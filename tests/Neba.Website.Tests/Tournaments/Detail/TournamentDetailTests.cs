@@ -220,12 +220,12 @@ public sealed class TournamentDetailTests : IDisposable
 
     // ── Champion bar ─────────────────────────────────────────────────────────
 
-    [Fact(DisplayName = "Should render champion bar when winners are present")]
-    public void Render_ShouldRenderChampionBar_WhenWinnersPresent()
+    [Fact(DisplayName = "Should render champion bar when winners are present and the tournament is title eligible")]
+    public void Render_ShouldRenderChampionBar_WhenWinnersPresentAndTitleEligible()
     {
         // Arrange
         SetupSuccessResponse(TournamentDetailResponseFactory.Create(
-            winners: ["Alex Example", "Jamie Sample"]));
+            winners: ["Alex Example", "Jamie Sample"], titleEligible: true));
 
         // Act
         var cut = _ctx.Render<TournamentDetail>(p => p.Add(x => x.Id, TournamentDetailResponseFactory.ValidId));
@@ -238,13 +238,28 @@ public sealed class TournamentDetailTests : IDisposable
     public void Render_ShouldNotRenderChampionBar_WhenNoWinners()
     {
         // Arrange
-        SetupSuccessResponse(TournamentDetailResponseFactory.Create(winners: []));
+        SetupSuccessResponse(TournamentDetailResponseFactory.Create(winners: [], titleEligible: true));
 
         // Act
         var cut = _ctx.Render<TournamentDetail>(p => p.Add(x => x.Id, TournamentDetailResponseFactory.ValidId));
 
         // Assert
         cut.FindAll(".tournament-detail__champion-bar").ShouldBeEmpty();
+    }
+
+    [Fact(DisplayName = "Should not render champion bar when winners are present but the tournament is not title eligible")]
+    public void Render_ShouldNotRenderChampionBar_WhenNotTitleEligible()
+    {
+        // Arrange
+        SetupSuccessResponse(TournamentDetailResponseFactory.Create(
+            winners: ["Alex Example"], status: TournamentStatus.Truncated, titleEligible: false));
+
+        // Act
+        var cut = _ctx.Render<TournamentDetail>(p => p.Add(x => x.Id, TournamentDetailResponseFactory.ValidId));
+
+        // Assert
+        cut.FindAll(".tournament-detail__champion-bar").ShouldBeEmpty();
+        cut.FindAll(".td-hero__champion-pill").ShouldBeEmpty();
     }
 
     // ── Info card (upcoming) ─────────────────────────────────────────────────

@@ -43,16 +43,18 @@
         </div>
 
         <div class="tournament-past-card__champion">
-            @if (Tournament.HasWinners)
+            @if (Tournament.ShowChampionBadge)
             {
                 <div class="tournament-past-card__champion-pill">
                     <span class="material-symbols-outlined" aria-hidden="true">emoji_events</span>
                     <span class="tournament-past-card__champion-name">@string.Join(" / ", Tournament.Winners)</span>
                 </div>
-                @if (Tournament.IsTruncated)
-                {
-                    <p class="tournament-past-card__status-note">Finals cancelled — not a title win</p>
-                }
+            }
+            else if (Tournament.HasWinners)
+            {
+                <p class="tournament-past-card__status-note">
+                    @string.Join(" / ", Tournament.Winners) — not a title win
+                </p>
             }
             else
             {

@@ -261,7 +261,7 @@ else
                             </div>
                         }
 
-                        @if (!_model.IsUpcoming && _model.HasWinners)
+                        @if (!_model.IsUpcoming && _model.ShowChampionBadge)
                         {
                             <div class="td-hero__champion-pill" aria-label="@("Tournament champion: " + WinnersText)">
                                 <span class="material-symbols-outlined" aria-hidden="true">emoji_events</span>
@@ -277,7 +277,7 @@ else
                 </div>
             </header>
 
-            @if (_model.IsUpcoming && _model.HasWinners)
+            @if (_model.IsUpcoming && _model.ShowChampionBadge)
             {
                 <div class="tournament-detail__champion-bar">
                     <span class="material-symbols-outlined" aria-hidden="true">emoji_events</span>

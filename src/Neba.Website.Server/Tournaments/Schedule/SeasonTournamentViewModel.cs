@@ -181,6 +181,14 @@ public sealed record SeasonTournamentViewModel
     public bool HasWinners => Winners.Count > 0;
 
     /// <summary>
+    /// True when the champion callout (trophy pill) should render. A tournament can have recorded
+    /// winners without being title eligible (Truncated, or Completed under the format's minimum
+    /// entries) - the winner(s) still get named in that case, just not with the champion trophy
+    /// treatment.
+    /// </summary>
+    public bool ShowChampionBadge => HasWinners && TitleEligible;
+
+    /// <summary>
     /// True when a registration URL is available.
     /// </summary>
     public bool CanRegister => RegistrationUrl is not null;
