@@ -272,7 +272,7 @@ public sealed class GenerateSeasonStatsJobTests(AppDbContextFixture fixture, Leg
         await InsertQualifyingStatsAsync(statsId, squadId: 1, score: 1200, games: 6, highGame: 220);
         await InsertResultsStatsAsync(statsId, sideCut: null);
 
-        tournament.CompleteTournament();
+        tournament.CompleteTournament(entryCount: 100);
         tournament.AddResult(bowler.Id, place: 1, prizeMoney: 500m, points: 100);
         await _dbContext.SaveChangesAsync(ct);
         _dbContext.ChangeTracker.Clear();
@@ -305,7 +305,7 @@ public sealed class GenerateSeasonStatsJobTests(AppDbContextFixture fixture, Leg
         await InsertQualifyingStatsAsync(statsId, squadId: 1, score: 1200, games: 6, highGame: 220);
         await InsertResultsStatsAsync(statsId, sideCut: null);
 
-        tournament.CompleteTournament();
+        tournament.CompleteTournament(entryCount: 100);
         tournament.AddResult(bowler.Id, place: 1, prizeMoney: 500m, points: 100);
         await _dbContext.SaveChangesAsync(ct);
         _dbContext.ChangeTracker.Clear();
@@ -348,7 +348,7 @@ public sealed class GenerateSeasonStatsJobTests(AppDbContextFixture fixture, Leg
         await InsertQualifyingStatsAsync(removedStatsId, squadId: 1, score: 1100, games: 6, highGame: 210);
         await InsertResultsStatsAsync(removedStatsId, sideCut: null);
 
-        tournament.CompleteTournament();
+        tournament.CompleteTournament(entryCount: 100);
         tournament.AddResult(keptBowler.Id, place: 1, prizeMoney: 500m, points: 100);
         tournament.AddResult(removedBowler.Id, place: 2, prizeMoney: 250m, points: 50);
         await _dbContext.SaveChangesAsync(ct);
@@ -393,7 +393,7 @@ public sealed class GenerateSeasonStatsJobTests(AppDbContextFixture fixture, Leg
         await InsertQualifyingStatsAsync(statsId, squadId: 1, score: 1200, games: 6, highGame: 220);
         await InsertResultsStatsAsync(statsId, sideCut: null);
 
-        tournament.CompleteTournament();
+        tournament.CompleteTournament(entryCount: 100);
         tournament.AddResult(bowler.Id, place: 1, prizeMoney: 500m, points: 100);
         await _dbContext.SaveChangesAsync(ct);
         _dbContext.ChangeTracker.Clear();
@@ -465,7 +465,7 @@ public sealed class GenerateSeasonStatsJobTests(AppDbContextFixture fixture, Leg
         var secondStatsId = await InsertStatsAsync(100, 42);
         await InsertResultsStatsAsync(secondStatsId, sideCut: 1);
 
-        tournament.CompleteTournament();
+        tournament.CompleteTournament(entryCount: 100);
         tournament.AddResult(bowler.Id, place: 1, prizeMoney: 500m, points: 100);
         await _dbContext.SaveChangesAsync(ct);
         _dbContext.ChangeTracker.Clear();
@@ -500,7 +500,7 @@ public sealed class GenerateSeasonStatsJobTests(AppDbContextFixture fixture, Leg
         await InsertQualifyingStatsAsync(outOfSeasonStatsId, squadId: 1, score: 1000, games: 6, highGame: 190);
         await InsertResultsStatsAsync(outOfSeasonStatsId, sideCut: null);
 
-        tournament.CompleteTournament();
+        tournament.CompleteTournament(entryCount: 100);
         tournament.AddResult(inSeasonBowler.Id, place: 1, prizeMoney: 500m, points: 100);
         await _dbContext.SaveChangesAsync(ct);
         _dbContext.ChangeTracker.Clear();

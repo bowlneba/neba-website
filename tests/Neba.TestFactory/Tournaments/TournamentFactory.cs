@@ -34,7 +34,9 @@ public static class TournamentFactory
         IReadOnlyCollection<TournamentSponsor>? sponsors = null,
         IReadOnlyCollection<Squad>? squads = null,
         DateTimeOffset? oilPatternRevealDateTime = null,
-        decimal? nebaAddedMoney = null)
+        decimal? nebaAddedMoney = null,
+        TournamentStatus? status = null,
+        int? entryCountForTitleEligibility = null)
     {
         var result = Tournament.Create(
             name: name ?? ValidName,
@@ -78,6 +80,22 @@ public static class TournamentFactory
             if (addResult.IsError)
             {
                 throw new InvalidOperationException($"Failed to add squad to tournament: {addResult.Errors[0].Description}");
+            }
+        }
+
+        if (status is not null && status != TournamentStatus.Scheduled)
+        {
+            var statusResult = status.Name switch
+            {
+                nameof(TournamentStatus.Completed) => tournament.CompleteTournament(entryCountForTitleEligibility ?? tournament.TournamentType.MinimumEntries),
+                nameof(TournamentStatus.Truncated) => tournament.TruncateTournament(),
+                nameof(TournamentStatus.Cancelled) => tournament.CancelTournament(),
+                _ => throw new InvalidOperationException($"Unsupported tournament status: {status.Name}")
+            };
+
+            if (statusResult.IsError)
+            {
+                throw new InvalidOperationException($"Failed to set tournament status to {status.Name}: {statusResult.Errors[0].Description}");
             }
         }
 

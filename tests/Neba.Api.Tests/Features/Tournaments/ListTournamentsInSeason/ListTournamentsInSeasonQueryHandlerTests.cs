@@ -300,7 +300,7 @@ public sealed class ListTournamentsInSeasonQueryHandlerTests(AppDbContextFixture
         await _dbContext.Tournaments.AddAsync(tournament, ct);
         await _dbContext.SaveChangesAsync(ct);
 
-        tournament.CompleteTournament();
+        tournament.CompleteTournament(entryCount: 100);
         tournament.AddResult(bowler.Id, place: 1, prizeMoney: 500m, points: 100);
         await _dbContext.SaveChangesAsync(ct);
 
@@ -338,7 +338,7 @@ public sealed class ListTournamentsInSeasonQueryHandlerTests(AppDbContextFixture
             Tournament = tournament
         }, ct);
 
-        tournament.CompleteTournament();
+        tournament.CompleteTournament(entryCount: 100);
         tournament.AddResult(recordedBowler.Id, place: 1, prizeMoney: 500m, points: 100);
         await _dbContext.SaveChangesAsync(ct);
 

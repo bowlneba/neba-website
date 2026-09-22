@@ -175,7 +175,7 @@ public sealed class ListChampionsQueryHandlerTests(AppDbContextFixture fixture)
         await _dbContext.Tournaments.AddAsync(tournament, ct);
         await _dbContext.SaveChangesAsync(ct);
 
-        tournament.CompleteTournament();
+        tournament.CompleteTournament(entryCount: 100);
         tournament.AddResult(bob.Id, place: 1, prizeMoney: 500m, points: 50);
         tournament.AddResult(zach.Id, place: 1, prizeMoney: 500m, points: 50);
         tournament.AddResult(amanda.Id, place: 1, prizeMoney: 500m, points: 50);
@@ -347,7 +347,7 @@ public sealed class ListChampionsQueryHandlerTests(AppDbContextFixture fixture)
         await _dbContext.Tournaments.AddAsync(tournament, ct);
         await _dbContext.SaveChangesAsync(ct);
 
-        tournament.CompleteTournament();
+        tournament.CompleteTournament(entryCount: 100);
         tournament.AddResult(bowler.Id, place: 1, prizeMoney: 500m, points: 50);
         await _dbContext.SaveChangesAsync(ct);
 
@@ -384,7 +384,7 @@ public sealed class ListChampionsQueryHandlerTests(AppDbContextFixture fixture)
         await _dbContext.Tournaments.AddAsync(tournament, ct);
         await _dbContext.SaveChangesAsync(ct);
 
-        tournament.CompleteTournament();
+        tournament.CompleteTournament(entryCount: 100);
         tournament.AddResult(bowler.Id, place: 2, prizeMoney: 250m, points: 30);
         await _dbContext.SaveChangesAsync(ct);
 
@@ -415,7 +415,7 @@ public sealed class ListChampionsQueryHandlerTests(AppDbContextFixture fixture)
         await _dbContext.Tournaments.AddAsync(tournament, ct);
         await _dbContext.SaveChangesAsync(ct);
 
-        tournament.CompleteTournament();
+        tournament.CompleteTournament(entryCount: 100);
         tournament.AddResult(bowler.Id, place: 1, prizeMoney: 1000m, points: 100);
         await _dbContext.SaveChangesAsync(ct);
 
@@ -451,7 +451,7 @@ public sealed class ListChampionsQueryHandlerTests(AppDbContextFixture fixture)
             Tournament = historicalTournament
         }, ct);
 
-        recordedTournament.CompleteTournament();
+        recordedTournament.CompleteTournament(entryCount: 100);
         recordedTournament.AddResult(recordedBowler.Id, place: 1, prizeMoney: 500m, points: 50);
         await _dbContext.SaveChangesAsync(ct);
 
@@ -498,7 +498,7 @@ public sealed class ListChampionsQueryHandlerTests(AppDbContextFixture fixture)
             Tournament = historicalTournament
         }, ct);
 
-        recordedTournament.CompleteTournament();
+        recordedTournament.CompleteTournament(entryCount: 100);
         recordedTournament.AddResult(recordedBowler.Id, place: 1, prizeMoney: 500m, points: 50);
         await _dbContext.SaveChangesAsync(ct);
 

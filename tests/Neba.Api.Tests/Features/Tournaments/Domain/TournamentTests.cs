@@ -1051,67 +1051,191 @@ public sealed class TournamentTests
         result.FirstError.Code.ShouldBe("Tournament.Squad.NotFound");
     }
 
-    [Fact(DisplayName = "CompleteTournament returns success when the tournament is not already complete")]
-    public void CompleteTournament_ShouldReturnSuccess_WhenNotAlreadyComplete()
+    [Fact(DisplayName = "CompleteTournament returns success when the tournament is not already finalized")]
+    public void CompleteTournament_ShouldReturnSuccess_WhenNotAlreadyFinalized()
     {
         // Arrange
         var tournament = TournamentFactory.Create();
 
         // Act
-        var result = tournament.CompleteTournament();
+        var result = tournament.CompleteTournament(entryCount: 100);
 
         // Assert
         result.IsError.ShouldBeFalse();
     }
 
-    [Fact(DisplayName = "CompleteTournament marks the tournament complete when not already complete")]
-    public void CompleteTournament_ShouldMarkComplete_WhenNotAlreadyComplete()
+    [Fact(DisplayName = "CompleteTournament marks the tournament completed when not already finalized")]
+    public void CompleteTournament_ShouldMarkCompleted_WhenNotAlreadyFinalized()
     {
         // Arrange
         var tournament = TournamentFactory.Create();
 
         // Act
-        tournament.CompleteTournament();
+        tournament.CompleteTournament(entryCount: 100);
 
         // Assert
-        tournament.Complete.ShouldBeTrue();
+        tournament.Status.ShouldBe(TournamentStatus.Completed);
     }
 
-    [Fact(DisplayName = "CompleteTournament returns Tournament.AlreadyComplete when the tournament is already complete")]
-    public void CompleteTournament_ShouldReturnError_WhenAlreadyComplete()
+    [Fact(DisplayName = "CompleteTournament sets TitleEligible to true when entries meet the tournament type's MinimumEntries")]
+    public void CompleteTournament_ShouldSetTitleEligibleTrue_WhenEntriesMeetMinimum()
     {
         // Arrange
-        var tournament = TournamentFactory.Create();
-        tournament.CompleteTournament();
+        var tournament = TournamentFactory.Create(tournamentType: TournamentType.Doubles);
 
         // Act
-        var result = tournament.CompleteTournament();
+        tournament.CompleteTournament(entryCount: TournamentType.Doubles.MinimumEntries);
+
+        // Assert
+        tournament.TitleEligible.ShouldBeTrue();
+    }
+
+    [Fact(DisplayName = "CompleteTournament sets TitleEligible to false when entries fall short of the tournament type's MinimumEntries")]
+    public void CompleteTournament_ShouldSetTitleEligibleFalse_WhenEntriesFallShortOfMinimum()
+    {
+        // Arrange
+        var tournament = TournamentFactory.Create(tournamentType: TournamentType.Doubles);
+
+        // Act
+        tournament.CompleteTournament(entryCount: TournamentType.Doubles.MinimumEntries - 1);
+
+        // Assert
+        tournament.TitleEligible.ShouldBeFalse();
+    }
+
+    [Theory(DisplayName = "CompleteTournament returns Tournament.AlreadyFinalized when the tournament is already finalized")]
+    [InlineData(nameof(TournamentStatus.Completed))]
+    [InlineData(nameof(TournamentStatus.Truncated))]
+    [InlineData(nameof(TournamentStatus.Cancelled))]
+    public void CompleteTournament_ShouldReturnError_WhenAlreadyFinalized(string statusName)
+    {
+        // Arrange
+        var status = TournamentStatus.FromName(statusName);
+        var tournament = TournamentFactory.Create(status: status);
+
+        // Act
+        var result = tournament.CompleteTournament(entryCount: 100);
 
         // Assert
         result.IsError.ShouldBeTrue();
-        result.FirstError.Code.ShouldBe("Tournament.AlreadyComplete");
+        result.FirstError.Code.ShouldBe("Tournament.AlreadyFinalized");
     }
 
-    [Fact(DisplayName = "AddResult returns Tournament.NotComplete when the tournament is not complete")]
-    public void AddResult_ShouldReturnError_WhenTournamentNotComplete()
+    [Fact(DisplayName = "TruncateTournament returns success when the tournament is not already finalized")]
+    public void TruncateTournament_ShouldReturnSuccess_WhenNotAlreadyFinalized()
     {
         // Arrange
         var tournament = TournamentFactory.Create();
+
+        // Act
+        var result = tournament.TruncateTournament();
+
+        // Assert
+        result.IsError.ShouldBeFalse();
+    }
+
+    [Fact(DisplayName = "TruncateTournament marks the tournament truncated and never title eligible")]
+    public void TruncateTournament_ShouldMarkTruncatedAndNotTitleEligible_WhenNotAlreadyFinalized()
+    {
+        // Arrange
+        var tournament = TournamentFactory.Create();
+
+        // Act
+        tournament.TruncateTournament();
+
+        // Assert
+        tournament.Status.ShouldBe(TournamentStatus.Truncated);
+        tournament.TitleEligible.ShouldBeFalse();
+    }
+
+    [Theory(DisplayName = "TruncateTournament returns Tournament.AlreadyFinalized when the tournament is already finalized")]
+    [InlineData(nameof(TournamentStatus.Completed))]
+    [InlineData(nameof(TournamentStatus.Truncated))]
+    [InlineData(nameof(TournamentStatus.Cancelled))]
+    public void TruncateTournament_ShouldReturnError_WhenAlreadyFinalized(string statusName)
+    {
+        // Arrange
+        var status = TournamentStatus.FromName(statusName);
+        var tournament = TournamentFactory.Create(status: status);
+
+        // Act
+        var result = tournament.TruncateTournament();
+
+        // Assert
+        result.IsError.ShouldBeTrue();
+        result.FirstError.Code.ShouldBe("Tournament.AlreadyFinalized");
+    }
+
+    [Fact(DisplayName = "CancelTournament returns success when the tournament is not already finalized")]
+    public void CancelTournament_ShouldReturnSuccess_WhenNotAlreadyFinalized()
+    {
+        // Arrange
+        var tournament = TournamentFactory.Create();
+
+        // Act
+        var result = tournament.CancelTournament();
+
+        // Assert
+        result.IsError.ShouldBeFalse();
+    }
+
+    [Fact(DisplayName = "CancelTournament marks the tournament cancelled and never title eligible")]
+    public void CancelTournament_ShouldMarkCancelledAndNotTitleEligible_WhenNotAlreadyFinalized()
+    {
+        // Arrange
+        var tournament = TournamentFactory.Create();
+
+        // Act
+        tournament.CancelTournament();
+
+        // Assert
+        tournament.Status.ShouldBe(TournamentStatus.Cancelled);
+        tournament.TitleEligible.ShouldBeFalse();
+    }
+
+    [Theory(DisplayName = "CancelTournament returns Tournament.AlreadyFinalized when the tournament is already finalized")]
+    [InlineData(nameof(TournamentStatus.Completed))]
+    [InlineData(nameof(TournamentStatus.Truncated))]
+    [InlineData(nameof(TournamentStatus.Cancelled))]
+    public void CancelTournament_ShouldReturnError_WhenAlreadyFinalized(string statusName)
+    {
+        // Arrange
+        var status = TournamentStatus.FromName(statusName);
+        var tournament = TournamentFactory.Create(status: status);
+
+        // Act
+        var result = tournament.CancelTournament();
+
+        // Assert
+        result.IsError.ShouldBeTrue();
+        result.FirstError.Code.ShouldBe("Tournament.AlreadyFinalized");
+    }
+
+    [Theory(DisplayName = "AddResult returns Tournament.NotFinalized when the tournament is not finalized")]
+    [InlineData(nameof(TournamentStatus.Scheduled))]
+    [InlineData(nameof(TournamentStatus.Cancelled))]
+    public void AddResult_ShouldReturnError_WhenTournamentNotFinalized(string statusName)
+    {
+        // Arrange
+        var status = TournamentStatus.FromName(statusName);
+        var tournament = TournamentFactory.Create(status: status);
 
         // Act
         var result = tournament.AddResult(BowlerId.New(), place: 1, prizeMoney: 100m, points: 10);
 
         // Assert
         result.IsError.ShouldBeTrue();
-        result.FirstError.Code.ShouldBe("Tournament.NotComplete");
+        result.FirstError.Code.ShouldBe("Tournament.NotFinalized");
     }
 
-    [Fact(DisplayName = "AddResult returns success when the tournament is complete and the bowler has no result yet")]
-    public void AddResult_ShouldReturnSuccess_WhenTournamentCompleteAndBowlerHasNoResult()
+    [Theory(DisplayName = "AddResult returns success when the tournament is finalized and the bowler has no result yet")]
+    [InlineData(nameof(TournamentStatus.Completed))]
+    [InlineData(nameof(TournamentStatus.Truncated))]
+    public void AddResult_ShouldReturnSuccess_WhenTournamentFinalizedAndBowlerHasNoResult(string statusName)
     {
         // Arrange
-        var tournament = TournamentFactory.Create();
-        tournament.CompleteTournament();
+        var status = TournamentStatus.FromName(statusName);
+        var tournament = TournamentFactory.Create(status: status);
 
         // Act
         var result = tournament.AddResult(BowlerId.New(), place: 1, prizeMoney: 100m, points: 10);
@@ -1120,12 +1244,12 @@ public sealed class TournamentTests
         result.IsError.ShouldBeFalse();
     }
 
-    [Fact(DisplayName = "AddResult adds the result to Results when the tournament is complete")]
-    public void AddResult_ShouldAddResultToResults_WhenTournamentComplete()
+    [Fact(DisplayName = "AddResult adds the result to Results when the tournament is completed")]
+    public void AddResult_ShouldAddResultToResults_WhenTournamentCompleted()
     {
         // Arrange
         var tournament = TournamentFactory.Create();
-        tournament.CompleteTournament();
+        tournament.CompleteTournament(entryCount: 100);
         var bowlerId = BowlerId.New();
 
         // Act
@@ -1140,7 +1264,7 @@ public sealed class TournamentTests
     {
         // Arrange
         var tournament = TournamentFactory.Create();
-        tournament.CompleteTournament();
+        tournament.CompleteTournament(entryCount: 100);
         var bowlerId = BowlerId.New();
         tournament.AddResult(bowlerId, place: 1, prizeMoney: 100m, points: 10);
 
@@ -1157,7 +1281,7 @@ public sealed class TournamentTests
     {
         // Arrange
         var tournament = TournamentFactory.Create();
-        tournament.CompleteTournament();
+        tournament.CompleteTournament(entryCount: 100);
 
         // Act
         var result = tournament.AddResult(BowlerId.New(), place: 0, prizeMoney: 100m, points: 10);

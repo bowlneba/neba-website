@@ -435,7 +435,7 @@ public sealed class GetTournamentQueryHandlerTests(AppDbContextFixture fixture)
             Tournament = tournament
         }, ct);
 
-        tournament.CompleteTournament();
+        tournament.CompleteTournament(entryCount: 100);
         tournament.AddResult(recordedBowler.Id, place: 2, prizeMoney: 250m, points: 50);
         await _dbContext.SaveChangesAsync(ct);
 
@@ -474,7 +474,7 @@ public sealed class GetTournamentQueryHandlerTests(AppDbContextFixture fixture)
             Entries = 64,
         }, ct);
 
-        tournament.CompleteTournament();
+        tournament.CompleteTournament(entryCount: 100);
         tournament.AddResult(recordedBowler.Id, place: 1, prizeMoney: 500m, points: 50);
         await _dbContext.SaveChangesAsync(ct);
 
