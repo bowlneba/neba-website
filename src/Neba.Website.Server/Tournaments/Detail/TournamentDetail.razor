@@ -90,6 +90,14 @@ else
 
                     <h1 class="td-hero__title">@_model.Name</h1>
 
+                    @if (_model.IsTruncated || _model.IsCancelled)
+                    {
+                        <span class="td-status-badge td-status-badge--@(_model.Status.ToLowerInvariant())">
+                            <span class="material-symbols-outlined">@(_model.IsTruncated ? "warning" : "block")</span>
+                            @_model.Status
+                        </span>
+                    }
+
                     <div class="td-hero__admin-actions">
                         <AuthorizeView Policy="@Permissions.EditTournament.PolicyName">
                             <Authorized>
@@ -99,6 +107,24 @@ else
                                 </a>
                             </Authorized>
                         </AuthorizeView>
+
+                        @if (_model.IsScheduled)
+                        {
+                            <AuthorizeView Policy="@Permissions.ManageTournamentStatus.PolicyName">
+                                <Authorized>
+                                    <button type="button" class="neba-btn neba-btn-secondary td-hero__truncate-btn" @onclick="OpenTruncateConfirm">
+                                        <span class="material-symbols-outlined">warning</span>
+                                        Mark Truncated
+                                    </button>
+                                    <HelpButton DocName="truncate-tournament" Light="true" />
+                                    <button type="button" class="neba-btn neba-btn-secondary td-hero__cancel-btn" @onclick="OpenCancelConfirm">
+                                        <span class="material-symbols-outlined">block</span>
+                                        Cancel Tournament
+                                    </button>
+                                    <HelpButton DocName="cancel-tournament" Light="true" />
+                                </Authorized>
+                            </AuthorizeView>
+                        }
 
                         <AuthorizeView Policy="@Permissions.DeleteTournament.PolicyName">
                             <Authorized>
@@ -186,6 +212,37 @@ else
                             }
                         </div>
 
+                        @if (_model.IsTruncated)
+                        {
+                            <div class="td-eligibility-note">
+                                <span class="material-symbols-outlined">warning</span>
+                                <div>
+                                    <strong>Does not count toward a title</strong>
+                                    <span class="sub">This tournament didn't finish as planned. Results and stats still count.</span>
+                                </div>
+                            </div>
+                        }
+                        else if (_model.IsCompleted && !_model.TitleEligible)
+                        {
+                            <div class="td-eligibility-note">
+                                <span class="material-symbols-outlined">warning</span>
+                                <div>
+                                    <strong>Completed — did not meet the minimum entries for a title</strong>
+                                    <span class="sub">Stats still count.</span>
+                                </div>
+                            </div>
+                        }
+                        else if (_model.IsCancelled)
+                        {
+                            <div class="td-eligibility-note td-eligibility-note--cancelled">
+                                <span class="material-symbols-outlined">block</span>
+                                <div>
+                                    <strong>No official results</strong>
+                                    <span class="sub">This event did not run as a sanctioned NEBA tournament.</span>
+                                </div>
+                            </div>
+                        }
+
                         @if (_model.IsUpcoming)
                         {
                             <div class="td-hero__cta">
@@ -206,7 +263,7 @@ else
                             </div>
                         }
 
-                        @if (!_model.IsUpcoming && _model.HasWinners)
+                        @if (!_model.IsUpcoming && _model.ShowChampionBadge)
                         {
                             <div class="td-hero__champion-pill" aria-label="@("Tournament champion: " + WinnersText)">
                                 <span class="material-symbols-outlined" aria-hidden="true">emoji_events</span>
@@ -222,7 +279,7 @@ else
                 </div>
             </header>
 
-            @if (_model.IsUpcoming && _model.HasWinners)
+            @if (_model.IsUpcoming && _model.ShowChampionBadge)
             {
                 <div class="tournament-detail__champion-bar">
                     <span class="material-symbols-outlined" aria-hidden="true">emoji_events</span>
@@ -465,6 +522,24 @@ else
                         IsBusy="@_isDeleteBusy"
                         OnConfirm="ConfirmDeleteAsync"
                         OnCancel="@(() => _isDeleteConfirmOpen = false)" />
+
+    <ConfirmActionModal IsOpen="@_isTruncateConfirmOpen"
+                        Title="Mark tournament truncated?"
+                        Message="This tournament will count toward season stats but will never be eligible for a title. This can't be undone."
+                        ConfirmLabel="Mark Truncated"
+                        BusyLabel="Marking Truncated..."
+                        IsBusy="@_isTruncateBusy"
+                        OnConfirm="ConfirmTruncateAsync"
+                        OnCancel="@(() => _isTruncateConfirmOpen = false)" />
+
+    <ConfirmActionModal IsOpen="@_isCancelConfirmOpen"
+                        Title="Cancel this tournament?"
+                        Message="This tournament will not count toward stats or a title. This can't be undone."
+                        ConfirmLabel="Cancel Tournament"
+                        BusyLabel="Cancelling..."
+                        IsBusy="@_isCancelBusy"
+                        OnConfirm="ConfirmCancelAsync"
+                        OnCancel="@(() => _isCancelConfirmOpen = false)" />
 }
 
 @code {
@@ -474,6 +549,10 @@ else
 
     private bool _isDeleteConfirmOpen;
     private bool _isDeleteBusy;
+    private bool _isTruncateConfirmOpen;
+    private bool _isTruncateBusy;
+    private bool _isCancelConfirmOpen;
+    private bool _isCancelBusy;
 
     private TournamentDetailViewModel? _model;
     private DateTimeOffset? _oilPatternRevealLocal;
@@ -583,6 +662,60 @@ else
         var deletedTournamentName = _model!.Name;
         ToastService.Show("Tournament Deleted", $"\"{deletedTournamentName}\" was successfully deleted.", NotifySeverity.Success);
         Navigation.NavigateTo("/tournaments");
+    }
+
+    private void OpenTruncateConfirm()
+    {
+        _isTruncateConfirmOpen = true;
+    }
+
+    private async Task ConfirmTruncateAsync()
+    {
+        _isTruncateBusy = true;
+
+        var result = await ApiExecutor.ExecuteAsync(
+            "TournamentsApi",
+            "TruncateTournament",
+            ct => TournamentsApi.TruncateTournamentAsync(Id, ct));
+
+        _isTruncateBusy = false;
+        _isTruncateConfirmOpen = false;
+
+        if (result.IsError)
+        {
+            ToastService.Show("Truncate Failed", result.FirstError.Description, NotifySeverity.Error);
+            return;
+        }
+
+        ToastService.Show("Tournament Truncated", "Stats will still count; this tournament will not award a title.", NotifySeverity.Success);
+        await ReloadTournamentAsync();
+    }
+
+    private void OpenCancelConfirm()
+    {
+        _isCancelConfirmOpen = true;
+    }
+
+    private async Task ConfirmCancelAsync()
+    {
+        _isCancelBusy = true;
+
+        var result = await ApiExecutor.ExecuteAsync(
+            "TournamentsApi",
+            "CancelTournament",
+            ct => TournamentsApi.CancelTournamentAsync(Id, ct));
+
+        _isCancelBusy = false;
+        _isCancelConfirmOpen = false;
+
+        if (result.IsError)
+        {
+            ToastService.Show("Cancel Failed", result.FirstError.Description, NotifySeverity.Error);
+            return;
+        }
+
+        ToastService.Show("Tournament Cancelled", "This tournament no longer counts toward stats or a title.", NotifySeverity.Success);
+        await ReloadTournamentAsync();
     }
 
     private bool HasRailContent =>

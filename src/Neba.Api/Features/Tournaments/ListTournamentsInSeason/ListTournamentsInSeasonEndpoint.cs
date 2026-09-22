@@ -57,6 +57,8 @@ internal sealed class ListTournamentsInSeasonEndpoint(
                 StartDate = t.StartDate,
                 EndDate = t.EndDate,
                 TournamentType = t.TournamentType,
+                Status = t.Status,
+                TitleEligible = t.TitleEligible,
                 EntryFee = t.EntryFee,
                 RegistrationUrl = t.RegistrationUrl,
                 AddedMoney = t.AddedMoney,

@@ -15,6 +15,8 @@ internal static class TournamentDetailMappingExtensions
             EndDate = response.EndDate,
             TournamentType = response.TournamentType,
             StatsEligible = response.StatsEligible,
+            Status = response.Status,
+            TitleEligible = response.TitleEligible,
             EntryFee = response.EntryFee,
             RegistrationUrl = response.RegistrationUrl,
             AddedMoney = response.AddedMoney,

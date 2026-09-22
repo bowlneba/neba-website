@@ -62,9 +62,18 @@ public sealed class Tournament
     public bool StatsEligible { get; private set; }
 
     /// <summary>
-    /// Whether this tournament has finished and its results are final.
+    /// Gets the lifecycle status of this tournament.
     /// </summary>
-    public bool Complete { get; private set; }
+    public TournamentStatus Status { get; private set; } = TournamentStatus.Scheduled;
+
+    /// <summary>
+    /// Whether this tournament counts toward a NEBA title. Set once, only when transitioning to
+    /// <see cref="TournamentStatus.Completed"/>, from entries compared against
+    /// <see cref="TournamentType.MinimumEntries"/> at that moment — never recomputed afterward, so a
+    /// later change to <see cref="TournamentType.MinimumEntries"/> can't retroactively affect it.
+    /// Always <see langword="false"/> for every other status.
+    /// </summary>
+    public bool TitleEligible { get; private set; }
 
     /// <summary>
     /// Gets the oil-to-dry ratio category of the lane condition used in this tournament,
@@ -428,20 +437,60 @@ public sealed class Tournament
     }
 
     /// <summary>
-    /// Marks the tournament complete, allowing results to be recorded. Returns an error if
-    /// already complete. Carries no other business-rule gate today — the caller (currently the
-    /// legacy backdoor sync; later a UI-driven endpoint) is responsible for deciding a tournament
-    /// is actually done. Aggregate-level invariants for what "may be completed" are deferred until
-    /// that UI-driven endpoint replaces the legacy backdoor as the caller.
+    /// Marks the tournament complete, allowing results to be recorded. Returns an error if the
+    /// tournament has already been finalized (completed, truncated, or cancelled). Carries no
+    /// other business-rule gate today — the caller (currently the legacy backdoor sync; later a
+    /// UI-driven endpoint) is responsible for deciding a tournament is actually done.
+    /// Aggregate-level invariants for what "may be completed" are deferred until that UI-driven
+    /// endpoint replaces the legacy backdoor as the caller.
     /// </summary>
-    public ErrorOr<Success> CompleteTournament()
+    /// <param name="entryCount">
+    /// Supplied by the caller (the legacy completion sync today) and compared against
+    /// <see cref="TournamentType.MinimumEntries"/> to freeze <see cref="TitleEligible"/> — the
+    /// aggregate enforces the rule, the caller supplies the fact, per the cross-aggregate-data
+    /// pattern.
+    /// </param>
+    public ErrorOr<Success> CompleteTournament(int entryCount)
     {
-        if (Complete)
+        if (Status != TournamentStatus.Scheduled)
         {
-            return TournamentErrors.AlreadyComplete;
+            return TournamentErrors.TournamentAlreadyFinalized;
         }
 
-        Complete = true;
+        Status = TournamentStatus.Completed;
+        TitleEligible = entryCount >= TournamentType.MinimumEntries;
+
+        return Result.Success;
+    }
+
+    /// <summary>
+    /// Marks the tournament truncated — held, but didn't finish as planned. A board-level decision,
+    /// made from the website admin panel; never title-eligible.
+    /// </summary>
+    public ErrorOr<Success> TruncateTournament()
+    {
+        if (Status != TournamentStatus.Scheduled)
+        {
+            return TournamentErrors.TournamentAlreadyFinalized;
+        }
+
+        Status = TournamentStatus.Truncated;
+
+        return Result.Success;
+    }
+
+    /// <summary>
+    /// Marks the tournament cancelled — no official NEBA event took place under this record. A
+    /// board-level decision, made from the website admin panel.
+    /// </summary>
+    public ErrorOr<Success> CancelTournament()
+    {
+        if (Status != TournamentStatus.Scheduled)
+        {
+            return TournamentErrors.TournamentAlreadyFinalized;
+        }
+
+        Status = TournamentStatus.Cancelled;
 
         return Result.Success;
     }
@@ -456,14 +505,25 @@ public sealed class Tournament
         => _results;
 
     /// <summary>
-    /// Records a bowler's result; returns an error if the tournament isn't complete or the
-    /// bowler already has a result recorded.
+    /// Records a bowler's result; returns an error if the tournament isn't finalized (Completed or
+    /// Truncated) or the bowler already has a result recorded.
     /// </summary>
+    /// <remarks>
+    /// Results are only ever added after the tournament is finalized, never before — this mirrors
+    /// nebamgmt-v3's own flow, where finalists' results are entered manually while the tournament is
+    /// still open, then the Software auto-generates participation placeholders for everyone else at
+    /// the moment it's marked complete (see `docs/plans/software-backdoor-complete-tournament.md`).
+    /// The website only sees results once, in one batch, via <c>SyncTournamentResultsJob</c>, which
+    /// is chained from <c>CompleteTournamentSyncJob</c> and therefore always runs after
+    /// <see cref="CompleteTournament"/>/<see cref="TruncateTournament"/> has already set
+    /// <see cref="Status"/> — this guard exists to enforce that ordering on the website side too, not
+    /// to support results trickling in before finalization the way the Software's manual entry does.
+    /// </remarks>
     public ErrorOr<Success> AddResult(BowlerId bowlerId, int place, decimal prizeMoney, int points)
     {
-        if (!Complete)
+        if (Status == TournamentStatus.Scheduled || Status == TournamentStatus.Cancelled)
         {
-            return TournamentErrors.TournamentNotComplete;
+            return TournamentErrors.TournamentNotFinalized;
         }
 
         if (_results.Any(result => result.BowlerId == bowlerId))

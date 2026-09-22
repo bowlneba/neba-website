@@ -228,6 +228,8 @@ export const MOCK_SEASON_TOURNAMENTS = {
       startDate: '2026-03-15',
       endDate: '2026-03-15',
       tournamentType: 'Singles',
+      status: 'Completed',
+      titleEligible: true,
       entryFee: 75,
       registrationUrl: null,
       addedMoney: 500,
@@ -307,6 +309,8 @@ export const MOCK_TOURNAMENT_DETAIL = {
   startDate: '2024-09-21',
   endDate: '2024-09-21',
   statsEligible: true,
+  status: 'Completed',
+  titleEligible: true,
   tournamentType: 'Open',
   entryFee: 75,
   registrationUrl: null,
@@ -361,6 +365,8 @@ const MOCK_TOURNAMENT_OIL_REVEAL_PENDING = {
   startDate: '2026-06-01',
   endDate: '2026-06-01',
   statsEligible: true,
+  status: 'Completed',
+  titleEligible: true,
   tournamentType: 'Singles',
   entryFee: 60,
   registrationUrl: null,
@@ -386,6 +392,8 @@ const MOCK_TOURNAMENT_OIL_REVEALED = {
   startDate: '2026-06-01',
   endDate: '2026-06-01',
   statsEligible: true,
+  status: 'Completed',
+  titleEligible: true,
   tournamentType: 'Singles',
   entryFee: 60,
   registrationUrl: null,
@@ -412,6 +420,8 @@ const MOCK_TOURNAMENT_OIL_REVEAL_MGMT = {
   startDate: '2026-06-01',
   endDate: '2026-06-01',
   statsEligible: true,
+  status: 'Completed',
+  titleEligible: true,
   tournamentType: 'Singles',
   entryFee: 60,
   registrationUrl: null,
@@ -441,6 +451,8 @@ const MOCK_TOURNAMENT_SPONSOR_MGMT = {
   startDate: '2026-06-01',
   endDate: '2026-06-01',
   statsEligible: true,
+  status: 'Completed',
+  titleEligible: true,
   tournamentType: 'Singles',
   entryFee: 60,
   registrationUrl: null,
@@ -457,11 +469,55 @@ const MOCK_TOURNAMENT_SPONSOR_MGMT = {
   results: [],
 };
 
+// Dedicated tournament for the Truncate/Cancel status-action E2E flow, kept separate from
+// MOCK_TOURNAMENT_DETAIL so mutating its status via the PATCH handlers below never leaks into
+// the other tournament-detail tests that assert a fixed "Completed" status.
+export const MOCK_TOURNAMENT_STATUS_ACTIONS_ID = '01JX0000000000000000000050';
+
+const MOCK_TOURNAMENT_STATUS_ACTIONS = {
+  id: MOCK_TOURNAMENT_STATUS_ACTIONS_ID,
+  name: 'NEBA Status Actions Classic',
+  season: '2025-2026 Season',
+  startDate: '2026-06-01',
+  endDate: '2026-06-01',
+  statsEligible: true,
+  status: 'Scheduled',
+  titleEligible: false,
+  tournamentType: 'Singles',
+  entryFee: 60,
+  registrationUrl: null,
+  addedMoney: null,
+  reservations: null,
+  entryCount: null,
+  patternLengthCategory: null,
+  patternRatioCategory: null,
+  logoUrl: null,
+  bowlingCenter: { name: 'Lucky Strike Lanes', city: 'Boston', state: 'MA' },
+  sponsors: [] as TournamentSponsorFixture[],
+  oilPatterns: [],
+  winners: [],
+  results: [],
+};
+
+// A second, separate tournament for the Truncate happy-path test specifically — Truncate and
+// Cancel each finalize their tournament (a one-way transition), so the Truncate happy-path test
+// can't share MOCK_TOURNAMENT_STATUS_ACTIONS_ID with the Cancel happy-path test without one of
+// them observing the other's finalized status.
+export const MOCK_TOURNAMENT_TRUNCATE_ACTIONS_ID = '01JX0000000000000000000051';
+
+const MOCK_TOURNAMENT_TRUNCATE_ACTIONS = {
+  ...MOCK_TOURNAMENT_STATUS_ACTIONS,
+  id: MOCK_TOURNAMENT_TRUNCATE_ACTIONS_ID,
+  name: 'NEBA Truncate Actions Classic',
+};
+
 const EXTRA_TOURNAMENT_DETAILS = new Map<string, object>([
   [MOCK_TOURNAMENT_OIL_REVEAL_PENDING_ID, MOCK_TOURNAMENT_OIL_REVEAL_PENDING],
   [MOCK_TOURNAMENT_OIL_REVEALED_ID, MOCK_TOURNAMENT_OIL_REVEALED],
   [MOCK_TOURNAMENT_OIL_REVEAL_MGMT_ID, MOCK_TOURNAMENT_OIL_REVEAL_MGMT],
   [MOCK_TOURNAMENT_SPONSOR_MGMT_ID, MOCK_TOURNAMENT_SPONSOR_MGMT],
+  [MOCK_TOURNAMENT_STATUS_ACTIONS_ID, MOCK_TOURNAMENT_STATUS_ACTIONS],
+  [MOCK_TOURNAMENT_TRUNCATE_ACTIONS_ID, MOCK_TOURNAMENT_TRUNCATE_ACTIONS],
 ]);
 
 type SeasonVariants = {
@@ -1116,6 +1172,8 @@ async function handleRequest(req: IncomingMessage, res: ServerResponse): Promise
       startDate: tournament.startDate ?? null,
       endDate: tournament.endDate ?? null,
       statsEligible: tournament.statsEligible ?? true,
+      status: 'Scheduled',
+      titleEligible: false,
       tournamentType: tournament.tournamentType ?? 'Singles',
       entryFee: tournament.entryFee ?? null,
       registrationUrl: tournament.externalRegistrationUrl ?? null,
@@ -1214,6 +1272,42 @@ async function handleRequest(req: IncomingMessage, res: ServerResponse): Promise
 
   if (req.method === 'DELETE' && pathname.startsWith('/tournaments/') && !pathname.includes('/sponsors/')) {
     if (sendMockOverrideErrorIfSet(res, pathname)) return;
+
+    res.writeHead(204);
+    res.end();
+    return;
+  }
+
+  if (req.method === 'PATCH' && pathname.startsWith('/tournaments/') && pathname.endsWith('/truncate')) {
+    if (sendMockOverrideErrorIfSet(res, pathname)) return;
+
+    const tournamentId = pathname.slice('/tournaments/'.length, -'/truncate'.length);
+    const tournament = resolveGetRoute(`/tournaments/${tournamentId}`, new URLSearchParams()) as
+      | { status: string; titleEligible: boolean }
+      | null;
+
+    if (tournament !== null) {
+      tournament.status = 'Truncated';
+      tournament.titleEligible = false;
+    }
+
+    res.writeHead(204);
+    res.end();
+    return;
+  }
+
+  if (req.method === 'PATCH' && pathname.startsWith('/tournaments/') && pathname.endsWith('/cancel')) {
+    if (sendMockOverrideErrorIfSet(res, pathname)) return;
+
+    const tournamentId = pathname.slice('/tournaments/'.length, -'/cancel'.length);
+    const tournament = resolveGetRoute(`/tournaments/${tournamentId}`, new URLSearchParams()) as
+      | { status: string; titleEligible: boolean }
+      | null;
+
+    if (tournament !== null) {
+      tournament.status = 'Cancelled';
+      tournament.titleEligible = false;
+    }
 
     res.writeHead(204);
     res.end();

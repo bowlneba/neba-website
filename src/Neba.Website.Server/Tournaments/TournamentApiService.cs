@@ -77,6 +77,11 @@ internal sealed class TournamentApiService(
             StartDate = response.StartDate,
             EndDate = response.EndDate,
             TournamentType = response.TournamentType,
+            Status = response.Status,
+            // A Scheduled tournament hasn't run yet and hasn't been disqualified by anything, so
+            // it should read as title eligible by default - the API's TitleEligible flag only
+            // turns true once the tournament completes, so it can't be trusted as-is here.
+            TitleEligible = response.Status == "Scheduled" || response.TitleEligible,
             EntryFee = response.EntryFee,
             RegistrationUrl = response.RegistrationUrl,
             AddedMoney = response.AddedMoney,

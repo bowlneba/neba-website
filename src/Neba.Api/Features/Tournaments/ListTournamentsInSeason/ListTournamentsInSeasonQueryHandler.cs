@@ -43,6 +43,8 @@ internal sealed class ListTournamentsInSeasonQueryHandler(
                 tournament.StartDate,
                 tournament.EndDate,
                 tournament.StatsEligible,
+                Status = tournament.Status.Name,
+                tournament.TitleEligible,
                 TournamentType = tournament.TournamentType.Name,
                 BowlingCenter = tournament.BowlingCenter == null
                     ? null
@@ -139,6 +141,8 @@ internal sealed class ListTournamentsInSeasonQueryHandler(
                 StartDate = row.StartDate,
                 EndDate = row.EndDate,
                 StatsEligible = row.StatsEligible,
+                Status = row.Status,
+                TitleEligible = row.TitleEligible,
                 TournamentType = row.TournamentType,
                 EntryFee = row.EntryFee,
                 RegistrationUrl = row.RegistrationUrl,

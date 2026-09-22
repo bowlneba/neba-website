@@ -1263,10 +1263,6 @@ namespace Neba.Api.Database.Migrations
                         .HasColumnType("character varying(6)")
                         .HasColumnName("bowling_center_id");
 
-                    b.Property<bool>("Complete")
-                        .HasColumnType("boolean")
-                        .HasColumnName("complete");
-
                     b.Property<DateOnly>("EndDate")
                         .HasColumnType("date")
                         .HasColumnName("end_date");
@@ -1329,6 +1325,14 @@ namespace Neba.Api.Database.Migrations
                     b.Property<bool>("StatsEligible")
                         .HasColumnType("boolean")
                         .HasColumnName("stats_eligible");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("integer")
+                        .HasColumnName("status");
+
+                    b.Property<bool>("TitleEligible")
+                        .HasColumnType("boolean")
+                        .HasColumnName("title_eligible");
 
                     b.Property<int>("TournamentType")
                         .HasColumnType("integer")

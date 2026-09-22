@@ -43,6 +43,36 @@ public sealed record TournamentDetailViewModel
     public required bool StatsEligible { get; init; }
 
     /// <summary>
+    /// Current lifecycle status of the tournament ("Scheduled", "Completed", "Truncated", "Cancelled").
+    /// </summary>
+    public required string Status { get; init; }
+
+    /// <summary>
+    /// Whether this tournament counts toward a NEBA title.
+    /// </summary>
+    public required bool TitleEligible { get; init; }
+
+    /// <summary>
+    /// True while the tournament hasn't been finalized — the only state Truncate/Cancel actions are available from.
+    /// </summary>
+    public bool IsScheduled => Status == "Scheduled";
+
+    /// <summary>
+    /// True when the tournament ran its full planned format to conclusion.
+    /// </summary>
+    public bool IsCompleted => Status == "Completed";
+
+    /// <summary>
+    /// True when the tournament was held but didn't finish as planned.
+    /// </summary>
+    public bool IsTruncated => Status == "Truncated";
+
+    /// <summary>
+    /// True when no official NEBA event took place under this record.
+    /// </summary>
+    public bool IsCancelled => Status == "Cancelled";
+
+    /// <summary>
     /// Per-bowler entry fee in USD; null if not set.
     /// </summary>
     public decimal? EntryFee { get; init; }
@@ -153,6 +183,14 @@ public sealed record TournamentDetailViewModel
     /// True when winner(s) have been recorded.
     /// </summary>
     public bool HasWinners => Winners.Count > 0;
+
+    /// <summary>
+    /// True when the champion callout (trophy pill/banner) should render. A tournament can have
+    /// recorded winners without being title eligible (Truncated, or Completed under the format's
+    /// minimum entries) - those results still appear in the Results table below, just not
+    /// headlined as a championship.
+    /// </summary>
+    public bool ShowChampionBadge => HasWinners && TitleEligible;
 
     /// <summary>
     /// True when a host bowling center is assigned.

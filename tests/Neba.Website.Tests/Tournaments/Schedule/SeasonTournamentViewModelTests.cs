@@ -128,6 +128,24 @@ public sealed class SeasonTournamentViewModelTests
         withoutWinners.HasWinners.ShouldBeFalse();
     }
 
+    [Fact(DisplayName = "Should show the champion badge only when winners exist and the tournament is title eligible")]
+    public void ShowChampionBadge_ShouldBeTrueOnlyWhenWinnersExistAndTitleEligible_WhenEvaluated()
+    {
+        // Arrange
+        var eligibleWithWinners = SeasonTournamentViewModelFactory.Create() with
+        {
+            Winners = ["A Winner"],
+            TitleEligible = true,
+        };
+        var ineligibleWithWinners = eligibleWithWinners with { TitleEligible = false };
+        var eligibleWithoutWinners = eligibleWithWinners with { Winners = [] };
+
+        // Assert
+        eligibleWithWinners.ShowChampionBadge.ShouldBeTrue();
+        ineligibleWithWinners.ShowChampionBadge.ShouldBeFalse();
+        eligibleWithoutWinners.ShowChampionBadge.ShouldBeFalse();
+    }
+
     [Fact(DisplayName = "Should compute merged season and past flags from season and end date")]
     public void SeasonalFlags_ShouldReflectSeasonAndEndDate_WhenEvaluated()
     {

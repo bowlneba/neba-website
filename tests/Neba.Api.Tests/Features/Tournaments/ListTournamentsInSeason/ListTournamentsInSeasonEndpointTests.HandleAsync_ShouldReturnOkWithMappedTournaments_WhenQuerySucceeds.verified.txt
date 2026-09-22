@@ -5,55 +5,48 @@
       Name: Germany incentivize Antigua and Barbuda,
       StartDate: Date_1,
       EndDate: Date_2,
-      TournamentType: Doubles,
-      EntryFee: 63.5168915444598050,
-      RegistrationUrl: https://raymond.name,
-      AddedMoney: 3462.948614481345000,
-      SponsorMoney: 1549.241142137553000,
-      NebaAddedMoney: 372.756912546584000,
-      Reservations: 4,
-      PatternLengthCategory: Long,
-      PatternRatioCategory: Recreation,
+      TournamentType: Senior / Women,
+      Status: Cancelled,
+      TitleEligible: true,
+      EntryFee: 172.427292457980650,
+      RegistrationUrl: https://alva.net,
+      AddedMoney: 931.892281366460000,
+      SponsorMoney: 124.5298991559678000,
+      NebaAddedMoney: 616.399325717426000,
+      Reservations: 58,
+      PatternLengthCategory: Short,
+      PatternRatioCategory: Challenge,
       Winners: [
-        Wilber Cassin,
         Kathy Cassin
       ],
       BowlingCenter: {
-        Name: Connelly, Cassin and Ledner Lanes,
-        City: East Modestaport,
-        State: FL
+        Name: Feest, Gerhold and Lakin Lanes,
+        City: West Devante,
+        State: MT
       },
       Sponsors: [
         {
-          Name: Lindgren, Baumbach and Rath,
-          Slug: caleb
+          Name: O'Conner, Bailey and Hegmann,
+          Slug: titus,
+          LogoUrl: http://dina.com
         },
         {
-          Name: Yundt, Sauer and Collier,
-          Slug: shaun,
-          LogoUrl: http://keenan.name
+          Name: Aufderhar, Tillman and Will,
+          Slug: estefania
         }
       ],
       OilPatterns: [
         {
-          Name: libero Pattern,
-          Length: 34,
-          Volume: 17.510365789062520,
-          LeftRatio: 5.136585656151446,
-          RightRatio: 3.010605345019424,
+          Name: culpa Pattern,
+          Length: 35,
+          Volume: 33.694885204869740,
+          LeftRatio: 2.3137968603120170,
+          RightRatio: 2.3340973380646190,
           KegelId: Guid_1,
           Rounds: [
-            Match Play
-          ]
-        },
-        {
-          Name: ut Pattern,
-          Length: 47,
-          Volume: 24.272937015291740,
-          LeftRatio: 5.25810651912266,
-          RightRatio: 7.686466895829170,
-          Rounds: [
-            Qualifying
+            Match Play,
+            Qualifying,
+            Step Ladder
           ]
         }
       ]
@@ -64,75 +57,89 @@
       StartDate: Date_3,
       EndDate: Date_4,
       TournamentType: Baker,
-      EntryFee: 157.726211639925050,
-      RegistrationUrl: http://jamaal.com,
-      AddedMoney: 2497.983983484090000,
-      SponsorMoney: 26.85872746019565000,
-      NebaAddedMoney: 1657.675853771006000,
-      Reservations: 1,
-      PatternLengthCategory: Long,
+      Status: Cancelled,
+      TitleEligible: false,
+      EntryFee: 119.614036739624150,
+      RegistrationUrl: http://pierce.info,
+      AddedMoney: 4144.189634427515000,
+      SponsorMoney: 38.6904669174414000,
+      NebaAddedMoney: 6.14801701444574000,
+      Reservations: 6,
+      PatternLengthCategory: Medium,
       PatternRatioCategory: Challenge,
-      Winners: [
-        Kathy Cassin,
-        Kathy Cassin,
-        Jordy Cassin
-      ],
+      LogoUrl: https://alvah.info,
       BowlingCenter: {
-        Name: Murphy, Erdman and Ankunding Lanes,
-        City: East Annette,
-        State: OK
+        Name: Hoppe, Cormier and Balistreri Lanes,
+        City: Lake Lisandroland,
+        State: IL
       },
       Sponsors: [
         {
-          Name: Lemke, Jacobs and Gulgowski,
-          Slug: sydnee
+          Name: Connelly, Cassin and Ledner,
+          Slug: cathryn,
+          LogoUrl: https://jonas.biz
         }
       ],
       OilPatterns: [
         {
-          Name: libero Pattern,
-          Length: 34,
-          Volume: 17.510365789062520,
-          LeftRatio: 5.136585656151446,
-          RightRatio: 3.010605345019424,
-          KegelId: Guid_1,
+          Name: necessitatibus Pattern,
+          Length: 38,
+          Volume: 28.526421000029160,
+          LeftRatio: 5.933136897130466,
+          RightRatio: 7.907975646624332,
+          KegelId: Guid_2,
           Rounds: [
+            Qualifying
+          ]
+        },
+        {
+          Name: consectetur Pattern,
+          Length: 36,
+          Volume: 18.660902773803520,
+          LeftRatio: 2.1775014988041956,
+          RightRatio: 3.385089983877302,
+          Rounds: [
+            Step Ladder,
+            Cashers,
+            Qualifying,
             Match Play
           ]
         }
       ]
     },
     {
-      Id: 01HQ2QY4Y7H7YG0ME6KZJE1X8E,
-      Name: XSS synergistic Ergonomic Cotton Gloves,
+      Id: 01FSE81DM6A739ZS70YM77219D,
+      Name: Chilean Peso Practical integrated,
       StartDate: Date_5,
       EndDate: Date_5,
-      TournamentType: Eliminator,
-      EntryFee: 138.749369251890800,
-      RegistrationUrl: https://wyman.net,
-      AddedMoney: 4949.142916570020000,
-      SponsorMoney: 1952.496990539364000,
-      NebaAddedMoney: 48.4340405317182000,
-      Reservations: 34,
-      PatternLengthCategory: Short,
+      TournamentType: Youth,
+      Status: Scheduled,
+      TitleEligible: false,
+      EntryFee: 164.93345576568200,
+      RegistrationUrl: https://michaela.biz,
+      AddedMoney: 1727.037574968785000,
+      SponsorMoney: 2787.188527075197000,
+      NebaAddedMoney: 54.2857917278474000,
+      Reservations: 22,
+      PatternLengthCategory: Long,
       PatternRatioCategory: Challenge,
-      LogoUrl: http://crystel.name,
       Winners: [
         Kathy Cassin
       ],
       BowlingCenter: {
-        Name: Green, O'Connell and Conroy Lanes,
-        City: New Jordyntown,
-        State: MI
+        Name: Hoppe, Cormier and Balistreri Lanes,
+        City: Lake Lisandroland,
+        State: IL
       },
       Sponsors: [
         {
-          Name: Larson - Bechtelar,
-          Slug: heidi
+          Name: Runolfsson, Osinski and Rau,
+          Slug: edythe
         },
         {
-          Name: Brakus and Sons,
-          Slug: estell
+          Name: Feest, Gerhold and Lakin,
+          Slug: emmet,
+          LogoUrl: http://josefina.com
         }
       ]
     }

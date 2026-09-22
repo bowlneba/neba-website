@@ -40,6 +40,16 @@ public sealed record SeasonTournamentDto
     public required bool StatsEligible { get; init; }
 
     /// <summary>
+    /// Current lifecycle status of the tournament.
+    /// </summary>
+    public required string Status { get; init; }
+
+    /// <summary>
+    /// Whether this tournament counts toward a NEBA title.
+    /// </summary>
+    public required bool TitleEligible { get; init; }
+
+    /// <summary>
     /// Format category of the tournament.
     /// </summary>
     public required string TournamentType { get; init; }

@@ -27,6 +27,24 @@ public sealed class TournamentDetailViewModelTests
         neither.HasMultipleMoneySources.ShouldBeFalse();
     }
 
+    [Fact(DisplayName = "Should show the champion badge only when winners exist and the tournament is title eligible")]
+    public void ShowChampionBadge_ShouldBeTrueOnlyWhenWinnersExistAndTitleEligible_WhenEvaluated()
+    {
+        // Arrange
+        var eligibleWithWinners = TournamentDetailViewModelFactory.Create() with
+        {
+            Winners = ["A Winner"],
+            TitleEligible = true,
+        };
+        var ineligibleWithWinners = eligibleWithWinners with { TitleEligible = false };
+        var eligibleWithoutWinners = eligibleWithWinners with { Winners = [] };
+
+        // Assert
+        eligibleWithWinners.ShowChampionBadge.ShouldBeTrue();
+        ineligibleWithWinners.ShowChampionBadge.ShouldBeFalse();
+        eligibleWithoutWinners.ShowChampionBadge.ShouldBeFalse();
+    }
+
     [Fact(DisplayName = "Should use the tournament's own logo URL when set")]
     public void DisplayLogoSrc_ShouldUseLogoUrl_WhenSet()
     {

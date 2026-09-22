@@ -31,6 +31,16 @@ public sealed record SeasonTournamentResponse
     public required string TournamentType { get; init; }
 
     /// <summary>
+    /// Current lifecycle status of the tournament ("Scheduled", "Completed", "Truncated", "Cancelled").
+    /// </summary>
+    public required string Status { get; init; }
+
+    /// <summary>
+    /// Whether this tournament counts toward a NEBA title.
+    /// </summary>
+    public required bool TitleEligible { get; init; }
+
+    /// <summary>
     /// Per-bowler entry fee in USD; null if not set.
     /// </summary>
     public decimal? EntryFee { get; init; }

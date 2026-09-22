@@ -72,6 +72,33 @@
     flex-shrink: 0;
 }
 
+.tournament-upcoming-card__status-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    border-radius: 999px;
+    padding: 0.1rem 0.55rem;
+    font-size: 0.72rem;
+    font-weight: 700;
+    font-family: var(--neba-font-display);
+}
+
+.tournament-upcoming-card__status-pill .material-symbols-outlined {
+    font-size: 0.85rem;
+}
+
+.tournament-upcoming-card__status-pill--cancelled {
+    background: var(--neba-gray-200);
+    color: var(--neba-gray-500);
+}
+
+.tournament-upcoming-card__status-note {
+    font-size: 0.8125rem;
+    font-style: italic;
+    color: var(--neba-gray-400);
+    margin: 0;
+}
+
 .tournament-upcoming-card__title {
     font-family: var(--neba-font-display);
     font-size: 1.25rem;

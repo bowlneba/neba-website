@@ -5,67 +5,53 @@
   StartDate: Date_1,
   EndDate: Date_2,
   StatsEligible: true,
-  TournamentType: Doubles,
-  EntryFee: 63.5168915444598050,
-  RegistrationUrl: https://raymond.name,
-  AddedMoney: 3462.948614481345000,
-  SponsorMoney: 1549.241142137553000,
-  NebaAddedMoney: 372.756912546584000,
-  Reservations: 4,
+  Status: Cancelled,
+  TitleEligible: true,
+  TournamentType: Senior / Women,
+  EntryFee: 172.427292457980650,
+  RegistrationUrl: https://alva.net,
+  AddedMoney: 931.892281366460000,
+  SponsorMoney: 124.5298991559678000,
+  NebaAddedMoney: 616.399325717426000,
+  Reservations: 58,
   EntryCount: 63,
-  PatternLengthCategory: Long,
-  PatternRatioCategory: Recreation,
+  PatternLengthCategory: Short,
+  PatternRatioCategory: Challenge,
   BowlingCenter: {
-    Name: Connelly, Cassin and Ledner Lanes,
-    City: East Modestaport,
-    State: FL
+    Name: Feest, Gerhold and Lakin Lanes,
+    City: West Devante,
+    State: MT
   },
   Sponsors: [
     {
-      Name: O'Keefe Inc,
-      Slug: tate,
-      TagPhrase: Et quae quis qui iusto autem.,
-      SponsorId: 01HJZDCH2MKZJE1X8EE42JTZQF,
+      Name: Goldner Group,
+      Slug: forest,
+      SponsorId: 01K51XY9XECDH21QAYR61AZVPE,
       TitleSponsor: true,
-      SponsorshipAmount: 2260.76
+      SponsorshipAmount: 2770.19
     },
     {
-      Name: Blick, Casper and Zboncak,
-      Slug: eleonore,
-      WebsiteUrl: http://ariel.com,
-      TagPhrase: Est et molestiae beatae.,
-      SponsorId: 01G3HSSCS4HXGVQVY4C679A24J,
+      Name: Hamill, McKenzie and Rolfson,
+      Slug: ivah,
+      SponsorId: 01K7RZF8KF3CZ6G8GDSNKY6RCQ,
       TitleSponsor: false,
-      SponsorshipAmount: 4266.60
+      SponsorshipAmount: 2070.09
     }
   ],
   OilPatterns: [
     {
-      OilPatternId: 01GBP3VHXR2YX9DBG4SMXSK1MY,
-      Name: quaerat Pattern,
-      Length: 40,
-      Volume: 21.404663746433640,
-      LeftRatio: 4.285817681013524,
-      RightRatio: 3.561467810329736,
+      OilPatternId: 01GE6GGC0H91XGFQTPTFJ5DN3A,
+      Name: vero Pattern,
+      Length: 44,
+      Volume: 31.898384483949460,
+      LeftRatio: 7.649248236626966,
+      RightRatio: 6.867291657657962,
       Rounds: [
         Step Ladder
       ]
-    },
-    {
-      OilPatternId: 01K2A68DYZM7M70VRFQB016S0F,
-      Name: necessitatibus Pattern,
-      Length: 38,
-      Volume: 28.526421000029160,
-      LeftRatio: 5.933136897130466,
-      RightRatio: 7.907975646624332,
-      Rounds: [
-        Qualifying
-      ],
-      KegelId: Guid_1
     }
   ],
   Winners: [
-    Kathy Cassin,
     Kathy Cassin
   ]
 }
