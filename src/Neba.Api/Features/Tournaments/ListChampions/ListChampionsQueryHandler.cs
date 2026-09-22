@@ -11,11 +11,6 @@ namespace Neba.Api.Features.Tournaments.ListChampions;
 internal sealed class ListChampionsQueryHandler(AppDbContext appDbContext)
         : IQueryHandler<ListChampionsQuery, IReadOnlyCollection<TournamentChampionsDto>>
 {
-    // The 2026 NEBA Championship finals were canceled due to a state-of-emergency declaration,
-    // so the recorded 1st-place result for that tournament isn't a real title. Excluded by end
-    // date until GitHub issue #26 settles how cancellations should be modeled and filtered.
-    private static readonly DateOnly CancelledTournamentEndDate = new(2026, 2, 22);
-
     private readonly IQueryable<HistoricalTournamentChampion> _historicalTournamentChampions = appDbContext.HistoricalTournamentChampions.AsNoTracking();
     private readonly IQueryable<HallOfFameInduction> _hallOfFameInductions = appDbContext.HallOfFameInductions.AsNoTracking();
     private readonly IQueryable<Tournament> _tournaments = appDbContext.Tournaments.AsNoTracking();
@@ -54,7 +49,7 @@ internal sealed class ListChampionsQueryHandler(AppDbContext appDbContext)
         });
 
         var recordedChampionsByTournament = await _tournaments
-            .Where(tournament => tournament.EndDate != CancelledTournamentEndDate)
+            .Where(tournament => tournament.TitleEligible)
             .SelectMany(tournament => tournament.Results
                 .Where(result => result.Place == 1)
                 .Select(result => new
