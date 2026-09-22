@@ -130,7 +130,7 @@ internal sealed class GetTournamentQueryHandler(
             .Select(result => new TournamentResultDto
             {
                 BowlerName = result.Bowler.Name,
-                Place = result.Place,
+                Place = result.Place > 0 ? result.Place : null,
                 PrizeMoney = result.PrizeMoney,
                 Points = result.Points,
                 SideCutName = null,
@@ -148,7 +148,7 @@ internal sealed class GetTournamentQueryHandler(
             .Select(tournamentResult => new TournamentResultDto
             {
                 BowlerName = tournamentResult.Bowler.Name,
-                Place = tournamentResult.Place,
+                Place = tournamentResult.Place > 0 ? tournamentResult.Place : null,
                 PrizeMoney = tournamentResult.PrizeMoney,
                 Points = tournamentResult.Points,
                 SideCutName = tournamentResult.SideCut != null
