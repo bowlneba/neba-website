@@ -33,3 +33,4 @@ You need the `Tournaments.DeleteTournament` permission, enforced via the dynamic
 
 - [`docs/policies/README.md`](../policies/README.md) — the `Permission:{value}` policy this action requires and how it's evaluated.
 - [`docs/help/edit-tournament.md`](edit-tournament.md) — the equivalent doc for changing a tournament's details instead of removing it.
+- [`docs/help/truncate-tournament.md`](truncate-tournament.md) and [`docs/help/cancel-tournament.md`](cancel-tournament.md) — flagging a tournament's status without deleting its record, a different and unrelated action.
