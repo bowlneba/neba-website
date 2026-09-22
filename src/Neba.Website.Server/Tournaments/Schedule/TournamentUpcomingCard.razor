@@ -22,7 +22,15 @@
                 }
                 <time>@Tournament.FormatDateRange()</time>
 
-                @if (Tournament.IsUrgent)
+                @if (Tournament.IsCancelled)
+                {
+                    <span aria-hidden="true">·</span>
+                    <span class="tournament-upcoming-card__status-pill tournament-upcoming-card__status-pill--cancelled">
+                        <span class="material-symbols-outlined" aria-hidden="true">block</span>
+                        @Tournament.Status
+                    </span>
+                }
+                else if (Tournament.IsUrgent)
                 {
                     <span class="tournament-upcoming-card__urgency-tag"
                           aria-label="Starts in @Tournament.DaysUntilStart days">
@@ -60,6 +68,15 @@
         </div>
 
         <div class="tournament-upcoming-card__actions">
+            @if (Tournament.IsCancelled)
+            {
+                <p class="tournament-upcoming-card__status-note">This event will not be held</p>
+                <a href="/tournaments/@Tournament.Id" class="neba-link tournament-upcoming-card__details-link">
+                    View Details →
+                </a>
+            }
+            else
+            {
             <div class="tournament-upcoming-card__price">
                 @if (Tournament.DisplayPrice.HasValue)
                 {
@@ -123,9 +140,10 @@
                 <a href="/tournaments/@Tournament.Id" class="neba-link tournament-upcoming-card__details-link">
                     View Details →
                 </a>
-            </div>
+            }
         </div>
     </div>
+</div>
 
 @code {
     private static readonly CultureInfo CurrencyCulture = CultureInfo.GetCultureInfo("en-US");

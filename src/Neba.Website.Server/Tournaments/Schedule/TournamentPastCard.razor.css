@@ -43,6 +43,37 @@
     color: var(--neba-gray-500);
 }
 
+.tournament-past-card__status-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    border-radius: 999px;
+    padding: 0.1rem 0.55rem;
+    font-size: 0.72rem;
+    font-weight: 700;
+    font-family: var(--neba-font-display);
+}
+
+.tournament-past-card__status-pill .material-symbols-outlined {
+    font-size: 0.85rem;
+}
+
+.tournament-past-card__status-pill--truncated {
+    background: color-mix(in srgb, var(--neba-warning) 16%, transparent);
+    color: #92600a;
+}
+
+.tournament-past-card__status-pill--cancelled {
+    background: var(--neba-gray-200);
+    color: var(--neba-gray-500);
+}
+
+.tournament-past-card__status-note {
+    font-size: 0.8rem;
+    color: var(--neba-gray-400);
+    margin: 0;
+}
+
 .tournament-past-card__title {
     font-family: var(--neba-font-display);
     font-size: 1.125rem;

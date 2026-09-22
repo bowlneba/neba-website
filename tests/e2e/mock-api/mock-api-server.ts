@@ -228,6 +228,8 @@ export const MOCK_SEASON_TOURNAMENTS = {
       startDate: '2026-03-15',
       endDate: '2026-03-15',
       tournamentType: 'Singles',
+      status: 'Completed',
+      titleEligible: true,
       entryFee: 75,
       registrationUrl: null,
       addedMoney: 500,

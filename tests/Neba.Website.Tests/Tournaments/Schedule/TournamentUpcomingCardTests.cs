@@ -51,6 +51,39 @@ public sealed class TournamentUpcomingCardTests : IDisposable
         cut.Markup.ShouldContain("Host center to be announced");
     }
 
+    [Fact(DisplayName = "Should show a Cancelled status pill and not-held note instead of price/register/capacity when cancelled")]
+    public void Render_ShouldShowCancelledPillAndNote_WhenTournamentIsCancelled()
+    {
+        // Arrange
+        var tournament = SeasonTournamentViewModelFactory.Create() with { Status = "Cancelled" };
+
+        // Act
+        var cut = _ctx.Render<TournamentUpcomingCard>(parameters => parameters
+            .Add(p => p.Tournament, tournament));
+
+        // Assert
+        var pill = cut.Find(".tournament-upcoming-card__status-pill");
+        pill.ClassList.ShouldContain("tournament-upcoming-card__status-pill--cancelled");
+        pill.TextContent.ShouldContain("Cancelled");
+        cut.Markup.ShouldContain("This event will not be held");
+        cut.Markup.ShouldNotContain("Register");
+        cut.Markup.ShouldNotContain("tournament-upcoming-card__capacity");
+    }
+
+    [Fact(DisplayName = "Should not show a status pill for a normally scheduled tournament")]
+    public void Render_ShouldNotShowStatusPill_WhenTournamentIsScheduled()
+    {
+        // Arrange
+        var tournament = SeasonTournamentViewModelFactory.Create() with { Status = "Scheduled" };
+
+        // Act
+        var cut = _ctx.Render<TournamentUpcomingCard>(parameters => parameters
+            .Add(p => p.Tournament, tournament));
+
+        // Assert
+        cut.Markup.ShouldNotContain("tournament-upcoming-card__status-pill");
+    }
+
     [Fact(DisplayName = "Should render View Details link pointing to tournament detail page")]
     public void Render_ShouldRenderViewDetailsLink_ToTournamentDetailPage()
     {

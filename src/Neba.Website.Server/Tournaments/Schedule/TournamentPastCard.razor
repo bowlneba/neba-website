@@ -15,6 +15,14 @@
                     <span aria-hidden="true">·</span>
                 }
                 <time>@Tournament.FormatDateRange()</time>
+                @if (Tournament.IsTruncated || Tournament.IsCancelled)
+                {
+                    <span aria-hidden="true">·</span>
+                    <span class="tournament-past-card__status-pill tournament-past-card__status-pill--@(Tournament.IsTruncated ? "truncated" : "cancelled")">
+                        <span class="material-symbols-outlined" aria-hidden="true">@(Tournament.IsTruncated ? "warning" : "block")</span>
+                        @Tournament.Status
+                    </span>
+                }
             </div>
 
             <h3 class="tournament-past-card__title">
@@ -41,10 +49,16 @@
                     <span class="material-symbols-outlined" aria-hidden="true">emoji_events</span>
                     <span class="tournament-past-card__champion-name">@string.Join(" / ", Tournament.Winners)</span>
                 </div>
+                @if (Tournament.IsTruncated)
+                {
+                    <p class="tournament-past-card__status-note">Finals cancelled — not a title win</p>
+                }
             }
             else
             {
-                <p class="tournament-past-card__results-pending">Results pending</p>
+                <p class="tournament-past-card__results-pending">
+                    @(Tournament.IsCancelled ? "No official results — event cancelled" : "Results pending")
+                </p>
             }
             <a href="/tournaments/@Tournament.Id"
                class="neba-link tournament-past-card__results-link">

@@ -49,6 +49,64 @@ public sealed class TournamentPastCardTests : IDisposable
         cut.Markup.ShouldContain("Results pending");
     }
 
+    [Fact(DisplayName = "Should not show a status pill for a completed tournament")]
+    public void Render_ShouldNotShowStatusPill_WhenTournamentIsCompleted()
+    {
+        // Arrange
+        var tournament = SeasonTournamentViewModelFactory.Create() with { Status = "Completed" };
+
+        // Act
+        var cut = _ctx.Render<TournamentPastCard>(parameters => parameters
+            .Add(p => p.Tournament, tournament));
+
+        // Assert
+        cut.Markup.ShouldNotContain("tournament-past-card__status-pill");
+    }
+
+    [Fact(DisplayName = "Should show a Truncated status pill and not-a-title-win note alongside the winners pill")]
+    public void Render_ShouldShowTruncatedPillAndNote_WhenTournamentIsTruncated()
+    {
+        // Arrange
+        var tournament = SeasonTournamentViewModelFactory.Create() with
+        {
+            Status = "Truncated",
+            Winners = ["Alex Example"],
+        };
+
+        // Act
+        var cut = _ctx.Render<TournamentPastCard>(parameters => parameters
+            .Add(p => p.Tournament, tournament));
+
+        // Assert
+        var pill = cut.Find(".tournament-past-card__status-pill");
+        pill.ClassList.ShouldContain("tournament-past-card__status-pill--truncated");
+        pill.TextContent.ShouldContain("Truncated");
+        cut.Markup.ShouldContain("Alex Example");
+        cut.Markup.ShouldContain("Finals cancelled — not a title win");
+    }
+
+    [Fact(DisplayName = "Should show a Cancelled status pill and no-official-results message instead of results pending")]
+    public void Render_ShouldShowCancelledPillAndMessage_WhenTournamentIsCancelled()
+    {
+        // Arrange
+        var tournament = SeasonTournamentViewModelFactory.Create() with
+        {
+            Status = "Cancelled",
+            Winners = [],
+        };
+
+        // Act
+        var cut = _ctx.Render<TournamentPastCard>(parameters => parameters
+            .Add(p => p.Tournament, tournament));
+
+        // Assert
+        var pill = cut.Find(".tournament-past-card__status-pill");
+        pill.ClassList.ShouldContain("tournament-past-card__status-pill--cancelled");
+        pill.TextContent.ShouldContain("Cancelled");
+        cut.Markup.ShouldContain("No official results — event cancelled");
+        cut.Markup.ShouldNotContain("Results pending");
+    }
+
     [Fact(DisplayName = "Should link results link directly to tournament detail page without season segment")]
     public void Render_ShouldLinkResultsLink_ToTournamentDetailPage()
     {
