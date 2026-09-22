@@ -132,7 +132,7 @@
 
 .td-status-badge--cancelled {
     background: rgba(255, 255, 255, 0.14);
-    color: rgba(255, 255, 255, 0.85);
+    color: var(--neba-gray-100);
 }
 
 .td-eligibility-note {
