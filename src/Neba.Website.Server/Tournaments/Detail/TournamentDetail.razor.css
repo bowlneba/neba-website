@@ -100,11 +100,76 @@
 }
 
 .td-hero__edit-btn,
-.td-hero__delete-btn {
+.td-hero__delete-btn,
+.td-hero__truncate-btn,
+.td-hero__cancel-btn {
     display: inline-flex;
     align-items: center;
     gap: 0.4rem;
     width: fit-content;
+}
+
+.td-status-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    font-family: var(--neba-font-display);
+    font-weight: 700;
+    font-size: 0.78rem;
+    padding: 0.3rem 0.7rem;
+    border-radius: 999px;
+    margin-bottom: 0.75rem;
+}
+
+.td-status-badge .material-symbols-outlined {
+    font-size: 1rem;
+}
+
+.td-status-badge--truncated {
+    background: color-mix(in srgb, var(--neba-warning) 22%, transparent);
+    color: #ffd699;
+}
+
+.td-status-badge--cancelled {
+    background: rgba(255, 255, 255, 0.14);
+    color: rgba(255, 255, 255, 0.85);
+}
+
+.td-eligibility-note {
+    margin-top: 1rem;
+    background: white;
+    color: var(--neba-text);
+    border-left: 4px solid var(--neba-warning);
+    border-radius: var(--neba-radius-lg);
+    padding: 0.85rem 1rem;
+    display: flex;
+    gap: 0.65rem;
+    align-items: flex-start;
+    font-size: 0.9rem;
+}
+
+.td-eligibility-note--cancelled {
+    border-left-color: var(--neba-gray-500);
+}
+
+.td-eligibility-note .material-symbols-outlined {
+    color: var(--neba-warning);
+    font-size: 1.2rem;
+    margin-top: 0.1rem;
+}
+
+.td-eligibility-note--cancelled .material-symbols-outlined {
+    color: var(--neba-gray-600);
+}
+
+.td-eligibility-note strong {
+    display: block;
+    margin-bottom: 0.15rem;
+}
+
+.td-eligibility-note .sub {
+    color: var(--neba-gray-600);
+    font-size: 0.85rem;
 }
 
 .td-hero__sponsor--available {

@@ -708,6 +708,288 @@ tournamentType: TournamentType.Doubles, logoUrl: null));
         cut.Find(".tournament-detail__back-link").GetAttribute("href").ShouldBe("/tournaments");
     }
 
+    // ── Manage tournament status ─────────────────────────────────────────────
+
+    [Fact(DisplayName = "Should not show truncate or cancel buttons when user lacks ManageTournamentStatus permission")]
+    public void Render_ShouldNotShowStatusActionButtons_WhenUserLacksPermission()
+    {
+        // Arrange
+        _authContext.SetAuthorized("test-user");
+        SetupSuccessResponse(TournamentDetailResponseFactory.Create(status: TournamentStatus.Scheduled));
+
+        // Act
+        var cut = _ctx.Render<TournamentDetail>(p => p.Add(x => x.Id, TournamentDetailResponseFactory.ValidId));
+
+        // Assert
+        cut.Markup.ShouldNotContain("td-hero__truncate-btn");
+        cut.Markup.ShouldNotContain("td-hero__cancel-btn");
+    }
+
+    [Fact(DisplayName = "Should show truncate and cancel buttons when user has ManageTournamentStatus permission and tournament is scheduled")]
+    public void Render_ShouldShowStatusActionButtons_WhenUserHasPermissionAndTournamentIsScheduled()
+    {
+        // Arrange
+        _authContext.SetAuthorized("test-user");
+        _authContext.SetPolicies(Permissions.ManageTournamentStatus.PolicyName);
+        SetupSuccessResponse(TournamentDetailResponseFactory.Create(status: TournamentStatus.Scheduled));
+
+        // Act
+        var cut = _ctx.Render<TournamentDetail>(p => p.Add(x => x.Id, TournamentDetailResponseFactory.ValidId));
+
+        // Assert
+        cut.Find("button.td-hero__truncate-btn").ShouldNotBeNull();
+        cut.Find("button.td-hero__cancel-btn").ShouldNotBeNull();
+    }
+
+    [Fact(DisplayName = "Should not show truncate or cancel buttons when the tournament is already finalized")]
+    public void Render_ShouldNotShowStatusActionButtons_WhenTournamentIsAlreadyFinalized()
+    {
+        // Arrange
+        _authContext.SetAuthorized("test-user");
+        _authContext.SetPolicies(Permissions.ManageTournamentStatus.PolicyName);
+        SetupSuccessResponse(TournamentDetailResponseFactory.Create(status: TournamentStatus.Completed, titleEligible: true));
+
+        // Act
+        var cut = _ctx.Render<TournamentDetail>(p => p.Add(x => x.Id, TournamentDetailResponseFactory.ValidId));
+
+        // Assert
+        cut.Markup.ShouldNotContain("td-hero__truncate-btn");
+        cut.Markup.ShouldNotContain("td-hero__cancel-btn");
+    }
+
+    [Fact(DisplayName = "Should render the Truncated status badge and eligibility note when the tournament is truncated")]
+    public void Render_ShouldShowTruncatedBadgeAndNote_WhenTournamentIsTruncated()
+    {
+        // Arrange
+        SetupSuccessResponse(TournamentDetailResponseFactory.Create(status: TournamentStatus.Truncated));
+
+        // Act
+        var cut = _ctx.Render<TournamentDetail>(p => p.Add(x => x.Id, TournamentDetailResponseFactory.ValidId));
+
+        // Assert
+        var badge = cut.Find(".td-status-badge");
+        badge.ClassList.ShouldContain("td-status-badge--truncated");
+        badge.TextContent.ShouldContain("Truncated");
+        cut.Markup.ShouldContain("Does not count toward a title");
+    }
+
+    [Fact(DisplayName = "Should render the Cancelled status badge and eligibility note when the tournament is cancelled")]
+    public void Render_ShouldShowCancelledBadgeAndNote_WhenTournamentIsCancelled()
+    {
+        // Arrange
+        SetupSuccessResponse(TournamentDetailResponseFactory.Create(status: TournamentStatus.Cancelled));
+
+        // Act
+        var cut = _ctx.Render<TournamentDetail>(p => p.Add(x => x.Id, TournamentDetailResponseFactory.ValidId));
+
+        // Assert
+        var badge = cut.Find(".td-status-badge");
+        badge.ClassList.ShouldContain("td-status-badge--cancelled");
+        badge.TextContent.ShouldContain("Cancelled");
+        cut.Markup.ShouldContain("No official results");
+    }
+
+    [Fact(DisplayName = "Should render the not-title-eligible note when the tournament is completed but below the minimum entries")]
+    public void Render_ShouldShowNotTitleEligibleNote_WhenTournamentIsCompletedAndNotTitleEligible()
+    {
+        // Arrange
+        SetupSuccessResponse(TournamentDetailResponseFactory.Create(status: TournamentStatus.Completed, titleEligible: false));
+
+        // Act
+        var cut = _ctx.Render<TournamentDetail>(p => p.Add(x => x.Id, TournamentDetailResponseFactory.ValidId));
+
+        // Assert
+        cut.Markup.ShouldNotContain("td-status-badge");
+        cut.Markup.ShouldContain("did not meet the minimum entries for a title");
+    }
+
+    [Fact(DisplayName = "Should not render a status badge or eligibility note for a scheduled tournament")]
+    public void Render_ShouldNotShowBadgeOrNote_WhenTournamentIsScheduled()
+    {
+        // Arrange
+        SetupSuccessResponse(TournamentDetailResponseFactory.Create(status: TournamentStatus.Scheduled));
+
+        // Act
+        var cut = _ctx.Render<TournamentDetail>(p => p.Add(x => x.Id, TournamentDetailResponseFactory.ValidId));
+
+        // Assert
+        cut.Markup.ShouldNotContain("td-status-badge");
+        cut.Markup.ShouldNotContain("td-eligibility-note");
+    }
+
+    [Fact(DisplayName = "Should open the truncate confirm dialog when the truncate button is clicked")]
+    public void Click_ShouldOpenTruncateConfirmDialog_WhenTruncateButtonIsClicked()
+    {
+        // Arrange
+        _authContext.SetAuthorized("test-user");
+        _authContext.SetPolicies(Permissions.ManageTournamentStatus.PolicyName);
+        SetupSuccessResponse(TournamentDetailResponseFactory.Create(status: TournamentStatus.Scheduled));
+        var cut = _ctx.Render<TournamentDetail>(p => p.Add(x => x.Id, TournamentDetailResponseFactory.ValidId));
+
+        // Act
+        cut.Find("button.td-hero__truncate-btn").Click();
+
+        // Assert
+        cut.Markup.ShouldContain("Mark tournament truncated?");
+    }
+
+    [Fact(DisplayName = "Should close the truncate dialog and make no API call when cancelled")]
+    public void CancelTruncate_ShouldCloseDialogAndMakeNoApiCall_WhenCancelled()
+    {
+        // Arrange
+        _authContext.SetAuthorized("test-user");
+        _authContext.SetPolicies(Permissions.ManageTournamentStatus.PolicyName);
+        SetupSuccessResponse(TournamentDetailResponseFactory.Create(status: TournamentStatus.Scheduled));
+        var cut = _ctx.Render<TournamentDetail>(p => p.Add(x => x.Id, TournamentDetailResponseFactory.ValidId));
+        cut.Find("button.td-hero__truncate-btn").Click();
+
+        // Act — a strict mock with no TruncateTournamentAsync setup would throw if called
+        cut.Find("button.confirm-action-modal-cancel").Click();
+
+        // Assert
+        cut.Markup.ShouldNotContain("Mark tournament truncated?");
+    }
+
+    [Fact(DisplayName = "Should show a success toast and reload with the updated status when truncate succeeds")]
+    public void ConfirmTruncate_ShouldShowSuccessToastAndReload_WhenTruncateSucceeds()
+    {
+        // Arrange
+        _authContext.SetAuthorized("test-user");
+        _authContext.SetPolicies(Permissions.ManageTournamentStatus.PolicyName);
+        SetupSuccessResponseSequence(
+            TournamentDetailResponseFactory.Create(id: TournamentDetailResponseFactory.ValidId, status: TournamentStatus.Scheduled),
+            TournamentDetailResponseFactory.Create(id: TournamentDetailResponseFactory.ValidId, status: TournamentStatus.Truncated));
+
+        using var truncateResponse = new StubApiResponse<object>
+        {
+            IsSuccessStatusCode = true,
+            StatusCode = System.Net.HttpStatusCode.NoContent
+        };
+        _mockApi
+            .Setup(x => x.TruncateTournamentAsync(TournamentDetailResponseFactory.ValidId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(truncateResponse);
+
+        var cut = _ctx.Render<TournamentDetail>(p => p.Add(x => x.Id, TournamentDetailResponseFactory.ValidId));
+        cut.Find("button.td-hero__truncate-btn").Click();
+
+        // Act
+        cut.Find("button.confirm-action-modal-confirm").Click();
+
+        // Assert
+        _toastService.Current.ShouldNotBeNull();
+        _toastService.Current.Severity.ShouldBe(NotifySeverity.Success);
+        cut.Markup.ShouldContain("td-status-badge--truncated");
+        cut.Markup.ShouldNotContain("td-hero__truncate-btn");
+    }
+
+    [Fact(DisplayName = "Should show an error toast and stay scheduled when truncate fails")]
+    public void ConfirmTruncate_ShouldShowErrorToastAndStayScheduled_WhenTruncateFails()
+    {
+        // Arrange
+        _authContext.SetAuthorized("test-user");
+        _authContext.SetPolicies(Permissions.ManageTournamentStatus.PolicyName);
+        SetupSuccessResponse(TournamentDetailResponseFactory.Create(id: TournamentDetailResponseFactory.ValidId, status: TournamentStatus.Scheduled));
+
+        using var truncateResponse = new StubApiResponse<object>
+        {
+            IsSuccessStatusCode = false,
+            StatusCode = System.Net.HttpStatusCode.Conflict
+        };
+        _mockApi
+            .Setup(x => x.TruncateTournamentAsync(TournamentDetailResponseFactory.ValidId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(truncateResponse);
+
+        var cut = _ctx.Render<TournamentDetail>(p => p.Add(x => x.Id, TournamentDetailResponseFactory.ValidId));
+        cut.Find("button.td-hero__truncate-btn").Click();
+
+        // Act
+        cut.Find("button.confirm-action-modal-confirm").Click();
+
+        // Assert
+        _toastService.Current.ShouldNotBeNull();
+        _toastService.Current.Severity.ShouldBe(NotifySeverity.Error);
+        cut.Markup.ShouldNotContain("Mark tournament truncated?");
+        cut.Find("button.td-hero__truncate-btn").ShouldNotBeNull();
+    }
+
+    [Fact(DisplayName = "Should open the cancel confirm dialog when the cancel button is clicked")]
+    public void Click_ShouldOpenCancelConfirmDialog_WhenCancelButtonIsClicked()
+    {
+        // Arrange
+        _authContext.SetAuthorized("test-user");
+        _authContext.SetPolicies(Permissions.ManageTournamentStatus.PolicyName);
+        SetupSuccessResponse(TournamentDetailResponseFactory.Create(status: TournamentStatus.Scheduled));
+        var cut = _ctx.Render<TournamentDetail>(p => p.Add(x => x.Id, TournamentDetailResponseFactory.ValidId));
+
+        // Act
+        cut.Find("button.td-hero__cancel-btn").Click();
+
+        // Assert
+        cut.Markup.ShouldContain("Cancel this tournament?");
+    }
+
+    [Fact(DisplayName = "Should show a success toast and reload with the updated status when cancel succeeds")]
+    public void ConfirmCancel_ShouldShowSuccessToastAndReload_WhenCancelSucceeds()
+    {
+        // Arrange
+        _authContext.SetAuthorized("test-user");
+        _authContext.SetPolicies(Permissions.ManageTournamentStatus.PolicyName);
+        SetupSuccessResponseSequence(
+            TournamentDetailResponseFactory.Create(id: TournamentDetailResponseFactory.ValidId, status: TournamentStatus.Scheduled),
+            TournamentDetailResponseFactory.Create(id: TournamentDetailResponseFactory.ValidId, status: TournamentStatus.Cancelled));
+
+        using var cancelResponse = new StubApiResponse<object>
+        {
+            IsSuccessStatusCode = true,
+            StatusCode = System.Net.HttpStatusCode.NoContent
+        };
+        _mockApi
+            .Setup(x => x.CancelTournamentAsync(TournamentDetailResponseFactory.ValidId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(cancelResponse);
+
+        var cut = _ctx.Render<TournamentDetail>(p => p.Add(x => x.Id, TournamentDetailResponseFactory.ValidId));
+        cut.Find("button.td-hero__cancel-btn").Click();
+
+        // Act
+        cut.Find("button.confirm-action-modal-confirm").Click();
+
+        // Assert
+        _toastService.Current.ShouldNotBeNull();
+        _toastService.Current.Severity.ShouldBe(NotifySeverity.Success);
+        cut.Markup.ShouldContain("td-status-badge--cancelled");
+        cut.Markup.ShouldNotContain("td-hero__cancel-btn");
+    }
+
+    [Fact(DisplayName = "Should show an error toast and stay scheduled when cancel fails")]
+    public void ConfirmCancel_ShouldShowErrorToastAndStayScheduled_WhenCancelFails()
+    {
+        // Arrange
+        _authContext.SetAuthorized("test-user");
+        _authContext.SetPolicies(Permissions.ManageTournamentStatus.PolicyName);
+        SetupSuccessResponse(TournamentDetailResponseFactory.Create(id: TournamentDetailResponseFactory.ValidId, status: TournamentStatus.Scheduled));
+
+        using var cancelResponse = new StubApiResponse<object>
+        {
+            IsSuccessStatusCode = false,
+            StatusCode = System.Net.HttpStatusCode.Conflict
+        };
+        _mockApi
+            .Setup(x => x.CancelTournamentAsync(TournamentDetailResponseFactory.ValidId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(cancelResponse);
+
+        var cut = _ctx.Render<TournamentDetail>(p => p.Add(x => x.Id, TournamentDetailResponseFactory.ValidId));
+        cut.Find("button.td-hero__cancel-btn").Click();
+
+        // Act
+        cut.Find("button.confirm-action-modal-confirm").Click();
+
+        // Assert
+        _toastService.Current.ShouldNotBeNull();
+        _toastService.Current.Severity.ShouldBe(NotifySeverity.Error);
+        cut.Markup.ShouldNotContain("Cancel this tournament?");
+        cut.Find("button.td-hero__cancel-btn").ShouldNotBeNull();
+    }
+
     // ── Delete tournament ────────────────────────────────────────────────────
 
     [Fact(DisplayName = "Should not show delete button when user lacks DeleteTournament permission")]
@@ -850,6 +1132,22 @@ tournamentType: TournamentType.Doubles, logoUrl: null));
         _mockApi
             .Setup(x => x.GetTournamentAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(response);
+    }
+
+    // First call (initial load) returns `first`; every call after that returns `second` — used to
+    // verify a mutation's follow-up ReloadTournamentAsync call picks up the mutation's effect.
+    private void SetupSuccessResponseSequence(TournamentDetailResponse first, TournamentDetailResponse second)
+    {
+        var callCount = 0;
+
+        _mockApi
+            .Setup(x => x.GetTournamentAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(() => new StubApiResponse<TournamentDetailResponse>
+            {
+                IsSuccessStatusCode = true,
+                StatusCode = System.Net.HttpStatusCode.OK,
+                Content = callCount++ == 0 ? first : second
+            });
     }
 
     private void SetupFailureResponse(System.Net.HttpStatusCode statusCode)
