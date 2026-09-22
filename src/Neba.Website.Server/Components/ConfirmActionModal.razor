@@ -6,7 +6,7 @@
         <div class="flex justify-end gap-2">
             <button type="button" class="neba-btn neba-btn-secondary confirm-action-modal-cancel" @onclick="OnCancel" disabled="@IsBusy">@CancelLabel</button>
             <button type="button" class="neba-btn neba-btn-danger confirm-action-modal-confirm" @onclick="OnConfirm" disabled="@IsBusy">
-                @(IsBusy ? "Deleting..." : ConfirmLabel)
+                @(IsBusy ? BusyLabel : ConfirmLabel)
             </button>
         </div>
     </FooterContent>
@@ -30,6 +30,9 @@
 
     [Parameter]
     public string ConfirmLabel { get; set; } = "Delete";
+
+    [Parameter]
+    public string BusyLabel { get; set; } = "Deleting...";
 
     [Parameter]
     public string CancelLabel { get; set; } = "Cancel";

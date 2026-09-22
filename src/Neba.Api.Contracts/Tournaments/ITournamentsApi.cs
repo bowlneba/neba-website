@@ -89,4 +89,16 @@ public interface ITournamentsApi
     /// </summary>
     [Delete("/tournaments/{id}")]
     Task<IApiResponse> DeleteTournamentAsync(string id, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Marks a tournament truncated — held, but didn't finish as planned. Never title-eligible.
+    /// </summary>
+    [Patch("/tournaments/{id}/truncate")]
+    Task<IApiResponse> TruncateTournamentAsync(string id, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Marks a tournament cancelled — no official NEBA event took place under this record.
+    /// </summary>
+    [Patch("/tournaments/{id}/cancel")]
+    Task<IApiResponse> CancelTournamentAsync(string id, CancellationToken cancellationToken = default);
 }
