@@ -1,7 +1,10 @@
+using System.Diagnostics.CodeAnalysis;
+
 using Hangfire;
 using Hangfire.Common;
 using Hangfire.States;
 
+using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -24,15 +27,27 @@ namespace Neba.Api.Tests.Legacy.Tournaments.Complete;
 
 // This job's whole job is "complete, then chain" - covered separately from the endpoint test
 // (which only proves CompleteTournamentSyncJob gets enqueued) and from SyncTournamentResultsJob
-// (which does the actual results work once chained here).
+// (which does the actual results work once chained here). Uses a real SQL Server database (via
+// LegacySqlServerFixture) for the entry-count query CompleteTournament now runs before freezing
+// TitleEligible - same rationale as SyncTournamentResultsJobTests.
 [IntegrationTest]
 [Component("Legacy")]
-[Collection<AppDbContextFixture>]
-public sealed class CompleteTournamentSyncJobTests(AppDbContextFixture fixture)
-    : IClassFixture<AppDbContextFixture>, IAsyncLifetime
+[Collection(nameof(LegacyDatabasesTestScope))]
+public sealed class CompleteTournamentSyncJobTests(AppDbContextFixture fixture, LegacySqlServerFixture legacyFixture)
+    : IClassFixture<AppDbContextFixture>, IClassFixture<LegacySqlServerFixture>, IAsyncLifetime
 {
     private readonly AppDbContext _dbContext = fixture.CreateDbContext();
+
+    // Owned by LegacySqlServerFixture, not this class - it's one persistent database reused across
+    // this class's tests and disposed once by the fixture at the end of the run, not per test.
+    [SuppressMessage("Usage", "CA2213:Disposable fields should be disposed",
+        Justification = "Ownership stays with LegacySqlServerFixture, which disposes it once for the whole run.")]
+    private LegacySqlServerDatabase _legacyDatabase = null!;
     private ServiceProvider _serviceProvider = null!;
+    private int _nextStatsId = 1;
+
+    // Ownership (and disposal) of the connection belongs to LegacySqlServerFixture via _legacyDatabase.
+    private SqlConnection _legacyConnection => _legacyDatabase.Connection;
 
     public async ValueTask InitializeAsync()
     {
@@ -41,6 +56,26 @@ public sealed class CompleteTournamentSyncJobTests(AppDbContextFixture fixture)
         var services = new ServiceCollection();
         services.AddFusionCache().WithDefaultEntryOptions(options => options.Duration = TimeSpan.FromHours(1));
         _serviceProvider = services.BuildServiceProvider();
+
+        _legacyDatabase = await legacyFixture.GetOrCreateDatabaseAsync(nameof(CompleteTournamentSyncJobTests), CreateSchemaAsync);
+        await _legacyDatabase.ResetAsync();
+    }
+
+    private static async Task CreateSchemaAsync(SqlConnection connection)
+    {
+        await using var createStats = connection.CreateCommand();
+        createStats.CommandText = """
+            CREATE TABLE Stats (
+                Id int PRIMARY KEY,
+                BowlerId int NOT NULL,
+                TournamentId int NOT NULL
+            );
+            CREATE TABLE Stats_QualifyingStats (
+                Id int PRIMARY KEY,
+                SquadId int NOT NULL
+            );
+            """;
+        await createStats.ExecuteNonQueryAsync();
     }
 
     public async ValueTask DisposeAsync()
@@ -50,12 +85,38 @@ public sealed class CompleteTournamentSyncJobTests(AppDbContextFixture fixture)
         await _dbContext.DisposeAsync();
     }
 
-    private async Task<Tournament> CreateTournamentAsync(int legacyTournamentId, CancellationToken ct)
+    private async Task InsertEntryAsync(int legacyBowlerId, int legacyTournamentId, int squadId)
+    {
+        var statsId = _nextStatsId++;
+
+        await using var insertStats = _legacyConnection.CreateCommand();
+        insertStats.CommandText = "INSERT INTO Stats (Id, BowlerId, TournamentId) VALUES (@Id, @BowlerId, @TournamentId)";
+        insertStats.Parameters.AddWithValue("@Id", statsId);
+        insertStats.Parameters.AddWithValue("@BowlerId", legacyBowlerId);
+        insertStats.Parameters.AddWithValue("@TournamentId", legacyTournamentId);
+        await insertStats.ExecuteNonQueryAsync();
+
+        await using var insertQualifying = _legacyConnection.CreateCommand();
+        insertQualifying.CommandText = "INSERT INTO Stats_QualifyingStats (Id, SquadId) VALUES (@Id, @SquadId)";
+        insertQualifying.Parameters.AddWithValue("@Id", statsId);
+        insertQualifying.Parameters.AddWithValue("@SquadId", squadId);
+        await insertQualifying.ExecuteNonQueryAsync();
+    }
+
+    private async Task InsertEntriesAsync(int legacyTournamentId, int entryCount)
+    {
+        for (var i = 0; i < entryCount; i++)
+        {
+            await InsertEntryAsync(legacyBowlerId: 1000 + i, legacyTournamentId, squadId: 1);
+        }
+    }
+
+    private async Task<Tournament> CreateTournamentAsync(int legacyTournamentId, TournamentType? tournamentType, CancellationToken ct)
     {
         var season = SeasonFactory.Create();
         await _dbContext.Seasons.AddAsync(season, ct);
 
-        var tournament = TournamentFactory.Create(legacyId: legacyTournamentId, seasonId: season.Id);
+        var tournament = TournamentFactory.Create(tournamentType: tournamentType, legacyId: legacyTournamentId, seasonId: season.Id);
         await _dbContext.Tournaments.AddAsync(tournament, ct);
         await _dbContext.SaveChangesAsync(ct);
         _dbContext.ChangeTracker.Clear();
@@ -70,6 +131,7 @@ public sealed class CompleteTournamentSyncJobTests(AppDbContextFixture fixture)
         FakeLogger<CompleteTournamentSyncJob>? logger = null) =>
         new(
             _dbContext,
+            _legacyConnection,
             jobs,
             _serviceProvider.GetRequiredService<IFusionCache>(),
             (emailSender ?? new Mock<IEmailSender>(MockBehavior.Strict)).Object,
@@ -87,12 +149,13 @@ public sealed class CompleteTournamentSyncJobTests(AppDbContextFixture fixture)
         return (mock, () => captured);
     }
 
-    [Fact(DisplayName = "SyncAsync should complete the tournament, save, enqueue SyncTournamentResultsJob, and schedule GenerateSeasonStatsJob ten minutes out when the tournament is found and not yet complete")]
-    public async Task SyncAsync_ShouldCompleteSaveAndChain_WhenTournamentFoundAndNotComplete()
+    [Fact(DisplayName = "SyncAsync should complete the tournament, save, enqueue SyncTournamentResultsJob, and schedule GenerateSeasonStatsJob ten minutes out when the tournament is found and not yet finalized")]
+    public async Task SyncAsync_ShouldCompleteSaveAndChain_WhenTournamentFoundAndNotFinalized()
     {
         // Arrange
         var ct = TestContext.Current.CancellationToken;
-        await CreateTournamentAsync(legacyTournamentId: 42, ct);
+        await CreateTournamentAsync(legacyTournamentId: 42, TournamentType.Singles, ct);
+        await InsertEntriesAsync(legacyTournamentId: 42, entryCount: TournamentType.Singles.MinimumEntries);
         var (jobsMock, capturedJobs) = CreateJobsMock();
         var job = CreateJob(jobsMock.Object);
 
@@ -101,7 +164,8 @@ public sealed class CompleteTournamentSyncJobTests(AppDbContextFixture fixture)
 
         // Assert
         var tournament = await _dbContext.Tournaments.SingleAsync(t => t.LegacyId == 42, ct);
-        tournament.Complete.ShouldBeTrue();
+        tournament.Status.ShouldBe(TournamentStatus.Completed);
+        tournament.TitleEligible.ShouldBeTrue();
 
         var chained = capturedJobs();
         chained.Count.ShouldBe(2);
@@ -118,12 +182,50 @@ public sealed class CompleteTournamentSyncJobTests(AppDbContextFixture fixture)
         scheduledState.EnqueueAt.ShouldBeGreaterThan(DateTime.UtcNow.AddMinutes(9));
     }
 
+    [Fact(DisplayName = "SyncAsync should set TitleEligible false when entries fall short of the tournament type's MinimumEntries")]
+    public async Task SyncAsync_ShouldSetTitleEligibleFalse_WhenEntriesFallShortOfMinimum()
+    {
+        // Arrange
+        var ct = TestContext.Current.CancellationToken;
+        await CreateTournamentAsync(legacyTournamentId: 42, TournamentType.Singles, ct);
+        await InsertEntriesAsync(legacyTournamentId: 42, entryCount: TournamentType.Singles.MinimumEntries - 1);
+        var (jobsMock, _) = CreateJobsMock();
+        var job = CreateJob(jobsMock.Object);
+
+        // Act
+        await job.SyncAsync(42, ct);
+
+        // Assert
+        var tournament = await _dbContext.Tournaments.SingleAsync(t => t.LegacyId == 42, ct);
+        tournament.Status.ShouldBe(TournamentStatus.Completed);
+        tournament.TitleEligible.ShouldBeFalse();
+    }
+
+    [Fact(DisplayName = "SyncAsync should divide the distinct bowler/squad entry pair count by team size for multi-bowler formats")]
+    public async Task SyncAsync_ShouldDivideEntryPairCountByTeamSize_ForMultiBowlerFormats()
+    {
+        // Arrange - Doubles (TeamSize 2, MinimumEntries 25): 50 distinct bowler/squad pairs = 25 entries.
+        var ct = TestContext.Current.CancellationToken;
+        await CreateTournamentAsync(legacyTournamentId: 42, TournamentType.Doubles, ct);
+        await InsertEntriesAsync(legacyTournamentId: 42, entryCount: TournamentType.Doubles.MinimumEntries * TournamentType.Doubles.TeamSize);
+        var (jobsMock, _) = CreateJobsMock();
+        var job = CreateJob(jobsMock.Object);
+
+        // Act
+        await job.SyncAsync(42, ct);
+
+        // Assert
+        var tournament = await _dbContext.Tournaments.SingleAsync(t => t.LegacyId == 42, ct);
+        tournament.TitleEligible.ShouldBeTrue();
+    }
+
     [Fact(DisplayName = "SyncAsync should evict the tournament and season list cache tags when the tournament is completed for the first time")]
     public async Task SyncAsync_ShouldEvictTournamentAndSeasonListCacheTags_WhenTournamentCompletedForTheFirstTime()
     {
         // Arrange
         var ct = TestContext.Current.CancellationToken;
-        var tournament = await CreateTournamentAsync(legacyTournamentId: 42, ct);
+        var tournament = await CreateTournamentAsync(legacyTournamentId: 42, TournamentType.Singles, ct);
+        await InsertEntriesAsync(legacyTournamentId: 42, entryCount: TournamentType.Singles.MinimumEntries);
         var (jobsMock, _) = CreateJobsMock();
 
         var cache = _serviceProvider.GetRequiredService<IFusionCache>();
@@ -144,17 +246,17 @@ public sealed class CompleteTournamentSyncJobTests(AppDbContextFixture fixture)
         seasonListValueAfterSync.ShouldBe("fresh-value");
     }
 
-    [Fact(DisplayName = "SyncAsync should still chain SyncTournamentResultsJob and GenerateSeasonStatsJob when the tournament was already complete")]
-    public async Task SyncAsync_ShouldStillChain_WhenTournamentAlreadyComplete()
+    [Fact(DisplayName = "SyncAsync should still chain SyncTournamentResultsJob and GenerateSeasonStatsJob when the tournament was already finalized")]
+    public async Task SyncAsync_ShouldStillChain_WhenTournamentAlreadyFinalized()
     {
-        // Arrange - idempotent re-fire: AlreadyComplete is informational, not fatal.
+        // Arrange - idempotent re-fire: AlreadyFinalized is informational, not fatal.
         var ct = TestContext.Current.CancellationToken;
-        await CreateTournamentAsync(legacyTournamentId: 42, ct);
+        await CreateTournamentAsync(legacyTournamentId: 42, TournamentType.Singles, ct);
 
         // CreateTournamentAsync clears the change tracker before returning, so its result is
         // detached - reload before completing, or the completion never gets tracked/persisted.
         var tracked = await _dbContext.Tournaments.SingleAsync(t => t.LegacyId == 42, ct);
-        tracked.CompleteTournament();
+        tracked.CompleteTournament(entryCount: 100);
         await _dbContext.SaveChangesAsync(ct);
         _dbContext.ChangeTracker.Clear();
 
