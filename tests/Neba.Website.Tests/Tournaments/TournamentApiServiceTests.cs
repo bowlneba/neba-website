@@ -163,6 +163,8 @@ public sealed class TournamentApiServiceTests
             StartDate = new DateOnly(2024, 11, 1),
             EndDate = new DateOnly(2024, 11, 1),
             TournamentType = "Singles",
+            Status = "Completed",
+            TitleEligible = true,
         };
         SetupTournamentsInSeasonSuccess(season.Id, [tournament]);
 
@@ -176,6 +178,76 @@ public sealed class TournamentApiServiceTests
         vm.Id.ShouldBe(tournament.Id);
         vm.Name.ShouldBe(tournament.Name);
         vm.TournamentType.ShouldBe(tournament.TournamentType);
+        vm.Status.ShouldBe(tournament.Status);
+        vm.TitleEligible.ShouldBeTrue();
+    }
+
+    [Fact(DisplayName = "GetTournamentsForSeasonAsync should map TitleEligible true for a Scheduled tournament regardless of the API's raw flag")]
+    public async Task GetTournamentsForSeasonAsync_ShouldMapTitleEligibleTrue_ForScheduledTournament()
+    {
+        // Arrange — a Scheduled tournament hasn't run yet, so the API's TitleEligible flag is
+        // still false (it only turns true at completion); the mapping should correct for this
+        // rather than showing a normal, not-yet-run tournament as "not eligible."
+        var season = new SeasonViewModel
+        {
+            Id = "01000000000000000000000001",
+            Description = "2024-2025 Season",
+            StartDate = new DateOnly(2024, 9, 1),
+            EndDate = new DateOnly(2025, 6, 30),
+        };
+
+        var tournament = new SeasonTournamentResponse
+        {
+            Id = "01000000000000000000000002",
+            Name = "NEBA Singles",
+            StartDate = new DateOnly(2025, 3, 1),
+            EndDate = new DateOnly(2025, 3, 1),
+            TournamentType = "Singles",
+            Status = "Scheduled",
+            TitleEligible = false,
+        };
+        SetupTournamentsInSeasonSuccess(season.Id, [tournament]);
+
+        // Act
+        var result = await _service.GetTournamentsForSeasonAsync(season, TestContext.Current.CancellationToken);
+
+        // Assert
+        result.Value.Single().TitleEligible.ShouldBeTrue();
+    }
+
+    [Theory(DisplayName = "GetTournamentsForSeasonAsync should pass through the API's TitleEligible flag for finalized statuses")]
+    [InlineData("Completed", true)]
+    [InlineData("Completed", false)]
+    [InlineData("Truncated", false)]
+    [InlineData("Cancelled", false)]
+    public async Task GetTournamentsForSeasonAsync_ShouldPassThroughTitleEligible_ForFinalizedStatuses(string status, bool titleEligible)
+    {
+        // Arrange
+        var season = new SeasonViewModel
+        {
+            Id = "01000000000000000000000001",
+            Description = "2024-2025 Season",
+            StartDate = new DateOnly(2024, 9, 1),
+            EndDate = new DateOnly(2025, 6, 30),
+        };
+
+        var tournament = new SeasonTournamentResponse
+        {
+            Id = "01000000000000000000000002",
+            Name = "NEBA Singles",
+            StartDate = new DateOnly(2024, 11, 1),
+            EndDate = new DateOnly(2024, 11, 1),
+            TournamentType = "Singles",
+            Status = status,
+            TitleEligible = titleEligible,
+        };
+        SetupTournamentsInSeasonSuccess(season.Id, [tournament]);
+
+        // Act
+        var result = await _service.GetTournamentsForSeasonAsync(season, TestContext.Current.CancellationToken);
+
+        // Assert
+        result.Value.Single().TitleEligible.ShouldBe(titleEligible);
     }
 
     [Fact(DisplayName = "GetTournamentsForSeasonAsync should return empty list when season has no tournaments")]
@@ -238,6 +310,8 @@ public sealed class TournamentApiServiceTests
             StartDate = new DateOnly(2025, 3, 1),
             EndDate = new DateOnly(2025, 3, 1),
             TournamentType = "Singles",
+            Status = "Scheduled",
+            TitleEligible = false,
         };
         SetupTournamentsInSeasonSuccess(season.Id, [tournament]);
 

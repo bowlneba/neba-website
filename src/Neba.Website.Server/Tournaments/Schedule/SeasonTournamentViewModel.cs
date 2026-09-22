@@ -38,6 +38,20 @@ public sealed record SeasonTournamentViewModel
     public required string TournamentType { get; init; }
 
     /// <summary>
+    /// Current lifecycle status of the tournament ("Scheduled", "Completed", "Truncated", "Cancelled").
+    /// </summary>
+    public required string Status { get; init; }
+
+    /// <summary>
+    /// Whether this tournament counts toward a NEBA title. A Scheduled tournament hasn't run yet
+    /// and hasn't been disqualified by anything, so it reads as eligible by default — the API's
+    /// own <c>TitleEligible</c> flag only turns true at completion, so this is corrected for
+    /// Scheduled tournaments at the mapping layer (see <c>TournamentApiService.MapToViewModel</c>)
+    /// rather than trusting the raw API value here.
+    /// </summary>
+    public required bool TitleEligible { get; init; }
+
+    /// <summary>
     /// Per-bowler entry fee in dollars, if applicable.
     /// </summary>
     public decimal? EntryFee { get; init; }
@@ -119,6 +133,16 @@ public sealed record SeasonTournamentViewModel
     public IReadOnlyCollection<string> Winners { get; init; } = [];
 
     // ── Computed convenience ──────────────────────────────────────────────────
+
+    /// <summary>
+    /// True when the tournament was held but didn't finish as planned.
+    /// </summary>
+    public bool IsTruncated => Status == "Truncated";
+
+    /// <summary>
+    /// True when no official NEBA event took place under this record.
+    /// </summary>
+    public bool IsCancelled => Status == "Cancelled";
 
     /// <summary>
     /// True when the tournament spans more than one day.

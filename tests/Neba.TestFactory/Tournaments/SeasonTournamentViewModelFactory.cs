@@ -20,6 +20,8 @@ public static class SeasonTournamentViewModelFactory
         DateOnly? startDate = null,
         DateOnly? endDate = null,
         string? tournamentType = null,
+        string? status = null,
+        bool? titleEligible = null,
         decimal? sponsorMoney = null,
         decimal? nebaAddedMoney = null)
         => new()
@@ -30,6 +32,8 @@ public static class SeasonTournamentViewModelFactory
             StartDate = startDate ?? ValidStartDate,
             EndDate = endDate ?? ValidEndDate,
             TournamentType = tournamentType ?? ValidTournamentType,
+            Status = status ?? "Scheduled",
+            TitleEligible = titleEligible ?? true,
             EntryFee = 95m,
             RegistrationUrl = new Uri("https://www.bowlneba.com/register", UriKind.Absolute),
             BowlingCenterName = "Striker Lanes",
@@ -67,6 +71,8 @@ public static class SeasonTournamentViewModelFactory
                     StartDate = start,
                     EndDate = end,
                     TournamentType = f.PickRandom(tournamentTypeOptions),
+                    Status = f.PickRandom("Scheduled", "Completed", "Truncated", "Cancelled"),
+                    TitleEligible = f.Random.Bool(),
                     EntryFee = f.Random.Decimal(60, 180),
                     RegistrationUrl = new Uri(f.Internet.UrlWithPath(), UriKind.Absolute),
                     BowlingCenterName = f.Company.CompanyName() + " Lanes",
