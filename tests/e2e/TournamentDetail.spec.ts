@@ -5,6 +5,7 @@ const MOCK_TOURNAMENT_OIL_REVEAL_PENDING_ID = '01JX0000000000000000000030';
 const MOCK_TOURNAMENT_OIL_REVEALED_ID = '01JX0000000000000000000031';
 const MOCK_TOURNAMENT_OIL_REVEAL_MGMT_ID = '01JX0000000000000000000032';
 const MOCK_TOURNAMENT_SPONSOR_MGMT_ID = '01JX0000000000000000000040';
+const MOCK_TOURNAMENT_STATUS_ACTIONS_ID = '01JX0000000000000000000050';
 
 test.describe('Tournament Detail page', () => {
   test.use({ viewport: { width: 1200, height: 800 } });
@@ -247,5 +248,49 @@ test.describe('Tournament Detail — delete tournament (authorized)', () => {
 
     await page.request.post(
       `http://localhost:5151/__mock/reset?path=/tournaments/${MOCK_TOURNAMENT_ID}`);
+  });
+});
+
+test.describe('Tournament Detail — manage status (unauthenticated)', () => {
+  test.use({ viewport: { width: 1200, height: 800 } });
+
+  test('does not show the truncate or cancel buttons', async ({ page }) => {
+    await page.goto(`/tournaments/${MOCK_TOURNAMENT_STATUS_ACTIONS_ID}`);
+    await page.waitForSelector('.td-hero');
+    await expect(page.locator('.td-hero__truncate-btn')).toHaveCount(0);
+    await expect(page.locator('.td-hero__cancel-btn')).toHaveCount(0);
+  });
+});
+
+test.describe('Tournament Detail — manage status (authorized)', () => {
+  test.use({ viewport: { width: 1200, height: 800 } });
+  test.describe.configure({ mode: 'serial' });
+
+  test.beforeEach(async ({ page }) => {
+    await page.request.post('/__test/login?permissions=Tournaments.ManageTournamentStatus');
+  });
+
+  test('shows the truncate and cancel buttons while the tournament is scheduled', async ({ page }) => {
+    await page.goto(`/tournaments/${MOCK_TOURNAMENT_STATUS_ACTIONS_ID}`);
+    await page.waitForSelector('.td-hero');
+    await expect(page.locator('.td-hero__truncate-btn')).toBeVisible();
+    await expect(page.locator('.td-hero__cancel-btn')).toBeVisible();
+    await expect(page.locator('.td-status-badge')).toHaveCount(0);
+  });
+
+  test('marks the tournament cancelled after confirming, hides the status actions, and shows the cancelled badge and note', async ({ page }) => {
+    await page.goto(`/tournaments/${MOCK_TOURNAMENT_STATUS_ACTIONS_ID}`);
+    await page.waitForSelector('.td-hero');
+
+    await page.locator('.td-hero__cancel-btn').click();
+    await expect(page.locator('.neba-modal-content')).toContainText('Cancel this tournament?');
+
+    await page.locator('button.confirm-action-modal-confirm').click();
+
+    await expect(page.locator('.neba-toast')).toContainText('Tournament Cancelled');
+    await expect(page.locator('.td-status-badge')).toContainText('Cancelled');
+    await expect(page.locator('.td-eligibility-note')).toContainText('No official results');
+    await expect(page.locator('.td-hero__truncate-btn')).toHaveCount(0);
+    await expect(page.locator('.td-hero__cancel-btn')).toHaveCount(0);
   });
 });
