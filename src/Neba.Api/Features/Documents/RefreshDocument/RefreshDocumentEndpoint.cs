@@ -31,6 +31,7 @@ internal sealed class RefreshDocumentEndpoint(Messaging.ICommandHandler<RefreshD
             .WithName("RefreshDocument")
             .WithTags("Admin")
             .Produces(StatusCodes.Status204NoContent)
+            .ProducesProblemDetails(StatusCodes.Status400BadRequest)
             .ProducesProblemDetails(StatusCodes.Status401Unauthorized)
             .ProducesProblemDetails(StatusCodes.Status403Forbidden));
     }
