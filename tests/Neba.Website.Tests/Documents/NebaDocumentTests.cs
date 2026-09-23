@@ -1,12 +1,21 @@
 using Bunit;
 
 using Microsoft.AspNetCore.Components;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging.Abstractions;
 
+using Neba.Api.Contracts.Documents;
+using Neba.Api.Contracts.Security;
 using Neba.TestFactory.Attributes;
+using Neba.Website.Server.Clock;
 using Neba.Website.Server.Components;
 using Neba.Website.Server.Documents;
 using Neba.Website.Server.Notifications;
+using Neba.Website.Server.Services;
 using Neba.Website.Tests.TestSupport;
+
+using Refit;
+using Refit.Testing;
 
 namespace Neba.Website.Tests.Documents;
 
@@ -15,11 +24,21 @@ namespace Neba.Website.Tests.Documents;
 public sealed class NebaDocumentTests : IDisposable
 {
     private readonly BunitContext _ctx;
+    private readonly Mock<IDocumentsApi> _mockDocumentsApi;
 
     public NebaDocumentTests()
     {
         _ctx = new BunitContext();
         _ctx.SetupNebaDocumentModule();
+
+        _mockDocumentsApi = new Mock<IDocumentsApi>(MockBehavior.Strict);
+
+        var mockStopwatch = new Mock<IStopwatchProvider>(MockBehavior.Strict);
+        mockStopwatch.Setup(x => x.GetTimestamp()).Returns(0L);
+        mockStopwatch.Setup(x => x.GetElapsedTime(It.IsAny<long>())).Returns(TimeSpan.Zero);
+
+        _ctx.Services.AddSingleton(_mockDocumentsApi.Object);
+        _ctx.Services.AddSingleton(sp => new ApiExecutor(mockStopwatch.Object, sp.GetRequiredService<NavigationManager>(), NullLogger<ApiExecutor>.Instance));
     }
 
     public void Dispose() => _ctx.Dispose();
@@ -937,5 +956,113 @@ public sealed class NebaDocumentTests : IDisposable
         await disposable.DisposeAsync();
 
         cut.Instance.ShouldNotBeNull();
+    }
+
+    // ── Refresh document ─────────────────────────────────────────────────────
+
+    [Fact(DisplayName = "Should not render refresh button when caller lacks RefreshDocument permission")]
+    public void Render_ShouldNotShowRefreshButton_WhenCallerLacksPermission()
+    {
+        // Arrange & Act
+        var cut = _ctx.Render<NebaDocument>(parameters => parameters
+            .Add(p => p.Content, new MarkupString("<p>Body</p>"))
+            .Add(p => p.ShowTableOfContents, true)
+            .Add(p => p.DocumentId, "bylaws"));
+
+        // Assert
+        cut.FindAll("button[title='Refresh from Google Drive']").ShouldBeEmpty();
+    }
+
+    [Fact(DisplayName = "Should not render refresh button when DocumentId is not set")]
+    public void Render_ShouldNotShowRefreshButton_WhenDocumentIdIsNotSet()
+    {
+        // Arrange
+        _ctx.AddAuthorization().SetAuthorized("test-user").SetPolicies(Permissions.RefreshDocument.PolicyName);
+
+        // Act
+        var cut = _ctx.Render<NebaDocument>(parameters => parameters
+            .Add(p => p.Content, new MarkupString("<p>Body</p>"))
+            .Add(p => p.ShowTableOfContents, true));
+
+        // Assert
+        cut.FindAll("button[title='Refresh from Google Drive']").ShouldBeEmpty();
+    }
+
+    [Fact(DisplayName = "Should render refresh button when caller holds RefreshDocument permission")]
+    public void Render_ShouldShowRefreshButton_WhenCallerHoldsPermission()
+    {
+        // Arrange
+        _ctx.AddAuthorization().SetAuthorized("test-user").SetPolicies(Permissions.RefreshDocument.PolicyName);
+
+        // Act
+        var cut = _ctx.Render<NebaDocument>(parameters => parameters
+            .Add(p => p.Content, new MarkupString("<p>Body</p>"))
+            .Add(p => p.ShowTableOfContents, true)
+            .Add(p => p.DocumentId, "bylaws"));
+
+        // Assert — one in the desktop TOC sidebar, one in the mobile TOC modal (same as the
+        // existing "Last updated" text, which already renders in both places)
+        cut.FindAll("button[title='Refresh from Google Drive']").Count.ShouldBe(2);
+    }
+
+    [Fact(DisplayName = "Clicking refresh calls the API with DocumentId and force-reloads on success")]
+    public void Click_ShouldCallApiAndForceReload_WhenRefreshSucceeds()
+    {
+        // Arrange
+        _ctx.AddAuthorization().SetAuthorized("test-user").SetPolicies(Permissions.RefreshDocument.PolicyName);
+        _ctx.Services.AddSingleton<NavigationManager, StubNavigationManager>();
+
+        using var apiResponse = new StubApiResponse<object>
+        {
+            IsSuccessStatusCode = true,
+            StatusCode = System.Net.HttpStatusCode.NoContent
+        };
+        _mockDocumentsApi
+            .Setup(api => api.RefreshDocumentAsync("bylaws", It.IsAny<CancellationToken>()))
+            .ReturnsAsync(apiResponse);
+
+        var cut = _ctx.Render<NebaDocument>(parameters => parameters
+            .Add(p => p.Content, new MarkupString("<p>Body</p>"))
+            .Add(p => p.ShowTableOfContents, true)
+            .Add(p => p.DocumentId, "bylaws"));
+
+        // Act
+        cut.Find("button[title='Refresh from Google Drive']").Click();
+
+        // Assert
+        _mockDocumentsApi.VerifyAll();
+        var nav = _ctx.Services.GetRequiredService<NavigationManager>();
+        nav.Uri.ShouldNotBeNull();
+    }
+
+    [Fact(DisplayName = "Clicking refresh shows an error toast and re-enables the button when the API call fails")]
+    public void Click_ShouldShowErrorToastAndReenableButton_WhenRefreshFails()
+    {
+        // Arrange
+        _ctx.AddAuthorization().SetAuthorized("test-user").SetPolicies(Permissions.RefreshDocument.PolicyName);
+
+        using var apiResponse = new StubApiResponse<object>
+        {
+            IsSuccessStatusCode = false,
+            StatusCode = System.Net.HttpStatusCode.InternalServerError
+        };
+        _mockDocumentsApi
+            .Setup(api => api.RefreshDocumentAsync("bylaws", It.IsAny<CancellationToken>()))
+            .ReturnsAsync(apiResponse);
+
+        var cut = _ctx.Render<NebaDocument>(parameters => parameters
+            .Add(p => p.Content, new MarkupString("<p>Body</p>"))
+            .Add(p => p.ShowTableOfContents, true)
+            .Add(p => p.DocumentId, "bylaws"));
+
+        // Act
+        cut.Find("button[title='Refresh from Google Drive']").Click();
+
+        // Assert
+        var toastService = _ctx.Services.GetRequiredService<ToastService>();
+        toastService.Current.ShouldNotBeNull();
+        toastService.Current.Severity.ShouldBe(NotifySeverity.Error);
+        cut.FindAll("button[title='Refresh from Google Drive']")
+            .ShouldAllBe(button => !button.HasAttribute("disabled"));
     }
 }

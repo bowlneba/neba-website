@@ -1,0 +1,42 @@
+@using Neba.Api.Contracts.Security
+
+@if (!string.IsNullOrWhiteSpace(LastUpdatedText) || CanRefresh)
+{
+    <div class="neba-document-toc-last-updated">
+        @if (!string.IsNullOrWhiteSpace(LastUpdatedText))
+        {
+            <span class="updated-text">@LastUpdatedText</span>
+        }
+
+        @if (CanRefresh)
+        {
+            <AuthorizeView Policy="@Permissions.RefreshDocument.PolicyName">
+                <Authorized>
+                    <button type="button" class="neba-btn neba-btn-sm neba-btn-secondary"
+                            disabled="@IsRefreshing" title="Refresh from Google Drive"
+                            @onclick="OnRefresh">
+                        <svg class="neba-document-refresh-icon" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true">
+                            <path d="M8 3a5 5 0 1 0 4.546 2.914.5.5 0 0 1 .908-.417A6 6 0 1 1 8 2v1z" />
+                            <path d="M8 4.466V.534a.25.25 0 0 1 .41-.192l2.36 1.966c.12.1.12.284 0 .384L8.41 4.658A.25.25 0 0 1 8 4.466z" />
+                        </svg>
+                        <span>@(IsRefreshing ? "Refreshing..." : "Refresh")</span>
+                    </button>
+                </Authorized>
+            </AuthorizeView>
+        }
+    </div>
+}
+
+@code {
+    [Parameter]
+    public string? LastUpdatedText { get; set; }
+
+    [Parameter]
+    public bool CanRefresh { get; set; }
+
+    [Parameter]
+    public bool IsRefreshing { get; set; }
+
+    [Parameter]
+    public EventCallback OnRefresh { get; set; }
+}
