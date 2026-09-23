@@ -61,8 +61,20 @@ public static class CacheDescriptors
             => new()
             {
                 Key = $"neba:document:{documentKey}:content",
-                Tags = ["neba", "neba:documents", $"neba:document:{documentKey}"]
+                Tags = ["neba", "neba:documents", Tag(documentKey)]
             };
+
+        /// <summary>
+        /// Returns the tag that groups every cache entry for a single document, for evicting just that document.
+        /// </summary>
+        /// <param name="documentKey">
+        /// The key of the document.
+        /// </param>
+        /// <returns>
+        /// The document's cache tag.
+        /// </returns>
+        public static string Tag(string documentKey)
+            => $"neba:document:{documentKey}";
     }
 
     /// <summary>

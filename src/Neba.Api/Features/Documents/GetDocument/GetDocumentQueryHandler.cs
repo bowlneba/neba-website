@@ -20,9 +20,9 @@ internal sealed class GetDocumentQueryHandler(
 
     public async Task<ErrorOr<GetDocumentDto>> HandleAsync(GetDocumentQuery query, CancellationToken cancellationToken)
     {
-        if (await _storageService.ExistsAsync("bowlneba-private", $"documents/{query.DocumentName}", cancellationToken))
+        if (await _storageService.ExistsAsync(DocumentStorage.Container, DocumentStorage.BlobName(query.DocumentName), cancellationToken))
         {
-            var file = await _storageService.GetFileAsync("bowlneba-private", $"documents/{query.DocumentName}", cancellationToken);
+            var file = await _storageService.GetFileAsync(DocumentStorage.Container, DocumentStorage.BlobName(query.DocumentName), cancellationToken);
 
             if (file is null)
             {
@@ -49,8 +49,8 @@ internal sealed class GetDocumentQueryHandler(
         var now = _timeProvider.GetUtcNow();
 
         await _storageService.UploadFileAsync(
-            "bowlneba-private",
-            $"documents/{query.DocumentName}",
+            DocumentStorage.Container,
+            DocumentStorage.BlobName(query.DocumentName),
             document.Content,
             document.ContentType,
             new Dictionary<string, string>
