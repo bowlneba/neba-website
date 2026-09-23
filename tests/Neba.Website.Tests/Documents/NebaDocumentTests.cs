@@ -10,6 +10,7 @@ using Neba.TestFactory.Attributes;
 using Neba.Website.Server.Clock;
 using Neba.Website.Server.Components;
 using Neba.Website.Server.Documents;
+using Neba.Website.Server.Help;
 using Neba.Website.Server.Notifications;
 using Neba.Website.Server.Services;
 using Neba.Website.Tests.TestSupport;
@@ -38,6 +39,7 @@ public sealed class NebaDocumentTests : IDisposable
         mockStopwatch.Setup(x => x.GetElapsedTime(It.IsAny<long>())).Returns(TimeSpan.Zero);
 
         _ctx.Services.AddSingleton(_mockDocumentsApi.Object);
+        _ctx.Services.AddSingleton<HelpDocumentService>();
         _ctx.Services.AddSingleton(sp => new ApiExecutor(mockStopwatch.Object, sp.GetRequiredService<NavigationManager>(), NullLogger<ApiExecutor>.Instance));
     }
 

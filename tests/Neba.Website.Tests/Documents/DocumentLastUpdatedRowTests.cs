@@ -1,10 +1,12 @@
 using Bunit;
 
 using Microsoft.AspNetCore.Components;
+using Microsoft.Extensions.DependencyInjection;
 
 using Neba.Api.Contracts.Security;
 using Neba.TestFactory.Attributes;
 using Neba.Website.Server.Documents;
+using Neba.Website.Server.Help;
 
 namespace Neba.Website.Tests.Documents;
 
@@ -15,6 +17,12 @@ public sealed class DocumentLastUpdatedRowTests : IDisposable
     private const string RefreshButtonSelector = "button[title='Refresh from Google Drive']";
 
     private readonly BunitContext _ctx = new();
+
+    public DocumentLastUpdatedRowTests()
+    {
+        _ctx.JSInterop.Mode = JSRuntimeMode.Loose;
+        _ctx.Services.AddSingleton<HelpDocumentService>();
+    }
 
     public void Dispose() => _ctx.Dispose();
 
@@ -175,5 +183,34 @@ public sealed class DocumentLastUpdatedRowTests : IDisposable
 
         // Assert
         refreshCount.ShouldBe(1);
+    }
+
+    [Fact(DisplayName = "Should render the help button beside the refresh button when the caller can refresh")]
+    public void Render_ShouldShowHelpButton_WhenCallerCanRefresh()
+    {
+        // Arrange
+        AuthorizeWithRefreshPermission();
+
+        // Act
+        var cut = _ctx.Render<DocumentLastUpdatedRow>(parameters => parameters
+            .Add(p => p.CanRefresh, true));
+
+        // Assert
+        cut.FindComponent<Neba.Website.Server.Components.HelpButton>().Instance.DocName.ShouldBe("refresh-document");
+    }
+
+    [Fact(DisplayName = "Should not render the help button when the caller lacks the RefreshDocument permission")]
+    public void Render_ShouldHideHelpButton_WhenCallerLacksPermission()
+    {
+        // Arrange
+        _ctx.AddAuthorization().SetAuthorized("test-user");
+
+        // Act
+        var cut = _ctx.Render<DocumentLastUpdatedRow>(parameters => parameters
+            .Add(p => p.LastUpdatedText, "Last updated: January 15, 2026")
+            .Add(p => p.CanRefresh, true));
+
+        // Assert
+        cut.FindComponents<Neba.Website.Server.Components.HelpButton>().ShouldBeEmpty();
     }
 }
