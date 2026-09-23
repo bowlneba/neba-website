@@ -193,6 +193,7 @@ ConnectionStrings__bowlneba='Host=localhost;Port=52502;Database=bowlneba;Usernam
   - [x] Tournament Sponsors
   - [x] Edit Tournament
   - [x] Delete Tournament
+  - [x] Truncate / Cancel Tournament
 - [ ] Bowler Management
 - [x] Content Management
 

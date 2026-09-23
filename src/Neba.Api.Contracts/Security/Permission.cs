@@ -145,6 +145,15 @@ public sealed class Permissions
 
     #endregion
 
+    #region Documents
+
+    /// <summary>
+    /// Permission to force-refresh a single document's cached copy from Google Drive.
+    /// </summary>
+    public static readonly Permissions RefreshDocument = new("Documents.RefreshDocument", "Refresh Document");
+
+    #endregion
+
     #region Background Jobs
 
     /// <summary>

@@ -13,6 +13,14 @@
     DO NOT move neba-document.css to a .razor.css file - it will break layout and functionality.
 *@
 @implements System.IAsyncDisposable
+@using Neba.Api.Contracts.Documents
+@using Neba.Api.Contracts.Security
+@using Neba.Website.Server.Services
+
+@inject IDocumentsApi DocumentsApi
+@inject ApiExecutor ApiExecutor
+@inject ToastService ToastService
+@inject NavigationManager NavigationManager
 
 <script src="./Documents/NebaDocument.razor.js" type="module"></script>
 <link rel="stylesheet" href="/neba-document.css" />
@@ -30,6 +38,8 @@
 @if (!IsLoading && Content.HasValue)
 {
     <div class="neba-document-container" id="@ContainerId">
+        <NebaLoadingIndicator IsVisible="@_isRefreshing" Text="Refreshing document..." Scope="LoadingIndicatorScope.Page" />
+
         @{
             var lastUpdatedText = GetLastUpdatedText(LastUpdated);
         }
@@ -51,10 +61,10 @@
                 <div class="toc-sticky">
                     <h2 class="toc-title">@TableOfContentsTitle</h2>
                     <div id="@TocListId"></div>
-                    @if (!string.IsNullOrWhiteSpace(lastUpdatedText))
-                    {
-                        <div class="neba-document-toc-last-updated">@lastUpdatedText</div>
-                    }
+                    <DocumentLastUpdatedRow LastUpdatedText="@lastUpdatedText"
+                                             CanRefresh="@CanRefresh"
+                                             IsRefreshing="@_isRefreshing"
+                                             OnRefresh="RefreshDocumentAsync" />
                 </div>
             </nav>
 
@@ -76,10 +86,10 @@
                     </div>
                     <div class="neba-document-toc-modal-body">
                         <div id="@TocMobileListId"></div>
-                        @if (!string.IsNullOrWhiteSpace(lastUpdatedText))
-                        {
-                            <div class="neba-document-toc-last-updated">@lastUpdatedText</div>
-                        }
+                        <DocumentLastUpdatedRow LastUpdatedText="@lastUpdatedText"
+                                             CanRefresh="@CanRefresh"
+                                             IsRefreshing="@_isRefreshing"
+                                             OnRefresh="RefreshDocumentAsync" />
                     </div>
                 </div>
             </div>
@@ -220,6 +230,10 @@
     private string SlideoverCloseId => $"neba-document-slideover-close-{_instanceId}";
     private string SlideoverTitleId => $"neba-document-slideover-title-{_instanceId}";
     private string SlideoverContentId => $"neba-document-slideover-content-{_instanceId}";
+
+    private bool _isRefreshing;
+
+    private bool CanRefresh => !string.IsNullOrWhiteSpace(DocumentId);
 
     protected override void OnInitialized()
     {
@@ -373,5 +387,31 @@
         }
 
         return $"Last updated: {cachedAt.Value:MMMM d, yyyy}";
+    }
+
+    private async Task RefreshDocumentAsync()
+    {
+        if (!CanRefresh || _isRefreshing)
+        {
+            return;
+        }
+
+        _isRefreshing = true;
+        StateHasChanged();
+
+        var result = await ApiExecutor.ExecuteAsync(
+            "Documents",
+            "RefreshDocument",
+            ct => DocumentsApi.RefreshDocumentAsync(DocumentId!, ct));
+
+        if (result.IsError)
+        {
+            _isRefreshing = false;
+            ToastService.Show("Refresh Failed", result.FirstError.Description, NotifySeverity.Error);
+            StateHasChanged();
+            return;
+        }
+
+        NavigationManager.NavigateTo(NavigationManager.Uri, forceLoad: true);
     }
 }

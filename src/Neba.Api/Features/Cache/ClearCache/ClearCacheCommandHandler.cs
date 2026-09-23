@@ -18,7 +18,6 @@ internal sealed class ClearCacheCommandHandler(
     : ICommandHandler<ClearCacheCommand>
 {
     private const string CacheTag = "neba";
-    private const string DocumentsContainer = "bowlneba-private";
 
     public async Task<ErrorOr<Success>> HandleAsync(ClearCacheCommand command, CancellationToken cancellationToken)
     {
@@ -26,7 +25,7 @@ internal sealed class ClearCacheCommandHandler(
         await hybridCache.RemoveByTagAsync(CacheTag, cancellationToken);
 
         var deleteTasks = googleSettings.Documents
-            .Select(doc => storageService.DeleteAsync(DocumentsContainer, $"documents/{doc.Name}", cancellationToken));
+            .Select(doc => storageService.DeleteAsync(DocumentStorage.Container, DocumentStorage.BlobName(doc.Name), cancellationToken));
         await Task.WhenAll(deleteTasks);
 
         return Result.Success;
