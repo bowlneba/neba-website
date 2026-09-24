@@ -179,3 +179,56 @@ jobs:
           else
             gh pr comment "$PR_NUMBER" --repo "$REPO" --body "$BODY"
           fi
+
+  outdated-npm-packages:
+    name: Outdated npm Packages
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+      pull-requests: write
+
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Setup Node
+        uses: actions/setup-node@v7
+        with:
+          node-version: "24"
+
+      - name: Check for outdated packages
+        run: npm outdated --json > /tmp/npm-outdated.json || true
+
+      - name: Comment outdated npm packages on PR
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          REPO: ${{ github.repository }}
+        run: |
+          REPORT=$(jq -r '
+            to_entries
+            | sort_by(.key)
+            | if length == 0 then empty
+              else "| Package | Current | Wanted | Latest |\n|---|---|---|---|\n"
+                + (map("| \(.key) | \(.value.current // "-") | \(.value.wanted // "-") | \(.value.latest // "-") |") | join("\n"))
+                + "\n\n_Wanted_ is the newest version `package.json` allows; _Latest_ may need a range bump."
+              end' /tmp/npm-outdated.json 2>/dev/null || true)
+
+          if [ -z "$REPORT" ]; then
+            REPORT="All npm packages are up to date."
+          fi
+
+          BODY="<!-- npm-outdated -->
+          ## Outdated npm Packages
+
+          ${REPORT}"
+
+          COMMENT_ID=$(gh api "repos/${REPO}/issues/${PR_NUMBER}/comments" \
+            --jq '.[] | select(.body | startswith("<!-- npm-outdated -->")) | .id' | head -1)
+
+          if [ -n "$COMMENT_ID" ]; then
+            gh api "repos/${REPO}/issues/comments/${COMMENT_ID}" -X PATCH -f body="$BODY"
+          else
+            gh pr comment "$PR_NUMBER" --repo "$REPO" --body "$BODY"
+          fi
