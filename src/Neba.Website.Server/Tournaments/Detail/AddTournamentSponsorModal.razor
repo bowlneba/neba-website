@@ -25,7 +25,7 @@
             <FormLabel TargetId="sponsor-pick" For="@(() => _model.SponsorId)">Sponsor</FormLabel>
             <select id="sponsor-pick" class="neba-select" @bind="_model.SponsorId" @bind:after="MarkDirty">
                 <option value="">Select a sponsor…</option>
-                @foreach (var sponsor in AvailableSponsors)
+                @foreach (var sponsor in AvailableSponsors.OrderBy(s => s.Name, StringComparer.OrdinalIgnoreCase))
                 {
                     <option value="@sponsor.SponsorId">@sponsor.Name</option>
                 }
