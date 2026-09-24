@@ -203,6 +203,9 @@ public sealed class ListTournamentsInSeasonQueryHandlerTests(AppDbContextFixture
         fileStorageMock
             .Setup(s => s.GetBlobUri("logos", "tournaments/neba-singles.jpg"))
             .Returns(expectedUri);
+        fileStorageMock
+            .Setup(s => s.GetBlobUri("sponsor-logos", "sponsors/title-sponsor.jpg"))
+            .Returns(new Uri("https://storage.example.com/sponsor-logos/sponsors/title-sponsor.jpg"));
         var handler = new ListTournamentsInSeasonQueryHandler(_dbContext, fileStorageMock.Object, TimeProvider.System);
 
         // Act
@@ -234,6 +237,9 @@ public sealed class ListTournamentsInSeasonQueryHandlerTests(AppDbContextFixture
         await _dbContext.SaveChangesAsync(ct);
 
         var fileStorageMock = new Mock<IFileStorageService>(MockBehavior.Strict);
+        fileStorageMock
+            .Setup(s => s.GetBlobUri("sponsor-logos", "sponsors/regular-sponsor.jpg"))
+            .Returns(new Uri("https://storage.example.com/sponsor-logos/sponsors/regular-sponsor.jpg"));
         var handler = new ListTournamentsInSeasonQueryHandler(_dbContext, fileStorageMock.Object, TimeProvider.System);
 
         // Act
