@@ -556,20 +556,23 @@ tournamentType: TournamentType.Doubles, logoUrl: null));
         cut.Markup.ShouldContain("/sponsors/acme-corp");
     }
 
-    [Fact(DisplayName = "Should render sponsor logo image when logo URL is present")]
-    public void Render_ShouldRenderSponsorLogo_WhenLogoUrlPresent()
+    [Fact(DisplayName = "Should render sponsor logo image and name when logo URL is present")]
+    public void Render_ShouldRenderSponsorLogoAndName_WhenLogoUrlPresent()
     {
         // Arrange
         SetupSuccessResponse(TournamentDetailResponseFactory.Create(
             sponsors: [TournamentDetailSponsorResponseFactory.Create(
+                name: "Acme Corp",
                 logoUrl: new Uri("https://cdn.example.com/acme-logo.png"))]));
 
         // Act
         var cut = _ctx.Render<TournamentDetail>(p => p.Add(x => x.Id, TournamentDetailResponseFactory.ValidId));
 
         // Assert
-        cut.Markup.ShouldContain("https://cdn.example.com/acme-logo.png");
-        cut.FindAll(".td-rail-sponsor-card__name").ShouldBeEmpty();
+        var logo = cut.Find(".td-rail-sponsor-card__logo");
+        logo.GetAttribute("src").ShouldBe("https://cdn.example.com/acme-logo.png");
+        logo.GetAttribute("alt").ShouldBe(string.Empty);
+        cut.Find(".td-rail-sponsor-card__name").TextContent.ShouldBe("Acme Corp");
     }
 
     [Fact(DisplayName = "Should render sponsor name text when no logo URL")]
