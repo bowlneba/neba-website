@@ -119,6 +119,151 @@ public sealed class GetTournamentQueryHandlerTests(AppDbContextFixture fixture)
         result.Value.LogoUrl.ShouldBe(expectedUri);
     }
 
+    [Fact(DisplayName = "HandleAsync uses the title sponsor's logo when the tournament has no logo of its own")]
+    public async Task HandleAsync_ShouldUseTitleSponsorLogo_WhenTournamentHasNoLogo()
+    {
+        // Arrange
+        var ct = TestContext.Current.CancellationToken;
+        var season = SeasonFactory.Create();
+        await _dbContext.Seasons.AddAsync(season, ct);
+
+        var sponsorLogo = Neba.TestFactory.Storage.StoredFileFactory.Create(
+            container: "sponsor-logos", path: "sponsors/title-sponsor.jpg");
+        var titleSponsor = SponsorFactory.Create(logo: sponsorLogo);
+        await _dbContext.Sponsors.AddAsync(titleSponsor, ct);
+
+        var tournament = TournamentFactory.Create(seasonId: season.Id);
+        await _dbContext.Tournaments.AddAsync(tournament, ct);
+        await _dbContext.SaveChangesAsync(ct);
+
+        tournament.AddSponsor(titleSponsor.Id, titleSponsor: true, sponsorshipAmount: 1000m);
+        await _dbContext.SaveChangesAsync(ct);
+
+        var expectedUri = new Uri("https://storage.example.com/sponsor-logos/sponsors/title-sponsor.jpg");
+        var fileStorageMock = new Mock<IFileStorageService>(MockBehavior.Strict);
+        fileStorageMock
+            .Setup(s => s.GetBlobUri("sponsor-logos", "sponsors/title-sponsor.jpg"))
+            .Returns(expectedUri);
+        var handler = new GetTournamentQueryHandler(_dbContext, fileStorageMock.Object, TimeProvider.System);
+
+        // Act
+        var result = await handler.HandleAsync(
+            new GetTournamentQuery { Id = tournament.Id, CallerIsAuthenticated = true, CallerHasTournamentManagementPermission = true }, ct);
+
+        // Assert
+        result.IsError.ShouldBeFalse();
+        result.Value.LogoUrl.ShouldBe(expectedUri);
+    }
+
+    [Fact(DisplayName = "HandleAsync prefers the tournament's own logo over the title sponsor's logo when both are present")]
+    public async Task HandleAsync_ShouldPreferTournamentLogo_OverTitleSponsorLogo()
+    {
+        // Arrange
+        var ct = TestContext.Current.CancellationToken;
+        var season = SeasonFactory.Create();
+        await _dbContext.Seasons.AddAsync(season, ct);
+
+        var sponsorLogo = Neba.TestFactory.Storage.StoredFileFactory.Create(
+            container: "sponsor-logos", path: "sponsors/title-sponsor.jpg");
+        var titleSponsor = SponsorFactory.Create(logo: sponsorLogo);
+        await _dbContext.Sponsors.AddAsync(titleSponsor, ct);
+
+        var tournamentLogo = Neba.TestFactory.Storage.StoredFileFactory.Create(
+            container: "logos", path: "tournaments/neba-singles.jpg");
+        var tournament = TournamentFactory.Create(seasonId: season.Id, logo: tournamentLogo);
+        await _dbContext.Tournaments.AddAsync(tournament, ct);
+        await _dbContext.SaveChangesAsync(ct);
+
+        tournament.AddSponsor(titleSponsor.Id, titleSponsor: true, sponsorshipAmount: 1000m);
+        await _dbContext.SaveChangesAsync(ct);
+
+        var expectedUri = new Uri("https://storage.example.com/logos/tournaments/neba-singles.jpg");
+        var fileStorageMock = new Mock<IFileStorageService>(MockBehavior.Strict);
+        fileStorageMock
+            .Setup(s => s.GetBlobUri("logos", "tournaments/neba-singles.jpg"))
+            .Returns(expectedUri);
+        var handler = new GetTournamentQueryHandler(_dbContext, fileStorageMock.Object, TimeProvider.System);
+
+        // Act
+        var result = await handler.HandleAsync(
+            new GetTournamentQuery { Id = tournament.Id, CallerIsAuthenticated = true, CallerHasTournamentManagementPermission = true }, ct);
+
+        // Assert
+        result.IsError.ShouldBeFalse();
+        result.Value.LogoUrl.ShouldBe(expectedUri);
+    }
+
+    [Fact(DisplayName = "HandleAsync does not use a non-title sponsor's logo when the tournament has no logo")]
+    public async Task HandleAsync_ShouldNotUseNonTitleSponsorLogo_WhenTournamentHasNoLogo()
+    {
+        // Arrange
+        var ct = TestContext.Current.CancellationToken;
+        var season = SeasonFactory.Create();
+        await _dbContext.Seasons.AddAsync(season, ct);
+
+        var sponsorLogo = Neba.TestFactory.Storage.StoredFileFactory.Create(
+            container: "sponsor-logos", path: "sponsors/regular-sponsor.jpg");
+        var regularSponsor = SponsorFactory.Create(logo: sponsorLogo);
+        await _dbContext.Sponsors.AddAsync(regularSponsor, ct);
+
+        var tournament = TournamentFactory.Create(seasonId: season.Id);
+        await _dbContext.Tournaments.AddAsync(tournament, ct);
+        await _dbContext.SaveChangesAsync(ct);
+
+        tournament.AddSponsor(regularSponsor.Id, titleSponsor: false, sponsorshipAmount: 100m);
+        await _dbContext.SaveChangesAsync(ct);
+
+        var fileStorageMock = new Mock<IFileStorageService>(MockBehavior.Strict);
+        var handler = new GetTournamentQueryHandler(_dbContext, fileStorageMock.Object, TimeProvider.System);
+
+        // Act
+        var result = await handler.HandleAsync(
+            new GetTournamentQuery { Id = tournament.Id, CallerIsAuthenticated = true, CallerHasTournamentManagementPermission = true }, ct);
+
+        // Assert
+        result.IsError.ShouldBeFalse();
+        result.Value.LogoUrl.ShouldBeNull();
+    }
+
+    [Fact(DisplayName = "HandleAsync leaves raw logo fields null when the display logo comes from the title sponsor")]
+    public async Task HandleAsync_ShouldLeaveRawLogoFieldsNull_WhenDisplayLogoComesFromTitleSponsor()
+    {
+        // Arrange
+        var ct = TestContext.Current.CancellationToken;
+        var season = SeasonFactory.Create();
+        await _dbContext.Seasons.AddAsync(season, ct);
+
+        var sponsorLogo = Neba.TestFactory.Storage.StoredFileFactory.Create(
+            container: "sponsor-logos", path: "sponsors/title-sponsor.jpg");
+        var titleSponsor = SponsorFactory.Create(logo: sponsorLogo);
+        await _dbContext.Sponsors.AddAsync(titleSponsor, ct);
+
+        var tournament = TournamentFactory.Create(seasonId: season.Id);
+        await _dbContext.Tournaments.AddAsync(tournament, ct);
+        await _dbContext.SaveChangesAsync(ct);
+
+        tournament.AddSponsor(titleSponsor.Id, titleSponsor: true, sponsorshipAmount: 1000m);
+        await _dbContext.SaveChangesAsync(ct);
+
+        var fileStorageMock = new Mock<IFileStorageService>(MockBehavior.Strict);
+        fileStorageMock
+            .Setup(s => s.GetBlobUri("sponsor-logos", "sponsors/title-sponsor.jpg"))
+            .Returns(new Uri("https://storage.example.com/sponsor-logos/sponsors/title-sponsor.jpg"));
+        var handler = new GetTournamentQueryHandler(_dbContext, fileStorageMock.Object, TimeProvider.System);
+
+        // Act
+        var result = await handler.HandleAsync(
+            new GetTournamentQuery { Id = tournament.Id, CallerIsAuthenticated = true, CallerHasTournamentManagementPermission = true }, ct);
+
+        // Assert
+        result.IsError.ShouldBeFalse();
+        result.Value.LogoUrl.ShouldNotBeNull();
+        result.Value.LogoContainer.ShouldBeNull();
+        result.Value.LogoPath.ShouldBeNull();
+        result.Value.LogoContentType.ShouldBeNull();
+        result.Value.LogoSizeInBytes.ShouldBeNull();
+    }
+
     [Fact(DisplayName = "HandleAsync includes raw logo fields when caller has the tournament management permission")]
     public async Task HandleAsync_ShouldIncludeRawLogoFields_WhenCallerHasManagementPermission()
     {

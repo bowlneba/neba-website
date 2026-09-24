@@ -210,6 +210,11 @@ internal sealed class GetTournamentQueryHandler(
         var revealed = OilPatternRevealPolicy.IsRevealed(
             row.OilPatternRevealDateTime, query.CallerHasTournamentManagementPermission, timeProvider.GetUtcNow());
 
+        var logoSource = TournamentLogoResolver.Resolve(
+            row.TournamentLogoContainer,
+            row.TournamentLogoPath,
+            row.Sponsors.Select(s => (s.TitleSponsor, s.LogoContainer, s.LogoPath)));
+
         return new TournamentDetailDto
         {
             Id = row.Id,
@@ -245,8 +250,8 @@ internal sealed class GetTournamentQueryHandler(
                     KegelId = pattern.KegelId,
                 })
                 : [],
-            LogoUrl = row.TournamentLogoContainer is not null && row.TournamentLogoPath is not null
-                ? _fileStorageService.GetBlobUri(row.TournamentLogoContainer, row.TournamentLogoPath)
+            LogoUrl = logoSource.Container is not null && logoSource.Path is not null
+                ? _fileStorageService.GetBlobUri(logoSource.Container, logoSource.Path)
                 : null,
             LogoContainer = query.CallerHasTournamentManagementPermission ? row.TournamentLogoContainer : null,
             LogoPath = query.CallerHasTournamentManagementPermission ? row.TournamentLogoPath : null,

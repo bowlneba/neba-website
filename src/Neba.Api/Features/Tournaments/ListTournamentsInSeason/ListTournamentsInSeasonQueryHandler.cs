@@ -55,13 +55,13 @@ internal sealed class ListTournamentsInSeasonQueryHandler(
                         State = tournament.BowlingCenter.Address.Region
                     },
                 Sponsors = tournament.Sponsors
-                    .Select(tournamentSponsor => tournamentSponsor.Sponsor)
-                    .Select(s => new
+                    .Select(tournamentSponsor => new
                     {
-                        s.Name,
-                        s.Slug,
-                        LogoContainer = s.Logo != null ? s.Logo.Container : null,
-                        LogoPath = s.Logo != null ? s.Logo.Path : null
+                        tournamentSponsor.Sponsor.Name,
+                        tournamentSponsor.Sponsor.Slug,
+                        LogoContainer = tournamentSponsor.Sponsor.Logo != null ? tournamentSponsor.Sponsor.Logo.Container : null,
+                        LogoPath = tournamentSponsor.Sponsor.Logo != null ? tournamentSponsor.Sponsor.Logo.Path : null,
+                        tournamentSponsor.TitleSponsor
                     }).ToList(),
                 SponsorMoney = tournament.Sponsors.Sum(ts => ts.SponsorshipAmount),
                 tournament.NebaAddedMoney,
@@ -133,6 +133,11 @@ internal sealed class ListTournamentsInSeasonQueryHandler(
 
             var revealed = OilPatternRevealPolicy.IsRevealed(row.OilPatternRevealDateTime, query.CallerHasTournamentManagementPermission, now);
 
+            var logoSource = TournamentLogoResolver.Resolve(
+                row.TournamentLogoContainer,
+                row.TournamentLogoPath,
+                row.Sponsors.Select(s => (s.TitleSponsor, s.LogoContainer, s.LogoPath)));
+
             return new SeasonTournamentDto
             {
                 Id = row.Id,
@@ -167,8 +172,8 @@ internal sealed class ListTournamentsInSeasonQueryHandler(
                         TournamentRounds = [.. pattern.TournamentRounds.Select(r => r.Name)]
                     })
                     : [],
-                LogoUrl = row.TournamentLogoContainer is not null && row.TournamentLogoPath is not null
-                    ? _fileStorageService.GetBlobUri(row.TournamentLogoContainer, row.TournamentLogoPath)
+                LogoUrl = logoSource.Container is not null && logoSource.Path is not null
+                    ? _fileStorageService.GetBlobUri(logoSource.Container, logoSource.Path)
                     : null,
                 Winners = winnersByTournamentDbId.GetValueOrDefault(row.DbId, []),
             };
