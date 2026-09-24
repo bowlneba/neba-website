@@ -55,6 +55,23 @@ public sealed class AddTournamentSponsorModalTests : IDisposable
         cut.Find("button.neba-btn-primary").HasAttribute("disabled").ShouldBeTrue();
     }
 
+    [Fact(DisplayName = "Should list sponsors sorted by name, ignoring case, after the placeholder")]
+    public void Render_ShouldSortSponsorsByName()
+    {
+        // Arrange
+        List<string> names = ["Zeta", "alpha", "Mike", "Bravo"];
+        var sponsors = names
+            .Select((name, i) => SponsorSummaryResponseFactory.Create(sponsorId: $"0100000000000000000000000{i + 1}", name: name).ToViewModel())
+            .ToList();
+
+        // Act
+        var cut = Render(sponsors);
+
+        // Assert
+        var labels = cut.FindAll("#sponsor-pick option").Select(o => o.TextContent).ToList();
+        labels.ShouldBe(["Select a sponsor…", "alpha", "Bravo", "Mike", "Zeta"]);
+    }
+
     [Fact(DisplayName = "Should enable the Add Sponsor button once a sponsor is selected")]
     public void SelectSponsor_ShouldEnableSubmit()
     {
