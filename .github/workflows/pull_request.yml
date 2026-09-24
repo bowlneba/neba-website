@@ -145,7 +145,7 @@ jobs:
         run: dotnet tool install --global dotnet-outdated-tool
 
       - name: Check for outdated packages
-        run: dotnet outdated Neba.Website.slnx --output-format markdown --output /tmp/outdated.md
+        run: dotnet outdated Neba.Website.slnx --output-format json --output /tmp/outdated.json
 
       - name: Comment outdated packages on PR
         env:
@@ -153,9 +153,16 @@ jobs:
           PR_NUMBER: ${{ github.event.pull_request.number }}
           REPO: ${{ github.repository }}
         run: |
-          if [ -s /tmp/outdated.md ] && grep -q '|' /tmp/outdated.md; then
-            REPORT=$(cat /tmp/outdated.md)
-          else
+          REPORT=$(jq -r '
+            [.Projects[].TargetFrameworks[].Dependencies[]]
+            | unique_by(.Name)
+            | sort_by(.Name)
+            | if length == 0 then empty
+              else "| Package | Update | Severity |\n|---|---|---|\n"
+                + (map("| \(.Name) | \(.ResolvedVersion) → \(.LatestVersion) | \(.UpgradeSeverity) |") | join("\n"))
+              end' /tmp/outdated.json 2>/dev/null || true)
+
+          if [ -z "$REPORT" ]; then
             REPORT="All NuGet packages are up to date."
           fi
 
