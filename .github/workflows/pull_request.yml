@@ -121,3 +121,61 @@ jobs:
           else
             gh pr comment "$PR_NUMBER" --repo "$REPO" --body "$BODY"
           fi
+
+  outdated-packages:
+    name: Outdated Packages
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+      pull-requests: write
+    env:
+      HUSKY: 0
+
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v6
+        with:
+          dotnet-version: 10.0.x
+
+      - name: Install dotnet-outdated
+        run: dotnet tool install --global dotnet-outdated-tool
+
+      - name: Check for outdated packages
+        run: dotnet outdated Neba.Website.slnx --output-format json --output /tmp/outdated.json
+
+      - name: Comment outdated packages on PR
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          REPO: ${{ github.repository }}
+        run: |
+          REPORT=$(jq -r '
+            [.Projects[].TargetFrameworks[].Dependencies[]]
+            | unique_by(.Name)
+            | sort_by(.Name)
+            | if length == 0 then empty
+              else "| Package | Update | Severity |\n|---|---|---|\n"
+                + (map("| \(.Name) | \(.ResolvedVersion) → \(.LatestVersion) | \(.UpgradeSeverity) |") | join("\n"))
+              end' /tmp/outdated.json 2>/dev/null || true)
+
+          if [ -z "$REPORT" ]; then
+            REPORT="All NuGet packages are up to date."
+          fi
+
+          BODY="<!-- dotnet-outdated -->
+          ## Outdated NuGet Packages
+
+          ${REPORT}"
+
+          COMMENT_ID=$(gh api "repos/${REPO}/issues/${PR_NUMBER}/comments" \
+            --jq '.[] | select(.body | startswith("<!-- dotnet-outdated -->")) | .id' | head -1)
+
+          if [ -n "$COMMENT_ID" ]; then
+            gh api "repos/${REPO}/issues/comments/${COMMENT_ID}" -X PATCH -f body="$BODY"
+          else
+            gh pr comment "$PR_NUMBER" --repo "$REPO" --body "$BODY"
+          fi
