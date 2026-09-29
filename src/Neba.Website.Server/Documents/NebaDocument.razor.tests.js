@@ -954,35 +954,58 @@ describe('NebaDocument', () => {
         <ul id="toc-list"></ul>
       `;
 
+      const content = document.getElementById('content');
+      content.getBoundingClientRect = () => ({ top: 0, height: 400, bottom: 400 });
+      document.getElementById('heading1').getBoundingClientRect = () => ({ top: 0, height: 30, bottom: 30 });
+      document.getElementById('heading2').getBoundingClientRect = () => ({ top: 300, height: 30, bottom: 330 });
+
       initialize(mockDotNetReference, { contentId: 'content', tocListId: 'toc-list' });
 
       // updateActiveLink() is called once at end of setupScrollSpy.
-      // jsdom getBoundingClientRect returns zeros so distanceFromTop=0 → in active window.
       const activeLink = document.querySelector('.toc-link.active');
       expect(activeLink).not.toBeNull();
       expect(activeLink.dataset.target).toBe('heading1');
     });
 
-    test('should not mark any heading active when all headings are fully scrolled past', () => {
+    test('should keep a heading active after it scrolls past the top until the next heading arrives', () => {
       document.body.innerHTML = `
         <div id="content">
           <h1 id="heading1">Heading 1</h1>
+          <h1 id="heading2">Heading 2</h1>
         </div>
         <ul id="toc-list"></ul>
       `;
 
       const content = document.getElementById('content');
-      const heading1 = document.getElementById('heading1');
-
-      // distanceFromTop = 50 - 100 = -50; height=30 so -headingRect.height = -30
-      // -50 >= -30 → FALSE → fails primary window; fallback: -50 >= 0 → also FALSE
       content.getBoundingClientRect = () => ({ top: 100, height: 400, bottom: 500 });
-      heading1.getBoundingClientRect = () => ({ top: 50, height: 30, bottom: 80 });
+      // heading1 is 250px above the viewport top; heading2 is still 150px below it
+      document.getElementById('heading1').getBoundingClientRect = () => ({ top: -150, height: 30, bottom: -120 });
+      document.getElementById('heading2').getBoundingClientRect = () => ({ top: 250, height: 30, bottom: 280 });
 
       initialize(mockDotNetReference, { contentId: 'content', tocListId: 'toc-list' });
 
-      // With `if (activeHeading) → if (true)` mutation, null.id throws — kills that mutation.
-      expect(document.querySelector('.toc-link.active')).toBeNull();
+      const activeLink = document.querySelector('.toc-link.active');
+      expect(activeLink).not.toBeNull();
+      expect(activeLink.dataset.target).toBe('heading1');
+    });
+
+    test('should mark the first heading active when no heading has reached the top yet', () => {
+      document.body.innerHTML = `
+        <div id="content">
+          <h1 id="heading1">Heading 1</h1>
+          <h1 id="heading2">Heading 2</h1>
+        </div>
+        <ul id="toc-list"></ul>
+      `;
+
+      const content = document.getElementById('content');
+      content.getBoundingClientRect = () => ({ top: 0, height: 400, bottom: 400 });
+      document.getElementById('heading1').getBoundingClientRect = () => ({ top: 200, height: 30, bottom: 230 });
+      document.getElementById('heading2').getBoundingClientRect = () => ({ top: 300, height: 30, bottom: 330 });
+
+      initialize(mockDotNetReference, { contentId: 'content', tocListId: 'toc-list' });
+
+      expect(document.querySelector('.toc-link.active').dataset.target).toBe('heading1');
     });
 
     test('should select closest heading when multiple are in the active window', () => {

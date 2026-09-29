@@ -204,40 +204,27 @@ function setupScrollSpy(content, tocList, headings, signal) {
 }
 
 /**
- * Finds the heading currently visible near the top of the content viewport.
+ * Finds the active heading: the last heading whose top has reached the top of the
+ * content viewport (within a small tolerance). Before any heading has reached the
+ * top, the first heading is active.
  * @param {NodeList} headings - Collection of heading elements
  * @param {DOMRect} contentRect - Bounding rect of content container
  * @returns {HTMLElement|null} The active heading element
  */
 function findActiveHeading(headings, contentRect) {
+    const threshold = 20;
     let activeHeading = null;
-    let minDistance = Infinity;
 
-    headings.forEach(heading => {
-        const headingRect = heading.getBoundingClientRect();
-        const distanceFromTop = headingRect.top - contentRect.top;
-
-        if (distanceFromTop <= 100 && distanceFromTop >= -headingRect.height) {
-            if (Math.abs(distanceFromTop) < minDistance) {
-                minDistance = Math.abs(distanceFromTop);
-                activeHeading = heading;
-            }
+    for (const heading of headings) {
+        const distanceFromTop = heading.getBoundingClientRect().top - contentRect.top;
+        if (distanceFromTop <= threshold) {
+            activeHeading = heading;
+        } else {
+            break;
         }
-    });
-
-    if (!activeHeading) {
-        headings.forEach(heading => {
-            const headingRect = heading.getBoundingClientRect();
-            const distanceFromTop = headingRect.top - contentRect.top;
-
-            if (distanceFromTop >= 0 && distanceFromTop < minDistance) {
-                minDistance = distanceFromTop;
-                activeHeading = heading;
-            }
-        });
     }
 
-    return activeHeading;
+    return activeHeading ?? headings[0] ?? null;
 }
 
 /**
