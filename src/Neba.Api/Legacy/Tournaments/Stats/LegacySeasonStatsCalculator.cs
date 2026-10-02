@@ -13,11 +13,11 @@ namespace Neba.Api.Legacy.Tournaments.Stats;
 // convention assumes - a SideCut value is an attribute of that one row (which cut got the bowler
 // into finals), not a signal that multiple rows exist for the same tournament.
 //
-// Several fields below are intentionally NOT scoped to eligible tournaments even though the live
-// Dump scopes them (Cashes, Finals, QualifyingHighGame, HighBlock, the MatchPlay* fields, TotalGames,
-// TotalPinfall, HighFinish, AverageFinish) - BowlerSeasonStats's own XML docs describe these as
-// spanning the whole season, and (unlike Tournaments/Entries) there's no separate Eligible/Total pair
-// for any of them - the website's own aggregate deliberately simplifies away this legacy nuance.
+// Cashes, Finals, QualifyingHighGame, HighBlock, the MatchPlay* fields, TotalGames, TotalPinfall,
+// HighFinish and AverageFinish are scoped to the bowler's eligible tournaments (stat-eligible, minus
+// the Tournament of Champions double-dip), exactly like the live Dump. A bowler whose only match play
+// came in a non-stat-eligible event (e.g. Non-Champions) therefore shows 0-0. Tournaments/Entries keep
+// their separate Eligible/Total pair; TournamentWinnings is not eligibility-scoped.
 internal static class LegacySeasonStatsCalculator
 {
     private const int SeniorAge = 50;
@@ -133,7 +133,10 @@ internal static class LegacySeasonStatsCalculator
                 .ToList();
 
             var totalEntries = qualifying.Count;
-            var eligibleEntries = qualifying.Count(q => q.TournamentId != excludedTournamentId && eligibleTournamentIds.Contains(q.TournamentId));
+            var eligibleQualifying = qualifying.Where(q => eligibleTournamentIdsForBowler.Contains(q.TournamentId)).ToList();
+            var eligibleMatchPlay = matchPlay.Where(m => eligibleTournamentIdsForBowler.Contains(m.TournamentId)).ToList();
+            var eligibleBowlerResults = bowlerResults.Where(r => eligibleTournamentIdsForBowler.Contains(r.TournamentId)).ToList();
+            var eligibleEntries = eligibleQualifying.Count;
 
             var age = AgeOnDate(dateOfBirth, seasonEndDate);
             var isSenior = age >= SeniorAge;
@@ -143,29 +146,29 @@ internal static class LegacySeasonStatsCalculator
             var bowlerMemberships = membershipsByBowlerId.GetValueOrDefault(bowlerId, []);
             var (isMember, isRookie) = ComputeMembershipStatus(bowlerMemberships, seasonEndDate, newMembershipTypeId);
 
-            var cashes = bowlerResults.Count(r => r.PrizeMoney > 0);
-            var finals = matchPlay.Select(m => m.TournamentId).Distinct().Count();
+            var cashes = eligibleBowlerResults.Count(r => r.PrizeMoney > 0);
+            var finals = eligibleMatchPlay.Select(m => m.TournamentId).Distinct().Count();
 
-            var totalGames = qualifying.Sum(q => q.Games) + matchPlay.Sum(m => m.Games);
-            var totalPinfall = qualifying.Sum(q => q.Score) + matchPlay.Sum(m => m.Score);
+            var totalGames = eligibleQualifying.Sum(q => q.Games) + eligibleMatchPlay.Sum(m => m.Games);
+            var totalPinfall = eligibleQualifying.Sum(q => q.Score) + eligibleMatchPlay.Sum(m => m.Score);
 
             var fieldAverage = ComputeFieldAverage(eligibleTournamentIdsForBowler, qualifying, qualifyingStats);
 
-            var qualifyingHighGame = qualifying.Count > 0 ? qualifying.Max(q => q.HighGame) : 0;
-            var highBlock = qualifying.Where(q => q.Games == 5).Max(q => (int?)q.Score) ?? 0;
+            var qualifyingHighGame = eligibleQualifying.Count > 0 ? eligibleQualifying.Max(q => q.HighGame) : 0;
+            var highBlock = eligibleQualifying.Where(q => q.Games == 5).Max(q => (int?)q.Score) ?? 0;
 
-            var matchPlayWins = matchPlay.Count(m => m.Winner);
-            var matchPlayLosses = matchPlay.Count(m => !m.Winner);
-            var matchPlayGames = matchPlay.Sum(m => m.Games);
-            var matchPlayPinfall = matchPlay.Sum(m => m.Score);
-            var matchPlayHighGame = matchPlay.Count > 0 ? matchPlay.Max(m => m.HighGame) : 0;
+            var matchPlayWins = eligibleMatchPlay.Count(m => m.Winner);
+            var matchPlayLosses = eligibleMatchPlay.Count(m => !m.Winner);
+            var matchPlayGames = eligibleMatchPlay.Sum(m => m.Games);
+            var matchPlayPinfall = eligibleMatchPlay.Sum(m => m.Score);
+            var matchPlayHighGame = eligibleMatchPlay.Count > 0 ? eligibleMatchPlay.Max(m => m.HighGame) : 0;
 
             // A Place <= 0 is a data-quality sentinel (e.g. an unplaceable/team result predating
             // TournamentResult's own place > 0 validation), not a real finish "better than 1st" -
             // it must never pull HighFinish/AverageFinish toward it. Applies uniformly whether
             // this bowlerResults set came from the current season's live TournamentResult rows
             // (which should never carry one) or a past season being regenerated.
-            var placedResults = bowlerResults.Where(r => r.Place > 0).ToList();
+            var placedResults = eligibleBowlerResults.Where(r => r.Place > 0).ToList();
             int? highFinish = placedResults.Count > 0 ? placedResults.Min(r => r.Place) : null;
             decimal? averageFinish = placedResults.Count > 0 ? (decimal)placedResults.Average(r => r.Place) : null;
 
@@ -288,33 +291,37 @@ internal static class LegacySeasonStatsCalculator
         var finalsViaSideCut = eligibleResults.Count(r => r.SideCut is not null);
         var bowlerOfTheYearPoints = rawBowlerOfTheYearPoints + (finalsViaSideCut * SideCutFinalsBonusPoints);
 
+        // The Non-Champions winner's forced Tournament of Champions berth earns no points toward any
+        // award; only its prize money counts (handled outside this method).
+        var scoringResults = bowlerResults.Where(r => r.TournamentId != excludedTournamentId).ToList();
+
         var seniorEligibleTournamentIds = ComputeAgeEligibleTournamentIds(tournaments.EligibleSeasonTournaments, tournaments.SeniorTournaments, dateOfBirth, SeniorAge);
         var superSeniorEligibleTournamentIds = ComputeAgeEligibleTournamentIds(tournaments.EligibleSeasonTournaments, tournaments.SeniorTournaments, dateOfBirth, SuperSeniorAge);
         var seniorWithWomenSeniorTournamentIds = ComputeAgeEligibleTournamentIds([], tournaments.SeniorWithWomenTournaments, dateOfBirth, SeniorAge);
         var seniorWithWomenSuperSeniorTournamentIds = ComputeAgeEligibleTournamentIds([], tournaments.SeniorWithWomenTournaments, dateOfBirth, SuperSeniorAge);
 
-        var seniorResults = bowlerResults.Where(r => seniorEligibleTournamentIds.Contains(r.TournamentId)).ToList();
+        var seniorResults = scoringResults.Where(r => seniorEligibleTournamentIds.Contains(r.TournamentId)).ToList();
         var seniorFinalsViaSuperSeniorCut = seniorResults.Count(r => r.SideCut == SuperSeniorSideCut);
-        var seniorWithWomenSeniorPoints = bowlerResults.Where(r => seniorWithWomenSeniorTournamentIds.Contains(r.TournamentId)).Sum(r => r.Points);
+        var seniorWithWomenSeniorPoints = scoringResults.Where(r => seniorWithWomenSeniorTournamentIds.Contains(r.TournamentId)).Sum(r => r.Points);
         var seniorOfTheYearPoints = seniorResults
             .Where(r => r.SideCut != SuperSeniorSideCut && r.SideCut != WomanSideCut)
             .Sum(r => r.Points)
             + (seniorFinalsViaSuperSeniorCut * SideCutFinalsBonusPoints)
             + seniorWithWomenSeniorPoints;
 
-        var superSeniorResults = bowlerResults.Where(r => superSeniorEligibleTournamentIds.Contains(r.TournamentId)).ToList();
-        var seniorWithWomenSuperSeniorPoints = bowlerResults.Where(r => seniorWithWomenSuperSeniorTournamentIds.Contains(r.TournamentId)).Sum(r => r.Points);
+        var superSeniorResults = scoringResults.Where(r => superSeniorEligibleTournamentIds.Contains(r.TournamentId)).ToList();
+        var seniorWithWomenSuperSeniorPoints = scoringResults.Where(r => seniorWithWomenSuperSeniorTournamentIds.Contains(r.TournamentId)).Sum(r => r.Points);
         var superSeniorOfTheYearPoints = superSeniorResults
             .Where(r => r.SideCut != WomanSideCut)
             .Sum(r => r.Points)
             + seniorWithWomenSuperSeniorPoints;
 
         var womanSideCutPoints = eligibleResults.Where(r => r.SideCut is WomanSideCut or CombinedSideCut).Sum(r => r.Points);
-        var womanTournamentPoints = bowlerResults.Where(r => tournaments.WomenTournamentIds.Contains(r.TournamentId)).Sum(r => r.Points);
+        var womanTournamentPoints = scoringResults.Where(r => tournaments.WomenTournamentIds.Contains(r.TournamentId)).Sum(r => r.Points);
         var womanOfTheYearPoints = isWoman ? rawBowlerOfTheYearPoints + womanSideCutPoints + womanTournamentPoints : 0;
 
         var youthEligibleTournamentIds = ComputeAgeEligibleTournamentIds(tournaments.EligibleSeasonTournaments, tournaments.YouthTournaments, dateOfBirth, maximumAgeExclusive: YouthAge);
-        var youthOfTheYearPoints = bowlerResults.Where(r => youthEligibleTournamentIds.Contains(r.TournamentId)).Sum(r => r.Points);
+        var youthOfTheYearPoints = scoringResults.Where(r => youthEligibleTournamentIds.Contains(r.TournamentId)).Sum(r => r.Points);
 
         return new AwardPoints(bowlerOfTheYearPoints, seniorOfTheYearPoints, superSeniorOfTheYearPoints, womanOfTheYearPoints, youthOfTheYearPoints);
     }
