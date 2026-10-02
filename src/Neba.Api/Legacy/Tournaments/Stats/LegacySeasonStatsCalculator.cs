@@ -372,9 +372,9 @@ internal static class LegacySeasonStatsCalculator
 
     // The Non-Champions event's single-day winner earns a Tournament of Champions berth that
     // season - a forced entry that should not count as a second, ordinary tournament for that
-    // bowler's *eligible* tournament/entry counts and eligible-results-based points (Bowler of the
-    // Year). It does not affect Total tournament/entry counts, or any of the Senior/Super
-    // Senior/Woman/Youth category formulas - matching the live Dump exactly.
+    // bowler's eligible stats or any award points. It does not affect the Total tournament/entry
+    // counts or prize money. (The live Dump also lets this berth feed the Senior/Super Senior/Youth
+    // point formulas; that is a known live-report quirk we deliberately do not reproduce.)
     private static Dictionary<int, int> ComputeTournamentOfChampionsDoubleDipExclusions(
         IReadOnlyCollection<LegacySeasonTournamentRow> seasonTournaments,
         IReadOnlyCollection<LegacyBowlerResultRow> results)
