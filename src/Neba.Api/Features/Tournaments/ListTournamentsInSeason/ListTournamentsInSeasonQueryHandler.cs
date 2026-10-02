@@ -120,7 +120,9 @@ internal sealed class ListTournamentsInSeasonQueryHandler(
 
         return [.. rows.Select(row =>
         {
+            // The title sponsor must come first: consumers show the first sponsor as the headline one.
             var sponsors = row.Sponsors
+                .OrderByDescending(s => s.TitleSponsor)
                 .Select(s => new SeasonTournamentSponsorDto
                 {
                     Name = s.Name,

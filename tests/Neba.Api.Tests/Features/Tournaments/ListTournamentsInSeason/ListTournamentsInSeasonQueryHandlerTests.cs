@@ -251,6 +251,37 @@ public sealed class ListTournamentsInSeasonQueryHandlerTests(AppDbContextFixture
         result.Single().LogoUrl.ShouldBeNull();
     }
 
+    [Fact(DisplayName = "HandleAsync lists the title sponsor first regardless of sponsorship amount")]
+    public async Task HandleAsync_ShouldListTitleSponsorFirst_WhenAnotherSponsorGaveMore()
+    {
+        // Arrange
+        var ct = TestContext.Current.CancellationToken;
+        var season = SeasonFactory.Create();
+        await _dbContext.Seasons.AddAsync(season, ct);
+
+        var titleSponsor = Neba.TestFactory.Sponsors.SponsorFactory.Create(name: "Title Sponsor", slug: "title-sponsor");
+        var otherSponsor = Neba.TestFactory.Sponsors.SponsorFactory.Create(name: "Other Sponsor", slug: "other-sponsor");
+        await _dbContext.Sponsors.AddRangeAsync([otherSponsor, titleSponsor], ct);
+
+        var tournament = TournamentFactory.Create(seasonId: season.Id);
+        await _dbContext.Tournaments.AddAsync(tournament, ct);
+        await _dbContext.SaveChangesAsync(ct);
+
+        tournament.AddSponsor(otherSponsor.Id, titleSponsor: false, sponsorshipAmount: 1500m);
+        tournament.AddSponsor(titleSponsor.Id, titleSponsor: true, sponsorshipAmount: 100m);
+        await _dbContext.SaveChangesAsync(ct);
+
+        var fileStorageMock = new Mock<IFileStorageService>(MockBehavior.Strict);
+        var handler = new ListTournamentsInSeasonQueryHandler(_dbContext, fileStorageMock.Object, TimeProvider.System);
+
+        // Act
+        var result = await handler.HandleAsync(
+            new ListTournamentsInSeasonQuery { SeasonId = season.Id, CallerIsAuthenticated = true, CallerHasTournamentManagementPermission = true }, ct);
+
+        // Assert
+        result.Single().Sponsors.First().Name.ShouldBe("Title Sponsor");
+    }
+
     [Fact(DisplayName = "HandleAsync returns oil patterns with round names when tournament has oil patterns")]
     public async Task HandleAsync_ShouldReturnOilPatternsWithRoundNames_WhenTournamentHasOilPatterns()
     {
