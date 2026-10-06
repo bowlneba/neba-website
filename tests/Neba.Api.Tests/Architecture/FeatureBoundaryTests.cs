@@ -36,7 +36,6 @@ public sealed partial class FeatureBoundaryTests
     // Existing violations. The list may only shrink.
     private static readonly string[] KnownSliceViolations =
     [
-        "Neba.Api.Features.Tournaments.ListTournamentsInSeason.ListTournamentsInSeasonQueryHandler -> Neba.Api.Features.Seasons.ListSeasons.SeasonDto"
     ];
 
     [Fact(DisplayName = "Use-case code should not depend on another feature's use-case code")]

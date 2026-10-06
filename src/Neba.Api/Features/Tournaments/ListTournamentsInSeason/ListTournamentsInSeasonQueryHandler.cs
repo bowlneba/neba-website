@@ -4,7 +4,6 @@ using Neba.Api.Database;
 using Neba.Api.Database.Configurations;
 using Neba.Api.Database.Entities;
 using Neba.Api.Features.Bowlers.Domain;
-using Neba.Api.Features.Seasons.ListSeasons;
 using Neba.Api.Features.Tournaments.Domain;
 using Neba.Api.Messaging;
 using Neba.Api.Storage;
@@ -33,7 +32,7 @@ internal sealed class ListTournamentsInSeasonQueryHandler(
                 DbId = EF.Property<int>(tournament, ShadowIdConfiguration.DefaultPropertyName),
                 tournament.Id,
                 tournament.Name,
-                Season = new SeasonDto
+                Season = new SeasonTournamentSeasonDto
                 {
                     Id = tournament.Season.Id,
                     Description = tournament.Season.Description,
