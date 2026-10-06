@@ -1,5 +1,4 @@
 using Neba.Api.Features.Bowlers.Domain;
-using Neba.Api.Features.Seasons.ListSeasons;
 using Neba.Api.Features.Tournaments.Domain;
 
 namespace Neba.Api.Features.Tournaments.ListTournamentsInSeason;
@@ -22,7 +21,7 @@ public sealed record SeasonTournamentDto
     /// <summary>
     /// Season this tournament belongs to.
     /// </summary>
-    public required SeasonDto Season { get; init; }
+    public required SeasonTournamentSeasonDto Season { get; init; }
 
     /// <summary>
     /// Date the first qualifying squad is held.

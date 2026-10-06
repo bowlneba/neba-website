@@ -35,8 +35,73 @@ jobs:
       - name: Check formatting
         run: dotnet format --verify-no-changes --no-restore
 
+  npm-audit:
+    name: npm Audit
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+      pull-requests: write
+    env:
+      HUSKY: 0
+
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Setup Node
+        uses: actions/setup-node@v7
+        with:
+          node-version: "24"
+
+      - name: Install dependencies
+        run: npm ci --ignore-scripts
+
+      - name: Audit npm dependencies
+        id: audit
+        continue-on-error: true
+        run: |
+          set -o pipefail
+          npx --no-install better-npm-audit audit --level high 2>&1 | tee /tmp/npm-audit.txt
+
+      - name: Comment audit result on PR
+        if: github.event_name == 'pull_request'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          REPO: ${{ github.repository }}
+          AUDIT_OUTCOME: ${{ steps.audit.outcome }}
+        run: |
+          if [ "$AUDIT_OUTCOME" = "success" ]; then
+            REPORT="No high or critical npm vulnerabilities."
+          else
+            DETAILS=$(sed 's/\x1b\[[0-9;]*m//g' /tmp/npm-audit.txt | tail -c 55000)
+            REPORT="High or critical npm vulnerabilities found. The build did not start.
+
+          \`\`\`
+          ${DETAILS}
+          \`\`\`"
+          fi
+
+          BODY="<!-- npm-audit -->
+          ## npm Audit
+
+          ${REPORT}"
+
+          COMMENT_ID=$(gh api "repos/${REPO}/issues/${PR_NUMBER}/comments" \
+            --jq '.[] | select(.body | startswith("<!-- npm-audit -->")) | .id' | head -1)
+
+          if [ -n "$COMMENT_ID" ]; then
+            gh api "repos/${REPO}/issues/comments/${COMMENT_ID}" -X PATCH -f body="$BODY"
+          else
+            gh pr comment "$PR_NUMBER" --repo "$REPO" --body "$BODY"
+          fi
+
+      - name: Fail on audit errors
+        if: steps.audit.outcome == 'failure'
+        run: exit 1
+
   ci:
-    needs: format-check
+    needs: [format-check, npm-audit]
     permissions:
       contents: read
       checks: write
