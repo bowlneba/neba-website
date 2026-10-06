@@ -410,17 +410,7 @@ else
                                     <div class="td-rail-price">
                                         @if (_model.HasAddedMoney)
                                         {
-                                            <span class="td-rail-price__value td-rail-price__value--gold">
-                                                @_model.AddedMoney!.Value.ToString("C0", CurrencyCulture)
-                                            </span>
-                                            <span class="td-rail-price__label">Added money</span>
-                                            <TournamentAddedMoneyBreakdown Lines="@_model.AddedMoneyBreakdown" />
-                                            @if (_model.EntryFee.HasValue)
-                                            {
-                                                <span class="td-rail-price__secondary">
-                                                    @_model.EntryFee.Value.ToString("C0", CurrencyCulture) entry fee
-                                                </span>
-                                            }
+                                            @AddedMoneyPrice(true)
                                         }
                                         else
                                         {
@@ -439,11 +429,7 @@ else
                         {
                             <div class="neba-card td-rail-card">
                                 <div class="td-rail-price">
-                                    <span class="td-rail-price__value td-rail-price__value--gold">
-                                        @_model.AddedMoney!.Value.ToString("C0", CurrencyCulture)
-                                    </span>
-                                    <span class="td-rail-price__label">Added money</span>
-                                    <TournamentAddedMoneyBreakdown Lines="@_model.AddedMoneyBreakdown" />
+                                    @AddedMoneyPrice(false)
                                 </div>
                             </div>
                         }
@@ -711,6 +697,20 @@ else
         _model is null ? string.Empty : string.Join(" / ", _model.Winners);
 
     private TournamentDetailViewModel Model => _model!;
+
+    private RenderFragment<bool> AddedMoneyPrice => includeEntryFee => @<text>
+        <span class="td-rail-price__value td-rail-price__value--gold">
+            @_model!.AddedMoney!.Value.ToString("C0", CurrencyCulture)
+        </span>
+        <span class="td-rail-price__label">Added money</span>
+        <TournamentAddedMoneyBreakdown Lines="@_model.AddedMoneyBreakdown" />
+        @if (includeEntryFee && _model.EntryFee.HasValue)
+        {
+            <span class="td-rail-price__secondary">
+                @_model.EntryFee.Value.ToString("C0", CurrencyCulture) entry fee
+            </span>
+        }
+    </text>;
 
     private static string GetPatternClass(int length)
     {
