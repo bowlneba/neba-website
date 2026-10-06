@@ -511,6 +511,89 @@ const MOCK_TOURNAMENT_TRUNCATE_ACTIONS = {
   name: 'NEBA Truncate Actions Classic',
 };
 
+// Added money breakdown fixtures. Separate from MOCK_TOURNAMENT_DETAIL so its fixed sponsor list
+// stays valid for the other tournament-detail tests.
+export const MOCK_TOURNAMENT_ADDED_MONEY_UPCOMING_ID = '01JX0000000000000000000060';
+export const MOCK_TOURNAMENT_ADDED_MONEY_PAST_ID = '01JX0000000000000000000061';
+
+const MOCK_TOURNAMENT_ADDED_MONEY_UPCOMING = {
+  ...MOCK_TOURNAMENT_SPONSOR_MGMT,
+  id: MOCK_TOURNAMENT_ADDED_MONEY_UPCOMING_ID,
+  name: 'NEBA Added Money Upcoming Open',
+  startDate: '2099-01-15',
+  endDate: '2099-01-15',
+  status: 'Scheduled',
+  addedMoney: 1550,
+  nebaAddedMoney: 300,
+  sponsors: [
+    {
+      sponsorId: '01JX0000000000000000000201',
+      name: 'Pro Shop Plus',
+      slug: 'pro-shop-plus',
+      logoUrl: null,
+      websiteUrl: null,
+      tagPhrase: null,
+      titleSponsor: false,
+      sponsorshipAmount: 1000,
+    },
+    {
+      sponsorId: '01JX0000000000000000000202',
+      name: 'Greater Boston Area Bowling Proprietors Association & Friends of NEBA',
+      slug: 'greater-boston-proprietors',
+      logoUrl: null,
+      websiteUrl: null,
+      tagPhrase: null,
+      titleSponsor: false,
+      sponsorshipAmount: 250,
+    },
+  ],
+  results: [],
+};
+
+const MOCK_TOURNAMENT_ADDED_MONEY_PAST = {
+  ...MOCK_TOURNAMENT_SPONSOR_MGMT,
+  id: MOCK_TOURNAMENT_ADDED_MONEY_PAST_ID,
+  name: 'NEBA Added Money Past Open',
+  startDate: '2024-03-02',
+  endDate: '2024-03-02',
+  status: 'Completed',
+  addedMoney: 1500,
+  nebaAddedMoney: 100,
+  sponsors: [
+    {
+      sponsorId: '01JX0000000000000000000211',
+      name: 'Presenting Co',
+      slug: 'presenting-co',
+      logoUrl: null,
+      websiteUrl: null,
+      tagPhrase: null,
+      titleSponsor: true,
+      sponsorshipAmount: 0,
+    },
+    {
+      sponsorId: '01JX0000000000000000000212',
+      name: 'Zenith Lanes',
+      slug: 'zenith-lanes',
+      logoUrl: null,
+      websiteUrl: null,
+      tagPhrase: null,
+      titleSponsor: false,
+      sponsorshipAmount: 700,
+    },
+    {
+      sponsorId: '01JX0000000000000000000213',
+      name: 'Regional Lanes',
+      slug: 'regional-lanes',
+      logoUrl: null,
+      websiteUrl: null,
+      tagPhrase: null,
+      titleSponsor: false,
+      sponsorshipAmount: 700,
+    },
+  ],
+  results: [],
+};
+
 const EXTRA_TOURNAMENT_DETAILS = new Map<string, object>([
   [MOCK_TOURNAMENT_OIL_REVEAL_PENDING_ID, MOCK_TOURNAMENT_OIL_REVEAL_PENDING],
   [MOCK_TOURNAMENT_OIL_REVEALED_ID, MOCK_TOURNAMENT_OIL_REVEALED],
@@ -518,6 +601,8 @@ const EXTRA_TOURNAMENT_DETAILS = new Map<string, object>([
   [MOCK_TOURNAMENT_SPONSOR_MGMT_ID, MOCK_TOURNAMENT_SPONSOR_MGMT],
   [MOCK_TOURNAMENT_STATUS_ACTIONS_ID, MOCK_TOURNAMENT_STATUS_ACTIONS],
   [MOCK_TOURNAMENT_TRUNCATE_ACTIONS_ID, MOCK_TOURNAMENT_TRUNCATE_ACTIONS],
+  [MOCK_TOURNAMENT_ADDED_MONEY_UPCOMING_ID, MOCK_TOURNAMENT_ADDED_MONEY_UPCOMING],
+  [MOCK_TOURNAMENT_ADDED_MONEY_PAST_ID, MOCK_TOURNAMENT_ADDED_MONEY_PAST],
 ]);
 
 type SeasonVariants = {

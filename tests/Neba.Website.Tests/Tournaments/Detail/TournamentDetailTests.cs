@@ -319,6 +319,120 @@ status: TournamentStatus.Truncated, titleEligible: false, winners: ["Alex Exampl
         cut.Markup.ShouldNotContain("Register");
     }
 
+    // ── Added money breakdown ────────────────────────────────────────────────
+
+    [Fact(DisplayName = "Should render the added money breakdown in the rail for an upcoming tournament")]
+    public void Render_ShouldRenderBreakdownInRail_ForUpcomingTournament()
+    {
+        // Arrange
+        var futureDate = DateOnly.FromDateTime(DateTime.Today.AddDays(30));
+        SetupSuccessResponse(TournamentDetailResponseFactory.Create(
+            startDate: futureDate,
+            endDate: futureDate,
+            addedMoney: 2500m,
+            nebaAddedMoney: 100m,
+            sponsors:
+            [
+                TournamentDetailSponsorResponseFactory.Create(name: "Sponsor B", sponsorshipAmount: 700m),
+                TournamentDetailSponsorResponseFactory.Create(name: "Sponsor A", sponsorshipAmount: 1000m),
+                TournamentDetailSponsorResponseFactory.Create(name: "Sponsor C", sponsorshipAmount: 700m)
+            ]));
+
+        // Act
+        var cut = _ctx.Render<TournamentDetail>(p => p.Add(x => x.Id, TournamentDetailResponseFactory.ValidId));
+
+        // Assert
+        var lines = cut.FindAll(".td-rail-card .tamb__line").Select(l => l.TextContent.Trim()).ToArray();
+        lines.Length.ShouldBe(4);
+        lines[0].ShouldContain("Sponsor A");
+        lines[0].ShouldContain("$1,000");
+        lines[1].ShouldContain("Sponsor B");
+        lines[2].ShouldContain("Sponsor C");
+        lines[3].ShouldContain("NEBA");
+        lines[3].ShouldContain("$100");
+    }
+
+    [Fact(DisplayName = "Should render an added money rail card with the breakdown for a past tournament")]
+    public void Render_ShouldRenderBreakdownCard_ForPastTournament()
+    {
+        // Arrange
+        var pastDate = DateOnly.FromDateTime(DateTime.Today.AddDays(-30));
+        SetupSuccessResponse(TournamentDetailResponseFactory.Create(
+            startDate: pastDate,
+            endDate: pastDate,
+            addedMoney: 1000m,
+            sponsors:
+            [
+                TournamentDetailSponsorResponseFactory.Create(name: "Presenting Co", titleSponsor: true, sponsorshipAmount: 0m),
+                TournamentDetailSponsorResponseFactory.Create(name: "Sponsor A", sponsorshipAmount: 1000m)
+            ]));
+
+        // Act
+        var cut = _ctx.Render<TournamentDetail>(p => p.Add(x => x.Id, TournamentDetailResponseFactory.ValidId));
+
+        // Assert
+        cut.FindAll(".td-rail-card").Count.ShouldBe(1);
+        var lines = cut.FindAll(".td-rail-card .tamb__line");
+        lines.Count.ShouldBe(1);
+        lines[0].TextContent.ShouldContain("Sponsor A");
+        cut.FindAll(".td-rail-card .tamb").ShouldNotBeEmpty();
+        cut.Find(".td-rail-card").TextContent.ShouldNotContain("Presenting Co");
+        cut.Markup.ShouldContain("Presented by");
+    }
+
+    [Fact(DisplayName = "Should render no breakdown when the tournament has no added money")]
+    public void Render_ShouldRenderNoBreakdown_WhenNoAddedMoney()
+    {
+        // Arrange
+        var futureDate = DateOnly.FromDateTime(DateTime.Today.AddDays(30));
+        SetupSuccessResponse(TournamentDetailResponseFactory.Create(startDate: futureDate, endDate: futureDate));
+
+        // Act
+        var cut = _ctx.Render<TournamentDetail>(p => p.Add(x => x.Id, TournamentDetailResponseFactory.ValidId));
+
+        // Assert
+        cut.FindAll(".tamb").ShouldBeEmpty();
+        cut.Markup.ShouldNotContain("Added money");
+    }
+
+    [Fact(DisplayName = "Should render the total only when no sponsor or NEBA money is attributed")]
+    public void Render_ShouldRenderTotalOnly_WhenNoLinesAttributed()
+    {
+        // Arrange
+        var futureDate = DateOnly.FromDateTime(DateTime.Today.AddDays(30));
+        SetupSuccessResponse(TournamentDetailResponseFactory.Create(
+            startDate: futureDate,
+            endDate: futureDate,
+            addedMoney: 1000m));
+
+        // Act
+        var cut = _ctx.Render<TournamentDetail>(p => p.Add(x => x.Id, TournamentDetailResponseFactory.ValidId));
+
+        // Assert
+        cut.Markup.ShouldContain("$1,000");
+        cut.FindAll(".tamb").ShouldBeEmpty();
+    }
+
+    [Fact(DisplayName = "Should not render the old sponsor money and NEBA added money sub-lines in the hero")]
+    public void Render_ShouldNotRenderOldSubLines_InHero()
+    {
+        // Arrange
+        var futureDate = DateOnly.FromDateTime(DateTime.Today.AddDays(30));
+        SetupSuccessResponse(TournamentDetailResponseFactory.Create(
+            startDate: futureDate,
+            endDate: futureDate,
+            addedMoney: 1300m,
+            nebaAddedMoney: 300m,
+            sponsors: [TournamentDetailSponsorResponseFactory.Create(sponsorshipAmount: 1000m)]));
+
+        // Act
+        var cut = _ctx.Render<TournamentDetail>(p => p.Add(x => x.Id, TournamentDetailResponseFactory.ValidId));
+
+        // Assert
+        cut.Markup.ShouldNotContain("sponsor money");
+        cut.Markup.ShouldNotContain("NEBA added money");
+    }
+
     // ── Entry count ──────────────────────────────────────────────────────────
 
     [Fact(DisplayName = "Should render entry count when present")]

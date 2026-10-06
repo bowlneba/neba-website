@@ -7,24 +7,124 @@ namespace Neba.Website.Tests.Tournaments.Detail;
 [Component("Website.Tournaments.Detail.TournamentDetailViewModel")]
 public sealed class TournamentDetailViewModelTests
 {
-    [Fact(DisplayName = "Should report multiple money sources only when sponsor money and NEBA added money are both positive")]
-    public void HasMultipleMoneySources_ShouldRequireBothSponsorAndNebaMoney_WhenEvaluated()
+    [Fact(DisplayName = "Should order breakdown sponsors by amount descending")]
+    public void AddedMoneyBreakdown_ShouldOrderByAmountDescending_WhenAmountsDiffer()
     {
         // Arrange
-        var both = TournamentDetailViewModelFactory.Create() with
-        {
-            SponsorMoney = 1000m,
-            NebaAddedMoney = 500m,
-        };
-        var sponsorOnly = both with { NebaAddedMoney = 0m };
-        var nebaOnly = both with { SponsorMoney = 0m };
-        var neither = both with { SponsorMoney = 0m, NebaAddedMoney = 0m };
+        var model = TournamentDetailViewModelFactory.Create(sponsors:
+        [
+            TournamentDetailSponsorViewModelFactory.Create(name: "B", sponsorshipAmount: 700m),
+            TournamentDetailSponsorViewModelFactory.Create(name: "A", sponsorshipAmount: 1000m)
+        ]);
+
+        // Act
+        var lines = model.AddedMoneyBreakdown;
 
         // Assert
-        both.HasMultipleMoneySources.ShouldBeTrue();
-        sponsorOnly.HasMultipleMoneySources.ShouldBeFalse();
-        nebaOnly.HasMultipleMoneySources.ShouldBeFalse();
-        neither.HasMultipleMoneySources.ShouldBeFalse();
+        lines.Select(l => l.Name).ShouldBe(["A", "B"]);
+    }
+
+    [Fact(DisplayName = "Should order breakdown sponsors with equal amounts alphabetically")]
+    public void AddedMoneyBreakdown_ShouldOrderEqualAmountsAlphabetically_WhenAmountsTie()
+    {
+        // Arrange
+        var model = TournamentDetailViewModelFactory.Create(sponsors:
+        [
+            TournamentDetailSponsorViewModelFactory.Create(name: "Zed", sponsorshipAmount: 700m),
+            TournamentDetailSponsorViewModelFactory.Create(name: "alpha", sponsorshipAmount: 700m),
+            TournamentDetailSponsorViewModelFactory.Create(name: "Mid", sponsorshipAmount: 700m)
+        ]);
+
+        // Act
+        var lines = model.AddedMoneyBreakdown;
+
+        // Assert
+        lines.Select(l => l.Name).ShouldBe(["alpha", "Mid", "Zed"]);
+    }
+
+    [Fact(DisplayName = "Should leave a sponsor with a zero amount out of the breakdown")]
+    public void AddedMoneyBreakdown_ShouldExcludeSponsor_WhenAmountIsZero()
+    {
+        // Arrange
+        var model = TournamentDetailViewModelFactory.Create(sponsors:
+        [
+            TournamentDetailSponsorViewModelFactory.Create(name: "Presenting", sponsorshipAmount: 0m),
+            TournamentDetailSponsorViewModelFactory.Create(name: "Sponsor A", sponsorshipAmount: 1000m)
+        ]);
+
+        // Act
+        var lines = model.AddedMoneyBreakdown;
+
+        // Assert
+        lines.Select(l => l.Name).ShouldBe(["Sponsor A"]);
+    }
+
+    [Fact(DisplayName = "Should list NEBA last even when it contributed the most")]
+    public void AddedMoneyBreakdown_ShouldListNebaLast_WhenNebaContributedTheMost()
+    {
+        // Arrange
+        var model = TournamentDetailViewModelFactory.Create(sponsors:
+        [
+            TournamentDetailSponsorViewModelFactory.Create(name: "A", sponsorshipAmount: 1000m)
+        ], nebaAddedMoney: 1700m);
+
+        // Act
+        var lines = model.AddedMoneyBreakdown;
+
+        // Assert
+        lines.Select(l => l.Name).ShouldBe(["A", "NEBA"]);
+        lines[^1].IsNeba.ShouldBeTrue();
+        lines[^1].Amount.ShouldBe(1700m);
+    }
+
+    [Fact(DisplayName = "Should omit NEBA when its added money is zero")]
+    public void AddedMoneyBreakdown_ShouldOmitNeba_WhenNebaAddedMoneyIsZero()
+    {
+        // Arrange
+        var model = TournamentDetailViewModelFactory.Create(sponsors:
+        [
+            TournamentDetailSponsorViewModelFactory.Create(name: "A", sponsorshipAmount: 1000m)
+        ], nebaAddedMoney: 0m);
+
+        // Act
+        var lines = model.AddedMoneyBreakdown;
+
+        // Assert
+        lines.ShouldNotContain(l => l.IsNeba);
+    }
+
+    [Fact(DisplayName = "Should return an empty breakdown when no sponsor or NEBA money is attributed")]
+    public void AddedMoneyBreakdown_ShouldBeEmpty_WhenNoMoneyIsAttributed()
+    {
+        // Arrange
+        var model = TournamentDetailViewModelFactory.Create(sponsors:
+        [
+
+        ], nebaAddedMoney: 0m, addedMoney: 1000m);
+
+        // Act
+        var lines = model.AddedMoneyBreakdown;
+
+        // Assert
+        lines.ShouldBeEmpty();
+    }
+
+    [Fact(DisplayName = "Should have breakdown lines that sum to the added money total")]
+    public void AddedMoneyBreakdown_ShouldSumToAddedMoney_WhenAllContributionsAreListed()
+    {
+        // Arrange
+        var model = TournamentDetailViewModelFactory.Create(sponsors:
+        [
+            TournamentDetailSponsorViewModelFactory.Create(name: "A", sponsorshipAmount: 1000m),
+            TournamentDetailSponsorViewModelFactory.Create(name: "B", sponsorshipAmount: 700m),
+            TournamentDetailSponsorViewModelFactory.Create(name: "C", sponsorshipAmount: 700m)
+        ], nebaAddedMoney: 100m, addedMoney: 2500m);
+
+        // Act
+        var lines = model.AddedMoneyBreakdown;
+
+        // Assert
+        lines.Sum(l => l.Amount).ShouldBe(2500m);
     }
 
     [Fact(DisplayName = "Should show the champion badge only when winners exist and the tournament is title eligible")]

@@ -180,21 +180,15 @@
 /* ── Hero: stat strip ─────────────────────────────────────────────────────── */
 
 .td-hero__stats {
-    display: flex;
-    gap: 0;
-    flex-wrap: wrap;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 1.25rem 2rem;
 }
 
 .td-hero__stat {
     display: flex;
     flex-direction: column;
     gap: 0.125rem;
-    padding-right: 2rem;
-}
-
-.td-hero__stat + .td-hero__stat {
-    border-left: 1px solid rgba(255, 255, 255, 0.18);
-    padding-left: 2rem;
 }
 
 .td-hero__stat-label {
@@ -636,21 +630,6 @@
 
     .td-body__rail {
         position: static;
-    }
-
-    .td-hero__stats {
-        display: grid;
-        grid-template-columns: 1fr 1fr;
-        gap: 1.25rem;
-    }
-
-    .td-hero__stat + .td-hero__stat {
-        border-left: none;
-        padding-left: 0;
-    }
-
-    .td-hero__stat {
-        padding-right: 0;
     }
 }
 

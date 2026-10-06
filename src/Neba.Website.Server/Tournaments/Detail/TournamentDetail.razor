@@ -167,39 +167,23 @@ else
                                     <span class="td-hero__stat-value td-hero__stat-value--tba">To be announced</span>
                                 }
                             </div>
-                            @if (_model.EntryFee.HasValue || _model.HasAddedMoney)
+                            @if (_model.HasAddedMoney)
                             {
                                 <div class="td-hero__stat">
-                                    @if (_model.HasAddedMoney)
-                                    {
-                                        <span class="td-hero__stat-label">Added money</span>
-                                        <span class="td-hero__stat-value td-hero__stat-value--gold">
-                                            @_model.AddedMoney!.Value.ToString("C0", CurrencyCulture)
-                                        </span>
-                                        @if (_model.HasMultipleMoneySources)
-                                        {
-                                            <span class="td-hero__stat-sub">
-                                                @_model.SponsorMoney!.Value.ToString("C0", CurrencyCulture) sponsor money
-                                            </span>
-                                            <span class="td-hero__stat-sub">
-                                                @_model.NebaAddedMoney.ToString("C0", CurrencyCulture) NEBA added money
-                                            </span>
-                                        }
-                                        @if (_model.EntryFee.HasValue)
-                                        {
-                                            <span class="td-hero__stat-sub">
-                                                @_model.EntryFee.Value.ToString("C0", CurrencyCulture) entry
-                                            </span>
-                                        }
-                                    }
-                                    else
-                                    {
-                                        <span class="td-hero__stat-label">Entry fee</span>
-                                        <span class="td-hero__stat-value td-hero__stat-value--gold">
-                                            @_model.EntryFee!.Value.ToString("C0", CurrencyCulture)
-                                        </span>
-                                        <span class="td-hero__stat-sub">per bowler</span>
-                                    }
+                                    <span class="td-hero__stat-label">Added money</span>
+                                    <span class="td-hero__stat-value td-hero__stat-value--gold">
+                                        @_model.AddedMoney!.Value.ToString("C0", CurrencyCulture)
+                                    </span>
+                                </div>
+                            }
+                            @if (_model.EntryFee.HasValue)
+                            {
+                                <div class="td-hero__stat">
+                                    <span class="td-hero__stat-label">Entry fee</span>
+                                    <span class="td-hero__stat-value td-hero__stat-value--gold">
+                                        @_model.EntryFee.Value.ToString("C0", CurrencyCulture)
+                                    </span>
+                                    <span class="td-hero__stat-sub">per bowler</span>
                                 </div>
                             }
                         </div>
@@ -430,15 +414,7 @@ else
                                                 @_model.AddedMoney!.Value.ToString("C0", CurrencyCulture)
                                             </span>
                                             <span class="td-rail-price__label">Added money</span>
-                                            @if (_model.HasMultipleMoneySources)
-                                            {
-                                                <span class="td-rail-price__secondary">
-                                                    @_model.SponsorMoney!.Value.ToString("C0", CurrencyCulture) sponsor money
-                                                </span>
-                                                <span class="td-rail-price__secondary">
-                                                    @_model.NebaAddedMoney.ToString("C0", CurrencyCulture) NEBA added money
-                                                </span>
-                                            }
+                                            <TournamentAddedMoneyBreakdown Lines="@_model.AddedMoneyBreakdown" />
                                             @if (_model.EntryFee.HasValue)
                                             {
                                                 <span class="td-rail-price__secondary">
@@ -456,6 +432,19 @@ else
                                     </div>
                                 }
                                 <TournamentStatusPill Status="@Model.RegistrationStatus" />
+                            </div>
+                        }
+
+                        @if (!_model.IsUpcoming && _model.HasAddedMoney)
+                        {
+                            <div class="neba-card td-rail-card">
+                                <div class="td-rail-price">
+                                    <span class="td-rail-price__value td-rail-price__value--gold">
+                                        @_model.AddedMoney!.Value.ToString("C0", CurrencyCulture)
+                                    </span>
+                                    <span class="td-rail-price__label">Added money</span>
+                                    <TournamentAddedMoneyBreakdown Lines="@_model.AddedMoneyBreakdown" />
+                                </div>
                             </div>
                         }
 
@@ -716,7 +705,7 @@ else
     }
 
     private bool HasRailContent =>
-        _model is not null && (_model.IsUpcoming || _model.HasSponsors || _model.EntryCount.HasValue || _model.HasPayout);
+        _model is not null && (_model.IsUpcoming || _model.HasAddedMoney || _model.HasSponsors || _model.EntryCount.HasValue || _model.HasPayout);
 
     private string WinnersText =>
         _model is null ? string.Empty : string.Join(" / ", _model.Winners);

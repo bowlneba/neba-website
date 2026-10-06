@@ -7,6 +7,8 @@ const MOCK_TOURNAMENT_OIL_REVEAL_MGMT_ID = '01JX0000000000000000000032';
 const MOCK_TOURNAMENT_SPONSOR_MGMT_ID = '01JX0000000000000000000040';
 const MOCK_TOURNAMENT_STATUS_ACTIONS_ID = '01JX0000000000000000000050';
 const MOCK_TOURNAMENT_TRUNCATE_ACTIONS_ID = '01JX0000000000000000000051';
+const MOCK_TOURNAMENT_ADDED_MONEY_UPCOMING_ID = '01JX0000000000000000000060';
+const MOCK_TOURNAMENT_ADDED_MONEY_PAST_ID = '01JX0000000000000000000061';
 
 test.describe('Tournament Detail page', () => {
   test.use({ viewport: { width: 1200, height: 800 } });
@@ -360,5 +362,48 @@ test.describe('Tournament Detail — manage status (authorized)', () => {
     await expect(page.locator('.td-eligibility-note')).toContainText('Does not count toward a title');
     await expect(page.locator('.td-hero__truncate-btn')).toHaveCount(0);
     await expect(page.locator('.td-hero__cancel-btn')).toHaveCount(0);
+  });
+});
+
+test.describe('Tournament Detail — added money breakdown', () => {
+  test.use({ viewport: { width: 1200, height: 800 } });
+
+  test('upcoming tournament lists sponsors by amount with NEBA last', async ({ page }) => {
+    await page.goto(`/tournaments/${MOCK_TOURNAMENT_ADDED_MONEY_UPCOMING_ID}`);
+    await page.waitForSelector('.td-hero');
+
+    await expect(page.locator('.td-rail-price__value')).toHaveText('$1,550');
+    await expect(page.locator('.td-rail-price .tamb__line')).toHaveText([
+      /Pro Shop Plus\s*\$1,000/,
+      /Greater Boston Area Bowling Proprietors Association & Friends of NEBA\s*\$250/,
+      /NEBA\s*\$300/,
+    ]);
+  });
+
+  test('past tournament lists tied sponsors A to Z and leaves out the zero-amount sponsor', async ({ page }) => {
+    await page.goto(`/tournaments/${MOCK_TOURNAMENT_ADDED_MONEY_PAST_ID}`);
+    await page.waitForSelector('.td-hero');
+
+    await expect(page.locator('.td-rail-card .tamb__line')).toHaveText([
+      /Regional Lanes\s*\$700/,
+      /Zenith Lanes\s*\$700/,
+      /NEBA\s*\$100/,
+    ]);
+    await expect(page.locator('.tamb')).not.toContainText('Presenting Co');
+    await expect(page.locator('.td-hero__sponsor')).toContainText('Presenting Co');
+  });
+
+  test.describe('on a phone', () => {
+    test.use({ viewport: { width: 375, height: 800 } });
+
+    test('keeps a long sponsor name inside the page width', async ({ page }) => {
+      await page.goto(`/tournaments/${MOCK_TOURNAMENT_ADDED_MONEY_UPCOMING_ID}`);
+      await page.waitForSelector('.td-hero');
+
+      const overflows = await page.evaluate(
+        () => document.documentElement.scrollWidth > document.documentElement.clientWidth
+      );
+      expect(overflows).toBe(false);
+    });
   });
 });

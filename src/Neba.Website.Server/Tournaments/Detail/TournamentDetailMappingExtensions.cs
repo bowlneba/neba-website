@@ -20,7 +20,6 @@ internal static class TournamentDetailMappingExtensions
             EntryFee = response.EntryFee,
             RegistrationUrl = response.RegistrationUrl,
             AddedMoney = response.AddedMoney,
-            SponsorMoney = response.SponsorMoney,
             NebaAddedMoney = response.NebaAddedMoney,
             EntryCount = response.EntryCount,
             PatternLengthCategory = response.PatternLengthCategory,

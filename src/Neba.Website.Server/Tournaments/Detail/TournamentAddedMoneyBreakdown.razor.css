@@ -1,0 +1,32 @@
+.tamb {
+    list-style: none;
+    margin: 0.625rem 0 0.5rem;
+    padding: 0.625rem 0 0;
+    border-top: 1px solid var(--neba-gray-200);
+    display: grid;
+    gap: 0.25rem;
+}
+
+.tamb__line {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 1rem;
+    font-size: 0.875rem;
+    color: var(--neba-gray-600);
+}
+
+.tamb__line--neba {
+    margin-top: 0.5rem;
+}
+
+.tamb__name {
+    min-width: 0;
+    overflow-wrap: anywhere;
+}
+
+.tamb__amount {
+    color: var(--neba-gray-800);
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+}
