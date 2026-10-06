@@ -16,45 +16,58 @@ public sealed partial class FeatureBoundaryTests
     [GeneratedRegex(@"^Neba\.Api\.Features\.(?<feature>[^.]+)\.Domain(\.|$)")]
     private static partial Regex FeatureDomainNamespace();
 
+    [GeneratedRegex(@"^Neba\.Api\.Features\.(?<feature>[^.]+)(\.(?!Domain(\.|$))|$)")]
+    private static partial Regex FeatureUseCaseNamespace();
+
+    private static string? FeatureOfUseCaseType(IType type)
+    {
+        var match = FeatureUseCaseNamespace().Match(type.Namespace.FullName);
+        return match.Success ? match.Groups["feature"].Value : null;
+    }
+
     private static string? FeatureOfDomainType(IType type)
     {
         var match = FeatureDomainNamespace().Match(type.Namespace.FullName);
         return match.Success ? match.Groups["feature"].Value : null;
     }
 
-    // A strongly-typed ID is a typed foreign key, not a domain dependency (see CLAUDE.md, Feature Boundaries).
-    private static bool IsStronglyTypedId(IType type) => type.Name.EndsWith("Id", StringComparison.Ordinal);
+    // Existing violations. The list may only shrink.
+    private static readonly string[] KnownSliceViolations =
+    [
+        "Neba.Api.Features.Tournaments.ListTournamentsInSeason.ListTournamentsInSeasonQueryHandler -> Neba.Api.Features.Seasons.ListSeasons.SeasonDto",
+        "Neba.Api.Features.Tournaments.ListTournamentsInSeason.SeasonTournamentDto -> Neba.Api.Features.Seasons.ListSeasons.SeasonDto",
+    ];
 
-    [Fact(DisplayName = "Feature domains should not depend on another feature's domain, except strongly-typed IDs")]
-    public void FeatureDomains_ShouldNotDependOnOtherFeatureDomains()
+    [Fact(DisplayName = "Use-case code should not depend on another feature's use-case code")]
+    public void UseCases_ShouldNotDependOnOtherFeaturesUseCases()
     {
         // Arrange
-        var domainTypes = Architecture.Types
-            .Where(t => FeatureOfDomainType(t) is not null)
+        var useCaseTypes = Architecture.Types
+            .Where(t => FeatureOfUseCaseType(t) is not null)
             .ToList();
 
         // Act
-        var violations = domainTypes
+        var violations = useCaseTypes
             .SelectMany(source => source.Dependencies
                 .Select(d => d.Target)
-                .Where(target => FeatureOfDomainType(target) is { } targetFeature
-                    && targetFeature != FeatureOfDomainType(source)
-                    && !IsStronglyTypedId(target))
+                .Where(target => FeatureOfUseCaseType(target) is { } targetFeature
+                    && targetFeature != FeatureOfUseCaseType(source)
+                    && !target.Name.EndsWith("EndpointGroup", StringComparison.Ordinal))
                 .Select(target => $"{source.FullName} -> {target.FullName}"))
             .Distinct()
             .Order()
             .ToList();
 
         // Assert
-        domainTypes.ShouldNotBeEmpty();
+        useCaseTypes.ShouldNotBeEmpty();
 
-        var newViolations = violations.Except(KnownFeatureBoundaryViolations.All).ToList();
+        var newViolations = violations.Except(KnownSliceViolations).ToList();
         newViolations.ShouldBeEmpty(
-            "New cross-feature domain dependencies:" + Environment.NewLine + string.Join(Environment.NewLine, newViolations));
+            "New cross-slice dependencies (each use case defines its own DTO):" + Environment.NewLine + string.Join(Environment.NewLine, newViolations));
 
-        var fixedViolations = KnownFeatureBoundaryViolations.All.Except(violations).Order().ToList();
+        var fixedViolations = KnownSliceViolations.Except(violations).Order().ToList();
         fixedViolations.ShouldBeEmpty(
-            "Fixed dependencies still listed in KnownFeatureBoundaryViolations; remove them:" + Environment.NewLine + string.Join(Environment.NewLine, fixedViolations));
+            "Fixed dependencies still listed in KnownSliceViolations; remove them:" + Environment.NewLine + string.Join(Environment.NewLine, fixedViolations));
     }
 
     [Fact(DisplayName = "Feature domains should not depend on FastEndpoints")]

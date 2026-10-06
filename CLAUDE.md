@@ -25,7 +25,7 @@ Before ending a session where significant discoveries were made, consider whethe
 
 ### Feature Boundaries
 
-- Feature domain folders (`Features/Bowlers/Domain`, `Features/Tournaments/Domain`, etc.) must NOT cross-reference each other's domain objects (aggregates, entities, value objects, domain services). Exception: importing a strongly-typed ID from another feature's domain (e.g., `BowlerId` from `Neba.Api.Features.Bowlers.Domain` in `HallOfFame`) is allowed — it's a typed foreign key, not a domain dependency.
+- This is vertical slice architecture, not strict DDD/clean architecture. A feature's `Domain` folder may reference another feature's domain types (EF navigations, typed IDs); the aggregate boundary is the unit of consistency, not the folder. The boundary that matters is between **use cases**: a use-case folder (endpoint, handler, DTO, validator) must NOT depend on another feature's use-case code. Each use case defines its own DTO. Enforced by `tests/Neba.Api.Tests/Architecture/FeatureBoundaryTests.cs`.
 - Commands return `ErrorOr<T>`, never throw for business rules
 - Queries return DTOs, never domain entities
 - Validators handle structural validation only (no DB lookups, no business rules)
