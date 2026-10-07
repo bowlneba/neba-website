@@ -857,6 +857,7 @@ A bowler gets a Tournament Result based on a paid, non-refunded Registration for
 **In Code**:
 
 - `AddedMoney` on `TournamentDetailDto`/`SeasonTournamentDto` and their downstream responses/view models — computed as `SponsorMoney + NebaAddedMoney` in `GetTournamentQueryHandler`/`ListTournamentsInSeasonQueryHandler`
+- `TournamentDetailViewModel.AddedMoneyBreakdown` — the per-contributor lines shown under the total: sponsors with a positive amount (largest first, ties A to Z), then NEBA last
 
 ---
 
@@ -866,7 +867,7 @@ A bowler gets a Tournament Result based on a paid, non-refunded Registration for
 
 **In Code**:
 
-- Computed as `tournament.Sponsors.Sum(ts => ts.SponsorshipAmount)`; surfaced as `SponsorMoney` on the same DTO/response/view-model chain as Added Money
+- Computed as `tournament.Sponsors.Sum(ts => ts.SponsorshipAmount)`; surfaced as `SponsorMoney` on the DTO and response (the detail view model lists each sponsor's amount through `AddedMoneyBreakdown` instead)
 
 ---
 

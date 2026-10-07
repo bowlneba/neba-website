@@ -88,11 +88,6 @@ public sealed record TournamentDetailViewModel
     public decimal? AddedMoney { get; init; }
 
     /// <summary>
-    /// Sponsor-contributed portion of added money in USD; null if none.
-    /// </summary>
-    public decimal? SponsorMoney { get; init; }
-
-    /// <summary>
     /// Amount NEBA itself contributed to the prize fund in USD, independent of sponsors.
     /// </summary>
     public decimal NebaAddedMoney { get; init; }
@@ -203,10 +198,28 @@ public sealed record TournamentDetailViewModel
     public bool HasAddedMoney => AddedMoney is > 0;
 
     /// <summary>
-    /// True when added money comes from more than one source (sponsors and NEBA), so a
-    /// sponsor money / NEBA added money breakdown is worth showing beneath the total.
+    /// Contributor lines for the added money breakdown: sponsors with a positive amount, largest first
+    /// (ties A to Z), then NEBA's own contribution last. Empty when no one is attributed.
     /// </summary>
-    public bool HasMultipleMoneySources => SponsorMoney is > 0 && NebaAddedMoney > 0;
+    public IReadOnlyList<AddedMoneyLineViewModel> AddedMoneyBreakdown
+    {
+        get
+        {
+            var lines = Sponsors
+                .Where(sponsor => sponsor.SponsorshipAmount > 0)
+                .OrderByDescending(sponsor => sponsor.SponsorshipAmount)
+                .ThenBy(sponsor => sponsor.Name, StringComparer.OrdinalIgnoreCase)
+                .Select(sponsor => new AddedMoneyLineViewModel { Name = sponsor.Name, Amount = sponsor.SponsorshipAmount })
+                .ToList();
+
+            if (NebaAddedMoney > 0)
+            {
+                lines.Add(new AddedMoneyLineViewModel { Name = "NEBA", Amount = NebaAddedMoney, IsNeba = true });
+            }
+
+            return lines;
+        }
+    }
 
     /// <summary>
     /// Sum of all prize money across results.
