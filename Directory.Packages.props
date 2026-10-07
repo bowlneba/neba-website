@@ -21,7 +21,7 @@
     <PackageVersion Include="AspNetCore.HealthChecks.Hangfire" Version="9.0.0" />
     <PackageVersion Include="AspNetCore.HealthChecks.SqlServer" Version="9.0.0" />
     <PackageVersion Include="Aspire.Hosting.PostgreSQL" Version="13.6.1" />
-    <PackageVersion Include="Aspire.Hosting.Testing" Version="13.6.0" />
+    <PackageVersion Include="Aspire.Hosting.Testing" Version="13.6.1" />
     <!-- v33 reviewed against Verify.XunitV3's v33 paid-tier precedent: unlike Verify, Audit.NET's
          v33 stayed MIT-licensed with no pricing change. Its one breaking change (EfEntitySettings
          override callbacks gaining a PropertyOverrideContext argument) has no call site in this
@@ -85,7 +85,7 @@
     <!-- Hard-pinned to 2.x: Microsoft.AspNetCore.OpenApi's XmlCommentGenerator emits code against the
          2.x object model (settable IOpenApiMediaType.Example); 3.x made it read-only and breaks the build. -->
     <PackageVersion Include="Microsoft.OpenApi" Version="[2.12.0]" />
-    <PackageVersion Include="Microsoft.Testing.Extensions.CodeCoverage" Version="18.11.2" />
+    <PackageVersion Include="Microsoft.Testing.Extensions.CodeCoverage" Version="18.12.0" />
     <PackageVersion Include="Microsoft.Testing.Extensions.TrxReport" Version="2.5.0" />
     <PackageVersion Include="Microsoft.VisualStudio.Threading.Analyzers" Version="18.7.23" />
     <PackageVersion Include="Moq" Version="4.21.0" />
