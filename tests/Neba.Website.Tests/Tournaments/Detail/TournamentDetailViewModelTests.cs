@@ -63,10 +63,12 @@ public sealed class TournamentDetailViewModelTests
     public void AddedMoneyBreakdown_ShouldListNebaLast_WhenNebaContributedTheMost()
     {
         // Arrange
-        var model = TournamentDetailViewModelFactory.Create(sponsors:
-        [
-            TournamentDetailSponsorViewModelFactory.Create(name: "A", sponsorshipAmount: 1000m)
-        ], nebaAddedMoney: 1700m);
+        var model = TournamentDetailViewModelFactory.Create(
+            nebaAddedMoney: 1700m,
+            sponsors:
+            [
+                TournamentDetailSponsorViewModelFactory.Create(name: "A", sponsorshipAmount: 1000m)
+            ]);
 
         // Act
         var lines = model.AddedMoneyBreakdown;
@@ -81,10 +83,12 @@ public sealed class TournamentDetailViewModelTests
     public void AddedMoneyBreakdown_ShouldOmitNeba_WhenNebaAddedMoneyIsZero()
     {
         // Arrange
-        var model = TournamentDetailViewModelFactory.Create(sponsors:
-        [
-            TournamentDetailSponsorViewModelFactory.Create(name: "A", sponsorshipAmount: 1000m)
-        ], nebaAddedMoney: 0m);
+        var model = TournamentDetailViewModelFactory.Create(
+            nebaAddedMoney: 0m,
+            sponsors:
+            [
+                TournamentDetailSponsorViewModelFactory.Create(name: "A", sponsorshipAmount: 1000m)
+            ]);
 
         // Act
         var lines = model.AddedMoneyBreakdown;
@@ -97,10 +101,10 @@ public sealed class TournamentDetailViewModelTests
     public void AddedMoneyBreakdown_ShouldBeEmpty_WhenNoMoneyIsAttributed()
     {
         // Arrange
-        var model = TournamentDetailViewModelFactory.Create(sponsors:
-        [
-
-        ], nebaAddedMoney: 0m, addedMoney: 1000m);
+        var model = TournamentDetailViewModelFactory.Create(
+            addedMoney: 1000m,
+            nebaAddedMoney: 0m,
+            sponsors: []);
 
         // Act
         var lines = model.AddedMoneyBreakdown;
@@ -113,12 +117,15 @@ public sealed class TournamentDetailViewModelTests
     public void AddedMoneyBreakdown_ShouldSumToAddedMoney_WhenAllContributionsAreListed()
     {
         // Arrange
-        var model = TournamentDetailViewModelFactory.Create(sponsors:
-        [
-            TournamentDetailSponsorViewModelFactory.Create(name: "A", sponsorshipAmount: 1000m),
-            TournamentDetailSponsorViewModelFactory.Create(name: "B", sponsorshipAmount: 700m),
-            TournamentDetailSponsorViewModelFactory.Create(name: "C", sponsorshipAmount: 700m)
-        ], nebaAddedMoney: 100m, addedMoney: 2500m);
+        var model = TournamentDetailViewModelFactory.Create(
+            addedMoney: 2500m,
+            nebaAddedMoney: 100m,
+            sponsors:
+            [
+                TournamentDetailSponsorViewModelFactory.Create(name: "A", sponsorshipAmount: 1000m),
+                TournamentDetailSponsorViewModelFactory.Create(name: "B", sponsorshipAmount: 700m),
+                TournamentDetailSponsorViewModelFactory.Create(name: "C", sponsorshipAmount: 700m)
+            ]);
 
         // Act
         var lines = model.AddedMoneyBreakdown;
