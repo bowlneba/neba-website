@@ -20,6 +20,7 @@ Use **`Humanizer.Core`** in `Neba.Website.Server` only.
 - `Neba.Api`, `Neba.Api.Contracts`, and `Neba.Website.Client` do not reference it. The API keeps returning raw numbers and counts.
 - Use it for **ordinals** (`Ordinalize`) and **count-aware plurals** (`ToQuantity`).
 - Pass `DisplayCulture.English` where an overload takes a culture. Analyzer CA1304 requires it, and it keeps output independent of server locale. The `ShowQuantityAs` overload of `ToQuantity` takes no culture and uses the current UI culture.
+- Use `ToOrdinal()` (`OrdinalExtensions`) for integer ordinals in `.razor` files; it wraps `Ordinalize(DisplayCulture.English)`.
 - Keep formatting in view models when a value is reused (`FormattedPlace`, `UrgencyLabel`). Inline the call in a `.razor` file for one-off labels.
 
 ### Where we do not use it
