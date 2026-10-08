@@ -247,6 +247,7 @@
     color: #9ca3af;
     font-size: 0.8125rem;
     width: 3rem;
+    white-space: nowrap;
 }
 
 .rank-cell-accent-blue-500 { color: var(--neba-blue-500, #3b82f6); font-size: 1rem; font-weight: 700; }

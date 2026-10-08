@@ -1,6 +1,5 @@
 using System.Globalization;
 
-using Humanizer;
 
 namespace Neba.Website.Server.Tournaments.Detail;
 
@@ -46,7 +45,7 @@ public sealed record TournamentResultViewModel
     /// </summary>
     public string FormattedPlace =>
         Place.HasValue
-            ? Place.Value.Ordinalize(DisplayCulture.English)
+            ? Place.Value.ToOrdinal()
             : "—";
 
     /// <summary>

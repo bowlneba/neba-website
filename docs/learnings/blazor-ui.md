@@ -118,4 +118,4 @@ Every routable page must have a `<PageTitle>` component. Sub-components (cards, 
 
 ### Display text: ordinals and plurals (Humanizer)
 
-See [ADR-0010](../adr/0010-humanizer-for-ui-display-formatting.md). Use `Ordinalize(DisplayCulture.English)` for places and ranks, and `ToQuantity` for counts, instead of hand-written ternaries. `ToQuantity(n, ShowQuantityAs.None)` returns only the noun, for markup where the number sits in its own element. Do not use Humanizer for dates or currency. CA1304 fails the build on culture-less calls.
+See [ADR-0010](../adr/0010-humanizer-for-ui-display-formatting.md). Use `ToOrdinal()` (wraps `Ordinalize(DisplayCulture.English)`) for places and ranks, and `ToQuantity` for counts, instead of hand-written ternaries. `ToQuantity(n, ShowQuantityAs.None)` returns only the noun, for markup where the number sits in its own element. Do not use Humanizer for dates or currency. CA1304 fails the build on culture-less calls.
