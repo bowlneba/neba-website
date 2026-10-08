@@ -29,6 +29,24 @@ public sealed class TournamentUpcomingCardTests : IDisposable
         cut.Markup.ShouldContain("Registration open");
     }
 
+    [Theory(DisplayName = "Should render urgency tag with natural wording for imminent tournaments")]
+    [InlineData(0, "Today")]
+    [InlineData(1, "Tomorrow")]
+    [InlineData(5, "In 5 days")]
+    public void Render_ShouldShowUrgencyTag_WhenStartingWithinThreeWeeks(int days, string expected)
+    {
+        // Arrange
+        var start = DateOnly.FromDateTime(DateTime.Today.AddDays(days));
+        var tournament = SeasonTournamentViewModelFactory.Create(startDate: start, endDate: start);
+
+        // Act
+        var cut = _ctx.Render<TournamentUpcomingCard>(parameters => parameters
+            .Add(p => p.Tournament, tournament));
+
+        // Assert
+        cut.Find(".tournament-upcoming-card__urgency-tag").TextContent.Trim().ShouldBe(expected);
+    }
+
     [Fact(DisplayName = "Should show registration later and sponsor fallback when registration and sponsor are missing")]
     public void Render_ShouldShowFallbackCopy_WhenOptionalDataMissing()
     {

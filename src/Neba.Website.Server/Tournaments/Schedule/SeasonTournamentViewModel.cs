@@ -1,3 +1,5 @@
+using Humanizer;
+
 namespace Neba.Website.Server.Tournaments.Schedule;
 
 /// <summary>
@@ -220,6 +222,26 @@ public sealed record SeasonTournamentViewModel
     /// </summary>
     public bool IsUrgent =>
         (StartDate.ToDateTime(TimeOnly.MinValue) - DateTime.Today).Days is >= 0 and <= 21;
+
+    /// <summary>
+    /// Short countdown text for the urgency tag: "Today", "Tomorrow", or "In 5 days".
+    /// </summary>
+    public string UrgencyLabel => DaysUntilStart switch
+    {
+        0 => "Today",
+        1 => "Tomorrow",
+        _ => "In " + "day".ToQuantity(DaysUntilStart, formatProvider: DisplayCulture.English),
+    };
+
+    /// <summary>
+    /// Screen reader text for the urgency tag: "Starts today", "Starts tomorrow", or "Starts in 5 days".
+    /// </summary>
+    public string UrgencyAriaLabel => DaysUntilStart switch
+    {
+        0 => "Starts today",
+        1 => "Starts tomorrow",
+        _ => "Starts in " + "day".ToQuantity(DaysUntilStart, formatProvider: DisplayCulture.English),
+    };
 
     /// <summary>
     /// Combined center name and city for display; null when host is unknown.
