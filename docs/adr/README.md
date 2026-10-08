@@ -70,6 +70,7 @@ ADRs are numbered sequentially:
 - [ADR-0007](0007-in-repo-user-help-documentation.md): In-Repo User Help Documentation
 - [ADR-0008](0008-policy-documentation-structure.md): Policy Documentation Structure
 - [ADR-0009](0009-reference-data-feature-area.md): Reference Data as a Dedicated Feature Area
+- [ADR-0010](0010-humanizer-for-ui-display-formatting.md): Humanizer for UI Display Formatting
 
 ## Resources
 
