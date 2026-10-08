@@ -1,5 +1,7 @@
 using System.Globalization;
 
+using Humanizer;
+
 namespace Neba.Website.Server.Tournaments.Detail;
 
 /// <summary>
@@ -40,11 +42,11 @@ public sealed record TournamentResultViewModel
     public string? SideCutIndicator { get; init; }
 
     /// <summary>
-    /// Place formatted for display; em dash when no place was recorded.
+    /// Place formatted for display; ordinal ("1st"); em dash when no place was recorded.
     /// </summary>
     public string FormattedPlace =>
         Place.HasValue
-            ? Place.Value.ToString(System.Globalization.CultureInfo.InvariantCulture)
+            ? Place.Value.Ordinalize(DisplayCulture.English)
             : "—";
 
     /// <summary>
