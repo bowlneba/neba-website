@@ -181,6 +181,26 @@ name: "Future Open", season: currentYear, startDate: futureDate, endDate: future
         cut.FindAll(".season-timeline__tooltip").ShouldBeEmpty();
     }
 
+    [Theory(DisplayName = "Should pluralize tournament count in timeline aria-label")]
+    [InlineData(1, "1 tournament.")]
+    [InlineData(2, "2 tournaments.")]
+    public void Render_ShouldPluralizeTournamentCount_InTimelineAriaLabel(int count, string expected)
+    {
+        // Arrange
+        var currentYear = DateTime.Today.Year.ToString(System.Globalization.CultureInfo.InvariantCulture);
+        var tournaments = Enumerable.Range(0, count)
+            .Select(_ => SeasonTournamentViewModelFactory.Create(season: currentYear))
+            .ToList();
+
+        // Act
+        var cut = _ctx.Render<SeasonTimeline>(parameters => parameters
+            .Add(p => p.Season, currentYear)
+            .Add(p => p.Tournaments, tournaments));
+
+        // Assert
+        (cut.Find(".season-timeline").GetAttribute("aria-label") ?? string.Empty).ShouldContain(expected);
+    }
+
     [Fact(DisplayName = "Should include tournament name and status in dot aria-label")]
     public void Render_ShouldIncludeNameAndStatusInDotAriaLabel()
     {

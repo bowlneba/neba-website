@@ -10,8 +10,8 @@
             <span class="year-head__chevron"><span class="msym">expand_more</span></span>
             <h2 class="year-head__title font-display">@year.Year</h2>
             <span class="year-head__meta">
-                <span><b>@eventRows.Count</b> events</span>
-                <span><b>@champCount</b> champions</span>
+                <span><b>@eventRows.Count</b> @("event".ToQuantity(eventRows.Count, ShowQuantityAs.None))</span>
+                <span><b>@champCount</b> @("champion".ToQuantity(champCount, ShowQuantityAs.None))</span>
             </span>
         </div>
         <div class="year-body">

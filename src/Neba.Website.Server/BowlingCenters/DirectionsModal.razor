@@ -147,7 +147,7 @@
                             class="w-full flex items-center justify-between p-3 bg-[var(--neba-gray-100)] hover:bg-[var(--neba-gray-200)] rounded-md transition-colors"
                             @onclick="@(() => _showDirections = !_showDirections)">
                             <span class="font-semibold text-[var(--neba-gray-700)]">
-                                Turn-by-turn directions (@State.Route.Instructions.Count steps)
+                                Turn-by-turn directions (@("step".ToQuantity(State.Route.Instructions.Count, formatProvider: DisplayCulture.English)))
                             </span>
                             <svg class="w-5 h-5 text-[var(--neba-gray-700)] transition-transform @(_showDirections ? "rotate-180" : "")"
                                  fill="none" stroke="currentColor" viewBox="0 0 24 24">
