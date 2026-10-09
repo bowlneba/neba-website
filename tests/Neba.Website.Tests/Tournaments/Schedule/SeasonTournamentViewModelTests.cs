@@ -193,6 +193,26 @@ public sealed class SeasonTournamentViewModelTests
         yesterday.IsUrgent.ShouldBeFalse();
     }
 
+    [Theory(DisplayName = "Should word the urgency countdown for singular and plural days")]
+    [InlineData(0, "Today", "Starts today")]
+    [InlineData(1, "Tomorrow", "Starts tomorrow")]
+    [InlineData(2, "In 2 days", "Starts in 2 days")]
+    [InlineData(21, "In 21 days", "Starts in 21 days")]
+    public void UrgencyLabels_ShouldReadNaturally_ForDaysUntilStart(int days, string label, string ariaLabel)
+    {
+        // Arrange
+        var start = DateOnly.FromDateTime(DateTime.Today.AddDays(days));
+        var tournament = SeasonTournamentViewModelFactory.Create(startDate: start, endDate: start);
+
+        // Act
+        var actualLabel = tournament.UrgencyLabel;
+        var actualAriaLabel = tournament.UrgencyAriaLabel;
+
+        // Assert
+        actualLabel.ShouldBe(label);
+        actualAriaLabel.ShouldBe(ariaLabel);
+    }
+
     [Fact(DisplayName = "Should build location text from host and city combinations")]
     public void DisplayLocation_ShouldReturnExpectedText_WhenHostAndCityVary()
     {

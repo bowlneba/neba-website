@@ -140,6 +140,34 @@ public sealed class DirectionsModalTests : IDisposable
         cut.Markup.ShouldContain("Open in Maps App");
     }
 
+    [Theory(DisplayName = "Should pluralize the turn-by-turn step count")]
+    [InlineData(1, "(1 step)")]
+    [InlineData(2, "(2 steps)")]
+    public void Render_ShouldPluralizeStepCount_WhenRouteHasInstructions(int count, string expected)
+    {
+        // Arrange
+        var state = new DirectionsState
+        {
+            Mode = MapMode.DirectionsActive,
+            Route = new ServerMaps.RouteData
+            {
+                DistanceMeters = 16093.4,
+                TravelTimeSeconds = 1200,
+                Instructions = [.. Enumerable.Range(0, count).Select(i => new ServerMaps.RouteInstruction { Text = $"Step {i}" })]
+            }
+        };
+
+        // Act
+        var cut = _ctx.Render<DirectionsModal>(p => p
+            .Add(x => x.IsOpen, true)
+            .Add(x => x.OnClose, EventCallback.Factory.Create(this, () => { }))
+            .Add(x => x.State, state)
+            .Add(x => x.OnLocationSelected, EventCallback.Factory.Create<double[]>(this, _ => { })));
+
+        // Assert
+        cut.Markup.ShouldContain(expected);
+    }
+
     [Fact(DisplayName = "Should render best route and alternative options when route options are available")]
     public void Render_ShouldShowRouteOptions_WhenRouteOptionsAreAvailable()
     {

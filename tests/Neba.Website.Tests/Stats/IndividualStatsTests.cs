@@ -513,7 +513,7 @@ public sealed class IndividualStatsTests : IDisposable
             .Add(x => x.BowlerId, BowlerId));
 
         // Assert
-        cut.Markup.ShouldContain("#3");
+        cut.Find(".indiv-rank-card--blue-500 .indiv-rank-number").TextContent.ShouldBe("3rd");
         cut.FindAll(".indiv-rank-card--blue-500").Count.ShouldBe(1);
         cut.FindAll(".indiv-rank-card--unranked").Count.ShouldBeGreaterThan(0);
     }

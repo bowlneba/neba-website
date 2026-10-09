@@ -1,7 +1,7 @@
 @namespace Neba.Website.Server.Tournaments.Schedule
 
 <div class="season-timeline" role="group"
-     aria-label="Season timeline for @Season season. @Tournaments.Count tournaments.">
+     aria-label="Season timeline for @Season season. @("tournament".ToQuantity(Tournaments.Count, formatProvider: DisplayCulture.English)).">
 
     <div class="season-timeline__header">
         <div class="season-timeline__legend" aria-hidden="true">

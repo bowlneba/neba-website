@@ -20,6 +20,7 @@
     <PackageReference Include="ErrorOr" />
     <PackageReference Include="HtmlAgilityPack" />
     <PackageReference Include="HtmlSanitizer" />
+    <PackageReference Include="Humanizer.Core" />
     <PackageReference Include="Markdig" />
     <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly.Server" />
     <PackageReference Include="Microsoft.FeatureManagement.AspNetCore" />

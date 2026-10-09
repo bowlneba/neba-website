@@ -33,9 +33,9 @@
                 else if (Tournament.IsUrgent)
                 {
                     <span class="tournament-upcoming-card__urgency-tag"
-                          aria-label="Starts in @Tournament.DaysUntilStart days">
+                          aria-label="@Tournament.UrgencyAriaLabel">
                         <span class="tournament-upcoming-card__urgency-dot" aria-hidden="true"></span>
-                        In @Tournament.DaysUntilStart days
+                        @Tournament.UrgencyLabel
                     </span>
                 }
             </div>
