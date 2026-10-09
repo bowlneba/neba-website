@@ -87,7 +87,7 @@
          2.x object model (settable IOpenApiMediaType.Example); 3.x made it read-only and breaks the build. -->
     <PackageVersion Include="Microsoft.OpenApi" Version="[2.12.0]" />
     <PackageVersion Include="Microsoft.Testing.Extensions.CodeCoverage" Version="18.12.0" />
-    <PackageVersion Include="Microsoft.Testing.Extensions.TrxReport" Version="2.5.0" />
+    <PackageVersion Include="Microsoft.Testing.Extensions.TrxReport" Version="2.5.1" />
     <PackageVersion Include="Microsoft.VisualStudio.Threading.Analyzers" Version="18.7.23" />
     <PackageVersion Include="Moq" Version="4.21.0" />
     <PackageVersion Include="Newtonsoft.Json" Version="13.0.4" />
@@ -112,10 +112,10 @@
     <PackageVersion Include="Respawn" Version="7.0.0" />
     <PackageVersion Include="System.Drawing.Common" Version="10.0.12" />
     <PackageVersion Include="System.IdentityModel.Tokens.Jwt" Version="8.23.0" />
-    <PackageVersion Include="Testcontainers" Version="4.15.0" />
-    <PackageVersion Include="Testcontainers.Azurite" Version="4.15.0" />
-    <PackageVersion Include="Testcontainers.MsSql" Version="4.15.0" />
-    <PackageVersion Include="Testcontainers.PostgreSql" Version="4.15.0" />
+    <PackageVersion Include="Testcontainers" Version="4.16.0" />
+    <PackageVersion Include="Testcontainers.Azurite" Version="4.16.0" />
+    <PackageVersion Include="Testcontainers.MsSql" Version="4.16.0" />
+    <PackageVersion Include="Testcontainers.PostgreSql" Version="4.16.0" />
     <!-- v33 becomes a paid version; stay on the 32.x free line. Range's exclusive upper bound also
          keeps `dotnet outdated` from suggesting 33.x, while still reporting/allowing 32.x updates. -->
     <PackageVersion Include="Verify.XunitV3" Version="[32.0.1,33.0.0)" />
