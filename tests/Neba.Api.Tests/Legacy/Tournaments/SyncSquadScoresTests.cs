@@ -12,6 +12,7 @@ using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.TestHost;
 using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Diagnostics;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Testing;
@@ -34,6 +35,8 @@ using Neba.TestFactory.Bowlers;
 using Neba.TestFactory.Infrastructure;
 using Neba.TestFactory.Seasons;
 using Neba.TestFactory.Tournaments;
+
+using Npgsql;
 
 using ZiggyCreatures.Caching.Fusion;
 
@@ -234,7 +237,11 @@ public sealed class UnsyncedBowlerScoreSyncEmailTests
 public sealed class SyncSquadScoresSyncJobTests(AppDbContextFixture fixture, LegacySqlServerFixture legacyFixture)
     : IClassFixture<AppDbContextFixture>, IClassFixture<LegacySqlServerFixture>, IAsyncLifetime
 {
-    private readonly AppDbContext _dbContext = fixture.CreateDbContext();
+    private readonly FailOnNthSaveInterceptor _saveInterceptor = new();
+
+    // Uses production's retrying execution strategy: it rejects user-initiated transactions unless
+    // they run through the strategy, which a plain test context would never catch.
+    private AppDbContext _dbContext = null!;
 
     // Owned by LegacySqlServerFixture, not this class - it's one persistent database reused across
     // this class's tests and disposed once by the fixture at the end of the run, not per test.
@@ -248,6 +255,7 @@ public sealed class SyncSquadScoresSyncJobTests(AppDbContextFixture fixture, Leg
 
     public async ValueTask InitializeAsync()
     {
+        _dbContext = fixture.CreateRetryingDbContext(_saveInterceptor);
         await fixture.ResetAsync();
 
         var services = new ServiceCollection();
@@ -592,5 +600,121 @@ public sealed class SyncSquadScoresSyncJobTests(AppDbContextFixture fixture, Leg
         scores[0].BowlerId.ShouldBe(bowler.Id);
         scores[0].Score.ShouldBe(200);
         scores[1].Score.ShouldBe(210);
+    }
+
+    [Fact(DisplayName = "SyncAsync should complete under the production retrying execution strategy")]
+    public async Task SyncAsync_ShouldComplete_UnderRetryingExecutionStrategy()
+    {
+        // Arrange - _dbContext is built with EnableRetryOnFailure, so an explicit transaction opened
+        // outside the execution strategy throws InvalidOperationException on the first SaveChangesAsync.
+        var ct = TestContext.Current.CancellationToken;
+        var squad = await CreateSquadAsync(legacySquadId: 1, ct);
+        await CreateBowlerAsync(legacyBowlerId: 100, ct);
+        await InsertLegacyScoreAsync(legacyBowlerId: 100, legacySquadId: 1, game: 1, score: 200);
+        _dbContext.Database.CreateExecutionStrategy().RetriesOnFailure.ShouldBeTrue();
+        var job = CreateJob();
+
+        // Act
+        await Should.NotThrowAsync(() => job.SyncAsync(1, ct));
+
+        // Assert
+        (await _dbContext.SquadScores.Where(s => s.SquadId == squad.Id).ToListAsync(ct)).ShouldHaveSingleItem();
+    }
+
+    [Fact(DisplayName = "SyncAsync should roll back every batch and keep the previous scores when a later save fails")]
+    public async Task SyncAsync_ShouldRollBackAllBatches_WhenALaterSaveFails()
+    {
+        // Arrange - one stale row (delete save is call 1), one fresh row (add save is call 2).
+        var ct = TestContext.Current.CancellationToken;
+        var squad = await CreateSquadAsync(legacySquadId: 1, ct);
+        var staleBowler = await CreateBowlerAsync(legacyBowlerId: 100, ct);
+        await _dbContext.SquadScores.AddAsync(
+            SquadScoreFactory.Create(squadId: squad.Id, bowlerId: staleBowler.Id, gameNumber: 1, value: 150), ct);
+        await _dbContext.SaveChangesAsync(ct);
+        _dbContext.ChangeTracker.Clear();
+
+        await CreateBowlerAsync(legacyBowlerId: 200, ct);
+        await InsertLegacyScoreAsync(legacyBowlerId: 200, legacySquadId: 1, game: 1, score: 250);
+        var job = CreateJob();
+        _saveInterceptor.FailOnCall(2, new InvalidOperationException("boom"));
+
+        // Act
+        await Should.ThrowAsync<InvalidOperationException>(() => job.SyncAsync(1, ct));
+
+        // Assert - the earlier delete batch rolled back with the failed add batch.
+        _saveInterceptor.Disarm();
+        _dbContext.ChangeTracker.Clear();
+        var scores = await _dbContext.SquadScores.Where(s => s.SquadId == squad.Id).ToListAsync(ct);
+        var remaining = scores.ShouldHaveSingleItem();
+        remaining.BowlerId.ShouldBe(staleBowler.Id);
+        remaining.Score.ShouldBe(150);
+    }
+
+    [Fact(DisplayName = "SyncAsync should retry the whole transaction after a transient failure and save each score once")]
+    public async Task SyncAsync_ShouldRetryWholeTransaction_WhenSaveFailsTransiently()
+    {
+        // Arrange
+        var ct = TestContext.Current.CancellationToken;
+        var squad = await CreateSquadAsync(legacySquadId: 1, ct);
+        await CreateBowlerAsync(legacyBowlerId: 100, ct);
+        await InsertLegacyScoreAsync(legacyBowlerId: 100, legacySquadId: 1, game: 1, score: 200);
+        await InsertLegacyScoreAsync(legacyBowlerId: 999, legacySquadId: 1, game: 1, score: 150);
+
+        var emailSender = new Mock<IEmailSender>(MockBehavior.Strict);
+        var sentMessages = new List<EmailMessage>();
+        emailSender
+            .Setup(s => s.SendAsync(It.IsAny<EmailMessage>(), It.IsAny<CancellationToken>()))
+            .Callback<EmailMessage, CancellationToken>((message, _) => sentMessages.Add(message))
+            .Returns(Task.CompletedTask);
+        var job = CreateJob(emailSender);
+
+        // Only the first attempt's save fails; the retry runs the delegate again from scratch.
+        _saveInterceptor.FailOnCall(1, new NpgsqlException("transient", new IOException("connection reset")));
+
+        // Act
+        await job.SyncAsync(1, ct);
+
+        // Assert
+        _saveInterceptor.Disarm();
+        _dbContext.ChangeTracker.Clear();
+        var scores = await _dbContext.SquadScores.Where(s => s.SquadId == squad.Id).ToListAsync(ct);
+        scores.ShouldHaveSingleItem().Score.ShouldBe(200);
+        sentMessages.ShouldHaveSingleItem();
+    }
+}
+
+// Throws on the Nth SaveChangesAsync call after FailOnCall, so a test can fail one specific batch
+// inside the job's transaction. Disarmed by default: seeding saves pass through untouched.
+internal sealed class FailOnNthSaveInterceptor : SaveChangesInterceptor
+{
+    private int _calls;
+    private int _failOnCall;
+    private Exception? _exception;
+
+    public void FailOnCall(int call, Exception exception)
+    {
+        _calls = 0;
+        _failOnCall = call;
+        _exception = exception;
+    }
+
+    public void Disarm() => _exception = null;
+
+    private void ThrowIfArmedCallReached()
+    {
+        if (_exception is not null && ++_calls == _failOnCall)
+        {
+            throw _exception;
+        }
+    }
+
+    public override ValueTask<InterceptionResult<int>> SavingChangesAsync(
+        DbContextEventData eventData,
+        InterceptionResult<int> result,
+        CancellationToken cancellationToken = default)
+    {
+        ThrowIfArmedCallReached();
+
+        return base.SavingChangesAsync(eventData, result, cancellationToken);
     }
 }

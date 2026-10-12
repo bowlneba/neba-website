@@ -83,9 +83,38 @@ internal sealed class SyncSquadScoresSyncJob(
             .Select(t => t.Id)
             .SingleAsync(ct);
 
+        var rows = await LoadLegacyScoreRowsAsync(legacySquadId);
+        var bowlerIdsByLegacyId = await LoadBowlerIdsByLegacyIdAsync(rows, ct);
+
+        // The configured NpgsqlRetryingExecutionStrategy rejects user-initiated transactions, so the
+        // whole transaction runs as one retriable unit through the strategy. Each attempt starts from a
+        // clean change tracker and rebuilds its working state, since a retry re-runs the delegate.
+        var unmappedRowsByLegacyBowlerId = new Dictionary<int, List<LegacyQualifyingScoreRow>>();
+        var strategy = db.Database.CreateExecutionStrategy();
+
+        await strategy.ExecuteAsync(() => ReplaceSquadScoresAsync(
+            squad, legacySquadId, rows, bowlerIdsByLegacyId, unmappedRowsByLegacyBowlerId, ct));
+
+        await cache.RemoveByTagAsync($"neba:tournaments:{tournamentId}", token: ct);
+
+        // Sent after SaveChangesAsync so the rest of the squad's sync isn't held up by email
+        // delivery - same ordering NewTournamentSyncJob uses for its own manual-intervention email.
+        foreach ((int legacyBowlerId, List<LegacyQualifyingScoreRow> unmappedRows) in unmappedRowsByLegacyBowlerId)
+        {
+            await emailSender.SendAsync(new EmailMessage
+            {
+                To = "website@bowlneba.com",
+                Subject = "Manual intervention needed: unsynced bowler in score sync",
+                HtmlBody = new UnsyncedBowlerScoreSyncEmail(legacyBowlerId, legacySquadId, unmappedRows).ToHtmlBody()
+            }, ct);
+        }
+    }
+
+    private async Task<List<LegacyQualifyingScoreRow>> LoadLegacyScoreRowsAsync(int legacySquadId)
+    {
         // See NewBowlerSyncJob.SyncAsync for the rationale on suppressing DAP005 here.
 #pragma warning disable DAP005
-        var rows = (await legacyConnection.QueryAsync<LegacyQualifyingScoreRow>(
+        var rows = await legacyConnection.QueryAsync<LegacyQualifyingScoreRow>(
             """
             SELECT
                 BowlerId,
@@ -96,13 +125,33 @@ internal sealed class SyncSquadScoresSyncJob(
             WHERE
                 SquadId = @SquadId
             """,
-            new { SquadId = legacySquadId })).ToList();
+            new { SquadId = legacySquadId });
 #pragma warning restore DAP005
 
+        return [.. rows];
+    }
+
+    private async Task<Dictionary<int, BowlerId>> LoadBowlerIdsByLegacyIdAsync(
+        List<LegacyQualifyingScoreRow> rows,
+        CancellationToken ct)
+    {
         var legacyBowlerIds = rows.Select(row => row.BowlerId).Distinct().ToList();
-        var bowlerIdsByLegacyId = await db.Bowlers
+
+        return await db.Bowlers
             .Where(bowler => bowler.LegacyId != null && legacyBowlerIds.Contains(bowler.LegacyId.Value))
             .ToDictionaryAsync(bowler => bowler.LegacyId!.Value, bowler => bowler.Id, ct);
+    }
+
+    private async Task ReplaceSquadScoresAsync(
+        Squad squad,
+        int legacySquadId,
+        List<LegacyQualifyingScoreRow> rows,
+        Dictionary<int, BowlerId> bowlerIdsByLegacyId,
+        Dictionary<int, List<LegacyQualifyingScoreRow>> unmappedRowsByLegacyBowlerId,
+        CancellationToken ct)
+    {
+        db.ChangeTracker.Clear();
+        unmappedRowsByLegacyBowlerId.Clear();
 
         var existing = await db.SquadScores
             .Where(squadScore => squadScore.SquadId == squad.Id)
@@ -129,9 +178,28 @@ internal sealed class SyncSquadScoresSyncJob(
             await db.SaveChangesAsync(ct);
         }
 
-        // Rows whose legacy bowler id has no website Bowler.LegacyId match, grouped so one email
-        // covers all of that bowler's scores rather than one email per row.
-        var unmappedRowsByLegacyBowlerId = new Dictionary<int, List<LegacyQualifyingScoreRow>>();
+        var pendingScores = BuildPendingScores(
+            squad, legacySquadId, rows, bowlerIdsByLegacyId, unmappedRowsByLegacyBowlerId);
+
+        foreach (var batch in pendingScores.Chunk(saveBatchSize))
+        {
+            await db.SquadScores.AddRangeAsync(batch, ct);
+            await db.SaveChangesAsync(ct);
+        }
+
+        await transaction.CommitAsync(ct);
+    }
+
+    // Rows whose legacy bowler id has no website Bowler.LegacyId match are grouped into
+    // unmappedRowsByLegacyBowlerId so one email covers all of that bowler's scores rather than one
+    // email per row.
+    private List<SquadScore> BuildPendingScores(
+        Squad squad,
+        int legacySquadId,
+        List<LegacyQualifyingScoreRow> rows,
+        Dictionary<int, BowlerId> bowlerIdsByLegacyId,
+        Dictionary<int, List<LegacyQualifyingScoreRow>> unmappedRowsByLegacyBowlerId)
+    {
         var pendingScores = new List<SquadScore>();
 
         foreach (var row in rows)
@@ -160,27 +228,7 @@ internal sealed class SyncSquadScoresSyncJob(
             pendingScores.Add(created.Value);
         }
 
-        foreach (var batch in pendingScores.Chunk(saveBatchSize))
-        {
-            await db.SquadScores.AddRangeAsync(batch, ct);
-            await db.SaveChangesAsync(ct);
-        }
-
-        await transaction.CommitAsync(ct);
-
-        await cache.RemoveByTagAsync($"neba:tournaments:{tournamentId}", token: ct);
-
-        // Sent after SaveChangesAsync so the rest of the squad's sync isn't held up by email
-        // delivery - same ordering NewTournamentSyncJob uses for its own manual-intervention email.
-        foreach ((int legacyBowlerId, List<LegacyQualifyingScoreRow> unmappedRows) in unmappedRowsByLegacyBowlerId)
-        {
-            await emailSender.SendAsync(new EmailMessage
-            {
-                To = "website@bowlneba.com",
-                Subject = "Manual intervention needed: unsynced bowler in score sync",
-                HtmlBody = new UnsyncedBowlerScoreSyncEmail(legacyBowlerId, legacySquadId, unmappedRows).ToHtmlBody()
-            }, ct);
-        }
+        return pendingScores;
     }
 }
 
