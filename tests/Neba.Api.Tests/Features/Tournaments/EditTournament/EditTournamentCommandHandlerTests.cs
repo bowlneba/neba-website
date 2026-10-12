@@ -344,6 +344,61 @@ public sealed class EditTournamentCommandHandlerTests(AppDbContextFixture fixtur
         listAfterEdit.ShouldBe("fresh-list");
     }
 
+    [Fact(DisplayName = "HandleAsync invalidates the season stats cache tag when stats eligibility changes")]
+    public async Task HandleAsync_ShouldInvalidateSeasonStatsCacheTag_WhenStatsEligibilityChanges()
+    {
+        // Arrange
+        var ct = TestContext.Current.CancellationToken;
+        var season = await SeedSeasonAsync(new DateOnly(2025, 1, 1), new DateOnly(2025, 12, 31), ct);
+        var tournament = await SeedTournamentAsync(season, ct);
+        var cache = _serviceProvider.GetRequiredService<IFusionCache>();
+        var statsCacheKey = $"neba:stats:seasons:{season.Id}:bowlers";
+
+        await cache.GetOrSetAsync(
+            statsCacheKey, _ => Task.FromResult("cached-stats"), tags: [$"neba:stats:seasons:{season.Id}"], token: ct);
+
+        var command = ValidCommand(
+            tournament.Id,
+            startDate: season.StartDate,
+            endDate: season.StartDate,
+            statsEligible: !tournament.StatsEligible);
+
+        // Act
+        await CreateHandler().HandleAsync(command, ct);
+
+        // Assert
+        var statsAfterEdit = await cache.GetOrSetAsync(statsCacheKey, _ => Task.FromResult("fresh-stats"), token: ct);
+        statsAfterEdit.ShouldBe("fresh-stats");
+    }
+
+    [Fact(DisplayName = "HandleAsync keeps the season stats cache when neither eligibility nor season changes")]
+    public async Task HandleAsync_ShouldKeepSeasonStatsCache_WhenEligibilityAndSeasonAreUnchanged()
+    {
+        // Arrange
+        var ct = TestContext.Current.CancellationToken;
+        var season = await SeedSeasonAsync(new DateOnly(2025, 1, 1), new DateOnly(2025, 12, 31), ct);
+        var tournament = await SeedTournamentAsync(season, ct);
+        var cache = _serviceProvider.GetRequiredService<IFusionCache>();
+        var statsCacheKey = $"neba:stats:seasons:{season.Id}:bowlers";
+
+        await cache.GetOrSetAsync(
+            statsCacheKey, _ => Task.FromResult("cached-stats"), tags: [$"neba:stats:seasons:{season.Id}"], token: ct);
+
+        var command = ValidCommand(
+            tournament.Id,
+            name: "Renamed Tournament",
+            startDate: season.StartDate,
+            endDate: season.StartDate,
+            statsEligible: tournament.StatsEligible);
+
+        // Act
+        await CreateHandler().HandleAsync(command, ct);
+
+        // Assert
+        var statsAfterEdit = await cache.GetOrSetAsync(statsCacheKey, _ => Task.FromResult("fresh-stats"), token: ct);
+        statsAfterEdit.ShouldBe("cached-stats");
+    }
+
     [Fact(DisplayName = "HandleAsync enqueues a delete job for the previous logo when the logo is replaced")]
     public async Task HandleAsync_ShouldEnqueueDeleteJob_WhenLogoIsReplaced()
     {

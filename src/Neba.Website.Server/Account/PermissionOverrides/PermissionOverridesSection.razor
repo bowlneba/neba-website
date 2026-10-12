@@ -72,7 +72,7 @@
     private static readonly PermissionOverrideSet _empty = new();
 
     private IReadOnlyList<AreaGroup> _areas = [];
-    private ILookup<string, string> _grantingRoles = Enumerable.Empty<string>().ToLookup(_ => _, _ => _);
+    private IReadOnlyDictionary<string, IReadOnlyList<string>> _grantingRoles = new Dictionary<string, IReadOnlyList<string>>();
 
     [Parameter, EditorRequired]
     public IReadOnlyCollection<RoleResponse> Roles { get; set; } = [];
@@ -125,11 +125,12 @@
 
         _grantingRoles = selected
             .SelectMany(role => role.Permissions.Select(permission => (permission, role.Name)))
-            .ToLookup(pair => pair.permission, pair => pair.Name, StringComparer.Ordinal);
+            .GroupBy(pair => pair.permission, pair => pair.Name, StringComparer.Ordinal)
+            .ToDictionary(group => group.Key, group => (IReadOnlyList<string>)[.. group], StringComparer.Ordinal);
     }
 
     private IReadOnlyList<string> GrantingRoles(string permissionValue)
-        => [.. _grantingRoles[permissionValue]];
+        => _grantingRoles.TryGetValue(permissionValue, out var roles) ? roles : [];
 
     /// <summary>
     /// A position is blocked when moving to it would give more access than the loaded state and the

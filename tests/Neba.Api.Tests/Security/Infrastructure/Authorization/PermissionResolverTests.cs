@@ -101,6 +101,20 @@ public sealed class PermissionResolverTests(SecurityDbContextFixture fixture)
         result.ShouldBe([Permissions.CreateArticle]);
     }
 
+    [Fact(DisplayName = "ResolveAsync should match role names regardless of case")]
+    public async Task ResolveAsync_ShouldMatchRoleNames_RegardlessOfCase()
+    {
+        // Arrange
+        await SeedRoleAsync(Roles.Manager, Permissions.CreateArticle.Value);
+        var user = await SeedUserAsync();
+
+        // Act
+        var result = await ResolveAsync(user, Roles.Manager.ToUpperInvariant());
+
+        // Assert
+        result.ShouldBe([Permissions.CreateArticle]);
+    }
+
     [Fact(DisplayName = "ResolveAsync should ignore role claims whose claim type is not the permission claim type")]
     public async Task ResolveAsync_ShouldIgnoreNonPermissionClaims()
     {

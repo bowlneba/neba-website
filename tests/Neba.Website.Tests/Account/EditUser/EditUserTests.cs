@@ -164,6 +164,20 @@ public sealed class EditUserTests : IDisposable
         cut.Markup.ShouldContain("You don't have permission to edit users.");
     }
 
+    [Fact(DisplayName = "Should not call the API when the caller lacks EditUser")]
+    public void Render_ShouldNotCallApi_WhenCallerLacksEditUser()
+    {
+        // Arrange
+        _authContext.SetPolicies();
+
+        // Act
+        RenderPage();
+
+        // Assert
+        _mockApi.Verify(api => api.GetUserAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Never);
+        _mockApi.Verify(api => api.ListRolesAsync(It.IsAny<CancellationToken>()), Times.Never);
+    }
+
     // ── Load states ──────────────────────────────────────────────────────────
 
     [Fact(DisplayName = "Should show a loading skeleton while the user is loading")]

@@ -201,7 +201,24 @@ public sealed class UpdateUserCommandHandlerTests(SecurityDbContextFixture fixtu
 
         var log = _logger.Collector.GetSnapshot().ShouldHaveSingleItem();
         log.Level.ShouldBe(LogLevel.Information);
-        log.Message.ShouldContain("1 added, 1 removed");
+        log.Message.ShouldContain($"added [{Permissions.ClearCache.Value}]");
+        log.Message.ShouldContain($"removed [{Permissions.CreateArticle.Value}]");
+    }
+
+    [Fact(DisplayName = "HandleAsync does not log when the requested overrides match the stored overrides")]
+    public async Task HandleAsync_ShouldNotLog_WhenOverridesAreUnchanged()
+    {
+        // Arrange
+        var ct = TestContext.Current.CancellationToken;
+        var user = await SeedUserAsync(claims: new Claim(Permissions.ClaimType, Permissions.CreateArticle.Value));
+
+        // Act
+        var result = await CreateHandler().HandleAsync(
+            CreateCommand(user.Id, added: [Permissions.CreateArticle.Value]), ct);
+
+        // Assert
+        result.IsError.ShouldBeFalse();
+        _logger.Collector.GetSnapshot().ShouldBeEmpty();
     }
 
     [Fact(DisplayName = "HandleAsync stores the requested set and removes values that are no longer requested")]

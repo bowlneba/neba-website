@@ -16,6 +16,8 @@ using Neba.Api.Security.Infrastructure;
 
 using Npgsql;
 
+using ZiggyCreatures.Caching.Fusion;
+
 namespace Neba.Api.Security;
 
 internal static class SecurityConfiguration
@@ -194,6 +196,11 @@ internal static class SecurityConfiguration
                 var seedLogger = seedScope.ServiceProvider.GetRequiredService<ILoggerFactory>()
                     .CreateLogger("Neba.Api.Security.Infrastructure.SecurityRoleSeeder");
                 await SecurityRoleSeeder.SeedAsync(roleManager, seedLogger);
+
+                // The role list is cached in the persistent L2 cache and survives restarts, so a seeder
+                // change to role grants must evict it or readers see the old grants for up to an hour.
+                var cache = seedScope.ServiceProvider.GetRequiredService<IFusionCache>();
+                await cache.RemoveByTagAsync("neba:security:roles");
             }
 
             return app;

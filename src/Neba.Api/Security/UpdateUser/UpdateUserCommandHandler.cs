@@ -68,6 +68,11 @@ internal sealed class UpdateUserCommandHandler(
             return UpdateUserErrors.PermissionNotHeld(notHeld);
         }
 
+        if (requested.Value.Added.SetEquals(previous.Added) && requested.Value.Removed.SetEquals(previous.Removed))
+        {
+            return Result.Updated;
+        }
+
         // One SaveChanges: the replace is all-or-nothing, so a failure can't leave a half-applied set.
         foreach (var claim in stored)
         {
@@ -84,8 +89,10 @@ internal sealed class UpdateUserCommandHandler(
 
         await securityDbContext.SaveChangesAsync(cancellationToken);
 
-        logger.LogPermissionOverridesUpdated(
-            command.UserId, command.CallerUserId, requested.Value.Added.Count, requested.Value.Removed.Count);
+        var added = string.Join(", ", requested.Value.Added.Order(StringComparer.Ordinal));
+        var removed = string.Join(", ", requested.Value.Removed.Order(StringComparer.Ordinal));
+
+        logger.LogPermissionOverridesUpdated(command.UserId, command.CallerUserId, added, removed);
 
         return Result.Updated;
     }
@@ -107,7 +114,7 @@ internal static partial class UpdateUserCommandHandlerLogMessages
 {
     [LoggerMessage(
         Level = LogLevel.Information,
-        Message = "Permission overrides for user {UserId} set by {CallerUserId}: {AddedCount} added, {RemovedCount} removed")]
+        Message = "Permission overrides for user {UserId} set by {CallerUserId}: added [{Added}], removed [{Removed}]")]
     public static partial void LogPermissionOverridesUpdated(
-        this ILogger<UpdateUserCommandHandler> logger, Ulid userId, Ulid callerUserId, int addedCount, int removedCount);
+        this ILogger<UpdateUserCommandHandler> logger, Ulid userId, Ulid callerUserId, string added, string removed);
 }
