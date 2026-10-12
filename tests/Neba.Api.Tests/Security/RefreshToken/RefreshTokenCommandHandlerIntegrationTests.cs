@@ -1,3 +1,5 @@
+using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
 using System.Security.Cryptography;
 using System.Text.Json;
 
@@ -8,6 +10,7 @@ using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Logging.Testing;
 using Microsoft.Extensions.Time.Testing;
 
+using Neba.Api.Contracts.Security;
 using Neba.Api.Database;
 using Neba.Api.Security;
 using Neba.Api.Security.Domain;
@@ -251,6 +254,45 @@ public sealed class RefreshTokenCommandHandlerIntegrationTests(SecurityDbContext
         result.Value.AccessToken.ShouldNotBeNullOrEmpty();
         result.Value.RefreshToken.ShouldNotBeNullOrEmpty();
         result.Value.ExpiresAt.ShouldBeGreaterThan(DateTimeOffset.UtcNow);
+    }
+
+    [Fact(DisplayName = "HandleAsync issues a token with role permissions plus added minus removed overrides")]
+    public async Task HandleAsync_ShouldApplyPermissionOverrides_WhenUserHasOverrides()
+    {
+        // Arrange
+        var ct = TestContext.Current.CancellationToken;
+        using var scope = fixture.CreateScope();
+        var userManager = scope.ServiceProvider.GetRequiredService<UserManager<ApplicationUser>>();
+        var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<ApplicationRole>>();
+        var securityDbContext = scope.ServiceProvider.GetRequiredService<SecurityDbContext>();
+        var signInManager = scope.ServiceProvider.GetRequiredService<SignInManager<ApplicationUser>>();
+
+        var role = new ApplicationRole(Roles.Journalist);
+        await roleManager.CreateAsync(role);
+        await roleManager.AddClaimAsync(role, new Claim(Permissions.ClaimType, Permissions.CreateArticle.Value));
+        await roleManager.AddClaimAsync(role, new Claim(Permissions.ClaimType, Permissions.EditArticle.Value));
+
+        var (user, refreshToken) = await SeedLoginAsync(userManager, roleManager, signInManager);
+        await userManager.AddToRoleAsync(user, Roles.Journalist);
+        await userManager.AddClaimsAsync(user,
+        [
+            new Claim(Permissions.ClaimType, Permissions.CreateSponsor.Value),
+            new Claim(Permissions.DeniedClaimType, Permissions.CreateArticle.Value)
+        ]);
+
+        var command = new RefreshTokenCommand { UserId = user.Id, RefreshToken = refreshToken };
+
+        // Act
+        var result = await CreateHandler(userManager, roleManager, securityDbContext).HandleAsync(command, ct);
+
+        // Assert
+        result.IsError.ShouldBeFalse();
+        var token = new JwtSecurityTokenHandler().ReadJwtToken(result.Value.AccessToken);
+        var permissions = token.Claims.Where(c => c.Type == Permissions.ClaimType).Select(c => c.Value).ToList();
+        permissions.Count.ShouldBe(2);
+        permissions.ShouldContain(Permissions.EditArticle.Value);
+        permissions.ShouldContain(Permissions.CreateSponsor.Value);
+        permissions.ShouldNotContain(Permissions.CreateArticle.Value);
     }
 
     [Fact(DisplayName = "HandleAsync returns RefreshTokenDto with correct email and userId when the refresh token is valid")]
