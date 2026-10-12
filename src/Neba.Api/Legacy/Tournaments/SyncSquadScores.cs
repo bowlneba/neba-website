@@ -128,7 +128,7 @@ internal sealed class SyncSquadScoresSyncJob(
             new { SquadId = legacySquadId });
 #pragma warning restore DAP005
 
-        return rows.ToList();
+        return [.. rows];
     }
 
     private async Task<Dictionary<int, BowlerId>> LoadBowlerIdsByLegacyIdAsync(
