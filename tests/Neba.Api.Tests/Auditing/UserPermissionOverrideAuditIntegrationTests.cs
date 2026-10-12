@@ -150,10 +150,10 @@ public sealed class UserPermissionOverrideAuditIntegrationTests(SecurityDbContex
         // Assert
         clear.StatusCode.ShouldBe(HttpStatusCode.NoContent);
 
-        var entry = ClaimEntries().ShouldHaveSingleItem();
-        entry.Entry.Action.ShouldBe("Delete");
-        entry.Entry.ColumnValues[nameof(IdentityUserClaim<Ulid>.ClaimValue)].ShouldBe(Permissions.CreateSponsor.Value);
-        entry.Event.CustomFields["ActorId"].ShouldBe(callerId.ToString());
+        var (@event, entry) = ClaimEntries().ShouldHaveSingleItem();
+        entry.Action.ShouldBe("Delete");
+        entry.ColumnValues[nameof(IdentityUserClaim<Ulid>.ClaimValue)].ShouldBe(Permissions.CreateSponsor.Value);
+        @event.CustomFields["ActorId"].ShouldBe(callerId.ToString());
     }
 
     [Fact(DisplayName = "PUT /security/users/{id} writes no audit rows when the request is rejected")]

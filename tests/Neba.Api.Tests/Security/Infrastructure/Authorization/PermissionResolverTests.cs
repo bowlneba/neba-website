@@ -251,10 +251,10 @@ public sealed class PermissionResolverTests(SecurityDbContextFixture fixture)
         await context.DisposeAsync();
 
         // Act
-        var act = () => PermissionResolver.ResolveAsync(
+        Task<IReadOnlyCollection<Permissions>> Act() => PermissionResolver.ResolveAsync(
             context, user, [Roles.Journalist], TestContext.Current.CancellationToken);
 
         // Assert
-        await Should.ThrowAsync<ObjectDisposedException>(act);
+        await Should.ThrowAsync<ObjectDisposedException>((Func<Task<IReadOnlyCollection<Permissions>>>)Act);
     }
 }

@@ -20,7 +20,7 @@ internal static class PermissionResolver
         var isAdmin = roles.Contains(Roles.Admin, StringComparer.OrdinalIgnoreCase);
 
         // Identity's default normalizer upper-cases names, so match on NormalizedName like FindByNameAsync did.
-        var normalizedRoles = roles.Select(role => role.ToUpperInvariant()).ToList();
+        var normalizedRoles = roles.ConvertAll(role => role.ToUpperInvariant());
 
         var roleGrants = securityDbContext.RoleClaims
             .AsNoTracking()

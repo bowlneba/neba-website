@@ -43,30 +43,81 @@ internal static class SecurityConfiguration
     // changes.
     internal const string SharedAuthCookieName = ".Neba.Auth";
 
+    private static void ConfigureSecurityDbContext(IServiceProvider sp, DbContextOptionsBuilder options)
+    {
+        var dataSource = sp.GetRequiredService<NpgsqlDataSource>();
+        options
+            .UseNpgsql(dataSource, npgsql => npgsql
+                .MigrationsHistoryTable(
+                    SecurityDbContext.MigrationsHistoryTableName,
+                    SecurityDbContext.Schema
+                )
+                .EnableRetryOnFailure(maxRetryCount: 5, maxRetryDelay: TimeSpan.FromSeconds(10), errorCodesToAdd: null))
+            .UseSnakeCaseNamingConvention();
+
+        // Registered by AddAuditing(). Without it the SecurityDbContext opt-in list in
+        // AuditingConfiguration never runs and user, role and claim changes go unaudited.
+        // Optional so hosts that exercise only authorization (no audit store) still build.
+        if (sp.GetService<PooledAuditSaveChangesInterceptor>() is { } audit)
+        {
+            options.AddInterceptors(audit);
+        }
+    }
+
+    private static JwtSettings ReadJwtSettings(IConfiguration configuration)
+    {
+        var jwtSettings = configuration
+            .GetSection("JwtSettings")
+            .Get<JwtSettings>()
+            ?? throw new InvalidOperationException("JwtSettings configuration section is missing.");
+
+        if (string.IsNullOrWhiteSpace(jwtSettings.SigningKey))
+            throw new InvalidOperationException("JwtSettings:SigningKey must not be empty.");
+
+        if (Encoding.UTF8.GetByteCount(jwtSettings.SigningKey) < 32)
+            throw new InvalidOperationException("JwtSettings:SigningKey must be at least 32 bytes (256 bits) for HMAC-SHA256.");
+
+        return jwtSettings;
+    }
+
+    private static WebsiteSettings ReadWebsiteSettings(IConfiguration configuration)
+    {
+        var websiteSettings = (configuration
+            .GetSection("WebsiteSettings")
+            .Get<WebsiteSettings>()
+            ?? throw new InvalidOperationException("WebsiteSettings configuration section is missing."))
+            .WithPreviewOverride();
+
+        if (string.IsNullOrWhiteSpace(websiteSettings.BaseUrl))
+            throw new InvalidOperationException("WebsiteSettings:BaseUrl must not be empty.");
+
+        return websiteSettings;
+    }
+
+    // The Hangfire dashboard (/background-jobs) is a plain browser-navigated page,
+    // not an API call the website's Refit clients attach a bearer token to, so it
+    // has no other way to authenticate a linked-to visit. Scoped narrowly to that
+    // one path so token-in-URL isn't accepted anywhere else in the API (query
+    // strings end up in server logs/browser history, unlike an Authorization header).
+    private static Task ReadDashboardAccessTokenAsync(MessageReceivedContext context)
+    {
+        if (context.Request.Path.StartsWithSegments(BackgroundJobsDashboardPath, StringComparison.Ordinal))
+        {
+            var token = context.Request.Query[AccessTokenQueryParameterName];
+            if (!string.IsNullOrEmpty(token))
+            {
+                context.Token = token;
+            }
+        }
+
+        return Task.CompletedTask;
+    }
+
     extension(WebApplicationBuilder builder)
     {
         public WebApplicationBuilder AddSecurity()
         {
-            builder.Services.AddDbContext<SecurityDbContext>((sp, options) =>
-            {
-                var dataSource = sp.GetRequiredService<NpgsqlDataSource>();
-                options
-                    .UseNpgsql(dataSource, npgsql => npgsql
-                        .MigrationsHistoryTable(
-                            SecurityDbContext.MigrationsHistoryTableName,
-                            SecurityDbContext.Schema
-                        )
-                        .EnableRetryOnFailure(maxRetryCount: 5, maxRetryDelay: TimeSpan.FromSeconds(10), errorCodesToAdd: null))
-                    .UseSnakeCaseNamingConvention();
-
-                // Registered by AddAuditing(). Without it the SecurityDbContext opt-in list in
-                // AuditingConfiguration never runs and user, role and claim changes go unaudited.
-                // Optional so hosts that exercise only authorization (no audit store) still build.
-                if (sp.GetService<PooledAuditSaveChangesInterceptor>() is { } audit)
-                {
-                    options.AddInterceptors(audit);
-                }
-            });
+            builder.Services.AddDbContext<SecurityDbContext>(ConfigureSecurityDbContext);
 
             builder.Services
                 .AddIdentity<ApplicationUser, ApplicationRole>(options =>
@@ -83,28 +134,12 @@ internal static class SecurityConfiguration
                 .AddEntityFrameworkStores<SecurityDbContext>()
                 .AddDefaultTokenProviders();
 
-            var jwtSettings = builder.Configuration
-                .GetSection("JwtSettings")
-                .Get<JwtSettings>()
-                ?? throw new InvalidOperationException("JwtSettings configuration section is missing.");
-
-            if (string.IsNullOrWhiteSpace(jwtSettings.SigningKey))
-                throw new InvalidOperationException("JwtSettings:SigningKey must not be empty.");
-
-            if (Encoding.UTF8.GetByteCount(jwtSettings.SigningKey) < 32)
-                throw new InvalidOperationException("JwtSettings:SigningKey must be at least 32 bytes (256 bits) for HMAC-SHA256.");
+            var jwtSettings = ReadJwtSettings(builder.Configuration);
 
             builder.Services.AddSingleton(jwtSettings);
             builder.Services.AddSingleton<IJwtTokenService, JwtTokenService>();
 
-            var websiteSettings = (builder.Configuration
-                .GetSection("WebsiteSettings")
-                .Get<WebsiteSettings>()
-                ?? throw new InvalidOperationException("WebsiteSettings configuration section is missing."))
-                .WithPreviewOverride();
-
-            if (string.IsNullOrWhiteSpace(websiteSettings.BaseUrl))
-                throw new InvalidOperationException("WebsiteSettings:BaseUrl must not be empty.");
+            var websiteSettings = ReadWebsiteSettings(builder.Configuration);
 
             builder.Services.AddSingleton(websiteSettings);
 
@@ -144,27 +179,7 @@ internal static class SecurityConfiguration
                                 Encoding.UTF8.GetBytes(jwtSettings.SigningKey))
                     };
 
-                    // The Hangfire dashboard (/background-jobs) is a plain browser-navigated page,
-                    // not an API call the website's Refit clients attach a bearer token to, so it
-                    // has no other way to authenticate a linked-to visit. Scoped narrowly to that
-                    // one path so token-in-URL isn't accepted anywhere else in the API (query
-                    // strings end up in server logs/browser history, unlike an Authorization header).
-                    options.Events = new JwtBearerEvents
-                    {
-                        OnMessageReceived = context =>
-                        {
-                            if (context.Request.Path.StartsWithSegments(BackgroundJobsDashboardPath, StringComparison.Ordinal))
-                            {
-                                var token = context.Request.Query[AccessTokenQueryParameterName];
-                                if (!string.IsNullOrEmpty(token))
-                                {
-                                    context.Token = token;
-                                }
-                            }
-
-                            return Task.CompletedTask;
-                        }
-                    };
+                    options.Events = new JwtBearerEvents { OnMessageReceived = ReadDashboardAccessTokenAsync };
                 });
 
             builder.Services

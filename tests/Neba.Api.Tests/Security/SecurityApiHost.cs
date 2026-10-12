@@ -108,10 +108,10 @@ internal sealed class SecurityApiHost
     }
 
     /// <summary>Stops the host. Deliberately not disposed - see DeleteArticleEndpointAuthorizationTests.</summary>
-    public async Task StopAsync()
+    public Task StopAsync()
     {
         Client.Dispose();
-        await App.StopAsync();
+        return App.StopAsync();
     }
 
     public async Task<HttpResponseMessage> PutOverridesAsync(

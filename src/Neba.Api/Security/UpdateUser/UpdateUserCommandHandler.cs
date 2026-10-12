@@ -74,15 +74,7 @@ internal sealed class UpdateUserCommandHandler(
         }
 
         // One SaveChanges: the replace is all-or-nothing, so a failure can't leave a half-applied set.
-        foreach (var claim in stored)
-        {
-            var wanted = claim.ClaimType == Permissions.ClaimType ? requested.Value.Added : requested.Value.Removed;
-
-            if (!wanted.Contains(claim.ClaimValue!))
-            {
-                securityDbContext.UserClaims.Remove(claim);
-            }
-        }
+        RemoveStale(requested.Value, stored);
 
         AddMissing(command.UserId, Permissions.ClaimType, requested.Value.Added, stored);
         AddMissing(command.UserId, Permissions.DeniedClaimType, requested.Value.Removed, stored);
@@ -95,6 +87,17 @@ internal sealed class UpdateUserCommandHandler(
         logger.LogPermissionOverridesUpdated(command.UserId, command.CallerUserId, added, removed);
 
         return Result.Updated;
+    }
+
+    private void RemoveStale(UserPermissionOverrides requested, IEnumerable<IdentityUserClaim<Ulid>> stored)
+    {
+        var stale = stored.Where(claim =>
+            !(claim.ClaimType == Permissions.ClaimType ? requested.Added : requested.Removed).Contains(claim.ClaimValue!));
+
+        foreach (var claim in stale)
+        {
+            securityDbContext.UserClaims.Remove(claim);
+        }
     }
 
     private void AddMissing(

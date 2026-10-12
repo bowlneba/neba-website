@@ -44,14 +44,11 @@ internal sealed class UserPermissionOverrides
 
         var both = addedSet.Intersect(removedSet).Order(StringComparer.Ordinal).ToList();
 
-        if (both.Count > 0)
-        {
-            return Error.Validation(
+        return both.Count > 0
+            ? Error.Validation(
                 "UserPermissionOverrides.AddedAndRemoved",
-                $"A permission can't be both added and removed: {string.Join(", ", both)}.");
-        }
-
-        return new UserPermissionOverrides(addedSet, removedSet);
+                $"A permission can't be both added and removed: {string.Join(", ", both)}.")
+            : new UserPermissionOverrides(addedSet, removedSet);
     }
 
     /// <summary>
