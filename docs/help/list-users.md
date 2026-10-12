@@ -24,7 +24,8 @@ You need the `System.GetUsers` permission, enforced via the dynamic `Permission:
 
 ## Related actions
 
-Resetting a user's password is a separate action available from this same page — see [Reset a User's Password](reset-password.md) for that flow.
+- **Edit permissions** — click the pencil icon on a row (shown with the `System.EditUser` permission; Admin accounts have none). See [Edit a User's Permissions](edit-user.md).
+- **Reset password** — a separate action available from this same page. See [Reset a User's Password](reset-password.md).
 
 ## Troubleshooting
 
@@ -37,5 +38,6 @@ Resetting a user's password is a separate action available from this same page �
 ## Related
 
 - [Create a User](create-user.md) — invites a new staff account.
+- [Edit a User's Permissions](edit-user.md) — adds or removes individual permissions for one user.
 - [Reset a User's Password](reset-password.md) — forces a fresh set-password link for an existing user, reachable from this page's table.
 - [`docs/policies/README.md`](../policies/README.md) — the `Permission:{value}` policy this action requires and how it's evaluated.
