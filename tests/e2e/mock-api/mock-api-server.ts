@@ -963,9 +963,46 @@ const MOCK_USERS = {
   pageSize: 20,
 };
 
+const MOCK_ROLES = {
+  roles: [
+    {
+      name: 'Journalist',
+      permissions: ['News.CreateArticle', 'News.DeleteArticle', 'News.EditArticle'],
+    },
+    {
+      name: 'Member',
+      permissions: [],
+    },
+    {
+      name: 'Tournament Director',
+      permissions: [
+        'Tournaments.CreateTournament',
+        'Tournaments.EditTournament',
+        'Tournaments.ManageSponsors',
+        'Tournaments.ManageTournamentStatus',
+      ],
+    },
+    {
+      name: 'Webmaster',
+      permissions: [
+        'News.CreateArticle',
+        'News.DeleteArticle',
+        'News.EditArticle',
+        'System.CreateUser',
+        'System.EditUser',
+        'System.GetUsers',
+        'System.ResetUserPassword',
+        'Tournaments.CreateTournament',
+        'Tournaments.EditTournament',
+      ],
+    },
+  ],
+};
+
 const routes: Record<string, unknown> = {
   '/health': { status: 'healthy' },
   '/security/users': MOCK_USERS,
+  '/security/roles': MOCK_ROLES,
   '/documents/tournament-rules': { html: MOCK_TOURNAMENT_RULES_HTML },
   '/documents/bylaws': { html: MOCK_BYLAWS_HTML },
   '/reference-data/us-states': MOCK_US_STATES,
@@ -1024,6 +1061,15 @@ function resolveSponsorDetailRoute(pathname: string): object | null {
   return createdSponsors.get(slug) ?? null;
 }
 
+function resolveUserDetailRoute(pathname: string): object | null {
+  if (!pathname.startsWith('/security/users/')) return null;
+
+  const userId = pathname.slice('/security/users/'.length);
+  const user = MOCK_USERS.items.find((candidate) => candidate.userId === userId);
+
+  return user ? { ...user, addedPermissions: [], removedPermissions: [] } : null;
+}
+
 function resolveGetRoute(pathname: string, searchParams: URLSearchParams): object | null {
   return (
     resolveStatsRoute(pathname, searchParams) ??
@@ -1031,6 +1077,7 @@ function resolveGetRoute(pathname: string, searchParams: URLSearchParams): objec
     resolveStaticGetRoute(pathname) ??
     resolveTournamentDetailRoute(pathname) ??
     resolveSponsorDetailRoute(pathname) ??
+    resolveUserDetailRoute(pathname) ??
     (routes[pathname] as object | undefined) ??
     null
   );
@@ -1472,7 +1519,10 @@ async function handleRequest(req: IncomingMessage, res: ServerResponse): Promise
 
   if (
     req.method === 'PUT' &&
-    (pathname.startsWith('/news/') || pathname.startsWith('/sponsors/') || pathname.startsWith('/tournaments/'))
+    (pathname.startsWith('/news/') ||
+      pathname.startsWith('/sponsors/') ||
+      pathname.startsWith('/tournaments/') ||
+      pathname.startsWith('/security/users/'))
   ) {
     if (sendMockOverrideErrorIfSet(res, pathname)) return;
 
