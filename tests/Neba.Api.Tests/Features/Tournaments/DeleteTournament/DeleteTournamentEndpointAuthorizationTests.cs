@@ -73,6 +73,7 @@ public sealed class DeleteTournamentEndpointAuthorizationTests(SecurityDbContext
             })
             .AddVersioning();
 
+        builder.Services.AddFusionCache();
         builder.AddSecurity();
 
         _app = builder.Build();

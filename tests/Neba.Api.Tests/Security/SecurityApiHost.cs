@@ -87,6 +87,7 @@ internal sealed class SecurityApiHost
             })
             .AddVersioning();
 
+        builder.Services.AddFusionCache();
         builder.AddSecurity();
 
         var app = builder.Build();

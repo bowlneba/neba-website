@@ -83,6 +83,7 @@ public sealed class UploadSponsorLogoEndpointAuthorizationTests(SecurityDbContex
             })
             .AddVersioning();
 
+        builder.Services.AddFusionCache();
         builder.AddSecurity();
 
         _app = builder.Build();
