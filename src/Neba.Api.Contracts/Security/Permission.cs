@@ -18,12 +18,23 @@ public sealed class Permissions
     /// </summary>
     public const string ClaimType = "permission";
 
+    /// <summary>
+    /// The claim type that removes a permission from a single user even when one of their roles grants it.
+    /// Stored on the user (AspNetUserClaims), never on a role or in a JWT.
+    /// </summary>
+    public const string DeniedClaimType = "permission.denied";
+
     #region System
 
     /// <summary>
     /// Permission to create a new user in the system.
     /// </summary>
     public static readonly Permissions CreateUser = new("System.CreateUser", "Create User");
+
+    /// <summary>
+    /// Permission to edit a user account (currently: that user's permission overrides).
+    /// </summary>
+    public static readonly Permissions EditUser = new("System.EditUser", "Edit User");
 
     /// <summary>
     /// Permission to reset a user's password in the system.

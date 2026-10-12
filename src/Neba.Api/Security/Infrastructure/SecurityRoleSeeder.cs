@@ -17,6 +17,7 @@ internal static class SecurityRoleSeeder
         [Roles.Webmaster] =
         [
             Permissions.CreateUser,
+            Permissions.EditUser,
             Permissions.ResetUserPassword,
             Permissions.GetUsers,
 
