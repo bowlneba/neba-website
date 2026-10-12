@@ -1186,7 +1186,7 @@ async function handleRequest(req: IncomingMessage, res: ServerResponse): Promise
 
     await readRequestBody(req);
 
-    sendJsonResponse(res, { userId: '01JX0000000000000000000399', rolesAssigned: true }, 201);
+    sendJsonResponse(res, { userId: '01JX0000000000000000000399', rolesAssigned: true, permissionOverridesApplied: true }, 201);
     return;
   }
 

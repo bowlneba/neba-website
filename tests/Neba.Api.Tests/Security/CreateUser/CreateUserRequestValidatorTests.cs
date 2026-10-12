@@ -134,42 +134,87 @@ public sealed class CreateUserRequestValidatorTests
             && e.ErrorMessage == "One or more roles are not recognized.");
     }
 
-    [Fact(DisplayName = "Validate should fail with ClaimTypeUnsupported when a claim type other than 'permission' is requested")]
-    public void Validate_ShouldFailWithClaimTypeUnsupported_WhenClaimTypeIsNotPermission()
+    [Fact(DisplayName = "Validate should fail with AddedPermissionUnknown when an added permission is not recognized")]
+    public void Validate_ShouldFailWithAddedPermissionUnknown_WhenValueIsNotRecognized()
     {
         // Arrange
-        var request = CreateUserRequestFactory.Create(
-            claims: [new ClaimInput { Type = "not-permission", Value = Permissions.CreateUser.Value }]);
+        var request = CreateUserRequestFactory.Create(addedPermissions: ["Not.ARealPermission"]);
 
         // Act
         var result = _validator.Validate(request);
 
         // Assert
         result.IsValid.ShouldBeFalse();
-        result.Errors.ShouldContain(e => e.ErrorCode == "CreateUserRequest.ClaimTypeUnsupported");
+        result.Errors.ShouldContain(e => e.ErrorCode == "CreateUserRequest.AddedPermissionUnknown");
     }
 
-    [Fact(DisplayName = "Validate should fail with ClaimValueUnknown when a claim value is not a recognized permission")]
-    public void Validate_ShouldFailWithClaimValueUnknown_WhenClaimValueIsNotRecognizedPermission()
+    [Fact(DisplayName = "Validate should fail with RemovedPermissionUnknown when a removed permission is not recognized")]
+    public void Validate_ShouldFailWithRemovedPermissionUnknown_WhenValueIsNotRecognized()
     {
         // Arrange
-        var request = CreateUserRequestFactory.Create(
-            claims: [new ClaimInput { Type = Permissions.ClaimType, Value = "Not.ARealPermission" }]);
+        var request = CreateUserRequestFactory.Create(removedPermissions: ["Not.ARealPermission"]);
 
         // Act
         var result = _validator.Validate(request);
 
         // Assert
         result.IsValid.ShouldBeFalse();
-        result.Errors.ShouldContain(e => e.ErrorCode == "CreateUserRequest.ClaimValueUnknown");
+        result.Errors.ShouldContain(e => e.ErrorCode == "CreateUserRequest.RemovedPermissionUnknown");
     }
 
-    [Fact(DisplayName = "Validate should succeed when claims carry a known permission value")]
-    public void Validate_ShouldSucceed_WhenClaimsCarryKnownPermissionValue()
+    [Fact(DisplayName = "Validate should fail with AddedPermissionDuplicate when an added permission is repeated")]
+    public void Validate_ShouldFailWithAddedPermissionDuplicate_WhenValueIsRepeated()
     {
         // Arrange
         var request = CreateUserRequestFactory.Create(
-            claims: [new ClaimInput { Type = Permissions.ClaimType, Value = Permissions.CreateUser.Value }]);
+            addedPermissions: [Permissions.CreateUser.Value, Permissions.CreateUser.Value]);
+
+        // Act
+        var result = _validator.Validate(request);
+
+        // Assert
+        result.IsValid.ShouldBeFalse();
+        result.Errors.ShouldContain(e => e.ErrorCode == "CreateUserRequest.AddedPermissionDuplicate");
+    }
+
+    [Fact(DisplayName = "Validate should fail with RemovedPermissionDuplicate when a removed permission is repeated")]
+    public void Validate_ShouldFailWithRemovedPermissionDuplicate_WhenValueIsRepeated()
+    {
+        // Arrange
+        var request = CreateUserRequestFactory.Create(
+            removedPermissions: [Permissions.CreateUser.Value, Permissions.CreateUser.Value]);
+
+        // Act
+        var result = _validator.Validate(request);
+
+        // Assert
+        result.IsValid.ShouldBeFalse();
+        result.Errors.ShouldContain(e => e.ErrorCode == "CreateUserRequest.RemovedPermissionDuplicate");
+    }
+
+    [Fact(DisplayName = "Validate should fail with PermissionAddedAndRemoved when a permission is in both sets")]
+    public void Validate_ShouldFailWithPermissionAddedAndRemoved_WhenValueIsInBothSets()
+    {
+        // Arrange
+        var request = CreateUserRequestFactory.Create(
+            addedPermissions: [Permissions.CreateUser.Value],
+            removedPermissions: [Permissions.CreateUser.Value]);
+
+        // Act
+        var result = _validator.Validate(request);
+
+        // Assert
+        result.IsValid.ShouldBeFalse();
+        result.Errors.ShouldContain(e => e.ErrorCode == "CreateUserRequest.PermissionAddedAndRemoved");
+    }
+
+    [Fact(DisplayName = "Validate should succeed when added and removed permissions are distinct known values")]
+    public void Validate_ShouldSucceed_WhenOverridesAreDistinctKnownValues()
+    {
+        // Arrange
+        var request = CreateUserRequestFactory.Create(
+            addedPermissions: [Permissions.CreateUser.Value],
+            removedPermissions: [Permissions.CreateArticle.Value]);
 
         // Act
         var result = _validator.Validate(request);

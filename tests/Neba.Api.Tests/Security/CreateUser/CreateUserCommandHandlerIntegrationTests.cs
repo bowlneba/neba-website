@@ -3,6 +3,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Testing;
 
+using Neba.Api.Contracts.Security;
 using Neba.Api.Email;
 using Neba.Api.Security;
 using Neba.Api.Security.CreateUser;
@@ -56,6 +57,7 @@ public sealed class CreateUserCommandHandlerIntegrationTests(SecurityDbContextFi
         var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<ApplicationRole>>();
         var command = new CreateUserCommand
         {
+            CallerPermissions = [],
             Email = LoginRequestFactory.ValidEmail,
             Roles = [Roles.Member]
         };
@@ -84,6 +86,7 @@ public sealed class CreateUserCommandHandlerIntegrationTests(SecurityDbContextFi
         var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<ApplicationRole>>();
         var command = new CreateUserCommand
         {
+            CallerPermissions = [],
             Email = LoginRequestFactory.ValidEmail,
             UsbcId = "12345",
             PhoneNumber = "555-123-4567",
@@ -118,6 +121,7 @@ public sealed class CreateUserCommandHandlerIntegrationTests(SecurityDbContextFi
         var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<ApplicationRole>>();
         var command = new CreateUserCommand
         {
+            CallerPermissions = [],
             Email = LoginRequestFactory.ValidEmail,
             Roles = [Roles.Member, Roles.Journalist]
         };
@@ -152,6 +156,7 @@ public sealed class CreateUserCommandHandlerIntegrationTests(SecurityDbContextFi
         // IdentityResult failure path without mocking UserManager.
         var command = new CreateUserCommand
         {
+            CallerPermissions = [],
             Email = LoginRequestFactory.ValidEmail,
             Roles = [Roles.Member, Roles.Member.ToUpperInvariant()]
         };
@@ -173,8 +178,8 @@ public sealed class CreateUserCommandHandlerIntegrationTests(SecurityDbContextFi
         logRecord.Message.ShouldContain(result.Value.UserId.ToString());
     }
 
-    [Fact(DisplayName = "HandleAsync assigns claims to the user when claims are provided")]
-    public async Task HandleAsync_ShouldAssignClaims_WhenClaimsAreProvided()
+    [Fact(DisplayName = "HandleAsync stores added permissions as 'permission' claims and removed permissions as 'permission.denied' claims")]
+    public async Task HandleAsync_ShouldStoreOverrides_WhenOverridesAreProvided()
     {
         // Arrange
         var ct = TestContext.Current.CancellationToken;
@@ -185,7 +190,9 @@ public sealed class CreateUserCommandHandlerIntegrationTests(SecurityDbContextFi
         {
             Email = LoginRequestFactory.ValidEmail,
             Roles = [Roles.Member],
-            Claims = [("permission", "tournaments.manage")]
+            AddedPermissions = [Permissions.CreateSponsor.Value],
+            RemovedPermissions = [Permissions.CreateArticle.Value],
+            CallerPermissions = [Permissions.CreateSponsor.Value]
         };
 
         await SeedRolesAsync(roleManager, command.Roles);
@@ -194,13 +201,94 @@ public sealed class CreateUserCommandHandlerIntegrationTests(SecurityDbContextFi
             .Returns(Task.CompletedTask);
 
         // Act
-        await CreateHandler(userManager).HandleAsync(command, ct);
+        var result = await CreateHandler(userManager).HandleAsync(command, ct);
 
         // Assert
+        result.IsError.ShouldBeFalse();
+        result.Value.PermissionOverridesApplied.ShouldBeTrue();
         var stored = await userManager.FindByEmailAsync(command.Email);
         stored.ShouldNotBeNull();
         var claims = await userManager.GetClaimsAsync(stored);
-        claims.ShouldContain(c => c.Type == "permission" && c.Value == "tournaments.manage");
+        claims.ShouldContain(c => c.Type == Permissions.ClaimType && c.Value == Permissions.CreateSponsor.Value);
+        claims.ShouldContain(c => c.Type == Permissions.DeniedClaimType && c.Value == Permissions.CreateArticle.Value);
+    }
+
+    [Fact(DisplayName = "HandleAsync returns Forbidden and creates no user when the caller adds a permission they do not hold")]
+    public async Task HandleAsync_ShouldReturnForbiddenAndCreateNoUser_WhenAddedPermissionIsNotHeld()
+    {
+        // Arrange
+        var ct = TestContext.Current.CancellationToken;
+        using var scope = fixture.CreateScope();
+        var userManager = scope.ServiceProvider.GetRequiredService<UserManager<ApplicationUser>>();
+        var command = new CreateUserCommand
+        {
+            Email = LoginRequestFactory.ValidEmail,
+            Roles = [Roles.Member],
+            AddedPermissions = [Permissions.ClearCache.Value],
+            CallerPermissions = [Permissions.CreateUser.Value]
+        };
+
+        // Act
+        var result = await CreateHandler(userManager).HandleAsync(command, ct);
+
+        // Assert
+        result.IsError.ShouldBeTrue();
+        result.FirstError.Type.ShouldBe(ErrorOr.ErrorType.Forbidden);
+        result.FirstError.Description.ShouldContain(Permissions.ClearCache.Value);
+        (await userManager.FindByEmailAsync(command.Email)).ShouldBeNull();
+    }
+
+    [Fact(DisplayName = "HandleAsync allows the caller to remove a permission they do not hold")]
+    public async Task HandleAsync_ShouldAllowRemoval_WhenCallerDoesNotHoldPermission()
+    {
+        // Arrange
+        var ct = TestContext.Current.CancellationToken;
+        using var scope = fixture.CreateScope();
+        var userManager = scope.ServiceProvider.GetRequiredService<UserManager<ApplicationUser>>();
+        var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<ApplicationRole>>();
+        var command = new CreateUserCommand
+        {
+            Email = LoginRequestFactory.ValidEmail,
+            Roles = [Roles.Member],
+            RemovedPermissions = [Permissions.ClearCache.Value],
+            CallerPermissions = []
+        };
+
+        await SeedRolesAsync(roleManager, command.Roles);
+        _emailSender
+            .Setup(s => s.SendAsync(It.IsAny<EmailMessage>(), ct))
+            .Returns(Task.CompletedTask);
+
+        // Act
+        var result = await CreateHandler(userManager).HandleAsync(command, ct);
+
+        // Assert
+        result.IsError.ShouldBeFalse();
+    }
+
+    [Fact(DisplayName = "HandleAsync returns a validation error and creates no user when a permission is both added and removed")]
+    public async Task HandleAsync_ShouldReturnValidationError_WhenPermissionIsInBothSets()
+    {
+        // Arrange
+        var ct = TestContext.Current.CancellationToken;
+        using var scope = fixture.CreateScope();
+        var userManager = scope.ServiceProvider.GetRequiredService<UserManager<ApplicationUser>>();
+        var command = new CreateUserCommand
+        {
+            Email = LoginRequestFactory.ValidEmail,
+            Roles = [Roles.Member],
+            AddedPermissions = [Permissions.CreateUser.Value],
+            RemovedPermissions = [Permissions.CreateUser.Value],
+            CallerPermissions = [Permissions.CreateUser.Value]
+        };
+
+        // Act
+        var result = await CreateHandler(userManager).HandleAsync(command, ct);
+
+        // Assert
+        result.IsError.ShouldBeTrue();
+        result.FirstError.Type.ShouldBe(ErrorOr.ErrorType.Validation);
+        (await userManager.FindByEmailAsync(command.Email)).ShouldBeNull();
     }
 
     [Fact(DisplayName = "HandleAsync sends an invite email with a set-password link")]
@@ -213,6 +301,7 @@ public sealed class CreateUserCommandHandlerIntegrationTests(SecurityDbContextFi
         var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<ApplicationRole>>();
         var command = new CreateUserCommand
         {
+            CallerPermissions = [],
             Email = LoginRequestFactory.ValidEmail,
             Roles = [Roles.Member]
         };
@@ -241,6 +330,7 @@ public sealed class CreateUserCommandHandlerIntegrationTests(SecurityDbContextFi
         var ct = TestContext.Current.CancellationToken;
         var command = new CreateUserCommand
         {
+            CallerPermissions = [],
             Email = LoginRequestFactory.ValidEmail,
             Roles = [Roles.Member]
         };
@@ -277,6 +367,7 @@ public sealed class CreateUserCommandHandlerIntegrationTests(SecurityDbContextFi
         var userManager = scope.ServiceProvider.GetRequiredService<UserManager<ApplicationUser>>();
         var command = new CreateUserCommand
         {
+            CallerPermissions = [],
             Email = "not-an-email",
             Roles = [Roles.Member]
         };

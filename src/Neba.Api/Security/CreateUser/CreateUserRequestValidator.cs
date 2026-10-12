@@ -2,7 +2,6 @@ using FastEndpoints;
 
 using FluentValidation;
 
-using Neba.Api.Contracts.Security;
 using Neba.Api.Contracts.Security.CreateUser;
 using Neba.Api.Security.Domain;
 
@@ -33,12 +32,9 @@ internal sealed class CreateUserRequestValidator : Validator<CreateUserRequest>
             .WithErrorCode("CreateUserRequest.RoleUnknown")
             .WithMessage("One or more roles are not recognized.");
 
-        RuleForEach(r => r.User.Claims)
-            .Must(claim => claim.Type == Permissions.ClaimType)
-            .WithErrorCode("CreateUserRequest.ClaimTypeUnsupported")
-            .WithMessage($"Only the '{Permissions.ClaimType}' claim type can be granted through this endpoint.")
-            .Must(claim => Permissions.List.Any(p => p.Value == claim.Value))
-            .WithErrorCode("CreateUserRequest.ClaimValueUnknown")
-            .WithMessage("One or more claim values are not recognized permissions.");
+        this.ApplyPermissionOverrideRules(
+            r => r.User.AddedPermissions,
+            r => r.User.RemovedPermissions,
+            "CreateUserRequest");
     }
 }

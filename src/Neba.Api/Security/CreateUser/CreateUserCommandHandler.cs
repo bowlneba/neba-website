@@ -5,6 +5,7 @@ using ErrorOr;
 
 using Microsoft.AspNetCore.Identity;
 
+using Neba.Api.Contracts.Security;
 using Neba.Api.Email;
 using Neba.Api.Messaging;
 using Neba.Api.Security.Domain;
@@ -21,6 +22,24 @@ internal sealed class CreateUserCommandHandler(
 {
     public async Task<ErrorOr<CreateUserResult>> HandleAsync(CreateUserCommand command, CancellationToken cancellationToken)
     {
+        // Build and guard before creating anything: a rejected request must not leave an invited account behind.
+        var overrides = UserPermissionOverrides.Create(command.AddedPermissions, command.RemovedPermissions);
+
+        if (overrides.IsError)
+        {
+            return overrides.Errors;
+        }
+
+        var notHeld = overrides.Value.GainsOver(UserPermissionOverrides.None)
+            .Where(permission => !command.CallerPermissions.Contains(permission))
+            .Order(StringComparer.Ordinal)
+            .ToList();
+
+        if (notHeld.Count > 0)
+        {
+            return CreateUserErrors.PermissionNotHeld(notHeld);
+        }
+
         var user = new ApplicationUser
         {
             Id = Ulid.NewUlid(),
@@ -54,18 +73,18 @@ internal sealed class CreateUserCommandHandler(
 
         var rolesAssigned = addToRolesResult.Succeeded;
 
-        // Validated to only carry Permissions.ClaimType with a known permission value (see
-        // CreateUserRequestValidator), but authorization never reads it back: JWTs only carry
-        // permissions resolved from role membership (PermissionResolver), not from a user's own
-        // stored claims. This lets an admin pre-stage a claim for a future feature without it
-        // granting anything today.
-        if (command.Claims.Count > 0)
+        var overridesApplied = true;
+
+        if (overrides.Value.Added.Count > 0 || overrides.Value.Removed.Count > 0)
         {
-            var claims = command.Claims.Select(c => new Claim(c.Type, c.Value));
+            var claims = overrides.Value.Added.Select(value => new Claim(Permissions.ClaimType, value))
+                .Concat(overrides.Value.Removed.Select(value => new Claim(Permissions.DeniedClaimType, value)));
+
             var addClaimsResult = await userManager.AddClaimsAsync(user, claims);
 
             if (!addClaimsResult.Succeeded)
             {
+                overridesApplied = false;
                 var errors = string.Join("; ", addClaimsResult.Errors.Select(e => $"{e.Code}: {e.Description}"));
                 logger.LogClaimAssignmentFailed(user.Id, errors);
             }
@@ -81,7 +100,7 @@ internal sealed class CreateUserCommandHandler(
             HtmlBody = new InviteUserEmail(inviteLink).ToHtmlBody()
         }, cancellationToken);
 
-        return new CreateUserResult(user.Id, rolesAssigned);
+        return new CreateUserResult(user.Id, rolesAssigned, overridesApplied);
     }
 }
 
@@ -100,7 +119,7 @@ internal static partial class CreateUserCommandHandlerLogMessages
 
     [LoggerMessage(
         Level = LogLevel.Error,
-        Message = "Failed to assign claim(s) to newly created user {UserId}. Errors: {Errors}")]
+        Message = "Failed to store permission override(s) for newly created user {UserId}. Errors: {Errors}")]
     public static partial void LogClaimAssignmentFailed(
         this ILogger<CreateUserCommandHandler> logger, Ulid userId, string errors);
 }
