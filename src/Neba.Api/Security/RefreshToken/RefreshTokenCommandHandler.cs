@@ -96,7 +96,7 @@ internal sealed class RefreshTokenCommandHandler(
         // Roles/permissions don't change between CAS retries for the same user, so only
         // resolve them once - on the first attempt whose token actually validated.
         roleContext.Roles ??= (await userManager.GetRolesAsync(user)).AsReadOnly();
-        roleContext.Permissions ??= await PermissionResolver.ResolveAsync(roleManager, roleContext.Roles);
+        roleContext.Permissions ??= await PermissionResolver.ResolveAsync(roleManager, userManager, user, roleContext.Roles);
 
         if (matchedSlot.GracedUntil is not null)
         {

@@ -131,7 +131,8 @@ internal static class AuditingConfiguration
                     .IncludeEntityObjects(true))
                 .UseOptIn()
                 .Include<ApplicationUser>()
-                .Include<IdentityUserRole<Ulid>>();
+                .Include<IdentityUserRole<Ulid>>()
+                .Include<IdentityUserClaim<Ulid>>();
 
             return builder;
         }

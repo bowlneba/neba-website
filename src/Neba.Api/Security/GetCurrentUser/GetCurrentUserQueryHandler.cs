@@ -23,7 +23,7 @@ internal sealed class GetCurrentUserQueryHandler(
         }
 
         var roles = await userManager.GetRolesAsync(user);
-        var permissions = await PermissionResolver.ResolveAsync(roleManager, roles);
+        var permissions = await PermissionResolver.ResolveAsync(roleManager, userManager, user, roles);
 
         return new UserDto
         {

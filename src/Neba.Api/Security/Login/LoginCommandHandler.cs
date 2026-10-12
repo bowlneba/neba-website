@@ -33,7 +33,7 @@ internal sealed class LoginCommandHandler(
         }
 
         var roles = await userManager.GetRolesAsync(user);
-        var permissions = await PermissionResolver.ResolveAsync(roleManager, roles);
+        var permissions = await PermissionResolver.ResolveAsync(roleManager, userManager, user, roles);
         var tokenPair = jwtTokenService.CreateTokenPair(user, roles.AsReadOnly(), permissions);
 
         await RefreshTokenStore.StoreAsync(userManager, user, tokenPair.RefreshToken, timeProvider);
