@@ -2,6 +2,7 @@ using ErrorOr;
 
 using Microsoft.AspNetCore.Identity;
 
+using Neba.Api.Database;
 using Neba.Api.Messaging;
 using Neba.Api.Security.Domain;
 using Neba.Api.Security.Infrastructure.Authorization;
@@ -10,7 +11,7 @@ namespace Neba.Api.Security.GetCurrentUser;
 
 internal sealed class GetCurrentUserQueryHandler(
         UserManager<ApplicationUser> userManager,
-        RoleManager<ApplicationRole> roleManager)
+        SecurityDbContext securityDbContext)
     : IQueryHandler<GetCurrentUserQuery, ErrorOr<UserDto>>
 {
     public async Task<ErrorOr<UserDto>> HandleAsync(GetCurrentUserQuery query, CancellationToken cancellationToken)
@@ -23,7 +24,7 @@ internal sealed class GetCurrentUserQueryHandler(
         }
 
         var roles = await userManager.GetRolesAsync(user);
-        var permissions = await PermissionResolver.ResolveAsync(roleManager, userManager, user, roles);
+        var permissions = await PermissionResolver.ResolveAsync(securityDbContext, user, roles, cancellationToken);
 
         return new UserDto
         {

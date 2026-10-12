@@ -1,6 +1,7 @@
-using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore;
 
 using Neba.Api.Contracts.Security;
+using Neba.Api.Database;
 using Neba.Api.Security.Domain;
 
 namespace Neba.Api.Security.Infrastructure.Authorization;
@@ -8,29 +9,23 @@ namespace Neba.Api.Security.Infrastructure.Authorization;
 internal static class PermissionResolver
 {
     public static async Task<IReadOnlyCollection<Permissions>> ResolveAsync(
-        RoleManager<ApplicationRole> roleManager,
-        UserManager<ApplicationUser> userManager,
+        SecurityDbContext securityDbContext,
         ApplicationUser user,
-        IEnumerable<string> roleNames)
+        IEnumerable<string> roleNames,
+        CancellationToken cancellationToken)
     {
         var roles = roleNames.ToList();
-        var permissionKeys = new HashSet<string>(StringComparer.Ordinal);
 
-        foreach (var roleName in roles)
-        {
-            var role = await roleManager.FindByNameAsync(roleName);
+        // One query for every role's grants, instead of a role lookup and a claim read per role.
+        var roleGrants = await securityDbContext.RoleClaims
+            .AsNoTracking()
+            .Where(claim => claim.ClaimType == SecurityRoleSeeder.PermissionClaimType
+                && securityDbContext.Roles.Any(role => role.Id == claim.RoleId && roles.Contains(role.Name!)))
+            .Select(claim => claim.ClaimValue!)
+            .Distinct()
+            .ToListAsync(cancellationToken);
 
-            if (role is null)
-            {
-                continue;
-            }
-
-            var claims = await roleManager.GetClaimsAsync(role);
-            foreach (var claim in claims.Where(c => c.Type == SecurityRoleSeeder.PermissionClaimType))
-            {
-                permissionKeys.Add(claim.Value);
-            }
-        }
+        var permissionKeys = new HashSet<string>(roleGrants, StringComparer.Ordinal);
 
         // Admin holds every permission by definition. Stored overrides never narrow it, so a user
         // promoted to Admin later can't carry a stale denial. The claim read below is not wrapped in
@@ -40,7 +35,13 @@ internal static class PermissionResolver
             return [.. permissionKeys.Select(key => Permissions.FromValue(key))];
         }
 
-        var overrides = UserPermissionOverrides.FromStoredClaims(await userManager.GetClaimsAsync(user));
+        var storedClaims = await securityDbContext.UserClaims
+            .AsNoTracking()
+            .Where(claim => claim.UserId == user.Id
+                && (claim.ClaimType == Permissions.ClaimType || claim.ClaimType == Permissions.DeniedClaimType))
+            .ToListAsync(cancellationToken);
+
+        var overrides = UserPermissionOverrides.FromStoredClaims(storedClaims.Select(claim => claim.ToClaim()));
 
         return [.. overrides.ApplyTo(permissionKeys).Select(key => Permissions.FromValue(key))];
     }
