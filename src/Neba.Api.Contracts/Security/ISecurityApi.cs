@@ -7,6 +7,7 @@ using Neba.Api.Contracts.Security.Login;
 using Neba.Api.Contracts.Security.RefreshToken;
 using Neba.Api.Contracts.Security.ResetPassword;
 using Neba.Api.Contracts.Security.SetPasswordFromToken;
+using Neba.Api.Contracts.Security.UpdateUser;
 
 using Refit;
 
@@ -57,4 +58,8 @@ public interface ISecurityApi
     /// <summary>Lists every role with the permissions it grants.</summary>
     [Get("/security/roles")]
     Task<IApiResponse<ListRolesResponse>> ListRolesAsync(CancellationToken cancellationToken = default);
+
+    /// <summary>Replaces a user's permission overrides.</summary>
+    [Put("/security/users/{userId}")]
+    Task<IApiResponse> UpdateUserAsync(string userId, [Body] UpdateUserRequest request, CancellationToken cancellationToken = default);
 }
