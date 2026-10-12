@@ -20,6 +20,10 @@ jobs:
     runs-on: ubuntu-latest
     needs: infra-preview
     environment: Production
+    # Same group as hotfix.yml's deploy job, so a main deploy and a hotfix queue.
+    concurrency:
+      group: prod-deploy
+      cancel-in-progress: false
     permissions:
       contents: read
       id-token: write

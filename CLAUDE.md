@@ -211,3 +211,8 @@ Detailed write-ups live in `docs/learnings/`. Read the matching file before work
 ### Hangfire PostgreSql — `docs/learnings/hangfire-postgres.md`
 
 - `EnableTransactionScopeEnlistment` stays `false`. Dev runs one worker, so one wedged job stops all local jobs.
+
+### Hotfix deploys — `docs/learnings/hotfix.md`
+
+- Emergency fixes go on a `hotfix/*` branch cut from the latest release tag (tagged by hand after each deploy) and deploy with `hotfix.yml` (manual dispatch). Open the PR to `main` right away; never leave a hotfix off `main`.
+- Hotfixes never run migrations. `hotfix.yml` and `cd.yml` hold copies of the deploy steps; change both.
