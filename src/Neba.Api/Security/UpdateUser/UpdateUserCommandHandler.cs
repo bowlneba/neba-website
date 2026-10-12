@@ -24,17 +24,22 @@ internal sealed class UpdateUserCommandHandler(
             return UpdateUserErrors.CannotEditOwnAccount;
         }
 
-        if (!await securityDbContext.Users.AnyAsync(u => u.Id == command.UserId, cancellationToken))
+        var target = await securityDbContext.Users
+            .AsNoTracking()
+            .Where(u => u.Id == command.UserId)
+            .Select(u => new
+            {
+                IsAdmin = securityDbContext.UserRoles.Any(userRole => userRole.UserId == u.Id
+                    && securityDbContext.Roles.Any(role => role.Id == userRole.RoleId && role.Name == Roles.Admin))
+            })
+            .SingleOrDefaultAsync(cancellationToken);
+
+        if (target is null)
         {
             return UpdateUserErrors.UserNotFound;
         }
 
-        var targetIsAdmin = await securityDbContext.UserRoles
-            .Where(userRole => userRole.UserId == command.UserId)
-            .Join(securityDbContext.Roles, userRole => userRole.RoleId, role => role.Id, (_, role) => role.Name)
-            .AnyAsync(name => name == Roles.Admin, cancellationToken);
-
-        if (targetIsAdmin)
+        if (target.IsAdmin)
         {
             return UpdateUserErrors.AdminOverridesNotAllowed;
         }

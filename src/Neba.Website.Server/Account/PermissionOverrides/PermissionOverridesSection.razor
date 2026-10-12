@@ -72,6 +72,7 @@
     private static readonly PermissionOverrideSet _empty = new();
 
     private IReadOnlyList<AreaGroup> _areas = [];
+    private ILookup<string, string> _grantingRoles = Enumerable.Empty<string>().ToLookup(_ => _, _ => _);
 
     [Parameter, EditorRequired]
     public IReadOnlyCollection<RoleResponse> Roles { get; set; } = [];
@@ -113,12 +114,22 @@
         ];
     }
 
-    private List<string> GrantingRoles(string permissionValue)
-        => [.. Roles
-            .Where(role => SelectedRoles.Contains(role.Name, StringComparer.Ordinal)
-                && role.Permissions.Contains(permissionValue, StringComparer.Ordinal))
-            .Select(role => role.Name)
-            .Order(StringComparer.Ordinal)];
+    protected override void OnParametersSet()
+    {
+        // Built once per parameter change, not per permission per render: toggling a switch re-renders
+        // this section without changing Roles or SelectedRoles.
+        var selected = Roles
+            .Where(role => SelectedRoles.Contains(role.Name, StringComparer.Ordinal))
+            .OrderBy(role => role.Name, StringComparer.Ordinal)
+            .ToList();
+
+        _grantingRoles = selected
+            .SelectMany(role => role.Permissions.Select(permission => (permission, role.Name)))
+            .ToLookup(pair => pair.permission, pair => pair.Name, StringComparer.Ordinal);
+    }
+
+    private IReadOnlyList<string> GrantingRoles(string permissionValue)
+        => [.. _grantingRoles[permissionValue]];
 
     /// <summary>
     /// A position is blocked when moving to it would give more access than the loaded state and the
