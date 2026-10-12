@@ -700,15 +700,20 @@ internal sealed class FailOnNthSaveInterceptor : SaveChangesInterceptor
 
     public void Disarm() => _exception = null;
 
-    public override ValueTask<InterceptionResult<int>> SavingChangesAsync(
-        DbContextEventData eventData,
-        InterceptionResult<int> result,
-        CancellationToken cancellationToken = default)
+    private void ThrowIfArmedCallReached()
     {
         if (_exception is not null && ++_calls == _failOnCall)
         {
             throw _exception;
         }
+    }
+
+    public override ValueTask<InterceptionResult<int>> SavingChangesAsync(
+        DbContextEventData eventData,
+        InterceptionResult<int> result,
+        CancellationToken cancellationToken = default)
+    {
+        ThrowIfArmedCallReached();
 
         return base.SavingChangesAsync(eventData, result, cancellationToken);
     }
