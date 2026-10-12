@@ -1,6 +1,7 @@
 using Neba.Api.Contracts.Security.CreateUser;
 using Neba.Api.Contracts.Security.GetCurrentUser;
 using Neba.Api.Contracts.Security.GetUser;
+using Neba.Api.Contracts.Security.ListRoles;
 using Neba.Api.Contracts.Security.ListUsers;
 using Neba.Api.Contracts.Security.Login;
 using Neba.Api.Contracts.Security.RefreshToken;
@@ -52,4 +53,8 @@ public interface ISecurityApi
     /// <summary>Returns one user with roles and permission overrides.</summary>
     [Get("/security/users/{userId}")]
     Task<IApiResponse<UserDetailResponse>> GetUserAsync(string userId, CancellationToken cancellationToken = default);
+
+    /// <summary>Lists every role with the permissions it grants.</summary>
+    [Get("/security/roles")]
+    Task<IApiResponse<ListRolesResponse>> ListRolesAsync(CancellationToken cancellationToken = default);
 }
