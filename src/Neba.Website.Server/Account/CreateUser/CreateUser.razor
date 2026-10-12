@@ -3,6 +3,8 @@
 @using ErrorOr
 @using Neba.Api.Contracts.Security
 @using Neba.Api.Contracts.Security.CreateUser
+@using Neba.Api.Contracts.Security.ListRoles
+@using Neba.Website.Server.Account.PermissionOverrides
 @using Neba.Website.Server.Services
 @using Refit
 @implements IAsyncDisposable
@@ -10,6 +12,7 @@
 
 @inject ApiExecutor ApiExecutor
 @inject ISecurityApi SecurityApi
+@inject AuthenticationStateProvider AuthenticationStateProvider
 
 <PageTitle>Create User - BowlNEBA</PageTitle>
 
@@ -37,6 +40,12 @@
             {
                 <NebaAlert Severity="NotifySeverity.Warning" Title="Roles Not Assigned" Message="@_warningMessage" Dismissible="true"
                            OnDismiss="@(() => _warningMessage = null)" />
+            }
+
+            @if (_overridesWarning is not null)
+            {
+                <NebaAlert Severity="NotifySeverity.Warning" Title="Permission Overrides Not Saved" Message="@_overridesWarning" Dismissible="true"
+                           OnDismiss="@(() => _overridesWarning = null)" />
             }
 
             @if (_errorMessage is not null)
@@ -82,6 +91,23 @@
                         </section>
 
                         <section class="neba-space-y-4">
+                            @if (_rolesLoadFailed)
+                            {
+                                <NebaAlert Severity="NotifySeverity.Warning" Title="Permission overrides unavailable"
+                                           Message="The role list didn't load, so overrides can't be set here. You can still send the invite and set overrides later with Edit."
+                                           Dismissible="false" />
+                            }
+                            else
+                            {
+                                <PermissionOverridesSection Roles="@_roleDefinitions"
+                                                            SelectedRoles="@_model.Roles"
+                                                            Overrides="@_overrides"
+                                                            CallerPermissions="@_callerPermissions"
+                                                            OnChanged="@MarkDirty" />
+                            }
+                        </section>
+
+                        <section class="neba-space-y-4">
                             <h2 class="create-sponsor-section-title">Additional Info</h2>
                             <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                 <div>
@@ -124,11 +150,35 @@
     private string? _warningMessage;
     private string? _errorMessage;
     private string? _rolesError;
+    private IReadOnlyCollection<RoleResponse> _roleDefinitions = [];
+    private IReadOnlyCollection<string> _callerPermissions = [];
+    private PermissionOverrideSet _overrides = new();
+    private bool _rolesLoadFailed;
+    private string? _overridesWarning;
 
     public CreateUser()
     {
         _editContext = new EditContext(_model);
         _editContext.OnFieldChanged += HandleFieldChanged;
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+        _callerPermissions = [.. authState.User.FindAll(Permissions.ClaimType).Select(claim => claim.Value)];
+
+        var rolesResult = await ApiExecutor.ExecuteAsync(
+            "Security",
+            "ListRoles",
+            ct => SecurityApi.ListRolesAsync(ct));
+
+        if (rolesResult.IsError)
+        {
+            _rolesLoadFailed = true;
+            return;
+        }
+
+        _roleDefinitions = rolesResult.Value.Roles;
     }
 
     private void MarkDirty() => _isDirty = true;
@@ -165,6 +215,7 @@
         _errorMessage = null;
         _successMessage = null;
         _warningMessage = null;
+        _overridesWarning = null;
 
         var request = new CreateUserRequest
         {
@@ -173,7 +224,9 @@
                 Email = _model.Email,
                 Roles = _model.Roles,
                 UsbcId = string.IsNullOrWhiteSpace(_model.UsbcId) ? null : _model.UsbcId,
-                PhoneNumber = string.IsNullOrWhiteSpace(_model.PhoneNumber) ? null : _model.PhoneNumber
+                PhoneNumber = string.IsNullOrWhiteSpace(_model.PhoneNumber) ? null : _model.PhoneNumber,
+                AddedPermissions = [.. _overrides.Added.Order(StringComparer.Ordinal)],
+                RemovedPermissions = [.. _overrides.Removed.Order(StringComparer.Ordinal)]
             }
         };
 
@@ -197,6 +250,12 @@
             _warningMessage = "The account for \"" + _model.Email + "\" was created, but the requested role(s) could not be assigned. Please verify and reassign roles for this user.";
         }
 
+        if (!result.Value.PermissionOverridesApplied)
+        {
+            _overridesWarning = "The account for \"" + _model.Email + "\" was created and the invite sent, but the permission overrides didn't apply. Open the user from the Users list and set them with Edit.";
+        }
+
+        _overrides = new PermissionOverrideSet();
         _editContext.OnFieldChanged -= HandleFieldChanged;
         _model = new CreateUserFormModel();
         _editContext = new EditContext(_model);
