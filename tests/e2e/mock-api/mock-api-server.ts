@@ -957,22 +957,60 @@ const MOCK_USERS = {
       emailConfirmed: false,
       roles: ['Journalist'],
     },
+    {
+      userId: '01JX0000000000000000000498',
+      email: 'admin@bowlneba.com',
+      emailConfirmed: true,
+      roles: ['Admin'],
+    },
   ],
-  totalItems: 2,
+  totalItems: 3,
   pageNumber: 1,
   pageSize: 20,
 };
 
+const ALL_PERMISSION_VALUES = [
+  'BackgroundJobs.ViewDashboard',
+  'Cache.Clear',
+  'Documents.RefreshDocument',
+  'News.CreateArticle',
+  'News.DeleteArticle',
+  'News.EditArticle',
+  'Sponsors.CreateSponsor',
+  'Sponsors.EditSponsor',
+  'System.CreateUser',
+  'System.EditUser',
+  'System.GetUsers',
+  'System.ResetUserPassword',
+  'Tournaments.CreateTournament',
+  'Tournaments.DeleteTournament',
+  'Tournaments.EditTournament',
+  'Tournaments.ManageSponsors',
+  'Tournaments.ManageTournamentStatus',
+];
+
 const MOCK_ROLES = {
   roles: [
+    { name: 'Admin', permissions: ALL_PERMISSION_VALUES },
     {
       name: 'Journalist',
       permissions: ['News.CreateArticle', 'News.DeleteArticle', 'News.EditArticle'],
     },
     {
-      name: 'Member',
-      permissions: [],
+      name: 'Manager',
+      permissions: [
+        'News.CreateArticle',
+        'News.DeleteArticle',
+        'News.EditArticle',
+        'Sponsors.CreateSponsor',
+        'Sponsors.EditSponsor',
+        'Tournaments.CreateTournament',
+        'Tournaments.EditTournament',
+        'Tournaments.ManageSponsors',
+        'Tournaments.ManageTournamentStatus',
+      ],
     },
+    { name: 'Member', permissions: [] },
     {
       name: 'Tournament Director',
       permissions: [
@@ -985,19 +1023,29 @@ const MOCK_ROLES = {
     {
       name: 'Webmaster',
       permissions: [
+        'BackgroundJobs.ViewDashboard',
+        'Documents.RefreshDocument',
         'News.CreateArticle',
         'News.DeleteArticle',
         'News.EditArticle',
+        'Sponsors.CreateSponsor',
+        'Sponsors.EditSponsor',
         'System.CreateUser',
         'System.EditUser',
         'System.GetUsers',
         'System.ResetUserPassword',
         'Tournaments.CreateTournament',
+        'Tournaments.DeleteTournament',
         'Tournaments.EditTournament',
+        'Tournaments.ManageSponsors',
+        'Tournaments.ManageTournamentStatus',
       ],
     },
   ],
 };
+
+// Bodies of the last non-GET request per "METHOD /path", so specs can assert what the UI sent.
+const lastRequestBodies = new Map<string, string>();
 
 const routes: Record<string, unknown> = {
   '/health': { status: 'healthy' },
@@ -1231,7 +1279,7 @@ async function handleRequest(req: IncomingMessage, res: ServerResponse): Promise
   if (req.method === 'POST' && pathname === '/security/users') {
     if (sendMockOverrideErrorIfSet(res, pathname)) return;
 
-    await readRequestBody(req);
+    lastRequestBodies.set('POST /security/users', await readRequestBody(req));
 
     sendJsonResponse(res, { userId: '01JX0000000000000000000399', rolesAssigned: true, permissionOverridesApplied: true }, 201);
     return;
@@ -1494,6 +1542,19 @@ async function handleRequest(req: IncomingMessage, res: ServerResponse): Promise
     }
   }
 
+  if (req.method === 'GET' && pathname === '/__mock/last-request') {
+    const method = requestUrl.searchParams.get('method') ?? '';
+    const path = requestUrl.searchParams.get('path') ?? '';
+    const body = lastRequestBodies.get(method + ' ' + path);
+
+    if (body === undefined) {
+      sendJsonResponse(res, { error: 'No request recorded' }, 404);
+    } else {
+      sendJsonResponse(res, JSON.parse(body));
+    }
+    return;
+  }
+
   if (req.method === 'GET') {
     const delayMs = mockOverrides.get(pathname)?.delayMs;
     if (delayMs) {
@@ -1517,12 +1578,21 @@ async function handleRequest(req: IncomingMessage, res: ServerResponse): Promise
     return;
   }
 
+  if (req.method === 'PUT' && pathname.startsWith('/security/users/')) {
+    if (sendMockOverrideErrorIfSet(res, pathname)) return;
+
+    lastRequestBodies.set('PUT ' + pathname, await readRequestBody(req));
+
+    res.writeHead(204);
+    res.end();
+    return;
+  }
+
   if (
     req.method === 'PUT' &&
     (pathname.startsWith('/news/') ||
       pathname.startsWith('/sponsors/') ||
-      pathname.startsWith('/tournaments/') ||
-      pathname.startsWith('/security/users/'))
+      pathname.startsWith('/tournaments/'))
   ) {
     if (sendMockOverrideErrorIfSet(res, pathname)) return;
 
