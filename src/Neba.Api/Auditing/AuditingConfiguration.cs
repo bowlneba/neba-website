@@ -45,6 +45,58 @@ internal static class AuditingConfiguration
             ? "unknown"
             : eventType.Replace('/', '_').Replace('\\', '_').Replace('#', '_').Replace('?', '_');
 
+    /// <summary>
+    /// Opts the <see cref="AppDbContext"/> entity types in. Separate from <see cref="AddAuditing"/> so tests
+    /// can apply the real opt-in list without the Azure Table provider wiring.
+    /// </summary>
+    internal static void ConfigureAppDbContextAuditing()
+    {
+        Audit.EntityFramework.Configuration.Setup()
+            .ForContext<AppDbContext>(auditConfig => auditConfig
+                .AuditEventType("EF:{context}")
+                // Must be true so AuditEnrichmentAction.Enrich can read entry.Entity to build
+                // scrubbed ColumnValues; it clears entry.Entity afterward so the raw,
+                // unscrubbed entity is never itself serialized into the audit event.
+                .IncludeEntityObjects(true))
+            .UseOptIn()
+            .Include<Bowler>()
+            // Name is an owned type (Bowler.Name, OwnsOne) - EF Core models it as its own entity
+            // type even though it shares Bowler's table, and UseOptIn() opts in per entity type.
+            // Without this, a change to just the name (with no other Bowler property touched)
+            // produces no audit row at all.
+            .Include<Name>()
+            .Include<Season>()
+            .Include<Tournament>()
+            .Include<OilPattern>()
+            .Include<HallOfFameInduction>()
+            .Include<HighAverageAward>()
+            .Include<HighBlockAward>()
+            .Include<BowlerOfTheYearAward>()
+            .Include<BowlingCenter>()
+            .Include<Sponsor>()
+            .Include<Article>()
+            .Include<PendingUpload>()
+            .Include<Squad>()
+            .Include<SquadScore>()
+            .Include<TournamentResult>();
+    }
+
+    /// <summary>
+    /// Opts the <see cref="SecurityDbContext"/> entity types in. Audit.NET's EF configuration is static, so
+    /// tests apply this on its own rather than also opting in every <see cref="AppDbContext"/> entity.
+    /// </summary>
+    internal static void ConfigureSecurityDbContextAuditing()
+    {
+        Audit.EntityFramework.Configuration.Setup()
+            .ForContext<SecurityDbContext>(auditConfig => auditConfig
+                .AuditEventType("EF:{context}")
+                .IncludeEntityObjects(true))
+            .UseOptIn()
+            .Include<ApplicationUser>()
+            .Include<IdentityUserRole<Ulid>>()
+            .Include<IdentityUserClaim<Ulid>>();
+    }
+
     extension(IAzureTableConnectionConfigurator config)
     {
         /// <summary>
@@ -96,43 +148,8 @@ internal static class AuditingConfiguration
                 .Use(new SecurityAuditDataProviderRouter(securityProvider, defaultProvider))
                 .WithCreationPolicy(EventCreationPolicy.InsertOnStartReplaceOnEnd);
 
-            Audit.EntityFramework.Configuration.Setup()
-                .ForContext<AppDbContext>(auditConfig => auditConfig
-                    .AuditEventType("EF:{context}")
-                    // Must be true so AuditEnrichmentAction.Enrich can read entry.Entity to build
-                    // scrubbed ColumnValues; it clears entry.Entity afterward so the raw,
-                    // unscrubbed entity is never itself serialized into the audit event.
-                    .IncludeEntityObjects(true))
-                .UseOptIn()
-                .Include<Bowler>()
-                // Name is an owned type (Bowler.Name, OwnsOne) - EF Core models it as its own entity
-                // type even though it shares Bowler's table, and UseOptIn() opts in per entity type.
-                // Without this, a change to just the name (with no other Bowler property touched)
-                // produces no audit row at all.
-                .Include<Name>()
-                .Include<Season>()
-                .Include<Tournament>()
-                .Include<OilPattern>()
-                .Include<HallOfFameInduction>()
-                .Include<HighAverageAward>()
-                .Include<HighBlockAward>()
-                .Include<BowlerOfTheYearAward>()
-                .Include<BowlingCenter>()
-                .Include<Sponsor>()
-                .Include<Article>()
-                .Include<PendingUpload>()
-                .Include<Squad>()
-                .Include<SquadScore>()
-                .Include<TournamentResult>();
-
-            Audit.EntityFramework.Configuration.Setup()
-                .ForContext<SecurityDbContext>(auditConfig => auditConfig
-                    .AuditEventType("EF:{context}")
-                    .IncludeEntityObjects(true))
-                .UseOptIn()
-                .Include<ApplicationUser>()
-                .Include<IdentityUserRole<Ulid>>()
-                .Include<IdentityUserClaim<Ulid>>();
+            ConfigureAppDbContextAuditing();
+            ConfigureSecurityDbContextAuditing();
 
             return builder;
         }

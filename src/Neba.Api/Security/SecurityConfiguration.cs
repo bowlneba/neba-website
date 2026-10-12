@@ -10,6 +10,7 @@ using Microsoft.IdentityModel.Tokens;
 using Neba.Api.Contracts.Security;
 using Neba.Api.Contracts.Security.Authorization;
 using Neba.Api.Database;
+using Neba.Api.Database.Interceptors;
 using Neba.Api.Security.Domain;
 using Neba.Api.Security.Infrastructure;
 
@@ -55,6 +56,14 @@ internal static class SecurityConfiguration
                         )
                         .EnableRetryOnFailure(maxRetryCount: 5, maxRetryDelay: TimeSpan.FromSeconds(10), errorCodesToAdd: null))
                     .UseSnakeCaseNamingConvention();
+
+                // Registered by AddAuditing(). Without it the SecurityDbContext opt-in list in
+                // AuditingConfiguration never runs and user, role and claim changes go unaudited.
+                // Optional so hosts that exercise only authorization (no audit store) still build.
+                if (sp.GetService<PooledAuditSaveChangesInterceptor>() is { } audit)
+                {
+                    options.AddInterceptors(audit);
+                }
             });
 
             builder.Services
