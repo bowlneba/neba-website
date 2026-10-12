@@ -12,7 +12,9 @@ using Neba.Api.Security.Domain;
 
 namespace Neba.Api.Security.UpdateUser;
 
-internal sealed class UpdateUserCommandHandler(SecurityDbContext securityDbContext)
+internal sealed class UpdateUserCommandHandler(
+    SecurityDbContext securityDbContext,
+    ILogger<UpdateUserCommandHandler> logger)
     : ICommandHandler<UpdateUserCommand, Updated>
 {
     public async Task<ErrorOr<Updated>> HandleAsync(UpdateUserCommand command, CancellationToken cancellationToken)
@@ -77,6 +79,9 @@ internal sealed class UpdateUserCommandHandler(SecurityDbContext securityDbConte
 
         await securityDbContext.SaveChangesAsync(cancellationToken);
 
+        logger.LogPermissionOverridesUpdated(
+            command.UserId, command.CallerUserId, requested.Value.Added.Count, requested.Value.Removed.Count);
+
         return Result.Updated;
     }
 
@@ -91,4 +96,13 @@ internal sealed class UpdateUserCommandHandler(SecurityDbContext securityDbConte
                 new IdentityUserClaim<Ulid> { UserId = userId, ClaimType = claimType, ClaimValue = value });
         }
     }
+}
+
+internal static partial class UpdateUserCommandHandlerLogMessages
+{
+    [LoggerMessage(
+        Level = LogLevel.Information,
+        Message = "Permission overrides for user {UserId} set by {CallerUserId}: {AddedCount} added, {RemovedCount} removed")]
+    public static partial void LogPermissionOverridesUpdated(
+        this ILogger<UpdateUserCommandHandler> logger, Ulid userId, Ulid callerUserId, int addedCount, int removedCount);
 }

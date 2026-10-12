@@ -3,6 +3,8 @@ using System.Security.Claims;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Testing;
 
 using Neba.Api.Contracts.Security;
 using Neba.Api.Security.Domain;
@@ -60,8 +62,10 @@ public sealed class UpdateUserCommandHandlerTests(SecurityDbContextFixture fixtu
         return [.. rows.Select(c => (c.ClaimType!, c.ClaimValue!))];
     }
 
+    private readonly FakeLogger<UpdateUserCommandHandler> _logger = new();
+
     private UpdateUserCommandHandler CreateHandler()
-        => new(fixture.CreateDbContext());
+        => new(fixture.CreateDbContext(), _logger);
 
     private static UpdateUserCommand CreateCommand(
         Ulid userId,
@@ -194,6 +198,10 @@ public sealed class UpdateUserCommandHandlerTests(SecurityDbContextFixture fixtu
         var stored = await StoredClaimsAsync(user.Id, ct);
         stored.ShouldContain((Permissions.ClaimType, Permissions.ClearCache.Value));
         stored.ShouldContain((Permissions.DeniedClaimType, Permissions.CreateArticle.Value));
+
+        var log = _logger.Collector.GetSnapshot().ShouldHaveSingleItem();
+        log.Level.ShouldBe(LogLevel.Information);
+        log.Message.ShouldContain("1 added, 1 removed");
     }
 
     [Fact(DisplayName = "HandleAsync stores the requested set and removes values that are no longer requested")]
