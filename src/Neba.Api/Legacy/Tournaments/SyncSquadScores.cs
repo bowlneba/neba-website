@@ -104,69 +104,80 @@ internal sealed class SyncSquadScoresSyncJob(
             .Where(bowler => bowler.LegacyId != null && legacyBowlerIds.Contains(bowler.LegacyId.Value))
             .ToDictionaryAsync(bowler => bowler.LegacyId!.Value, bowler => bowler.Id, ct);
 
-        var existing = await db.SquadScores
-            .Where(squadScore => squadScore.SquadId == squad.Id)
-            .ToListAsync(ct);
-
-        // Intentionally NOT "batch then save once" (the usual SaveChanges-in-a-loop fix): the loop
-        // itself is the fix. Audit.EntityFramework serializes every changed entry's old/new values
-        // from one SaveChangesAsync call into a single EF audit event property, and a large squad
-        // (many bowlers x games) can produce hundreds of changed SquadScore rows in one call - past
-        // Azure Table Storage's 64KB per-property limit, silently dropped by
-        // ResilientAuditDataProvider. Capping each SaveChangesAsync's entity count bounds that
-        // property's size regardless of squad size. The whole batch loop runs inside one explicit
-        // transaction so a mid-loop failure rolls back every prior batch instead of leaving the
-        // squad's scores partially resynced - PooledAuditSaveChangesInterceptor opens/closes its own
-        // Audit.EntityFramework scope per SaveChangesAsync call regardless of an enclosing
-        // transaction, so this doesn't merge or grow any audit event.
-        const int saveBatchSize = 50;
-
-        await using var transaction = await db.Database.BeginTransactionAsync(ct);
-
-        foreach (var batch in existing.Chunk(saveBatchSize))
-        {
-            db.SquadScores.RemoveRange(batch);
-            await db.SaveChangesAsync(ct);
-        }
-
-        // Rows whose legacy bowler id has no website Bowler.LegacyId match, grouped so one email
-        // covers all of that bowler's scores rather than one email per row.
+        // The configured NpgsqlRetryingExecutionStrategy rejects user-initiated transactions, so the
+        // whole transaction runs as one retriable unit through the strategy. Each attempt starts from a
+        // clean change tracker and rebuilds its working state, since a retry re-runs the delegate.
         var unmappedRowsByLegacyBowlerId = new Dictionary<int, List<LegacyQualifyingScoreRow>>();
-        var pendingScores = new List<SquadScore>();
+        var strategy = db.Database.CreateExecutionStrategy();
 
-        foreach (var row in rows)
+        await strategy.ExecuteAsync(async () =>
         {
-            if (!bowlerIdsByLegacyId.TryGetValue(row.BowlerId, out var bowlerId))
-            {
-                logger.LogLegacyBowlerNotSyncedForScoreSync(row.BowlerId, legacySquadId);
+            db.ChangeTracker.Clear();
+            unmappedRowsByLegacyBowlerId.Clear();
 
-                if (!unmappedRowsByLegacyBowlerId.TryGetValue(row.BowlerId, out var unmappedRows))
+            var existing = await db.SquadScores
+                .Where(squadScore => squadScore.SquadId == squad.Id)
+                .ToListAsync(ct);
+
+            // Intentionally NOT "batch then save once" (the usual SaveChanges-in-a-loop fix): the loop
+            // itself is the fix. Audit.EntityFramework serializes every changed entry's old/new values
+            // from one SaveChangesAsync call into a single EF audit event property, and a large squad
+            // (many bowlers x games) can produce hundreds of changed SquadScore rows in one call - past
+            // Azure Table Storage's 64KB per-property limit, silently dropped by
+            // ResilientAuditDataProvider. Capping each SaveChangesAsync's entity count bounds that
+            // property's size regardless of squad size. The whole batch loop runs inside one explicit
+            // transaction so a mid-loop failure rolls back every prior batch instead of leaving the
+            // squad's scores partially resynced - PooledAuditSaveChangesInterceptor opens/closes its own
+            // Audit.EntityFramework scope per SaveChangesAsync call regardless of an enclosing
+            // transaction, so this doesn't merge or grow any audit event.
+            const int saveBatchSize = 50;
+
+            await using var transaction = await db.Database.BeginTransactionAsync(ct);
+
+            foreach (var batch in existing.Chunk(saveBatchSize))
+            {
+                db.SquadScores.RemoveRange(batch);
+                await db.SaveChangesAsync(ct);
+            }
+
+            // Rows whose legacy bowler id has no website Bowler.LegacyId match, grouped so one email
+            // covers all of that bowler's scores rather than one email per row.
+            var pendingScores = new List<SquadScore>();
+
+            foreach (var row in rows)
+            {
+                if (!bowlerIdsByLegacyId.TryGetValue(row.BowlerId, out var bowlerId))
                 {
-                    unmappedRows = [];
-                    unmappedRowsByLegacyBowlerId[row.BowlerId] = unmappedRows;
+                    logger.LogLegacyBowlerNotSyncedForScoreSync(row.BowlerId, legacySquadId);
+
+                    if (!unmappedRowsByLegacyBowlerId.TryGetValue(row.BowlerId, out var unmappedRows))
+                    {
+                        unmappedRows = [];
+                        unmappedRowsByLegacyBowlerId[row.BowlerId] = unmappedRows;
+                    }
+
+                    unmappedRows.Add(row);
+                    continue;
                 }
 
-                unmappedRows.Add(row);
-                continue;
+                var created = SquadScore.Create(squad.Id, bowlerId, (short)row.Game, row.Score);
+                if (created.IsError)
+                {
+                    logger.LogLegacySquadScoreSyncFailed(legacySquadId, row.BowlerId, row.Game, created.FirstError.Description);
+                    continue;
+                }
+
+                pendingScores.Add(created.Value);
             }
 
-            var created = SquadScore.Create(squad.Id, bowlerId, (short)row.Game, row.Score);
-            if (created.IsError)
+            foreach (var batch in pendingScores.Chunk(saveBatchSize))
             {
-                logger.LogLegacySquadScoreSyncFailed(legacySquadId, row.BowlerId, row.Game, created.FirstError.Description);
-                continue;
+                await db.SquadScores.AddRangeAsync(batch, ct);
+                await db.SaveChangesAsync(ct);
             }
 
-            pendingScores.Add(created.Value);
-        }
-
-        foreach (var batch in pendingScores.Chunk(saveBatchSize))
-        {
-            await db.SquadScores.AddRangeAsync(batch, ct);
-            await db.SaveChangesAsync(ct);
-        }
-
-        await transaction.CommitAsync(ct);
+            await transaction.CommitAsync(ct);
+        });
 
         await cache.RemoveByTagAsync($"neba:tournaments:{tournamentId}", token: ct);
 

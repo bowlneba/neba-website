@@ -47,7 +47,18 @@ public sealed class AppDbContextFixture : IAsyncLifetime
     internal AppDbContext CreateDbContext(params IReadOnlyList<IInterceptor> extraInterceptors)
         => new(CreateDbContextOptions(extraInterceptors));
 
+    /// <summary>
+    /// Creates a context configured with the same <c>EnableRetryOnFailure</c> execution strategy as
+    /// production (<c>DatabaseConfiguration</c>). The default test context omits it, so code that
+    /// opens its own transaction without going through the strategy only fails against this one.
+    /// </summary>
+    internal AppDbContext CreateRetryingDbContext(params IReadOnlyList<IInterceptor> extraInterceptors)
+        => new(CreateDbContextOptions(extraInterceptors, enableRetryOnFailure: true));
+
     internal DbContextOptions<AppDbContext> CreateDbContextOptions(params IReadOnlyList<IInterceptor> extraInterceptors)
+        => CreateDbContextOptions(extraInterceptors, enableRetryOnFailure: false);
+
+    private DbContextOptions<AppDbContext> CreateDbContextOptions(IReadOnlyList<IInterceptor> extraInterceptors, bool enableRetryOnFailure)
     {
         var builder = new NpgsqlConnectionStringBuilder(ConnectionString)
         {
@@ -62,7 +73,14 @@ public sealed class AppDbContextFixture : IAsyncLifetime
 
         return new DbContextOptionsBuilder<AppDbContext>()
             .UseNpgsql(builder.ConnectionString, options =>
-                options.MigrationsHistoryTable(AppDbContext.MigrationsHistoryTableName, AppDbContext.DefaultSchema))
+            {
+                options.MigrationsHistoryTable(AppDbContext.MigrationsHistoryTableName, AppDbContext.DefaultSchema);
+
+                if (enableRetryOnFailure)
+                {
+                    options.EnableRetryOnFailure(maxRetryCount: 5, maxRetryDelay: TimeSpan.FromSeconds(10), errorCodesToAdd: null);
+                }
+            })
             .UseSnakeCaseNamingConvention()
             .UseExceptionProcessor()
             .EnableDetailedErrors()
