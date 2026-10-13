@@ -19,6 +19,7 @@ internal static class LegacyEndpoints
             app.MapNewTournament();
             app.MapSyncSquadScores();
             app.MapCompleteTournament();
+            app.MapSyncTournamentResults();
             app.MapUpdateTournamentStats();
 
             app.MapCompleteSeason();
