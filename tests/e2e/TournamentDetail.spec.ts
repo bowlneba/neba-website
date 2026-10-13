@@ -22,6 +22,12 @@ test.describe('Tournament Detail page', () => {
     await expect(page.locator('.td-hero__title')).toContainText('NEBA Spring Classic');
   });
 
+  test('hero shows the tournament type badge', async ({ page }) => {
+    const badge = page.locator('.td-hero__chips .type-pill');
+    await expect(badge).toBeVisible();
+    await expect(badge).toHaveClass(/type-singles/);
+  });
+
   test('past tournament uses past hero styling', async ({ page }) => {
     await expect(page.locator('.td-hero')).toHaveClass(/td-hero--past/);
   });
