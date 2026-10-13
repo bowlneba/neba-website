@@ -7,7 +7,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Testing;
 
 using Neba.Api.Database;
-using Neba.Api.Email;
+using Neba.Api.Discord;
 using Neba.Api.Features.Bowlers.Domain;
 using Neba.Api.Features.Seasons.Domain;
 using Neba.Api.Features.Tournaments.Domain;
@@ -155,12 +155,12 @@ public sealed class GenerateSeasonStatsJobTests(AppDbContextFixture fixture, Leg
         await _dbContext.DisposeAsync();
     }
 
-    private GenerateSeasonStatsJob CreateJob(Mock<IEmailSender>? emailSender = null, FakeLogger<GenerateSeasonStatsJob>? logger = null) =>
+    private GenerateSeasonStatsJob CreateJob(Mock<IManualInterventionNotifier>? manualInterventionNotifier = null, FakeLogger<GenerateSeasonStatsJob>? logger = null) =>
         new(
             _dbContext,
             _legacyConnection,
             _serviceProvider.GetRequiredService<IFusionCache>(),
-            (emailSender ?? new Mock<IEmailSender>(MockBehavior.Strict)).Object,
+            (manualInterventionNotifier ?? new Mock<IManualInterventionNotifier>(MockBehavior.Strict)).Object,
             logger ?? new FakeLogger<GenerateSeasonStatsJob>());
 
     private async Task<(Season Season, Tournament Tournament)> CreateSeasonAndTournamentAsync(
@@ -235,27 +235,29 @@ public sealed class GenerateSeasonStatsJobTests(AppDbContextFixture fixture, Leg
     private async Task<Tournament> ReloadTournamentAsync(int legacyTournamentId, CancellationToken ct) =>
         await _dbContext.Set<Tournament>().SingleAsync(t => t.LegacyId == legacyTournamentId, ct);
 
-    [Fact(DisplayName = "SyncAsync should log a warning and send an email when the legacy tournament has no linked website tournament")]
-    public async Task SyncAsync_ShouldLogWarningAndSendEmail_WhenTournamentNotSynced()
+    [Fact(DisplayName = "SyncAsync should log a warning and post a Critical alert when the legacy tournament has no linked website tournament")]
+    public async Task SyncAsync_ShouldLogWarningAndPostAlert_WhenTournamentNotSynced()
     {
         // Arrange
         var ct = TestContext.Current.CancellationToken;
         var fakeLogger = new FakeLogger<GenerateSeasonStatsJob>();
-        EmailMessage? sentMessage = null;
-        var emailSender = new Mock<IEmailSender>(MockBehavior.Strict);
-        emailSender
-            .Setup(s => s.SendAsync(It.IsAny<EmailMessage>(), It.IsAny<CancellationToken>()))
-            .Callback<EmailMessage, CancellationToken>((message, _) => sentMessage = message)
+        DiscordAlert? postedAlert = null;
+        var manualInterventionNotifier = new Mock<IManualInterventionNotifier>(MockBehavior.Strict);
+        manualInterventionNotifier
+            .Setup(n => n.NotifyAsync(It.IsAny<DiscordAlert>(), It.IsAny<CancellationToken>()))
+            .Callback<DiscordAlert, CancellationToken>((alert, _) => postedAlert = alert)
             .Returns(Task.CompletedTask);
-        var job = CreateJob(emailSender, fakeLogger);
+        var job = CreateJob(manualInterventionNotifier, fakeLogger);
 
         // Act
         await job.SyncAsync(999, ct);
 
         // Assert
         fakeLogger.Collector.GetSnapshot().ShouldContain(r => r.Level == LogLevel.Warning && r.Message.Contains("999", StringComparison.Ordinal));
-        sentMessage.ShouldNotBeNull();
-        sentMessage.HtmlBody.ShouldContain("999");
+        postedAlert.ShouldNotBeNull();
+        postedAlert.Severity.ShouldBe(DiscordAlertSeverity.Critical);
+        postedAlert.Metadata.ShouldNotBeNull();
+        postedAlert.Metadata["LegacyTournamentId"].ShouldBe("999");
     }
 
     [Fact(DisplayName = "SyncAsync should regenerate a BowlerSeasonStats row from legacy qualifying/results data for a linked, mapped bowler")]
@@ -360,16 +362,16 @@ public sealed class GenerateSeasonStatsJobTests(AppDbContextFixture fixture, Leg
 
         // Act - simulate a correction: the second bowler is unlinked from the legacy system. This
         // makes them "unmapped" on the second run (still present in raw legacy qualifying/results
-        // data), which the job reports via its unmapped-bowler email - expected here, not a failure.
+        // data), which the job reports via its unmapped-bowler alert - expected here, not a failure.
         await _dbContext.Bowlers
             .Where(b => b.Id == removedBowler.Id)
             .ExecuteUpdateAsync(s => s.SetProperty(b => b.LegacyId, (int?)null), ct);
 
-        var emailSender = new Mock<IEmailSender>(MockBehavior.Strict);
-        emailSender
-            .Setup(s => s.SendAsync(It.IsAny<EmailMessage>(), It.IsAny<CancellationToken>()))
+        var manualInterventionNotifier = new Mock<IManualInterventionNotifier>(MockBehavior.Strict);
+        manualInterventionNotifier
+            .Setup(n => n.NotifyAsync(It.IsAny<DiscordAlert>(), It.IsAny<CancellationToken>()))
             .Returns(Task.CompletedTask);
-        var secondRunJob = CreateJob(emailSender);
+        var secondRunJob = CreateJob(manualInterventionNotifier);
 
         await secondRunJob.SyncAsync(42, ct);
 
@@ -416,8 +418,8 @@ public sealed class GenerateSeasonStatsJobTests(AppDbContextFixture fixture, Leg
         valueAfterSync.ShouldBe("fresh-value");
     }
 
-    [Fact(DisplayName = "SyncAsync should log a warning and send an email for a legacy bowler with no matching website bowler")]
-    public async Task SyncAsync_ShouldLogWarningAndSendEmail_ForUnmappedLegacyBowler()
+    [Fact(DisplayName = "SyncAsync should log a warning and post a Warning alert for a legacy bowler with no matching website bowler")]
+    public async Task SyncAsync_ShouldLogWarningAndPostAlert_ForUnmappedLegacyBowler()
     {
         // Arrange
         var ct = TestContext.Current.CancellationToken;
@@ -431,21 +433,25 @@ public sealed class GenerateSeasonStatsJobTests(AppDbContextFixture fixture, Leg
         await InsertResultsStatsAsync(statsId, sideCut: null);
 
         var fakeLogger = new FakeLogger<GenerateSeasonStatsJob>();
-        EmailMessage? sentMessage = null;
-        var emailSender = new Mock<IEmailSender>(MockBehavior.Strict);
-        emailSender
-            .Setup(s => s.SendAsync(It.IsAny<EmailMessage>(), It.IsAny<CancellationToken>()))
-            .Callback<EmailMessage, CancellationToken>((message, _) => sentMessage = message)
+        DiscordAlert? postedAlert = null;
+        var manualInterventionNotifier = new Mock<IManualInterventionNotifier>(MockBehavior.Strict);
+        manualInterventionNotifier
+            .Setup(n => n.NotifyAsync(It.IsAny<DiscordAlert>(), It.IsAny<CancellationToken>()))
+            .Callback<DiscordAlert, CancellationToken>((alert, _) => postedAlert = alert)
             .Returns(Task.CompletedTask);
-        var job = CreateJob(emailSender, fakeLogger);
+        var job = CreateJob(manualInterventionNotifier, fakeLogger);
 
         // Act
         await job.SyncAsync(42, ct);
 
         // Assert
         fakeLogger.Collector.GetSnapshot().ShouldContain(r => r.Level == LogLevel.Warning && r.Message.Contains("999", StringComparison.Ordinal));
-        sentMessage.ShouldNotBeNull();
-        sentMessage.HtmlBody.ShouldContain("999");
+        postedAlert.ShouldNotBeNull();
+        postedAlert.Severity.ShouldBe(DiscordAlertSeverity.Warning);
+        postedAlert.Metadata.ShouldNotBeNull();
+        postedAlert.Metadata.ShouldContainKey("SeasonId");
+        postedAlert.Metadata["UnmappedBowlerCount"].ShouldBe("1");
+        postedAlert.Metadata["LegacyBowlerIds"].ShouldBe("999");
     }
 
     [Fact(DisplayName = "SyncAsync should log an error and continue without throwing when a bowler has more than one Stats_ResultsStats row for the same tournament")]

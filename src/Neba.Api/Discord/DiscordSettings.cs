@@ -8,4 +8,7 @@ internal sealed class DiscordSettings
 
     [Required]
     public string WebhookUrl { get; init; } = string.Empty;
+
+    [Required]
+    public string ManualInterventionWebhookUrl { get; init; } = string.Empty;
 }

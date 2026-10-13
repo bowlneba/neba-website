@@ -1,11 +1,12 @@
 using System.Data;
+using System.Globalization;
 
 using Dapper;
 
 using Microsoft.EntityFrameworkCore;
 
 using Neba.Api.Database;
-using Neba.Api.Email;
+using Neba.Api.Discord;
 using Neba.Api.Features.Bowlers.Domain;
 using Neba.Api.Features.Seasons.Domain;
 using Neba.Api.Features.Stats.Domain;
@@ -25,7 +26,7 @@ internal sealed class GenerateSeasonStatsJob(
     AppDbContext db,
     IDbConnection legacyConnection,
     IFusionCache cache,
-    IEmailSender emailSender,
+    IManualInterventionNotifier manualInterventionNotifier,
     ILogger<GenerateSeasonStatsJob> logger)
 {
     // Placeholders are numbered and bound individually (Id0, Id1, ...) rather than relying on
@@ -121,12 +122,18 @@ internal sealed class GenerateSeasonStatsJob(
 
         if (unmappedLegacyBowlerIds.Count > 0)
         {
-            await emailSender.SendAsync(new EmailMessage
-            {
-                To = "website@bowlneba.com",
-                Subject = "Manual intervention needed: unsynced bowler(s) in season stats generation",
-                HtmlBody = new UnmappedBowlerStatsEmail(season.Id, unmappedLegacyBowlerIds).ToHtmlBody()
-            }, ct);
+            var alert = new DiscordAlert(
+                DiscordAlertSeverity.Warning,
+                "Unmapped bowlers in season stats generation",
+                "The season was regenerated, but these legacy bowlers have no matching website bowler (no Bowler.LegacyId match) and were left out of its stats. Re-trigger stats generation after they are linked.",
+                new Dictionary<string, string>
+                {
+                    ["SeasonId"] = season.Id.ToString(),
+                    ["UnmappedBowlerCount"] = unmappedLegacyBowlerIds.Count.ToString(CultureInfo.InvariantCulture),
+                    ["LegacyBowlerIds"] = DiscordFieldFormatter.JoinIds(unmappedLegacyBowlerIds)
+                });
+
+            await manualInterventionNotifier.NotifyAsync(alert, ct);
         }
     }
 
@@ -134,12 +141,16 @@ internal sealed class GenerateSeasonStatsJob(
     {
         logger.LogLegacyTournamentNotSyncedForStatsGeneration(legacyTournamentId);
 
-        await emailSender.SendAsync(new EmailMessage
-        {
-            To = "website@bowlneba.com",
-            Subject = "Manual intervention needed: season stats generation with no linked tournament",
-            HtmlBody = new UnlinkedTournamentStatsEmail(legacyTournamentId).ToHtmlBody()
-        }, ct);
+        var alert = new DiscordAlert(
+            DiscordAlertSeverity.Critical,
+            "Season stats generation could not be matched",
+            "A legacy tournament was reported for season stats generation, but no website tournament is linked to it (no Tournament.LegacyId match). Stats were not generated. Re-fire the stats update after the tournament is linked.",
+            new Dictionary<string, string>
+            {
+                ["LegacyTournamentId"] = legacyTournamentId.ToString(CultureInfo.InvariantCulture)
+            });
+
+        await manualInterventionNotifier.NotifyAsync(alert, ct);
     }
 
     // See NewBowlerSyncJob.SyncAsync for the rationale on suppressing DAP005 here.
