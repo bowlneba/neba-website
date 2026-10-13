@@ -104,8 +104,17 @@ jobs:
           LEGACY_API_KEY: ${{ secrets.LEGACY_API_KEY }}
           LEGACY_DB_CONNECTION_STRING: ${{ secrets.LEGACY_DB_CONNECTION_STRING }}
           DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
+          DISCORD_MANUAL_INTERVENTION_WEBHOOK_URL: ${{ secrets.DISCORD_MANUAL_INTERVENTION_WEBHOOK_URL }}
         run: |
           set -euo pipefail
+
+          # The API fails startup validation when either webhook URL is blank, so stop the deploy here.
+          for name in DISCORD_WEBHOOK_URL DISCORD_MANUAL_INTERVENTION_WEBHOOK_URL; do
+            if [ -z "${!name}" ]; then
+              echo "::error::GitHub secret $name is not set"
+              exit 1
+            fi
+          done
 
           VAULT_NAME=$(azd env get-value KEYVAULT_VAULTURI | sed 's|https://||;s|\.vault\.azure\.net.*||')
 
@@ -140,6 +149,10 @@ jobs:
           az keyvault secret set --vault-name "$VAULT_NAME" \
             --name "Discord--WebhookUrl" \
             --value "$DISCORD_WEBHOOK_URL"
+
+          az keyvault secret set --vault-name "$VAULT_NAME" \
+            --name "Discord--ManualInterventionWebhookUrl" \
+            --value "$DISCORD_MANUAL_INTERVENTION_WEBHOOK_URL"
 
       - name: Deploy migration jobs
         env:

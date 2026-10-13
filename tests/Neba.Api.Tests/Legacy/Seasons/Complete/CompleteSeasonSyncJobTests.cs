@@ -12,7 +12,6 @@ using Microsoft.Extensions.Logging.Testing;
 
 using Neba.Api.Database;
 using Neba.Api.Discord;
-using Neba.Api.Email;
 using Neba.Api.Features.Seasons.Domain;
 using Neba.Api.Legacy.Seasons.Complete;
 using Neba.TestFactory.Attributes;
@@ -100,16 +99,14 @@ public sealed class CompleteSeasonSyncJobTests(AppDbContextFixture fixture, Lega
 
     private CompleteSeasonSyncJob CreateJob(
         IBackgroundJobClient jobs,
-        Mock<IEmailSender>? emailSender = null,
-        Mock<IDiscordNotifier>? discordNotifier = null,
+        Mock<IManualInterventionNotifier>? manualInterventionNotifier = null,
         FakeLogger<CompleteSeasonSyncJob>? logger = null) =>
         new(
             _dbContext,
             _legacyConnection,
             jobs,
             _serviceProvider.GetRequiredService<IFusionCache>(),
-            (emailSender ?? new Mock<IEmailSender>(MockBehavior.Strict)).Object,
-            (discordNotifier ?? new Mock<IDiscordNotifier>(MockBehavior.Strict)).Object,
+            (manualInterventionNotifier ?? new Mock<IManualInterventionNotifier>(MockBehavior.Strict)).Object,
             logger ?? new FakeLogger<CompleteSeasonSyncJob>());
 
     private static (Mock<IBackgroundJobClient> Mock, Func<IReadOnlyList<(Job Job, IState State)>> CapturedJobs) CreateJobsMock()
@@ -243,46 +240,36 @@ public sealed class CompleteSeasonSyncJobTests(AppDbContextFixture fixture, Lega
         fakeLogger.Collector.GetSnapshot().ShouldContain(r => r.Level == LogLevel.Information);
     }
 
-    [Fact(DisplayName = "SyncAsync should not schedule any award job and should send a manual-intervention email and Discord alert when no legacy season is found")]
-    public async Task SyncAsync_ShouldNotScheduleAndShouldSendEmail_WhenLegacySeasonNotFound()
+    [Fact(DisplayName = "SyncAsync should not schedule any award job and should send a manual-intervention alert when no legacy season is found")]
+    public async Task SyncAsync_ShouldNotScheduleAndShouldSendAlert_WhenLegacySeasonNotFound()
     {
         // Arrange - Strict jobs mock with no setup: any Create call would throw, proving nothing was scheduled.
         var ct = TestContext.Current.CancellationToken;
         var jobsMock = new Mock<IBackgroundJobClient>(MockBehavior.Strict);
 
-        var emailSender = new Mock<IEmailSender>(MockBehavior.Strict);
-        EmailMessage? sentMessage = null;
-        emailSender
-            .Setup(s => s.SendAsync(It.IsAny<EmailMessage>(), It.IsAny<CancellationToken>()))
-            .Callback<EmailMessage, CancellationToken>((message, _) => sentMessage = message)
-            .Returns(Task.CompletedTask);
-
-        var discordNotifier = new Mock<IDiscordNotifier>(MockBehavior.Strict);
+        var manualInterventionNotifier = new Mock<IManualInterventionNotifier>(MockBehavior.Strict);
         DiscordAlert? postedAlert = null;
-        discordNotifier
+        manualInterventionNotifier
             .Setup(n => n.NotifyAsync(It.IsAny<DiscordAlert>(), It.IsAny<CancellationToken>()))
             .Callback<DiscordAlert, CancellationToken>((alert, _) => postedAlert = alert)
             .Returns(Task.CompletedTask);
 
-        var job = CreateJob(jobsMock.Object, emailSender, discordNotifier);
+        var job = CreateJob(jobsMock.Object, manualInterventionNotifier);
 
         // Act
         await job.SyncAsync(999, ct);
 
         // Assert - Strict mock with no Create setup already proves nothing was scheduled (see Arrange comment).
-        sentMessage.ShouldNotBeNull();
-        sentMessage.To.ShouldBe("website@bowlneba.com");
-        sentMessage.HtmlBody.ShouldContain("999");
-
         // The captured alert's content below already proves NotifyAsync was called.
         postedAlert.ShouldNotBeNull();
         postedAlert.Severity.ShouldBe(DiscordAlertSeverity.Critical);
         postedAlert.Metadata.ShouldNotBeNull();
         postedAlert.Metadata["LegacySeasonId"].ShouldBe("999");
+        postedAlert.Metadata.ShouldNotContainKey("EmailSent");
     }
 
-    [Fact(DisplayName = "SyncAsync should not schedule any award job and should send a manual-intervention email and Discord alert when no website season matches the legacy date range")]
-    public async Task SyncAsync_ShouldNotScheduleAndShouldSendEmail_WhenNoWebsiteSeasonMatches()
+    [Fact(DisplayName = "SyncAsync should not schedule any award job and should send a manual-intervention alert when no website season matches the legacy date range")]
+    public async Task SyncAsync_ShouldNotScheduleAndShouldSendAlert_WhenNoWebsiteSeasonMatches()
     {
         // Arrange - Strict jobs mock with no setup: any Create call would throw, proving nothing was scheduled.
         var ct = TestContext.Current.CancellationToken;
@@ -291,33 +278,24 @@ public sealed class CompleteSeasonSyncJobTests(AppDbContextFixture fixture, Lega
 
         var jobsMock = new Mock<IBackgroundJobClient>(MockBehavior.Strict);
 
-        var emailSender = new Mock<IEmailSender>(MockBehavior.Strict);
-        EmailMessage? sentMessage = null;
-        emailSender
-            .Setup(s => s.SendAsync(It.IsAny<EmailMessage>(), It.IsAny<CancellationToken>()))
-            .Callback<EmailMessage, CancellationToken>((message, _) => sentMessage = message)
-            .Returns(Task.CompletedTask);
-
-        var discordNotifier = new Mock<IDiscordNotifier>(MockBehavior.Strict);
+        var manualInterventionNotifier = new Mock<IManualInterventionNotifier>(MockBehavior.Strict);
         DiscordAlert? postedAlert = null;
-        discordNotifier
+        manualInterventionNotifier
             .Setup(n => n.NotifyAsync(It.IsAny<DiscordAlert>(), It.IsAny<CancellationToken>()))
             .Callback<DiscordAlert, CancellationToken>((alert, _) => postedAlert = alert)
             .Returns(Task.CompletedTask);
 
-        var job = CreateJob(jobsMock.Object, emailSender, discordNotifier);
+        var job = CreateJob(jobsMock.Object, manualInterventionNotifier);
 
         // Act
         await job.SyncAsync(42, ct);
 
         // Assert - Strict mock with no Create setup already proves nothing was scheduled (see Arrange comment).
-        sentMessage.ShouldNotBeNull();
-        sentMessage.HtmlBody.ShouldContain("42");
-
         // The captured alert's content below already proves NotifyAsync was called.
         postedAlert.ShouldNotBeNull();
         postedAlert.Severity.ShouldBe(DiscordAlertSeverity.Critical);
         postedAlert.Metadata.ShouldNotBeNull();
         postedAlert.Metadata["LegacySeasonId"].ShouldBe("42");
+        postedAlert.Metadata.ShouldNotContainKey("EmailSent");
     }
 }

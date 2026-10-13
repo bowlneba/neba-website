@@ -18,7 +18,7 @@ using Microsoft.Extensions.Logging.Testing;
 using Microsoft.Extensions.Options;
 
 using Neba.Api.Database;
-using Neba.Api.Email;
+using Neba.Api.Discord;
 using Neba.Api.Features.Seasons.Domain;
 using Neba.Api.Features.Tournaments.Domain;
 using Neba.Api.Legacy;
@@ -220,40 +220,6 @@ public sealed class LegacyTournamentLinkExtensionsTests
     }
 }
 
-[UnitTest]
-[Component("Legacy")]
-public sealed class TournamentLinkCannotBeDerivedEmailTests
-{
-    [Fact(DisplayName = "ToHtmlBody should include the legacy id, end date, and candidate count")]
-    public void ToHtmlBody_ShouldIncludeLegacyIdEndDateAndCandidateCount()
-    {
-        // Arrange
-        var email = new TournamentLinkCannotBeDerivedEmail(42, new DateOnly(2025, 10, 5), 3);
-
-        // Act
-        var body = email.ToHtmlBody();
-
-        // Assert
-        body.ShouldContain("42");
-        body.ShouldContain("2025-10-05");
-        body.ShouldContain("3");
-        body.ShouldContain("LegacyId");
-    }
-
-    [Fact(DisplayName = "ToHtmlBody should render zero candidates")]
-    public void ToHtmlBody_ShouldRenderZeroCandidates_WhenNoCandidatesRemain()
-    {
-        // Arrange
-        var email = new TournamentLinkCannotBeDerivedEmail(1, new DateOnly(2025, 1, 1), 0);
-
-        // Act
-        var body = email.ToHtmlBody();
-
-        // Assert
-        body.ShouldContain("remaining after narrowing: 0");
-    }
-}
-
 [IntegrationTest]
 [Component("Legacy")]
 [Collection(nameof(LegacyDatabasesTestScope))]
@@ -391,12 +357,12 @@ public sealed class NewTournamentSyncJobTests(AppDbContextFixture fixture, Legac
         return tournament;
     }
 
-    private NewTournamentSyncJob CreateJob(Mock<IEmailSender>? emailSender = null, FakeLogger<NewTournamentSyncJob>? logger = null) =>
+    private NewTournamentSyncJob CreateJob(Mock<IManualInterventionNotifier>? manualInterventionNotifier = null, FakeLogger<NewTournamentSyncJob>? logger = null) =>
         new(
             _dbContext,
             _legacyConnection,
             _serviceProvider.GetRequiredService<IFusionCache>(),
-            (emailSender ?? new Mock<IEmailSender>(MockBehavior.Strict)).Object,
+            (manualInterventionNotifier ?? new Mock<IManualInterventionNotifier>(MockBehavior.Strict)).Object,
             logger ?? new FakeLogger<NewTournamentSyncJob>());
 
     [Fact(DisplayName = "SyncAsync should be a no-op and should log information when the legacy id was already synced")]
@@ -416,7 +382,7 @@ public sealed class NewTournamentSyncJobTests(AppDbContextFixture fixture, Legac
         // Act
         await job.SyncAsync(1, ct);
 
-        // Assert - Strict email mock: any SendAsync call without a setup would throw.
+        // Assert - Strict notifier mock: any NotifyAsync call without a setup would throw.
         var record = fakeLogger.Collector.GetSnapshot().ShouldHaveSingleItem();
         record.Level.ShouldBe(LogLevel.Information);
         record.Message.ShouldContain("1");
@@ -458,7 +424,7 @@ public sealed class NewTournamentSyncJobTests(AppDbContextFixture fixture, Legac
         // Act
         await job.SyncAsync(999, ct);
 
-        // Assert - Strict email mock: any SendAsync call without a setup would throw.
+        // Assert - Strict notifier mock: any NotifyAsync call without a setup would throw.
         var record = fakeLogger.Collector.GetSnapshot().ShouldHaveSingleItem();
         record.Level.ShouldBe(LogLevel.Warning);
         record.Message.ShouldContain("999");
@@ -698,40 +664,41 @@ public sealed class NewTournamentSyncJobTests(AppDbContextFixture fixture, Legac
         linked.TournamentType.ShouldBe(expectedTournamentType);
     }
 
-    [Fact(DisplayName = "SyncAsync should send a manual-intervention email and leave tournaments unlinked when no tournament shares the legacy end date")]
-    public async Task SyncAsync_ShouldSendEmailAndLeaveUnlinked_WhenNoTournamentSharesTheEndDate()
+    [Fact(DisplayName = "SyncAsync should post a manual-intervention alert and leave tournaments unlinked when no tournament shares the legacy end date")]
+    public async Task SyncAsync_ShouldPostAlertAndLeaveUnlinked_WhenNoTournamentSharesTheEndDate()
     {
         // Arrange
         var ct = TestContext.Current.CancellationToken;
         var endDate = new DateOnly(2025, 10, 5);
         await InsertLegacySinglesTournamentAsync(1, endDate.ToDateTime(TimeOnly.MinValue), singlesTournamentType: 0);
 
-        var emailSender = new Mock<IEmailSender>(MockBehavior.Strict);
-        EmailMessage? sentMessage = null;
-        emailSender
-            .Setup(s => s.SendAsync(It.IsAny<EmailMessage>(), It.IsAny<CancellationToken>()))
-            .Callback<EmailMessage, CancellationToken>((message, _) => sentMessage = message)
+        var manualInterventionNotifier = new Mock<IManualInterventionNotifier>(MockBehavior.Strict);
+        DiscordAlert? postedAlert = null;
+        manualInterventionNotifier
+            .Setup(n => n.NotifyAsync(It.IsAny<DiscordAlert>(), It.IsAny<CancellationToken>()))
+            .Callback<DiscordAlert, CancellationToken>((alert, _) => postedAlert = alert)
             .Returns(Task.CompletedTask);
 
         var fakeLogger = new FakeLogger<NewTournamentSyncJob>();
-        var job = CreateJob(emailSender, fakeLogger);
+        var job = CreateJob(manualInterventionNotifier, fakeLogger);
 
         // Act
         await job.SyncAsync(1, ct);
 
-        // Assert - Strict mock: the Setup above is the verification that SendAsync was called.
-        sentMessage.ShouldNotBeNull();
-        sentMessage.To.ShouldBe("website@bowlneba.com");
-        sentMessage.Subject.ShouldBe("Manual intervention needed: tournament link");
-        sentMessage.HtmlBody.ShouldContain("1");
-        sentMessage.HtmlBody.ShouldContain("remaining after narrowing: 0");
+        // Assert - Strict mock: the Setup above is the verification that NotifyAsync was called.
+        postedAlert.ShouldNotBeNull();
+        postedAlert.Severity.ShouldBe(DiscordAlertSeverity.Critical);
+        postedAlert.Metadata.ShouldNotBeNull();
+        postedAlert.Metadata["LegacyTournamentId"].ShouldBe("1");
+        postedAlert.Metadata["EndDate"].ShouldBe("2025-10-05");
+        postedAlert.Metadata["CandidateCount"].ShouldBe("0");
 
         var record = fakeLogger.Collector.GetSnapshot().ShouldHaveSingleItem();
         record.Level.ShouldBe(LogLevel.Warning);
     }
 
-    [Fact(DisplayName = "SyncAsync should send a manual-intervention email and leave tournaments unlinked when the legacy team size has no website equivalent")]
-    public async Task SyncAsync_ShouldSendEmailAndLeaveUnlinked_WhenLegacyTeamSizeHasNoWebsiteEquivalent()
+    [Fact(DisplayName = "SyncAsync should post a manual-intervention alert and leave tournaments unlinked when the legacy team size has no website equivalent")]
+    public async Task SyncAsync_ShouldPostAlertAndLeaveUnlinked_WhenLegacyTeamSizeHasNoWebsiteEquivalent()
     {
         // Arrange - team size 4 is not a recognized website team format; per MapLegacyTournamentType's
         // contract, an unmapped shape skips the exact-type narrowing step rather than eliminating every
@@ -743,24 +710,24 @@ public sealed class NewTournamentSyncJobTests(AppDbContextFixture fixture, Legac
         var trios = await CreateUnlinkedTournamentAsync(seasonId, TournamentType.Trios, endDate, ct);
         await InsertLegacyTeamTournamentAsync(1, endDate.ToDateTime(TimeOnly.MinValue), teamSize: 4, overUnder: null);
 
-        var emailSender = new Mock<IEmailSender>(MockBehavior.Strict);
-        emailSender
-            .Setup(s => s.SendAsync(It.IsAny<EmailMessage>(), It.IsAny<CancellationToken>()))
+        var manualInterventionNotifier = new Mock<IManualInterventionNotifier>(MockBehavior.Strict);
+        manualInterventionNotifier
+            .Setup(n => n.NotifyAsync(It.IsAny<DiscordAlert>(), It.IsAny<CancellationToken>()))
             .Returns(Task.CompletedTask);
-        var job = CreateJob(emailSender);
+        var job = CreateJob(manualInterventionNotifier);
 
         // Act
         await job.SyncAsync(1, ct);
 
-        // Assert - Strict mock: the Setup above is the verification that SendAsync was called.
+        // Assert - Strict mock: the Setup above is the verification that NotifyAsync was called.
         var unchangedDoubles = await _dbContext.Tournaments.SingleAsync(t => t.Id == doubles.Id, ct);
         var unchangedTrios = await _dbContext.Tournaments.SingleAsync(t => t.Id == trios.Id, ct);
         unchangedDoubles.LegacyId.ShouldBeNull();
         unchangedTrios.LegacyId.ShouldBeNull();
     }
 
-    [Fact(DisplayName = "SyncAsync should send a manual-intervention email and leave tournaments unlinked when multiple candidates share the same exact type")]
-    public async Task SyncAsync_ShouldSendEmailAndLeaveUnlinked_WhenMultipleCandidatesShareTheSameExactType()
+    [Fact(DisplayName = "SyncAsync should post a manual-intervention alert and leave tournaments unlinked when multiple candidates share the same exact type")]
+    public async Task SyncAsync_ShouldPostAlertAndLeaveUnlinked_WhenMultipleCandidatesShareTheSameExactType()
     {
         // Arrange
         var ct = TestContext.Current.CancellationToken;
@@ -770,20 +737,22 @@ public sealed class NewTournamentSyncJobTests(AppDbContextFixture fixture, Legac
         var second = await CreateUnlinkedTournamentAsync(seasonId, TournamentType.Singles, endDate, ct);
         await InsertLegacySinglesTournamentAsync(1, endDate.ToDateTime(TimeOnly.MinValue), singlesTournamentType: 0);
 
-        var emailSender = new Mock<IEmailSender>(MockBehavior.Strict);
-        EmailMessage? sentMessage = null;
-        emailSender
-            .Setup(s => s.SendAsync(It.IsAny<EmailMessage>(), It.IsAny<CancellationToken>()))
-            .Callback<EmailMessage, CancellationToken>((message, _) => sentMessage = message)
+        var manualInterventionNotifier = new Mock<IManualInterventionNotifier>(MockBehavior.Strict);
+        DiscordAlert? postedAlert = null;
+        manualInterventionNotifier
+            .Setup(n => n.NotifyAsync(It.IsAny<DiscordAlert>(), It.IsAny<CancellationToken>()))
+            .Callback<DiscordAlert, CancellationToken>((alert, _) => postedAlert = alert)
             .Returns(Task.CompletedTask);
-        var job = CreateJob(emailSender);
+        var job = CreateJob(manualInterventionNotifier);
 
         // Act
         await job.SyncAsync(1, ct);
 
-        // Assert - Strict mock: the Setup above is the verification that SendAsync was called.
-        sentMessage.ShouldNotBeNull();
-        sentMessage.HtmlBody.ShouldContain("remaining after narrowing: 2");
+        // Assert - Strict mock: the Setup above is the verification that NotifyAsync was called.
+        postedAlert.ShouldNotBeNull();
+        postedAlert.Severity.ShouldBe(DiscordAlertSeverity.Critical);
+        postedAlert.Metadata.ShouldNotBeNull();
+        postedAlert.Metadata["CandidateCount"].ShouldBe("2");
         var unchangedFirst = await _dbContext.Tournaments.SingleAsync(t => t.Id == first.Id, ct);
         var unchangedSecond = await _dbContext.Tournaments.SingleAsync(t => t.Id == second.Id, ct);
         unchangedFirst.LegacyId.ShouldBeNull();

@@ -12,7 +12,6 @@ using Microsoft.Extensions.Logging.Testing;
 
 using Neba.Api.Database;
 using Neba.Api.Discord;
-using Neba.Api.Email;
 using Neba.Api.Features.Tournaments.Domain;
 using Neba.Api.Legacy.Tournaments.Complete;
 using Neba.Api.Legacy.Tournaments.Stats;
@@ -126,16 +125,14 @@ public sealed class CompleteTournamentSyncJobTests(AppDbContextFixture fixture, 
 
     private CompleteTournamentSyncJob CreateJob(
         IBackgroundJobClient jobs,
-        Mock<IEmailSender>? emailSender = null,
-        Mock<IDiscordNotifier>? discordNotifier = null,
+        Mock<IManualInterventionNotifier>? manualInterventionNotifier = null,
         FakeLogger<CompleteTournamentSyncJob>? logger = null) =>
         new(
             _dbContext,
             _legacyConnection,
             jobs,
             _serviceProvider.GetRequiredService<IFusionCache>(),
-            (emailSender ?? new Mock<IEmailSender>(MockBehavior.Strict)).Object,
-            (discordNotifier ?? new Mock<IDiscordNotifier>(MockBehavior.Strict)).Object,
+            (manualInterventionNotifier ?? new Mock<IManualInterventionNotifier>(MockBehavior.Strict)).Object,
             logger ?? new FakeLogger<CompleteTournamentSyncJob>());
 
     private static (Mock<IBackgroundJobClient> Mock, Func<IReadOnlyList<(Job Job, IState State)>> CapturedJobs) CreateJobsMock()
@@ -274,41 +271,31 @@ public sealed class CompleteTournamentSyncJobTests(AppDbContextFixture fixture, 
         fakeLogger.Collector.GetSnapshot().ShouldContain(r => r.Level == LogLevel.Information);
     }
 
-    [Fact(DisplayName = "SyncAsync should not chain SyncTournamentResultsJob and should send a manual-intervention email and Discord alert when no tournament is linked")]
-    public async Task SyncAsync_ShouldNotChainAndShouldSendEmail_WhenTournamentNotFound()
+    [Fact(DisplayName = "SyncAsync should not chain SyncTournamentResultsJob and should send a manual-intervention alert when no tournament is linked")]
+    public async Task SyncAsync_ShouldNotChainAndShouldSendAlert_WhenTournamentNotFound()
     {
         // Arrange - Strict jobs mock with no setup: any Create call would throw, proving the chain does not fire.
         var ct = TestContext.Current.CancellationToken;
         var jobsMock = new Mock<IBackgroundJobClient>(MockBehavior.Strict);
 
-        var emailSender = new Mock<IEmailSender>(MockBehavior.Strict);
-        EmailMessage? sentMessage = null;
-        emailSender
-            .Setup(s => s.SendAsync(It.IsAny<EmailMessage>(), It.IsAny<CancellationToken>()))
-            .Callback<EmailMessage, CancellationToken>((message, _) => sentMessage = message)
-            .Returns(Task.CompletedTask);
-
-        var discordNotifier = new Mock<IDiscordNotifier>(MockBehavior.Strict);
+        var manualInterventionNotifier = new Mock<IManualInterventionNotifier>(MockBehavior.Strict);
         DiscordAlert? postedAlert = null;
-        discordNotifier
+        manualInterventionNotifier
             .Setup(n => n.NotifyAsync(It.IsAny<DiscordAlert>(), It.IsAny<CancellationToken>()))
             .Callback<DiscordAlert, CancellationToken>((alert, _) => postedAlert = alert)
             .Returns(Task.CompletedTask);
 
-        var job = CreateJob(jobsMock.Object, emailSender, discordNotifier);
+        var job = CreateJob(jobsMock.Object, manualInterventionNotifier);
 
         // Act
         await job.SyncAsync(999, ct);
 
         // Assert - Strict mock with no Create setup already proves the chain didn't fire (see Arrange comment).
-        sentMessage.ShouldNotBeNull();
-        sentMessage.To.ShouldBe("website@bowlneba.com");
-        sentMessage.HtmlBody.ShouldContain("999");
-
         // The captured alert's content below already proves NotifyAsync was called.
         postedAlert.ShouldNotBeNull();
         postedAlert.Severity.ShouldBe(DiscordAlertSeverity.Critical);
         postedAlert.Metadata.ShouldNotBeNull();
         postedAlert.Metadata["LegacyTournamentId"].ShouldBe("999");
+        postedAlert.Metadata.ShouldNotContainKey("EmailSent");
     }
 }
