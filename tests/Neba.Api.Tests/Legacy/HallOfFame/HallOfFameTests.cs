@@ -18,7 +18,7 @@ using Microsoft.Extensions.Logging.Testing;
 using Microsoft.Extensions.Options;
 
 using Neba.Api.Database;
-using Neba.Api.Email;
+using Neba.Api.Discord;
 using Neba.Api.Features.Bowlers.Domain;
 using Neba.Api.Features.HallOfFame.Domain;
 using Neba.Api.Legacy;
@@ -261,26 +261,6 @@ public sealed class LegacyHallOfFameInductionExtensionsTests
     }
 }
 
-[UnitTest]
-[Component("Legacy")]
-public sealed class HallOfFameBowlerNotFoundEmailTests
-{
-    [Fact(DisplayName = "ToHtmlBody should include the legacy Hall of Fame id, bowler id, and year")]
-    public void ToHtmlBody_ShouldIncludeLegacyHallOfFameIdBowlerIdAndYear()
-    {
-        // Arrange
-        var email = new HallOfFameBowlerNotFoundEmail(42, 7, 2025);
-
-        // Act
-        var body = email.ToHtmlBody();
-
-        // Assert
-        body.ShouldContain("42");
-        body.ShouldContain("7");
-        body.ShouldContain("2025");
-    }
-}
-
 [IntegrationTest]
 [Component("Legacy")]
 [Collection(nameof(LegacyDatabasesTestScope))]
@@ -362,13 +342,13 @@ public sealed class NewHallOfFameInductionSyncJobTests(AppDbContextFixture fixtu
     }
 
     private NewHallOfFameInductionSyncJob CreateJob(
-        Mock<IEmailSender>? emailSender = null,
+        Mock<IManualInterventionNotifier>? manualInterventionNotifier = null,
         FakeLogger<NewHallOfFameInductionSyncJob>? logger = null) =>
         new(
             _dbContext,
             _legacyConnection,
             _serviceProvider.GetRequiredService<IFusionCache>(),
-            (emailSender ?? new Mock<IEmailSender>(MockBehavior.Strict)).Object,
+            (manualInterventionNotifier ?? new Mock<IManualInterventionNotifier>(MockBehavior.Strict)).Object,
             logger ?? new FakeLogger<NewHallOfFameInductionSyncJob>());
 
     [Fact(DisplayName = "SyncAsync should log a warning and make no changes when a legacy id is not found")]
@@ -492,32 +472,34 @@ public sealed class NewHallOfFameInductionSyncJobTests(AppDbContextFixture fixtu
         record.Message.ShouldContain("999");
     }
 
-    [Fact(DisplayName = "SyncAsync should send a manual-intervention email and create no induction when the bowler cannot be resolved")]
-    public async Task SyncAsync_ShouldSendEmailAndCreateNoInduction_WhenBowlerCannotBeResolved()
+    [Fact(DisplayName = "SyncAsync should post a manual-intervention alert and create no induction when the bowler cannot be resolved")]
+    public async Task SyncAsync_ShouldPostAlertAndCreateNoInduction_WhenBowlerCannotBeResolved()
     {
         // Arrange
         var ct = TestContext.Current.CancellationToken;
         await InsertLegacyHallOfFameRowAsync(1, bowlerId: 999, category: 100, year: 2025);
 
-        var emailSender = new Mock<IEmailSender>(MockBehavior.Strict);
-        EmailMessage? sentMessage = null;
-        emailSender
-            .Setup(s => s.SendAsync(It.IsAny<EmailMessage>(), It.IsAny<CancellationToken>()))
-            .Callback<EmailMessage, CancellationToken>((message, _) => sentMessage = message)
+        var manualInterventionNotifier = new Mock<IManualInterventionNotifier>(MockBehavior.Strict);
+        DiscordAlert? postedAlert = null;
+        manualInterventionNotifier
+            .Setup(n => n.NotifyAsync(It.IsAny<DiscordAlert>(), It.IsAny<CancellationToken>()))
+            .Callback<DiscordAlert, CancellationToken>((alert, _) => postedAlert = alert)
             .Returns(Task.CompletedTask);
 
         var fakeLogger = new FakeLogger<NewHallOfFameInductionSyncJob>();
-        var job = CreateJob(emailSender, fakeLogger);
+        var job = CreateJob(manualInterventionNotifier, fakeLogger);
 
         // Act
         await job.SyncAsync([1], ct);
 
-        // Assert - Strict mock: the Setup above is the verification that SendAsync was called.
+        // Assert - Strict mock: the Setup above is the verification that NotifyAsync was called.
         (await _dbContext.HallOfFameInductions.AnyAsync(ct)).ShouldBeFalse();
-        sentMessage.ShouldNotBeNull();
-        sentMessage.To.ShouldBe("website@bowlneba.com");
-        sentMessage.Subject.ShouldBe("Manual intervention needed: Hall of Fame induction");
-        sentMessage.HtmlBody.ShouldContain("999");
+        postedAlert.ShouldNotBeNull();
+        postedAlert.Severity.ShouldBe(DiscordAlertSeverity.Warning);
+        postedAlert.Metadata.ShouldNotBeNull();
+        postedAlert.Metadata["LegacyHallOfFameId"].ShouldBe("1");
+        postedAlert.Metadata["LegacyBowlerId"].ShouldBe("999");
+        postedAlert.Metadata["Year"].ShouldBe("2025");
 
         var record = fakeLogger.Collector.GetSnapshot().ShouldHaveSingleItem();
         record.Level.ShouldBe(LogLevel.Warning);
@@ -604,16 +586,16 @@ public sealed class NewHallOfFameInductionSyncJobTests(AppDbContextFixture fixtu
         await InsertLegacyHallOfFameRowAsync(1, bowlerId: 999, category: 100, year: 2025);
         await InsertLegacyHallOfFameRowAsync(2, bowlerId: 5, category: 200, year: 2025);
 
-        var emailSender = new Mock<IEmailSender>(MockBehavior.Strict);
-        emailSender
-            .Setup(s => s.SendAsync(It.IsAny<EmailMessage>(), It.IsAny<CancellationToken>()))
+        var manualInterventionNotifier = new Mock<IManualInterventionNotifier>(MockBehavior.Strict);
+        manualInterventionNotifier
+            .Setup(n => n.NotifyAsync(It.IsAny<DiscordAlert>(), It.IsAny<CancellationToken>()))
             .Returns(Task.CompletedTask);
-        var job = CreateJob(emailSender);
+        var job = CreateJob(manualInterventionNotifier);
 
         // Act
         await job.SyncAsync([1, 2], ct);
 
-        // Assert - Strict mock: the Setup above is the verification that SendAsync was called.
+        // Assert - Strict mock: the Setup above is the verification that NotifyAsync was called.
         var induction = await _dbContext.HallOfFameInductions.SingleAsync(i => i.BowlerId == bowler.Id, ct);
         induction.Categories.ShouldBe([HallOfFameCategory.MeritoriousService]);
     }

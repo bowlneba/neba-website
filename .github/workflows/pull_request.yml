@@ -4,7 +4,8 @@ on:
   workflow_dispatch:
   pull_request:
     # PRs from hotfix/* branches target main, so they still run the full pipeline.
-    branches: [main]
+    # PRs into a release branch run it too.
+    branches: [main, "release/**"]
     paths:
       - "src/**"
       - "tests/**"

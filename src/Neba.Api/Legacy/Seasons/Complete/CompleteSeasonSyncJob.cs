@@ -9,7 +9,6 @@ using Microsoft.EntityFrameworkCore;
 
 using Neba.Api.Database;
 using Neba.Api.Discord;
-using Neba.Api.Email;
 
 using ZiggyCreatures.Caching.Fusion;
 
@@ -25,8 +24,7 @@ internal sealed class CompleteSeasonSyncJob(
     IDbConnection legacyConnection,
     IBackgroundJobClient jobs,
     IFusionCache cache,
-    IEmailSender emailSender,
-    IDiscordNotifier discordNotifier,
+    IManualInterventionNotifier manualInterventionNotifier,
     ILogger<CompleteSeasonSyncJob> logger)
 {
     private static readonly TimeSpan AwardJobDelay = TimeSpan.FromHours(1);
@@ -49,24 +47,16 @@ internal sealed class CompleteSeasonSyncJob(
         if (legacySeason is null)
         {
             logger.LogLegacySeasonNotFound(legacySeasonId);
-            await emailSender.SendAsync(new EmailMessage
-            {
-                To = "website@bowlneba.com",
-                Subject = "Manual intervention needed: season completion for unknown legacy season",
-                HtmlBody = new UnknownLegacySeasonEmail(legacySeasonId).ToHtmlBody()
-            }, ct);
-
             var unknownSeasonAlert = new DiscordAlert(
                 DiscordAlertSeverity.Critical,
                 "Season completion could not be matched",
-                "The legacy season completion event referenced a legacy season id that does not exist.",
+                "The legacy season completion event referenced a legacy season id that does not exist. The season was deleted or the id is invalid. Season completion and award assignment were skipped.",
                 new Dictionary<string, string>
                 {
-                    ["LegacySeasonId"] = legacySeasonId.ToString(CultureInfo.InvariantCulture),
-                    ["EmailSent"] = nameof(UnknownLegacySeasonEmail)
+                    ["LegacySeasonId"] = legacySeasonId.ToString(CultureInfo.InvariantCulture)
                 });
 
-            await discordNotifier.NotifyAsync(unknownSeasonAlert, ct);
+            await manualInterventionNotifier.NotifyAsync(unknownSeasonAlert, ct);
 
             return;
         }
@@ -80,13 +70,6 @@ internal sealed class CompleteSeasonSyncJob(
         if (season is null)
         {
             logger.LogLegacySeasonNotMatched(legacySeasonId, startDate, endDate);
-            await emailSender.SendAsync(new EmailMessage
-            {
-                To = "website@bowlneba.com",
-                Subject = "Manual intervention needed: season completion with no matching website season",
-                HtmlBody = new UnmatchedSeasonEmail(legacySeasonId, startDate, endDate).ToHtmlBody()
-            }, ct);
-
             var unmatchedSeasonAlert = new DiscordAlert(
                 DiscordAlertSeverity.Critical,
                 "Season completion could not be matched",
@@ -95,11 +78,10 @@ internal sealed class CompleteSeasonSyncJob(
                 {
                     ["LegacySeasonId"] = legacySeasonId.ToString(CultureInfo.InvariantCulture),
                     ["StartDate"] = startDate.ToString("O", CultureInfo.InvariantCulture),
-                    ["EndDate"] = endDate.ToString("O", CultureInfo.InvariantCulture),
-                    ["EmailSent"] = nameof(UnmatchedSeasonEmail)
+                    ["EndDate"] = endDate.ToString("O", CultureInfo.InvariantCulture)
                 });
 
-            await discordNotifier.NotifyAsync(unmatchedSeasonAlert, ct);
+            await manualInterventionNotifier.NotifyAsync(unmatchedSeasonAlert, ct);
 
             return;
         }
