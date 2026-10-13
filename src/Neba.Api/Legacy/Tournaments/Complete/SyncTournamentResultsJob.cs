@@ -248,7 +248,7 @@ internal sealed class SyncTournamentResultsJob(
         return unmappedLegacyBowlerIds;
     }
 
-    private async Task NotifyUnmappedBowlersAsync(
+    private Task NotifyUnmappedBowlersAsync(
         int legacyTournamentId,
         bool isTeamTournament,
         List<int> unmappedLegacyBowlerIds,
@@ -273,7 +273,7 @@ internal sealed class SyncTournamentResultsJob(
             + "Their results were not saved; re-sync after the bowlers are linked." + teamNote,
             fields);
 
-        await manualInterventionNotifier.NotifyAsync(alert, ct);
+        return manualInterventionNotifier.NotifyAsync(alert, ct);
     }
 
     private sealed record TeamRosterRows(
