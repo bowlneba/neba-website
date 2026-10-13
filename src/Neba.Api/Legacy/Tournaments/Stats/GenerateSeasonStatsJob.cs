@@ -128,7 +128,7 @@ internal sealed class GenerateSeasonStatsJob(
                 "The season was regenerated, but these legacy bowlers have no matching website bowler (no Bowler.LegacyId match) and were left out of its stats. Re-trigger stats generation after they are linked.",
                 new Dictionary<string, string>
                 {
-                    ["SeasonId"] = season.Id.ToString(),
+                    ["SeasonId"] = season.Id.ToString(null, CultureInfo.InvariantCulture),
                     ["UnmappedBowlerCount"] = unmappedLegacyBowlerIds.Count.ToString(CultureInfo.InvariantCulture),
                     ["LegacyBowlerIds"] = DiscordFieldFormatter.JoinIds(unmappedLegacyBowlerIds)
                 });
