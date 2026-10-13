@@ -89,11 +89,10 @@ internal sealed class SyncSquadScoresSyncJob(
         // The configured NpgsqlRetryingExecutionStrategy rejects user-initiated transactions, so the
         // whole transaction runs as one retriable unit through the strategy. Each attempt starts from a
         // clean change tracker and rebuilds its working state, since a retry re-runs the delegate.
-        var unmappedRowsByLegacyBowlerId = new Dictionary<int, List<LegacyQualifyingScoreRow>>();
         var strategy = db.Database.CreateExecutionStrategy();
 
-        await strategy.ExecuteAsync(() => ReplaceSquadScoresAsync(
-            squad, legacySquadId, rows, bowlerIdsByLegacyId, unmappedRowsByLegacyBowlerId, ct));
+        var unmappedRowsByLegacyBowlerId = await strategy.ExecuteAsync(() => ReplaceSquadScoresAsync(
+            squad, legacySquadId, rows, bowlerIdsByLegacyId, ct));
 
         await cache.RemoveByTagAsync($"neba:tournaments:{tournamentId}", token: ct);
 
@@ -158,16 +157,14 @@ internal sealed class SyncSquadScoresSyncJob(
             .ToDictionaryAsync(bowler => bowler.LegacyId!.Value, bowler => bowler.Id, ct);
     }
 
-    private async Task ReplaceSquadScoresAsync(
+    private async Task<Dictionary<int, List<LegacyQualifyingScoreRow>>> ReplaceSquadScoresAsync(
         Squad squad,
         int legacySquadId,
         List<LegacyQualifyingScoreRow> rows,
         Dictionary<int, BowlerId> bowlerIdsByLegacyId,
-        Dictionary<int, List<LegacyQualifyingScoreRow>> unmappedRowsByLegacyBowlerId,
         CancellationToken ct)
     {
         db.ChangeTracker.Clear();
-        unmappedRowsByLegacyBowlerId.Clear();
 
         var existing = await db.SquadScores
             .Where(squadScore => squadScore.SquadId == squad.Id)
@@ -194,6 +191,7 @@ internal sealed class SyncSquadScoresSyncJob(
             await db.SaveChangesAsync(ct);
         }
 
+        var unmappedRowsByLegacyBowlerId = new Dictionary<int, List<LegacyQualifyingScoreRow>>();
         var pendingScores = BuildPendingScores(
             squad, legacySquadId, rows, bowlerIdsByLegacyId, unmappedRowsByLegacyBowlerId);
 
@@ -204,6 +202,8 @@ internal sealed class SyncSquadScoresSyncJob(
         }
 
         await transaction.CommitAsync(ct);
+
+        return unmappedRowsByLegacyBowlerId;
     }
 
     // Rows whose legacy bowler id has no website Bowler.LegacyId match are grouped into

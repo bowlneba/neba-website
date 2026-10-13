@@ -7,6 +7,7 @@ using Microsoft.EntityFrameworkCore;
 
 using Neba.Api.Database;
 using Neba.Api.Discord;
+using Neba.Api.Features.Bowlers.Domain;
 using Neba.Api.Features.Tournaments.Domain;
 
 using ZiggyCreatures.Caching.Fusion;
@@ -39,9 +40,45 @@ internal sealed class SyncTournamentResultsJob(
             return;
         }
 
+        var resultRows = await LoadResultRowsAsync(legacyTournamentId);
+        var qualifyingRows = await LoadQualifyingRowsAsync(legacyTournamentId);
+
+        var isTeamTournament = tournament.TournamentType.TeamSize > 1;
+        var teamRosters = isTeamTournament
+            ? await LoadTeamRostersAsync(legacyTournamentId)
+            : TeamRosterRows.Empty;
+
+        var singleResultRows = await SeparateDuplicateResultRowsAsync(resultRows, legacyTournamentId, ct);
+
+        var placeByLegacyBowlerId = TournamentPlaceCalculator.ComputePlaces(
+            singleResultRows, qualifyingRows, teamRosters.Teams, teamRosters.Members, teamRosters.Squads);
+
+        var legacyBowlerIds = singleResultRows.Select(r => r.BowlerId).Distinct().ToList();
+        var bowlerIdsByLegacyId = await db.Bowlers
+            .Where(bowler => bowler.LegacyId != null && legacyBowlerIds.Contains(bowler.LegacyId.Value))
+            .ToDictionaryAsync(bowler => bowler.LegacyId!.Value, bowler => bowler.Id, ct);
+
+        var unmappedLegacyBowlerIds = AddResults(
+            tournament, singleResultRows, bowlerIdsByLegacyId, placeByLegacyBowlerId, legacyTournamentId);
+
+        await db.SaveChangesAsync(ct);
+
+        // Place == 1 results feed the champions list (ListChampionsQueryHandler) directly, in
+        // addition to the tournament's own detail view.
+        await cache.RemoveByTagAsync($"neba:tournaments:{tournament.Id}", token: ct);
+        await cache.RemoveByTagAsync("neba:tournaments:champions", token: ct);
+
+        if (unmappedLegacyBowlerIds.Count > 0)
+        {
+            await NotifyUnmappedBowlersAsync(legacyTournamentId, isTeamTournament, unmappedLegacyBowlerIds, ct);
+        }
+    }
+
+    private async Task<List<LegacyResultRow>> LoadResultRowsAsync(int legacyTournamentId)
+    {
         // See NewBowlerSyncJob.SyncAsync for the rationale on suppressing DAP005 here.
 #pragma warning disable DAP005
-        var resultRows = (await legacyConnection.QueryAsync<LegacyResultRow>(
+        var rows = await legacyConnection.QueryAsync<LegacyResultRow>(
             """
             SELECT
                 s.BowlerId,
@@ -54,9 +91,16 @@ internal sealed class SyncTournamentResultsJob(
             WHERE
                 s.TournamentId = @TournamentId
             """,
-            new { TournamentId = legacyTournamentId })).ToList();
+            new { TournamentId = legacyTournamentId });
+#pragma warning restore DAP005
 
-        var qualifyingRows = (await legacyConnection.QueryAsync<LegacyQualifyingRow>(
+        return [.. rows];
+    }
+
+    private async Task<List<LegacyQualifyingRow>> LoadQualifyingRowsAsync(int legacyTournamentId)
+    {
+#pragma warning disable DAP005
+        var rows = await legacyConnection.QueryAsync<LegacyQualifyingRow>(
             """
             SELECT
                 s.BowlerId,
@@ -70,71 +114,83 @@ internal sealed class SyncTournamentResultsJob(
             WHERE
                 s.TournamentId = @TournamentId
             """,
-            new { TournamentId = legacyTournamentId })).ToList();
-
-        var isTeamTournament = tournament.TournamentType.TeamSize > 1;
-
-        List<LegacyTeamRow> teamRows = [];
-        List<LegacyTeamMemberRow> teamMemberRows = [];
-        List<LegacyTeamSquadRow> teamSquadRows = [];
-
-        if (isTeamTournament)
-        {
-            // One row per roster (Teams.Id) - a bowler who partnered with different people
-            // across the tournament has one Teams row per pairing, not one per bowler.
-            teamRows = [.. (await legacyConnection.QueryAsync<LegacyTeamRow>(
-                """
-                SELECT
-                    t.Id AS TeamId,
-                    t.Forfeit
-                FROM
-                    Teams t
-                WHERE
-                    t.TeamTournamentId = @TournamentId
-                """,
-                new { TournamentId = legacyTournamentId }))];
-
-            teamMemberRows = [.. (await legacyConnection.QueryAsync<LegacyTeamMemberRow>(
-                """
-                SELECT
-                    tm.Bowlers_Id AS BowlerId,
-                    tm.Teams_Id AS TeamId
-                FROM
-                    TeamMember tm
-                INNER JOIN Teams t ON t.Id = tm.Teams_Id
-                WHERE
-                    t.TeamTournamentId = @TournamentId
-                """,
-                new { TournamentId = legacyTournamentId }))];
-
-            // One row per (roster, squad) - a roster that re-entered the same squad grouping
-            // more than once (no partner change) has more than one row here.
-            teamSquadRows = [.. (await legacyConnection.QueryAsync<LegacyTeamSquadRow>(
-                """
-                SELECT
-                    st.TeamId,
-                    st.TeamSquadId AS SquadId,
-                    st.HighGame
-                FROM
-                    Teams t
-                INNER JOIN SquadTeams st ON st.TeamId = t.Id
-                WHERE
-                    t.TeamTournamentId = @TournamentId
-                """,
-                new { TournamentId = legacyTournamentId }))];
-        }
+            new { TournamentId = legacyTournamentId });
 #pragma warning restore DAP005
 
-        // Stats_ResultsStats is only ever meant to hold one row per BowlerId per tournament, but
-        // that's convention, not a schema constraint - if it happens, treat it as a data anomaly
-        // worth a human look rather than silently picking one arbitrarily.
-        var resultRowsByBowlerId = resultRows.GroupBy(r => r.BowlerId).ToList();
-        var anomalousLegacyBowlerIds = resultRowsByBowlerId.Where(g => g.Count() > 1).Select(g => g.Key).ToList();
-        foreach (var legacyBowlerId in anomalousLegacyBowlerIds)
-        {
-            logger.LogLegacyBowlerHasMultipleResultRows(legacyBowlerId, legacyTournamentId);
+        return [.. rows];
+    }
 
-            var rowCount = resultRowsByBowlerId.Single(g => g.Key == legacyBowlerId).Count();
+    private async Task<TeamRosterRows> LoadTeamRostersAsync(int legacyTournamentId)
+    {
+#pragma warning disable DAP005
+        // One row per roster (Teams.Id) - a bowler who partnered with different people
+        // across the tournament has one Teams row per pairing, not one per bowler.
+        var teams = await legacyConnection.QueryAsync<LegacyTeamRow>(
+            """
+            SELECT
+                t.Id AS TeamId,
+                t.Forfeit
+            FROM
+                Teams t
+            WHERE
+                t.TeamTournamentId = @TournamentId
+            """,
+            new { TournamentId = legacyTournamentId });
+
+        var members = await legacyConnection.QueryAsync<LegacyTeamMemberRow>(
+            """
+            SELECT
+                tm.Bowlers_Id AS BowlerId,
+                tm.Teams_Id AS TeamId
+            FROM
+                TeamMember tm
+            INNER JOIN Teams t ON t.Id = tm.Teams_Id
+            WHERE
+                t.TeamTournamentId = @TournamentId
+            """,
+            new { TournamentId = legacyTournamentId });
+
+        // One row per (roster, squad) - a roster that re-entered the same squad grouping
+        // more than once (no partner change) has more than one row here.
+        var squads = await legacyConnection.QueryAsync<LegacyTeamSquadRow>(
+            """
+            SELECT
+                st.TeamId,
+                st.TeamSquadId AS SquadId,
+                st.HighGame
+            FROM
+                Teams t
+            INNER JOIN SquadTeams st ON st.TeamId = t.Id
+            WHERE
+                t.TeamTournamentId = @TournamentId
+            """,
+            new { TournamentId = legacyTournamentId });
+#pragma warning restore DAP005
+
+        return new TeamRosterRows([.. teams], [.. members], [.. squads]);
+    }
+
+    // Stats_ResultsStats is only ever meant to hold one row per BowlerId per tournament, but
+    // that's convention, not a schema constraint - if it happens, treat it as a data anomaly
+    // worth a human look rather than silently picking one arbitrarily. Returns the rows for
+    // bowlers with exactly one result row.
+    private async Task<List<LegacyResultRow>> SeparateDuplicateResultRowsAsync(
+        List<LegacyResultRow> resultRows,
+        int legacyTournamentId,
+        CancellationToken ct)
+    {
+        var singleResultRows = new List<LegacyResultRow>();
+
+        foreach (var group in resultRows.GroupBy(r => r.BowlerId))
+        {
+            var rowCount = group.Count();
+            if (rowCount == 1)
+            {
+                singleResultRows.Add(group.Single());
+                continue;
+            }
+
+            logger.LogLegacyBowlerHasMultipleResultRows(group.Key, legacyTournamentId);
 
             var alert = new DiscordAlert(
                 DiscordAlertSeverity.Warning,
@@ -142,7 +198,7 @@ internal sealed class SyncTournamentResultsJob(
                 "A bowler has more than one result row for this tournament in the legacy database.",
                 new Dictionary<string, string>
                 {
-                    ["LegacyBowlerId"] = legacyBowlerId.ToString(CultureInfo.InvariantCulture),
+                    ["LegacyBowlerId"] = group.Key.ToString(CultureInfo.InvariantCulture),
                     ["LegacyTournamentId"] = legacyTournamentId.ToString(CultureInfo.InvariantCulture),
                     ["RowCount"] = rowCount.ToString(CultureInfo.InvariantCulture)
                 });
@@ -150,15 +206,17 @@ internal sealed class SyncTournamentResultsJob(
             await manualInterventionNotifier.NotifyAsync(alert, ct);
         }
 
-        var singleResultRows = resultRowsByBowlerId.Where(g => g.Count() == 1).Select(g => g.Single()).ToList();
+        return singleResultRows;
+    }
 
-        var placeByLegacyBowlerId = TournamentPlaceCalculator.ComputePlaces(singleResultRows, qualifyingRows, teamRows, teamMemberRows, teamSquadRows);
-
-        var legacyBowlerIds = singleResultRows.Select(r => r.BowlerId).Distinct().ToList();
-        var bowlerIdsByLegacyId = await db.Bowlers
-            .Where(bowler => bowler.LegacyId != null && legacyBowlerIds.Contains(bowler.LegacyId.Value))
-            .ToDictionaryAsync(bowler => bowler.LegacyId!.Value, bowler => bowler.Id, ct);
-
+    // Returns the legacy ids of bowlers with no website bowler, whose results were skipped.
+    private List<int> AddResults(
+        Tournament tournament,
+        List<LegacyResultRow> singleResultRows,
+        Dictionary<int, BowlerId> bowlerIdsByLegacyId,
+        Dictionary<int, int> placeByLegacyBowlerId,
+        int legacyTournamentId)
+    {
         var unmappedLegacyBowlerIds = new List<int>();
 
         foreach (var row in singleResultRows)
@@ -187,35 +245,42 @@ internal sealed class SyncTournamentResultsJob(
             }
         }
 
-        await db.SaveChangesAsync(ct);
+        return unmappedLegacyBowlerIds;
+    }
 
-        // Place == 1 results feed the champions list (ListChampionsQueryHandler) directly, in
-        // addition to the tournament's own detail view.
-        await cache.RemoveByTagAsync($"neba:tournaments:{tournament.Id}", token: ct);
-        await cache.RemoveByTagAsync("neba:tournaments:champions", token: ct);
-
-        if (unmappedLegacyBowlerIds.Count > 0)
+    private async Task NotifyUnmappedBowlersAsync(
+        int legacyTournamentId,
+        bool isTeamTournament,
+        List<int> unmappedLegacyBowlerIds,
+        CancellationToken ct)
+    {
+        var fields = new Dictionary<string, string>
         {
-            var fields = new Dictionary<string, string>
-            {
-                ["LegacyTournamentId"] = legacyTournamentId.ToString(CultureInfo.InvariantCulture),
-                ["TournamentFormat"] = isTeamTournament ? "Team" : "Individual",
-                ["UnsyncedBowlerCount"] = unmappedLegacyBowlerIds.Count.ToString(CultureInfo.InvariantCulture),
-                ["LegacyBowlerIds"] = DiscordFieldFormatter.JoinIds(unmappedLegacyBowlerIds)
-            };
+            ["LegacyTournamentId"] = legacyTournamentId.ToString(CultureInfo.InvariantCulture),
+            ["TournamentFormat"] = isTeamTournament ? "Team" : "Individual",
+            ["UnsyncedBowlerCount"] = unmappedLegacyBowlerIds.Count.ToString(CultureInfo.InvariantCulture),
+            ["LegacyBowlerIds"] = DiscordFieldFormatter.JoinIds(unmappedLegacyBowlerIds)
+        };
 
-            var teamNote = isTeamTournament
-                ? " An unmapped bowler is also left out of the team's merged qualifying score, which may change teammates' computed place."
-                : string.Empty;
+        var teamNote = isTeamTournament
+            ? " An unmapped bowler is also left out of the team's merged qualifying score, which may change teammates' computed place."
+            : string.Empty;
 
-            var unmappedAlert = new DiscordAlert(
-                DiscordAlertSeverity.Warning,
-                "Unsynced bowlers in tournament result sync",
-                "Bowlers with no matching website bowler (no Bowler.LegacyId match) were left out of the results. "
-                + "Their results were not saved; re-sync after the bowlers are linked." + teamNote,
-                fields);
+        var alert = new DiscordAlert(
+            DiscordAlertSeverity.Warning,
+            "Unsynced bowlers in tournament result sync",
+            "Bowlers with no matching website bowler (no Bowler.LegacyId match) were left out of the results. "
+            + "Their results were not saved; re-sync after the bowlers are linked." + teamNote,
+            fields);
 
-            await manualInterventionNotifier.NotifyAsync(unmappedAlert, ct);
-        }
+        await manualInterventionNotifier.NotifyAsync(alert, ct);
+    }
+
+    private sealed record TeamRosterRows(
+        List<LegacyTeamRow> Teams,
+        List<LegacyTeamMemberRow> Members,
+        List<LegacyTeamSquadRow> Squads)
+    {
+        public static TeamRosterRows Empty => new([], [], []);
     }
 }
