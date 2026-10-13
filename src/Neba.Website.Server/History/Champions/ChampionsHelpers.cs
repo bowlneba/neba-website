@@ -18,15 +18,4 @@ internal static class ChampionsHelpers
         12 => "Dec",
         _ => string.Empty
     };
-
-    public static string TypePillClass(string tournamentType)
-    {
-        if (tournamentType.Contains("double", StringComparison.OrdinalIgnoreCase)) return "type-doubles";
-        if (tournamentType.Contains("trio", StringComparison.OrdinalIgnoreCase)) return "type-trios";
-        if (tournamentType.Contains("team", StringComparison.OrdinalIgnoreCase)) return "type-team";
-        if (tournamentType.Contains("senior", StringComparison.OrdinalIgnoreCase)) return "type-senior";
-        if (tournamentType.Contains("women", StringComparison.OrdinalIgnoreCase)) return "type-women";
-        if (tournamentType.Contains("special", StringComparison.OrdinalIgnoreCase)) return "type-special";
-        return "type-singles";
-    }
 }

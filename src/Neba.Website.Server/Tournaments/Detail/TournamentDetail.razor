@@ -189,7 +189,7 @@ else
                         </div>
 
                         <div class="td-hero__chips">
-                            <span class="td-hero__chip">@_model.TournamentType</span>
+                            <TournamentTypeBadge TournamentType="@_model.TournamentType" />
                             @if (_model.PatternLengthCategory is not null)
                             {
                                 <span class="td-hero__chip">@_model.PatternLengthCategory</span>

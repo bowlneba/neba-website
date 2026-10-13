@@ -59,7 +59,7 @@
             }
 
             <div class="tournament-upcoming-card__chips">
-                <span class="tournament-upcoming-card__chip">@Tournament.TournamentType</span>
+                <TournamentTypeBadge TournamentType="@Tournament.TournamentType" />
                 @if (Tournament.PatternDisplay is not null)
                 {
                     <span class="tournament-upcoming-card__chip">@Tournament.PatternDisplay</span>

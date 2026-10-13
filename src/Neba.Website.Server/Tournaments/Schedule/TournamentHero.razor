@@ -52,7 +52,7 @@
             </div>
 
             <div class="tournament-hero__chips">
-                <span class="tournament-hero__chip">@Tournament.TournamentType</span>
+                <TournamentTypeBadge TournamentType="@Tournament.TournamentType" />
                 @if (Tournament.PatternDisplay is not null)
                 {
                     <span class="tournament-hero__chip">@Tournament.PatternDisplay</span>
