@@ -215,7 +215,8 @@ public sealed class TournamentDetailTests : IDisposable
         var cut = _ctx.Render<TournamentDetail>(p => p.Add(x => x.Id, TournamentDetailResponseFactory.ValidId));
 
         // Assert
-        cut.FindAll(".td-hero__chips .td-hero__chip").Count.ShouldBe(1);
+        cut.FindAll(".td-hero__chips .type-pill").Count.ShouldBe(1);
+        cut.FindAll(".td-hero__chips .td-hero__chip").Count.ShouldBe(0);
     }
 
     // ── Champion bar ─────────────────────────────────────────────────────────

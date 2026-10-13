@@ -53,7 +53,7 @@ public static class SeasonTournamentViewModelFactory
 
     public static IReadOnlyCollection<SeasonTournamentViewModel> Bogus(int count, int? seed = null)
     {
-        var tournamentTypeOptions = new[] { "Singles", "Doubles", "Trios", "Team", "Senior", "Women", "Senior / Women", "Special Event" };
+        var tournamentTypeOptions = new[] { "Singles", "Doubles", "Trios", "Baker", "Senior", "Women", "Senior / Women", "Invitational" };
 
         var faker = new Faker<SeasonTournamentViewModel>()
             .CustomInstantiator(f =>

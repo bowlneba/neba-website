@@ -29,9 +29,7 @@
                         <tr @key="@row.TournamentId">
                             <td class="col-month">@ChampionsHelpers.MonthAbbreviation(row.Month)</td>
                             <td class="col-type">
-                                <span class="@("type-pill " + ChampionsHelpers.TypePillClass(row.TournamentType))">
-                                    @row.TournamentType
-                                </span>
+                                <TournamentTypeBadge TournamentType="@row.TournamentType" />
                             </td>
                             <td class="col-champs">
                                 @for (var i = 0; i < row.Champions.Count; i++)

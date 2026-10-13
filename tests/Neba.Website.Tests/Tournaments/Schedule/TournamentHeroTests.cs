@@ -14,6 +14,22 @@ public sealed class TournamentHeroTests : IDisposable
 
     public void Dispose() => _ctx.Dispose();
 
+    [Fact(DisplayName = "Should render the tournament type as a type badge")]
+    public void Render_ShouldShowTypeBadge_WhenTournamentHasType()
+    {
+        // Arrange
+        var tournament = SeasonTournamentViewModelFactory.Create(tournamentType: "Doubles");
+
+        // Act
+        var cut = _ctx.Render<TournamentHero>(parameters => parameters
+            .Add(p => p.Tournament, tournament));
+
+        // Assert
+        var badge = cut.Find(".type-pill");
+        badge.TextContent.Trim().ShouldBe("Doubles");
+        badge.ClassList.ShouldContain("type-doubles");
+    }
+
     [Fact(DisplayName = "Should render register CTA and status pill when registration is available")]
     public void Render_ShouldShowRegisterLink_WhenRegistrationUrlExists()
     {

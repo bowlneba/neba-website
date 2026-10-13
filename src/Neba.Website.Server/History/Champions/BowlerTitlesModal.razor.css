@@ -199,37 +199,6 @@
     background: var(--neba-blue-50);
 }
 
-/* Type pills */
-.type-pill {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.4rem;
-    padding: 0.25rem 0.7rem;
-    border-radius: 999px;
-    font-family: 'Manrope', sans-serif;
-    font-weight: 600;
-    font-size: 0.72rem;
-    letter-spacing: 0.02em;
-    white-space: nowrap;
-}
-
-.type-pill::before {
-    content: '';
-    width: 6px;
-    height: 6px;
-    border-radius: 50%;
-    background: currentColor;
-    opacity: 0.7;
-}
-
-.type-singles { background: var(--neba-blue-50);  color: var(--neba-blue-700); }
-.type-doubles { background: #f4ecfb;              color: #7a3fb8; }
-.type-trios   { background: #fff4e6;              color: #9a3412; }
-.type-team    { background: #ecfdf5;              color: #047857; }
-.type-senior  { background: #fffbeb;              color: #92400e; }
-.type-women   { background: #fdf2f8;              color: #be185d; }
-.type-special { background: var(--neba-gray-100); color: var(--neba-gray-700); }
-
 .hof-badge {
     height: 1.5rem;
     width: auto;
