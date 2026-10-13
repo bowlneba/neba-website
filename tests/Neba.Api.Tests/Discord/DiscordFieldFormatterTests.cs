@@ -71,4 +71,56 @@ public sealed class DiscordFieldFormatterTests
         // Assert
         result.Length.ShouldBeLessThan(1024);
     }
+
+    [Fact(DisplayName = "JoinLines should return None when there are no lines")]
+    public void JoinLines_ShouldReturnNone_WhenEmpty()
+    {
+        // Arrange
+        // Act
+        var result = DiscordFieldFormatter.JoinLines([]);
+
+        // Assert
+        result.ShouldBe("None");
+    }
+
+    [Fact(DisplayName = "JoinLines should join lines with newlines when under the limit")]
+    public void JoinLines_ShouldJoinWithNewlines_WhenUnderLimit()
+    {
+        // Arrange
+        string[] lines = ["1: G1 200", "2: G1 190"];
+
+        // Act
+        var result = DiscordFieldFormatter.JoinLines(lines);
+
+        // Assert
+        result.ShouldBe("1: G1 200\n2: G1 190");
+    }
+
+    [Fact(DisplayName = "JoinLines should drop trailing lines and note the count when over the limit")]
+    public void JoinLines_ShouldTruncate_WhenOverLimit()
+    {
+        // Arrange
+        var lines = Enumerable.Range(1, 500).Select(i => $"{i}: G1 200, G2 190, G3 180").ToList();
+
+        // Act
+        var result = DiscordFieldFormatter.JoinLines(lines);
+
+        // Assert
+        result.Length.ShouldBeLessThanOrEqualTo(DiscordFieldFormatter.MaxFieldLength);
+        result.ShouldStartWith("1: G1 200, G2 190, G3 180\n2:");
+        result.ShouldMatch(@"\(\+\d+ more\)$");
+    }
+
+    [Fact(DisplayName = "JoinLines should clip a single line longer than the limit")]
+    public void JoinLines_ShouldClipLine_WhenSingleLineExceedsLimit()
+    {
+        // Arrange
+        string[] lines = [new string('x', 5000)];
+
+        // Act
+        var result = DiscordFieldFormatter.JoinLines(lines);
+
+        // Assert
+        result.Length.ShouldBeLessThanOrEqualTo(DiscordFieldFormatter.MaxFieldLength);
+    }
 }

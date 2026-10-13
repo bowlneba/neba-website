@@ -112,8 +112,8 @@ public sealed class DiscordConfigurationTests
         Should.Throw<OptionsValidationException>(() => serviceProvider.GetRequiredService<IOptions<DiscordSettings>>().Value);
     }
 
-    [Fact(DisplayName = "AddDiscord should register IManualInterventionNotifier as DiscordNotifier")]
-    public void AddDiscord_ShouldRegisterIManualInterventionNotifier_AsDiscordNotifier()
+    [Fact(DisplayName = "AddDiscord should register IManualInterventionNotifier as ManualInterventionNotifier")]
+    public void AddDiscord_ShouldRegisterIManualInterventionNotifier_AsManualInterventionNotifier()
     {
         // Arrange
         var builder = WebApplication.CreateSlimBuilder();
@@ -130,6 +130,6 @@ public sealed class DiscordConfigurationTests
         // Assert
         using var serviceProvider = builder.Services.BuildServiceProvider();
         using var scope = serviceProvider.CreateScope();
-        scope.ServiceProvider.GetRequiredService<IManualInterventionNotifier>().ShouldBeOfType<DiscordNotifier>();
+        scope.ServiceProvider.GetRequiredService<IManualInterventionNotifier>().ShouldBeOfType<ManualInterventionNotifier>();
     }
 }

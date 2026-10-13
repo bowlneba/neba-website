@@ -108,6 +108,14 @@ jobs:
         run: |
           set -euo pipefail
 
+          # The API fails startup validation when either webhook URL is blank, so stop the deploy here.
+          for name in DISCORD_WEBHOOK_URL DISCORD_MANUAL_INTERVENTION_WEBHOOK_URL; do
+            if [ -z "${!name}" ]; then
+              echo "::error::GitHub secret $name is not set"
+              exit 1
+            fi
+          done
+
           VAULT_NAME=$(azd env get-value KEYVAULT_VAULTURI | sed 's|https://||;s|\.vault\.azure\.net.*||')
 
           az keyvault secret set --vault-name "$VAULT_NAME" \

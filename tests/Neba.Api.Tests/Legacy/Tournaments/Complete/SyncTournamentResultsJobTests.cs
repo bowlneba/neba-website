@@ -204,14 +204,12 @@ public sealed class SyncTournamentResultsJobTests(AppDbContextFixture fixture, L
     }
 
     private SyncTournamentResultsJob CreateJob(
-        Mock<IDiscordNotifier>? discordNotifier = null,
         Mock<IManualInterventionNotifier>? manualInterventionNotifier = null,
         FakeLogger<SyncTournamentResultsJob>? logger = null) =>
         new(
             _dbContext,
             _legacyConnection,
             _serviceProvider.GetRequiredService<IFusionCache>(),
-            (discordNotifier ?? new Mock<IDiscordNotifier>(MockBehavior.Strict)).Object,
             (manualInterventionNotifier ?? new Mock<IManualInterventionNotifier>(MockBehavior.Strict)).Object,
             logger ?? new FakeLogger<SyncTournamentResultsJob>());
 
@@ -468,7 +466,7 @@ public sealed class SyncTournamentResultsJobTests(AppDbContextFixture fixture, L
         fakeLogger.Collector.GetSnapshot().ShouldContain(r => r.Level == LogLevel.Warning && r.Message.Contains("100", StringComparison.Ordinal));
     }
 
-    [Fact(DisplayName = "SyncAsync should log an error, post a Discord alert, and skip a bowler with more than one Stats_ResultsStats row, without throwing")]
+    [Fact(DisplayName = "SyncAsync should log an error, post a manual-intervention alert, and skip a bowler with more than one Stats_ResultsStats row, without throwing")]
     public async Task SyncAsync_ShouldLogErrorAndSkip_WhenBowlerHasMultipleResultRows()
     {
         // Arrange - data anomaly: two Stats rows for the same bowler, each with its own ResultsStats row.
@@ -483,14 +481,14 @@ public sealed class SyncTournamentResultsJobTests(AppDbContextFixture fixture, L
 
         var fakeLogger = new FakeLogger<SyncTournamentResultsJob>();
 
-        var discordNotifier = new Mock<IDiscordNotifier>(MockBehavior.Strict);
+        var manualInterventionNotifier = new Mock<IManualInterventionNotifier>(MockBehavior.Strict);
         DiscordAlert? postedAlert = null;
-        discordNotifier
+        manualInterventionNotifier
             .Setup(n => n.NotifyAsync(It.IsAny<DiscordAlert>(), It.IsAny<CancellationToken>()))
             .Callback<DiscordAlert, CancellationToken>((alert, _) => postedAlert = alert)
             .Returns(Task.CompletedTask);
 
-        var job = CreateJob(discordNotifier: discordNotifier, logger: fakeLogger);
+        var job = CreateJob(manualInterventionNotifier: manualInterventionNotifier, logger: fakeLogger);
 
         // Act & Assert
         await Should.NotThrowAsync(() => job.SyncAsync(42, ct));

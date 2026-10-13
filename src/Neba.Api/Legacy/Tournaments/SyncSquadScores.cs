@@ -97,28 +97,33 @@ internal sealed class SyncSquadScoresSyncJob(
 
         await cache.RemoveByTagAsync($"neba:tournaments:{tournamentId}", token: ct);
 
-        // Sent after SaveChangesAsync so the rest of the squad's sync isn't held up by the alert -
-        // same ordering NewTournamentSyncJob uses for its own manual-intervention alert.
-        foreach ((int legacyBowlerId, List<LegacyQualifyingScoreRow> unmappedRows) in unmappedRowsByLegacyBowlerId)
+        if (unmappedRowsByLegacyBowlerId.Count == 0)
         {
-            var games = string.Join(", ", unmappedRows
-                .OrderBy(row => row.Game)
-                .Select(row => $"G{row.Game}: {row.Score}"));
-
-            var alert = new DiscordAlert(
-                DiscordAlertSeverity.Warning,
-                "Unsynced bowler in score sync",
-                "This legacy bowler has scores in a squad sync but no matching website bowler (no Bowler.LegacyId match). "
-                + "The scores were not saved. Link the bowler, then re-trigger this squad's score sync.",
-                new Dictionary<string, string>
-                {
-                    ["LegacyBowlerId"] = legacyBowlerId.ToString(CultureInfo.InvariantCulture),
-                    ["LegacySquadId"] = legacySquadId.ToString(CultureInfo.InvariantCulture),
-                    ["UnsyncedGames"] = games
-                });
-
-            await manualInterventionNotifier.NotifyAsync(alert, ct);
+            return;
         }
+
+        // One alert for the whole squad, sent after SaveChangesAsync so the sync isn't held up by it -
+        // a per-bowler post would hit Discord's webhook rate limit on a squad with many unlinked bowlers.
+        var unsyncedScores = unmappedRowsByLegacyBowlerId
+            .OrderBy(entry => entry.Key)
+            .Select(entry => $"{entry.Key}: " + string.Join(", ", entry.Value
+                .OrderBy(row => row.Game)
+                .Select(row => $"G{row.Game} {row.Score}")))
+            .ToList();
+
+        var alert = new DiscordAlert(
+            DiscordAlertSeverity.Warning,
+            "Unsynced bowlers in score sync",
+            "These legacy bowlers have scores in a squad sync but no matching website bowler (no Bowler.LegacyId match). "
+            + "Their scores were not saved. Link the bowlers, then re-trigger this squad's score sync.",
+            new Dictionary<string, string>
+            {
+                ["LegacySquadId"] = legacySquadId.ToString(CultureInfo.InvariantCulture),
+                ["UnsyncedBowlerCount"] = unmappedRowsByLegacyBowlerId.Count.ToString(CultureInfo.InvariantCulture),
+                ["UnsyncedScores"] = DiscordFieldFormatter.JoinLines(unsyncedScores)
+            });
+
+        await manualInterventionNotifier.NotifyAsync(alert, ct);
     }
 
     private async Task<List<LegacyQualifyingScoreRow>> LoadLegacyScoreRowsAsync(int legacySquadId)
@@ -202,8 +207,8 @@ internal sealed class SyncSquadScoresSyncJob(
     }
 
     // Rows whose legacy bowler id has no website Bowler.LegacyId match are grouped into
-    // unmappedRowsByLegacyBowlerId so one email covers all of that bowler's scores rather than one
-    // email per row.
+    // unmappedRowsByLegacyBowlerId so one alert covers all of that bowler's scores rather than one
+    // alert per row.
     private List<SquadScore> BuildPendingScores(
         Squad squad,
         int legacySquadId,

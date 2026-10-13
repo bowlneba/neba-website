@@ -1,22 +1,13 @@
 namespace Neba.Api.Discord;
 
 internal sealed class DiscordNotifier(HttpClient httpClient, TimeProvider timeProvider, ILogger<DiscordNotifier> logger)
-    : IDiscordNotifier, IManualInterventionNotifier
+    : IDiscordNotifier
 {
     public async Task NotifyAsync(DiscordAlert alert, CancellationToken cancellationToken)
     {
-        var embed = new DiscordEmbed(
-            alert.Title,
-            alert.Body,
-            alert.Severity.NotificationColor.RawValue,
-            timeProvider.GetUtcNow(),
-            alert.Metadata?.Select(field => new DiscordEmbedField(field.Key, field.Value)).ToList());
-
-        var payload = new { embeds = new[] { embed } };
-
         try
         {
-            using var response = await httpClient.PostAsJsonAsync(string.Empty, payload, cancellationToken);
+            using var response = await DiscordWebhook.PostAsync(httpClient, timeProvider, alert, cancellationToken);
 
             if (!response.IsSuccessStatusCode)
             {

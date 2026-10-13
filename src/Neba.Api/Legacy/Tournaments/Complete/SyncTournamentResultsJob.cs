@@ -20,7 +20,6 @@ internal sealed class SyncTournamentResultsJob(
     AppDbContext db,
     IDbConnection legacyConnection,
     IFusionCache cache,
-    IDiscordNotifier discordNotifier,
     IManualInterventionNotifier manualInterventionNotifier,
     ILogger<SyncTournamentResultsJob> logger)
 {
@@ -148,7 +147,7 @@ internal sealed class SyncTournamentResultsJob(
                     ["RowCount"] = rowCount.ToString(CultureInfo.InvariantCulture)
                 });
 
-            await discordNotifier.NotifyAsync(alert, ct);
+            await manualInterventionNotifier.NotifyAsync(alert, ct);
         }
 
         var singleResultRows = resultRowsByBowlerId.Where(g => g.Count() == 1).Select(g => g.Single()).ToList();

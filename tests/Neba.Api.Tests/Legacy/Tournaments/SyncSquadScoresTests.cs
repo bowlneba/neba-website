@@ -417,15 +417,15 @@ public sealed class SyncSquadScoresSyncJobTests(AppDbContextFixture fixture, Leg
         postedAlert.ShouldNotBeNull();
         postedAlert.Severity.ShouldBe(DiscordAlertSeverity.Warning);
         postedAlert.Metadata.ShouldNotBeNull();
-        postedAlert.Metadata["LegacyBowlerId"].ShouldBe("999");
         postedAlert.Metadata["LegacySquadId"].ShouldBe("1");
-        postedAlert.Metadata["UnsyncedGames"].ShouldBe("G1: 150");
+        postedAlert.Metadata["UnsyncedBowlerCount"].ShouldBe("1");
+        postedAlert.Metadata["UnsyncedScores"].ShouldBe("999: G1 150");
 
         fakeLogger.Collector.GetSnapshot().ShouldContain(r => r.Level == LogLevel.Warning && r.Message.Contains("999", StringComparison.Ordinal));
     }
 
-    [Fact(DisplayName = "SyncAsync should post two separate alerts, one per unmapped bowler, each scoped to only that bowler's rows")]
-    public async Task SyncAsync_ShouldPostSeparateAlertsPerUnmappedBowler_WhenTwoLegacyBowlerIdsAreUnmapped()
+    [Fact(DisplayName = "SyncAsync should post one alert listing every unmapped bowler with only that bowler's rows")]
+    public async Task SyncAsync_ShouldPostSingleAlertListingAllUnmappedBowlers_WhenTwoLegacyBowlerIdsAreUnmapped()
     {
         // Arrange
         var ct = TestContext.Current.CancellationToken;
@@ -445,9 +445,9 @@ public sealed class SyncSquadScoresSyncJobTests(AppDbContextFixture fixture, Leg
         await job.SyncAsync(1, ct);
 
         // Assert
-        postedAlerts.Count.ShouldBe(2);
-        postedAlerts.ShouldContain(a => a.Metadata!["LegacyBowlerId"] == "901" && a.Metadata["UnsyncedGames"] == "G1: 111");
-        postedAlerts.ShouldContain(a => a.Metadata!["LegacyBowlerId"] == "902" && a.Metadata["UnsyncedGames"] == "G1: 222");
+        var alert = postedAlerts.ShouldHaveSingleItem();
+        alert.Metadata!["UnsyncedBowlerCount"].ShouldBe("2");
+        alert.Metadata["UnsyncedScores"].ShouldBe("901: G1 111\n902: G1 222");
     }
 
     [Fact(DisplayName = "SyncAsync should not post an alert when all bowlers are mapped")]

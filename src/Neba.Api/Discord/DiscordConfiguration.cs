@@ -18,7 +18,7 @@ internal static class DiscordConfiguration
                     client.BaseAddress = new Uri(sp.GetRequiredService<IOptions<DiscordSettings>>().Value.WebhookUrl))
                 .AddStandardResilienceHandler(ConfigureResilience);
 
-            builder.Services.AddHttpClient<IManualInterventionNotifier, DiscordNotifier>((sp, client) =>
+            builder.Services.AddHttpClient<IManualInterventionNotifier, ManualInterventionNotifier>((sp, client) =>
                     client.BaseAddress = new Uri(sp.GetRequiredService<IOptions<DiscordSettings>>().Value.ManualInterventionWebhookUrl))
                 .AddStandardResilienceHandler(ConfigureResilience);
 
