@@ -16,7 +16,8 @@ Use this when a fix must reach production faster than the normal pipeline allows
    git switch -c hotfix/2026-10-12-short-slug "$(git tag --list 'v*' --sort=-v:refname | head -1)"
    ```
 
-2. Commit the fix and push the branch. Pushing does not start any workflow.
+2. Commit the fix, then run `/hotfix`. It reviews the commits against the tag, checks tests exist and fail without the fix, runs the affected tests, and writes the PR description and bug report. It prints the push, dispatch, and PR commands but runs none of them.
+   Then push the branch. Pushing does not start any workflow.
 3. Run **Hotfix Workflow** from Actions on that branch (`gh workflow run hotfix.yml --ref hotfix/<name>`). It:
    - checks the branch is `hotfix/*`, descends from the latest `v*` tag (or the `base_tag` input), and touches no migrations;
    - runs Website tests (xunit, bunit), API tests (including Testcontainers integration), and Jest;
