@@ -145,6 +145,35 @@ public sealed class TruncateTournamentCommandHandlerTests(AppDbContextFixture fi
         seasonCacheAfterTruncate.ShouldBe("fresh-season-tournaments");
     }
 
+    [Fact(DisplayName = "HandleAsync invalidates the season stats cache tag when the tournament is truncated")]
+    public async Task HandleAsync_ShouldInvalidateSeasonStatsCacheTag_WhenTournamentIsTruncated()
+    {
+        // Arrange
+        var ct = TestContext.Current.CancellationToken;
+        var tournament = await SeedTournamentAsync(ct);
+        var cache = _serviceProvider.GetRequiredService<IFusionCache>();
+        var statsCacheKey = $"neba:stats:seasons:{tournament.SeasonId}:stats";
+
+        await cache.GetOrSetAsync(
+            statsCacheKey,
+            _ => Task.FromResult("cached-stats"),
+            tags: [$"neba:stats:seasons:{tournament.SeasonId}"],
+            token: ct);
+
+        var handler = CreateHandler();
+        var command = new TruncateTournamentCommand { TournamentId = tournament.Id };
+
+        // Act
+        await handler.HandleAsync(command, ct);
+
+        // Assert
+        var statsAfterTruncate = await cache.GetOrSetAsync(
+            statsCacheKey,
+            _ => Task.FromResult("fresh-stats"),
+            token: ct);
+        statsAfterTruncate.ShouldBe("fresh-stats");
+    }
+
     [Fact(DisplayName = "HandleAsync does not invalidate the cache when the tournament is already finalized")]
     public async Task HandleAsync_ShouldNotInvalidateCache_WhenTournamentIsAlreadyFinalized()
     {

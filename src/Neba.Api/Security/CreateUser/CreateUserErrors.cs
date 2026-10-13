@@ -6,4 +6,9 @@ internal static class CreateUserErrors
 {
     public static Error DuplicateEmail
         => Error.Conflict("CreateUser.DuplicateEmail", "An account with this email already exists.");
+
+    public static Error PermissionNotHeld(IReadOnlyCollection<string> permissions)
+        => Error.Forbidden(
+            "CreateUser.PermissionNotHeld",
+            $"You can't grant permissions you don't hold: {string.Join(", ", permissions)}.");
 }

@@ -24,11 +24,11 @@ internal static class TestAuthEndpoints
     {
         public void MapTestAuthEndpoints()
         {
-            app.MapPost("/__test/login", async (HttpContext httpContext, string? permissions, string? returnUrl) =>
+            app.MapPost("/__test/login", async (HttpContext httpContext, string? permissions, string? returnUrl, string? userId) =>
             {
                 var claims = new List<Claim>
                 {
-                    new(ClaimTypes.NameIdentifier, Guid.NewGuid().ToString()),
+                    new(ClaimTypes.NameIdentifier, userId ?? Guid.NewGuid().ToString()),
                     new(ClaimTypes.Email, "e2e-test-user@bowlneba.com"),
                 };
 

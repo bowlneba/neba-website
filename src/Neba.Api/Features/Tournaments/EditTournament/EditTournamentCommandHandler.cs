@@ -50,6 +50,7 @@ internal sealed class EditTournamentCommandHandler(
         (Season season, PatternLengthCategory? patternLengthCategory, PatternRatioCategory? patternRatioCategory) = resolveResult.Value;
 
         var previousSeasonId = tournament.SeasonId;
+        var previousStatsEligible = tournament.StatsEligible;
 
         // Must snapshot before Update() — Logo is mutated in place, so reading it after the call
         // would return the new value, not the one being replaced (see EditSponsorCommandHandler).
@@ -96,7 +97,8 @@ internal sealed class EditTournamentCommandHandler(
 
         await appDbContext.SaveChangesAsync(cancellationToken);
 
-        await EvictCachesAsync(tournament.Id, previousSeasonId, season.Id, cancellationToken);
+        await EvictCachesAsync(
+            tournament.Id, previousSeasonId, season.Id, previousStatsEligible != tournament.StatsEligible, cancellationToken);
 
         ScheduleBackgroundJobs(command, previousLogo, tournament.Id, season.Id);
 
@@ -104,7 +106,11 @@ internal sealed class EditTournamentCommandHandler(
     }
 
     private async Task EvictCachesAsync(
-        TournamentId tournamentId, SeasonId previousSeasonId, SeasonId currentSeasonId, CancellationToken cancellationToken)
+        TournamentId tournamentId,
+        SeasonId previousSeasonId,
+        SeasonId currentSeasonId,
+        bool statsEligibleChanged,
+        CancellationToken cancellationToken)
     {
         await cache.RemoveByTagAsync($"neba:tournaments:{tournamentId}", token: cancellationToken);
         await cache.RemoveByTagAsync($"neba:tournaments:{previousSeasonId}", token: cancellationToken);
@@ -112,6 +118,18 @@ internal sealed class EditTournamentCommandHandler(
         if (currentSeasonId != previousSeasonId)
         {
             await cache.RemoveByTagAsync($"neba:tournaments:{currentSeasonId}", token: cancellationToken);
+        }
+
+        // Season stat minimums count stats-eligible tournaments, so flipping eligibility or moving a
+        // tournament between seasons makes the cached season stats stale.
+        if (statsEligibleChanged || currentSeasonId != previousSeasonId)
+        {
+            await cache.RemoveByTagAsync($"neba:stats:seasons:{previousSeasonId}", token: cancellationToken);
+
+            if (currentSeasonId != previousSeasonId)
+            {
+                await cache.RemoveByTagAsync($"neba:stats:seasons:{currentSeasonId}", token: cancellationToken);
+            }
         }
     }
 

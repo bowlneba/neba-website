@@ -19,13 +19,16 @@ You need the `System.CreateUser` permission, enforced via the dynamic `Permissio
 
    ![Blank Create User form](images/create-user/create-form.png)
 
-3. Click **Send Invite** to create the account and email the invite, or navigate away to discard.
+3. Optionally, use the **Permission overrides** table to change one permission for this person only. Each permission has a three-way switch: **Added** (always allowed), **Default** (their roles decide), or **Removed** (never allowed, even if a role allows it). The **Granted by role** and **Result** columns update as you tick roles. You can only add a permission you hold yourself. See [Edit a User's Permissions](edit-user.md) for the full explanation.
+
+4. Click **Send Invite** to create the account and email the invite, or navigate away to discard.
 
    If you've filled in anything and try to leave the page before submitting — clicking away to another page, or closing/refreshing the browser tab — you're asked to confirm first ("Discard unsaved changes?" with **Leave**/**Stay** options, or your browser's own "leave site?" prompt for a tab close/refresh).
 
 ## What happens after you confirm
 
 - **Success**: an "Invite Sent" message confirms the account was created, and the form clears so you can invite another person. The invitee receives an email with a **Set Your Password** button/link.
+- **Overrides not saved**: a "Permission Overrides Not Saved" warning means the account was created and the invite sent, but the overrides didn't apply. Open the user from the Users list and set them with Edit.
 - **Failure**: an "Unable to Create User" message explains what went wrong (see Troubleshooting below) — nothing is saved, and the form stays filled in so you can fix it and try again.
 
 ## Setting the password (invite flow)
@@ -47,6 +50,8 @@ On success, the token is consumed (it can't be reused), the account's email is m
 | --- | --- |
 | No "Create User" option in the account menu, or a "you don't have permission" message on `/account/create-user` | You don't hold `System.CreateUser` — ask an admin to grant it if you believe you should have it. |
 | "An account with this email already exists." | Someone has already been invited or registered with that email. Use a different email, or ask an admin to resend the existing invite. |
+| "You can't grant permissions you don't hold: ..." | An override adds a permission you don't hold. Set it to Default, or ask an admin who holds it. |
+| "Permission overrides unavailable" (above the form) | The role list didn't load, so overrides can't be set here. You can still send the invite and set them later with Edit. |
 | "At least one role is required." | No role checkbox was selected. Pick at least one and try again. |
 | "The Admin role cannot be granted through this endpoint." or "One or more roles are not recognized." | This shouldn't happen from the form itself, since only valid, non-Admin roles are offered as checkboxes — if you see it, try again or contact support. |
 | Any other "Unable to Create User" message | The server rejected the request; the message describes the specific problem. The account was not created — correct the issue and submit again. |
@@ -55,5 +60,6 @@ On success, the token is consumed (it can't be reused), the account's email is m
 ## Related
 
 - [View Users](list-users.md) — see every account you've created, including its status.
+- [Edit a User's Permissions](edit-user.md) — change a user's permission overrides after the account exists.
 - [Reset a User's Password](reset-password.md) — forces a fresh set-password link for an existing user, using the same mechanism.
 - [`docs/policies/README.md`](../policies/README.md) — the `Permission:{value}` policy this action requires and how it's evaluated.

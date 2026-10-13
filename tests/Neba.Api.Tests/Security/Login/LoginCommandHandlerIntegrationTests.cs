@@ -1,3 +1,5 @@
+using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
@@ -5,6 +7,7 @@ using System.Text.Json;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.DependencyInjection;
 
+using Neba.Api.Contracts.Security;
 using Neba.Api.Security;
 using Neba.Api.Security.Domain;
 using Neba.Api.Security.Login;
@@ -38,11 +41,10 @@ public sealed class LoginCommandHandlerIntegrationTests(SecurityDbContextFixture
     public ValueTask DisposeAsync()
         => ValueTask.CompletedTask;
 
-    private static LoginCommandHandler CreateHandler(
+    private LoginCommandHandler CreateHandler(
         UserManager<ApplicationUser> userManager,
-        RoleManager<ApplicationRole> roleManager,
         SignInManager<ApplicationUser> signInManager)
-        => new(userManager, roleManager, signInManager, new JwtTokenService(TestJwtSettings, TimeProvider.System), TimeProvider.System);
+        => new(userManager, fixture.CreateDbContext(), signInManager, new JwtTokenService(TestJwtSettings, TimeProvider.System), TimeProvider.System);
 
     private static async Task<ApplicationUser> SeedUserAsync(UserManager<ApplicationUser> userManager)
     {
@@ -60,7 +62,6 @@ public sealed class LoginCommandHandlerIntegrationTests(SecurityDbContextFixture
         using var scope = fixture.CreateScope();
         var userManager = scope.ServiceProvider.GetRequiredService<UserManager<ApplicationUser>>();
         var signInManager = scope.ServiceProvider.GetRequiredService<SignInManager<ApplicationUser>>();
-        var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<ApplicationRole>>();
         await SeedUserAsync(userManager);
         var command = new LoginCommand
         {
@@ -69,13 +70,55 @@ public sealed class LoginCommandHandlerIntegrationTests(SecurityDbContextFixture
         };
 
         // Act
-        var result = await CreateHandler(userManager, roleManager, signInManager).HandleAsync(command, ct);
+        var result = await CreateHandler(userManager, signInManager).HandleAsync(command, ct);
 
         // Assert
         result.IsError.ShouldBeFalse();
         result.Value.AccessToken.ShouldNotBeNullOrEmpty();
         result.Value.RefreshToken.ShouldNotBeNullOrEmpty();
         result.Value.ExpiresAt.ShouldBeGreaterThan(DateTimeOffset.UtcNow);
+    }
+
+    [Fact(DisplayName = "HandleAsync issues a token with role permissions plus added minus removed overrides")]
+    public async Task HandleAsync_ShouldApplyPermissionOverrides_WhenUserHasOverrides()
+    {
+        // Arrange
+        var ct = TestContext.Current.CancellationToken;
+        using var scope = fixture.CreateScope();
+        var userManager = scope.ServiceProvider.GetRequiredService<UserManager<ApplicationUser>>();
+        var signInManager = scope.ServiceProvider.GetRequiredService<SignInManager<ApplicationUser>>();
+        var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<ApplicationRole>>();
+
+        var role = new ApplicationRole(Roles.Journalist);
+        await roleManager.CreateAsync(role);
+        await roleManager.AddClaimAsync(role, new Claim(Permissions.ClaimType, Permissions.CreateArticle.Value));
+        await roleManager.AddClaimAsync(role, new Claim(Permissions.ClaimType, Permissions.EditArticle.Value));
+
+        var user = await SeedUserAsync(userManager);
+        await userManager.AddToRoleAsync(user, Roles.Journalist);
+        await userManager.AddClaimsAsync(user,
+        [
+            new Claim(Permissions.ClaimType, Permissions.CreateSponsor.Value),
+            new Claim(Permissions.DeniedClaimType, Permissions.CreateArticle.Value)
+        ]);
+
+        var command = new LoginCommand
+        {
+            Email = LoginRequestFactory.ValidEmail,
+            Password = LoginRequestFactory.ValidPassword
+        };
+
+        // Act
+        var result = await CreateHandler(userManager, signInManager).HandleAsync(command, ct);
+
+        // Assert
+        result.IsError.ShouldBeFalse();
+        var token = new JwtSecurityTokenHandler().ReadJwtToken(result.Value.AccessToken);
+        var permissions = token.Claims.Where(c => c.Type == Permissions.ClaimType).Select(c => c.Value).ToList();
+        permissions.Count.ShouldBe(2);
+        permissions.ShouldContain(Permissions.EditArticle.Value);
+        permissions.ShouldContain(Permissions.CreateSponsor.Value);
+        permissions.ShouldNotContain(Permissions.CreateArticle.Value);
     }
 
     [Fact(DisplayName = "HandleAsync returns LoginDto with email and userId matching the registered user")]
@@ -86,7 +129,6 @@ public sealed class LoginCommandHandlerIntegrationTests(SecurityDbContextFixture
         using var scope = fixture.CreateScope();
         var userManager = scope.ServiceProvider.GetRequiredService<UserManager<ApplicationUser>>();
         var signInManager = scope.ServiceProvider.GetRequiredService<SignInManager<ApplicationUser>>();
-        var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<ApplicationRole>>();
         var user = await SeedUserAsync(userManager);
         var command = new LoginCommand
         {
@@ -95,7 +137,7 @@ public sealed class LoginCommandHandlerIntegrationTests(SecurityDbContextFixture
         };
 
         // Act
-        var result = await CreateHandler(userManager, roleManager, signInManager).HandleAsync(command, ct);
+        var result = await CreateHandler(userManager, signInManager).HandleAsync(command, ct);
 
         // Assert
         result.IsError.ShouldBeFalse();
@@ -111,7 +153,6 @@ public sealed class LoginCommandHandlerIntegrationTests(SecurityDbContextFixture
         using var scope = fixture.CreateScope();
         var userManager = scope.ServiceProvider.GetRequiredService<UserManager<ApplicationUser>>();
         var signInManager = scope.ServiceProvider.GetRequiredService<SignInManager<ApplicationUser>>();
-        var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<ApplicationRole>>();
         await SeedUserAsync(userManager);
         var command = new LoginCommand
         {
@@ -120,7 +161,7 @@ public sealed class LoginCommandHandlerIntegrationTests(SecurityDbContextFixture
         };
 
         // Act
-        var result = await CreateHandler(userManager, roleManager, signInManager).HandleAsync(command, ct);
+        var result = await CreateHandler(userManager, signInManager).HandleAsync(command, ct);
 
         // Assert
         result.IsError.ShouldBeFalse();
@@ -146,7 +187,6 @@ public sealed class LoginCommandHandlerIntegrationTests(SecurityDbContextFixture
         using var scope = fixture.CreateScope();
         var userManager = scope.ServiceProvider.GetRequiredService<UserManager<ApplicationUser>>();
         var signInManager = scope.ServiceProvider.GetRequiredService<SignInManager<ApplicationUser>>();
-        var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<ApplicationRole>>();
         var command = new LoginCommand
         {
             Email = "nobody@bowlneba.com",
@@ -154,7 +194,7 @@ public sealed class LoginCommandHandlerIntegrationTests(SecurityDbContextFixture
         };
 
         // Act
-        var result = await CreateHandler(userManager, roleManager, signInManager).HandleAsync(command, ct);
+        var result = await CreateHandler(userManager, signInManager).HandleAsync(command, ct);
 
         // Assert
         result.IsError.ShouldBeTrue();
@@ -170,7 +210,6 @@ public sealed class LoginCommandHandlerIntegrationTests(SecurityDbContextFixture
         using var scope = fixture.CreateScope();
         var userManager = scope.ServiceProvider.GetRequiredService<UserManager<ApplicationUser>>();
         var signInManager = scope.ServiceProvider.GetRequiredService<SignInManager<ApplicationUser>>();
-        var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<ApplicationRole>>();
         await SeedUserAsync(userManager);
         var command = new LoginCommand
         {
@@ -179,7 +218,7 @@ public sealed class LoginCommandHandlerIntegrationTests(SecurityDbContextFixture
         };
 
         // Act
-        var result = await CreateHandler(userManager, roleManager, signInManager).HandleAsync(command, ct);
+        var result = await CreateHandler(userManager, signInManager).HandleAsync(command, ct);
 
         // Assert
         result.IsError.ShouldBeTrue();

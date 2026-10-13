@@ -13,5 +13,10 @@ internal sealed record CreateUserCommand
 
     public string? PhoneNumber { get; init; }
 
-    public IReadOnlyCollection<(string Type, string Value)> Claims { get; init; } = [];
+    public IReadOnlyCollection<string> AddedPermissions { get; init; } = [];
+
+    public IReadOnlyCollection<string> RemovedPermissions { get; init; } = [];
+
+    /// <summary>The caller's permissions. The cross-aggregate fact the escalation guard needs.</summary>
+    public required IReadOnlyCollection<string> CallerPermissions { get; init; }
 }

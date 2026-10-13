@@ -407,6 +407,22 @@ public static class CacheDescriptors
     }
 
     /// <summary>
+    /// Cache descriptors for security data.
+    /// </summary>
+    public static class Security
+    {
+        /// <summary>
+        /// Returns a cache descriptor for the list of roles with the permissions each grants.
+        /// </summary>
+        public static CacheDescriptor ListRoles
+            => new()
+            {
+                Key = "neba:security:roles:list",
+                Tags = ["neba", "neba:security", "neba:security:roles"]
+            };
+    }
+
+    /// <summary>
     /// Cache descriptors for oil patterns.
     /// </summary>
     /// <remarks>

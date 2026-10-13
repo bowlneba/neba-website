@@ -19,6 +19,13 @@ public sealed record CreateUserInput
     [PersonalData]
     public string? PhoneNumber { get; init; }
 
-    /// <summary>Additional claims to grant the new user. Empty when none are requested.</summary>
-    public IReadOnlyCollection<ClaimInput> Claims { get; init; } = [];
+    /// <summary>
+    /// Permissions granted to this user regardless of their roles. Empty when none are requested.
+    /// </summary>
+    public IReadOnlyCollection<string> AddedPermissions { get; init; } = [];
+
+    /// <summary>
+    /// Permissions withheld from this user even when one of their roles grants them. Empty when none are requested.
+    /// </summary>
+    public IReadOnlyCollection<string> RemovedPermissions { get; init; } = [];
 }
