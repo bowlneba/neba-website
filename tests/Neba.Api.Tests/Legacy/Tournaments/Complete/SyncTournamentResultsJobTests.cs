@@ -8,7 +8,6 @@ using Microsoft.Extensions.Logging.Testing;
 
 using Neba.Api.Database;
 using Neba.Api.Discord;
-using Neba.Api.Email;
 using Neba.Api.Features.Bowlers.Domain;
 using Neba.Api.Features.Tournaments.Domain;
 using Neba.Api.Legacy.Tournaments.Complete;
@@ -205,15 +204,15 @@ public sealed class SyncTournamentResultsJobTests(AppDbContextFixture fixture, L
     }
 
     private SyncTournamentResultsJob CreateJob(
-        Mock<IEmailSender>? emailSender = null,
         Mock<IDiscordNotifier>? discordNotifier = null,
+        Mock<IManualInterventionNotifier>? manualInterventionNotifier = null,
         FakeLogger<SyncTournamentResultsJob>? logger = null) =>
         new(
             _dbContext,
             _legacyConnection,
             _serviceProvider.GetRequiredService<IFusionCache>(),
-            (emailSender ?? new Mock<IEmailSender>(MockBehavior.Strict)).Object,
             (discordNotifier ?? new Mock<IDiscordNotifier>(MockBehavior.Strict)).Object,
+            (manualInterventionNotifier ?? new Mock<IManualInterventionNotifier>(MockBehavior.Strict)).Object,
             logger ?? new FakeLogger<SyncTournamentResultsJob>());
 
     private async Task<Tournament> ReloadTournamentAsync(int legacyTournamentId, CancellationToken ct) =>
@@ -227,7 +226,7 @@ public sealed class SyncTournamentResultsJobTests(AppDbContextFixture fixture, L
         var fakeLogger = new FakeLogger<SyncTournamentResultsJob>();
         var job = CreateJob(logger: fakeLogger);
 
-        // Act - Strict email mock: any SendAsync call without a setup would throw.
+        // Act - Strict notifier mock: any NotifyAsync call without a setup would throw.
         await job.SyncAsync(999, ct);
 
         // Assert
@@ -411,8 +410,8 @@ public sealed class SyncTournamentResultsJobTests(AppDbContextFixture fixture, L
         tournament.Results.Single(r => r.BowlerId == otherBowlerD.Id).Place.ShouldBe(2);
     }
 
-    [Fact(DisplayName = "SyncAsync should skip an unmapped bowler, log a warning, and send an email flagging the team-tournament caveat")]
-    public async Task SyncAsync_ShouldSkipUnmappedBowlerAndSendTeamAwareEmail_WhenBowlerHasNoWebsiteMatch()
+    [Fact(DisplayName = "SyncAsync should skip an unmapped bowler, log a warning, and post a manual-intervention alert flagging the team-tournament caveat")]
+    public async Task SyncAsync_ShouldSkipUnmappedBowlerAndPostTeamAwareAlert_WhenBowlerHasNoWebsiteMatch()
     {
         // Arrange
         var ct = TestContext.Current.CancellationToken;
@@ -421,23 +420,28 @@ public sealed class SyncTournamentResultsJobTests(AppDbContextFixture fixture, L
         var unmappedStatsId = await InsertStatsAsync(999, 42);
         await InsertResultsStatsAsync(unmappedStatsId, place: 1, payout: 500m, points: 100);
 
-        var emailSender = new Mock<IEmailSender>(MockBehavior.Strict);
-        EmailMessage? sentMessage = null;
-        emailSender
-            .Setup(s => s.SendAsync(It.IsAny<EmailMessage>(), It.IsAny<CancellationToken>()))
-            .Callback<EmailMessage, CancellationToken>((message, _) => sentMessage = message)
+        var manualInterventionNotifier = new Mock<IManualInterventionNotifier>(MockBehavior.Strict);
+        DiscordAlert? postedAlert = null;
+        manualInterventionNotifier
+            .Setup(n => n.NotifyAsync(It.IsAny<DiscordAlert>(), It.IsAny<CancellationToken>()))
+            .Callback<DiscordAlert, CancellationToken>((alert, _) => postedAlert = alert)
             .Returns(Task.CompletedTask);
 
         var fakeLogger = new FakeLogger<SyncTournamentResultsJob>();
-        var job = CreateJob(emailSender, logger: fakeLogger);
+        var job = CreateJob(manualInterventionNotifier: manualInterventionNotifier, logger: fakeLogger);
 
         // Act
         await job.SyncAsync(42, ct);
 
-        // Assert - Strict mock: the Setup above is the verification that SendAsync was called.
-        sentMessage.ShouldNotBeNull();
-        sentMessage.HtmlBody.ShouldContain("999");
-        sentMessage.HtmlBody.ShouldContain("team tournament", Case.Insensitive);
+        // Assert - the captured alert proves NotifyAsync was called.
+        postedAlert.ShouldNotBeNull();
+        postedAlert.Severity.ShouldBe(DiscordAlertSeverity.Warning);
+        postedAlert.Body.ShouldContain("team", Case.Insensitive);
+        postedAlert.Metadata.ShouldNotBeNull();
+        postedAlert.Metadata["LegacyTournamentId"].ShouldBe("42");
+        postedAlert.Metadata["TournamentFormat"].ShouldBe("Team");
+        postedAlert.Metadata["UnsyncedBowlerCount"].ShouldBe("1");
+        postedAlert.Metadata["LegacyBowlerIds"].ShouldBe("999");
         fakeLogger.Collector.GetSnapshot().ShouldContain(r => r.Level == LogLevel.Warning && r.Message.Contains("999", StringComparison.Ordinal));
     }
 

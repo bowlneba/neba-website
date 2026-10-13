@@ -1,7 +1,7 @@
 namespace Neba.Api.Discord;
 
 internal sealed class DiscordNotifier(HttpClient httpClient, TimeProvider timeProvider, ILogger<DiscordNotifier> logger)
-    : IDiscordNotifier
+    : IDiscordNotifier, IManualInterventionNotifier
 {
     public async Task NotifyAsync(DiscordAlert alert, CancellationToken cancellationToken)
     {

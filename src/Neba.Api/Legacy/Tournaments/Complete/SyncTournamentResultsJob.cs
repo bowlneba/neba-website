@@ -7,7 +7,6 @@ using Microsoft.EntityFrameworkCore;
 
 using Neba.Api.Database;
 using Neba.Api.Discord;
-using Neba.Api.Email;
 using Neba.Api.Features.Tournaments.Domain;
 
 using ZiggyCreatures.Caching.Fusion;
@@ -21,8 +20,8 @@ internal sealed class SyncTournamentResultsJob(
     AppDbContext db,
     IDbConnection legacyConnection,
     IFusionCache cache,
-    IEmailSender emailSender,
     IDiscordNotifier discordNotifier,
+    IManualInterventionNotifier manualInterventionNotifier,
     ILogger<SyncTournamentResultsJob> logger)
 {
     public async Task SyncAsync(int legacyTournamentId, CancellationToken ct)
@@ -198,12 +197,26 @@ internal sealed class SyncTournamentResultsJob(
 
         if (unmappedLegacyBowlerIds.Count > 0)
         {
-            await emailSender.SendAsync(new EmailMessage
+            var fields = new Dictionary<string, string>
             {
-                To = "website@bowlneba.com",
-                Subject = "Manual intervention needed: unsynced bowler(s) in tournament result sync",
-                HtmlBody = new UnsyncedBowlerResultSyncEmail(unmappedLegacyBowlerIds, legacyTournamentId, isTeamTournament).ToHtmlBody()
-            }, ct);
+                ["LegacyTournamentId"] = legacyTournamentId.ToString(CultureInfo.InvariantCulture),
+                ["TournamentFormat"] = isTeamTournament ? "Team" : "Individual",
+                ["UnsyncedBowlerCount"] = unmappedLegacyBowlerIds.Count.ToString(CultureInfo.InvariantCulture),
+                ["LegacyBowlerIds"] = DiscordFieldFormatter.JoinIds(unmappedLegacyBowlerIds)
+            };
+
+            var teamNote = isTeamTournament
+                ? " An unmapped bowler is also left out of the team's merged qualifying score, which may change teammates' computed place."
+                : string.Empty;
+
+            var unmappedAlert = new DiscordAlert(
+                DiscordAlertSeverity.Warning,
+                "Unsynced bowlers in tournament result sync",
+                "Bowlers with no matching website bowler (no Bowler.LegacyId match) were left out of the results. "
+                + "Their results were not saved; re-sync after the bowlers are linked." + teamNote,
+                fields);
+
+            await manualInterventionNotifier.NotifyAsync(unmappedAlert, ct);
         }
     }
 }

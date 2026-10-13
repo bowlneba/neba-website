@@ -19,7 +19,8 @@ public sealed class DiscordConfigurationTests
         var builder = WebApplication.CreateSlimBuilder();
         builder.Configuration.AddInMemoryCollection(new Dictionary<string, string?>
         {
-            ["Discord:WebhookUrl"] = "https://discord.com/api/webhooks/1/token"
+            ["Discord:WebhookUrl"] = "https://discord.com/api/webhooks/1/token",
+            ["Discord:ManualInterventionWebhookUrl"] = "https://discord.com/api/webhooks/2/token"
         });
 
         // Act
@@ -29,6 +30,7 @@ public sealed class DiscordConfigurationTests
         var settings = builder.Services.BuildServiceProvider()
             .GetRequiredService<IOptions<DiscordSettings>>().Value;
         settings.WebhookUrl.ShouldBe("https://discord.com/api/webhooks/1/token");
+        settings.ManualInterventionWebhookUrl.ShouldBe("https://discord.com/api/webhooks/2/token");
     }
 
     [Fact(DisplayName = "AddDiscord should throw on start when the Discord section is absent")]
@@ -52,7 +54,8 @@ public sealed class DiscordConfigurationTests
         var builder = WebApplication.CreateSlimBuilder();
         builder.Configuration.AddInMemoryCollection(new Dictionary<string, string?>
         {
-            ["Discord:WebhookUrl"] = "https://discord.com/api/webhooks/1/token"
+            ["Discord:WebhookUrl"] = "https://discord.com/api/webhooks/1/token",
+            ["Discord:ManualInterventionWebhookUrl"] = "https://discord.com/api/webhooks/2/token"
         });
         builder.Services.AddSingleton(TimeProvider.System);
 
@@ -72,7 +75,8 @@ public sealed class DiscordConfigurationTests
         var builder = WebApplication.CreateSlimBuilder();
         builder.Configuration.AddInMemoryCollection(new Dictionary<string, string?>
         {
-            ["Discord:WebhookUrl"] = "https://discord.com/api/webhooks/1/token"
+            ["Discord:WebhookUrl"] = "https://discord.com/api/webhooks/1/token",
+            ["Discord:ManualInterventionWebhookUrl"] = "https://discord.com/api/webhooks/2/token"
         });
 
         // Act
@@ -84,5 +88,48 @@ public sealed class DiscordConfigurationTests
         var httpClientFactory = scope.ServiceProvider.GetRequiredService<IHttpClientFactory>();
         using var client = httpClientFactory.CreateClient(nameof(IDiscordNotifier));
         client.BaseAddress.ShouldBe(new Uri("https://discord.com/api/webhooks/1/token"));
+
+        using var manualInterventionClient = httpClientFactory.CreateClient(nameof(IManualInterventionNotifier));
+        manualInterventionClient.BaseAddress.ShouldBe(new Uri("https://discord.com/api/webhooks/2/token"));
+    }
+
+    [Fact(DisplayName = "AddDiscord should throw on start when the manual-intervention webhook URL is blank")]
+    public void AddDiscord_ShouldThrowOnStart_WhenManualInterventionWebhookUrlIsBlank()
+    {
+        // Arrange
+        var builder = WebApplication.CreateSlimBuilder();
+        builder.Configuration.AddInMemoryCollection(new Dictionary<string, string?>
+        {
+            ["Discord:WebhookUrl"] = "https://discord.com/api/webhooks/1/token",
+            ["Discord:ManualInterventionWebhookUrl"] = ""
+        });
+
+        // Act
+        builder.AddDiscord();
+
+        // Assert
+        var serviceProvider = builder.Services.BuildServiceProvider();
+        Should.Throw<OptionsValidationException>(() => serviceProvider.GetRequiredService<IOptions<DiscordSettings>>().Value);
+    }
+
+    [Fact(DisplayName = "AddDiscord should register IManualInterventionNotifier as DiscordNotifier")]
+    public void AddDiscord_ShouldRegisterIManualInterventionNotifier_AsDiscordNotifier()
+    {
+        // Arrange
+        var builder = WebApplication.CreateSlimBuilder();
+        builder.Configuration.AddInMemoryCollection(new Dictionary<string, string?>
+        {
+            ["Discord:WebhookUrl"] = "https://discord.com/api/webhooks/1/token",
+            ["Discord:ManualInterventionWebhookUrl"] = "https://discord.com/api/webhooks/2/token"
+        });
+        builder.Services.AddSingleton(TimeProvider.System);
+
+        // Act
+        builder.AddDiscord();
+
+        // Assert
+        using var serviceProvider = builder.Services.BuildServiceProvider();
+        using var scope = serviceProvider.CreateScope();
+        scope.ServiceProvider.GetRequiredService<IManualInterventionNotifier>().ShouldBeOfType<DiscordNotifier>();
     }
 }

@@ -19,7 +19,7 @@ using Microsoft.Extensions.Logging.Testing;
 using Microsoft.Extensions.Options;
 
 using Neba.Api.Database;
-using Neba.Api.Email;
+using Neba.Api.Discord;
 using Neba.Api.Features.Bowlers.Domain;
 using Neba.Api.Features.Seasons.Domain;
 using Neba.Api.Features.Tournaments.Domain;
@@ -207,30 +207,6 @@ public sealed class SyncSquadScoresEndpointTests : IAsyncLifetime
     }
 }
 
-[UnitTest]
-[Component("Legacy")]
-public sealed class UnsyncedBowlerScoreSyncEmailTests
-{
-    [Fact(DisplayName = "ToHtmlBody should include the legacy bowler id, legacy squad id, and score rows")]
-    public void ToHtmlBody_ShouldIncludeLegacyBowlerIdLegacySquadIdAndScoreRows()
-    {
-        // Arrange
-        var email = new UnsyncedBowlerScoreSyncEmail(
-            legacyBowlerId: 42,
-            legacySquadId: 7,
-            unmappedRows: [new LegacyQualifyingScoreRow(42, 1, 200), new LegacyQualifyingScoreRow(42, 2, 210)]);
-
-        // Act
-        var body = email.ToHtmlBody();
-
-        // Assert
-        body.ShouldContain("42");
-        body.ShouldContain("7");
-        body.ShouldContain("200");
-        body.ShouldContain("210");
-    }
-}
-
 [IntegrationTest]
 [Component("Legacy")]
 [Collection(nameof(LegacyDatabasesTestScope))]
@@ -332,12 +308,12 @@ public sealed class SyncSquadScoresSyncJobTests(AppDbContextFixture fixture, Leg
         return bowler;
     }
 
-    private SyncSquadScoresSyncJob CreateJob(Mock<IEmailSender>? emailSender = null, FakeLogger<SyncSquadScoresSyncJob>? logger = null) =>
+    private SyncSquadScoresSyncJob CreateJob(Mock<IManualInterventionNotifier>? manualInterventionNotifier = null, FakeLogger<SyncSquadScoresSyncJob>? logger = null) =>
         new(
             _dbContext,
             _legacyConnection,
             _serviceProvider.GetRequiredService<IFusionCache>(),
-            (emailSender ?? new Mock<IEmailSender>(MockBehavior.Strict)).Object,
+            (manualInterventionNotifier ?? new Mock<IManualInterventionNotifier>(MockBehavior.Strict)).Object,
             logger ?? new FakeLogger<SyncSquadScoresSyncJob>());
 
     [Fact(DisplayName = "SyncAsync should log a warning and make no changes when the legacy squad is not found")]
@@ -351,7 +327,7 @@ public sealed class SyncSquadScoresSyncJobTests(AppDbContextFixture fixture, Leg
         // Act
         await job.SyncAsync(999, ct);
 
-        // Assert - Strict email mock: any SendAsync call without a setup would throw.
+        // Assert - Strict notifier mock: any NotifyAsync call without a setup would throw.
         var record = fakeLogger.Collector.GetSnapshot().ShouldHaveSingleItem();
         record.Level.ShouldBe(LogLevel.Warning);
         record.Message.ShouldContain("999");
@@ -410,8 +386,8 @@ public sealed class SyncSquadScoresSyncJobTests(AppDbContextFixture fixture, Leg
         valueAfterSync.ShouldBe("fresh-value");
     }
 
-    [Fact(DisplayName = "SyncAsync should skip an unmapped bowler's rows, sync others, log a warning, and send a manual-intervention email")]
-    public async Task SyncAsync_ShouldSkipUnmappedBowlerAndSendEmail_WhenOneLegacyBowlerIdHasNoMatch()
+    [Fact(DisplayName = "SyncAsync should skip an unmapped bowler's rows, sync others, log a warning, and post a manual-intervention alert")]
+    public async Task SyncAsync_ShouldSkipUnmappedBowlerAndPostAlert_WhenOneLegacyBowlerIdHasNoMatch()
     {
         // Arrange
         var ct = TestContext.Current.CancellationToken;
@@ -420,34 +396,36 @@ public sealed class SyncSquadScoresSyncJobTests(AppDbContextFixture fixture, Leg
         await InsertLegacyScoreAsync(legacyBowlerId: 100, legacySquadId: 1, game: 1, score: 200);
         await InsertLegacyScoreAsync(legacyBowlerId: 999, legacySquadId: 1, game: 1, score: 150);
 
-        var emailSender = new Mock<IEmailSender>(MockBehavior.Strict);
-        EmailMessage? sentMessage = null;
-        emailSender
-            .Setup(s => s.SendAsync(It.IsAny<EmailMessage>(), It.IsAny<CancellationToken>()))
-            .Callback<EmailMessage, CancellationToken>((message, _) => sentMessage = message)
+        var manualInterventionNotifier = new Mock<IManualInterventionNotifier>(MockBehavior.Strict);
+        DiscordAlert? postedAlert = null;
+        manualInterventionNotifier
+            .Setup(n => n.NotifyAsync(It.IsAny<DiscordAlert>(), It.IsAny<CancellationToken>()))
+            .Callback<DiscordAlert, CancellationToken>((alert, _) => postedAlert = alert)
             .Returns(Task.CompletedTask);
 
         var fakeLogger = new FakeLogger<SyncSquadScoresSyncJob>();
-        var job = CreateJob(emailSender, fakeLogger);
+        var job = CreateJob(manualInterventionNotifier, fakeLogger);
 
         // Act
         await job.SyncAsync(1, ct);
 
-        // Assert - Strict mock: the Setup above is the verification that SendAsync was called.
+        // Assert - the captured alert proves NotifyAsync was called.
         var scores = await _dbContext.SquadScores.Where(s => s.SquadId == squad.Id).ToListAsync(ct);
         var mappedScore = scores.ShouldHaveSingleItem();
         mappedScore.BowlerId.ShouldBe(mappedBowler.Id);
 
-        sentMessage.ShouldNotBeNull();
-        sentMessage.To.ShouldBe("website@bowlneba.com");
-        sentMessage.HtmlBody.ShouldContain("999");
-        sentMessage.HtmlBody.ShouldContain("150");
+        postedAlert.ShouldNotBeNull();
+        postedAlert.Severity.ShouldBe(DiscordAlertSeverity.Warning);
+        postedAlert.Metadata.ShouldNotBeNull();
+        postedAlert.Metadata["LegacyBowlerId"].ShouldBe("999");
+        postedAlert.Metadata["LegacySquadId"].ShouldBe("1");
+        postedAlert.Metadata["UnsyncedGames"].ShouldBe("G1: 150");
 
         fakeLogger.Collector.GetSnapshot().ShouldContain(r => r.Level == LogLevel.Warning && r.Message.Contains("999", StringComparison.Ordinal));
     }
 
-    [Fact(DisplayName = "SyncAsync should send two separate emails, one per unmapped bowler, each scoped to only that bowler's rows")]
-    public async Task SyncAsync_ShouldSendSeparateEmailsPerUnmappedBowler_WhenTwoLegacyBowlerIdsAreUnmapped()
+    [Fact(DisplayName = "SyncAsync should post two separate alerts, one per unmapped bowler, each scoped to only that bowler's rows")]
+    public async Task SyncAsync_ShouldPostSeparateAlertsPerUnmappedBowler_WhenTwoLegacyBowlerIdsAreUnmapped()
     {
         // Arrange
         var ct = TestContext.Current.CancellationToken;
@@ -455,27 +433,27 @@ public sealed class SyncSquadScoresSyncJobTests(AppDbContextFixture fixture, Leg
         await InsertLegacyScoreAsync(legacyBowlerId: 901, legacySquadId: 1, game: 1, score: 111);
         await InsertLegacyScoreAsync(legacyBowlerId: 902, legacySquadId: 1, game: 1, score: 222);
 
-        var emailSender = new Mock<IEmailSender>(MockBehavior.Strict);
-        var sentMessages = new List<EmailMessage>();
-        emailSender
-            .Setup(s => s.SendAsync(It.IsAny<EmailMessage>(), It.IsAny<CancellationToken>()))
-            .Callback<EmailMessage, CancellationToken>((message, _) => sentMessages.Add(message))
+        var manualInterventionNotifier = new Mock<IManualInterventionNotifier>(MockBehavior.Strict);
+        var postedAlerts = new List<DiscordAlert>();
+        manualInterventionNotifier
+            .Setup(n => n.NotifyAsync(It.IsAny<DiscordAlert>(), It.IsAny<CancellationToken>()))
+            .Callback<DiscordAlert, CancellationToken>((alert, _) => postedAlerts.Add(alert))
             .Returns(Task.CompletedTask);
-        var job = CreateJob(emailSender);
+        var job = CreateJob(manualInterventionNotifier);
 
         // Act
         await job.SyncAsync(1, ct);
 
-        // Assert - Strict mock: the Setup above is the verification that SendAsync was called twice.
-        sentMessages.Count.ShouldBe(2);
-        sentMessages.ShouldContain(m => m.HtmlBody.Contains("901", StringComparison.Ordinal) && m.HtmlBody.Contains("111", StringComparison.Ordinal) && !m.HtmlBody.Contains("902", StringComparison.Ordinal));
-        sentMessages.ShouldContain(m => m.HtmlBody.Contains("902", StringComparison.Ordinal) && m.HtmlBody.Contains("222", StringComparison.Ordinal) && !m.HtmlBody.Contains("901", StringComparison.Ordinal));
+        // Assert
+        postedAlerts.Count.ShouldBe(2);
+        postedAlerts.ShouldContain(a => a.Metadata!["LegacyBowlerId"] == "901" && a.Metadata["UnsyncedGames"] == "G1: 111");
+        postedAlerts.ShouldContain(a => a.Metadata!["LegacyBowlerId"] == "902" && a.Metadata["UnsyncedGames"] == "G1: 222");
     }
 
-    [Fact(DisplayName = "SyncAsync should not send an email when all bowlers are mapped")]
-    public async Task SyncAsync_ShouldNotSendEmail_WhenAllBowlersAreMapped()
+    [Fact(DisplayName = "SyncAsync should not post an alert when all bowlers are mapped")]
+    public async Task SyncAsync_ShouldNotPostAlert_WhenAllBowlersAreMapped()
     {
-        // Arrange - Strict mock with no setup: any SendAsync call would throw.
+        // Arrange - Strict mock with no setup: any NotifyAsync call would throw.
         var ct = TestContext.Current.CancellationToken;
         await CreateSquadAsync(legacySquadId: 1, ct);
         await CreateBowlerAsync(legacyBowlerId: 100, ct);
@@ -660,13 +638,13 @@ public sealed class SyncSquadScoresSyncJobTests(AppDbContextFixture fixture, Leg
         await InsertLegacyScoreAsync(legacyBowlerId: 100, legacySquadId: 1, game: 1, score: 200);
         await InsertLegacyScoreAsync(legacyBowlerId: 999, legacySquadId: 1, game: 1, score: 150);
 
-        var emailSender = new Mock<IEmailSender>(MockBehavior.Strict);
-        var sentMessages = new List<EmailMessage>();
-        emailSender
-            .Setup(s => s.SendAsync(It.IsAny<EmailMessage>(), It.IsAny<CancellationToken>()))
-            .Callback<EmailMessage, CancellationToken>((message, _) => sentMessages.Add(message))
+        var manualInterventionNotifier = new Mock<IManualInterventionNotifier>(MockBehavior.Strict);
+        var postedAlerts = new List<DiscordAlert>();
+        manualInterventionNotifier
+            .Setup(n => n.NotifyAsync(It.IsAny<DiscordAlert>(), It.IsAny<CancellationToken>()))
+            .Callback<DiscordAlert, CancellationToken>((alert, _) => postedAlerts.Add(alert))
             .Returns(Task.CompletedTask);
-        var job = CreateJob(emailSender);
+        var job = CreateJob(manualInterventionNotifier);
 
         // Only the first attempt's save fails; the retry runs the delegate again from scratch.
         _saveInterceptor.FailOnCall(1, new NpgsqlException("transient", new IOException("connection reset")));
@@ -679,7 +657,7 @@ public sealed class SyncSquadScoresSyncJobTests(AppDbContextFixture fixture, Leg
         _dbContext.ChangeTracker.Clear();
         var scores = await _dbContext.SquadScores.Where(s => s.SquadId == squad.Id).ToListAsync(ct);
         scores.ShouldHaveSingleItem().Score.ShouldBe(200);
-        sentMessages.ShouldHaveSingleItem();
+        postedAlerts.ShouldHaveSingleItem();
     }
 }
 

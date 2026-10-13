@@ -9,7 +9,6 @@ using Microsoft.EntityFrameworkCore;
 
 using Neba.Api.Database;
 using Neba.Api.Discord;
-using Neba.Api.Email;
 using Neba.Api.Features.Tournaments.Domain;
 using Neba.Api.Legacy.Tournaments.Stats;
 
@@ -28,8 +27,7 @@ internal sealed class CompleteTournamentSyncJob(
     IDbConnection legacyConnection,
     IBackgroundJobClient jobs,
     IFusionCache cache,
-    IEmailSender emailSender,
-    IDiscordNotifier discordNotifier,
+    IManualInterventionNotifier manualInterventionNotifier,
     ILogger<CompleteTournamentSyncJob> logger)
 {
     public async Task SyncAsync(int legacyTournamentId, CancellationToken ct)
@@ -42,24 +40,16 @@ internal sealed class CompleteTournamentSyncJob(
         {
             logger.LogLegacyTournamentNotSyncedForCompletion(legacyTournamentId);
 
-            await emailSender.SendAsync(new EmailMessage
-            {
-                To = "website@bowlneba.com",
-                Subject = "Manual intervention needed: tournament completion with no linked tournament",
-                HtmlBody = new UnlinkedTournamentCompletionEmail(legacyTournamentId).ToHtmlBody()
-            }, ct);
-
             var alert = new DiscordAlert(
                 DiscordAlertSeverity.Critical,
                 "Tournament completion could not be matched",
-                "The legacy tournament completion event referenced a legacy tournament id with no linked website tournament.",
+                "The legacy tournament completion event referenced a legacy tournament id with no linked website tournament (no Tournament.LegacyId match). Results were not synced. Re-trigger completion after the tournament is linked.",
                 new Dictionary<string, string>
                 {
-                    ["LegacyTournamentId"] = legacyTournamentId.ToString(CultureInfo.InvariantCulture),
-                    ["EmailSent"] = nameof(UnlinkedTournamentCompletionEmail)
+                    ["LegacyTournamentId"] = legacyTournamentId.ToString(CultureInfo.InvariantCulture)
                 });
 
-            await discordNotifier.NotifyAsync(alert, ct);
+            await manualInterventionNotifier.NotifyAsync(alert, ct);
 
             return;
         }

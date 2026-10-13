@@ -14,7 +14,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
 using Neba.Api.Database;
-using Neba.Api.Email;
+using Neba.Api.Discord;
 using Neba.Api.Features.Tournaments.Domain;
 
 using ZiggyCreatures.Caching.Fusion;
@@ -70,7 +70,7 @@ internal sealed class NewTournamentSyncJob(
     AppDbContext db,
     IDbConnection legacyConnection,
     IFusionCache cache,
-    IEmailSender emailSender,
+    IManualInterventionNotifier manualInterventionNotifier,
     ILogger<NewTournamentSyncJob> logger)
 {
     private static readonly TimeZoneInfo EasternTimeZone = FindEasternTimeZone();
@@ -158,12 +158,18 @@ internal sealed class NewTournamentSyncJob(
         {
             logger.LogLegacyTournamentCannotBeDerived(legacyTournamentId, candidates.Count);
 
-            await emailSender.SendAsync(new EmailMessage
-            {
-                To = "website@bowlneba.com",
-                Subject = "Manual intervention needed: tournament link",
-                HtmlBody = new TournamentLinkCannotBeDerivedEmail(legacyTournamentId, endDate, candidates.Count).ToHtmlBody()
-            }, ct);
+            var alert = new DiscordAlert(
+                DiscordAlertSeverity.Critical,
+                "Tournament link cannot be derived",
+                "No unique website tournament matched this legacy tournament. Once the correct match is identified, set the website tournament's LegacyId column to link it.",
+                new Dictionary<string, string>
+                {
+                    ["LegacyTournamentId"] = legacyTournamentId.ToString(CultureInfo.InvariantCulture),
+                    ["EndDate"] = endDate.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture),
+                    ["CandidateCount"] = candidates.Count.ToString(CultureInfo.InvariantCulture)
+                });
+
+            await manualInterventionNotifier.NotifyAsync(alert, ct);
 
             return;
         }
@@ -317,26 +323,11 @@ internal static partial class NewTournamentSyncJobLogMessages
 
     [LoggerMessage(
         Level = LogLevel.Warning,
-        Message = "Could not derive a unique website tournament for legacy id {LegacyTournamentId} ({CandidateCount} candidate(s) remaining after narrowing); manual intervention email sent.")]
+        Message = "Could not derive a unique website tournament for legacy id {LegacyTournamentId} ({CandidateCount} candidate(s) remaining after narrowing); manual intervention alert sent.")]
     public static partial void LogLegacyTournamentCannotBeDerived(this ILogger<NewTournamentSyncJob> logger, int legacyTournamentId, int candidateCount);
 
     [LoggerMessage(
         Level = LogLevel.Warning,
         Message = "Failed to sync legacy squad {LegacySquadId} for legacy tournament {LegacyTournamentId}: {Reason}")]
     public static partial void LogLegacySquadSyncFailed(this ILogger<NewTournamentSyncJob> logger, int legacySquadId, int legacyTournamentId, string reason);
-}
-
-internal sealed class TournamentLinkCannotBeDerivedEmail(int legacyTournamentId, DateOnly endDate, int candidateCount)
-{
-    public string ToHtmlBody()
-    {
-        var body = $"""
-                    <p>Tournament with legacy id <strong>{WebUtility.HtmlEncode(legacyTournamentId.ToString(CultureInfo.CurrentCulture))}</strong> cannot be derived and needs manual intervention.</p>
-                    <p>End date: {WebUtility.HtmlEncode(endDate.ToString("yyyy-MM-dd", CultureInfo.CurrentCulture))}<br/>
-                    Candidate website tournaments remaining after narrowing: {WebUtility.HtmlEncode(candidateCount.ToString(CultureInfo.CurrentCulture))}</p>
-                    <p>Use the tournament's <code>LegacyId</code> column to link it manually once the correct match is identified.</p>
-                    """;
-
-        return EmailLayout.Wrap(body);
-    }
 }

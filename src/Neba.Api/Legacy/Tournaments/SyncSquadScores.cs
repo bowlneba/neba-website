@@ -12,7 +12,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
 using Neba.Api.Database;
-using Neba.Api.Email;
+using Neba.Api.Discord;
 using Neba.Api.Features.Bowlers.Domain;
 using Neba.Api.Features.Tournaments.Domain;
 
@@ -61,7 +61,7 @@ internal sealed class SyncSquadScoresSyncJob(
     AppDbContext db,
     IDbConnection legacyConnection,
     IFusionCache cache,
-    IEmailSender emailSender,
+    IManualInterventionNotifier manualInterventionNotifier,
     ILogger<SyncSquadScoresSyncJob> logger)
 {
     public async Task SyncAsync(int legacySquadId, CancellationToken ct)
@@ -97,16 +97,27 @@ internal sealed class SyncSquadScoresSyncJob(
 
         await cache.RemoveByTagAsync($"neba:tournaments:{tournamentId}", token: ct);
 
-        // Sent after SaveChangesAsync so the rest of the squad's sync isn't held up by email
-        // delivery - same ordering NewTournamentSyncJob uses for its own manual-intervention email.
+        // Sent after SaveChangesAsync so the rest of the squad's sync isn't held up by the alert -
+        // same ordering NewTournamentSyncJob uses for its own manual-intervention alert.
         foreach ((int legacyBowlerId, List<LegacyQualifyingScoreRow> unmappedRows) in unmappedRowsByLegacyBowlerId)
         {
-            await emailSender.SendAsync(new EmailMessage
-            {
-                To = "website@bowlneba.com",
-                Subject = "Manual intervention needed: unsynced bowler in score sync",
-                HtmlBody = new UnsyncedBowlerScoreSyncEmail(legacyBowlerId, legacySquadId, unmappedRows).ToHtmlBody()
-            }, ct);
+            var games = string.Join(", ", unmappedRows
+                .OrderBy(row => row.Game)
+                .Select(row => $"G{row.Game}: {row.Score}"));
+
+            var alert = new DiscordAlert(
+                DiscordAlertSeverity.Warning,
+                "Unsynced bowler in score sync",
+                "This legacy bowler has scores in a squad sync but no matching website bowler (no Bowler.LegacyId match). "
+                + "The scores were not saved. Link the bowler, then re-trigger this squad's score sync.",
+                new Dictionary<string, string>
+                {
+                    ["LegacyBowlerId"] = legacyBowlerId.ToString(CultureInfo.InvariantCulture),
+                    ["LegacySquadId"] = legacySquadId.ToString(CultureInfo.InvariantCulture),
+                    ["UnsyncedGames"] = games
+                });
+
+            await manualInterventionNotifier.NotifyAsync(alert, ct);
         }
     }
 
@@ -243,30 +254,11 @@ internal static partial class SyncSquadScoresSyncJobLogMessages
 
     [LoggerMessage(
         Level = LogLevel.Warning,
-        Message = "No website bowler found for legacy bowler {LegacyBowlerId} (legacy squad {LegacySquadId}); skipping their scores and sending a manual-intervention email.")]
+        Message = "No website bowler found for legacy bowler {LegacyBowlerId} (legacy squad {LegacySquadId}); skipping their scores and sending a manual-intervention alert.")]
     public static partial void LogLegacyBowlerNotSyncedForScoreSync(this ILogger<SyncSquadScoresSyncJob> logger, int legacyBowlerId, int legacySquadId);
 
     [LoggerMessage(
         Level = LogLevel.Error,
         Message = "Failed to sync score for legacy bowler {LegacyBowlerId}, game {Game} (legacy squad {LegacySquadId}): {Reason}")]
     public static partial void LogLegacySquadScoreSyncFailed(this ILogger<SyncSquadScoresSyncJob> logger, int legacyBowlerId, int game, int legacySquadId, string reason);
-}
-
-internal sealed class UnsyncedBowlerScoreSyncEmail(int legacyBowlerId, int legacySquadId, IReadOnlyCollection<LegacyQualifyingScoreRow> unmappedRows)
-{
-    public string ToHtmlBody()
-    {
-        var scoreRows = string.Concat(unmappedRows
-            .OrderBy(row => row.Game)
-            .Select(row => $"<tr><td>{WebUtility.HtmlEncode(row.Game.ToString(CultureInfo.CurrentCulture))}</td><td>{WebUtility.HtmlEncode(row.Score.ToString(CultureInfo.CurrentCulture))}</td></tr>"));
-
-        var body = $"""
-                    <p>Legacy bowler id <strong>{WebUtility.HtmlEncode(legacyBowlerId.ToString(CultureInfo.CurrentCulture))}</strong> has scores in a squad score sync but no matching website bowler (no <code>Bowler.LegacyId</code> match).</p>
-                    <p>Legacy squad id: {WebUtility.HtmlEncode(legacySquadId.ToString(CultureInfo.CurrentCulture))}</p>
-                    <p>This usually means the <code>NewBowler</code>/<code>UpdateBowler</code> backdoor sync never ran for this bowler. Their scores below were not saved to the website and will need to be re-synced (re-triggering this squad's score sync again after the bowler is linked will pick them up).</p>
-                    <table><thead><tr><th>Game</th><th>Score</th></tr></thead><tbody>{scoreRows}</tbody></table>
-                    """;
-
-        return EmailLayout.Wrap(body);
-    }
 }
