@@ -1,0 +1,15 @@
+.edit-user-meta {
+    margin: 0;
+    display: grid;
+    grid-template-columns: max-content 1fr;
+    gap: 0.15rem 1rem;
+    font-size: 0.9rem;
+}
+
+.edit-user-meta dt { color: var(--neba-text-muted); }
+.edit-user-meta dd { margin: 0; }
+
+.edit-user-count {
+    font-size: 0.88rem;
+    color: var(--neba-text-muted);
+}

@@ -8,11 +8,15 @@ public static class CreateUserResponseFactory
 {
     public const string ValidUserId = "01000000000000000000000001";
 
-    public static CreateUserResponse Create(string? userId = null, bool? rolesAssigned = null)
+    public static CreateUserResponse Create(
+        string? userId = null,
+        bool? rolesAssigned = null,
+        bool? permissionOverridesApplied = null)
         => new()
         {
             UserId = userId ?? ValidUserId,
             RolesAssigned = rolesAssigned ?? true,
+            PermissionOverridesApplied = permissionOverridesApplied ?? true,
         };
 
     internal static IReadOnlyCollection<CreateUserResponse> Bogus(int count, Faker faker)
@@ -22,6 +26,7 @@ public static class CreateUserResponseFactory
         {
             UserId = Ulid.BogusString(faker),
             RolesAssigned = faker.Random.Bool(),
+            PermissionOverridesApplied = faker.Random.Bool(),
         })];
     }
 

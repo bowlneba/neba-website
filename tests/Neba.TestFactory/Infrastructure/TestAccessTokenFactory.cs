@@ -29,9 +29,10 @@ public static class TestAccessTokenFactory
 
     public static string Create(
         IReadOnlyCollection<string>? roles = null,
-        IReadOnlyCollection<Permissions>? permissions = null)
+        IReadOnlyCollection<Permissions>? permissions = null,
+        Ulid? userId = null)
     {
-        List<Claim> claims = [new Claim(JwtRegisteredClaimNames.Sub, Ulid.NewUlid().ToString())];
+        List<Claim> claims = [new Claim(JwtRegisteredClaimNames.Sub, (userId ?? Ulid.NewUlid()).ToString())];
 
         foreach (var role in roles ?? [])
         {

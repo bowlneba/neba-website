@@ -1,3 +1,3 @@
 namespace Neba.Api.Security.CreateUser;
 
-internal sealed record CreateUserResult(Ulid UserId, bool RolesAssigned);
+internal sealed record CreateUserResult(Ulid UserId, bool RolesAssigned, bool PermissionOverridesApplied);

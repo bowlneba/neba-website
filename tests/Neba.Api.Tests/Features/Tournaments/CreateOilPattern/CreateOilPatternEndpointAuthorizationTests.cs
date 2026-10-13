@@ -72,6 +72,7 @@ public sealed class CreateOilPatternEndpointAuthorizationTests(SecurityDbContext
             })
             .AddVersioning();
 
+        builder.Services.AddFusionCache();
         builder.AddSecurity();
 
         _app = builder.Build();

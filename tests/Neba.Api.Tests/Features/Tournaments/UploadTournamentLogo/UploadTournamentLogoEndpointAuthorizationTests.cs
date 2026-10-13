@@ -83,6 +83,7 @@ public sealed class UploadTournamentLogoEndpointAuthorizationTests(SecurityDbCon
             })
             .AddVersioning();
 
+        builder.Services.AddFusionCache();
         builder.AddSecurity();
 
         _app = builder.Build();

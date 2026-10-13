@@ -1850,10 +1850,21 @@ The NEBA program that formally recognizes individuals for exceptional competitiv
 
 - Namespace: `Neba.Api.Security.Domain`
 - Type: `ApplicationRole` (extends `IdentityRole<Ulid>`)
-- Known roles: `Roles.Admin`, `Roles.Webmaster`, `Roles.Member`
-- `Admin` — full access to all resources, including admin-only endpoints (e.g., register user, reset password)
-- `Webmaster` — access to website management features (defined but not yet assigned to any endpoint)
-- `Member` — standard authenticated user access (defined but not yet assigned to any endpoint)
+- Known roles: `Roles.All` — `Admin`, `Webmaster`, `Manager`, `Tournament Director`, `Journalist`, `Member`
+- `Admin` — every permission; Permission Overrides never apply to it
+- The other roles grant the permissions seeded by `SecurityRoleSeeder`
+
+---
+
+### Permission Overrides
+
+**Definition**: A per-user adjustment to the permissions the user's roles grant. **Added** permissions are granted regardless of role; **Removed** permissions are withheld even when a role grants them. The effective set is `(role permissions ∪ Added) − Removed`, so Removed wins over every other source. A permission can't be in both sets. Admins hold every permission, so overrides don't apply to them. A caller can only add or restore a permission they hold themselves, and can't change their own overrides.
+
+**In Code**:
+
+- Namespace: `Neba.Api.Security.Domain`
+- Type: `UserPermissionOverrides` (`Added`, `Removed`, `ApplyTo`, `GainsOver`)
+- Stored as user claims of type `permission` (Added) and `permission.denied` (Removed); the JWT carries only the resolved `permission` values
 
 ---
 

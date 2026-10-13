@@ -77,6 +77,7 @@ public sealed class ClearCacheEndpointAuthorizationTests(SecurityDbContextFixtur
             })
             .AddVersioning();
 
+        builder.Services.AddFusionCache();
         builder.AddSecurity();
 
         _app = builder.Build();

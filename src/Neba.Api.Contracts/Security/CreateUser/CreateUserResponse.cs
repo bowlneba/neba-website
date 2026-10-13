@@ -14,4 +14,10 @@ public sealed record CreateUserResponse
     /// should verify and reassign roles for this user.
     /// </summary>
     public required bool RolesAssigned { get; init; }
+
+    /// <summary>
+    /// Whether the requested permission overrides were stored. False means the account was created
+    /// and the invite sent, but the overrides didn't apply — the admin should set them from the edit page.
+    /// </summary>
+    public required bool PermissionOverridesApplied { get; init; }
 }

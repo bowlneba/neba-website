@@ -54,6 +54,7 @@ public sealed class SecurityConfigurationTests(SecurityDbContextFixture fixture)
         // Postgres connection - hence the Testcontainers-backed fixture rather than a bare builder.
         var builder = CreateBuilderWithValidJwtSettings();
         builder.Services.AddSingleton(new NpgsqlDataSourceBuilder(fixture.ConnectionString).Build());
+        builder.Services.AddFusionCache();
         builder.AddSecurity();
         var app = builder.Build();
 
