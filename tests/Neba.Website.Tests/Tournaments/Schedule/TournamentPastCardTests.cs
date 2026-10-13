@@ -14,6 +14,22 @@ public sealed class TournamentPastCardTests : IDisposable
 
     public void Dispose() => _ctx.Dispose();
 
+    [Fact(DisplayName = "Should render the tournament type as a type badge")]
+    public void Render_ShouldShowTypeBadge_WhenTournamentHasType()
+    {
+        // Arrange
+        var tournament = SeasonTournamentViewModelFactory.Create(tournamentType: "Doubles");
+
+        // Act
+        var cut = _ctx.Render<TournamentPastCard>(parameters => parameters
+            .Add(p => p.Tournament, tournament));
+
+        // Assert
+        var badge = cut.Find(".type-pill");
+        badge.TextContent.Trim().ShouldBe("Doubles");
+        badge.ClassList.ShouldContain("type-doubles");
+    }
+
     [Fact(DisplayName = "Should render winners pill when winners are present")]
     public void Render_ShouldShowWinners_WhenWinnersExist()
     {
