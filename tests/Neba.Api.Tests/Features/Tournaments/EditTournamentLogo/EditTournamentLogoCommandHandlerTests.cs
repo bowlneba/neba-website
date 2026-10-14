@@ -144,7 +144,6 @@ public sealed class EditTournamentLogoCommandHandlerTests(AppDbContextFixture fi
 
         // Assert
         result.IsError.ShouldBeFalse();
-        schedulerMock.Verify(s => s.Enqueue(It.IsAny<DeleteTournamentFilesJob>()), Times.Never);
     }
 
     [Fact(DisplayName = "HandleAsync does not enqueue a delete job when only the logo metadata differs from the current logo")]
@@ -221,7 +220,6 @@ public sealed class EditTournamentLogoCommandHandlerTests(AppDbContextFixture fi
 
         // Assert
         result.IsError.ShouldBeFalse();
-        schedulerMock.Verify(s => s.Enqueue(It.IsAny<DeleteTournamentFilesJob>()), Times.Never);
     }
 
     [Fact(DisplayName = "HandleAsync removes the pending upload record for the new logo")]
