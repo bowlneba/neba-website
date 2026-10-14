@@ -501,9 +501,45 @@ public sealed class SyncTournamentResultsJobTests(AppDbContextFixture fixture, L
         postedAlert.ShouldNotBeNull();
         postedAlert.Severity.ShouldBe(DiscordAlertSeverity.Warning);
         postedAlert.Metadata.ShouldNotBeNull();
-        postedAlert.Metadata["LegacyBowlerId"].ShouldBe("100");
         postedAlert.Metadata["LegacyTournamentId"].ShouldBe("42");
-        postedAlert.Metadata["RowCount"].ShouldBe("2");
+        postedAlert.Metadata["DuplicateBowlerCount"].ShouldBe("1");
+        postedAlert.Metadata["LegacyBowlerIds"].ShouldBe("100");
+    }
+
+    [Fact(DisplayName = "SyncAsync should post one alert listing every bowler with more than one Stats_ResultsStats row")]
+    public async Task SyncAsync_ShouldPostSingleAlert_WhenSeveralBowlersHaveMultipleResultRows()
+    {
+        // Arrange
+        var ct = TestContext.Current.CancellationToken;
+        await CreateTournamentAsync(42, TournamentType.Singles, complete: true, ct);
+        await CreateBowlerAsync(100, ct);
+        await CreateBowlerAsync(200, ct);
+
+        foreach (var legacyBowlerId in new[] { 100, 200 })
+        {
+            var firstStatsId = await InsertStatsAsync(legacyBowlerId, 42);
+            await InsertResultsStatsAsync(firstStatsId, place: 1, payout: 500m, points: 100);
+            var secondStatsId = await InsertStatsAsync(legacyBowlerId, 42);
+            await InsertResultsStatsAsync(secondStatsId, place: 2, payout: 300m, points: 90);
+        }
+
+        var manualInterventionNotifier = new Mock<IManualInterventionNotifier>(MockBehavior.Strict);
+        var postedAlerts = new List<DiscordAlert>();
+        manualInterventionNotifier
+            .Setup(n => n.NotifyAsync(It.IsAny<DiscordAlert>(), It.IsAny<CancellationToken>()))
+            .Callback<DiscordAlert, CancellationToken>((alert, _) => postedAlerts.Add(alert))
+            .Returns(Task.CompletedTask);
+
+        var job = CreateJob(manualInterventionNotifier: manualInterventionNotifier);
+
+        // Act
+        await job.SyncAsync(42, ct);
+
+        // Assert
+        var alert = postedAlerts.ShouldHaveSingleItem();
+        alert.Metadata.ShouldNotBeNull();
+        alert.Metadata["DuplicateBowlerCount"].ShouldBe("2");
+        alert.Metadata["LegacyBowlerIds"].ShouldBe("100, 200");
     }
 
     [Fact(DisplayName = "SyncAsync should query only the rows for the requested legacy tournament id")]

@@ -180,27 +180,33 @@ internal sealed class SyncTournamentResultsJob(
         CancellationToken ct)
     {
         var singleResultRows = new List<LegacyResultRow>();
+        var duplicateBowlerIds = new List<int>();
 
         foreach (var group in resultRows.GroupBy(r => r.BowlerId))
         {
-            var rowCount = group.Count();
-            if (rowCount == 1)
+            if (group.Count() == 1)
             {
                 singleResultRows.Add(group.Single());
                 continue;
             }
 
             logger.LogLegacyBowlerHasMultipleResultRows(group.Key, legacyTournamentId);
+            duplicateBowlerIds.Add(group.Key);
+        }
 
+        // One alert for the whole tournament: a post per bowler would run serially and, if one
+        // failed, abort the sync and repeat the earlier posts on the Hangfire retry.
+        if (duplicateBowlerIds.Count > 0)
+        {
             var alert = new DiscordAlert(
                 DiscordAlertSeverity.Warning,
                 "Duplicate legacy result rows",
-                "A bowler has more than one result row for this tournament in the legacy database.",
+                "Bowlers with more than one result row for this tournament in the legacy database were left out of the results.",
                 new Dictionary<string, string>
                 {
-                    ["LegacyBowlerId"] = group.Key.ToString(CultureInfo.InvariantCulture),
                     ["LegacyTournamentId"] = legacyTournamentId.ToString(CultureInfo.InvariantCulture),
-                    ["RowCount"] = rowCount.ToString(CultureInfo.InvariantCulture)
+                    ["DuplicateBowlerCount"] = duplicateBowlerIds.Count.ToString(CultureInfo.InvariantCulture),
+                    ["LegacyBowlerIds"] = DiscordFieldFormatter.JoinIds(duplicateBowlerIds)
                 });
 
             await manualInterventionNotifier.NotifyAsync(alert, ct);
