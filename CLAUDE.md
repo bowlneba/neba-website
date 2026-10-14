@@ -170,6 +170,7 @@ Mutation testing (Stryker) is **not currently in the CI pipeline** — removed M
 - **Specific component**: `dotnet test --filter-trait "Component=Tournaments"`
 - Since the `xunit.v3` 4.0.0 upgrade, `dotnet test` runs via the MTP `dotnet test` mode (`global.json`'s `test.runner`), which uses xunit's own `--filter-trait`/`--filter-class`/`--filter-query` syntax instead of VSTest's `--filter`. A project with zero tests matching the trait now exits non-zero ("Zero tests ran", exit code 8) instead of silently succeeding — expected when filtering a solution where only some projects carry a given trait; check each project's summary line, not just the overall exit code.
 - **E2E tests**: `npm run test:e2e`
+- **MCP servers** (`.mcp.json`): the `github` server needs `GITHUB_MCP_TOKEN` (a GitHub token) and `postgres` needs `POSTGRES_RO_PASSWORD` in your shell environment; without them the server fails to start.
 - **CI status**: `gh run list --limit 5`
 - **CI failure details**: `gh run view <run-id> --log-failed`
 
