@@ -101,4 +101,25 @@ public sealed class EditTournamentLogoEndpointTests
         // Assert
         endpoint.HttpContext.Response.StatusCode.ShouldBe(404);
     }
+
+    [Fact(DisplayName = "HandleAsync should return 422 when the command returns a validation error")]
+    public async Task HandleAsync_ShouldReturn422_WhenCommandReturnsValidationError()
+    {
+        // Arrange
+        var request = new EditTournamentLogoRequest { Id = TournamentId.New().Value.ToString(), Logo = null };
+        var ct = TestContext.Current.CancellationToken;
+
+        var commandHandlerMock = new Mock<NebaMessaging.ICommandHandler<EditTournamentLogoCommand, Updated>>(MockBehavior.Strict);
+        commandHandlerMock
+            .Setup(h => h.HandleAsync(It.IsAny<EditTournamentLogoCommand>(), ct))
+            .ReturnsAsync(TournamentErrors.LogoNotUploaded);
+
+        var endpoint = Factory.Create<EditTournamentLogoEndpoint>(commandHandlerMock.Object);
+
+        // Act
+        await endpoint.HandleAsync(request, ct);
+
+        // Assert
+        endpoint.HttpContext.Response.StatusCode.ShouldBe(422);
+    }
 }

@@ -35,7 +35,8 @@ internal sealed class EditTournamentLogoEndpoint(Messaging.ICommandHandler<EditT
             .ProducesProblemDetails(StatusCodes.Status400BadRequest)
             .ProducesProblemDetails(StatusCodes.Status401Unauthorized)
             .ProducesProblemDetails(StatusCodes.Status403Forbidden)
-            .ProducesProblemDetails(StatusCodes.Status404NotFound));
+            .ProducesProblemDetails(StatusCodes.Status404NotFound)
+            .ProducesProblemDetails(StatusCodes.Status422UnprocessableEntity));
     }
 
     public override async Task HandleAsync(EditTournamentLogoRequest req, CancellationToken ct)
@@ -50,8 +51,15 @@ internal sealed class EditTournamentLogoEndpoint(Messaging.ICommandHandler<EditT
 
         if (result.IsError)
         {
-            // TournamentNotFound is the only error the handler returns.
-            await Send.NotFoundAsync(ct);
+            if (result.FirstError.Type == ErrorType.NotFound)
+            {
+                await Send.NotFoundAsync(ct);
+                // Stryker disable once Statement
+                return;
+            }
+
+            await TournamentMutationResultSender.SendConflictOrValidationErrorsAsync(
+                result.FirstError, result.Errors, error => AddError(error), Send.ErrorsAsync, ct);
             // Stryker disable once Statement
             return;
         }

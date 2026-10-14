@@ -27,7 +27,7 @@ public sealed class EditTournamentLogoSummaryTests
         summary.Description.ShouldNotBeNullOrWhiteSpace();
     }
 
-    [Fact(DisplayName = "Constructor should register 204, 400, 401, 403, and 404 responses")]
+    [Fact(DisplayName = "Constructor should register 204, 400, 401, 403, 404, and 422 responses")]
     public void Constructor_ShouldRegisterExpectedResponses()
     {
         // Arrange & Act
@@ -39,6 +39,7 @@ public sealed class EditTournamentLogoSummaryTests
         summary.Responses.ShouldContainKey(401);
         summary.Responses.ShouldContainKey(403);
         summary.Responses.ShouldContainKey(404);
+        summary.Responses.ShouldContainKey(422);
     }
 
     [Fact(DisplayName = "Constructor should set an example request with a logo")]
