@@ -1,0 +1,74 @@
+@using ErrorOr
+@using Neba.Api.Contracts.Tournaments
+@using Neba.Api.Contracts.Tournaments.CreateTournament
+@using Neba.Api.Contracts.Tournaments.EditTournamentLogo
+@using Neba.Api.Contracts.Uploads
+@using Neba.Website.Server.Notifications
+@using Neba.Website.Server.Services
+@using Refit
+@inject ApiExecutor ApiExecutor
+@inject ITournamentsApi TournamentsApi
+@inject ToastService ToastService
+
+<EditTournamentLogoModal IsOpen="@IsOpen"
+                         TournamentName="@TournamentName"
+                         CurrentLogoUrl="@CurrentLogoUrl"
+                         OnClose="OnClose"
+                         OnSaved="HandleSavedAsync"
+                         OnUploadRequestedAsync="UploadLogoAsync"
+                         OnSubmitRequestedAsync="SaveLogoAsync" />
+
+@code {
+    [Parameter, EditorRequired]
+    public bool IsOpen { get; set; }
+
+    [Parameter, EditorRequired]
+    public string TournamentId { get; set; } = string.Empty;
+
+    [Parameter, EditorRequired]
+    public string TournamentName { get; set; } = string.Empty;
+
+    /// <summary>
+    /// The tournament's own logo, or null when it has none. Never the default-artwork fallback.
+    /// </summary>
+    [Parameter]
+    public Uri? CurrentLogoUrl { get; set; }
+
+    [Parameter, EditorRequired]
+    public EventCallback OnClose { get; set; }
+
+    /// <summary>
+    /// Raised after the logo saved. The host closes the editor and reloads its data; the toast follows.
+    /// </summary>
+    [Parameter, EditorRequired]
+    public EventCallback OnSaved { get; set; }
+
+    private Task<ErrorOr<UploadedFileResponse>> UploadLogoAsync(
+        Stream stream, string fileName, string contentType, IProgress<int> progress, CancellationToken ct)
+        => ApiExecutor.ExecuteAsync(
+            "TournamentsApi",
+            "UploadTournamentLogo",
+            c => TournamentsApi.UploadTournamentLogoAsync(new StreamPart(stream, fileName, contentType), c),
+            ct);
+
+    private Task<ErrorOr<Success>> SaveLogoAsync(TournamentLogoInput? logo, CancellationToken ct)
+    {
+        var request = new EditTournamentLogoRequest
+        {
+            Id = TournamentId,
+            Input = new EditTournamentLogoInput { Logo = logo }
+        };
+
+        return ApiExecutor.ExecuteAsync(
+            "TournamentsApi",
+            "EditTournamentLogo",
+            c => TournamentsApi.EditTournamentLogoAsync(TournamentId, request, c),
+            ct);
+    }
+
+    private async Task HandleSavedAsync()
+    {
+        await OnSaved.InvokeAsync();
+        ToastService.Show("Logo Saved", "The tournament logo was updated.", NotifySeverity.Success);
+    }
+}

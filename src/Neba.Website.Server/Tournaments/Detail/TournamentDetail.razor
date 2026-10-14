@@ -6,10 +6,6 @@
 @using Neba.Api.Contracts.Sponsors
 @using Neba.Api.Contracts.Tournaments
 @using Neba.Api.Contracts.Tournaments.AddTournamentSponsor
-@using Neba.Api.Contracts.Tournaments.CreateTournament
-@using Neba.Api.Contracts.Tournaments.EditTournamentLogo
-@using Neba.Api.Contracts.Uploads
-@using Refit
 @using Neba.Website.Server.Services
 @using Neba.Website.Server.Time
 @using System.Globalization
@@ -494,13 +490,12 @@ else
 
     </main>
 
-    <EditTournamentLogoModal IsOpen="@_isEditLogoOpen"
-                             TournamentName="@_model!.Name"
-                             CurrentLogoUrl="@_model.LogoUrl"
-                             OnClose="@(() => _isEditLogoOpen = false)"
-                             OnSaved="HandleLogoSavedAsync"
-                             OnUploadRequestedAsync="UploadLogoAsync"
-                             OnSubmitRequestedAsync="SaveLogoAsync" />
+    <TournamentLogoEditor IsOpen="@_isEditLogoOpen"
+                          TournamentId="@Id"
+                          TournamentName="@_model!.Name"
+                          CurrentLogoUrl="@_model.LogoUrl"
+                          OnClose="@(() => _isEditLogoOpen = false)"
+                          OnSaved="HandleLogoSavedAsync" />
 
     <ConfirmActionModal IsOpen="@_isDeleteConfirmOpen"
                         Title="Delete tournament?"
@@ -624,32 +619,10 @@ else
 
     private bool _isEditLogoOpen;
 
-    // Same upload/save/toast wiring lives in Tournaments.razor. If a third host needs it, look into
-    // refactoring it into a shared piece instead of copying it again.
-    private Task<ErrorOr<UploadedFileResponse>> UploadLogoAsync(
-        Stream stream, string fileName, string contentType, IProgress<int> progress, CancellationToken ct)
-        => ApiExecutor.ExecuteAsync(
-            "TournamentsApi",
-            "UploadTournamentLogo",
-            c => TournamentsApi.UploadTournamentLogoAsync(new StreamPart(stream, fileName, contentType), c),
-            ct);
-
-    private Task<ErrorOr<Success>> SaveLogoAsync(TournamentLogoInput? logo, CancellationToken ct)
-    {
-        var request = new EditTournamentLogoRequest { Id = Id, Input = new EditTournamentLogoInput { Logo = logo } };
-
-        return ApiExecutor.ExecuteAsync(
-            "TournamentsApi",
-            "EditTournamentLogo",
-            c => TournamentsApi.EditTournamentLogoAsync(Id, request, c),
-            ct);
-    }
-
     private async Task HandleLogoSavedAsync()
     {
         _isEditLogoOpen = false;
         await ReloadTournamentAsync();
-        ToastService.Show("Logo Saved", "The tournament logo was updated.", NotifySeverity.Success);
     }
 
     private void OpenDeleteConfirm()
