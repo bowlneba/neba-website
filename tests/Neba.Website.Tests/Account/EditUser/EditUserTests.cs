@@ -164,6 +164,22 @@ public sealed class EditUserTests : IDisposable
         cut.Markup.ShouldContain("You don't have permission to edit users.");
     }
 
+    // A strict mock's exception would be swallowed by ApiExecutor's catch-all, so the
+    // explicit Times.Never verify is the only thing that proves the guard in OnParametersSetAsync.
+    [Fact(DisplayName = "Should not call the API when the caller lacks EditUser")]
+    public void Render_ShouldNotCallApi_WhenCallerLacksEditUser()
+    {
+        // Arrange
+        _authContext.SetPolicies();
+
+        // Act
+        RenderPage();
+
+        // Assert
+        _mockApi.Verify(api => api.GetUserAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Never);
+        _mockApi.Verify(api => api.ListRolesAsync(It.IsAny<CancellationToken>()), Times.Never);
+    }
+
     [Fact(DisplayName = "Should show a loading skeleton while the user is loading")]
     public void Render_ShouldShowSkeleton_WhileLoading()
     {
