@@ -51,6 +51,6 @@ public sealed class EditTournamentLogoSummaryTests
         // Assert
         var example = summary.ExampleRequest.ShouldBeOfType<Neba.Api.Contracts.Tournaments.EditTournamentLogo.EditTournamentLogoRequest>();
         example.Id.Length.ShouldBe(26);
-        example.Logo.ShouldNotBeNull();
+        example.Input.Logo.ShouldNotBeNull();
     }
 }

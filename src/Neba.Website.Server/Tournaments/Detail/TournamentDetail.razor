@@ -636,7 +636,7 @@ else
 
     private Task<ErrorOr<Success>> SaveLogoAsync(TournamentLogoInput? logo, CancellationToken ct)
     {
-        var request = new EditTournamentLogoRequest { Id = Id, Logo = logo };
+        var request = new EditTournamentLogoRequest { Id = Id, Input = new EditTournamentLogoInput { Logo = logo } };
 
         return ApiExecutor.ExecuteAsync(
             "TournamentsApi",

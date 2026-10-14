@@ -44,7 +44,7 @@ internal sealed class EditTournamentLogoEndpoint(Messaging.ICommandHandler<EditT
         var command = new EditTournamentLogoCommand
         {
             TournamentId = new TournamentId(req.Id),
-            Logo = TournamentInputMapper.ToLogo(req.Logo)
+            Logo = TournamentInputMapper.ToLogo(req.Input.Logo)
         };
 
         var result = await _commandHandler.HandleAsync(command, ct);

@@ -1,5 +1,3 @@
-using Neba.Api.Contracts.Tournaments.CreateTournament;
-
 namespace Neba.Api.Contracts.Tournaments.EditTournamentLogo;
 
 /// <summary>
@@ -13,7 +11,7 @@ public sealed record EditTournamentLogoRequest
     public required string Id { get; init; }
 
     /// <summary>
-    /// The already-uploaded logo to use, or <see langword="null"/> to remove the current logo.
+    /// The logo change to apply.
     /// </summary>
-    public required TournamentLogoInput? Logo { get; init; }
+    public required EditTournamentLogoInput Input { get; init; }
 }

@@ -12,17 +12,18 @@ internal sealed class EditTournamentLogoSummary : Summary<EditTournamentLogoEndp
         Summary = "Replaces or removes a tournament's logo.";
         Description = "Sets the tournament's logo to a previously uploaded file, or clears it when the logo is null. Does not change any other tournament field. Requires the Tournaments.EditTournamentLogo permission.";
 
-        // Id and Logo sit directly on the request. If a third logo host or a second field appears,
-        // wrap them in an input object like the other command requests.
         ExampleRequest = new EditTournamentLogoRequest
         {
             Id = "01JZ8K3M4N5P6Q7R8S9T0V1W2X",
-            Logo = new TournamentLogoInput
+            Input = new EditTournamentLogoInput
             {
-                Container = "tournaments",
-                Path = "logos/01JZ8K3M4N5P6Q7R8S9T0V1W2X.png",
-                ContentType = "image/png",
-                SizeInBytes = 48213
+                Logo = new TournamentLogoInput
+                {
+                    Container = "tournaments",
+                    Path = "logos/01JZ8K3M4N5P6Q7R8S9T0V1W2X.png",
+                    ContentType = "image/png",
+                    SizeInBytes = 48213
+                }
             }
         };
 

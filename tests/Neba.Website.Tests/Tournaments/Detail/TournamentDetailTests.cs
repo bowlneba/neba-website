@@ -898,7 +898,7 @@ tournamentType: TournamentType.Doubles, logoUrl: null));
         // Assert
         captured.ShouldNotBeNull();
         captured.Id.ShouldBe(TournamentDetailResponseFactory.ValidId);
-        captured.Logo.ShouldBeNull();
+        captured.Input.Logo.ShouldBeNull();
         _mockApi.Verify(
             x => x.GetTournamentAsync(TournamentDetailResponseFactory.ValidId, It.IsAny<CancellationToken>()),
             Times.Exactly(2));

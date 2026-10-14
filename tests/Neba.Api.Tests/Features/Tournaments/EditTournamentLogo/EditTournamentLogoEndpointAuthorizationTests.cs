@@ -113,7 +113,7 @@ public sealed class EditTournamentLogoEndpointAuthorizationTests(SecurityDbConte
 
         using var request = new HttpRequestMessage(HttpMethod.Put, $"/tournaments/{tournamentId}/logo")
         {
-            Content = JsonContent.Create(new { id = tournamentId, logo = (object?)null })
+            Content = JsonContent.Create(new { id = tournamentId, input = new { logo = (object?)null } })
         };
 
         if (accessToken is not null)

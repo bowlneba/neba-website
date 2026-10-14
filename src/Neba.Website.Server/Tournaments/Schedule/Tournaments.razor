@@ -340,7 +340,7 @@ SeasonViewModel? current)
     private Task<ErrorOr<Success>> SaveLogoAsync(TournamentLogoInput? logo, CancellationToken ct)
     {
         var id = _logoTournament!.Id;
-        var request = new EditTournamentLogoRequest { Id = id, Logo = logo };
+        var request = new EditTournamentLogoRequest { Id = id, Input = new EditTournamentLogoInput { Logo = logo } };
 
         return ApiExecutor.ExecuteAsync(
             "TournamentsApi",

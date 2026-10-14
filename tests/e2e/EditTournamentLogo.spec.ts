@@ -71,7 +71,7 @@ test.describe('Edit tournament logo (logo permission only)', () => {
     const lastRequest = await page.request
       .get(`http://localhost:5151/__mock/last-request?method=PUT&path=/tournaments/${MOCK_TOURNAMENT_ID}/logo`)
       .then((r) => r.json());
-    expect(lastRequest.logo.path).toBe('tournaments/logo/e2e-test-logo.png');
+    expect(lastRequest.input.logo.path).toBe('tournaments/logo/e2e-test-logo.png');
   });
 
   test('asks before discarding an uploaded logo when Cancel is clicked', async ({ page }) => {

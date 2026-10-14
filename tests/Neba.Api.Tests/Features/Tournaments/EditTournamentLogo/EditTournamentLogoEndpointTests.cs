@@ -28,7 +28,7 @@ public sealed class EditTournamentLogoEndpointTests
             ContentType = "image/png",
             SizeInBytes = 4096
         };
-        var request = new EditTournamentLogoRequest { Id = tournamentId.Value.ToString(), Logo = logo };
+        var request = new EditTournamentLogoRequest { Id = tournamentId.Value.ToString(), Input = new EditTournamentLogoInput { Logo = logo } };
         var ct = TestContext.Current.CancellationToken;
 
         EditTournamentLogoCommand? capturedCommand = null;
@@ -59,7 +59,7 @@ public sealed class EditTournamentLogoEndpointTests
     public async Task HandleAsync_ShouldSendNullLogo_WhenRequestLogoIsNull()
     {
         // Arrange
-        var request = new EditTournamentLogoRequest { Id = TournamentId.New().Value.ToString(), Logo = null };
+        var request = new EditTournamentLogoRequest { Id = TournamentId.New().Value.ToString(), Input = new EditTournamentLogoInput { Logo = null } };
         var ct = TestContext.Current.CancellationToken;
 
         EditTournamentLogoCommand? capturedCommand = null;
@@ -85,7 +85,7 @@ public sealed class EditTournamentLogoEndpointTests
     public async Task HandleAsync_ShouldReturn404_WhenCommandReturnsNotFoundError()
     {
         // Arrange
-        var request = new EditTournamentLogoRequest { Id = TournamentId.New().Value.ToString(), Logo = null };
+        var request = new EditTournamentLogoRequest { Id = TournamentId.New().Value.ToString(), Input = new EditTournamentLogoInput { Logo = null } };
         var ct = TestContext.Current.CancellationToken;
 
         var commandHandlerMock = new Mock<NebaMessaging.ICommandHandler<EditTournamentLogoCommand, Updated>>(MockBehavior.Strict);
@@ -106,7 +106,7 @@ public sealed class EditTournamentLogoEndpointTests
     public async Task HandleAsync_ShouldReturn422_WhenCommandReturnsValidationError()
     {
         // Arrange
-        var request = new EditTournamentLogoRequest { Id = TournamentId.New().Value.ToString(), Logo = null };
+        var request = new EditTournamentLogoRequest { Id = TournamentId.New().Value.ToString(), Input = new EditTournamentLogoInput { Logo = null } };
         var ct = TestContext.Current.CancellationToken;
 
         var commandHandlerMock = new Mock<NebaMessaging.ICommandHandler<EditTournamentLogoCommand, Updated>>(MockBehavior.Strict);

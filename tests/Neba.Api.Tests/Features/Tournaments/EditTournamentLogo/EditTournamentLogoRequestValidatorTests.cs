@@ -21,7 +21,7 @@ public sealed class EditTournamentLogoRequestValidatorTests
         };
 
     private static EditTournamentLogoRequest ValidRequest(TournamentLogoInput? logo = null)
-        => new() { Id = "01J7ZK8X6ZQJ8V3F8N9T9C9R2E", Logo = logo ?? ValidLogo() };
+        => new() { Id = "01J7ZK8X6ZQJ8V3F8N9T9C9R2E", Input = new EditTournamentLogoInput { Logo = logo ?? ValidLogo() } };
 
     [Fact(DisplayName = "Validate should succeed when the request has an id and a valid logo")]
     public void Validate_ShouldSucceed_WhenRequestHasValidLogo()
@@ -40,7 +40,7 @@ public sealed class EditTournamentLogoRequestValidatorTests
     public void Validate_ShouldSucceed_WhenLogoIsNull()
     {
         // Arrange
-        var request = new EditTournamentLogoRequest { Id = "01J7ZK8X6ZQJ8V3F8N9T9C9R2E", Logo = null };
+        var request = new EditTournamentLogoRequest { Id = "01J7ZK8X6ZQJ8V3F8N9T9C9R2E", Input = new EditTournamentLogoInput { Logo = null } };
 
         // Act
         var result = _validator.Validate(request);
@@ -134,4 +134,20 @@ public sealed class EditTournamentLogoRequestValidatorTests
         result.IsValid.ShouldBeFalse();
         result.Errors.ShouldContain(e => e.ErrorCode == "EditTournamentLogoRequest.LogoSizeInvalid");
     }
+
+#nullable disable
+    [Fact(DisplayName = "Validate should fail with InputRequired when the input is missing")]
+    public void Validate_ShouldFailWithInputRequired_WhenInputIsNull()
+    {
+        // Arrange
+        var request = new EditTournamentLogoRequest { Id = "01J7ZK8X6ZQJ8V3F8N9T9C9R2E", Input = null };
+
+        // Act
+        var result = _validator.Validate(request);
+
+        // Assert
+        result.IsValid.ShouldBeFalse();
+        result.Errors.ShouldContain(e => e.ErrorCode == "EditTournamentLogoRequest.InputRequired");
+    }
+#nullable enable
 }
