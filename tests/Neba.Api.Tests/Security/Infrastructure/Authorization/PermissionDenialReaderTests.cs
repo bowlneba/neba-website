@@ -113,4 +113,27 @@ public sealed class PermissionDenialReaderTests(SecurityDbContextFixture fixture
         // Assert
         result.ShouldBeFalse();
     }
+
+    [Fact(DisplayName = "IsDeniedAsync returns false for a stored Admin even when a denial is stored")]
+    public async Task IsDeniedAsync_ShouldReturnFalse_WhenUserHoldsStoredAdminRole()
+    {
+        // Arrange
+        var user = await SeedUserAsync(new Claim(Permissions.DeniedClaimType, Permissions.EditArticle.Value));
+
+        using (var scope = fixture.CreateScope())
+        {
+            var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<ApplicationRole>>();
+            await roleManager.CreateAsync(ApplicationRoleFactory.Create(name: Roles.Admin));
+
+            var userManager = scope.ServiceProvider.GetRequiredService<UserManager<ApplicationUser>>();
+            var storedUser = await userManager.FindByIdAsync(user.Id.ToString());
+            await userManager.AddToRoleAsync(storedUser!, Roles.Admin);
+        }
+
+        // Act
+        var result = await IsDeniedAsync(user.Id, Permissions.EditArticle);
+
+        // Assert
+        result.ShouldBeFalse();
+    }
 }

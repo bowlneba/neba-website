@@ -36,7 +36,6 @@ internal sealed class EditTournamentCommandHandler(
 
         // A denial is read only when the logo changes, so an edit that leaves it alone skips the lookup.
         if (!TournamentLogoClaim.IsSameFile(command.Logo, tournament.Logo)
-            && !command.CallerIsAdmin
             && await permissionDenialReader.IsDeniedAsync(
                 command.CallerUserId, Contracts.Security.Permissions.EditTournamentLogo, cancellationToken))
         {

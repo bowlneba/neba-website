@@ -68,7 +68,6 @@ internal sealed class EditTournamentEndpoint(
             ExternalRegistrationUrl = input.ExternalRegistrationUrl,
             Logo = TournamentInputMapper.ToLogo(input.Logo),
             CallerUserId = callerUserId,
-            CallerIsAdmin = User.IsInRole(Security.Domain.Roles.Admin),
             OilPatternId = TournamentInputMapper.ToOilPatternId(input.OilPatternId),
             PatternLengthCategory = TournamentInputMapper.ToPatternLengthCategory(input.PatternLengthCategory),
             PatternRatioCategory = TournamentInputMapper.ToPatternRatioCategory(input.PatternRatioCategory),

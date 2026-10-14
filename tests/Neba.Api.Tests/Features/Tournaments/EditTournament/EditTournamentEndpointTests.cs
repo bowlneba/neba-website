@@ -11,7 +11,6 @@ using Neba.Api.Contracts.Tournaments.CreateTournament;
 using Neba.Api.Contracts.Tournaments.EditTournament;
 using Neba.Api.Features.Tournaments.Domain;
 using Neba.Api.Features.Tournaments.EditTournament;
-using Neba.Api.Security.Domain;
 using Neba.TestFactory.Attributes;
 using Neba.TestFactory.Tournaments;
 
@@ -23,17 +22,11 @@ namespace Neba.Api.Tests.Features.Tournaments.EditTournament;
 [Component("Tournaments")]
 public sealed class EditTournamentEndpointTests
 {
-    private static Action<DefaultHttpContext> AsCaller(Ulid? callerId = null, string? role = null)
+    private static Action<DefaultHttpContext> AsCaller(Ulid? callerId = null)
         => ctx =>
         {
-            var claims = new List<Claim> { new(JwtRegisteredClaimNames.Sub, (callerId ?? Ulid.NewUlid()).ToString()) };
-
-            if (role is not null)
-            {
-                claims.Add(new Claim(ClaimTypes.Role, role));
-            }
-
-            ctx.User = new ClaimsPrincipal(new ClaimsIdentity(claims, "test"));
+            ctx.User = new ClaimsPrincipal(new ClaimsIdentity(
+                [new Claim(JwtRegisteredClaimNames.Sub, (callerId ?? Ulid.NewUlid()).ToString())], "test"));
         };
 
     [Fact(DisplayName = "HandleAsync should map request fields to command and take the success branch when edit succeeds")]
@@ -212,8 +205,8 @@ public sealed class EditTournamentEndpointTests
         endpoint.Definition.PreBuiltUserPolicies.ShouldContain(Neba.Api.Contracts.Security.Permissions.EditTournament.PolicyName);
     }
 
-    [Fact(DisplayName = "HandleAsync should put the caller's user ID and admin flag on the command")]
-    public async Task HandleAsync_ShouldMapCaller_WhenCallerIsAdmin()
+    [Fact(DisplayName = "HandleAsync should put the caller's user ID on the command")]
+    public async Task HandleAsync_ShouldMapCaller_WhenCallerIsAuthenticated()
     {
         // Arrange
         var callerId = Ulid.NewUlid();
@@ -231,7 +224,7 @@ public sealed class EditTournamentEndpointTests
             .Callback<EditTournamentCommand, CancellationToken>((c, _) => capturedCommand = c)
             .ReturnsAsync(Result.Updated);
 
-        var endpoint = Factory.Create<EditTournamentEndpoint>(AsCaller(callerId, Roles.Admin), commandHandlerMock.Object);
+        var endpoint = Factory.Create<EditTournamentEndpoint>(AsCaller(callerId), commandHandlerMock.Object);
 
         // Act
         await endpoint.HandleAsync(request, ct);
@@ -239,7 +232,6 @@ public sealed class EditTournamentEndpointTests
         // Assert
         capturedCommand.ShouldNotBeNull();
         capturedCommand.CallerUserId.ShouldBe(callerId);
-        capturedCommand.CallerIsAdmin.ShouldBeTrue();
     }
 
     [Fact(DisplayName = "HandleAsync should return 401 when the caller has no user ID")]

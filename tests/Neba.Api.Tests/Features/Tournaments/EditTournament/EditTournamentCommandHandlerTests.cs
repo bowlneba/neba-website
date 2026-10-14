@@ -117,8 +117,7 @@ public sealed class EditTournamentCommandHandlerTests(AppDbContextFixture fixtur
         OilPatternId? oilPatternId = null,
         PatternLengthCategory? patternLengthCategory = null,
         PatternRatioCategory? patternRatioCategory = null,
-        DateTimeOffset? oilPatternRevealDateTime = null,
-        bool callerIsAdmin = false)
+        DateTimeOffset? oilPatternRevealDateTime = null)
         => new()
         {
             TournamentId = tournamentId,
@@ -133,7 +132,6 @@ public sealed class EditTournamentCommandHandlerTests(AppDbContextFixture fixtur
             ExternalRegistrationUrl = externalRegistrationUrl,
             Logo = logo,
             CallerUserId = Ulid.NewUlid(),
-            CallerIsAdmin = callerIsAdmin,
             OilPatternId = oilPatternId,
             PatternLengthCategory = patternLengthCategory,
             PatternRatioCategory = patternRatioCategory,
@@ -534,31 +532,6 @@ public sealed class EditTournamentCommandHandlerTests(AppDbContextFixture fixtur
 
         // Assert
         result.IsError.ShouldBeFalse();
-    }
-
-    [Fact(DisplayName = "HandleAsync lets an admin change the logo without looking up a denial")]
-    public async Task HandleAsync_ShouldSucceedWithoutLookup_WhenCallerIsAdminAndLogoChanges()
-    {
-        // Arrange
-        var ct = TestContext.Current.CancellationToken;
-        var season = await SeedSeasonAsync(new DateOnly(2025, 1, 1), new DateOnly(2025, 12, 31), ct);
-        var tournament = await SeedTournamentAsync(season, ct);
-
-        var newLogo = StoredFileFactory.Create(container: "tournament-logos", path: "admin-logo.png");
-        await _dbContext.PendingUploads.AddAsync(PendingUploadFactory.Create(container: newLogo.Container, path: newLogo.Path), ct);
-        await _dbContext.SaveChangesAsync(ct);
-
-        var lookups = 0;
-        var handler = CreateHandler(permissionDenialReader: DenialReader(denied: true, onLookup: () => lookups++));
-        var command = ValidCommand(
-            tournament.Id, startDate: season.StartDate, endDate: season.StartDate, logo: newLogo, callerIsAdmin: true);
-
-        // Act
-        var result = await handler.HandleAsync(command, ct);
-
-        // Assert
-        result.IsError.ShouldBeFalse();
-        lookups.ShouldBe(0);
     }
 
     [Fact(DisplayName = "HandleAsync does not look up the logo denial when the logo is unchanged")]
