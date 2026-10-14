@@ -206,6 +206,7 @@ Detailed write-ups live in `docs/learnings/`. Read the matching file before work
 - Put `[PersonalData]`/`[PrivateData]` on any `[LoggerMessage]` parameter carrying PII. `AddRedaction()` needs `EnableRedaction()` too.
 - Cached query DTOs hold primitives, never SmartEnum instances.
 - Never initialize an EF collection navigation with `= []` on an `IReadOnlyCollection<T>` auto-property (it becomes a fixed-size array); use a `List<T>` backing field. Suppress IDE0305 and IDE0028 where you must use `new List<T>()`, and add an `ICollection<T>.Add` regression test.
+- `[LogProperties]` tags are `<param>.<Property>` and skip the formatted message; log enrichers also need `Logging.EnableEnrichment()`; resource monitoring is Linux/Windows only (`docs/learnings/backend.md`).
 - Emails: inline styles, `<table>` layout, hosted logo URL, `WebUtility.HtmlEncode` on user values.
 
 ### Hangfire PostgreSql — `docs/learnings/hangfire-postgres.md`

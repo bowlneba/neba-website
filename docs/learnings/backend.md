@@ -106,3 +106,11 @@ Confirmed and fixed for `Sponsor.PhoneNumbers`, `Sponsor.TournamentsSponsored`, 
 - **`<body>` has only 40% full support** — 34% of clients strip it entirely (Outlook Windows, Apple Mail, Samsung Email); another 26% replace it with a `<div>`. Any styles on `<body>` (background color, font-family) must be duplicated on the outer `<table>` as a fallback. Background color AND font-family both need to be on the outer table, not just the body.
 - **`text-align:center`** is safe; avoid flow-relative values (`start`, `end`) which have ~38% less support.
 
+### Structured logging, enrichers, resource metrics
+
+- `[LogProperties]` on a `[LoggerMessage]` parameter logs each public property as a tag named `<param>.<Property>` (for example `location.Container`). Properties are tags only; they do not appear in the formatted message unless the parameter itself is in the template (its `ToString()` is used). `[PersonalData]`/`[PrivateData]` on the properties are redacted when the pipeline has `EnableRedaction()`; `BlobLocationLoggingTests` shows it. Use `[property: PersonalData]` on positional records.
+- Convert a message only when one value object clearly replaces a repeated group of parameters (for example `BlobLocation` for container and path). Renaming tags from `Container` to `location.Container` breaks saved App Insights queries.
+- Log enrichers need `builder.Logging.EnableEnrichment()` as well as the `Add*LogEnricher` call, and `AddServiceLogEnricher` is obsolete: use `AddApplicationLogEnricher` plus `AddApplicationMetadata`. Both live in `Neba.ServiceDefaults/Telemetry/LogEnrichmentConfiguration.cs`.
+- `Microsoft.Extensions.Diagnostics.ResourceMonitoring` supports Linux and Windows only, so registration is skipped on macOS. Its instrument names are internal, so the meter name is a literal in `TelemetryConfiguration`. `IResourceMonitor` is obsolete; use the instruments.
+- Not adopted: `Microsoft.AspNetCore.Diagnostics.Middleware` request logging. Audit.WebApi (`Neba.Api/Auditing`) and OpenTelemetry request telemetry already record each request.
+
