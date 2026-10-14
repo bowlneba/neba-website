@@ -542,6 +542,38 @@ public sealed class SyncTournamentResultsJobTests(AppDbContextFixture fixture, L
         alert.Metadata["LegacyBowlerIds"].ShouldBe("100, 200");
     }
 
+    [Fact(DisplayName = "SyncAsync should save results for clean rows even when the duplicate-row alert fails to post")]
+    public async Task SyncAsync_ShouldSaveCleanResults_WhenDuplicateAlertFails()
+    {
+        // Arrange
+        var ct = TestContext.Current.CancellationToken;
+        await CreateTournamentAsync(42, TournamentType.Singles, complete: true, ct);
+        await CreateBowlerAsync(100, ct);
+        await CreateBowlerAsync(200, ct);
+
+        var cleanStatsId = await InsertStatsAsync(100, 42);
+        await InsertResultsStatsAsync(cleanStatsId, place: 1, payout: 500m, points: 100);
+
+        var firstStatsId = await InsertStatsAsync(200, 42);
+        await InsertResultsStatsAsync(firstStatsId, place: 2, payout: 300m, points: 90);
+        var secondStatsId = await InsertStatsAsync(200, 42);
+        await InsertResultsStatsAsync(secondStatsId, place: 3, payout: 200m, points: 80);
+
+        var manualInterventionNotifier = new Mock<IManualInterventionNotifier>(MockBehavior.Strict);
+        manualInterventionNotifier
+            .Setup(n => n.NotifyAsync(It.IsAny<DiscordAlert>(), It.IsAny<CancellationToken>()))
+            .ThrowsAsync(new InvalidOperationException("webhook down"));
+
+        var job = CreateJob(manualInterventionNotifier: manualInterventionNotifier);
+
+        // Act
+        await Should.ThrowAsync<InvalidOperationException>(() => job.SyncAsync(42, ct));
+
+        // Assert
+        var tournament = await ReloadTournamentAsync(42, ct);
+        tournament.Results.ShouldHaveSingleItem();
+    }
+
     [Fact(DisplayName = "SyncAsync should query only the rows for the requested legacy tournament id")]
     public async Task SyncAsync_ShouldQueryOnlyRowsForRequestedTournamentId()
     {

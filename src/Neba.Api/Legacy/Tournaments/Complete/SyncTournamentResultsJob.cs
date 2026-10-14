@@ -48,7 +48,7 @@ internal sealed class SyncTournamentResultsJob(
             ? await LoadTeamRostersAsync(legacyTournamentId)
             : TeamRosterRows.Empty;
 
-        var singleResultRows = await SeparateDuplicateResultRowsAsync(resultRows, legacyTournamentId, ct);
+        var (singleResultRows, duplicateBowlerIds) = SeparateDuplicateResultRows(resultRows, legacyTournamentId);
 
         var placeByLegacyBowlerId = TournamentPlaceCalculator.ComputePlaces(
             singleResultRows, qualifyingRows, teamRosters.Teams, teamRosters.Members, teamRosters.Squads);
@@ -67,6 +67,13 @@ internal sealed class SyncTournamentResultsJob(
         // addition to the tournament's own detail view.
         await cache.RemoveByTagAsync($"neba:tournaments:{tournament.Id}", token: ct);
         await cache.RemoveByTagAsync("neba:tournaments:champions", token: ct);
+
+        // Alerts go out after the save so a retry of a failed sync does not repeat them, and a
+        // webhook failure cannot block the results from being saved.
+        if (duplicateBowlerIds.Count > 0)
+        {
+            await NotifyDuplicateResultRowsAsync(legacyTournamentId, duplicateBowlerIds, ct);
+        }
 
         if (unmappedLegacyBowlerIds.Count > 0)
         {
@@ -173,11 +180,10 @@ internal sealed class SyncTournamentResultsJob(
     // Stats_ResultsStats is only ever meant to hold one row per BowlerId per tournament, but
     // that's convention, not a schema constraint - if it happens, treat it as a data anomaly
     // worth a human look rather than silently picking one arbitrarily. Returns the rows for
-    // bowlers with exactly one result row.
-    private async Task<List<LegacyResultRow>> SeparateDuplicateResultRowsAsync(
+    // bowlers with exactly one result row, and the ids of bowlers with more than one.
+    private (List<LegacyResultRow> SingleResultRows, List<int> DuplicateBowlerIds) SeparateDuplicateResultRows(
         List<LegacyResultRow> resultRows,
-        int legacyTournamentId,
-        CancellationToken ct)
+        int legacyTournamentId)
     {
         var singleResultRows = new List<LegacyResultRow>();
         var duplicateBowlerIds = new List<int>();
@@ -194,25 +200,28 @@ internal sealed class SyncTournamentResultsJob(
             duplicateBowlerIds.Add(group.Key);
         }
 
-        // One alert for the whole tournament: a post per bowler would run serially and, if one
-        // failed, abort the sync and repeat the earlier posts on the Hangfire retry.
-        if (duplicateBowlerIds.Count > 0)
-        {
-            var alert = new DiscordAlert(
-                DiscordAlertSeverity.Warning,
-                "Duplicate legacy result rows",
-                "Bowlers with more than one result row for this tournament in the legacy database were left out of the results.",
-                new Dictionary<string, string>
-                {
-                    ["LegacyTournamentId"] = legacyTournamentId.ToString(CultureInfo.InvariantCulture),
-                    ["DuplicateBowlerCount"] = duplicateBowlerIds.Count.ToString(CultureInfo.InvariantCulture),
-                    ["LegacyBowlerIds"] = DiscordFieldFormatter.JoinIds(duplicateBowlerIds)
-                });
+        return (singleResultRows, duplicateBowlerIds);
+    }
 
-            await manualInterventionNotifier.NotifyAsync(alert, ct);
-        }
+    // One alert for the whole tournament: a post per bowler would run serially and, if one
+    // failed, abort the sync and repeat the earlier posts on the Hangfire retry.
+    private Task NotifyDuplicateResultRowsAsync(
+        int legacyTournamentId,
+        List<int> duplicateBowlerIds,
+        CancellationToken ct)
+    {
+        var alert = new DiscordAlert(
+            DiscordAlertSeverity.Warning,
+            "Duplicate legacy result rows",
+            "Bowlers with more than one result row for this tournament in the legacy database were left out of the results.",
+            new Dictionary<string, string>
+            {
+                ["LegacyTournamentId"] = legacyTournamentId.ToString(CultureInfo.InvariantCulture),
+                ["DuplicateBowlerCount"] = duplicateBowlerIds.Count.ToString(CultureInfo.InvariantCulture),
+                ["LegacyBowlerIds"] = DiscordFieldFormatter.JoinIds(duplicateBowlerIds)
+            });
 
-        return singleResultRows;
+        return manualInterventionNotifier.NotifyAsync(alert, ct);
     }
 
     // Returns the legacy ids of bowlers with no website bowler, whose results were skipped.
