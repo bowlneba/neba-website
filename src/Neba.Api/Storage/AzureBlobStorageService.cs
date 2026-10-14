@@ -50,18 +50,19 @@ internal sealed class AzureBlobStorageService
         activity?.SetTag(StorageContainerTag, container);
         activity?.SetTag(StoragePathTag, path);
 
+        var location = new BlobLocation(container, path);
         long startTimestamp = _stopwatchProvider.GetTimestamp();
 
         try
         {
-            _logger.LogCheckingFileExists(new BlobLocation(container, path));
+            _logger.LogCheckingFileExists(location);
 
             var blobClient = GetBlobClient(container, path);
             bool exists = await blobClient.ExistsAsync(cancellationToken);
 
             var durationMs = _stopwatchProvider.GetElapsedTime(startTimestamp);
 
-            _logger.LogFileExistsChecked(new BlobLocation(container, path), exists, durationMs.TotalMilliseconds);
+            _logger.LogFileExistsChecked(location, exists, durationMs.TotalMilliseconds);
 
             StorageMetrics.RecordOperationSuccess(container, "exists", durationMs.TotalMilliseconds);
 
@@ -75,7 +76,7 @@ internal sealed class AzureBlobStorageService
         {
             var durationMs = _stopwatchProvider.GetElapsedTime(startTimestamp);
 
-            _logger.LogFileExistsCheckFailed(ex, new BlobLocation(container, path));
+            _logger.LogFileExistsCheckFailed(ex, location);
 
             StorageMetrics.RecordOperationFailure(container, "exists", durationMs.TotalMilliseconds, ex.GetType().Name);
 
@@ -93,11 +94,12 @@ internal sealed class AzureBlobStorageService
         activity?.SetTag(StorageContainerTag, container);
         activity?.SetTag(StoragePathTag, path);
 
+        var location = new BlobLocation(container, path);
         long startTimestamp = _stopwatchProvider.GetTimestamp();
 
         try
         {
-            _logger.LogDownloadingFile(new BlobLocation(container, path));
+            _logger.LogDownloadingFile(location);
 
             var blobClient = GetBlobClient(container, path);
 
@@ -105,7 +107,7 @@ internal sealed class AzureBlobStorageService
             {
                 var durationMs = _stopwatchProvider.GetElapsedTime(startTimestamp);
 
-                _logger.LogFileNotFound(new BlobLocation(container, path));
+                _logger.LogFileNotFound(location);
 
                 activity?.SetTag("storage.found", false);
                 activity?.SetTag(StorageDurationMsTag, durationMs.TotalMilliseconds);
@@ -125,7 +127,7 @@ internal sealed class AzureBlobStorageService
 
             var finalDurationMs = _stopwatchProvider.GetElapsedTime(startTimestamp);
 
-            _logger.LogFileDownloaded(new BlobLocation(container, path), storedFile.Content.Length, finalDurationMs.TotalMilliseconds);
+            _logger.LogFileDownloaded(location, storedFile.Content.Length, finalDurationMs.TotalMilliseconds);
 
             StorageMetrics.RecordOperationSuccess(container, "download", finalDurationMs.TotalMilliseconds, storedFile.Content.Length);
 
@@ -141,7 +143,7 @@ internal sealed class AzureBlobStorageService
         {
             var durationMs = _stopwatchProvider.GetElapsedTime(startTimestamp);
 
-            _logger.LogFileDownloadFailed(ex, new BlobLocation(container, path));
+            _logger.LogFileDownloadFailed(ex, location);
 
             StorageMetrics.RecordOperationFailure(container, "download", durationMs.TotalMilliseconds, ex.GetType().Name);
 
@@ -170,11 +172,12 @@ internal sealed class AzureBlobStorageService
         activity?.SetTag("storage.size_bytes", content.Length);
         activity?.SetTag("storage.content_type", contentType);
 
+        var location = new BlobLocation(container, path);
         long startTimestamp = _stopwatchProvider.GetTimestamp();
 
         try
         {
-            _logger.LogUploadingFile(new BlobLocation(container, path), content.Length, contentType);
+            _logger.LogUploadingFile(location, content.Length, contentType);
 
             var containerClient = _blobServiceClient.GetBlobContainerClient(container);
             var publicAccessType = container == PublicContainerName ? PublicAccessType.Blob : PublicAccessType.None;
@@ -208,7 +211,7 @@ internal sealed class AzureBlobStorageService
 
             var durationMs = _stopwatchProvider.GetElapsedTime(startTimestamp);
 
-            _logger.LogFileUploaded(new BlobLocation(container, path), content.Length, durationMs.TotalMilliseconds);
+            _logger.LogFileUploaded(location, content.Length, durationMs.TotalMilliseconds);
 
             StorageMetrics.RecordOperationSuccess(container, "upload", durationMs.TotalMilliseconds, content.Length);
 
@@ -219,7 +222,7 @@ internal sealed class AzureBlobStorageService
         {
             var durationMs = _stopwatchProvider.GetElapsedTime(startTimestamp);
 
-            _logger.LogFileUploadFailed(ex, new BlobLocation(container, path), content.Length);
+            _logger.LogFileUploadFailed(ex, location, content.Length);
 
             StorageMetrics.RecordOperationFailure(container, "upload", durationMs.TotalMilliseconds, ex.GetType().Name);
 
@@ -237,18 +240,19 @@ internal sealed class AzureBlobStorageService
         activity?.SetTag(StorageContainerTag, container);
         activity?.SetTag(StoragePathTag, path);
 
+        var location = new BlobLocation(container, path);
         long startTimestamp = _stopwatchProvider.GetTimestamp();
 
         try
         {
-            _logger.LogDeletingFile(new BlobLocation(container, path));
+            _logger.LogDeletingFile(location);
 
             var blobClient = GetBlobClient(container, path);
             var response = await blobClient.DeleteIfExistsAsync(cancellationToken: cancellationToken);
 
             var durationMs = _stopwatchProvider.GetElapsedTime(startTimestamp);
 
-            _logger.LogFileDeleted(new BlobLocation(container, path), durationMs.TotalMilliseconds);
+            _logger.LogFileDeleted(location, durationMs.TotalMilliseconds);
 
             StorageMetrics.RecordOperationSuccess(container, "delete", durationMs.TotalMilliseconds);
 
@@ -261,7 +265,7 @@ internal sealed class AzureBlobStorageService
         {
             var durationMs = _stopwatchProvider.GetElapsedTime(startTimestamp);
 
-            _logger.LogFileDeleteFailed(ex, new BlobLocation(container, path));
+            _logger.LogFileDeleteFailed(ex, location);
 
             StorageMetrics.RecordOperationFailure(container, "delete", durationMs.TotalMilliseconds, ex.GetType().Name);
 

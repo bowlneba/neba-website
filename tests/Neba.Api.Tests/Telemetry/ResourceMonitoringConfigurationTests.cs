@@ -1,4 +1,5 @@
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Diagnostics.ResourceMonitoring;
 using Microsoft.Extensions.Hosting;
 
 using Neba.ServiceDefaults.Telemetry;
@@ -21,9 +22,10 @@ public sealed class ResourceMonitoringConfigurationTests
         builder.AddResourceMonitoring();
 
         // Assert
-        builder.Services.Any(descriptor =>
-                descriptor.ServiceType.Assembly.GetName().Name == "Microsoft.Extensions.Diagnostics.ResourceMonitoring"
-                || descriptor.ImplementationType?.Assembly.GetName().Name == "Microsoft.Extensions.Diagnostics.ResourceMonitoring")
-            .ShouldBe(supported);
+        using var provider = builder.Services.BuildServiceProvider();
+#pragma warning disable CS0618 // IResourceMonitor is obsolete; only its registration is checked
+        var monitor = provider.GetService<IResourceMonitor>();
+#pragma warning restore CS0618
+        (monitor is not null).ShouldBe(supported);
     }
 }
