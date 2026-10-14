@@ -84,7 +84,7 @@ test.describe('Edit tournament logo (logo permission only)', () => {
     await page.getByRole('button', { name: 'Cancel' }).click();
     await expect(page.getByText('Discard unsaved changes?')).toBeVisible();
 
-    await page.getByRole('button', { name: 'Discard' }).click();
+    await page.getByRole('button', { name: 'Discard', exact: true }).click();
     await expect(page.locator('.elm-subtitle')).toHaveCount(0);
   });
 
