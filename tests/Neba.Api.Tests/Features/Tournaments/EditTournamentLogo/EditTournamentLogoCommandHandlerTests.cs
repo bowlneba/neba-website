@@ -147,6 +147,29 @@ public sealed class EditTournamentLogoCommandHandlerTests(AppDbContextFixture fi
         schedulerMock.Verify(s => s.Enqueue(It.IsAny<DeleteTournamentFilesJob>()), Times.Never);
     }
 
+    [Fact(DisplayName = "HandleAsync does not enqueue a delete job when only the logo metadata differs from the current logo")]
+    public async Task HandleAsync_ShouldNotEnqueueDeleteJob_WhenOnlyMetadataDiffers()
+    {
+        // Arrange
+        var ct = TestContext.Current.CancellationToken;
+        var logo = StoredFileFactory.Create(container: "tournament-logos", path: "same-logo.png", contentType: "image/png", sizeInBytes: 2048);
+        var (_, tournament) = await SeedTournamentAsync(logo, ct);
+
+        var schedulerMock = new Mock<IBackgroundJobScheduler>(MockBehavior.Strict);
+        var handler = CreateHandler(schedulerMock.Object);
+        var command = new EditTournamentLogoCommand
+        {
+            TournamentId = tournament.Id,
+            Logo = StoredFileFactory.Create(container: logo.Container, path: logo.Path, contentType: "image/jpeg", sizeInBytes: 1)
+        };
+
+        // Act
+        var result = await handler.HandleAsync(command, ct);
+
+        // Assert
+        result.IsError.ShouldBeFalse();
+    }
+
     [Fact(DisplayName = "HandleAsync clears the logo and enqueues deletion of the previous file when the logo is null")]
     public async Task HandleAsync_ShouldClearLogoAndEnqueueDeleteJob_WhenLogoIsNull()
     {

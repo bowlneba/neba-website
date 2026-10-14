@@ -48,7 +48,10 @@ internal sealed class EditTournamentLogoCommandHandler(
         await cache.RemoveByTagAsync($"neba:tournaments:{tournament.Id}", token: cancellationToken);
         await cache.RemoveByTagAsync($"neba:tournaments:{tournament.SeasonId}", token: cancellationToken);
 
-        if (previousLogo is not null && previousLogo != command.Logo)
+        if (previousLogo is not null
+            && (command.Logo is null
+                || previousLogo.Container != command.Logo.Container
+                || previousLogo.Path != command.Logo.Path))
         {
             backgroundJobScheduler.Enqueue(new DeleteTournamentFilesJob
             {

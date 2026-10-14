@@ -464,6 +464,36 @@ public sealed class EditTournamentCommandHandlerTests(AppDbContextFixture fixtur
         file.Path.ShouldBe(previousLogo.Path);
     }
 
+    [Fact(DisplayName = "HandleAsync does not enqueue a delete job when only the logo metadata differs from the current logo")]
+    public async Task HandleAsync_ShouldNotEnqueueDeleteJob_WhenOnlyLogoMetadataDiffers()
+    {
+        // Arrange
+        var ct = TestContext.Current.CancellationToken;
+        var season = await SeedSeasonAsync(new DateOnly(2025, 1, 1), new DateOnly(2025, 12, 31), ct);
+        var logo = StoredFileFactory.Create(container: "tournament-logos", path: "same-logo.png", contentType: "image/png", sizeInBytes: 2048);
+        var tournament = TournamentFactory.Create(
+            startDate: season.StartDate,
+            endDate: season.StartDate,
+            seasonId: season.Id,
+            logo: logo);
+        await _dbContext.Tournaments.AddAsync(tournament, ct);
+        await _dbContext.SaveChangesAsync(ct);
+
+        var schedulerMock = new Mock<IBackgroundJobScheduler>(MockBehavior.Strict);
+        var handler = CreateHandler(schedulerMock.Object);
+        var command = ValidCommand(
+            tournament.Id,
+            startDate: season.StartDate,
+            endDate: season.StartDate,
+            logo: StoredFileFactory.Create(container: logo.Container, path: logo.Path, contentType: "image/jpeg", sizeInBytes: 1));
+
+        // Act
+        var result = await handler.HandleAsync(command, ct);
+
+        // Assert
+        result.IsError.ShouldBeFalse();
+    }
+
     [Fact(DisplayName = "HandleAsync does not enqueue a delete job when the logo is unchanged")]
     public async Task HandleAsync_ShouldNotEnqueueDeleteJob_WhenLogoIsUnchanged()
     {
