@@ -69,6 +69,7 @@ internal sealed class EditTournamentCommandHandler(
 
         var previousSeasonId = tournament.SeasonId;
         var previousStatsEligible = tournament.StatsEligible;
+        var previousChampionDetails = (tournament.Name, tournament.EndDate, tournament.TournamentType);
 
         // Must snapshot before Update() — Logo is mutated in place, so reading it after the call
         // would return the new value, not the one being replaced (see EditSponsorCommandHandler).
@@ -116,7 +117,12 @@ internal sealed class EditTournamentCommandHandler(
         await appDbContext.SaveChangesAsync(cancellationToken);
 
         await EvictCachesAsync(
-            tournament.Id, previousSeasonId, season.Id, previousStatsEligible != tournament.StatsEligible, cancellationToken);
+            tournament.Id,
+            previousSeasonId,
+            season.Id,
+            previousStatsEligible != tournament.StatsEligible,
+            previousChampionDetails != (tournament.Name, tournament.EndDate, tournament.TournamentType),
+            cancellationToken);
 
         ScheduleBackgroundJobs(command, previousLogo, tournament.Id, season.Id);
 
@@ -128,6 +134,7 @@ internal sealed class EditTournamentCommandHandler(
         SeasonId previousSeasonId,
         SeasonId currentSeasonId,
         bool statsEligibleChanged,
+        bool championDetailsChanged,
         CancellationToken cancellationToken)
     {
         await cache.RemoveByTagAsync($"neba:tournaments:{tournamentId}", token: cancellationToken);
@@ -136,6 +143,13 @@ internal sealed class EditTournamentCommandHandler(
         if (currentSeasonId != previousSeasonId)
         {
             await cache.RemoveByTagAsync($"neba:tournaments:{currentSeasonId}", token: cancellationToken);
+        }
+
+        // The champions list and each bowler's titles project the tournament's name, end date and type.
+        if (championDetailsChanged)
+        {
+            await cache.RemoveByTagAsync("neba:tournaments:champions", token: cancellationToken);
+            await cache.RemoveByTagAsync("neba:bowlers", token: cancellationToken);
         }
 
         // Season stat minimums count stats-eligible tournaments, so flipping eligibility or moving a

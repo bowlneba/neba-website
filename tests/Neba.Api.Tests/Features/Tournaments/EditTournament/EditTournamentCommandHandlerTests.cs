@@ -340,6 +340,44 @@ public sealed class EditTournamentCommandHandlerTests(AppDbContextFixture fixtur
         listAfterEdit.ShouldBe("fresh-list");
     }
 
+    [Theory(DisplayName = "HandleAsync evicts the champions and bowler titles caches only when name, end date or type changes")]
+    [InlineData(true, "fresh-value")]
+    [InlineData(false, "cached-value")]
+    public async Task HandleAsync_ShouldEvictChampionAndTitleCaches_OnlyWhenChampionDetailsChange(bool rename, string expectedValue)
+    {
+        // Arrange
+        var ct = TestContext.Current.CancellationToken;
+        var season = await SeedSeasonAsync(new DateOnly(2025, 1, 1), new DateOnly(2025, 12, 31), ct);
+        var tournament = await SeedTournamentAsync(season, ct);
+
+        var cache = _serviceProvider.GetRequiredService<IFusionCache>();
+        const string championsKey = "edit-tournament-champions-cache-test";
+        const string titlesKey = "edit-tournament-titles-cache-test";
+        await cache.GetOrSetAsync(championsKey, _ => Task.FromResult("cached-value"), tags: ["neba:tournaments:champions"], token: ct);
+        await cache.GetOrSetAsync(titlesKey, _ => Task.FromResult("cached-value"), tags: ["neba:bowlers", "neba:bowlers:any"], token: ct);
+
+        var handler = CreateHandler();
+        var command = ValidCommand(
+            tournament.Id,
+            name: rename ? "Renamed Tournament" : tournament.Name,
+            tournamentType: tournament.TournamentType,
+            startDate: tournament.StartDate,
+            endDate: tournament.EndDate,
+            statsEligible: tournament.StatsEligible,
+            entryFee: tournament.EntryFee,
+            nebaAddedMoney: tournament.NebaAddedMoney);
+
+        // Act
+        var result = await handler.HandleAsync(command, ct);
+
+        // Assert
+        result.IsError.ShouldBeFalse();
+        var champions = await cache.GetOrSetAsync(championsKey, _ => Task.FromResult("fresh-value"), token: ct);
+        champions.ShouldBe(expectedValue);
+        var titles = await cache.GetOrSetAsync(titlesKey, _ => Task.FromResult("fresh-value"), token: ct);
+        titles.ShouldBe(expectedValue);
+    }
+
     [Fact(DisplayName = "HandleAsync invalidates the new season's cache tag when the season changes")]
     public async Task HandleAsync_ShouldInvalidateNewSeasonCacheTag_WhenSeasonChanges()
     {
