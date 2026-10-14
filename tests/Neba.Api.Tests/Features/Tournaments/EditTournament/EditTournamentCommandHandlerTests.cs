@@ -13,6 +13,7 @@ using Neba.Api.Features.Tournaments.Domain;
 using Neba.Api.Features.Tournaments.EditTournament;
 using Neba.Api.Features.Tournaments.EvictOilPatternRevealCache;
 using Neba.Api.Features.Tournaments.GetTournament;
+using Neba.Api.Security.Infrastructure.Authorization;
 using Neba.Api.Storage;
 using Neba.TestFactory.Attributes;
 using Neba.TestFactory.BowlingCenters;
@@ -56,11 +57,30 @@ public sealed class EditTournamentCommandHandlerTests(AppDbContextFixture fixtur
     private EditTournamentCommandHandler CreateHandler(
         IBackgroundJobScheduler? backgroundJobScheduler = null,
         TimeProvider? timeProvider = null,
-        AppDbContext? dbContext = null)
+        AppDbContext? dbContext = null,
+        IPermissionDenialReader? permissionDenialReader = null)
     {
         var cache = _serviceProvider.GetRequiredService<IFusionCache>();
         var scheduler = backgroundJobScheduler ?? new Mock<IBackgroundJobScheduler>(MockBehavior.Strict).Object;
-        return new EditTournamentCommandHandler(dbContext ?? _dbContext, cache, scheduler, timeProvider ?? new FakeTimeProvider(Now));
+        return new EditTournamentCommandHandler(
+            dbContext ?? _dbContext,
+            cache,
+            scheduler,
+            timeProvider ?? new FakeTimeProvider(Now),
+            permissionDenialReader ?? DenialReader(denied: false));
+    }
+
+    private static IPermissionDenialReader DenialReader(bool denied, Action? onLookup = null)
+    {
+        var mock = new Mock<IPermissionDenialReader>(MockBehavior.Strict);
+        mock
+            .Setup(r => r.IsDeniedAsync(
+                It.IsAny<Ulid>(),
+                Neba.Api.Contracts.Security.Permissions.EditTournamentLogo,
+                It.IsAny<CancellationToken>()))
+            .Callback(() => onLookup?.Invoke())
+            .ReturnsAsync(denied);
+        return mock.Object;
     }
 
     private async Task<Season> SeedSeasonAsync(DateOnly startDate, DateOnly endDate, CancellationToken ct)
@@ -98,8 +118,7 @@ public sealed class EditTournamentCommandHandlerTests(AppDbContextFixture fixtur
         PatternLengthCategory? patternLengthCategory = null,
         PatternRatioCategory? patternRatioCategory = null,
         DateTimeOffset? oilPatternRevealDateTime = null,
-        bool logoChangeDenied = false,
-        Func<CancellationToken, Task<bool>>? isLogoChangeDeniedAsync = null)
+        bool callerIsAdmin = false)
         => new()
         {
             TournamentId = tournamentId,
@@ -113,7 +132,8 @@ public sealed class EditTournamentCommandHandlerTests(AppDbContextFixture fixtur
             BowlingCenterId = bowlingCenterId,
             ExternalRegistrationUrl = externalRegistrationUrl,
             Logo = logo,
-            IsLogoChangeDeniedAsync = isLogoChangeDeniedAsync ?? (_ => Task.FromResult(logoChangeDenied)),
+            CallerUserId = Ulid.NewUlid(),
+            CallerIsAdmin = callerIsAdmin,
             OilPatternId = oilPatternId,
             PatternLengthCategory = patternLengthCategory,
             PatternRatioCategory = patternRatioCategory,
@@ -446,9 +466,9 @@ public sealed class EditTournamentCommandHandlerTests(AppDbContextFixture fixtur
         await _dbContext.PendingUploads.AddAsync(PendingUploadFactory.Create(container: newLogo.Container, path: newLogo.Path), ct);
         await _dbContext.SaveChangesAsync(ct);
 
-        var handler = CreateHandler();
+        var handler = CreateHandler(permissionDenialReader: DenialReader(denied: true));
         var command = ValidCommand(
-            tournament.Id, startDate: season.StartDate, endDate: season.StartDate, logo: newLogo, logoChangeDenied: true);
+            tournament.Id, startDate: season.StartDate, endDate: season.StartDate, logo: newLogo);
 
         // Act
         var result = await handler.HandleAsync(command, ct);
@@ -477,14 +497,13 @@ public sealed class EditTournamentCommandHandlerTests(AppDbContextFixture fixtur
         await _dbContext.Tournaments.AddAsync(tournament, ct);
         await _dbContext.SaveChangesAsync(ct);
 
-        var handler = CreateHandler();
+        var handler = CreateHandler(permissionDenialReader: DenialReader(denied: true));
         var command = ValidCommand(
             tournament.Id,
             name: "Renamed Tournament",
             startDate: season.StartDate,
             endDate: season.StartDate,
-            logo: StoredFileFactory.Create(container: logo.Container, path: logo.Path),
-            logoChangeDenied: true);
+            logo: StoredFileFactory.Create(container: logo.Container, path: logo.Path));
 
         // Act
         var result = await handler.HandleAsync(command, ct);
@@ -506,15 +525,40 @@ public sealed class EditTournamentCommandHandlerTests(AppDbContextFixture fixtur
         await _dbContext.Tournaments.AddAsync(tournament, ct);
         await _dbContext.SaveChangesAsync(ct);
 
-        var handler = CreateHandler();
+        var handler = CreateHandler(permissionDenialReader: DenialReader(denied: true));
         var command = ValidCommand(
-            tournament.Id, startDate: season.StartDate, endDate: season.StartDate, logo: null, logoChangeDenied: true);
+            tournament.Id, startDate: season.StartDate, endDate: season.StartDate, logo: null);
 
         // Act
         var result = await handler.HandleAsync(command, ct);
 
         // Assert
         result.IsError.ShouldBeFalse();
+    }
+
+    [Fact(DisplayName = "HandleAsync lets an admin change the logo without looking up a denial")]
+    public async Task HandleAsync_ShouldSucceedWithoutLookup_WhenCallerIsAdminAndLogoChanges()
+    {
+        // Arrange
+        var ct = TestContext.Current.CancellationToken;
+        var season = await SeedSeasonAsync(new DateOnly(2025, 1, 1), new DateOnly(2025, 12, 31), ct);
+        var tournament = await SeedTournamentAsync(season, ct);
+
+        var newLogo = StoredFileFactory.Create(container: "tournament-logos", path: "admin-logo.png");
+        await _dbContext.PendingUploads.AddAsync(PendingUploadFactory.Create(container: newLogo.Container, path: newLogo.Path), ct);
+        await _dbContext.SaveChangesAsync(ct);
+
+        var lookups = 0;
+        var handler = CreateHandler(permissionDenialReader: DenialReader(denied: true, onLookup: () => lookups++));
+        var command = ValidCommand(
+            tournament.Id, startDate: season.StartDate, endDate: season.StartDate, logo: newLogo, callerIsAdmin: true);
+
+        // Act
+        var result = await handler.HandleAsync(command, ct);
+
+        // Assert
+        result.IsError.ShouldBeFalse();
+        lookups.ShouldBe(0);
     }
 
     [Fact(DisplayName = "HandleAsync does not look up the logo denial when the logo is unchanged")]
@@ -531,17 +575,12 @@ public sealed class EditTournamentCommandHandlerTests(AppDbContextFixture fixtur
         await _dbContext.SaveChangesAsync(ct);
 
         var lookups = 0;
-        var handler = CreateHandler();
+        var handler = CreateHandler(permissionDenialReader: DenialReader(denied: true, onLookup: () => lookups++));
         var command = ValidCommand(
             tournament.Id,
             startDate: season.StartDate,
             endDate: season.StartDate,
-            logo: null,
-            isLogoChangeDeniedAsync: _ =>
-            {
-                lookups++;
-                return Task.FromResult(true);
-            });
+            logo: null);
 
         // Act
         var result = await handler.HandleAsync(command, ct);

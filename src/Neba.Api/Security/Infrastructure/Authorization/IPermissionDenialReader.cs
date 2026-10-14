@@ -1,5 +1,3 @@
-using System.Security.Claims;
-
 using Neba.Api.Contracts.Security;
 
 namespace Neba.Api.Security.Infrastructure.Authorization;
@@ -10,5 +8,5 @@ namespace Neba.Api.Security.Infrastructure.Authorization;
 /// </summary>
 internal interface IPermissionDenialReader
 {
-    Task<bool> IsDeniedAsync(ClaimsPrincipal caller, Permissions permission, CancellationToken cancellationToken);
+    Task<bool> IsDeniedAsync(Ulid userId, Permissions permission, CancellationToken cancellationToken);
 }

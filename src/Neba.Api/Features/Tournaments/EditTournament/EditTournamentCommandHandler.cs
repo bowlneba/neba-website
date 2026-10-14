@@ -9,6 +9,7 @@ using Neba.Api.Features.Storage.Domain;
 using Neba.Api.Features.Tournaments.Domain;
 using Neba.Api.Features.Tournaments.EvictOilPatternRevealCache;
 using Neba.Api.Messaging;
+using Neba.Api.Security.Infrastructure.Authorization;
 
 using ZiggyCreatures.Caching.Fusion;
 
@@ -18,7 +19,8 @@ internal sealed class EditTournamentCommandHandler(
         AppDbContext appDbContext,
         IFusionCache cache,
         IBackgroundJobScheduler backgroundJobScheduler,
-        TimeProvider timeProvider)
+        TimeProvider timeProvider,
+        IPermissionDenialReader permissionDenialReader)
     : ICommandHandler<EditTournamentCommand, Updated>
 {
     public async Task<ErrorOr<Updated>> HandleAsync(EditTournamentCommand command, CancellationToken cancellationToken)
@@ -32,8 +34,11 @@ internal sealed class EditTournamentCommandHandler(
             return TournamentErrors.TournamentNotFound(command.TournamentId);
         }
 
+        // A denial is read only when the logo changes, so an edit that leaves it alone skips the lookup.
         if (!TournamentLogoClaim.IsSameFile(command.Logo, tournament.Logo)
-            && await command.IsLogoChangeDeniedAsync(cancellationToken))
+            && !command.CallerIsAdmin
+            && await permissionDenialReader.IsDeniedAsync(
+                command.CallerUserId, Contracts.Security.Permissions.EditTournamentLogo, cancellationToken))
         {
             return TournamentErrors.LogoChangeDenied;
         }

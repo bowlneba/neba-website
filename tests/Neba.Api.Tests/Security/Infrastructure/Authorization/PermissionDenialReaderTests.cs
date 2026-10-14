@@ -40,29 +40,12 @@ public sealed class PermissionDenialReaderTests(SecurityDbContextFixture fixture
         return user;
     }
 
-    private static ClaimsPrincipal CreateCaller(Ulid? userId, string? role = null)
-    {
-        var claims = new List<Claim>();
-
-        if (userId is { } id)
-        {
-            claims.Add(new Claim(ClaimTypes.NameIdentifier, id.ToString()));
-        }
-
-        if (role is not null)
-        {
-            claims.Add(new Claim(ClaimTypes.Role, role));
-        }
-
-        return new ClaimsPrincipal(new ClaimsIdentity(claims, "test"));
-    }
-
-    private async Task<bool> IsDeniedAsync(ClaimsPrincipal caller, Permissions permission)
+    private async Task<bool> IsDeniedAsync(Ulid userId, Permissions permission)
     {
         await using var context = fixture.CreateDbContext();
         var reader = new PermissionDenialReader(context);
 
-        return await reader.IsDeniedAsync(caller, permission, TestContext.Current.CancellationToken);
+        return await reader.IsDeniedAsync(userId, permission, TestContext.Current.CancellationToken);
     }
 
     [Fact(DisplayName = "IsDeniedAsync returns true when the user has a stored denial for the permission")]
@@ -72,7 +55,7 @@ public sealed class PermissionDenialReaderTests(SecurityDbContextFixture fixture
         var user = await SeedUserAsync(new Claim(Permissions.DeniedClaimType, Permissions.EditArticle.Value));
 
         // Act
-        var result = await IsDeniedAsync(CreateCaller(user.Id), Permissions.EditArticle);
+        var result = await IsDeniedAsync(user.Id, Permissions.EditArticle);
 
         // Assert
         result.ShouldBeTrue();
@@ -85,7 +68,7 @@ public sealed class PermissionDenialReaderTests(SecurityDbContextFixture fixture
         var user = await SeedUserAsync();
 
         // Act
-        var result = await IsDeniedAsync(CreateCaller(user.Id), Permissions.EditArticle);
+        var result = await IsDeniedAsync(user.Id, Permissions.EditArticle);
 
         // Assert
         result.ShouldBeFalse();
@@ -98,7 +81,7 @@ public sealed class PermissionDenialReaderTests(SecurityDbContextFixture fixture
         var user = await SeedUserAsync(new Claim(Permissions.DeniedClaimType, Permissions.CreateArticle.Value));
 
         // Act
-        var result = await IsDeniedAsync(CreateCaller(user.Id), Permissions.EditArticle);
+        var result = await IsDeniedAsync(user.Id, Permissions.EditArticle);
 
         // Assert
         result.ShouldBeFalse();
@@ -111,7 +94,7 @@ public sealed class PermissionDenialReaderTests(SecurityDbContextFixture fixture
         var user = await SeedUserAsync(new Claim(Permissions.ClaimType, Permissions.EditArticle.Value));
 
         // Act
-        var result = await IsDeniedAsync(CreateCaller(user.Id), Permissions.EditArticle);
+        var result = await IsDeniedAsync(user.Id, Permissions.EditArticle);
 
         // Assert
         result.ShouldBeFalse();
@@ -125,33 +108,7 @@ public sealed class PermissionDenialReaderTests(SecurityDbContextFixture fixture
         var caller = await SeedUserAsync();
 
         // Act
-        var result = await IsDeniedAsync(CreateCaller(caller.Id), Permissions.EditArticle);
-
-        // Assert
-        result.ShouldBeFalse();
-    }
-
-    [Fact(DisplayName = "IsDeniedAsync returns false for an admin even when a denial is stored")]
-    public async Task IsDeniedAsync_ShouldReturnFalse_WhenCallerIsAdmin()
-    {
-        // Arrange
-        var user = await SeedUserAsync(new Claim(Permissions.DeniedClaimType, Permissions.EditArticle.Value));
-
-        // Act
-        var result = await IsDeniedAsync(CreateCaller(user.Id, Roles.Admin), Permissions.EditArticle);
-
-        // Assert
-        result.ShouldBeFalse();
-    }
-
-    [Fact(DisplayName = "IsDeniedAsync returns false when the caller has no user ID")]
-    public async Task IsDeniedAsync_ShouldReturnFalse_WhenCallerHasNoUserId()
-    {
-        // Arrange
-        await SeedUserAsync(new Claim(Permissions.DeniedClaimType, Permissions.EditArticle.Value));
-
-        // Act
-        var result = await IsDeniedAsync(CreateCaller(null), Permissions.EditArticle);
+        var result = await IsDeniedAsync(caller.Id, Permissions.EditArticle);
 
         // Assert
         result.ShouldBeFalse();
