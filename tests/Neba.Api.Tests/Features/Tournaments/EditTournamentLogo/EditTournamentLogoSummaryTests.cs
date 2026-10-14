@@ -40,4 +40,16 @@ public sealed class EditTournamentLogoSummaryTests
         summary.Responses.ShouldContainKey(403);
         summary.Responses.ShouldContainKey(404);
     }
+
+    [Fact(DisplayName = "Constructor should set an example request with a logo")]
+    public void Constructor_ShouldSetExampleRequest()
+    {
+        // Arrange & Act
+        var summary = new EditTournamentLogoSummary();
+
+        // Assert
+        var example = summary.ExampleRequest.ShouldBeOfType<Neba.Api.Contracts.Tournaments.EditTournamentLogo.EditTournamentLogoRequest>();
+        example.Id.Length.ShouldBe(26);
+        example.Logo.ShouldNotBeNull();
+    }
 }

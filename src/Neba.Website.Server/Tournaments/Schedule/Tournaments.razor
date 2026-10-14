@@ -327,6 +327,8 @@ SeasonViewModel? current)
     private void CloseEditLogo()
         => _logoTournament = null;
 
+    // Same upload/save/toast wiring lives in TournamentDetail.razor. If a third host needs it, look into
+    // refactoring it into a shared piece instead of copying it again.
     private Task<ErrorOr<UploadedFileResponse>> UploadLogoAsync(
         Stream stream, string fileName, string contentType, IProgress<int> progress, CancellationToken ct)
         => ApiExecutor.ExecuteAsync(
