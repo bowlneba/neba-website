@@ -296,7 +296,31 @@ SeasonViewModel? current)
             _pageNotice = "Tournament data is currently unavailable.";
             return;
         }
-        _allTournaments = tournamentsResult.Value;
+
+        await ApplyTournamentsAsync(tournamentsResult.Value, availableSeasons, ct);
+    }
+
+    // Reload after a save. A failed reload keeps the list the user already sees; the save itself worked.
+    private async Task RefreshTournamentsAsync(List<SeasonViewModel> availableSeasons, CancellationToken ct)
+    {
+        if (_activeSeason is null)
+        {
+            return;
+        }
+
+        var tournamentsResult = await DataService.GetTournamentsForSeasonAsync(_activeSeason, ct);
+        if (tournamentsResult.IsError)
+        {
+            return;
+        }
+
+        await ApplyTournamentsAsync(tournamentsResult.Value, availableSeasons, ct);
+    }
+
+    private async Task ApplyTournamentsAsync(
+        List<SeasonTournamentViewModel> tournaments, List<SeasonViewModel> availableSeasons, CancellationToken ct)
+    {
+        _allTournaments = tournaments;
 
         // When the current season has no upcoming tournaments, look ahead to the next season
         if (_isCurrentSeason && _allTournaments.Count > 0 && _allTournaments.TrueForAll(t => t.IsPast))
@@ -355,7 +379,14 @@ SeasonViewModel? current)
 
         if (_availableSeasons is not null)
         {
-            await LoadTournamentsAndHeroAsync(_availableSeasons, _cts.Token);
+            try
+            {
+                await RefreshTournamentsAsync(_availableSeasons, _cts.Token);
+            }
+            catch (OperationCanceledException) when (_cts.IsCancellationRequested)
+            {
+                return;
+            }
         }
 
         ToastService.Show("Logo Saved", "The tournament logo was updated.", NotifySeverity.Success);
