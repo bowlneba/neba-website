@@ -32,6 +32,12 @@ internal sealed record EditTournamentCommand
 
     public StoredFile? Logo { get; init; }
 
+    /// <summary>
+    /// True when an admin explicitly denied the caller the right to change logos. The logo then must
+    /// stay as it is; a missing permission does not set this.
+    /// </summary>
+    public bool LogoChangeDenied { get; init; }
+
     public OilPatternId? OilPatternId { get; init; }
 
     public PatternLengthCategory? PatternLengthCategory { get; init; }

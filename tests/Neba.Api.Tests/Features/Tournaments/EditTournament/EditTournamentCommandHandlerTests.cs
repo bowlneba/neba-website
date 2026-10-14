@@ -97,7 +97,8 @@ public sealed class EditTournamentCommandHandlerTests(AppDbContextFixture fixtur
         OilPatternId? oilPatternId = null,
         PatternLengthCategory? patternLengthCategory = null,
         PatternRatioCategory? patternRatioCategory = null,
-        DateTimeOffset? oilPatternRevealDateTime = null)
+        DateTimeOffset? oilPatternRevealDateTime = null,
+        bool logoChangeDenied = false)
         => new()
         {
             TournamentId = tournamentId,
@@ -111,6 +112,7 @@ public sealed class EditTournamentCommandHandlerTests(AppDbContextFixture fixtur
             BowlingCenterId = bowlingCenterId,
             ExternalRegistrationUrl = externalRegistrationUrl,
             Logo = logo,
+            LogoChangeDenied = logoChangeDenied,
             OilPatternId = oilPatternId,
             PatternLengthCategory = patternLengthCategory,
             PatternRatioCategory = patternRatioCategory,
@@ -422,6 +424,96 @@ public sealed class EditTournamentCommandHandlerTests(AppDbContextFixture fixtur
         // Assert
         result.IsError.ShouldBeTrue();
         result.FirstError.Code.ShouldBe("Tournament.Logo.NotUploaded");
+    }
+
+    [Fact(DisplayName = "HandleAsync forbids a logo change when the caller is denied the logo permission")]
+    public async Task HandleAsync_ShouldReturnForbidden_WhenLogoChangeDeniedAndLogoChanges()
+    {
+        // Arrange
+        var ct = TestContext.Current.CancellationToken;
+        var season = await SeedSeasonAsync(new DateOnly(2025, 1, 1), new DateOnly(2025, 12, 31), ct);
+        var previousLogo = StoredFileFactory.Create(container: "tournament-logos", path: "old-logo.png");
+        var tournament = TournamentFactory.Create(
+            startDate: season.StartDate,
+            endDate: season.StartDate,
+            seasonId: season.Id,
+            logo: previousLogo);
+        await _dbContext.Tournaments.AddAsync(tournament, ct);
+        await _dbContext.SaveChangesAsync(ct);
+
+        var newLogo = StoredFileFactory.Create(container: "tournament-logos", path: "new-logo.png");
+        await _dbContext.PendingUploads.AddAsync(PendingUploadFactory.Create(container: newLogo.Container, path: newLogo.Path), ct);
+        await _dbContext.SaveChangesAsync(ct);
+
+        var handler = CreateHandler();
+        var command = ValidCommand(
+            tournament.Id, startDate: season.StartDate, endDate: season.StartDate, logo: newLogo, logoChangeDenied: true);
+
+        // Act
+        var result = await handler.HandleAsync(command, ct);
+
+        // Assert
+        result.IsError.ShouldBeTrue();
+        result.FirstError.Code.ShouldBe("Tournament.Logo.ChangeDenied");
+        result.FirstError.Type.ShouldBe(ErrorType.Forbidden);
+        var persisted = await _dbContext.Tournaments.AsNoTracking().SingleAsync(t => t.Id == tournament.Id, ct);
+        persisted.Logo.ShouldNotBeNull();
+        persisted.Logo.Path.ShouldBe(previousLogo.Path);
+    }
+
+    [Fact(DisplayName = "HandleAsync allows other edits when the caller is denied the logo permission and the logo is unchanged")]
+    public async Task HandleAsync_ShouldSucceed_WhenLogoChangeDeniedAndLogoUnchanged()
+    {
+        // Arrange
+        var ct = TestContext.Current.CancellationToken;
+        var season = await SeedSeasonAsync(new DateOnly(2025, 1, 1), new DateOnly(2025, 12, 31), ct);
+        var logo = StoredFileFactory.Create(container: "tournament-logos", path: "same-logo.png");
+        var tournament = TournamentFactory.Create(
+            startDate: season.StartDate,
+            endDate: season.StartDate,
+            seasonId: season.Id,
+            logo: logo);
+        await _dbContext.Tournaments.AddAsync(tournament, ct);
+        await _dbContext.SaveChangesAsync(ct);
+
+        var handler = CreateHandler();
+        var command = ValidCommand(
+            tournament.Id,
+            name: "Renamed Tournament",
+            startDate: season.StartDate,
+            endDate: season.StartDate,
+            logo: StoredFileFactory.Create(container: logo.Container, path: logo.Path),
+            logoChangeDenied: true);
+
+        // Act
+        var result = await handler.HandleAsync(command, ct);
+
+        // Assert
+        result.IsError.ShouldBeFalse();
+    }
+
+    [Fact(DisplayName = "HandleAsync allows no logo before and after when the caller is denied the logo permission")]
+    public async Task HandleAsync_ShouldSucceed_WhenLogoChangeDeniedAndBothLogosAreNull()
+    {
+        // Arrange
+        var ct = TestContext.Current.CancellationToken;
+        var season = await SeedSeasonAsync(new DateOnly(2025, 1, 1), new DateOnly(2025, 12, 31), ct);
+        var tournament = TournamentFactory.Create(
+            startDate: season.StartDate,
+            endDate: season.StartDate,
+            seasonId: season.Id);
+        await _dbContext.Tournaments.AddAsync(tournament, ct);
+        await _dbContext.SaveChangesAsync(ct);
+
+        var handler = CreateHandler();
+        var command = ValidCommand(
+            tournament.Id, startDate: season.StartDate, endDate: season.StartDate, logo: null, logoChangeDenied: true);
+
+        // Act
+        var result = await handler.HandleAsync(command, ct);
+
+        // Assert
+        result.IsError.ShouldBeFalse();
     }
 
     [Fact(DisplayName = "HandleAsync enqueues a delete job for the previous logo when the logo is replaced")]

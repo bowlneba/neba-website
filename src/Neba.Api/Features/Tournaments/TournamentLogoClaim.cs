@@ -19,7 +19,7 @@ internal static class TournamentLogoClaim
     /// re-save never lets the caller overwrite the stored content type or size.
     /// </summary>
     public static StoredFile? Resolve(StoredFile? logo, StoredFile? currentLogo)
-        => logo is not null && IsSameFile(logo, currentLogo) ? currentLogo : logo;
+        => logo is not null && NamesCurrentFile(logo, currentLogo) ? currentLogo : logo;
 
     /// <summary>
     /// A logo is claimable when it is null (removal), when it already is the tournament's current
@@ -31,7 +31,7 @@ internal static class TournamentLogoClaim
         StoredFile? currentLogo,
         CancellationToken cancellationToken)
     {
-        if (logo is null || IsSameFile(logo, currentLogo))
+        if (logo is null || NamesCurrentFile(logo, currentLogo))
         {
             return Result.Success;
         }
@@ -42,7 +42,15 @@ internal static class TournamentLogoClaim
         return isPending ? Result.Success : TournamentErrors.LogoNotUploaded;
     }
 
-    private static bool IsSameFile(StoredFile logo, StoredFile? currentLogo)
+    /// <summary>
+    /// True when both name the same file, or both are null (no logo before and after).
+    /// </summary>
+    public static bool IsSameFile(StoredFile? logo, StoredFile? currentLogo)
+        => logo is null
+            ? currentLogo is null
+            : NamesCurrentFile(logo, currentLogo);
+
+    private static bool NamesCurrentFile(StoredFile logo, StoredFile? currentLogo)
         => currentLogo is not null
             && currentLogo.Container == logo.Container
             && currentLogo.Path == logo.Path;

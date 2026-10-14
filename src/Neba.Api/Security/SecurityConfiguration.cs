@@ -12,6 +12,7 @@ using Neba.Api.Contracts.Security.Authorization;
 using Neba.Api.Database;
 using Neba.Api.Database.Interceptors;
 using Neba.Api.Security.Domain;
+using Neba.Api.Security.Infrastructure.Authorization;
 using Neba.Api.Security.Infrastructure;
 
 using Npgsql;
@@ -136,6 +137,7 @@ internal static class SecurityConfiguration
 
             builder.Services.AddSingleton(jwtSettings);
             builder.Services.AddSingleton<IJwtTokenService, JwtTokenService>();
+            builder.Services.AddScoped<IPermissionDenialReader, PermissionDenialReader>();
 
             var websiteSettings = ReadWebsiteSettings(builder.Configuration);
 

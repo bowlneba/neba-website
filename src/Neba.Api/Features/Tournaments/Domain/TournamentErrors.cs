@@ -55,6 +55,9 @@ internal static class TournamentErrors
             });
     }
 
+    public static Error LogoChangeDenied
+        => Error.Forbidden("Tournament.Logo.ChangeDenied", "Your account is not allowed to change tournament logos.");
+
     public static Error LogoNotUploaded
         => Error.Validation("Tournament.Logo.NotUploaded", "Logo must be a file uploaded through the logo upload endpoint.");
 

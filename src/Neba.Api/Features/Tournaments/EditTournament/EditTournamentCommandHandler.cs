@@ -32,6 +32,11 @@ internal sealed class EditTournamentCommandHandler(
             return TournamentErrors.TournamentNotFound(command.TournamentId);
         }
 
+        if (command.LogoChangeDenied && !TournamentLogoClaim.IsSameFile(command.Logo, tournament.Logo))
+        {
+            return TournamentErrors.LogoChangeDenied;
+        }
+
         var logoClaim = await TournamentLogoClaim.EnsureClaimableAsync(
             appDbContext, command.Logo, tournament.Logo, cancellationToken);
 

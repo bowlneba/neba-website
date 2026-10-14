@@ -7,15 +7,19 @@ using FastEndpoints.AspVersioning;
 
 using Neba.Api.Contracts.Tournaments.EditTournament;
 using Neba.Api.Features.Tournaments.Domain;
+using Neba.Api.Security.Infrastructure.Authorization;
 
 using PermissionCatalog = Neba.Api.Contracts.Security.Permissions;
 
 namespace Neba.Api.Features.Tournaments.EditTournament;
 
-internal sealed class EditTournamentEndpoint(Messaging.ICommandHandler<EditTournamentCommand, Updated> commandHandler)
+internal sealed class EditTournamentEndpoint(
+        Messaging.ICommandHandler<EditTournamentCommand, Updated> commandHandler,
+        IPermissionDenialReader permissionDenialReader)
     : Endpoint<EditTournamentRequest>
 {
     private readonly Messaging.ICommandHandler<EditTournamentCommand, Updated> _commandHandler = commandHandler;
+    private readonly IPermissionDenialReader _permissionDenialReader = permissionDenialReader;
 
     public override void Configure()
     {
@@ -57,6 +61,7 @@ internal sealed class EditTournamentEndpoint(Messaging.ICommandHandler<EditTourn
             BowlingCenterId = TournamentInputMapper.ToBowlingCenterId(input.BowlingCenterCertificationNumber),
             ExternalRegistrationUrl = input.ExternalRegistrationUrl,
             Logo = TournamentInputMapper.ToLogo(input.Logo),
+            LogoChangeDenied = await _permissionDenialReader.IsDeniedAsync(User, PermissionCatalog.EditTournamentLogo, ct),
             OilPatternId = TournamentInputMapper.ToOilPatternId(input.OilPatternId),
             PatternLengthCategory = TournamentInputMapper.ToPatternLengthCategory(input.PatternLengthCategory),
             PatternRatioCategory = TournamentInputMapper.ToPatternRatioCategory(input.PatternRatioCategory),
@@ -70,6 +75,13 @@ internal sealed class EditTournamentEndpoint(Messaging.ICommandHandler<EditTourn
             if (result.FirstError.Type == ErrorType.NotFound)
             {
                 await Send.NotFoundAsync(ct);
+                // Stryker disable once Statement
+                return;
+            }
+
+            if (result.FirstError.Type == ErrorType.Forbidden)
+            {
+                await Send.ForbiddenAsync(ct);
                 // Stryker disable once Statement
                 return;
             }
