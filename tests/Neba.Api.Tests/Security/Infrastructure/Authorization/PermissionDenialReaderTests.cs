@@ -1,0 +1,159 @@
+using System.Security.Claims;
+
+using Microsoft.AspNetCore.Identity;
+using Microsoft.Extensions.DependencyInjection;
+
+using Neba.Api.Contracts.Security;
+using Neba.Api.Security.Domain;
+using Neba.Api.Security.Infrastructure.Authorization;
+using Neba.TestFactory.Attributes;
+using Neba.TestFactory.Infrastructure;
+using Neba.TestFactory.Security;
+
+namespace Neba.Api.Tests.Security.Infrastructure.Authorization;
+
+[IntegrationTest]
+[Component("Security")]
+[Collection<SecurityDbContextFixture>]
+public sealed class PermissionDenialReaderTests(SecurityDbContextFixture fixture)
+    : IClassFixture<SecurityDbContextFixture>, IAsyncLifetime
+{
+    public async ValueTask InitializeAsync()
+        => await fixture.ResetAsync();
+
+    public ValueTask DisposeAsync()
+        => ValueTask.CompletedTask;
+
+    private async Task<ApplicationUser> SeedUserAsync(params Claim[] claims)
+    {
+        using var scope = fixture.CreateScope();
+        var userManager = scope.ServiceProvider.GetRequiredService<UserManager<ApplicationUser>>();
+
+        var user = ApplicationUserFactory.Create();
+        await userManager.CreateAsync(user);
+
+        if (claims.Length > 0)
+        {
+            await userManager.AddClaimsAsync(user, claims);
+        }
+
+        return user;
+    }
+
+    private static ClaimsPrincipal CreateCaller(Ulid? userId, string? role = null)
+    {
+        var claims = new List<Claim>();
+
+        if (userId is { } id)
+        {
+            claims.Add(new Claim(ClaimTypes.NameIdentifier, id.ToString()));
+        }
+
+        if (role is not null)
+        {
+            claims.Add(new Claim(ClaimTypes.Role, role));
+        }
+
+        return new ClaimsPrincipal(new ClaimsIdentity(claims, "test"));
+    }
+
+    private async Task<bool> IsDeniedAsync(ClaimsPrincipal caller, Permissions permission)
+    {
+        await using var context = fixture.CreateDbContext();
+        var reader = new PermissionDenialReader(context);
+
+        return await reader.IsDeniedAsync(caller, permission, TestContext.Current.CancellationToken);
+    }
+
+    [Fact(DisplayName = "IsDeniedAsync returns true when the user has a stored denial for the permission")]
+    public async Task IsDeniedAsync_ShouldReturnTrue_WhenDenialStored()
+    {
+        // Arrange
+        var user = await SeedUserAsync(new Claim(Permissions.DeniedClaimType, Permissions.EditArticle.Value));
+
+        // Act
+        var result = await IsDeniedAsync(CreateCaller(user.Id), Permissions.EditArticle);
+
+        // Assert
+        result.ShouldBeTrue();
+    }
+
+    [Fact(DisplayName = "IsDeniedAsync returns false when the user has no denial")]
+    public async Task IsDeniedAsync_ShouldReturnFalse_WhenNoDenialStored()
+    {
+        // Arrange
+        var user = await SeedUserAsync();
+
+        // Act
+        var result = await IsDeniedAsync(CreateCaller(user.Id), Permissions.EditArticle);
+
+        // Assert
+        result.ShouldBeFalse();
+    }
+
+    [Fact(DisplayName = "IsDeniedAsync returns false when the stored denial is for a different permission")]
+    public async Task IsDeniedAsync_ShouldReturnFalse_WhenDenialIsForDifferentPermission()
+    {
+        // Arrange
+        var user = await SeedUserAsync(new Claim(Permissions.DeniedClaimType, Permissions.CreateArticle.Value));
+
+        // Act
+        var result = await IsDeniedAsync(CreateCaller(user.Id), Permissions.EditArticle);
+
+        // Assert
+        result.ShouldBeFalse();
+    }
+
+    [Fact(DisplayName = "IsDeniedAsync returns false when the stored claim is a grant, not a denial")]
+    public async Task IsDeniedAsync_ShouldReturnFalse_WhenClaimIsGrant()
+    {
+        // Arrange
+        var user = await SeedUserAsync(new Claim(Permissions.ClaimType, Permissions.EditArticle.Value));
+
+        // Act
+        var result = await IsDeniedAsync(CreateCaller(user.Id), Permissions.EditArticle);
+
+        // Assert
+        result.ShouldBeFalse();
+    }
+
+    [Fact(DisplayName = "IsDeniedAsync returns false when another user holds the denial")]
+    public async Task IsDeniedAsync_ShouldReturnFalse_WhenAnotherUserHoldsDenial()
+    {
+        // Arrange
+        await SeedUserAsync(new Claim(Permissions.DeniedClaimType, Permissions.EditArticle.Value));
+        var caller = await SeedUserAsync();
+
+        // Act
+        var result = await IsDeniedAsync(CreateCaller(caller.Id), Permissions.EditArticle);
+
+        // Assert
+        result.ShouldBeFalse();
+    }
+
+    [Fact(DisplayName = "IsDeniedAsync returns false for an admin even when a denial is stored")]
+    public async Task IsDeniedAsync_ShouldReturnFalse_WhenCallerIsAdmin()
+    {
+        // Arrange
+        var user = await SeedUserAsync(new Claim(Permissions.DeniedClaimType, Permissions.EditArticle.Value));
+
+        // Act
+        var result = await IsDeniedAsync(CreateCaller(user.Id, Roles.Admin), Permissions.EditArticle);
+
+        // Assert
+        result.ShouldBeFalse();
+    }
+
+    [Fact(DisplayName = "IsDeniedAsync returns false when the caller has no user ID")]
+    public async Task IsDeniedAsync_ShouldReturnFalse_WhenCallerHasNoUserId()
+    {
+        // Arrange
+        await SeedUserAsync(new Claim(Permissions.DeniedClaimType, Permissions.EditArticle.Value));
+
+        // Act
+        var result = await IsDeniedAsync(CreateCaller(null), Permissions.EditArticle);
+
+        // Assert
+        result.ShouldBeFalse();
+    }
+}
