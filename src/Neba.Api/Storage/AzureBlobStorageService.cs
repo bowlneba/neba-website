@@ -54,14 +54,14 @@ internal sealed class AzureBlobStorageService
 
         try
         {
-            _logger.LogCheckingFileExists(container, path);
+            _logger.LogCheckingFileExists(new BlobLocation(container, path));
 
             var blobClient = GetBlobClient(container, path);
             bool exists = await blobClient.ExistsAsync(cancellationToken);
 
             var durationMs = _stopwatchProvider.GetElapsedTime(startTimestamp);
 
-            _logger.LogFileExistsChecked(container, path, exists, durationMs.TotalMilliseconds);
+            _logger.LogFileExistsChecked(new BlobLocation(container, path), exists, durationMs.TotalMilliseconds);
 
             StorageMetrics.RecordOperationSuccess(container, "exists", durationMs.TotalMilliseconds);
 
@@ -75,7 +75,7 @@ internal sealed class AzureBlobStorageService
         {
             var durationMs = _stopwatchProvider.GetElapsedTime(startTimestamp);
 
-            _logger.LogFileExistsCheckFailed(ex, container, path);
+            _logger.LogFileExistsCheckFailed(ex, new BlobLocation(container, path));
 
             StorageMetrics.RecordOperationFailure(container, "exists", durationMs.TotalMilliseconds, ex.GetType().Name);
 
@@ -97,7 +97,7 @@ internal sealed class AzureBlobStorageService
 
         try
         {
-            _logger.LogDownloadingFile(container, path);
+            _logger.LogDownloadingFile(new BlobLocation(container, path));
 
             var blobClient = GetBlobClient(container, path);
 
@@ -105,7 +105,7 @@ internal sealed class AzureBlobStorageService
             {
                 var durationMs = _stopwatchProvider.GetElapsedTime(startTimestamp);
 
-                _logger.LogFileNotFound(container, path);
+                _logger.LogFileNotFound(new BlobLocation(container, path));
 
                 activity?.SetTag("storage.found", false);
                 activity?.SetTag(StorageDurationMsTag, durationMs.TotalMilliseconds);
@@ -125,7 +125,7 @@ internal sealed class AzureBlobStorageService
 
             var finalDurationMs = _stopwatchProvider.GetElapsedTime(startTimestamp);
 
-            _logger.LogFileDownloaded(container, path, storedFile.Content.Length, finalDurationMs.TotalMilliseconds);
+            _logger.LogFileDownloaded(new BlobLocation(container, path), storedFile.Content.Length, finalDurationMs.TotalMilliseconds);
 
             StorageMetrics.RecordOperationSuccess(container, "download", finalDurationMs.TotalMilliseconds, storedFile.Content.Length);
 
@@ -141,7 +141,7 @@ internal sealed class AzureBlobStorageService
         {
             var durationMs = _stopwatchProvider.GetElapsedTime(startTimestamp);
 
-            _logger.LogFileDownloadFailed(ex, container, path);
+            _logger.LogFileDownloadFailed(ex, new BlobLocation(container, path));
 
             StorageMetrics.RecordOperationFailure(container, "download", durationMs.TotalMilliseconds, ex.GetType().Name);
 
@@ -174,7 +174,7 @@ internal sealed class AzureBlobStorageService
 
         try
         {
-            _logger.LogUploadingFile(container, path, content.Length, contentType);
+            _logger.LogUploadingFile(new BlobLocation(container, path), content.Length, contentType);
 
             var containerClient = _blobServiceClient.GetBlobContainerClient(container);
             var publicAccessType = container == PublicContainerName ? PublicAccessType.Blob : PublicAccessType.None;
@@ -208,7 +208,7 @@ internal sealed class AzureBlobStorageService
 
             var durationMs = _stopwatchProvider.GetElapsedTime(startTimestamp);
 
-            _logger.LogFileUploaded(container, path, content.Length, durationMs.TotalMilliseconds);
+            _logger.LogFileUploaded(new BlobLocation(container, path), content.Length, durationMs.TotalMilliseconds);
 
             StorageMetrics.RecordOperationSuccess(container, "upload", durationMs.TotalMilliseconds, content.Length);
 
@@ -219,7 +219,7 @@ internal sealed class AzureBlobStorageService
         {
             var durationMs = _stopwatchProvider.GetElapsedTime(startTimestamp);
 
-            _logger.LogFileUploadFailed(ex, container, path, content.Length);
+            _logger.LogFileUploadFailed(ex, new BlobLocation(container, path), content.Length);
 
             StorageMetrics.RecordOperationFailure(container, "upload", durationMs.TotalMilliseconds, ex.GetType().Name);
 
@@ -241,14 +241,14 @@ internal sealed class AzureBlobStorageService
 
         try
         {
-            _logger.LogDeletingFile(container, path);
+            _logger.LogDeletingFile(new BlobLocation(container, path));
 
             var blobClient = GetBlobClient(container, path);
             var response = await blobClient.DeleteIfExistsAsync(cancellationToken: cancellationToken);
 
             var durationMs = _stopwatchProvider.GetElapsedTime(startTimestamp);
 
-            _logger.LogFileDeleted(container, path, durationMs.TotalMilliseconds);
+            _logger.LogFileDeleted(new BlobLocation(container, path), durationMs.TotalMilliseconds);
 
             StorageMetrics.RecordOperationSuccess(container, "delete", durationMs.TotalMilliseconds);
 
@@ -261,7 +261,7 @@ internal sealed class AzureBlobStorageService
         {
             var durationMs = _stopwatchProvider.GetElapsedTime(startTimestamp);
 
-            _logger.LogFileDeleteFailed(ex, container, path);
+            _logger.LogFileDeleteFailed(ex, new BlobLocation(container, path));
 
             StorageMetrics.RecordOperationFailure(container, "delete", durationMs.TotalMilliseconds, ex.GetType().Name);
 
@@ -299,119 +299,106 @@ internal static partial class AzureBlobStorageServiceLogMessages
 {
     [LoggerMessage(
         Level = LogLevel.Debug,
-        Message = "Checking if file exists: {Container}/{Path}")]
+        Message = "Checking if file exists: {Location}")]
     public static partial void LogCheckingFileExists(
         this ILogger<AzureBlobStorageService> logger,
-        string container,
-        string path);
+        [LogProperties] BlobLocation location);
 
     [LoggerMessage(
         Level = LogLevel.Debug,
-        Message = "File exists check completed: {Container}/{Path} (exists: {Exists}, {DurationMs} ms)")]
+        Message = "File exists check completed: {Location} (exists: {Exists}, {DurationMs} ms)")]
     public static partial void LogFileExistsChecked(
         this ILogger<AzureBlobStorageService> logger,
-        string container,
-        string path,
+        [LogProperties] BlobLocation location,
         bool exists,
         double durationMs);
 
     [LoggerMessage(
         Level = LogLevel.Error,
-        Message = "Failed to check if file exists: {Container}/{Path}")]
+        Message = "Failed to check if file exists: {Location}")]
     public static partial void LogFileExistsCheckFailed(
         this ILogger<AzureBlobStorageService> logger,
         Exception exception,
-        string container,
-        string path);
+        [LogProperties] BlobLocation location);
 
     [LoggerMessage(
         Level = LogLevel.Debug,
-        Message = "Downloading file: {Container}/{Path}")]
+        Message = "Downloading file: {Location}")]
     public static partial void LogDownloadingFile(
         this ILogger<AzureBlobStorageService> logger,
-        string container,
-        string path);
+        [LogProperties] BlobLocation location);
 
     [LoggerMessage(
         Level = LogLevel.Warning,
-        Message = "File not found: {Container}/{Path}")]
+        Message = "File not found: {Location}")]
     public static partial void LogFileNotFound(
         this ILogger<AzureBlobStorageService> logger,
-        string container,
-        string path);
+        [LogProperties] BlobLocation location);
 
     [LoggerMessage(
         Level = LogLevel.Information,
-        Message = "File downloaded successfully: {Container}/{Path} ({SizeBytes} bytes, {DurationMs} ms)")]
+        Message = "File downloaded successfully: {Location} ({SizeBytes} bytes, {DurationMs} ms)")]
     public static partial void LogFileDownloaded(
         this ILogger<AzureBlobStorageService> logger,
-        string container,
-        string path,
+        [LogProperties] BlobLocation location,
         long sizeBytes,
         double durationMs);
 
     [LoggerMessage(
         Level = LogLevel.Error,
-        Message = "Failed to download file: {Container}/{Path}")]
+        Message = "Failed to download file: {Location}")]
     public static partial void LogFileDownloadFailed(
         this ILogger<AzureBlobStorageService> logger,
         Exception exception,
-        string container,
-        string path);
+        [LogProperties] BlobLocation location);
 
     [LoggerMessage(
         Level = LogLevel.Debug,
-        Message = "Uploading file: {Container}/{Path} ({SizeBytes} bytes, content type: {ContentType})")]
+        Message = "Uploading file: {Location} ({SizeBytes} bytes, content type: {ContentType})")]
     public static partial void LogUploadingFile(
         this ILogger<AzureBlobStorageService> logger,
-        string container,
-        string path,
+        [LogProperties] BlobLocation location,
         long sizeBytes,
         string contentType);
 
     [LoggerMessage(
         Level = LogLevel.Information,
-        Message = "File uploaded successfully: {Container}/{Path} ({SizeBytes} bytes, {DurationMs} ms)")]
+        Message = "File uploaded successfully: {Location} ({SizeBytes} bytes, {DurationMs} ms)")]
     public static partial void LogFileUploaded(
         this ILogger<AzureBlobStorageService> logger,
-        string container,
-        string path,
+        [LogProperties] BlobLocation location,
         long sizeBytes,
         double durationMs);
 
     [LoggerMessage(
         Level = LogLevel.Error,
-        Message = "Failed to upload file: {Container}/{Path} ({SizeBytes} bytes)")]
+        Message = "Failed to upload file: {Location} ({SizeBytes} bytes)")]
     public static partial void LogFileUploadFailed(
         this ILogger<AzureBlobStorageService> logger,
         Exception exception,
-        string container,
-        string path,
+        [LogProperties] BlobLocation location,
         long sizeBytes);
 
     [LoggerMessage(
         Level = LogLevel.Debug,
-        Message = "Deleting file: {Container}/{Path}")]
+        Message = "Deleting file: {Location}")]
     public static partial void LogDeletingFile(
         this ILogger<AzureBlobStorageService> logger,
-        string container,
-        string path);
+        [LogProperties] BlobLocation location);
 
     [LoggerMessage(
         Level = LogLevel.Information,
-        Message = "File deleted successfully: {Container}/{Path} ({DurationMs} ms)")]
+        Message = "File deleted successfully: {Location} ({DurationMs} ms)")]
     public static partial void LogFileDeleted(
         this ILogger<AzureBlobStorageService> logger,
-        string container,
-        string path,
+        [LogProperties] BlobLocation location,
         double durationMs);
 
     [LoggerMessage(
         Level = LogLevel.Error,
-        Message = "Failed to delete file: {Container}/{Path}")]
+        Message = "Failed to delete file: {Location}")]
     public static partial void LogFileDeleteFailed(
         this ILogger<AzureBlobStorageService> logger,
         Exception exception,
-        string container,
-        string path);
+        [LogProperties] BlobLocation location);
 }
