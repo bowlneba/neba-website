@@ -216,4 +216,5 @@ Detailed write-ups live in `docs/learnings/`. Read the matching file before work
 ### Hotfix deploys — `docs/learnings/hotfix.md`
 
 - Emergency fixes go on a `hotfix/*` branch cut from the latest release tag (tagged by hand after each deploy) and deploy with `hotfix.yml` (manual dispatch). Open the PR to `main` right away; never leave a hotfix off `main`.
+- Release version lives in `<Version>` in `Directory.Build.props`. PRs to `main` and hotfixes must have it greater than the latest `v*` tag (`.github/scripts/check-version-bump.sh`); bump it with each deploying change.
 - Hotfixes never run migrations. `hotfix.yml` and `cd.yml` hold copies of the deploy steps; change both.

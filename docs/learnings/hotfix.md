@@ -19,7 +19,7 @@ Use this when a fix must reach production faster than the normal pipeline allows
 2. Commit the fix, then run `/hotfix`. It reviews the commits against the tag, checks tests exist and fail without the fix, runs the affected tests, and writes the PR description and bug report. It prints the push, dispatch, and PR commands but runs none of them.
    Then push the branch. Pushing does not start any workflow.
 3. Run **Hotfix Workflow** from Actions on that branch (`gh workflow run hotfix.yml --ref hotfix/<name>`). It:
-   - checks the branch is `hotfix/*`, descends from the latest `v*` tag (or the `base_tag` input), and touches no migrations;
+   - checks the branch is `hotfix/*`, descends from the latest `v*` tag (or the `base_tag` input), has `<Version>` in `Directory.Build.props` greater than that tag (bump the patch number in the fix commit), and touches no migrations;
    - runs Website tests (xunit, bunit), API tests (including Testcontainers integration), and Jest;
    - waits for `Production` environment approval, deploys `api` and `web`, and smoke tests `/health` on both.
 4. Open a PR from the hotfix branch to `main` right away. The full pipeline runs in parallel with the deploy.
