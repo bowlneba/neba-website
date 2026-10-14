@@ -6,6 +6,8 @@ Lets staff replace or remove a tournament's logo without being able to change an
 
 You need the `Tournaments.EditTournamentLogo` permission. `Tournaments.EditTournament` alone is not enough, so an admin can deny logo changes to a user who can still edit the rest of a tournament. If you lack the permission, no edit-logo button appears.
 
+The Edit Tournament form treats a missing permission and a denial differently. If your role simply does not grant `Tournaments.EditTournamentLogo`, you can still change the logo there, because a logo is part of the tournament. If an admin denied the permission to your account, the form shows the logo read only, other changes still save, and the API refuses a logo change. Creating a tournament is not affected: you can still upload a logo when you create one.
+
 `Tournaments.EditTournamentLogo` is held by the Admin, Webmaster, Manager, and Tournament Director roles. An admin can also grant it to a single user through that user's permission overrides.
 
 ## Steps
