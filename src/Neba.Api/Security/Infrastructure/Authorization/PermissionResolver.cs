@@ -16,9 +16,9 @@ internal static class PermissionResolver
         IEnumerable<string> roleNames,
         CancellationToken cancellationToken)
     {
-        var (granted, _) = await ResolveWithDeniedAsync(securityDbContext, user, roleNames, cancellationToken);
+        var (granted, _) = await ResolveKeysAsync(securityDbContext, user, roleNames, cancellationToken);
 
-        return granted;
+        return [.. granted.Select(key => Permissions.FromValue(key))];
     }
 
     /// <summary>
@@ -26,6 +26,20 @@ internal static class PermissionResolver
     /// claims. Admin holds every permission by definition, so a stored denial never applies to it.
     /// </summary>
     public static async Task<(IReadOnlyCollection<Permissions> Granted, IReadOnlyCollection<Permissions> Denied)> ResolveWithDeniedAsync(
+        SecurityDbContext securityDbContext,
+        ApplicationUser user,
+        IEnumerable<string> roleNames,
+        CancellationToken cancellationToken)
+    {
+        var (granted, denied) = await ResolveKeysAsync(securityDbContext, user, roleNames, cancellationToken);
+
+        return (
+            [.. granted.Select(key => Permissions.FromValue(key))],
+            [.. denied.Select(key => Permissions.FromValue(key))]);
+    }
+
+    // Denied stays a lazy sequence so ResolveAsync, on the login hot path, never materializes it.
+    private static async Task<(IEnumerable<string> Granted, IEnumerable<string> Denied)> ResolveKeysAsync(
         SecurityDbContext securityDbContext,
         ApplicationUser user,
         IEnumerable<string> roleNames,
@@ -51,10 +65,7 @@ internal static class PermissionResolver
         {
             var adminGrants = await roleGrants.ToListAsync(cancellationToken);
 
-            return (
-                [.. adminGrants.Select(row => row.Value!).Distinct(StringComparer.Ordinal)
-                    .Select(key => Permissions.FromValue(key))],
-                []);
+            return (adminGrants.Select(row => row.Value!).Distinct(StringComparer.Ordinal), []);
         }
 
         // Role grants and the user's stored overrides come back from one round trip.
@@ -75,9 +86,7 @@ internal static class PermissionResolver
 
         var overrides = UserPermissionOverrides.FromStoredClaims(storedClaims);
 
-        return (
-            [.. overrides.ApplyTo(permissionKeys).Select(key => Permissions.FromValue(key))],
-            [.. overrides.Removed.Select(key => Permissions.FromValue(key))]);
+        return (overrides.ApplyTo(permissionKeys), overrides.Removed);
     }
 
     private sealed class GrantRow
