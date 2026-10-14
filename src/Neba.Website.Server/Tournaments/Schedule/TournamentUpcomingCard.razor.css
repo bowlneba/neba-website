@@ -19,6 +19,10 @@
 }
 
 /* Logo column */
+.tournament-upcoming-card__logo {
+    position: relative;
+}
+
 .tournament-upcoming-card__logo ::deep .tournament-logo-tile {
     height: 100%;
     min-height: 180px;

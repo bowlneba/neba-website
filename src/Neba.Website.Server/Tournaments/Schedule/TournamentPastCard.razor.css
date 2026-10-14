@@ -19,6 +19,10 @@
 }
 
 /* Logo column */
+.tournament-past-card__logo {
+    position: relative;
+}
+
 .tournament-past-card__logo ::deep .tournament-logo-tile {
     height: 160px;
 }

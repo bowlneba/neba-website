@@ -7,6 +7,7 @@ using Neba.Api.Features.Sponsors.Domain;
 using Neba.Api.Features.Tournaments.Domain;
 using Neba.TestFactory.Attributes;
 using Neba.TestFactory.BowlingCenters;
+using Neba.TestFactory.Storage;
 using Neba.TestFactory.Tournaments;
 
 namespace Neba.Api.Tests.Features.Tournaments.Domain;
@@ -1289,5 +1290,37 @@ public sealed class TournamentTests
         // Assert
         result.IsError.ShouldBeTrue();
         result.FirstError.Code.ShouldBe("TournamentResult.Place.Invalid");
+    }
+
+    [Fact(DisplayName = "ChangeLogo replaces the logo and leaves the other fields unchanged")]
+    public void ChangeLogo_ShouldReplaceLogo_WhenLogoProvided()
+    {
+        // Arrange
+        var previousLogo = StoredFileFactory.Create(container: "tournament-logos", path: "old.png");
+        var newLogo = StoredFileFactory.Create(container: "tournament-logos", path: "new.png");
+        var tournament = TournamentFactory.Create(logo: previousLogo);
+        var name = tournament.Name;
+        var startDate = tournament.StartDate;
+
+        // Act
+        tournament.ChangeLogo(newLogo);
+
+        // Assert
+        tournament.Logo.ShouldBe(newLogo);
+        tournament.Name.ShouldBe(name);
+        tournament.StartDate.ShouldBe(startDate);
+    }
+
+    [Fact(DisplayName = "ChangeLogo clears the logo when null is passed")]
+    public void ChangeLogo_ShouldClearLogo_WhenNull()
+    {
+        // Arrange
+        var tournament = TournamentFactory.Create(logo: StoredFileFactory.Create());
+
+        // Act
+        tournament.ChangeLogo(null);
+
+        // Assert
+        tournament.Logo.ShouldBeNull();
     }
 }

@@ -1,0 +1,25 @@
+@using Neba.Api.Contracts.Security
+
+<AuthorizeView Policy="@Permissions.CanEditTournamentLogoPolicyName">
+    <Authorized>
+        <button type="button" class="tournament-logo-edit @(ShowLabel ? "tournament-logo-edit--labelled" : null)"
+                aria-label="@("Edit logo for " + TournamentName)" @onclick="OnClick">
+            <span class="material-symbols-outlined" aria-hidden="true">edit</span>
+            @if (ShowLabel)
+            {
+                <span>Edit logo</span>
+            }
+        </button>
+    </Authorized>
+</AuthorizeView>
+
+@code {
+    [Parameter, EditorRequired]
+    public string TournamentName { get; set; } = string.Empty;
+
+    [Parameter]
+    public bool ShowLabel { get; set; }
+
+    [Parameter, EditorRequired]
+    public EventCallback OnClick { get; set; }
+}

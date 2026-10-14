@@ -292,6 +292,7 @@
 /* ── Hero: right column (logo tile) ──────────────────────────────────────── */
 
 .td-hero__tile {
+    position: relative;
     min-height: 300px;
     display: flex;
 }

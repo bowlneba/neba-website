@@ -5,10 +5,15 @@ using ErrorOr;
 
 using Microsoft.AspNetCore.Components;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging.Abstractions;
 
+using Neba.Api.Contracts.Tournaments;
 using Neba.TestFactory.Attributes;
 using Neba.TestFactory.Tournaments;
+using Neba.Website.Server.Clock;
 using Neba.Website.Server.History.Champions;
+using Neba.Website.Server.Notifications;
+using Neba.Website.Server.Services;
 using Neba.Website.Server.Tournaments;
 using Neba.Website.Server.Tournaments.Schedule;
 
@@ -23,6 +28,7 @@ public sealed class TournamentsPageTests : IDisposable
     private readonly BunitContext _ctx;
     private readonly FakeTournamentDataService _dataService;
     private readonly BunitAuthorizationContext _authContext;
+    private readonly ToastService _toastService;
 
     public TournamentsPageTests()
     {
@@ -35,9 +41,23 @@ public sealed class TournamentsPageTests : IDisposable
 
         _dataService = new FakeTournamentDataService();
         _ctx.Services.AddSingleton<ITournamentApiService>(_dataService);
+
+        var mockStopwatch = new Mock<IStopwatchProvider>(MockBehavior.Strict);
+        mockStopwatch.Setup(x => x.GetTimestamp()).Returns(0L);
+        mockStopwatch.Setup(x => x.GetElapsedTime(It.IsAny<long>())).Returns(TimeSpan.Zero);
+
+        _toastService = new ToastService();
+
+        _ctx.Services.AddSingleton(new Mock<ITournamentsApi>(MockBehavior.Strict).Object);
+        _ctx.Services.AddSingleton(sp => new ApiExecutor(mockStopwatch.Object, sp.GetRequiredService<NavigationManager>(), NullLogger<ApiExecutor>.Instance));
+        _ctx.Services.AddSingleton(_toastService);
     }
 
-    public void Dispose() => _ctx.Dispose();
+    public void Dispose()
+    {
+        _ctx.Dispose();
+        _toastService.Dispose();
+    }
 
     [Fact(DisplayName = "Should render hero and upcoming tournament card for current season route")]
     public void Render_ShouldShowHeroAndUpcomingCard_WhenCurrentSeasonLoaded()
@@ -70,6 +90,35 @@ public sealed class TournamentsPageTests : IDisposable
         cut.Markup.ShouldContain("Next upcoming tournament");
         cut.Markup.ShouldContain("Spring Classic");
         _dataService.RequestedSeasons.ShouldContain(currentSeason.Label);
+    }
+
+    [Fact(DisplayName = "Should open the edit-logo modal for the selected tournament when an authorized user clicks a card's edit-logo button")]
+    public async Task EditLogo_ShouldOpenModalForTournament_WhenAuthorizedUserClicksCardButton()
+    {
+        // Arrange
+        _authContext.SetAuthorized("test-user");
+        _authContext.SetPolicies(Neba.Api.Contracts.Security.Permissions.CanEditTournamentLogoPolicyName);
+        _ctx.JSInterop.SetupModule("./Components/FileUpload.razor.js")
+            .Setup<string?[]>("getPreviewUrls", _ => true).SetResult([]);
+
+        var currentSeason = MakeSeason(DateTime.Today.Year);
+        var upcoming = SeasonTournamentViewModelFactory.Create(
+            id: "upcoming",
+            name: "Spring Classic",
+            season: currentSeason.Label,
+            startDate: DateOnly.FromDateTime(DateTime.Today.AddDays(10)),
+            endDate: DateOnly.FromDateTime(DateTime.Today.AddDays(10)));
+
+        _dataService.Seasons = [currentSeason];
+        _dataService.SeasonData[currentSeason.Label] = [upcoming];
+
+        var cut = _ctx.Render<TournamentsPage>();
+
+        // Act
+        await cut.Find(".tournament-upcoming-card button.tournament-logo-edit").ClickAsync();
+
+        // Assert
+        cut.Find(".elm-subtitle").TextContent.Trim().ShouldBe("Spring Classic");
     }
 
     [Fact(DisplayName = "Should display the season description in the header eyebrow")]

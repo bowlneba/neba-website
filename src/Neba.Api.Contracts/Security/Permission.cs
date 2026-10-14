@@ -128,6 +128,11 @@ public sealed class Permissions
     public static readonly Permissions EditTournament = new("Tournaments.EditTournament", "Edit Tournament");
 
     /// <summary>
+    /// Permission to replace or remove a tournament's logo without being able to edit the rest of the tournament.
+    /// </summary>
+    public static readonly Permissions EditTournamentLogo = new("Tournaments.EditTournamentLogo", "Edit Tournament Logo");
+
+    /// <summary>
     /// Permission to delete an existing tournament.
     /// </summary>
     public static readonly Permissions DeleteTournament = new("Tournaments.DeleteTournament", "Delete Tournament");
@@ -153,6 +158,35 @@ public sealed class Permissions
     /// Policy name satisfied when the caller holds any permission in <see cref="TournamentManagementPermissions"/>.
     /// </summary>
     public const string CanManageTournamentsPolicyName = "CanManageTournaments";
+
+    /// <summary>
+    /// Permissions that let a caller replace or remove a tournament's logo.
+    /// </summary>
+    public static readonly IReadOnlyCollection<Permissions> TournamentLogoEditPermissions =
+    [
+        EditTournament,
+        EditTournamentLogo
+    ];
+
+    /// <summary>
+    /// Policy name satisfied when the caller holds any permission in <see cref="TournamentLogoEditPermissions"/>.
+    /// </summary>
+    public const string CanEditTournamentLogoPolicyName = "CanEditTournamentLogo";
+
+    /// <summary>
+    /// Permissions that let a caller upload a tournament logo to staging.
+    /// </summary>
+    public static readonly IReadOnlyCollection<Permissions> TournamentLogoUploadPermissions =
+    [
+        CreateTournament,
+        EditTournament,
+        EditTournamentLogo
+    ];
+
+    /// <summary>
+    /// Policy name satisfied when the caller holds any permission in <see cref="TournamentLogoUploadPermissions"/>.
+    /// </summary>
+    public const string CanUploadTournamentLogoPolicyName = "CanUploadTournamentLogo";
 
     #endregion
 

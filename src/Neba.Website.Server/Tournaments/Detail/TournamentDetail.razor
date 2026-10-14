@@ -6,6 +6,10 @@
 @using Neba.Api.Contracts.Sponsors
 @using Neba.Api.Contracts.Tournaments
 @using Neba.Api.Contracts.Tournaments.AddTournamentSponsor
+@using Neba.Api.Contracts.Tournaments.CreateTournament
+@using Neba.Api.Contracts.Tournaments.EditTournamentLogo
+@using Neba.Api.Contracts.Uploads
+@using Refit
 @using Neba.Website.Server.Services
 @using Neba.Website.Server.Time
 @using System.Globalization
@@ -258,6 +262,8 @@ else
 
                     <div class="td-hero__tile">
                         <img src="@_model.DisplayLogoSrc" alt="@(_model.Name + " logo")" class="td-hero__logo-img" />
+                        <TournamentLogoEditButton TournamentName="@_model.Name" ShowLabel="true"
+                                                  OnClick="@(() => _isEditLogoOpen = true)" />
                     </div>
 
                 </div>
@@ -488,6 +494,14 @@ else
 
     </main>
 
+    <EditTournamentLogoModal IsOpen="@_isEditLogoOpen"
+                             TournamentName="@_model!.Name"
+                             CurrentLogoUrl="@_model.LogoUrl"
+                             OnClose="@(() => _isEditLogoOpen = false)"
+                             OnSaved="HandleLogoSavedAsync"
+                             OnUploadRequestedAsync="UploadLogoAsync"
+                             OnSubmitRequestedAsync="SaveLogoAsync" />
+
     <ConfirmActionModal IsOpen="@_isDeleteConfirmOpen"
                         Title="Delete tournament?"
                         Message="@($"This permanently removes \"{_model!.Name}\", its sponsor links, and oil pattern assignments. This can't be undone.")"
@@ -607,6 +621,34 @@ else
             "RemoveTournamentSponsor",
             c => TournamentsApi.RemoveTournamentSponsorAsync(Id, sponsorId, c),
             ct);
+
+    private bool _isEditLogoOpen;
+
+    private Task<ErrorOr<UploadedFileResponse>> UploadLogoAsync(
+        Stream stream, string fileName, string contentType, IProgress<int> progress, CancellationToken ct)
+        => ApiExecutor.ExecuteAsync(
+            "TournamentsApi",
+            "UploadTournamentLogo",
+            c => TournamentsApi.UploadTournamentLogoAsync(new StreamPart(stream, fileName, contentType), c),
+            ct);
+
+    private Task<ErrorOr<Success>> SaveLogoAsync(TournamentLogoInput? logo, CancellationToken ct)
+    {
+        var request = new EditTournamentLogoRequest { Id = Id, Logo = logo };
+
+        return ApiExecutor.ExecuteAsync(
+            "TournamentsApi",
+            "EditTournamentLogo",
+            c => TournamentsApi.EditTournamentLogoAsync(Id, request, c),
+            ct);
+    }
+
+    private async Task HandleLogoSavedAsync()
+    {
+        _isEditLogoOpen = false;
+        await ReloadTournamentAsync();
+        ToastService.Show("Logo Saved", "The tournament logo was updated.", NotifySeverity.Success);
+    }
 
     private void OpenDeleteConfirm()
     {

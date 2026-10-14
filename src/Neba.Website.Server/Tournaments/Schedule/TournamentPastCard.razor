@@ -5,6 +5,8 @@
         <div class="tournament-past-card__logo">
             <img src="@Tournament.DisplayLogoSrc"
                  alt="@Tournament.Name logo" class="tournament-past-card__logo-img" />
+            <TournamentLogoEditButton TournamentName="@Tournament.Name"
+                                      OnClick="@(() => OnEditLogo.InvokeAsync(Tournament))" />
         </div>
 
         <div class="tournament-past-card__content">
@@ -71,6 +73,9 @@
 </div>
 
 @code {
+    [Parameter]
+    public EventCallback<SeasonTournamentViewModel> OnEditLogo { get; set; }
+
     [Parameter][EditorRequired]
     public SeasonTournamentViewModel Tournament { get; set; } = default!;
 }

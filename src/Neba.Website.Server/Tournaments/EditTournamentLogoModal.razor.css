@@ -1,0 +1,90 @@
+.elm-subtitle {
+    font-size: 0.8125rem;
+    color: var(--neba-gray-500);
+    margin-top: 0.125rem;
+}
+
+.elm-preview {
+    display: grid;
+    grid-template-columns: 132px 1fr;
+    gap: 1.25rem;
+    align-items: center;
+    margin-bottom: 1.25rem;
+}
+
+.elm-tile {
+    width: 132px;
+    height: 132px;
+    border-radius: var(--neba-radius-lg);
+    overflow: hidden;
+    background: var(--neba-gray-100);
+    border: 1px solid var(--neba-gray-200);
+    display: grid;
+    place-items: center;
+}
+
+.elm-tile img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+}
+
+.elm-tile--none {
+    border-style: dashed;
+    color: var(--neba-gray-500);
+    font-size: 0.8125rem;
+}
+
+.elm-badge {
+    display: inline-block;
+    font-size: 0.75rem;
+    font-weight: 600;
+    padding: 0.125rem 0.5rem;
+    border-radius: 999px;
+    background: var(--neba-blue-100);
+    color: var(--neba-blue-brand);
+    margin-bottom: 0.25rem;
+}
+
+.elm-state {
+    margin: 0;
+    font-size: 0.9375rem;
+    font-weight: 600;
+}
+
+.elm-help {
+    margin: 0.125rem 0 0.5rem;
+    font-size: 0.875rem;
+    color: var(--neba-gray-600);
+}
+
+.elm-link-danger {
+    background: none;
+    border: 0;
+    padding: 0.25rem 0;
+    min-height: 44px;
+    color: #B42318;
+    font-size: 0.875rem;
+    font-weight: 600;
+    text-decoration: underline;
+    text-underline-offset: 3px;
+    cursor: pointer;
+}
+
+.elm-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 0.75rem;
+}
+
+@media (max-width: 640px) {
+    .elm-preview {
+        grid-template-columns: 96px 1fr;
+    }
+
+    .elm-tile {
+        width: 96px;
+        height: 96px;
+    }
+}

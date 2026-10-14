@@ -3,7 +3,17 @@
 @implements IAsyncDisposable
 @inject ITournamentApiService DataService
 @inject NavigationManager Nav
+@inject ApiExecutor ApiExecutor
+@inject ITournamentsApi TournamentsApi
+@inject ToastService ToastService
+@using ErrorOr
 @using Neba.Api.Contracts.Security
+@using Neba.Api.Contracts.Tournaments
+@using Neba.Api.Contracts.Tournaments.CreateTournament
+@using Neba.Api.Contracts.Tournaments.EditTournamentLogo
+@using Neba.Api.Contracts.Uploads
+@using Neba.Website.Server.Services
+@using Refit
 
 @rendermode @(new InteractiveServerRenderMode(prerender: false))
 @preservewhitespace false
@@ -25,7 +35,7 @@
 
         @if (ShowHero)
         {
-            <TournamentHero Tournament="@(HeroTournament!)" />
+            <TournamentHero Tournament="@(HeroTournament!)" OnEditLogo="OpenEditLogo" />
         }
         else
         {
@@ -66,11 +76,11 @@
                     {
                         @if (_activeTab == TournamentTab.Upcoming)
                         {
-                            <TournamentUpcomingCard Tournament="@t" />
+                            <TournamentUpcomingCard Tournament="@t" OnEditLogo="OpenEditLogo" />
                         }
                         else
                         {
-                            <TournamentPastCard Tournament="@t" />
+                            <TournamentPastCard Tournament="@t" OnEditLogo="OpenEditLogo" />
                         }
                     }
 
@@ -97,6 +107,14 @@
     </Authorized>
 </AuthorizeView>
 
+<EditTournamentLogoModal IsOpen="@(_logoTournament is not null)"
+                         TournamentName="@(_logoTournament?.Name ?? string.Empty)"
+                         CurrentLogoUrl="@_logoTournament?.TournamentLogoUrl"
+                         OnClose="CloseEditLogo"
+                         OnSaved="HandleLogoSavedAsync"
+                         OnUploadRequestedAsync="UploadLogoAsync"
+                         OnSubmitRequestedAsync="SaveLogoAsync" />
+
 @code {
     [SupplyParameterFromQuery(Name = "year")]
     public int? Year { get; set; }
@@ -119,6 +137,8 @@
     private SeasonTournamentViewModel? _nextSeasonHeroTournament;
     private string? _pageNotice;
     private bool _isLoading = true;
+
+    private SeasonTournamentViewModel? _logoTournament;
 
     private CancellationTokenSource _cts = new();
     private bool _disposed;
@@ -301,6 +321,44 @@ SeasonViewModel? current)
     }
 
     // ── Handlers ───────────────────────────────────────────────────────────
+    private void OpenEditLogo(SeasonTournamentViewModel tournament)
+        => _logoTournament = tournament;
+
+    private void CloseEditLogo()
+        => _logoTournament = null;
+
+    private Task<ErrorOr<UploadedFileResponse>> UploadLogoAsync(
+        Stream stream, string fileName, string contentType, IProgress<int> progress, CancellationToken ct)
+        => ApiExecutor.ExecuteAsync(
+            "TournamentsApi",
+            "UploadTournamentLogo",
+            c => TournamentsApi.UploadTournamentLogoAsync(new StreamPart(stream, fileName, contentType), c),
+            ct);
+
+    private Task<ErrorOr<Success>> SaveLogoAsync(TournamentLogoInput? logo, CancellationToken ct)
+    {
+        var id = _logoTournament!.Id;
+        var request = new EditTournamentLogoRequest { Id = id, Logo = logo };
+
+        return ApiExecutor.ExecuteAsync(
+            "TournamentsApi",
+            "EditTournamentLogo",
+            c => TournamentsApi.EditTournamentLogoAsync(id, request, c),
+            ct);
+    }
+
+    private async Task HandleLogoSavedAsync()
+    {
+        _logoTournament = null;
+
+        if (_availableSeasons is not null)
+        {
+            await LoadTournamentsAndHeroAsync(_availableSeasons, _cts.Token);
+        }
+
+        ToastService.Show("Logo Saved", "The tournament logo was updated.", NotifySeverity.Success);
+    }
+
     private void HandleTabChanged(TournamentTab tab)
     {
         if (tab == TournamentTab.Upcoming && !_isCurrentSeason)

@@ -50,3 +50,4 @@ You need the `Tournaments.EditTournament` permission, enforced via the dynamic `
 
 - [`docs/policies/README.md`](../policies/README.md) — the `Permission:{value}` policy this action requires and how it's evaluated.
 - [`docs/help/create-tournament.md`](create-tournament.md) — the equivalent doc for adding a new tournament.
+- [`docs/help/edit-tournament-logo.md`](edit-tournament-logo.md) — changing only the logo, with a narrower permission.

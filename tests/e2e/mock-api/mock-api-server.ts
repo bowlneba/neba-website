@@ -985,6 +985,7 @@ const ALL_PERMISSION_VALUES = [
   'Tournaments.CreateTournament',
   'Tournaments.DeleteTournament',
   'Tournaments.EditTournament',
+  'Tournaments.EditTournamentLogo',
   'Tournaments.ManageSponsors',
   'Tournaments.ManageTournamentStatus',
 ];
@@ -1006,6 +1007,7 @@ const MOCK_ROLES = {
         'Sponsors.EditSponsor',
         'Tournaments.CreateTournament',
         'Tournaments.EditTournament',
+        'Tournaments.EditTournamentLogo',
         'Tournaments.ManageSponsors',
         'Tournaments.ManageTournamentStatus',
       ],
@@ -1016,6 +1018,7 @@ const MOCK_ROLES = {
       permissions: [
         'Tournaments.CreateTournament',
         'Tournaments.EditTournament',
+        'Tournaments.EditTournamentLogo',
         'Tournaments.ManageSponsors',
         'Tournaments.ManageTournamentStatus',
       ],
@@ -1581,6 +1584,17 @@ async function handleRequest(req: IncomingMessage, res: ServerResponse): Promise
   if (req.method === 'PUT' && pathname.startsWith('/security/users/')) {
     if (sendMockOverrideErrorIfSet(res, pathname)) return;
 
+    lastRequestBodies.set('PUT ' + pathname, await readRequestBody(req));
+
+    res.writeHead(204);
+    res.end();
+    return;
+  }
+
+  if (req.method === 'PUT' && pathname.startsWith('/tournaments/') && pathname.endsWith('/logo')) {
+    if (sendMockOverrideErrorIfSet(res, pathname)) return;
+
+    // Recorded so a test can assert on the submitted logo (null when the logo was removed).
     lastRequestBodies.set('PUT ' + pathname, await readRequestBody(req));
 
     res.writeHead(204);
