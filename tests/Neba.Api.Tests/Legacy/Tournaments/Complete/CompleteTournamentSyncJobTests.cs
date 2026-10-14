@@ -243,6 +243,29 @@ public sealed class CompleteTournamentSyncJobTests(AppDbContextFixture fixture, 
         seasonListValueAfterSync.ShouldBe("fresh-value");
     }
 
+    [Fact(DisplayName = "SyncAsync should evict the season stats cache tag when the tournament is completed for the first time")]
+    public async Task SyncAsync_ShouldEvictSeasonStatsCacheTag_WhenTournamentCompletedForTheFirstTime()
+    {
+        // Arrange
+        var ct = TestContext.Current.CancellationToken;
+        var tournament = await CreateTournamentAsync(legacyTournamentId: 42, TournamentType.Singles, ct);
+        await InsertEntriesAsync(legacyTournamentId: 42, entryCount: TournamentType.Singles.MinimumEntries);
+        var (jobsMock, _) = CreateJobsMock();
+
+        var cache = _serviceProvider.GetRequiredService<IFusionCache>();
+        const string statsCacheKey = "complete-tournament-season-stats-cache-test";
+        await cache.GetOrSetAsync(statsCacheKey, _ => Task.FromResult("stale-cached-value"), tags: [$"neba:stats:seasons:{tournament.SeasonId}"], token: ct);
+
+        var job = CreateJob(jobsMock.Object);
+
+        // Act
+        await job.SyncAsync(42, ct);
+
+        // Assert
+        var valueAfterSync = await cache.GetOrSetAsync(statsCacheKey, _ => Task.FromResult("fresh-value"), token: ct);
+        valueAfterSync.ShouldBe("fresh-value");
+    }
+
     [Fact(DisplayName = "SyncAsync should still chain SyncTournamentResultsJob and GenerateSeasonStatsJob when the tournament was already finalized")]
     public async Task SyncAsync_ShouldStillChain_WhenTournamentAlreadyFinalized()
     {

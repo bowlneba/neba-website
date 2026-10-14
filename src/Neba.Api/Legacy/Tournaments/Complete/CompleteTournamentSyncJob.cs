@@ -72,6 +72,10 @@ internal sealed class CompleteTournamentSyncJob(
             // season's tournament list (e.g. complete/upcoming filtering).
             await cache.RemoveByTagAsync($"neba:tournaments:{tournament.Id}", token: ct);
             await cache.RemoveByTagAsync($"neba:tournaments:{tournament.SeasonId}", token: ct);
+
+            // A completed tournament counts toward the season's stat minimums, so cached season stats
+            // are stale now rather than when GenerateSeasonStatsJob runs ten minutes later.
+            await cache.RemoveByTagAsync($"neba:stats:seasons:{tournament.SeasonId}", token: ct);
         }
 
         jobs.Enqueue<SyncTournamentResultsJob>(job => job.SyncAsync(legacyTournamentId, CancellationToken.None));
