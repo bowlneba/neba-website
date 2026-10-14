@@ -16,6 +16,21 @@ internal static class PermissionResolver
         IEnumerable<string> roleNames,
         CancellationToken cancellationToken)
     {
+        var (granted, _) = await ResolveWithDeniedAsync(securityDbContext, user, roleNames, cancellationToken);
+
+        return granted;
+    }
+
+    /// <summary>
+    /// The effective permissions plus the ones a stored denial withholds, from one read of the user's
+    /// claims. Admin holds every permission by definition, so a stored denial never applies to it.
+    /// </summary>
+    public static async Task<(IReadOnlyCollection<Permissions> Granted, IReadOnlyCollection<Permissions> Denied)> ResolveWithDeniedAsync(
+        SecurityDbContext securityDbContext,
+        ApplicationUser user,
+        IEnumerable<string> roleNames,
+        CancellationToken cancellationToken)
+    {
         var roles = roleNames.ToList();
         var isAdmin = roles.Contains(Roles.Admin, StringComparer.OrdinalIgnoreCase);
 
@@ -36,8 +51,10 @@ internal static class PermissionResolver
         {
             var adminGrants = await roleGrants.ToListAsync(cancellationToken);
 
-            return [.. adminGrants.Select(row => row.Value!).Distinct(StringComparer.Ordinal)
-                .Select(key => Permissions.FromValue(key))];
+            return (
+                [.. adminGrants.Select(row => row.Value!).Distinct(StringComparer.Ordinal)
+                    .Select(key => Permissions.FromValue(key))],
+                []);
         }
 
         // Role grants and the user's stored overrides come back from one round trip.
@@ -58,34 +75,9 @@ internal static class PermissionResolver
 
         var overrides = UserPermissionOverrides.FromStoredClaims(storedClaims);
 
-        return [.. overrides.ApplyTo(permissionKeys).Select(key => Permissions.FromValue(key))];
-    }
-
-    /// <summary>
-    /// The permissions withheld from this user by a stored denial. Admin holds every permission by
-    /// definition, so a stored denial never applies to it.
-    /// </summary>
-    public static async Task<IReadOnlyCollection<Permissions>> ResolveDeniedAsync(
-        SecurityDbContext securityDbContext,
-        Ulid userId,
-        IEnumerable<string> roleNames,
-        CancellationToken cancellationToken)
-    {
-        if (roleNames.Contains(Roles.Admin, StringComparer.OrdinalIgnoreCase))
-        {
-            return [];
-        }
-
-        var denied = await securityDbContext.UserClaims
-            .AsNoTracking()
-            .Where(claim => claim.UserId == userId && claim.ClaimType == Permissions.DeniedClaimType)
-            .Select(claim => claim.ClaimValue!)
-            .ToListAsync(cancellationToken);
-
-        return [.. denied
-            .Distinct(StringComparer.Ordinal)
-            .Where(value => Permissions.TryFromValue(value, out _))
-            .Select(value => Permissions.FromValue(value))];
+        return (
+            [.. overrides.ApplyTo(permissionKeys).Select(key => Permissions.FromValue(key))],
+            [.. overrides.Removed.Select(key => Permissions.FromValue(key))]);
     }
 
     private sealed class GrantRow

@@ -227,6 +227,55 @@ public sealed class PermissionResolverTests(SecurityDbContextFixture fixture)
         result.ShouldBe([Permissions.CreateArticle]);
     }
 
+    [Fact(DisplayName = "ResolveWithDeniedAsync should return the granted permissions and the denied ones together")]
+    public async Task ResolveWithDeniedAsync_ShouldReturnGrantedAndDenied()
+    {
+        // Arrange
+        await SeedRoleAsync(Roles.Journalist, Permissions.CreateArticle.Value, Permissions.EditArticle.Value);
+        var user = await SeedUserAsync(new Claim(Permissions.DeniedClaimType, Permissions.CreateArticle.Value));
+        await using var context = fixture.CreateDbContext();
+
+        // Act
+        var (granted, denied) = await PermissionResolver.ResolveWithDeniedAsync(
+            context, user, [Roles.Journalist], TestContext.Current.CancellationToken);
+
+        // Assert
+        granted.ShouldBe([Permissions.EditArticle]);
+        denied.ShouldBe([Permissions.CreateArticle]);
+    }
+
+    [Fact(DisplayName = "ResolveWithDeniedAsync should return no denied permissions for a user who holds the Admin role")]
+    public async Task ResolveWithDeniedAsync_ShouldReturnNoDenied_WhenUserIsAdmin()
+    {
+        // Arrange
+        await SeedRoleAsync(Roles.Admin, Permissions.CreateArticle.Value);
+        var user = await SeedUserAsync(new Claim(Permissions.DeniedClaimType, Permissions.CreateArticle.Value));
+        await using var context = fixture.CreateDbContext();
+
+        // Act
+        var (granted, denied) = await PermissionResolver.ResolveWithDeniedAsync(
+            context, user, [Roles.Admin], TestContext.Current.CancellationToken);
+
+        // Assert
+        granted.ShouldBe([Permissions.CreateArticle]);
+        denied.ShouldBeEmpty();
+    }
+
+    [Fact(DisplayName = "ResolveWithDeniedAsync should skip a stored denial whose value is no longer a known permission")]
+    public async Task ResolveWithDeniedAsync_ShouldSkipUnknownDeniedValue()
+    {
+        // Arrange
+        var user = await SeedUserAsync(new Claim(Permissions.DeniedClaimType, "retired.permission"));
+        await using var context = fixture.CreateDbContext();
+
+        // Act
+        var (_, denied) = await PermissionResolver.ResolveWithDeniedAsync(
+            context, user, [], TestContext.Current.CancellationToken);
+
+        // Assert
+        denied.ShouldBeEmpty();
+    }
+
     [Fact(DisplayName = "ResolveAsync should skip a stored override whose value is no longer a known permission")]
     public async Task ResolveAsync_ShouldSkipUnknownStoredValue()
     {
