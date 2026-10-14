@@ -4,9 +4,9 @@ Lets staff replace or remove a tournament's logo without being able to change an
 
 ## Prerequisites
 
-You need either the `Tournaments.EditTournamentLogo` permission (logo changes only) or `Tournaments.EditTournament` (full edit, which already includes the logo). Both satisfy the `CanEditTournamentLogo` policy — see [`docs/policies/README.md`](../policies/README.md). If you have neither, no edit-logo button appears.
+You need the `Tournaments.EditTournamentLogo` permission. `Tournaments.EditTournament` alone is not enough, so an admin can deny logo changes to a user who can still edit the rest of a tournament. If you lack the permission, no edit-logo button appears.
 
-`Tournaments.EditTournamentLogo` is held by the Manager and Tournament Director roles. An admin can also grant it to a single user through that user's permission overrides.
+`Tournaments.EditTournamentLogo` is held by the Admin, Webmaster, Manager, and Tournament Director roles. An admin can also grant it to a single user through that user's permission overrides.
 
 ## Steps
 
@@ -34,4 +34,4 @@ You need either the `Tournaments.EditTournamentLogo` permission (logo changes on
 ## Related
 
 - [`docs/help/edit-tournament.md`](edit-tournament.md) — the full tournament edit, which also covers the logo.
-- [`docs/policies/README.md`](../policies/README.md) — the `CanEditTournamentLogo` and `CanUploadTournamentLogo` policies.
+- [`docs/policies/README.md`](../policies/README.md) — the `CanUploadTournamentLogo` policy.

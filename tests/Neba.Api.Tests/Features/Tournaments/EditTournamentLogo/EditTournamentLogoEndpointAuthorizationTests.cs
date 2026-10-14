@@ -179,8 +179,8 @@ public sealed class EditTournamentLogoEndpointAuthorizationTests(SecurityDbConte
         response.StatusCode.ShouldBe(HttpStatusCode.NoContent);
     }
 
-    [Fact(DisplayName = "PUT /tournaments/{id}/logo returns 204 when the token has only the Tournaments.EditTournament permission")]
-    public async Task Edit_ShouldReturn204_WhenTokenHasOnlyEditTournamentPermission()
+    [Fact(DisplayName = "PUT /tournaments/{id}/logo returns 403 when the token has only the Tournaments.EditTournament permission")]
+    public async Task Edit_ShouldReturn403_WhenTokenHasOnlyEditTournamentPermission()
     {
         // Arrange
         var ct = TestContext.Current.CancellationToken;
@@ -190,6 +190,6 @@ public sealed class EditTournamentLogoEndpointAuthorizationTests(SecurityDbConte
         using var response = await SendEditAsync(token, ct);
 
         // Assert
-        response.StatusCode.ShouldBe(HttpStatusCode.NoContent);
+        response.StatusCode.ShouldBe(HttpStatusCode.Forbidden);
     }
 }

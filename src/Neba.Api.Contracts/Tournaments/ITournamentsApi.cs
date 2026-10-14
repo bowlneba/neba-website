@@ -86,8 +86,7 @@ public interface ITournamentsApi
     Task<IApiResponse> EditTournamentAsync(string id, EditTournamentRequest request, CancellationToken cancellationToken = default);
 
     /// <summary>
-    /// Replaces or removes a tournament's logo. Requires the Tournaments.EditTournament or
-    /// Tournaments.EditTournamentLogo permission.
+    /// Replaces or removes a tournament's logo. Requires the Tournaments.EditTournamentLogo permission.
     /// </summary>
     [Put("/tournaments/{id}/logo")]
     Task<IApiResponse> EditTournamentLogoAsync(string id, EditTournamentLogoRequest request, CancellationToken cancellationToken = default);

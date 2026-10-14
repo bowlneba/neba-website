@@ -10,7 +10,7 @@ internal sealed class EditTournamentLogoSummary : Summary<EditTournamentLogoEndp
     public EditTournamentLogoSummary()
     {
         Summary = "Replaces or removes a tournament's logo.";
-        Description = "Sets the tournament's logo to a previously uploaded file, or clears it when the logo is null. Does not change any other tournament field. Requires the Tournaments.EditTournament or Tournaments.EditTournamentLogo permission.";
+        Description = "Sets the tournament's logo to a previously uploaded file, or clears it when the logo is null. Does not change any other tournament field. Requires the Tournaments.EditTournamentLogo permission.";
 
         // Id and Logo sit directly on the request. If a third logo host or a second field appears,
         // wrap them in an input object like the other command requests.
@@ -29,7 +29,7 @@ internal sealed class EditTournamentLogoSummary : Summary<EditTournamentLogoEndp
         Response(204, "Tournament logo updated.");
         Response(400, "Id or the logo fields failed structural validation.");
         Response(401, "No valid bearer token provided.");
-        Response(403, "Authenticated user has neither the Tournaments.EditTournament nor the Tournaments.EditTournamentLogo permission.");
+        Response(403, "Authenticated user does not have the Tournaments.EditTournamentLogo permission.");
         Response(404, "No tournament exists with the given Id.");
         Response(422, "The logo is not a file uploaded through the logo upload endpoint.");
     }

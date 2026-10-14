@@ -76,38 +76,6 @@ public sealed class PolicyExtensionsTests
         result.Succeeded.ShouldBeFalse();
     }
 
-    [Theory(DisplayName = "AddNebaPolicies should succeed for CanEditTournamentLogo when caller has EditTournament or EditTournamentLogo")]
-    [InlineData("Tournaments.EditTournament")]
-    [InlineData("Tournaments.EditTournamentLogo")]
-    public async Task AddNebaPolicies_ShouldSucceedForCanEditTournamentLogo_WhenCallerHasEditPermission(string permission)
-    {
-        // Arrange
-        var provider = BuildAuthorizationServiceProvider();
-        var authorizationService = provider.GetRequiredService<IAuthorizationService>();
-        var principal = new ClaimsPrincipal(new ClaimsIdentity([new Claim(Permissions.ClaimType, permission)]));
-
-        // Act
-        var result = await authorizationService.AuthorizeAsync(principal, Permissions.CanEditTournamentLogoPolicyName);
-
-        // Assert
-        result.Succeeded.ShouldBeTrue();
-    }
-
-    [Fact(DisplayName = "AddNebaPolicies should fail for CanEditTournamentLogo when caller has only CreateTournament")]
-    public async Task AddNebaPolicies_ShouldFailForCanEditTournamentLogo_WhenCallerHasOnlyCreateTournament()
-    {
-        // Arrange
-        var provider = BuildAuthorizationServiceProvider();
-        var authorizationService = provider.GetRequiredService<IAuthorizationService>();
-        var principal = new ClaimsPrincipal(new ClaimsIdentity([new Claim(Permissions.ClaimType, Permissions.CreateTournament.Value)]));
-
-        // Act
-        var result = await authorizationService.AuthorizeAsync(principal, Permissions.CanEditTournamentLogoPolicyName);
-
-        // Assert
-        result.Succeeded.ShouldBeFalse();
-    }
-
     [Theory(DisplayName = "AddNebaPolicies should succeed for CanUploadTournamentLogo when caller has CreateTournament, EditTournament, or EditTournamentLogo")]
     [InlineData("Tournaments.CreateTournament")]
     [InlineData("Tournaments.EditTournament")]

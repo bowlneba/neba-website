@@ -846,7 +846,7 @@ tournamentType: TournamentType.Doubles, logoUrl: null));
     {
         // Arrange
         _authContext.SetAuthorized("test-user");
-        _authContext.SetPolicies(Permissions.CanEditTournamentLogoPolicyName);
+        _authContext.SetPolicies(Permissions.EditTournamentLogo.PolicyName);
         _ctx.JSInterop.SetupModule("./Components/FileUpload.razor.js")
             .Setup<string?[]>("getPreviewUrls", _ => true).SetResult([]);
 
@@ -866,7 +866,7 @@ tournamentType: TournamentType.Doubles, logoUrl: null));
     {
         // Arrange
         _authContext.SetAuthorized("test-user");
-        _authContext.SetPolicies(Permissions.CanEditTournamentLogoPolicyName);
+        _authContext.SetPolicies(Permissions.EditTournamentLogo.PolicyName);
         _ctx.JSInterop.SetupModule("./Components/FileUpload.razor.js")
             .Setup<string?[]>("getPreviewUrls", _ => true).SetResult([]);
 

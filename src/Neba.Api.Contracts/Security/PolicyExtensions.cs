@@ -24,9 +24,6 @@ public static class PolicyExtensions
             builder.AddPolicy(Permissions.CanManageTournamentsPolicyName, policy => policy
                 .RequireAssertion(context => context.User.HasAnyPermission(Permissions.TournamentManagementPermissions)));
 
-            builder.AddPolicy(Permissions.CanEditTournamentLogoPolicyName, policy => policy
-                .RequireAssertion(context => context.User.HasAnyPermission(Permissions.TournamentLogoEditPermissions)));
-
             builder.AddPolicy(Permissions.CanUploadTournamentLogoPolicyName, policy => policy
                 .RequireAssertion(context => context.User.HasAnyPermission(Permissions.TournamentLogoUploadPermissions)));
 

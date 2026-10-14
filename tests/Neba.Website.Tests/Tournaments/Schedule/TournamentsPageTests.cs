@@ -97,7 +97,7 @@ public sealed class TournamentsPageTests : IDisposable
     {
         // Arrange
         _authContext.SetAuthorized("test-user");
-        _authContext.SetPolicies(Neba.Api.Contracts.Security.Permissions.CanEditTournamentLogoPolicyName);
+        _authContext.SetPolicies(Neba.Api.Contracts.Security.Permissions.EditTournamentLogo.PolicyName);
         _ctx.JSInterop.SetupModule("./Components/FileUpload.razor.js")
             .Setup<string?[]>("getPreviewUrls", _ => true).SetResult([]);
 

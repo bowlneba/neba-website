@@ -26,7 +26,7 @@ internal sealed class EditTournamentLogoEndpoint(Messaging.ICommandHandler<EditT
             .WithVersionSet("Tournaments")
             .MapToApiVersion(new ApiVersion(1, 0)));
 
-        Policies(PermissionCatalog.CanEditTournamentLogoPolicyName);
+        Policies(PermissionCatalog.EditTournamentLogo.PolicyName);
 
         Description(description => description
             .WithName("EditTournamentLogo")

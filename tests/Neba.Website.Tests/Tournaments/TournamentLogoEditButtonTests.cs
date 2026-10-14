@@ -29,12 +29,12 @@ public sealed class TournamentLogoEditButtonTests : IDisposable
             p.Add(x => x.OnClick, onClick ?? (() => { }));
         });
 
-    [Fact(DisplayName = "Should render the button when the caller satisfies the CanEditTournamentLogo policy")]
+    [Fact(DisplayName = "Should render the button when the caller holds the EditTournamentLogo permission")]
     public void Render_ShouldShowButton_WhenPolicySatisfied()
     {
         // Arrange
         _authContext.SetAuthorized("test-user");
-        _authContext.SetPolicies(Permissions.CanEditTournamentLogoPolicyName);
+        _authContext.SetPolicies(Permissions.EditTournamentLogo.PolicyName);
 
         // Act
         var cut = Render();
@@ -74,7 +74,7 @@ public sealed class TournamentLogoEditButtonTests : IDisposable
     {
         // Arrange
         _authContext.SetAuthorized("test-user");
-        _authContext.SetPolicies(Permissions.CanEditTournamentLogoPolicyName);
+        _authContext.SetPolicies(Permissions.EditTournamentLogo.PolicyName);
 
         // Act
         var cut = Render();
@@ -90,7 +90,7 @@ public sealed class TournamentLogoEditButtonTests : IDisposable
     {
         // Arrange
         _authContext.SetAuthorized("test-user");
-        _authContext.SetPolicies(Permissions.CanEditTournamentLogoPolicyName);
+        _authContext.SetPolicies(Permissions.EditTournamentLogo.PolicyName);
 
         // Act
         var cut = Render(showLabel);
@@ -104,7 +104,7 @@ public sealed class TournamentLogoEditButtonTests : IDisposable
     {
         // Arrange
         _authContext.SetAuthorized("test-user");
-        _authContext.SetPolicies(Permissions.CanEditTournamentLogoPolicyName);
+        _authContext.SetPolicies(Permissions.EditTournamentLogo.PolicyName);
         var clicks = 0;
         var cut = Render(onClick: () => clicks++);
 

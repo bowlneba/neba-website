@@ -160,20 +160,6 @@ public sealed class Permissions
     public const string CanManageTournamentsPolicyName = "CanManageTournaments";
 
     /// <summary>
-    /// Permissions that let a caller replace or remove a tournament's logo.
-    /// </summary>
-    public static readonly IReadOnlyCollection<Permissions> TournamentLogoEditPermissions =
-    [
-        EditTournament,
-        EditTournamentLogo
-    ];
-
-    /// <summary>
-    /// Policy name satisfied when the caller holds any permission in <see cref="TournamentLogoEditPermissions"/>.
-    /// </summary>
-    public const string CanEditTournamentLogoPolicyName = "CanEditTournamentLogo";
-
-    /// <summary>
     /// Permissions that let a caller upload a tournament logo to staging.
     /// </summary>
     public static readonly IReadOnlyCollection<Permissions> TournamentLogoUploadPermissions =

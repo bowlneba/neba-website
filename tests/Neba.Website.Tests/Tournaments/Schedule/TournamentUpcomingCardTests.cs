@@ -147,7 +147,7 @@ public sealed class TournamentUpcomingCardTests : IDisposable
     {
         // Arrange
         _authContext.SetAuthorized("test-user");
-        _authContext.SetPolicies(Permissions.CanEditTournamentLogoPolicyName);
+        _authContext.SetPolicies(Permissions.EditTournamentLogo.PolicyName);
         var tournament = SeasonTournamentViewModelFactory.Create();
         SeasonTournamentViewModel? raised = null;
 
