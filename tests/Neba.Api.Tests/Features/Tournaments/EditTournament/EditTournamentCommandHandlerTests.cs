@@ -492,6 +492,10 @@ public sealed class EditTournamentCommandHandlerTests(AppDbContextFixture fixtur
 
         // Assert
         result.IsError.ShouldBeFalse();
+        var persisted = await _dbContext.Tournaments.AsNoTracking().SingleAsync(t => t.Id == tournament.Id, ct);
+        persisted.Logo.ShouldNotBeNull();
+        persisted.Logo.ContentType.ShouldBe("image/png");
+        persisted.Logo.SizeInBytes.ShouldBe(2048);
     }
 
     [Fact(DisplayName = "HandleAsync does not enqueue a delete job when the logo is unchanged")]

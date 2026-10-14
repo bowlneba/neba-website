@@ -15,6 +15,13 @@ namespace Neba.Api.Features.Tournaments;
 internal static class TournamentLogoClaim
 {
     /// <summary>
+    /// Returns the tournament's stored logo when <paramref name="logo"/> names the same file, so a
+    /// re-save never lets the caller overwrite the stored content type or size.
+    /// </summary>
+    public static StoredFile? Resolve(StoredFile? logo, StoredFile? currentLogo)
+        => logo is not null && IsSameFile(logo, currentLogo) ? currentLogo : logo;
+
+    /// <summary>
     /// A logo is claimable when it is null (removal), when it already is the tournament's current
     /// logo (a re-save resubmits it), or when it matches a pending upload.
     /// </summary>
@@ -24,10 +31,7 @@ internal static class TournamentLogoClaim
         StoredFile? currentLogo,
         CancellationToken cancellationToken)
     {
-        if (logo is null
-            || (currentLogo is not null
-                && currentLogo.Container == logo.Container
-                && currentLogo.Path == logo.Path))
+        if (logo is null || IsSameFile(logo, currentLogo))
         {
             return Result.Success;
         }
@@ -37,4 +41,9 @@ internal static class TournamentLogoClaim
 
         return isPending ? Result.Success : TournamentErrors.LogoNotUploaded;
     }
+
+    private static bool IsSameFile(StoredFile logo, StoredFile? currentLogo)
+        => currentLogo is not null
+            && currentLogo.Container == logo.Container
+            && currentLogo.Path == logo.Path;
 }

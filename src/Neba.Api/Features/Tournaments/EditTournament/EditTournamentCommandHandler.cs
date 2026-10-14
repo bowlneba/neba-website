@@ -75,7 +75,7 @@ internal sealed class EditTournamentCommandHandler(
             nebaAddedMoney: command.NebaAddedMoney,
             bowlingCenterId: command.BowlingCenterId,
             externalRegistrationUrl: command.ExternalRegistrationUrl,
-            logo: command.Logo,
+            logo: TournamentLogoClaim.Resolve(command.Logo, previousLogo),
             patternLengthCategory: patternLengthCategory,
             patternRatioCategory: patternRatioCategory,
             oilPatternRevealDateTime: command.OilPatternRevealDateTime);

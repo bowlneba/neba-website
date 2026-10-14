@@ -39,9 +39,11 @@ internal sealed class EditTournamentLogoCommandHandler(
         // Snapshot before ChangeLogo: Logo is mutated in place, so reading it afterwards returns the new value.
         var previousLogo = tournament.Logo;
 
-        tournament.ChangeLogo(command.Logo);
+        var logo = TournamentLogoClaim.Resolve(command.Logo, previousLogo);
 
-        await TournamentPendingUploadCleaner.RemoveClaimedAsync(appDbContext, command.Logo, cancellationToken);
+        tournament.ChangeLogo(logo);
+
+        await TournamentPendingUploadCleaner.RemoveClaimedAsync(appDbContext, logo, cancellationToken);
 
         await appDbContext.SaveChangesAsync(cancellationToken);
 
@@ -49,9 +51,9 @@ internal sealed class EditTournamentLogoCommandHandler(
         await cache.RemoveByTagAsync($"neba:tournaments:{tournament.SeasonId}", token: cancellationToken);
 
         if (previousLogo is not null
-            && (command.Logo is null
-                || previousLogo.Container != command.Logo.Container
-                || previousLogo.Path != command.Logo.Path))
+            && (logo is null
+                || previousLogo.Container != logo.Container
+                || previousLogo.Path != logo.Path))
         {
             backgroundJobScheduler.Enqueue(new DeleteTournamentFilesJob
             {

@@ -168,6 +168,10 @@ public sealed class EditTournamentLogoCommandHandlerTests(AppDbContextFixture fi
 
         // Assert
         result.IsError.ShouldBeFalse();
+        var persisted = await _dbContext.Tournaments.AsNoTracking().SingleAsync(t => t.Id == tournament.Id, ct);
+        persisted.Logo.ShouldNotBeNull();
+        persisted.Logo.ContentType.ShouldBe("image/png");
+        persisted.Logo.SizeInBytes.ShouldBe(2048);
     }
 
     [Fact(DisplayName = "HandleAsync clears the logo and enqueues deletion of the previous file when the logo is null")]
