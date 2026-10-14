@@ -17,6 +17,9 @@ namespace Neba.ServiceDefaults.Telemetry;
 /// </summary>
 public static class TelemetryConfiguration
 {
+    // The package keeps its instrument names internal, so the meter name is repeated here.
+    private const string ResourceMonitoringMeterName = "Microsoft.Extensions.Diagnostics.ResourceMonitoring";
+
     extension<TBuilder>(TBuilder builder)
         where TBuilder : IHostApplicationBuilder
     {
@@ -37,6 +40,7 @@ public static class TelemetryConfiguration
             builder.Services.AddOpenTelemetry()
                 .WithMetrics(metrics => metrics
                     .AddMeter("Neba.*")
+                    .AddMeter(ResourceMonitoringMeterName)
                     .AddFusionCacheInstrumentation()
                     .AddAspNetCoreInstrumentation()
                     .AddHttpClientInstrumentation()
@@ -60,7 +64,30 @@ public static class TelemetryConfiguration
                     tracing.AddProcessor(new HangfireTraceFilterProcessor());
                 });
 
+            builder.AddResourceMonitoring();
+
             builder.AddOpenTelemetryExporters();
+
+            return builder;
+        }
+
+        /// <summary>
+        /// Registers container CPU and memory utilization metrics. The meter is already
+        /// subscribed in <see cref="ConfigureOpenTelemetry{TBuilder}(TBuilder)"/>, so the
+        /// values go out through the existing OpenTelemetry exporters.
+        /// </summary>
+        /// <remarks>
+        /// The package supports Linux and Windows only; local development on macOS skips it.
+        /// </remarks>
+        /// <returns>
+        /// The builder for chaining.
+        /// </returns>
+        internal TBuilder AddResourceMonitoring()
+        {
+            if (OperatingSystem.IsLinux() || OperatingSystem.IsWindows())
+            {
+                builder.Services.AddResourceMonitoring();
+            }
 
             return builder;
         }

@@ -10,11 +10,37 @@ on:
       - "src/**"
       - "tests/**"
       - ".github/workflows/**"
+      - ".github/scripts/**"
       - "Directory.Packages.props"
+      - "Directory.Build.props"
       - "package.json"
       - "package-lock.json"
 
 jobs:
+  version-check:
+    name: Version Bump Check
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      # release/vX.Y.Z: <Version> must be X.Y.Z. Other targets (main): it must be greater
+      # than the base branch's version. A manual run has no base branch and compares to the latest tag.
+      - name: Check <Version>
+        env:
+          BASE_REF: ${{ github.base_ref }}
+        run: |
+          if [ -n "$BASE_REF" ]; then
+            .github/scripts/check-version-bump.sh --base "$BASE_REF"
+          else
+            .github/scripts/check-version-bump.sh
+          fi
+
   format-check:
     name: Code Format Check
     runs-on: ubuntu-latest

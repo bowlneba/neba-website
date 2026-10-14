@@ -206,6 +206,7 @@ Detailed write-ups live in `docs/learnings/`. Read the matching file before work
 - Put `[PersonalData]`/`[PrivateData]` on any `[LoggerMessage]` parameter carrying PII. `AddRedaction()` needs `EnableRedaction()` too.
 - Cached query DTOs hold primitives, never SmartEnum instances.
 - Never initialize an EF collection navigation with `= []` on an `IReadOnlyCollection<T>` auto-property (it becomes a fixed-size array); use a `List<T>` backing field. Suppress IDE0305 and IDE0028 where you must use `new List<T>()`, and add an `ICollection<T>.Add` regression test.
+- `[LogProperties]` tags are `<param>.<Property>` and skip the formatted message; log enrichers also need `Logging.EnableEnrichment()`; resource monitoring is Linux/Windows only (`docs/learnings/backend.md`).
 - Emails: inline styles, `<table>` layout, hosted logo URL, `WebUtility.HtmlEncode` on user values.
 
 ### Hangfire PostgreSql — `docs/learnings/hangfire-postgres.md`
@@ -215,4 +216,5 @@ Detailed write-ups live in `docs/learnings/`. Read the matching file before work
 ### Hotfix deploys — `docs/learnings/hotfix.md`
 
 - Emergency fixes go on a `hotfix/*` branch cut from the latest release tag (tagged by hand after each deploy) and deploy with `hotfix.yml` (manual dispatch). Open the PR to `main` right away; never leave a hotfix off `main`.
+- Release version lives in `<Version>` in `Directory.Build.props`. PRs to `main` must raise it above `main`'s version, PRs to `release/vX.Y.Z` must set it to `X.Y.Z`, and hotfixes must exceed the base tag (`.github/scripts/check-version-bump.sh`).
 - Hotfixes never run migrations. `hotfix.yml` and `cd.yml` hold copies of the deploy steps; change both.
