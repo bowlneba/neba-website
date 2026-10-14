@@ -98,7 +98,8 @@ public sealed class EditTournamentCommandHandlerTests(AppDbContextFixture fixtur
         PatternLengthCategory? patternLengthCategory = null,
         PatternRatioCategory? patternRatioCategory = null,
         DateTimeOffset? oilPatternRevealDateTime = null,
-        bool logoChangeDenied = false)
+        bool logoChangeDenied = false,
+        Func<CancellationToken, Task<bool>>? isLogoChangeDeniedAsync = null)
         => new()
         {
             TournamentId = tournamentId,
@@ -112,7 +113,7 @@ public sealed class EditTournamentCommandHandlerTests(AppDbContextFixture fixtur
             BowlingCenterId = bowlingCenterId,
             ExternalRegistrationUrl = externalRegistrationUrl,
             Logo = logo,
-            LogoChangeDenied = logoChangeDenied,
+            IsLogoChangeDeniedAsync = isLogoChangeDeniedAsync ?? (_ => Task.FromResult(logoChangeDenied)),
             OilPatternId = oilPatternId,
             PatternLengthCategory = patternLengthCategory,
             PatternRatioCategory = patternRatioCategory,
@@ -514,6 +515,40 @@ public sealed class EditTournamentCommandHandlerTests(AppDbContextFixture fixtur
 
         // Assert
         result.IsError.ShouldBeFalse();
+    }
+
+    [Fact(DisplayName = "HandleAsync does not look up the logo denial when the logo is unchanged")]
+    public async Task HandleAsync_ShouldNotCheckLogoDenial_WhenLogoUnchanged()
+    {
+        // Arrange
+        var ct = TestContext.Current.CancellationToken;
+        var season = await SeedSeasonAsync(new DateOnly(2025, 1, 1), new DateOnly(2025, 12, 31), ct);
+        var tournament = TournamentFactory.Create(
+            startDate: season.StartDate,
+            endDate: season.StartDate,
+            seasonId: season.Id);
+        await _dbContext.Tournaments.AddAsync(tournament, ct);
+        await _dbContext.SaveChangesAsync(ct);
+
+        var lookups = 0;
+        var handler = CreateHandler();
+        var command = ValidCommand(
+            tournament.Id,
+            startDate: season.StartDate,
+            endDate: season.StartDate,
+            logo: null,
+            isLogoChangeDeniedAsync: _ =>
+            {
+                lookups++;
+                return Task.FromResult(true);
+            });
+
+        // Act
+        var result = await handler.HandleAsync(command, ct);
+
+        // Assert
+        result.IsError.ShouldBeFalse();
+        lookups.ShouldBe(0);
     }
 
     [Fact(DisplayName = "HandleAsync enqueues a delete job for the previous logo when the logo is replaced")]

@@ -33,10 +33,11 @@ internal sealed record EditTournamentCommand
     public StoredFile? Logo { get; init; }
 
     /// <summary>
-    /// True when an admin explicitly denied the caller the right to change logos. The logo then must
-    /// stay as it is; a missing permission does not set this.
+    /// Whether an admin explicitly denied the caller the right to change logos. The logo then must
+    /// stay as it is; a missing permission does not count. Asked only when the logo changes, so an
+    /// edit that leaves the logo alone skips the lookup.
     /// </summary>
-    public bool LogoChangeDenied { get; init; }
+    public Func<CancellationToken, Task<bool>> IsLogoChangeDeniedAsync { get; init; } = static _ => Task.FromResult(false);
 
     public OilPatternId? OilPatternId { get; init; }
 

@@ -61,7 +61,7 @@ internal sealed class EditTournamentEndpoint(
             BowlingCenterId = TournamentInputMapper.ToBowlingCenterId(input.BowlingCenterCertificationNumber),
             ExternalRegistrationUrl = input.ExternalRegistrationUrl,
             Logo = TournamentInputMapper.ToLogo(input.Logo),
-            LogoChangeDenied = await _permissionDenialReader.IsDeniedAsync(User, PermissionCatalog.EditTournamentLogo, ct),
+            IsLogoChangeDeniedAsync = token => _permissionDenialReader.IsDeniedAsync(User, PermissionCatalog.EditTournamentLogo, token),
             OilPatternId = TournamentInputMapper.ToOilPatternId(input.OilPatternId),
             PatternLengthCategory = TournamentInputMapper.ToPatternLengthCategory(input.PatternLengthCategory),
             PatternRatioCategory = TournamentInputMapper.ToPatternRatioCategory(input.PatternRatioCategory),

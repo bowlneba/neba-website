@@ -206,8 +206,8 @@ public sealed class EditTournamentEndpointTests
         endpoint.Definition.PreBuiltUserPolicies.ShouldContain(Neba.Api.Contracts.Security.Permissions.EditTournament.PolicyName);
     }
 
-    [Fact(DisplayName = "HandleAsync should flag the command when the caller is denied the logo permission")]
-    public async Task HandleAsync_ShouldFlagLogoChangeDenied_WhenCallerIsDenied()
+    [Fact(DisplayName = "HandleAsync should give the command a lookup that reports the caller's logo denial")]
+    public async Task HandleAsync_ShouldProvideLogoDenialLookup_WhenCallerIsDenied()
     {
         // Arrange
         var request = new EditTournamentRequest
@@ -231,7 +231,7 @@ public sealed class EditTournamentEndpointTests
 
         // Assert
         capturedCommand.ShouldNotBeNull();
-        capturedCommand.LogoChangeDenied.ShouldBeTrue();
+        (await capturedCommand.IsLogoChangeDeniedAsync(ct)).ShouldBeTrue();
     }
 
     [Fact(DisplayName = "HandleAsync should return 403 when the command returns a forbidden error")]
