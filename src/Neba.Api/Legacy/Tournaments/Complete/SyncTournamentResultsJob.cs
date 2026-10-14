@@ -68,6 +68,14 @@ internal sealed class SyncTournamentResultsJob(
         await cache.RemoveByTagAsync($"neba:tournaments:{tournament.Id}", token: ct);
         await cache.RemoveByTagAsync("neba:tournaments:champions", token: ct);
 
+        // Season stats read both the stats-eligible tournament count and these results, so they are
+        // stale only once the results are written; evicting at completion would let a request
+        // recache the half-updated snapshot.
+        if (tournament.StatsEligible)
+        {
+            await cache.RemoveByTagAsync($"neba:stats:seasons:{tournament.SeasonId}", token: ct);
+        }
+
         // Alerts go out after the save so a retry of a failed sync does not repeat them, and a
         // webhook failure cannot block the results from being saved.
         if (duplicateBowlerIds.Count > 0)

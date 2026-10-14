@@ -175,12 +175,12 @@ public sealed class SyncTournamentResultsJobTests(AppDbContextFixture fixture, L
         await insert.ExecuteNonQueryAsync();
     }
 
-    private async Task<Tournament> CreateTournamentAsync(int legacyTournamentId, TournamentType? tournamentType, bool complete, CancellationToken ct)
+    private async Task<Tournament> CreateTournamentAsync(int legacyTournamentId, TournamentType? tournamentType, bool complete, CancellationToken ct, bool? statsEligible = null)
     {
         var season = SeasonFactory.Create();
         await _dbContext.Seasons.AddAsync(season, ct);
 
-        var tournament = TournamentFactory.Create(tournamentType: tournamentType, legacyId: legacyTournamentId, seasonId: season.Id);
+        var tournament = TournamentFactory.Create(tournamentType: tournamentType, legacyId: legacyTournamentId, seasonId: season.Id, statsEligible: statsEligible);
         if (complete)
         {
             tournament.CompleteTournament(entryCount: 100);
@@ -295,6 +295,33 @@ public sealed class SyncTournamentResultsJobTests(AppDbContextFixture fixture, L
         tournamentValueAfterSync.ShouldBe("fresh-value");
         var championsValueAfterSync = await cache.GetOrSetAsync(championsCacheKey, _ => Task.FromResult("fresh-value"), token: ct);
         championsValueAfterSync.ShouldBe("fresh-value");
+    }
+
+    [Theory(DisplayName = "SyncAsync should evict the season stats cache tag only when the tournament is stats eligible")]
+    [InlineData(true, "fresh-value")]
+    [InlineData(false, "stale-cached-value")]
+    public async Task SyncAsync_ShouldEvictSeasonStatsCacheTag_OnlyWhenStatsEligible(bool statsEligible, string expectedValue)
+    {
+        // Arrange
+        var ct = TestContext.Current.CancellationToken;
+        var tournament = await CreateTournamentAsync(42, TournamentType.Singles, complete: true, ct, statsEligible);
+        await CreateBowlerAsync(100, ct);
+
+        var statsId = await InsertStatsAsync(100, 42);
+        await InsertResultsStatsAsync(statsId, place: 1, payout: 500m, points: 100);
+
+        var cache = _serviceProvider.GetRequiredService<IFusionCache>();
+        const string statsCacheKey = "results-season-stats-cache-test";
+        await cache.GetOrSetAsync(statsCacheKey, _ => Task.FromResult("stale-cached-value"), tags: [$"neba:stats:seasons:{tournament.SeasonId}"], token: ct);
+
+        var job = CreateJob();
+
+        // Act
+        await job.SyncAsync(42, ct);
+
+        // Assert
+        var valueAfterSync = await cache.GetOrSetAsync(statsCacheKey, _ => Task.FromResult("fresh-value"), token: ct);
+        valueAfterSync.ShouldBe(expectedValue);
     }
 
     [Fact(DisplayName = "SyncAsync should place a non-advancing team roster together, excluding a forfeited roster")]
