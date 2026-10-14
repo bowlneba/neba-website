@@ -28,8 +28,17 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Require <Version> greater than the latest release tag
-        run: .github/scripts/check-version-bump.sh
+      # release/vX.Y.Z: <Version> must be X.Y.Z. Other targets (main): it must be greater
+      # than the base branch's version. A manual run has no base branch and compares to the latest tag.
+      - name: Check <Version>
+        env:
+          BASE_REF: ${{ github.base_ref }}
+        run: |
+          if [ -n "$BASE_REF" ]; then
+            .github/scripts/check-version-bump.sh --base "$BASE_REF"
+          else
+            .github/scripts/check-version-bump.sh
+          fi
 
   format-check:
     name: Code Format Check

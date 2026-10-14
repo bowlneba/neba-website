@@ -67,7 +67,7 @@ jobs:
       - name: Require a version bump
         env:
           BASE_TAG: ${{ steps.base.outputs.tag }}
-        run: .github/scripts/check-version-bump.sh "$BASE_TAG"
+        run: .github/scripts/check-version-bump.sh --tag "$BASE_TAG"
 
       - name: Block migrations
         if: ${{ !inputs.allow_migrations }}
