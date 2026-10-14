@@ -5,7 +5,6 @@ using Microsoft.EntityFrameworkCore;
 using Neba.Api.BackgroundJobs;
 using Neba.Api.Database;
 using Neba.Api.Features.Tournaments.Domain;
-using Neba.Api.Features.Tournaments.EditTournament;
 using Neba.Api.Messaging;
 
 using ZiggyCreatures.Caching.Fusion;
@@ -50,19 +49,7 @@ internal sealed class EditTournamentLogoCommandHandler(
         await cache.RemoveByTagAsync($"neba:tournaments:{tournament.Id}", token: cancellationToken);
         await cache.RemoveByTagAsync($"neba:tournaments:{tournament.SeasonId}", token: cancellationToken);
 
-        if (previousLogo is not null
-            && (logo is null
-                || previousLogo.Container != logo.Container
-                || previousLogo.Path != logo.Path))
-        {
-            backgroundJobScheduler.Enqueue(new DeleteTournamentFilesJob
-            {
-                Files =
-                [
-                    new TournamentFileReference { Container = previousLogo.Container, Path = previousLogo.Path }
-                ]
-            });
-        }
+        TournamentLogoCleanup.ScheduleDeleteOfReplacedLogo(backgroundJobScheduler, previousLogo, logo);
 
         return Result.Updated;
     }
