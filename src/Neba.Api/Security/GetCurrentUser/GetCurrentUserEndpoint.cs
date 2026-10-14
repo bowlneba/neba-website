@@ -67,6 +67,7 @@ internal sealed class GetCurrentUserEndpoint(IQueryHandler<GetCurrentUserQuery, 
             Email = dto.Email,
             Roles = dto.Roles,
             Permissions = [.. dto.Permissions.Select(permission => permission.Value)],
+            DeniedPermissions = [.. dto.DeniedPermissions.Select(permission => permission.Value)],
             UsbcId = dto.UsbcId,
         }, ct);
     }

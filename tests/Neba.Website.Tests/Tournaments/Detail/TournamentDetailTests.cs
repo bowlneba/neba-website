@@ -826,6 +826,85 @@ tournamentType: TournamentType.Doubles, logoUrl: null));
         cut.Markup.ShouldContain("$2,500");
     }
 
+    // ── Edit logo ────────────────────────────────────────────────────────────
+
+    [Fact(DisplayName = "Should not render the edit-logo button when caller lacks the policy")]
+    public void Render_ShouldNotRenderEditLogoButton_WhenNotAuthorized()
+    {
+        // Arrange
+        SetupSuccessResponse(TournamentDetailResponseFactory.Create());
+
+        // Act
+        var cut = _ctx.Render<TournamentDetail>(p => p.Add(x => x.Id, TournamentDetailResponseFactory.ValidId));
+
+        // Assert
+        cut.FindAll("button.tournament-logo-edit").ShouldBeEmpty();
+    }
+
+    [Fact(DisplayName = "Should open the edit-logo modal when an authorized caller clicks the edit-logo button")]
+    public async Task EditLogo_ShouldOpenModal_WhenAuthorizedCallerClicksButton()
+    {
+        // Arrange
+        _authContext.SetAuthorized("test-user");
+        _authContext.SetPolicies(Permissions.EditTournamentLogo.PolicyName);
+        _ctx.JSInterop.SetupModule("./Components/FileUpload.razor.js")
+            .Setup<string?[]>("getPreviewUrls", _ => true).SetResult([]);
+
+        SetupSuccessResponse(TournamentDetailResponseFactory.Create(name: "Spring Open"));
+
+        var cut = _ctx.Render<TournamentDetail>(p => p.Add(x => x.Id, TournamentDetailResponseFactory.ValidId));
+
+        // Act
+        await cut.Find("button.tournament-logo-edit").ClickAsync();
+
+        // Assert
+        cut.Find(".elm-subtitle").TextContent.Trim().ShouldBe("Spring Open");
+    }
+
+    [Fact(DisplayName = "Should save a removed logo and reload the tournament when the edit-logo modal is saved")]
+    public async Task EditLogo_ShouldSaveAndReload_WhenLogoRemoved()
+    {
+        // Arrange
+        _authContext.SetAuthorized("test-user");
+        _authContext.SetPolicies(Permissions.EditTournamentLogo.PolicyName);
+        _ctx.JSInterop.SetupModule("./Components/FileUpload.razor.js")
+            .Setup<string?[]>("getPreviewUrls", _ => true).SetResult([]);
+
+        var withLogo = TournamentDetailResponseFactory.Create(logoUrl: new Uri("https://storage.example.com/logo.png"));
+        var withoutLogo = TournamentDetailResponseFactory.Create(logoUrl: null);
+        SetupSuccessResponseSequence(withLogo, withoutLogo);
+
+        Neba.Api.Contracts.Tournaments.EditTournamentLogo.EditTournamentLogoRequest? captured = null;
+        using var editResponse = new StubApiResponse<object>
+        {
+            IsSuccessStatusCode = true,
+            StatusCode = System.Net.HttpStatusCode.NoContent
+        };
+        _mockApi
+            .Setup(x => x.EditTournamentLogoAsync(
+                It.IsAny<string>(),
+                It.IsAny<Neba.Api.Contracts.Tournaments.EditTournamentLogo.EditTournamentLogoRequest>(),
+                It.IsAny<CancellationToken>()))
+            .Callback<string, Neba.Api.Contracts.Tournaments.EditTournamentLogo.EditTournamentLogoRequest, CancellationToken>((_, r, _) => captured = r)
+            .ReturnsAsync(editResponse);
+
+        var cut = _ctx.Render<TournamentDetail>(p => p.Add(x => x.Id, TournamentDetailResponseFactory.ValidId));
+        await cut.Find("button.tournament-logo-edit").ClickAsync();
+        await cut.Find(".elm-link-danger").ClickAsync();
+
+        // Act
+        await cut.Find("button.neba-btn-primary").ClickAsync();
+
+        // Assert
+        captured.ShouldNotBeNull();
+        captured.Id.ShouldBe(TournamentDetailResponseFactory.ValidId);
+        captured.Input.Logo.ShouldBeNull();
+        _mockApi.Verify(
+            x => x.GetTournamentAsync(TournamentDetailResponseFactory.ValidId, It.IsAny<CancellationToken>()),
+            Times.Exactly(2));
+        cut.FindAll(".elm-subtitle").ShouldBeEmpty();
+    }
+
     // ── Footer ───────────────────────────────────────────────────────────────
 
     [Fact(DisplayName = "Should render back link to tournament schedule")]

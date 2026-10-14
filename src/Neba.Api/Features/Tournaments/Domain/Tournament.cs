@@ -346,6 +346,12 @@ public sealed class Tournament
     }
 
     /// <summary>
+    /// Replaces the tournament's logo, or clears it when <paramref name="logo"/> is <see langword="null"/>.
+    /// </summary>
+    public void ChangeLogo(StoredFile? logo)
+        => Logo = logo;
+
+    /// <summary>
     /// Adds a sponsor; returns an error if already added or a title sponsor conflict exists.
     /// </summary>
     public ErrorOr<Success> AddSponsor(SponsorId sponsorId, bool titleSponsor, decimal sponsorshipAmount)

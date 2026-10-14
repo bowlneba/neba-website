@@ -32,6 +32,19 @@ internal sealed class EditTournamentCommandHandler(
             return TournamentErrors.TournamentNotFound(command.TournamentId);
         }
 
+        if (command.LogoChangeDenied && !TournamentLogoClaim.IsSameFile(command.Logo, tournament.Logo))
+        {
+            return TournamentErrors.LogoChangeDenied;
+        }
+
+        var logoClaim = await TournamentLogoClaim.EnsureClaimableAsync(
+            appDbContext, command.Logo, tournament.Logo, cancellationToken);
+
+        if (logoClaim.IsError)
+        {
+            return logoClaim.Errors;
+        }
+
         var resolveResult = await TournamentSeasonAndPatternResolver.ResolveAsync(
             appDbContext,
             command.StartDate,
@@ -67,7 +80,7 @@ internal sealed class EditTournamentCommandHandler(
             nebaAddedMoney: command.NebaAddedMoney,
             bowlingCenterId: command.BowlingCenterId,
             externalRegistrationUrl: command.ExternalRegistrationUrl,
-            logo: command.Logo,
+            logo: TournamentLogoClaim.Resolve(command.Logo, previousLogo),
             patternLengthCategory: patternLengthCategory,
             patternRatioCategory: patternRatioCategory,
             oilPatternRevealDateTime: command.OilPatternRevealDateTime);
@@ -136,16 +149,7 @@ internal sealed class EditTournamentCommandHandler(
     private void ScheduleBackgroundJobs(
         EditTournamentCommand command, StoredFile? previousLogo, TournamentId tournamentId, SeasonId seasonId)
     {
-        if (previousLogo is not null && previousLogo != command.Logo)
-        {
-            backgroundJobScheduler.Enqueue(new DeleteTournamentFilesJob
-            {
-                Files =
-                [
-                    new TournamentFileReference { Container = previousLogo.Container, Path = previousLogo.Path }
-                ]
-            });
-        }
+        TournamentLogoCleanup.ScheduleDeleteOfReplacedLogo(backgroundJobScheduler, previousLogo, command.Logo);
 
         if (command.OilPatternRevealDateTime is { } revealAt && revealAt > timeProvider.GetUtcNow())
         {

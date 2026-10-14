@@ -30,6 +30,7 @@ internal static class SecurityRoleSeeder
 
             Permissions.CreateTournament,
             Permissions.EditTournament,
+            Permissions.EditTournamentLogo,
             Permissions.ManageTournamentSponsors,
             Permissions.DeleteTournament,
             Permissions.ManageTournamentStatus,
@@ -50,6 +51,7 @@ internal static class SecurityRoleSeeder
 
             Permissions.CreateTournament,
             Permissions.EditTournament,
+            Permissions.EditTournamentLogo,
             Permissions.ManageTournamentSponsors,
             Permissions.ManageTournamentStatus
         ],
@@ -58,6 +60,7 @@ internal static class SecurityRoleSeeder
         [
             Permissions.CreateTournament,
             Permissions.EditTournament,
+            Permissions.EditTournamentLogo,
             Permissions.ManageTournamentSponsors,
             Permissions.ManageTournamentStatus
         ],

@@ -12,5 +12,7 @@ internal sealed record UserDto
 
     public required IReadOnlyCollection<Permissions> Permissions { get; init; }
 
+    public required IReadOnlyCollection<Permissions> DeniedPermissions { get; init; }
+
     public string? UsbcId { get; init; }
 }

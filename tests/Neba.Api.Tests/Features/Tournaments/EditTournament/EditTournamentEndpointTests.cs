@@ -6,6 +6,7 @@ using Neba.Api.Contracts.Tournaments.CreateTournament;
 using Neba.Api.Contracts.Tournaments.EditTournament;
 using Neba.Api.Features.Tournaments.Domain;
 using Neba.Api.Features.Tournaments.EditTournament;
+using Neba.Api.Security.Infrastructure.Authorization;
 using Neba.TestFactory.Attributes;
 using Neba.TestFactory.Tournaments;
 
@@ -17,6 +18,18 @@ namespace Neba.Api.Tests.Features.Tournaments.EditTournament;
 [Component("Tournaments")]
 public sealed class EditTournamentEndpointTests
 {
+    private static Mock<IPermissionDenialReader> DenialReader(bool denied)
+    {
+        var mock = new Mock<IPermissionDenialReader>(MockBehavior.Strict);
+        mock
+            .Setup(r => r.IsDeniedAsync(
+                It.IsAny<System.Security.Claims.ClaimsPrincipal>(),
+                Neba.Api.Contracts.Security.Permissions.EditTournamentLogo,
+                It.IsAny<CancellationToken>()))
+            .ReturnsAsync(denied);
+        return mock;
+    }
+
     [Fact(DisplayName = "HandleAsync should map request fields to command and take the success branch when edit succeeds")]
     public async Task HandleAsync_ShouldMapRequestToCommandAndTakeSuccessBranch_WhenEditSucceeds()
     {
@@ -34,7 +47,7 @@ public sealed class EditTournamentEndpointTests
             .Callback<EditTournamentCommand, CancellationToken>((c, _) => capturedCommand = c)
             .ReturnsAsync(Result.Updated);
 
-        var endpoint = Factory.Create<EditTournamentEndpoint>(commandHandlerMock.Object);
+        var endpoint = Factory.Create<EditTournamentEndpoint>(commandHandlerMock.Object, DenialReader(denied: false).Object);
 
         // Act
         await endpoint.HandleAsync(request, ct);
@@ -85,7 +98,7 @@ public sealed class EditTournamentEndpointTests
             .Callback<EditTournamentCommand, CancellationToken>((c, _) => capturedCommand = c)
             .ReturnsAsync(Result.Updated);
 
-        var endpoint = Factory.Create<EditTournamentEndpoint>(commandHandlerMock.Object);
+        var endpoint = Factory.Create<EditTournamentEndpoint>(commandHandlerMock.Object, DenialReader(denied: false).Object);
 
         // Act
         await endpoint.HandleAsync(request, ct);
@@ -120,7 +133,7 @@ public sealed class EditTournamentEndpointTests
             .Setup(h => h.HandleAsync(It.IsAny<EditTournamentCommand>(), ct))
             .ReturnsAsync(TournamentErrors.TournamentNotFound(TournamentId.New()));
 
-        var endpoint = Factory.Create<EditTournamentEndpoint>(commandHandlerMock.Object);
+        var endpoint = Factory.Create<EditTournamentEndpoint>(commandHandlerMock.Object, DenialReader(denied: false).Object);
 
         // Act
         await endpoint.HandleAsync(request, ct);
@@ -145,7 +158,7 @@ public sealed class EditTournamentEndpointTests
             .Setup(h => h.HandleAsync(It.IsAny<EditTournamentCommand>(), ct))
             .ReturnsAsync(TournamentErrors.NoSeasonForDates(TournamentInputFactory.ValidStartDate, TournamentInputFactory.ValidEndDate));
 
-        var endpoint = Factory.Create<EditTournamentEndpoint>(commandHandlerMock.Object);
+        var endpoint = Factory.Create<EditTournamentEndpoint>(commandHandlerMock.Object, DenialReader(denied: false).Object);
 
         // Act
         await endpoint.HandleAsync(request, ct);
@@ -170,7 +183,7 @@ public sealed class EditTournamentEndpointTests
             .Setup(h => h.HandleAsync(It.IsAny<EditTournamentCommand>(), ct))
             .ReturnsAsync(TournamentErrors.OilPatternNotFound(OilPatternId.New()));
 
-        var endpoint = Factory.Create<EditTournamentEndpoint>(commandHandlerMock.Object);
+        var endpoint = Factory.Create<EditTournamentEndpoint>(commandHandlerMock.Object, DenialReader(denied: false).Object);
 
         // Act
         await endpoint.HandleAsync(request, ct);
@@ -184,12 +197,65 @@ public sealed class EditTournamentEndpointTests
     {
         // Arrange
         var commandHandlerMock = new Mock<NebaMessaging.ICommandHandler<EditTournamentCommand, Updated>>(MockBehavior.Strict);
-        var endpoint = Factory.Create<EditTournamentEndpoint>(commandHandlerMock.Object);
+        var endpoint = Factory.Create<EditTournamentEndpoint>(commandHandlerMock.Object, DenialReader(denied: false).Object);
 
         // Assert
         endpoint.Definition.Verbs.ShouldContain("PUT");
         endpoint.Definition.Routes.ShouldContain(r => r.Contains("tournaments"), "should be under the /tournaments path");
         endpoint.Definition.PreBuiltUserPolicies.ShouldNotBeNull();
         endpoint.Definition.PreBuiltUserPolicies.ShouldContain(Neba.Api.Contracts.Security.Permissions.EditTournament.PolicyName);
+    }
+
+    [Fact(DisplayName = "HandleAsync should flag the command when the caller is denied the logo permission")]
+    public async Task HandleAsync_ShouldFlagLogoChangeDenied_WhenCallerIsDenied()
+    {
+        // Arrange
+        var request = new EditTournamentRequest
+        {
+            Id = TournamentId.New().Value.ToString(),
+            Tournament = TournamentInputFactory.Create()
+        };
+        var ct = TestContext.Current.CancellationToken;
+
+        EditTournamentCommand? capturedCommand = null;
+        var commandHandlerMock = new Mock<NebaMessaging.ICommandHandler<EditTournamentCommand, Updated>>(MockBehavior.Strict);
+        commandHandlerMock
+            .Setup(h => h.HandleAsync(It.IsAny<EditTournamentCommand>(), ct))
+            .Callback<EditTournamentCommand, CancellationToken>((c, _) => capturedCommand = c)
+            .ReturnsAsync(Result.Updated);
+
+        var endpoint = Factory.Create<EditTournamentEndpoint>(commandHandlerMock.Object, DenialReader(denied: true).Object);
+
+        // Act
+        await endpoint.HandleAsync(request, ct);
+
+        // Assert
+        capturedCommand.ShouldNotBeNull();
+        capturedCommand.LogoChangeDenied.ShouldBeTrue();
+    }
+
+    [Fact(DisplayName = "HandleAsync should return 403 when the command returns a forbidden error")]
+    public async Task HandleAsync_ShouldReturn403_WhenCommandReturnsForbiddenError()
+    {
+        // Arrange
+        var request = new EditTournamentRequest
+        {
+            Id = TournamentId.New().Value.ToString(),
+            Tournament = TournamentInputFactory.Create()
+        };
+        var ct = TestContext.Current.CancellationToken;
+
+        var commandHandlerMock = new Mock<NebaMessaging.ICommandHandler<EditTournamentCommand, Updated>>(MockBehavior.Strict);
+        commandHandlerMock
+            .Setup(h => h.HandleAsync(It.IsAny<EditTournamentCommand>(), ct))
+            .ReturnsAsync(TournamentErrors.LogoChangeDenied);
+
+        var endpoint = Factory.Create<EditTournamentEndpoint>(commandHandlerMock.Object, DenialReader(denied: true).Object);
+
+        // Act
+        await endpoint.HandleAsync(request, ct);
+
+        // Assert
+        endpoint.HttpContext.Response.StatusCode.ShouldBe(403);
     }
 }

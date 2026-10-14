@@ -99,12 +99,17 @@
         <div class="tournament-hero__tile-wrapper">
             <img src="@Tournament.DisplayLogoSrc"
                  alt="@Tournament.Name logo" class="tournament-hero__logo-img" />
+            <TournamentLogoEditButton TournamentName="@Tournament.Name" ShowLabel="true"
+                                      OnClick="@(() => OnEditLogo.InvokeAsync(Tournament))" />
         </div>
     </div>
 </section>
 
 @code {
     private static readonly CultureInfo CurrencyCulture = CultureInfo.GetCultureInfo("en-US");
+
+    [Parameter]
+    public EventCallback<SeasonTournamentViewModel> OnEditLogo { get; set; }
 
     [Parameter][EditorRequired]
     public SeasonTournamentViewModel Tournament { get; set; } = default!;

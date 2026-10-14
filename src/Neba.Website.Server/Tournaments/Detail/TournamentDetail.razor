@@ -258,6 +258,8 @@ else
 
                     <div class="td-hero__tile">
                         <img src="@_model.DisplayLogoSrc" alt="@(_model.Name + " logo")" class="td-hero__logo-img" />
+                        <TournamentLogoEditButton TournamentName="@_model.Name" ShowLabel="true"
+                                                  OnClick="@(() => _isEditLogoOpen = true)" />
                     </div>
 
                 </div>
@@ -488,6 +490,13 @@ else
 
     </main>
 
+    <TournamentLogoEditor IsOpen="@_isEditLogoOpen"
+                          TournamentId="@Id"
+                          TournamentName="@_model!.Name"
+                          CurrentLogoUrl="@_model.LogoUrl"
+                          OnClose="@(() => _isEditLogoOpen = false)"
+                          OnSaved="HandleLogoSavedAsync" />
+
     <ConfirmActionModal IsOpen="@_isDeleteConfirmOpen"
                         Title="Delete tournament?"
                         Message="@($"This permanently removes \"{_model!.Name}\", its sponsor links, and oil pattern assignments. This can't be undone.")"
@@ -607,6 +616,14 @@ else
             "RemoveTournamentSponsor",
             c => TournamentsApi.RemoveTournamentSponsorAsync(Id, sponsorId, c),
             ct);
+
+    private bool _isEditLogoOpen;
+
+    private async Task HandleLogoSavedAsync()
+    {
+        _isEditLogoOpen = false;
+        await ReloadTournamentAsync();
+    }
 
     private void OpenDeleteConfirm()
     {

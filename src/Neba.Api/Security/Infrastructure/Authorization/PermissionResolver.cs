@@ -61,6 +61,33 @@ internal static class PermissionResolver
         return [.. overrides.ApplyTo(permissionKeys).Select(key => Permissions.FromValue(key))];
     }
 
+    /// <summary>
+    /// The permissions withheld from this user by a stored denial. Admin holds every permission by
+    /// definition, so a stored denial never applies to it.
+    /// </summary>
+    public static async Task<IReadOnlyCollection<Permissions>> ResolveDeniedAsync(
+        SecurityDbContext securityDbContext,
+        Ulid userId,
+        IEnumerable<string> roleNames,
+        CancellationToken cancellationToken)
+    {
+        if (roleNames.Contains(Roles.Admin, StringComparer.OrdinalIgnoreCase))
+        {
+            return [];
+        }
+
+        var denied = await securityDbContext.UserClaims
+            .AsNoTracking()
+            .Where(claim => claim.UserId == userId && claim.ClaimType == Permissions.DeniedClaimType)
+            .Select(claim => claim.ClaimValue!)
+            .ToListAsync(cancellationToken);
+
+        return [.. denied
+            .Distinct(StringComparer.Ordinal)
+            .Where(value => Permissions.TryFromValue(value, out _))
+            .Select(value => Permissions.FromValue(value))];
+    }
+
     private sealed class GrantRow
     {
         public bool FromRole { get; init; }

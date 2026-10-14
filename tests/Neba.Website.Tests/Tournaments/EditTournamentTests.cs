@@ -15,6 +15,7 @@ using Neba.Api.Contracts.BowlingCenters;
 using Neba.Api.Contracts.OilPatterns;
 using Neba.Api.Contracts.OilPatterns.ListOilPatterns;
 using Neba.Api.Contracts.Security;
+using Neba.Api.Contracts.Security.GetCurrentUser;
 using Neba.Api.Contracts.Tournaments;
 using Neba.Api.Contracts.Tournaments.EditTournament;
 using Neba.Api.Contracts.Tournaments.GetTournament;
@@ -46,6 +47,7 @@ public sealed class EditTournamentTests : IDisposable
     private readonly Mock<ITournamentsApi> _mockTournamentsApi;
     private readonly Mock<IBowlingCentersApi> _mockBowlingCentersApi;
     private readonly Mock<IOilPatternsApi> _mockOilPatternsApi;
+    private readonly Mock<ISecurityApi> _mockSecurityApi;
     private readonly Mock<IClientTimeZoneService> _mockClientTimeZoneService;
     private readonly ToastService _toastService;
 
@@ -54,6 +56,7 @@ public sealed class EditTournamentTests : IDisposable
         _mockTournamentsApi = new Mock<ITournamentsApi>(MockBehavior.Strict);
         _mockBowlingCentersApi = new Mock<IBowlingCentersApi>(MockBehavior.Strict);
         _mockOilPatternsApi = new Mock<IOilPatternsApi>(MockBehavior.Strict);
+        _mockSecurityApi = new Mock<ISecurityApi>(MockBehavior.Strict);
         _mockClientTimeZoneService = new Mock<IClientTimeZoneService>(MockBehavior.Strict);
 
         var mockStopwatch = new Mock<IStopwatchProvider>(MockBehavior.Strict);
@@ -74,10 +77,12 @@ public sealed class EditTournamentTests : IDisposable
         SetupListBowlingCenters();
         SetupListTournamentTypes();
         SetupListOilPatterns();
+        SetupCurrentUser(deniedPermissions: []);
 
         _ctx.Services.AddSingleton(_mockTournamentsApi.Object);
         _ctx.Services.AddSingleton(_mockBowlingCentersApi.Object);
         _ctx.Services.AddSingleton(_mockOilPatternsApi.Object);
+        _ctx.Services.AddSingleton(_mockSecurityApi.Object);
         _ctx.Services.AddSingleton(_mockClientTimeZoneService.Object);
         _ctx.Services.AddSingleton(sp => new ApiExecutor(mockStopwatch.Object, sp.GetRequiredService<NavigationManager>(), NullLogger<ApiExecutor>.Instance));
         _ctx.Services.AddSingleton(_toastService);
@@ -449,6 +454,79 @@ public sealed class EditTournamentTests : IDisposable
         capturedRequest.Tournament.Logo.Path.ShouldBe("tournaments/logo/fall-classic.png");
     }
 
+    [Fact(DisplayName = "Should make the logo read only and hide the upload when an admin denied the logo permission")]
+    public void Logo_ShouldBeReadOnly_WhenLogoPermissionDenied()
+    {
+        // Arrange
+        SetupCurrentUser(deniedPermissions: [Permissions.EditTournamentLogo.Value]);
+        var tournament = TournamentDetailResponseFactory.Create(
+            logoUrl: new Uri("https://storage.example.com/tournaments/logo.png"),
+            logoContainer: "bowlneba-public",
+            logoPath: "tournaments/fall-classic/logo.png");
+        SetupGetTournamentSuccess(tournament);
+
+        // Act
+        var cut = RenderEditTournament(tournament.Id);
+
+        // Assert
+        cut.FindAll(".edit-tournament-logo-preview").Count.ShouldBe(1);
+        cut.FindComponents<FileUpload>().ShouldBeEmpty();
+        cut.Markup.ShouldNotContain("Remove current logo");
+        cut.Find(".edit-tournament-logo-locked").TextContent.ShouldContain("read only");
+    }
+
+    [Fact(DisplayName = "Should still save other edits and resubmit the existing logo when the logo permission is denied")]
+    public async Task Logo_ShouldResubmitExistingLogo_WhenLogoPermissionDenied()
+    {
+        // Arrange
+        SetupCurrentUser(deniedPermissions: [Permissions.EditTournamentLogo.Value]);
+        var tournament = TournamentDetailResponseFactory.Create(
+            logoUrl: new Uri("https://storage.example.com/tournaments/logo.png"),
+            logoContainer: "bowlneba-public",
+            logoPath: "tournaments/fall-classic/logo.png",
+            logoContentType: "image/png",
+            logoSizeInBytes: 12345);
+        SetupGetTournamentSuccess(tournament);
+
+        EditTournamentRequest? capturedRequest = null;
+        SetupEditTournamentResponse(capture: r => capturedRequest = r);
+
+        var cut = RenderEditTournament(tournament.Id);
+        await cut.InvokeAsync(() => cut.Find("#name").Change("Updated Name"));
+
+        // Act
+        await cut.Find("form").SubmitAsync();
+
+        // Assert
+        capturedRequest.ShouldNotBeNull();
+        capturedRequest.Tournament.Name.ShouldBe("Updated Name");
+        capturedRequest.Tournament.Logo.ShouldNotBeNull();
+        capturedRequest.Tournament.Logo.Path.ShouldBe("tournaments/fall-classic/logo.png");
+    }
+
+    [Fact(DisplayName = "Should keep the logo editable when the current-user lookup fails")]
+    public void Logo_ShouldStayEditable_WhenCurrentUserLookupFails()
+    {
+        // Arrange
+        using var failed = new StubApiResponse<GetCurrentUserResponse>
+        {
+            IsSuccessStatusCode = false,
+            StatusCode = HttpStatusCode.InternalServerError,
+            Content = null
+        };
+        _mockSecurityApi
+            .Setup(x => x.GetCurrentUserAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync(failed);
+        var tournament = TournamentDetailResponseFactory.Create(logoUrl: null);
+        SetupGetTournamentSuccess(tournament);
+
+        // Act
+        var cut = RenderEditTournament(tournament.Id);
+
+        // Assert
+        cut.FindComponents<FileUpload>().Count.ShouldBe(1);
+    }
+
     // ── Oil pattern reveal date/time ────────────────────────────────────────
 
     [Fact(DisplayName = "Submitting with a changed reveal date/time converts it to UTC via the client time zone service")]
@@ -555,6 +633,27 @@ public sealed class EditTournamentTests : IDisposable
 
         _mockOilPatternsApi
             .Setup(x => x.ListOilPatternsAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync(response);
+    }
+
+    private void SetupCurrentUser(IReadOnlyCollection<string> deniedPermissions)
+    {
+        using var response = new StubApiResponse<GetCurrentUserResponse>
+        {
+            IsSuccessStatusCode = true,
+            StatusCode = HttpStatusCode.OK,
+            Content = new GetCurrentUserResponse
+            {
+                UserId = "01000000000000000000000001",
+                Email = "editor@bowlneba.com",
+                Roles = ["Manager"],
+                Permissions = [Permissions.EditTournament.Value],
+                DeniedPermissions = deniedPermissions
+            }
+        };
+
+        _mockSecurityApi
+            .Setup(x => x.GetCurrentUserAsync(It.IsAny<CancellationToken>()))
             .ReturnsAsync(response);
     }
 

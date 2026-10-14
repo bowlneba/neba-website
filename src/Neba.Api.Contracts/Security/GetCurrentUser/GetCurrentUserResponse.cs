@@ -29,6 +29,12 @@ public sealed record GetCurrentUserResponse
     public required IReadOnlyCollection<string> Permissions { get; init; }
 
     /// <summary>
+    /// Gets the permissions an admin explicitly withheld from this user. A denied permission is absent from
+    /// <see cref="Permissions"/>, but absence alone does not mean denied: a role may simply not grant it.
+    /// </summary>
+    public required IReadOnlyCollection<string> DeniedPermissions { get; init; }
+
+    /// <summary>
     /// Gets the USBC ID of the user, if available. This property is optional and may be null if the user does not have a USBC ID associated with their account.
     /// </summary>
     public string? UsbcId { get; init; }
