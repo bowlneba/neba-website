@@ -18,7 +18,7 @@ internal sealed class EditTournamentLogoRequestValidator
         RuleFor(r => r.Input)
             .NotNull().WithErrorCode("EditTournamentLogoRequest.InputRequired").WithMessage("Input is required.");
 
-        When(r => r.Input is not null && r.Input.Logo is not null, () =>
+        When(r => r.Input?.Logo is not null, () =>
         {
             RuleFor(r => r.Input.Logo!.Container)
                 .NotEmpty().WithErrorCode("EditTournamentLogoRequest.LogoContainerRequired").WithMessage("Logo container is required.");
