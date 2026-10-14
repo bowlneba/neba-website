@@ -10,6 +10,7 @@ on:
       - "src/**"
       - "tests/**"
       - ".github/workflows/**"
+      - ".github/scripts/**"
       - "Directory.Packages.props"
       - "Directory.Build.props"
       - "package.json"

@@ -54,9 +54,11 @@ public static class LogEnrichmentConfiguration
     }
 
     // Informational version is "<version>+<commit sha>" when SourceLink is on; keep the
-    // sha because it ties a log line to a build.
+    // sha because it ties a log line to a build. Read from this assembly, not the entry
+    // assembly, so test hosts and tools such as `dotnet ef` still report the app build:
+    // every project gets <Version> from Directory.Build.props.
     private static string GetBuildVersion()
-        => (Assembly.GetEntryAssembly() ?? Assembly.GetExecutingAssembly())
+        => typeof(LogEnrichmentConfiguration).Assembly
             .GetCustomAttribute<AssemblyInformationalVersionAttribute>()?.InformationalVersion
             ?? UnknownVersion;
 }

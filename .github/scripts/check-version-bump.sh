@@ -25,7 +25,8 @@ fail() { echo "::error::$*"; exit 1; }
 version="$(read_version < "$props")"
 [ -n "$version" ] || fail "No <Version> found in $props."
 
-latest_tag="$(git tag --list 'v*' --sort=-v:refname | head -1)"
+# Release tags only (vX.Y.Z); prerelease or ad-hoc tags such as v1.2.0-rc1 would break the version sort.
+latest_tag="$(git tag --list 'v*' --sort=-v:refname | grep -E '^v[0-9]+\.[0-9]+\.[0-9]+$' | head -1 || true)"
 latest="${latest_tag#v}"
 
 if [ "$mode" = "tag" ]; then
