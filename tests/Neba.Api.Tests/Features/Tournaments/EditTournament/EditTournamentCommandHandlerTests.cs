@@ -399,6 +399,31 @@ public sealed class EditTournamentCommandHandlerTests(AppDbContextFixture fixtur
         statsAfterEdit.ShouldBe("cached-stats");
     }
 
+    [Fact(DisplayName = "HandleAsync rejects a logo that is not a pending upload or the current logo")]
+    public async Task HandleAsync_ShouldReturnValidationError_WhenLogoWasNeverUploaded()
+    {
+        // Arrange
+        var ct = TestContext.Current.CancellationToken;
+        var season = await SeedSeasonAsync(new DateOnly(2025, 1, 1), new DateOnly(2025, 12, 31), ct);
+        var tournament = TournamentFactory.Create(
+            startDate: season.StartDate,
+            endDate: season.StartDate,
+            seasonId: season.Id);
+        await _dbContext.Tournaments.AddAsync(tournament, ct);
+        await _dbContext.SaveChangesAsync(ct);
+
+        var foreignLogo = StoredFileFactory.Create(container: "documents", path: "bylaws.pdf");
+        var handler = CreateHandler();
+        var command = ValidCommand(tournament.Id, startDate: season.StartDate, endDate: season.StartDate, logo: foreignLogo);
+
+        // Act
+        var result = await handler.HandleAsync(command, ct);
+
+        // Assert
+        result.IsError.ShouldBeTrue();
+        result.FirstError.Code.ShouldBe("Tournament.Logo.NotUploaded");
+    }
+
     [Fact(DisplayName = "HandleAsync enqueues a delete job for the previous logo when the logo is replaced")]
     public async Task HandleAsync_ShouldEnqueueDeleteJob_WhenLogoIsReplaced()
     {
@@ -415,6 +440,8 @@ public sealed class EditTournamentCommandHandlerTests(AppDbContextFixture fixtur
         await _dbContext.SaveChangesAsync(ct);
 
         var newLogo = StoredFileFactory.Create(container: "tournament-logos", path: "new-logo.png");
+        await _dbContext.PendingUploads.AddAsync(PendingUploadFactory.Create(container: newLogo.Container, path: newLogo.Path), ct);
+        await _dbContext.SaveChangesAsync(ct);
 
         DeleteTournamentFilesJob? scheduledJob = null;
         var schedulerMock = new Mock<IBackgroundJobScheduler>(MockBehavior.Strict);

@@ -474,6 +474,24 @@ public sealed class CreateTournamentCommandHandlerTests(AppDbContextFixture fixt
         listAfterCreate.ShouldBe("cached-list");
     }
 
+    [Fact(DisplayName = "HandleAsync rejects a logo that is not a pending upload")]
+    public async Task HandleAsync_ShouldReturnValidationError_WhenLogoWasNeverUploaded()
+    {
+        // Arrange
+        var ct = TestContext.Current.CancellationToken;
+        await SeedSeasonAsync(ct);
+        var foreignLogo = StoredFileFactory.Create(container: "documents", path: "bylaws.pdf");
+        var handler = CreateHandler();
+        var command = ValidCommand(name: "Tournament With Foreign Logo", logo: foreignLogo);
+
+        // Act
+        var result = await handler.HandleAsync(command, ct);
+
+        // Assert
+        result.IsError.ShouldBeTrue();
+        result.FirstError.Code.ShouldBe("Tournament.Logo.NotUploaded");
+    }
+
     [Fact(DisplayName = "HandleAsync removes the pending upload record for the logo when command is valid")]
     public async Task HandleAsync_ShouldRemovePendingUpload_ForLogo_WhenCommandIsValid()
     {

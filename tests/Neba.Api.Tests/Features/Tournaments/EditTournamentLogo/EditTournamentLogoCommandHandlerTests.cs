@@ -94,6 +94,8 @@ public sealed class EditTournamentLogoCommandHandlerTests(AppDbContextFixture fi
         var previousLogo = StoredFileFactory.Create(container: "tournament-logos", path: "old-logo.png");
         var (_, tournament) = await SeedTournamentAsync(previousLogo, ct);
         var newLogo = StoredFileFactory.Create(container: "tournament-logos", path: "new-logo.png");
+        await _dbContext.PendingUploads.AddAsync(PendingUploadFactory.Create(container: newLogo.Container, path: newLogo.Path), ct);
+        await _dbContext.SaveChangesAsync(ct);
 
         DeleteTournamentFilesJob? scheduledJob = null;
         var schedulerMock = new Mock<IBackgroundJobScheduler>(MockBehavior.Strict);
@@ -232,12 +234,12 @@ public sealed class EditTournamentLogoCommandHandlerTests(AppDbContextFixture fi
         await cache.GetOrSetAsync(tournamentKey, _ => Task.FromResult("cached-tournament"), tags: [$"neba:tournaments:{tournament.Id}"], token: ct);
         await cache.GetOrSetAsync(seasonKey, _ => Task.FromResult("cached-season"), tags: [$"neba:tournaments:{season.Id}"], token: ct);
 
+        var newLogo = StoredFileFactory.Create(container: "tournament-logos", path: "new-logo.png");
+        await _dbContext.PendingUploads.AddAsync(PendingUploadFactory.Create(container: newLogo.Container, path: newLogo.Path), ct);
+        await _dbContext.SaveChangesAsync(ct);
+
         var handler = CreateHandler();
-        var command = new EditTournamentLogoCommand
-        {
-            TournamentId = tournament.Id,
-            Logo = StoredFileFactory.Create(container: "tournament-logos", path: "new-logo.png")
-        };
+        var command = new EditTournamentLogoCommand { TournamentId = tournament.Id, Logo = newLogo };
 
         // Act
         var result = await handler.HandleAsync(command, ct);
@@ -248,5 +250,30 @@ public sealed class EditTournamentLogoCommandHandlerTests(AppDbContextFixture fi
         var seasonAfter = await cache.GetOrSetAsync(seasonKey, _ => Task.FromResult("fresh-season"), token: ct);
         tournamentAfter.ShouldBe("fresh-tournament");
         seasonAfter.ShouldBe("fresh-season");
+    }
+
+    [Fact(DisplayName = "HandleAsync rejects a logo that is not a pending upload or the current logo")]
+    public async Task HandleAsync_ShouldReturnValidationError_WhenLogoWasNeverUploaded()
+    {
+        // Arrange
+        var ct = TestContext.Current.CancellationToken;
+        var previousLogo = StoredFileFactory.Create(container: "tournament-logos", path: "old-logo.png");
+        var (_, tournament) = await SeedTournamentAsync(previousLogo, ct);
+        var foreignLogo = StoredFileFactory.Create(container: "documents", path: "bylaws.pdf");
+
+        // Strict mock with no setups: the handler must not enqueue anything.
+        var schedulerMock = new Mock<IBackgroundJobScheduler>(MockBehavior.Strict);
+        var handler = CreateHandler(schedulerMock.Object);
+        var command = new EditTournamentLogoCommand { TournamentId = tournament.Id, Logo = foreignLogo };
+
+        // Act
+        var result = await handler.HandleAsync(command, ct);
+
+        // Assert
+        result.IsError.ShouldBeTrue();
+        result.FirstError.Code.ShouldBe("Tournament.Logo.NotUploaded");
+        var persisted = await _dbContext.Tournaments.AsNoTracking().SingleAsync(t => t.Id == tournament.Id, ct);
+        persisted.Logo.ShouldNotBeNull();
+        persisted.Logo.Path.ShouldBe(previousLogo.Path);
     }
 }

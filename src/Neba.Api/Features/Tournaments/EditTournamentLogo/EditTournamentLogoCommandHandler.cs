@@ -28,6 +28,14 @@ internal sealed class EditTournamentLogoCommandHandler(
             return TournamentErrors.TournamentNotFound(command.TournamentId);
         }
 
+        var logoClaim = await TournamentLogoClaim.EnsureClaimableAsync(
+            appDbContext, command.Logo, tournament.Logo, cancellationToken);
+
+        if (logoClaim.IsError)
+        {
+            return logoClaim.Errors;
+        }
+
         // Snapshot before ChangeLogo: Logo is mutated in place, so reading it afterwards returns the new value.
         var previousLogo = tournament.Logo;
 

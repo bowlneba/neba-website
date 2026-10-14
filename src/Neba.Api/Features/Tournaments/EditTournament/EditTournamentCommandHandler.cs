@@ -32,6 +32,14 @@ internal sealed class EditTournamentCommandHandler(
             return TournamentErrors.TournamentNotFound(command.TournamentId);
         }
 
+        var logoClaim = await TournamentLogoClaim.EnsureClaimableAsync(
+            appDbContext, command.Logo, tournament.Logo, cancellationToken);
+
+        if (logoClaim.IsError)
+        {
+            return logoClaim.Errors;
+        }
+
         var resolveResult = await TournamentSeasonAndPatternResolver.ResolveAsync(
             appDbContext,
             command.StartDate,
