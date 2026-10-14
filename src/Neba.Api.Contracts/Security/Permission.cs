@@ -20,7 +20,8 @@ public sealed class Permissions
 
     /// <summary>
     /// The claim type that removes a permission from a single user even when one of their roles grants it.
-    /// Stored on the user (AspNetUserClaims), never on a role or in a JWT.
+    /// Stored on the user (AspNetUserClaims), never on a role or in a JWT. A caller reads its own denials from the
+    /// current-user endpoint; the API reads them from the store when a rule depends on a denial.
     /// </summary>
     public const string DeniedClaimType = "permission.denied";
 

@@ -26,12 +26,15 @@ internal sealed class GetCurrentUserQueryHandler(
         var roles = await userManager.GetRolesAsync(user);
         var permissions = await PermissionResolver.ResolveAsync(securityDbContext, user, roles, cancellationToken);
 
+        var deniedPermissions = await PermissionResolver.ResolveDeniedAsync(securityDbContext, user.Id, roles, cancellationToken);
+
         return new UserDto
         {
             UserId = user.Id,
             Email = user.Email!,
             Roles = [.. roles],
             Permissions = permissions,
+            DeniedPermissions = deniedPermissions,
             UsbcId = user.UsbcId
         };
     }

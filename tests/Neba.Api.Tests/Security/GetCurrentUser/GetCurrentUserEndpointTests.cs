@@ -46,6 +46,34 @@ public sealed class GetCurrentUserEndpointTests
         await Verify(endpoint.Response);
     }
 
+    [Fact(DisplayName = "HandleAsync should map denied permissions to their values")]
+    public async Task HandleAsync_ShouldMapDeniedPermissions_WhenUserHasDenials()
+    {
+        // Arrange
+        var userId = Ulid.Parse("01000000000000000000000003", CultureInfo.InvariantCulture);
+        var dto = UserDtoFactory.Create(
+            userId: userId,
+            deniedPermissions: [Neba.Api.Contracts.Security.Permissions.EditTournamentLogo]);
+        var ct = TestContext.Current.CancellationToken;
+
+        var queryHandlerMock = new Mock<NebaMessaging.IQueryHandler<GetCurrentUserQuery, ErrorOr<UserDto>>>(MockBehavior.Strict);
+        queryHandlerMock
+            .Setup(h => h.HandleAsync(It.Is<GetCurrentUserQuery>(q => q.UserId == userId), ct))
+            .ReturnsAsync(dto);
+
+        var endpoint = Factory.Create<GetCurrentUserEndpoint>(queryHandlerMock.Object);
+        endpoint.HttpContext.User = new ClaimsPrincipal(new ClaimsIdentity(
+        [
+            new Claim(JwtRegisteredClaimNames.Sub, userId.ToString()),
+        ]));
+
+        // Act
+        await endpoint.HandleAsync(ct);
+
+        // Assert
+        endpoint.Response.DeniedPermissions.ShouldHaveSingleItem().ShouldBe("Tournaments.EditTournamentLogo");
+    }
+
     [Fact(DisplayName = "HandleAsync should return 200 OK when user ID is in NameIdentifier claim")]
     public async Task HandleAsync_ShouldReturn200_WhenUserIdIsInNameIdentifierClaim()
     {
