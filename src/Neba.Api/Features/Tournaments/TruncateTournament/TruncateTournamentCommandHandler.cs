@@ -2,6 +2,7 @@ using ErrorOr;
 
 using Microsoft.EntityFrameworkCore;
 
+using Neba.Api.Caching;
 using Neba.Api.Database;
 using Neba.Api.Features.Tournaments.Domain;
 using Neba.Api.Messaging;
@@ -35,7 +36,7 @@ internal sealed class TruncateTournamentCommandHandler(AppDbContext appDbContext
         await cache.RemoveByTagAsync($"neba:tournaments:{tournament.SeasonId}", token: cancellationToken);
 
         // A truncated tournament counts toward the season's stat minimums, so cached season stats are stale.
-        await cache.RemoveByTagAsync($"neba:stats:seasons:{tournament.SeasonId}", token: cancellationToken);
+        await cache.RemoveByTagAsync(CacheDescriptors.Stats.SeasonTag(tournament.SeasonId), token: cancellationToken);
 
         return Result.Success;
     }

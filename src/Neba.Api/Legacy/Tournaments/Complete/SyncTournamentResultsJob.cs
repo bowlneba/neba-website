@@ -5,6 +5,7 @@ using Dapper;
 
 using Microsoft.EntityFrameworkCore;
 
+using Neba.Api.Caching;
 using Neba.Api.Database;
 using Neba.Api.Discord;
 using Neba.Api.Features.Bowlers.Domain;
@@ -73,7 +74,7 @@ internal sealed class SyncTournamentResultsJob(
         // recache the half-updated snapshot.
         if (tournament.StatsEligible)
         {
-            await cache.RemoveByTagAsync($"neba:stats:seasons:{tournament.SeasonId}", token: ct);
+            await cache.RemoveByTagAsync(CacheDescriptors.Stats.SeasonTag(tournament.SeasonId), token: ct);
         }
 
         // Alerts go out after the save so a retry of a failed sync does not repeat them, and a

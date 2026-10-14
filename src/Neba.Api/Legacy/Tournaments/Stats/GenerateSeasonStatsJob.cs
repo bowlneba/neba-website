@@ -5,6 +5,7 @@ using Dapper;
 
 using Microsoft.EntityFrameworkCore;
 
+using Neba.Api.Caching;
 using Neba.Api.Database;
 using Neba.Api.Discord;
 using Neba.Api.Features.Bowlers.Domain;
@@ -118,7 +119,7 @@ internal sealed class GenerateSeasonStatsJob(
 
         await db.SaveChangesAsync(ct);
 
-        await cache.RemoveByTagAsync($"neba:stats:seasons:{season.Id}", token: ct);
+        await cache.RemoveByTagAsync(CacheDescriptors.Stats.SeasonTag(season.Id), token: ct);
 
         if (unmappedLegacyBowlerIds.Count > 0)
         {

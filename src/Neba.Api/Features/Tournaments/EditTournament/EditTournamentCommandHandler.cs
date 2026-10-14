@@ -3,6 +3,7 @@ using ErrorOr;
 using Microsoft.EntityFrameworkCore;
 
 using Neba.Api.BackgroundJobs;
+using Neba.Api.Caching;
 using Neba.Api.Database;
 using Neba.Api.Features.Seasons.Domain;
 using Neba.Api.Features.Storage.Domain;
@@ -156,11 +157,11 @@ internal sealed class EditTournamentCommandHandler(
         // tournament between seasons makes the cached season stats stale.
         if (statsEligibleChanged || currentSeasonId != previousSeasonId)
         {
-            await cache.RemoveByTagAsync($"neba:stats:seasons:{previousSeasonId}", token: cancellationToken);
+            await cache.RemoveByTagAsync(CacheDescriptors.Stats.SeasonTag(previousSeasonId), token: cancellationToken);
 
             if (currentSeasonId != previousSeasonId)
             {
-                await cache.RemoveByTagAsync($"neba:stats:seasons:{currentSeasonId}", token: cancellationToken);
+                await cache.RemoveByTagAsync(CacheDescriptors.Stats.SeasonTag(currentSeasonId), token: cancellationToken);
             }
         }
     }

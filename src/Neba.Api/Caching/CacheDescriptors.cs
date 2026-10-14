@@ -229,6 +229,18 @@ public static class CacheDescriptors
     public static class Stats
     {
         /// <summary>
+        /// The tag carried by every cached stats entry for the given season; evict it when the season's stats change.
+        /// </summary>
+        /// <param name="seasonId">
+        /// The season identifier.
+        /// </param>
+        /// <returns>
+        /// The season's stats cache tag.
+        /// </returns>
+        public static string SeasonTag(SeasonId seasonId)
+            => $"neba:stats:seasons:{seasonId}";
+
+        /// <summary>
         /// Returns a cache descriptor for the list of seasons with stats.
         /// </summary>
         public static CacheDescriptor ListSeasonsWithStats
@@ -251,7 +263,7 @@ public static class CacheDescriptors
             => new()
             {
                 Key = $"neba:stats:seasons:{seasonId}:bowlers",
-                Tags = ["neba", "neba:stats", "neba:stats:seasons", $"neba:stats:seasons:{seasonId}"]
+                Tags = ["neba", "neba:stats", "neba:stats:seasons", SeasonTag(seasonId)]
             };
 
         /// <summary>
@@ -267,7 +279,7 @@ public static class CacheDescriptors
             => new()
             {
                 Key = $"neba:stats:seasons:{seasonId}:boy-progressions",
-                Tags = ["neba", "neba:stats", "neba:stats:seasons", $"neba:stats:seasons:{seasonId}"]
+                Tags = ["neba", "neba:stats", "neba:stats:seasons", SeasonTag(seasonId)]
             };
     }
 
