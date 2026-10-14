@@ -1,7 +1,7 @@
-using Neba.Api.Contracts.Security;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.DependencyInjection;
 
+using Neba.Api.Contracts.Security;
 using Neba.Api.Security.Domain;
 using Neba.Api.Security.GetCurrentUser;
 using Neba.TestFactory.Attributes;

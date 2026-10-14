@@ -12,8 +12,8 @@ using Neba.Api.Contracts.Security.Authorization;
 using Neba.Api.Database;
 using Neba.Api.Database.Interceptors;
 using Neba.Api.Security.Domain;
-using Neba.Api.Security.Infrastructure.Authorization;
 using Neba.Api.Security.Infrastructure;
+using Neba.Api.Security.Infrastructure.Authorization;
 
 using Npgsql;
 
