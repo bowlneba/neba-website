@@ -23,9 +23,9 @@ public sealed class ResourceMonitoringConfigurationTests
 
         // Assert
         using var provider = builder.Services.BuildServiceProvider();
-#pragma warning disable CS0618 // IResourceMonitor is obsolete; only its registration is checked
+#pragma warning disable EXTOBS0001 // IResourceMonitor is obsolete; only its registration is checked
         var monitor = provider.GetService<IResourceMonitor>();
-#pragma warning restore CS0618
+#pragma warning restore EXTOBS0001
         (monitor is not null).ShouldBe(supported);
     }
 }

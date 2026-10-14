@@ -3,6 +3,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Testing;
 
+using Neba.Api.Contracts.Compliance;
 using Neba.Api.Storage;
 using Neba.TestFactory.Attributes;
 
