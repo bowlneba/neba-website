@@ -138,7 +138,7 @@ internal sealed class GenerateSeasonStatsJob(
         }
     }
 
-    private async Task NotifyUnlinkedTournamentAsync(int legacyTournamentId, CancellationToken ct)
+    private Task NotifyUnlinkedTournamentAsync(int legacyTournamentId, CancellationToken ct)
     {
         logger.LogLegacyTournamentNotSyncedForStatsGeneration(legacyTournamentId);
 
@@ -151,7 +151,7 @@ internal sealed class GenerateSeasonStatsJob(
                 ["LegacyTournamentId"] = legacyTournamentId.ToString(CultureInfo.InvariantCulture)
             });
 
-        await manualInterventionNotifier.NotifyAsync(alert, ct);
+        return manualInterventionNotifier.NotifyAsync(alert, ct);
     }
 
     // See NewBowlerSyncJob.SyncAsync for the rationale on suppressing DAP005 here.

@@ -180,7 +180,7 @@ public sealed class SyncTournamentResultsJobTests(AppDbContextFixture fixture, L
         var season = SeasonFactory.Create();
         await _dbContext.Seasons.AddAsync(season, ct);
 
-        var tournament = TournamentFactory.Create(tournamentType: tournamentType, legacyId: legacyTournamentId, seasonId: season.Id, statsEligible: statsEligible);
+        var tournament = TournamentFactory.Create(tournamentType: tournamentType, statsEligible: statsEligible, legacyId: legacyTournamentId, seasonId: season.Id);
         if (complete)
         {
             tournament.CompleteTournament(entryCount: 100);
@@ -213,8 +213,8 @@ public sealed class SyncTournamentResultsJobTests(AppDbContextFixture fixture, L
             (manualInterventionNotifier ?? new Mock<IManualInterventionNotifier>(MockBehavior.Strict)).Object,
             logger ?? new FakeLogger<SyncTournamentResultsJob>());
 
-    private async Task<Tournament> ReloadTournamentAsync(int legacyTournamentId, CancellationToken ct) =>
-        await _dbContext.Tournaments.Include(t => t.Results).SingleAsync(t => t.LegacyId == legacyTournamentId, ct);
+    private Task<Tournament> ReloadTournamentAsync(int legacyTournamentId, CancellationToken ct) =>
+        _dbContext.Tournaments.Include(t => t.Results).SingleAsync(t => t.LegacyId == legacyTournamentId, ct);
 
     [Fact(DisplayName = "SyncAsync should log a warning and make no changes when the legacy tournament is not synced")]
     public async Task SyncAsync_ShouldLogWarningAndMakeNoChanges_WhenTournamentNotSynced()

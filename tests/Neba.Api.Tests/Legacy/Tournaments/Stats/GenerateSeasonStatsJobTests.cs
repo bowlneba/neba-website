@@ -232,8 +232,8 @@ public sealed class GenerateSeasonStatsJobTests(AppDbContextFixture fixture, Leg
         await insert.ExecuteNonQueryAsync();
     }
 
-    private async Task<Tournament> ReloadTournamentAsync(int legacyTournamentId, CancellationToken ct) =>
-        await _dbContext.Set<Tournament>().SingleAsync(t => t.LegacyId == legacyTournamentId, ct);
+    private Task<Tournament> ReloadTournamentAsync(int legacyTournamentId, CancellationToken ct) =>
+        _dbContext.Set<Tournament>().SingleAsync(t => t.LegacyId == legacyTournamentId, ct);
 
     [Fact(DisplayName = "SyncAsync should log a warning and post a Critical alert when the legacy tournament has no linked website tournament")]
     public async Task SyncAsync_ShouldLogWarningAndPostAlert_WhenTournamentNotSynced()

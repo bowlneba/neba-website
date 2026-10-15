@@ -23,11 +23,8 @@ namespace Neba.Api.Tests.Features.Tournaments.EditTournament;
 public sealed class EditTournamentEndpointTests
 {
     private static Action<DefaultHttpContext> AsCaller(Ulid? callerId = null)
-        => ctx =>
-        {
-            ctx.User = new ClaimsPrincipal(new ClaimsIdentity(
+        => ctx => ctx.User = new ClaimsPrincipal(new ClaimsIdentity(
                 [new Claim(JwtRegisteredClaimNames.Sub, (callerId ?? Ulid.NewUlid()).ToString())], "test"));
-        };
 
     [Fact(DisplayName = "HandleAsync should map request fields to command and take the success branch when edit succeeds")]
     public async Task HandleAsync_ShouldMapRequestToCommandAndTakeSuccessBranch_WhenEditSucceeds()

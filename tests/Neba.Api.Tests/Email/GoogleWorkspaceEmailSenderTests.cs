@@ -191,7 +191,7 @@ public sealed class GoogleWorkspaceEmailSenderTests : IClassFixture<MailpitFixtu
     }
 
     [Fact(DisplayName = "SendAsync should not throw when SMTP delivery fails")]
-    public async Task SendAsync_ShouldNotThrow_WhenSmtpDeliveryFails()
+    public Task SendAsync_ShouldNotThrow_WhenSmtpDeliveryFails()
     {
         // Arrange
         _discordNotifier
@@ -201,7 +201,10 @@ public sealed class GoogleWorkspaceEmailSenderTests : IClassFixture<MailpitFixtu
         var message = EmailMessageFactory.Create();
 
         // Act & Assert
-        await Should.NotThrowAsync(() => sut.SendAsync(message, CancellationToken.None));
+        return
+
+        // Act & Assert
+        Should.NotThrowAsync(() => sut.SendAsync(message, CancellationToken.None));
     }
 
     [Fact(DisplayName = "SendAsync should post a critical Discord alert with recipient and subject when SMTP delivery fails")]

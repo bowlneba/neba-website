@@ -111,6 +111,8 @@
     border-radius: 0.5rem;
     /* clip, not hidden: hidden makes the section a scroll container and breaks sticky headers */
     overflow: clip;
+    --stats-navbar-height: 4.0625rem;
+    --stats-section-header-height: 3rem;
 }
 
 .stats-section-header {
@@ -168,11 +170,6 @@
 /* Sticky headers: the section title bar pins under the navbar, the column headers pin under the
    title bar, and both release when the section scrolls out so the next section's headers take over.
    Wide screens only: on narrow screens the wrapper scrolls horizontally, which traps sticky. */
-.stats-section {
-    --stats-navbar-height: 4.0625rem;
-    --stats-section-header-height: 3rem;
-}
-
 @media (min-width: 768px) {
     .stats-section .stats-section-header {
         position: sticky;

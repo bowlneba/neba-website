@@ -513,33 +513,33 @@ public sealed class CreateTournamentTests : IDisposable
     /// which bUnit does not execute — so tests drive it the same way RichTextEditorTests drives
     /// RichTextEditor's JS-originated content changes: call the [JSInvokable] entry point directly.
     /// </summary>
-    private static async Task SetDateInputAsync(IRenderedComponent<CreateTournamentPage> cut, string id, DateOnly date)
+    private static Task SetDateInputAsync(IRenderedComponent<CreateTournamentPage> cut, string id, DateOnly date)
     {
         var dateInput = cut.FindComponents<NebaDateInput>().Single(c => c.Markup.Contains($"id=\"{id}\"", StringComparison.Ordinal));
 
-        await cut.InvokeAsync(() => dateInput.Instance.NotifySegmentsChanged(
-            date.Month.ToString("D2", CultureInfo.InvariantCulture),
-            date.Day.ToString("D2", CultureInfo.InvariantCulture),
-            date.Year.ToString("D4", CultureInfo.InvariantCulture)));
+        return cut.InvokeAsync(() => dateInput.Instance.NotifySegmentsChanged(
+                   date.Month.ToString("D2", CultureInfo.InvariantCulture),
+                   date.Day.ToString("D2", CultureInfo.InvariantCulture),
+                   date.Year.ToString("D4", CultureInfo.InvariantCulture)));
     }
 
     /// <summary>
     /// Simulates the JS side of <see cref="NebaDateTimeInput"/> reporting a fully-typed date/time,
     /// the same way <see cref="SetDateInputAsync"/> drives <see cref="NebaDateInput"/>.
     /// </summary>
-    private static async Task SetDateTimeInputAsync(IRenderedComponent<CreateTournamentPage> cut, string id, DateTime value)
+    private static Task SetDateTimeInputAsync(IRenderedComponent<CreateTournamentPage> cut, string id, DateTime value)
     {
         var dateTimeInput = cut.FindComponents<NebaDateTimeInput>().Single(c => c.Markup.Contains($"id=\"{id}\"", StringComparison.Ordinal));
 
         var hour12 = value.Hour % 12 == 0 ? 12 : value.Hour % 12;
 
-        await cut.InvokeAsync(() => dateTimeInput.Instance.NotifySegmentsChanged(
-            value.Month.ToString("D2", CultureInfo.InvariantCulture),
-            value.Day.ToString("D2", CultureInfo.InvariantCulture),
-            value.Year.ToString("D4", CultureInfo.InvariantCulture),
-            hour12.ToString("D2", CultureInfo.InvariantCulture),
-            value.Minute.ToString("D2", CultureInfo.InvariantCulture),
-            value.Hour < 12 ? "AM" : "PM"));
+        return cut.InvokeAsync(() => dateTimeInput.Instance.NotifySegmentsChanged(
+                   value.Month.ToString("D2", CultureInfo.InvariantCulture),
+                   value.Day.ToString("D2", CultureInfo.InvariantCulture),
+                   value.Year.ToString("D4", CultureInfo.InvariantCulture),
+                   hour12.ToString("D2", CultureInfo.InvariantCulture),
+                   value.Minute.ToString("D2", CultureInfo.InvariantCulture),
+                   value.Hour < 12 ? "AM" : "PM"));
     }
 
     private void SetupListBowlingCenters(IReadOnlyCollection<Neba.Api.Contracts.BowlingCenters.ListBowlingCenters.BowlingCenterSummaryResponse>? centers = null)

@@ -80,10 +80,10 @@ public sealed class TournamentLogoCleanupTests
         var currentLogo = StoredFileFactory.Create();
 
         // Act
-        var act = () => TournamentLogoCleanup.ScheduleDeleteOfReplacedLogo(_scheduler.Object, null, currentLogo);
+        void Act() => TournamentLogoCleanup.ScheduleDeleteOfReplacedLogo(_scheduler.Object, null, currentLogo);
 
         // Assert — a strict mock with no setup throws if Enqueue is called
-        Should.NotThrow(act);
+        Should.NotThrow(Act);
     }
 
     [Fact(DisplayName = "ScheduleDeleteOfReplacedLogo does not enqueue when the logo file is unchanged")]
@@ -94,9 +94,9 @@ public sealed class TournamentLogoCleanupTests
         var currentLogo = StoredFileFactory.Create(contentType: "image/jpeg", sizeInBytes: 2);
 
         // Act
-        var act = () => TournamentLogoCleanup.ScheduleDeleteOfReplacedLogo(_scheduler.Object, previousLogo, currentLogo);
+        void Act() => TournamentLogoCleanup.ScheduleDeleteOfReplacedLogo(_scheduler.Object, previousLogo, currentLogo);
 
         // Assert — a strict mock with no setup throws if Enqueue is called
-        Should.NotThrow(act);
+        Should.NotThrow(Act);
     }
 }

@@ -16,11 +16,11 @@ internal static class TournamentLogoResolver
             return (tournamentLogoContainer, tournamentLogoPath);
         }
 
-        foreach (var sponsor in sponsors)
+        foreach (var (titleSponsor, logoContainer, logoPath) in sponsors)
         {
-            if (sponsor.TitleSponsor && sponsor.LogoContainer is not null && sponsor.LogoPath is not null)
+            if (titleSponsor && logoContainer is not null && logoPath is not null)
             {
-                return (sponsor.LogoContainer, sponsor.LogoPath);
+                return (logoContainer, logoPath);
             }
         }
 

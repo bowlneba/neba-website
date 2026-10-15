@@ -569,19 +569,19 @@ public sealed class EditTournamentTests : IDisposable
         return _ctx.Render<EditTournamentPage>(p => p.Add(x => x.Id, id));
     }
 
-    private static async Task SetDateTimeInputAsync(IRenderedComponent<EditTournamentPage> cut, string id, DateTime value)
+    private static Task SetDateTimeInputAsync(IRenderedComponent<EditTournamentPage> cut, string id, DateTime value)
     {
         var dateTimeInput = cut.FindComponents<NebaDateTimeInput>().Single(c => c.Markup.Contains($"id=\"{id}\"", StringComparison.Ordinal));
 
         var hour12 = value.Hour % 12 == 0 ? 12 : value.Hour % 12;
 
-        await cut.InvokeAsync(() => dateTimeInput.Instance.NotifySegmentsChanged(
-            value.Month.ToString("D2", CultureInfo.InvariantCulture),
-            value.Day.ToString("D2", CultureInfo.InvariantCulture),
-            value.Year.ToString("D4", CultureInfo.InvariantCulture),
-            hour12.ToString("D2", CultureInfo.InvariantCulture),
-            value.Minute.ToString("D2", CultureInfo.InvariantCulture),
-            value.Hour < 12 ? "AM" : "PM"));
+        return cut.InvokeAsync(() => dateTimeInput.Instance.NotifySegmentsChanged(
+                   value.Month.ToString("D2", CultureInfo.InvariantCulture),
+                   value.Day.ToString("D2", CultureInfo.InvariantCulture),
+                   value.Year.ToString("D4", CultureInfo.InvariantCulture),
+                   hour12.ToString("D2", CultureInfo.InvariantCulture),
+                   value.Minute.ToString("D2", CultureInfo.InvariantCulture),
+                   value.Hour < 12 ? "AM" : "PM"));
     }
 
     private void SetupListBowlingCenters(IReadOnlyCollection<Neba.Api.Contracts.BowlingCenters.ListBowlingCenters.BowlingCenterSummaryResponse>? centers = null)

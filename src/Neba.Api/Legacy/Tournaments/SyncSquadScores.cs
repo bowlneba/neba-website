@@ -146,13 +146,13 @@ internal sealed class SyncSquadScoresSyncJob(
         return [.. rows];
     }
 
-    private async Task<Dictionary<int, BowlerId>> LoadBowlerIdsByLegacyIdAsync(
+    private Task<Dictionary<int, BowlerId>> LoadBowlerIdsByLegacyIdAsync(
         List<LegacyQualifyingScoreRow> rows,
         CancellationToken ct)
     {
         var legacyBowlerIds = rows.Select(row => row.BowlerId).Distinct().ToList();
 
-        return await db.Bowlers
+        return db.Bowlers
             .Where(bowler => bowler.LegacyId != null && legacyBowlerIds.Contains(bowler.LegacyId.Value))
             .ToDictionaryAsync(bowler => bowler.LegacyId!.Value, bowler => bowler.Id, ct);
     }

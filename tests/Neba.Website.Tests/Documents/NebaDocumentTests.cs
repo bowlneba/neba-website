@@ -933,7 +933,7 @@ public sealed class NebaDocumentTests : IDisposable
     }
 
     [Fact(DisplayName = "OnInternalLinkClicked should not throw when no delegate is set")]
-    public async Task OnInternalLinkClicked_ShouldNotThrow_WhenNoDelegateIsSet()
+    public Task OnInternalLinkClicked_ShouldNotThrow_WhenNoDelegateIsSet()
     {
         // Arrange
         var content = new MarkupString("<p>Content</p>");
@@ -941,7 +941,10 @@ public sealed class NebaDocumentTests : IDisposable
             .Add(p => p.Content, content));
 
         // Act & Assert
-        await Should.NotThrowAsync(() => cut.Instance.OnInternalLinkClicked("bylaws"));
+        return
+
+        // Act & Assert
+        Should.NotThrowAsync(() => cut.Instance.OnInternalLinkClicked("bylaws"));
     }
 
     [Fact(DisplayName = "Should dispose without throwing exception")]
