@@ -15,7 +15,6 @@ namespace Neba.Api.Security.RefreshToken;
 
 internal sealed class RefreshTokenCommandHandler(
     UserManager<ApplicationUser> userManager,
-    RoleManager<ApplicationRole> roleManager,
     SecurityDbContext securityDbContext,
     IJwtTokenService jwtTokenService,
     JwtSettings jwtSettings,
@@ -49,7 +48,7 @@ internal sealed class RefreshTokenCommandHandler(
         {
             // Null means another request won the CAS race between our read and write; loop and
             // re-evaluate against the latest state rather than assuming.
-            var outcome = await TryRefreshOnceAsync(command.UserId, user, incomingHash, roleContext);
+            var outcome = await TryRefreshOnceAsync(command.UserId, user, incomingHash, roleContext, cancellationToken);
             if (outcome is not null)
             {
                 return outcome.Value;
@@ -64,7 +63,8 @@ internal sealed class RefreshTokenCommandHandler(
         Ulid userId,
         ApplicationUser user,
         string incomingHash,
-        RoleContext roleContext)
+        RoleContext roleContext,
+        CancellationToken cancellationToken)
     {
         var storedJson = await RefreshTokenStore.GetStoredJsonAsync(userManager, user);
         if (storedJson is null)
@@ -96,7 +96,7 @@ internal sealed class RefreshTokenCommandHandler(
         // Roles/permissions don't change between CAS retries for the same user, so only
         // resolve them once - on the first attempt whose token actually validated.
         roleContext.Roles ??= (await userManager.GetRolesAsync(user)).AsReadOnly();
-        roleContext.Permissions ??= await PermissionResolver.ResolveAsync(roleManager, roleContext.Roles);
+        roleContext.Permissions ??= await PermissionResolver.ResolveAsync(securityDbContext, user, roleContext.Roles, cancellationToken);
 
         if (matchedSlot.GracedUntil is not null)
         {

@@ -1,4 +1,7 @@
+using System.Data;
 using System.Globalization;
+
+using Dapper;
 
 using Hangfire;
 
@@ -6,7 +9,6 @@ using Microsoft.EntityFrameworkCore;
 
 using Neba.Api.Database;
 using Neba.Api.Discord;
-using Neba.Api.Email;
 using Neba.Api.Features.Tournaments.Domain;
 using Neba.Api.Legacy.Tournaments.Stats;
 
@@ -22,10 +24,10 @@ namespace Neba.Api.Legacy.Tournaments.Complete;
 // large unit of work.
 internal sealed class CompleteTournamentSyncJob(
     AppDbContext db,
+    IDbConnection legacyConnection,
     IBackgroundJobClient jobs,
     IFusionCache cache,
-    IEmailSender emailSender,
-    IDiscordNotifier discordNotifier,
+    IManualInterventionNotifier manualInterventionNotifier,
     ILogger<CompleteTournamentSyncJob> logger)
 {
     public async Task SyncAsync(int legacyTournamentId, CancellationToken ct)
@@ -38,34 +40,28 @@ internal sealed class CompleteTournamentSyncJob(
         {
             logger.LogLegacyTournamentNotSyncedForCompletion(legacyTournamentId);
 
-            await emailSender.SendAsync(new EmailMessage
-            {
-                To = "website@bowlneba.com",
-                Subject = "Manual intervention needed: tournament completion with no linked tournament",
-                HtmlBody = new UnlinkedTournamentCompletionEmail(legacyTournamentId).ToHtmlBody()
-            }, ct);
-
             var alert = new DiscordAlert(
                 DiscordAlertSeverity.Critical,
                 "Tournament completion could not be matched",
-                "The legacy tournament completion event referenced a legacy tournament id with no linked website tournament.",
+                "The legacy tournament completion event referenced a legacy tournament id with no linked website tournament (no Tournament.LegacyId match). Results were not synced. Re-trigger completion after the tournament is linked.",
                 new Dictionary<string, string>
                 {
-                    ["LegacyTournamentId"] = legacyTournamentId.ToString(CultureInfo.InvariantCulture),
-                    ["EmailSent"] = nameof(UnlinkedTournamentCompletionEmail)
+                    ["LegacyTournamentId"] = legacyTournamentId.ToString(CultureInfo.InvariantCulture)
                 });
 
-            await discordNotifier.NotifyAsync(alert, ct);
+            await manualInterventionNotifier.NotifyAsync(alert, ct);
 
             return;
         }
 
-        var completeResult = tournament.CompleteTournament();
+        var entryCount = await GetEntryCountAsync(legacyTournamentId, tournament.TournamentType.TeamSize, ct);
+
+        var completeResult = tournament.CompleteTournament(entryCount);
         if (completeResult.IsError)
         {
-            // AlreadyComplete: expected on retry/re-fire. Not fatal — still chain the follow-on
-            // jobs below (see idempotency decision in the plan); they're each independently safe
-            // to re-run.
+            // AlreadyFinalized: expected on retry/re-fire, or if the tournament was already
+            // Truncated/Cancelled from the admin panel before the legacy event arrived. Not fatal —
+            // still chain the follow-on jobs below; they're each independently safe to re-run.
             logger.LogLegacyTournamentAlreadyCompleteForResultSync(legacyTournamentId);
         }
         else
@@ -86,4 +82,25 @@ internal sealed class CompleteTournamentSyncJob(
         // GenerateSeasonStatsJob's delete-and-regenerate is idempotent and self-corrects on retry.
         jobs.Schedule<GenerateSeasonStatsJob>(job => job.SyncAsync(legacyTournamentId, CancellationToken.None), TimeSpan.FromMinutes(10));
     }
+
+    // Same distinct-(BowlerId, SquadId)-pairs-÷-TeamSize formula GetTournamentQueryHandler already
+    // uses for website-tracked tournaments (see EntryCount there) — just read from the legacy DB,
+    // since this job runs before SyncTournamentResultsJob populates any website-side SquadScore rows.
+#pragma warning disable DAP005
+    private async Task<int> GetEntryCountAsync(int legacyTournamentId, int teamSize, CancellationToken ct)
+    {
+        var pairCount = await legacyConnection.QuerySingleAsync<int>(
+            new CommandDefinition(
+                """
+                SELECT COUNT(DISTINCT CONCAT(s.BowlerId, '-', q.SquadId))
+                FROM Stats s
+                INNER JOIN Stats_QualifyingStats q ON s.Id = q.Id
+                WHERE s.TournamentId = @TournamentId
+                """,
+                new { TournamentId = legacyTournamentId },
+                cancellationToken: ct));
+
+        return pairCount / teamSize;
+    }
+#pragma warning restore DAP005
 }

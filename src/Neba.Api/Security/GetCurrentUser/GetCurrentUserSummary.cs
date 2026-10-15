@@ -22,6 +22,7 @@ internal sealed class GetCurrentUserSummary : Summary<GetCurrentUserEndpoint>
                 Email = "admin@bowlneba.com",
                 Roles = ["Admin"],
                 Permissions = ["Tournament.Complete", "Article.Create", "Member.Search"],
+                DeniedPermissions = [],
                 UsbcId = null,
             });
 #pragma warning restore S1075

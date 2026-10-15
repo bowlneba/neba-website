@@ -32,7 +32,7 @@ public sealed class ResultsTableTests : IDisposable
         cut.FindAll("tbody tr").Count.ShouldBe(3);
     }
 
-    [Fact(DisplayName = "Should render place number for placed results")]
+    [Fact(DisplayName = "Should render ordinal place for placed results")]
     public void Render_ShouldRenderPlaceNumber_WhenPlaceIsSet()
     {
         // Arrange
@@ -42,7 +42,28 @@ public sealed class ResultsTableTests : IDisposable
         var cut = _ctx.Render<ResultsTable>(p => p.Add(x => x.Results, (IEnumerable<TournamentResultViewModel>)[result]));
 
         // Assert
-        cut.Find("tbody tr td:first-child").TextContent.ShouldBe("1");
+        cut.Find("tbody tr td:first-child").TextContent.ShouldBe("1st");
+    }
+
+    [Theory(DisplayName = "Should render correct ordinal suffix for each place")]
+    [InlineData(2, "2nd")]
+    [InlineData(3, "3rd")]
+    [InlineData(4, "4th")]
+    [InlineData(11, "11th")]
+    [InlineData(12, "12th")]
+    [InlineData(13, "13th")]
+    [InlineData(21, "21st")]
+    [InlineData(22, "22nd")]
+    public void Render_ShouldRenderOrdinalSuffix_ForPlace(int place, string expected)
+    {
+        // Arrange
+        var result = TournamentResultViewModelFactory.Create(place: place);
+
+        // Act
+        var cut = _ctx.Render<ResultsTable>(p => p.Add(x => x.Results, (IEnumerable<TournamentResultViewModel>)[result]));
+
+        // Assert
+        cut.Find("tbody tr td:first-child").TextContent.ShouldBe(expected);
     }
 
     [Fact(DisplayName = "Should render em dash for results with no place recorded")]

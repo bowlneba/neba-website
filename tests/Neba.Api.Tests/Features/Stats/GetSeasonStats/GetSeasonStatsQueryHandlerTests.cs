@@ -203,7 +203,7 @@ public sealed class GetSeasonStatsQueryHandlerTests(AppDbContextFixture fixture)
         await _dbContext.Tournaments.AddAsync(tournament, ct);
         await _dbContext.SaveChangesAsync(ct);
 
-        tournament.CompleteTournament();
+        tournament.CompleteTournament(entryCount: 100);
         tournament.AddResult(bowler.Id, place: 1, prizeMoney: 500m, points: 100);
         await _dbContext.SaveChangesAsync(ct);
 
@@ -252,7 +252,7 @@ statsEligible: true, seasonId: season.Id);
         await _dbContext.HistoricalTournamentResults.AddAsync(historicalResult, ct);
         await _dbContext.SaveChangesAsync(ct);
 
-        currentTournament.CompleteTournament();
+        currentTournament.CompleteTournament(entryCount: 100);
         currentTournament.AddResult(bowler.Id, place: 1, prizeMoney: 500m, points: 150);
         await _dbContext.SaveChangesAsync(ct);
 
@@ -332,8 +332,8 @@ statsEligible: true, seasonId: season.Id);
             [completedEligibleTournament, upcomingTournament, completedIneligibleTournament], ct);
         await _dbContext.SaveChangesAsync(ct);
 
-        completedEligibleTournament.CompleteTournament();
-        completedIneligibleTournament.CompleteTournament();
+        completedEligibleTournament.CompleteTournament(entryCount: 100);
+        completedIneligibleTournament.CompleteTournament(entryCount: 100);
         await _dbContext.SaveChangesAsync(ct);
 
         var stats = BowlerSeasonStatsFactory.Create(seasonId: season.Id, bowlerId: bowler.Id);

@@ -5,6 +5,7 @@
 @using Neba.Api.Contracts.Security
 @using Neba.Api.Contracts.Security.ListUsers
 @using Neba.Api.Contracts.Security.ResetPassword
+@using Neba.Website.Server.Account.PermissionOverrides
 @using Neba.Website.Server.Services
 @rendermode @(new InteractiveServerRenderMode(prerender: false))
 
@@ -23,7 +24,7 @@
             <div class="page-title-bar">
                 <div class="page-title-inner">
                     <h1>Users</h1>
-                    <p>View staff accounts and reset a user's password.</p>
+                    <p>View staff accounts, edit their permissions, and reset a user's password.</p>
                 </div>
                 <div class="page-title-help">
                     <HelpButton DocName="list-users" Light="true" />
@@ -69,6 +70,20 @@
                                         <td>@string.Join(", ", user.Roles)</td>
                                         <td>@(user.EmailConfirmed ? "Active" : "Invite Pending")</td>
                                         <td class="text-right">
+                                            @if (!user.IsAdmin)
+                                            {
+                                                <AuthorizeView Policy="@Permissions.EditUser.PolicyName" Context="editContext">
+                                                    <Authorized>
+                                                        <a href="@("/account/users/" + user.UserId + "/edit")" class="neba-btn neba-btn-secondary users-edit-link"
+                                                           aria-label="@("Edit " + user.Email)" title="Edit permissions">
+                                                            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"
+                                                                 stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                                                <path d="M12 20h9" /><path d="M16.5 3.5a2.1 2.1 0 013 3L7 19l-4 1 1-4 12.5-12.5z" />
+                                                            </svg>
+                                                        </a>
+                                                    </Authorized>
+                                                </AuthorizeView>
+                                            }
                                             <AuthorizeView Policy="@Permissions.ResetUserPassword.PolicyName" Context="resetContext">
                                                 <Authorized>
                                                     <button type="button" class="neba-btn neba-btn-secondary"
@@ -218,5 +233,8 @@
         ToastService.Show("Password Reset Sent", $"A password-set link was emailed to \"{user.Email}\".", NotifySeverity.Success);
     }
 
-    private sealed record UserSummaryViewModel(string UserId, string Email, bool EmailConfirmed, IReadOnlyCollection<string> Roles);
+    private sealed record UserSummaryViewModel(string UserId, string Email, bool EmailConfirmed, IReadOnlyCollection<string> Roles)
+    {
+        public bool IsAdmin => Roles.Contains(PermissionOverrideRules.AdminRoleName, StringComparer.Ordinal);
+    }
 }

@@ -14,7 +14,8 @@ public static class CreateUserRequestFactory
         IReadOnlyCollection<string>? roles = null,
         string? usbcId = null,
         string? phoneNumber = null,
-        IReadOnlyCollection<ClaimInput>? claims = null)
+        IReadOnlyCollection<string>? addedPermissions = null,
+        IReadOnlyCollection<string>? removedPermissions = null)
         => new()
         {
             User = new CreateUserInput
@@ -23,7 +24,8 @@ public static class CreateUserRequestFactory
                 Roles = roles ?? [Roles.Webmaster],
                 UsbcId = usbcId,
                 PhoneNumber = phoneNumber,
-                Claims = claims ?? []
+                AddedPermissions = addedPermissions ?? [],
+                RemovedPermissions = removedPermissions ?? []
             }
         };
 

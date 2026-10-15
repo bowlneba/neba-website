@@ -17,6 +17,7 @@ internal static class SecurityRoleSeeder
         [Roles.Webmaster] =
         [
             Permissions.CreateUser,
+            Permissions.EditUser,
             Permissions.ResetUserPassword,
             Permissions.GetUsers,
 
@@ -29,10 +30,14 @@ internal static class SecurityRoleSeeder
 
             Permissions.CreateTournament,
             Permissions.EditTournament,
+            Permissions.EditTournamentLogo,
             Permissions.ManageTournamentSponsors,
             Permissions.DeleteTournament,
+            Permissions.ManageTournamentStatus,
 
-            Permissions.ViewBackgroundJobsDashboard
+            Permissions.ViewBackgroundJobsDashboard,
+
+            Permissions.RefreshDocument
         ],
 
         [Roles.Manager] =
@@ -46,14 +51,18 @@ internal static class SecurityRoleSeeder
 
             Permissions.CreateTournament,
             Permissions.EditTournament,
-            Permissions.ManageTournamentSponsors
+            Permissions.EditTournamentLogo,
+            Permissions.ManageTournamentSponsors,
+            Permissions.ManageTournamentStatus
         ],
 
         [Roles.TournamentDirector] =
         [
             Permissions.CreateTournament,
             Permissions.EditTournament,
-            Permissions.ManageTournamentSponsors
+            Permissions.EditTournamentLogo,
+            Permissions.ManageTournamentSponsors,
+            Permissions.ManageTournamentStatus
         ],
 
         [Roles.Journalist] =

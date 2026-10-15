@@ -18,12 +18,24 @@ public sealed class Permissions
     /// </summary>
     public const string ClaimType = "permission";
 
+    /// <summary>
+    /// The claim type that removes a permission from a single user even when one of their roles grants it.
+    /// Stored on the user (AspNetUserClaims), never on a role or in a JWT. A caller reads its own denials from the
+    /// current-user endpoint; the API reads them from the store when a rule depends on a denial.
+    /// </summary>
+    public const string DeniedClaimType = "permission.denied";
+
     #region System
 
     /// <summary>
     /// Permission to create a new user in the system.
     /// </summary>
     public static readonly Permissions CreateUser = new("System.CreateUser", "Create User");
+
+    /// <summary>
+    /// Permission to edit a user account (currently: that user's permission overrides).
+    /// </summary>
+    public static readonly Permissions EditUser = new("System.EditUser", "Edit User");
 
     /// <summary>
     /// Permission to reset a user's password in the system.
@@ -117,9 +129,19 @@ public sealed class Permissions
     public static readonly Permissions EditTournament = new("Tournaments.EditTournament", "Edit Tournament");
 
     /// <summary>
+    /// Permission to replace or remove a tournament's logo without being able to edit the rest of the tournament.
+    /// </summary>
+    public static readonly Permissions EditTournamentLogo = new("Tournaments.EditTournamentLogo", "Edit Tournament Logo");
+
+    /// <summary>
     /// Permission to delete an existing tournament.
     /// </summary>
     public static readonly Permissions DeleteTournament = new("Tournaments.DeleteTournament", "Delete Tournament");
+
+    /// <summary>
+    /// Permission to mark a tournament truncated or cancelled.
+    /// </summary>
+    public static readonly Permissions ManageTournamentStatus = new("Tournaments.ManageTournamentStatus", "Manage Tournament Status");
 
     /// <summary>
     /// A collection of permissions related to tournament management.
@@ -129,13 +151,38 @@ public sealed class Permissions
         CreateTournament,
         ManageTournamentSponsors,
         EditTournament,
-        DeleteTournament
+        DeleteTournament,
+        ManageTournamentStatus
     ];
 
     /// <summary>
     /// Policy name satisfied when the caller holds any permission in <see cref="TournamentManagementPermissions"/>.
     /// </summary>
     public const string CanManageTournamentsPolicyName = "CanManageTournaments";
+
+    /// <summary>
+    /// Permissions that let a caller upload a tournament logo to staging.
+    /// </summary>
+    public static readonly IReadOnlyCollection<Permissions> TournamentLogoUploadPermissions =
+    [
+        CreateTournament,
+        EditTournament,
+        EditTournamentLogo
+    ];
+
+    /// <summary>
+    /// Policy name satisfied when the caller holds any permission in <see cref="TournamentLogoUploadPermissions"/>.
+    /// </summary>
+    public const string CanUploadTournamentLogoPolicyName = "CanUploadTournamentLogo";
+
+    #endregion
+
+    #region Documents
+
+    /// <summary>
+    /// Permission to force-refresh a single document's cached copy from Google Drive.
+    /// </summary>
+    public static readonly Permissions RefreshDocument = new("Documents.RefreshDocument", "Refresh Document");
 
     #endregion
 

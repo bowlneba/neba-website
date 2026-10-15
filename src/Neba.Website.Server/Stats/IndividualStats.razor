@@ -113,7 +113,7 @@
                         {
                             <div
                                 class="@(rank.HasValue ? "indiv-rank-card indiv-rank-card--blue-500" : "indiv-rank-card indiv-rank-card--unranked")">
-                                <span class="indiv-rank-number">@(rank.HasValue ? $"#{rank.Value}" : "—")</span>
+                                <span class="indiv-rank-number">@(rank.HasValue ? rank.Value.ToOrdinal() : "—")</span>
                                 <span class="indiv-rank-title">@title</span>
                             </div>
                         }
@@ -134,7 +134,7 @@
                         {
                             <div
                                 class="@(rank.HasValue ? "indiv-rank-card indiv-rank-card--primary" : "indiv-rank-card indiv-rank-card--unranked")">
-                                <span class="indiv-rank-number">@(rank.HasValue ? $"#{rank.Value}" : "—")</span>
+                                <span class="indiv-rank-number">@(rank.HasValue ? rank.Value.ToOrdinal() : "—")</span>
                                 <span class="indiv-rank-title">@title</span>
                             </div>
                         }
@@ -156,7 +156,7 @@
                         {
                             <div
                                 class="@(rank.HasValue ? "indiv-rank-card indiv-rank-card--red" : "indiv-rank-card indiv-rank-card--unranked")">
-                                <span class="indiv-rank-number">@(rank.HasValue ? $"#{rank.Value}" : "—")</span>
+                                <span class="indiv-rank-number">@(rank.HasValue ? rank.Value.ToOrdinal() : "—")</span>
                                 <span class="indiv-rank-title">@title</span>
                             </div>
                         }
@@ -193,7 +193,7 @@
                         {
                             <div
                                 class="@(rank.HasValue ? "indiv-rank-card indiv-rank-card--blue-300" : "indiv-rank-card indiv-rank-card--unranked")">
-                                <span class="indiv-rank-number">@(rank.HasValue ? $"#{rank.Value}" : "—")</span>
+                                <span class="indiv-rank-number">@(rank.HasValue ? rank.Value.ToOrdinal() : "—")</span>
                                 <span class="indiv-rank-title">@title</span>
                             </div>
                         }

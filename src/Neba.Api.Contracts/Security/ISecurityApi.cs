@@ -1,10 +1,13 @@
 using Neba.Api.Contracts.Security.CreateUser;
 using Neba.Api.Contracts.Security.GetCurrentUser;
+using Neba.Api.Contracts.Security.GetUser;
+using Neba.Api.Contracts.Security.ListRoles;
 using Neba.Api.Contracts.Security.ListUsers;
 using Neba.Api.Contracts.Security.Login;
 using Neba.Api.Contracts.Security.RefreshToken;
 using Neba.Api.Contracts.Security.ResetPassword;
 using Neba.Api.Contracts.Security.SetPasswordFromToken;
+using Neba.Api.Contracts.Security.UpdateUser;
 
 using Refit;
 
@@ -47,4 +50,16 @@ public interface ISecurityApi
         int page = 1,
         int pageSize = 20,
         CancellationToken cancellationToken = default);
+
+    /// <summary>Returns one user with roles and permission overrides.</summary>
+    [Get("/security/users/{userId}")]
+    Task<IApiResponse<UserDetailResponse>> GetUserAsync(string userId, CancellationToken cancellationToken = default);
+
+    /// <summary>Lists every role with the permissions it grants.</summary>
+    [Get("/security/roles")]
+    Task<IApiResponse<ListRolesResponse>> ListRolesAsync(CancellationToken cancellationToken = default);
+
+    /// <summary>Replaces a user's permission overrides.</summary>
+    [Put("/security/users/{userId}")]
+    Task<IApiResponse> UpdateUserAsync(string userId, [Body] UpdateUserRequest request, CancellationToken cancellationToken = default);
 }

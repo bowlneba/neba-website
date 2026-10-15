@@ -40,13 +40,23 @@ internal sealed class CreateUserEndpoint(Messaging.ICommandHandler<CreateUserCom
 
     public override async Task HandleAsync(CreateUserRequest req, CancellationToken ct)
     {
+        if (User.CallerUserId is null)
+        {
+            await Send.UnauthorizedAsync(ct);
+
+            // Stryker disable once Statement
+            return;
+        }
+
         var command = new CreateUserCommand
         {
             Email = req.User.Email,
             Roles = req.User.Roles,
             UsbcId = req.User.UsbcId,
             PhoneNumber = req.User.PhoneNumber,
-            Claims = [.. req.User.Claims.Select(c => (c.Type, c.Value))]
+            AddedPermissions = req.User.AddedPermissions,
+            RemovedPermissions = req.User.RemovedPermissions,
+            CallerPermissions = User.CallerPermissions
         };
 
         var result = await _commandHandler.HandleAsync(command, ct);
@@ -58,9 +68,22 @@ internal sealed class CreateUserEndpoint(Messaging.ICommandHandler<CreateUserCom
             // CreatedAtAsync would produce a misleading header. Send 201 with the body only.
             // Stryker disable once Statement
             await Send.ResponseAsync(
-                new CreateUserResponse { UserId = result.Value.UserId.ToString(), RolesAssigned = result.Value.RolesAssigned },
+                new CreateUserResponse
+                {
+                    UserId = result.Value.UserId.ToString(),
+                    RolesAssigned = result.Value.RolesAssigned,
+                    PermissionOverridesApplied = result.Value.PermissionOverridesApplied
+                },
                 StatusCodes.Status201Created,
                 ct);
+
+            // Stryker disable once Statement
+            return;
+        }
+
+        if (result.FirstError.Type == ErrorType.Forbidden)
+        {
+            await Send.ForbiddenAsync(ct);
 
             // Stryker disable once Statement
             return;

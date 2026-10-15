@@ -15,11 +15,6 @@ namespace Neba.Api.Features.Bowlers.GetBowlerTitles;
 internal sealed class GetBowlerTitlesQueryHandler(AppDbContext appDbContext)
         : IQueryHandler<GetBowlerTitlesQuery, ErrorOr<BowlerTitlesDto>>
 {
-    // The 2026 NEBA Championship finals were canceled due to a state-of-emergency declaration,
-    // so the recorded 1st-place result for that tournament isn't a real title. Excluded by end
-    // date until GitHub issue #26 settles how cancellations should be modeled and filtered.
-    private static readonly DateOnly CancelledTournamentEndDate = new(2026, 2, 22);
-
     private readonly IQueryable<Bowler> _bowlers = appDbContext.Bowlers.AsNoTracking();
     private readonly IQueryable<HallOfFameInduction> _hallOfFameInductions = appDbContext.HallOfFameInductions.AsNoTracking();
     private readonly IQueryable<HistoricalTournamentChampion> _historicalTournamentChampions = appDbContext.HistoricalTournamentChampions.AsNoTracking();
@@ -54,7 +49,7 @@ internal sealed class GetBowlerTitlesQueryHandler(AppDbContext appDbContext)
             .ToListAsync(cancellationToken);
 
         var recordedTitles = await _tournaments
-            .Where(tournament => tournament.EndDate != CancelledTournamentEndDate)
+            .Where(tournament => tournament.TitleEligible)
             .SelectMany(tournament => tournament.Results
                 .Where(result => result.BowlerId == query.BowlerId && result.Place == 1)
                 .Select(_ => new

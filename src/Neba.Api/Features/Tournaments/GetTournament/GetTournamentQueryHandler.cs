@@ -44,6 +44,8 @@ internal sealed class GetTournamentQueryHandler(
                 tournament.StartDate,
                 tournament.EndDate,
                 tournament.StatsEligible,
+                Status = tournament.Status.Name,
+                tournament.TitleEligible,
                 TournamentType = tournament.TournamentType.Name,
                 TournamentTypeValue = tournament.TournamentType.Value,
                 SquadIds = tournament.Squads.Select(squad => squad.Id).ToList(),
@@ -130,7 +132,7 @@ internal sealed class GetTournamentQueryHandler(
             .Select(result => new TournamentResultDto
             {
                 BowlerName = result.Bowler.Name,
-                Place = result.Place,
+                Place = result.Place > 0 ? result.Place : null,
                 PrizeMoney = result.PrizeMoney,
                 Points = result.Points,
                 SideCutName = null,
@@ -148,7 +150,7 @@ internal sealed class GetTournamentQueryHandler(
             .Select(tournamentResult => new TournamentResultDto
             {
                 BowlerName = tournamentResult.Bowler.Name,
-                Place = tournamentResult.Place,
+                Place = tournamentResult.Place > 0 ? tournamentResult.Place : null,
                 PrizeMoney = tournamentResult.PrizeMoney,
                 Points = tournamentResult.Points,
                 SideCutName = tournamentResult.SideCut != null
@@ -208,6 +210,11 @@ internal sealed class GetTournamentQueryHandler(
         var revealed = OilPatternRevealPolicy.IsRevealed(
             row.OilPatternRevealDateTime, query.CallerHasTournamentManagementPermission, timeProvider.GetUtcNow());
 
+        var logoSource = TournamentLogoResolver.Resolve(
+            row.TournamentLogoContainer,
+            row.TournamentLogoPath,
+            row.Sponsors.Select(s => (s.TitleSponsor, s.LogoContainer, s.LogoPath)));
+
         return new TournamentDetailDto
         {
             Id = row.Id,
@@ -216,6 +223,8 @@ internal sealed class GetTournamentQueryHandler(
             StartDate = row.StartDate,
             EndDate = row.EndDate,
             StatsEligible = row.StatsEligible,
+            Status = row.Status,
+            TitleEligible = row.TitleEligible,
             TournamentType = row.TournamentType,
             EntryFee = row.EntryFee,
             RegistrationUrl = row.RegistrationUrl,
@@ -241,8 +250,8 @@ internal sealed class GetTournamentQueryHandler(
                     KegelId = pattern.KegelId,
                 })
                 : [],
-            LogoUrl = row.TournamentLogoContainer is not null && row.TournamentLogoPath is not null
-                ? _fileStorageService.GetBlobUri(row.TournamentLogoContainer, row.TournamentLogoPath)
+            LogoUrl = logoSource.Container is not null && logoSource.Path is not null
+                ? _fileStorageService.GetBlobUri(logoSource.Container, logoSource.Path)
                 : null,
             LogoContainer = query.CallerHasTournamentManagementPermission ? row.TournamentLogoContainer : null,
             LogoPath = query.CallerHasTournamentManagementPermission ? row.TournamentLogoPath : null,

@@ -1,0 +1,248 @@
+name: Hotfix Workflow
+
+# Emergency fast path: tests, then deploy api + web only. Run it by hand on a
+# `hotfix/*` branch cut from the latest release tag (the commit production runs;
+# tags are added by hand after each deploy).
+#
+# It skips infra preview, provision, Key Vault seeding, and migrations. Open the
+# PR from the hotfix branch to `main` right after you start this run so the full
+# pipeline checks the same change in parallel. See docs/learnings/hotfix.md.
+#
+# Keep the deploy steps in step with cd.yml.
+
+on:
+  workflow_dispatch:
+    inputs:
+      base_tag:
+        description: "Tag production runs. Blank = latest v* tag"
+        type: string
+        default: ""
+      allow_migrations:
+        description: "Allow a diff that touches EF migrations (migrations are NOT run by this workflow)"
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+jobs:
+  guard:
+    name: Guard
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Require a hotfix branch
+        if: ${{ !startsWith(github.ref, 'refs/heads/hotfix/') }}
+        run: |
+          echo "::error::Run this workflow on a hotfix/* branch (got $GITHUB_REF)."
+          exit 1
+
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      - name: Resolve the production tag
+        id: base
+        env:
+          INPUT_TAG: ${{ inputs.base_tag }}
+        run: |
+          set -euo pipefail
+          tag="${INPUT_TAG:-$(git tag --list 'v*' --sort=-v:refname | head -1)}"
+          if [ -z "$tag" ] || ! git rev-parse --verify --quiet "refs/tags/$tag" > /dev/null; then
+            echo "::error::No production tag found ('$tag'). Tag the deployed commit, or pass base_tag."
+            exit 1
+          fi
+          echo "Production tag: $tag"
+          echo "tag=$tag" >> "$GITHUB_OUTPUT"
+
+      - name: Require the production tag as an ancestor
+        env:
+          BASE_TAG: ${{ steps.base.outputs.tag }}
+        run: |
+          if ! git merge-base --is-ancestor "$BASE_TAG" HEAD; then
+            echo "::error::$BASE_TAG is not an ancestor of this branch. Cut the hotfix from that tag, or this deploy would drop code production already runs."
+            exit 1
+          fi
+
+      - name: Require a version bump
+        env:
+          BASE_TAG: ${{ steps.base.outputs.tag }}
+        run: .github/scripts/check-version-bump.sh --tag "$BASE_TAG"
+
+      - name: Block migrations
+        if: ${{ !inputs.allow_migrations }}
+        env:
+          BASE_TAG: ${{ steps.base.outputs.tag }}
+        run: |
+          set -euo pipefail
+          changed="$(git diff --name-only "$BASE_TAG"...HEAD | grep -i 'migrations' || true)"
+          if [ -n "$changed" ]; then
+            echo "::error::This diff touches migrations, which this workflow does not run. Use the normal pipeline, or re-run with allow_migrations after a plan for the schema."
+            echo "$changed"
+            exit 1
+          fi
+
+  test-dotnet:
+    name: ${{ matrix.test-name }}
+    needs: guard
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      HUSKY: 0
+    strategy:
+      fail-fast: true
+      matrix:
+        include:
+          - test-project: tests/Neba.Website.Tests/Neba.Website.Tests.csproj
+            test-name: Website Tests
+            needs-integration: false
+          - test-project: tests/Neba.Api.Tests/Neba.Api.Tests.csproj
+            test-name: API Tests
+            needs-integration: true
+
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 1
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v6
+        with:
+          dotnet-version: 10.0.x
+
+      - name: Pre-pull test container images
+        if: matrix.needs-integration
+        run: |
+          docker pull postgres:17.6
+          docker pull mcr.microsoft.com/azure-storage/azurite:latest
+
+      - name: Cache NuGet packages
+        uses: actions/cache@v6
+        with:
+          path: ~/.nuget/packages
+          key: ${{ runner.os }}-nuget-${{ hashFiles('**/*.csproj', '**/Directory.Packages.props') }}
+          restore-keys: |
+            ${{ runner.os }}-nuget-
+
+      - name: Restore
+        run: dotnet restore
+
+      - name: Build
+        run: dotnet build --configuration Release --no-restore
+
+      - name: Run tests
+        run: dotnet run --project ${{ matrix.test-project }} --configuration Release --no-build
+
+  test-js:
+    name: JavaScript Tests (Jest)
+    needs: guard
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 1
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: "24"
+
+      - name: Install dependencies
+        run: npm ci --ignore-scripts
+
+      - name: Run Jest tests
+        run: npm test
+
+  deploy:
+    name: Deploy api and web
+    needs: [guard, test-dotnet, test-js]
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    environment: Production
+    # Same group as cd.yml's deploy job, so a main deploy and a hotfix queue.
+    concurrency:
+      group: prod-deploy
+      cancel-in-progress: false
+    permissions:
+      contents: read
+      id-token: write
+
+    env:
+      AZURE_ENV_NAME: ${{ vars.AZURE_ENV_NAME }}
+      AZURE_LOCATION: ${{ vars.AZURE_LOCATION }}
+      AZURE_TENANT_ID: ${{ vars.AZURE_TENANT_ID }}
+      AZURE_SUBSCRIPTION_ID: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+      AZURE_CLIENT_ID: ${{ vars.AZURE_CLIENT_ID }}
+      AZURE_PRINCIPAL_ID: ${{ vars.AZURE_PRINCIPAL_ID }}
+      AZURE_CONTAINERAPP_MIN_REPLICAS: ${{ vars.AZURE_CONTAINERAPP_MIN_REPLICAS }}
+      AZURE_CONTAINERAPP_MAX_REPLICAS: ${{ vars.AZURE_CONTAINERAPP_MAX_REPLICAS }}
+      AZURE_CONTAINERAPP_CONCURRENT_REQUESTS: ${{ vars.AZURE_CONTAINERAPP_CONCURRENT_REQUESTS }}
+      AZURE_POSTGRES_SKU_NAME: ${{ vars.AZURE_POSTGRES_SKU_NAME }}
+      AZURE_POSTGRES_SKU_TIER: ${{ vars.AZURE_POSTGRES_SKU_TIER }}
+      AZURE_WEB_CUSTOM_DOMAIN: ${{ vars.AZURE_WEB_CUSTOM_DOMAIN }}
+      AZURE_WEB_CERTIFICATE_NAME: ${{ vars.AZURE_WEB_CERTIFICATE_NAME }}
+      AZURE_API_CUSTOM_DOMAIN: ${{ vars.AZURE_API_CUSTOM_DOMAIN }}
+      AZURE_API_CERTIFICATE_NAME: ${{ vars.AZURE_API_CERTIFICATE_NAME }}
+      AZD_AUTH_USE_AZURE_CLI: "true"
+
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Login to Azure
+        uses: azure/login@93381592711f247e165c389ebb30b596c84cdc48 # v3
+        with:
+          tenant-id: ${{ vars.AZURE_TENANT_ID }}
+          subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+          client-id: ${{ vars.AZURE_CLIENT_ID }}
+
+      - name: Setup azd
+        uses: Azure/setup-azd@80591774c092d5d640d43663766a76728d66e07d # v2.3.0
+
+      - name: Install Aspire CLI
+        run: |
+          set -euo pipefail
+          aspire_version="$(grep -oP '(?<=Aspire\.AppHost\.Sdk/)[0-9.]+' src/Neba.AppHost/Neba.AppHost.csproj)"
+          curl -sSL --fail --proto '=https' --tlsv1.2 https://aspire.dev/install.sh -o install-aspire.sh
+          [ -s install-aspire.sh ]
+          bash install-aspire.sh --version "$aspire_version"
+          rm -f install-aspire.sh
+          echo "$HOME/.aspire/bin" >> "$GITHUB_PATH"
+
+      - name: Configure azd authentication
+        run: azd config set auth.useAzCliAuth true
+
+      # cd.yml gets its azd environment values from `azd provision`. This path skips
+      # provision, so pull the outputs of the last deployment into a fresh env instead.
+      - name: Load azd environment from last deployment
+        run: |
+          set -euo pipefail
+          azd env new "$AZURE_ENV_NAME" --location "$AZURE_LOCATION" --subscription "$AZURE_SUBSCRIPTION_ID"
+          azd env refresh --no-prompt
+
+      - name: Deploy api
+        run: azd deploy api --no-prompt
+
+      - name: Deploy web
+        run: azd deploy web --no-prompt
+
+      # Container Apps run in single-revision mode, so a new revision takes traffic only
+      # once it passes its readiness probe. This step confirms the live site afterward.
+      - name: Smoke test
+        run: |
+          set -euo pipefail
+          check() {
+            local url="$1"
+            for attempt in $(seq 1 24); do
+              if curl --fail --silent --show-error --max-time 10 "$url" > /dev/null; then
+                echo "OK: $url"
+                return 0
+              fi
+              echo "Waiting for $url (attempt $attempt)..."
+              sleep 5
+            done
+            echo "::error::Smoke test failed: $url"
+            return 1
+          }
+          check "https://${AZURE_API_CUSTOM_DOMAIN}/health"
+          check "https://${AZURE_WEB_CUSTOM_DOMAIN}/health"

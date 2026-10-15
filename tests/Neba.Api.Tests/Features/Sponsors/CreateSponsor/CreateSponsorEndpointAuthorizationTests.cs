@@ -81,6 +81,7 @@ public sealed class CreateSponsorEndpointAuthorizationTests(SecurityDbContextFix
             })
             .AddVersioning();
 
+        builder.Services.AddFusionCache();
         builder.AddSecurity();
 
         _app = builder.Build();

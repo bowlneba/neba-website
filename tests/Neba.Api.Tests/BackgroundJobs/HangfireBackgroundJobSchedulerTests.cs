@@ -267,14 +267,17 @@ public sealed class HangfireBackgroundJobSchedulerTests : IDisposable
     }
 
     [Fact(DisplayName = "Should execute handler successfully when valid handler provided")]
-    public async Task ExecuteJobAsync_ShouldExecuteSuccessfully_WhenValidHandlerProvidedAsync()
+    public Task ExecuteJobAsync_ShouldExecuteSuccessfully_WhenValidHandlerProvidedAsync()
     {
         // Arrange
         HangfireBackgroundJobScheduler scheduler = CreateScheduler();
         var job = new TestBackgroundJob("Executable Job");
 
         // Act & Assert
-        await Should.NotThrowAsync(() =>
+        return
+
+        // Act & Assert
+        Should.NotThrowAsync(() =>
             scheduler.ExecuteJobAsync(job, "Display Name", CancellationToken.None));
     }
 

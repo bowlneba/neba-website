@@ -163,6 +163,22 @@ public sealed class BowlingCentersTests : IDisposable
         cut.Markup.ShouldContain("Error Loading Centers");
     }
 
+    [Theory(DisplayName = "Should pluralize the result count label")]
+    [InlineData(1, "of 1 center")]
+    [InlineData(2, "of 2 centers")]
+    public void Render_ShouldPluralizeResultCount_WhenCentersAreShown(int count, string expected)
+    {
+        // Arrange
+        SetupSuccessResponse([.. Enumerable.Range(0, count).Select(i => BowlingCenterSummaryResponseFactory.Create(name: $"Lanes {i}"))]);
+
+        // Act
+        var cut = _ctx.Render<BowlingCentersPage>();
+
+        // Assert
+        var text = cut.Find("div.whitespace-nowrap").TextContent;
+        text.Trim().ShouldEndWith(expected);
+    }
+
     [Fact(DisplayName = "Should filter centers by selected state")]
     public async Task FilterByState_ShouldShowOnlyCentersMatchingState()
     {

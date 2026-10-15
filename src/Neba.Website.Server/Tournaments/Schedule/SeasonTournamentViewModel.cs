@@ -1,3 +1,5 @@
+using Humanizer;
+
 namespace Neba.Website.Server.Tournaments.Schedule;
 
 /// <summary>
@@ -36,6 +38,20 @@ public sealed record SeasonTournamentViewModel
     /// Format category of the tournament (e.g., "Singles", "Doubles", "Senior / Women").
     /// </summary>
     public required string TournamentType { get; init; }
+
+    /// <summary>
+    /// Current lifecycle status of the tournament ("Scheduled", "Completed", "Truncated", "Cancelled").
+    /// </summary>
+    public required string Status { get; init; }
+
+    /// <summary>
+    /// Whether this tournament counts toward a NEBA title. A Scheduled tournament hasn't run yet
+    /// and hasn't been disqualified by anything, so it reads as eligible by default — the API's
+    /// own <c>TitleEligible</c> flag only turns true at completion, so this is corrected for
+    /// Scheduled tournaments at the mapping layer (see <c>TournamentApiService.MapToViewModel</c>)
+    /// rather than trusting the raw API value here.
+    /// </summary>
+    public required bool TitleEligible { get; init; }
 
     /// <summary>
     /// Per-bowler entry fee in dollars, if applicable.
@@ -121,6 +137,16 @@ public sealed record SeasonTournamentViewModel
     // ── Computed convenience ──────────────────────────────────────────────────
 
     /// <summary>
+    /// True when the tournament was held but didn't finish as planned.
+    /// </summary>
+    public bool IsTruncated => Status == "Truncated";
+
+    /// <summary>
+    /// True when no official NEBA event took place under this record.
+    /// </summary>
+    public bool IsCancelled => Status == "Cancelled";
+
+    /// <summary>
     /// True when the tournament spans more than one day.
     /// </summary>
     public bool IsMultiDay => EndDate > StartDate;
@@ -157,6 +183,14 @@ public sealed record SeasonTournamentViewModel
     public bool HasWinners => Winners.Count > 0;
 
     /// <summary>
+    /// True when the champion callout (trophy pill) should render. A tournament can have recorded
+    /// winners without being title eligible (Truncated, or Completed under the format's minimum
+    /// entries) - the winner(s) still get named in that case, just not with the champion trophy
+    /// treatment.
+    /// </summary>
+    public bool ShowChampionBadge => HasWinners && TitleEligible;
+
+    /// <summary>
     /// True when a registration URL is available.
     /// </summary>
     public bool CanRegister => RegistrationUrl is not null;
@@ -188,6 +222,26 @@ public sealed record SeasonTournamentViewModel
     /// </summary>
     public bool IsUrgent =>
         (StartDate.ToDateTime(TimeOnly.MinValue) - DateTime.Today).Days is >= 0 and <= 21;
+
+    /// <summary>
+    /// Short countdown text for the urgency tag: "Today", "Tomorrow", or "In 5 days".
+    /// </summary>
+    public string UrgencyLabel => DaysUntilStart switch
+    {
+        0 => "Today",
+        1 => "Tomorrow",
+        _ => "In " + "day".ToQuantity(DaysUntilStart, formatProvider: DisplayCulture.English),
+    };
+
+    /// <summary>
+    /// Screen reader text for the urgency tag: "Starts today", "Starts tomorrow", or "Starts in 5 days".
+    /// </summary>
+    public string UrgencyAriaLabel => DaysUntilStart switch
+    {
+        0 => "Starts today",
+        1 => "Starts tomorrow",
+        _ => "Starts in " + "day".ToQuantity(DaysUntilStart, formatProvider: DisplayCulture.English),
+    };
 
     /// <summary>
     /// Combined center name and city for display; null when host is unknown.

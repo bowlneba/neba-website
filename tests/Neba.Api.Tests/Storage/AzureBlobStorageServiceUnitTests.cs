@@ -177,7 +177,7 @@ public sealed class AzureBlobStorageServiceUnitTests
     }
 
     [Fact(DisplayName = "UploadFileAsync should not create container when container already exists")]
-    public async Task UploadFileAsync_ShouldNotCreateContainer_WhenContainerAlreadyExists()
+    public Task UploadFileAsync_ShouldNotCreateContainer_WhenContainerAlreadyExists()
     {
         // Arrange
         Mock<BlobContainerClient> mockContainerClient = CreateStrictContainerClientMock(containerExists: true);
@@ -185,7 +185,11 @@ public sealed class AzureBlobStorageServiceUnitTests
 
         // Act & Assert - the Strict mock has no Setup for CreateIfNotExistsAsync, so it
         // would throw if UploadFileAsync called it
-        await Should.NotThrowAsync(() => sut.UploadFileAsync(
+        return
+
+        // Act & Assert - the Strict mock has no Setup for CreateIfNotExistsAsync, so it
+        // would throw if UploadFileAsync called it
+        Should.NotThrowAsync(() => sut.UploadFileAsync(
             "container", "path.txt", "content", "text/plain",
             new Dictionary<string, string>(), CancellationToken.None));
     }

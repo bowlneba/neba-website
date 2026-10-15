@@ -36,6 +36,9 @@ public sealed class LegacySeasonStatsCalculatorTests
         return computed.Single();
     }
 
+    private static LegacySeasonTournamentRow[] EligibleTournaments(params int[] ids)
+        => [.. ids.Select(id => new LegacySeasonTournamentRow(id, DateTime.Today, DateTime.Today, true, 0))];
+
     [Fact(DisplayName = "Compute should mark a bowler a member when their membership row's EndDate matches the season's EndDate")]
     public void Compute_ShouldMarkMember_WhenMembershipEndDateMatchesSeasonEndDate()
     {
@@ -187,7 +190,7 @@ public sealed class LegacySeasonStatsCalculatorTests
         };
 
         // Act
-        var result = ComputeSingle(qualifyingStats: qualifying, results: results);
+        var result = ComputeSingle(seasonTournaments: EligibleTournaments(100, 101), qualifyingStats: qualifying, results: results);
 
         // Assert
         result.Cashes.ShouldBe(1);
@@ -205,7 +208,7 @@ public sealed class LegacySeasonStatsCalculatorTests
         };
 
         // Act
-        var result = ComputeSingle(qualifyingStats: qualifying);
+        var result = ComputeSingle(seasonTournaments: EligibleTournaments(100, 101), qualifyingStats: qualifying);
 
         // Assert
         result.HighBlock.ShouldBe(900);
@@ -238,7 +241,7 @@ public sealed class LegacySeasonStatsCalculatorTests
         };
 
         // Act
-        var result = ComputeSingle(qualifyingStats: qualifying, results: results);
+        var result = ComputeSingle(seasonTournaments: EligibleTournaments(100, 101), qualifyingStats: qualifying, results: results);
 
         // Assert
         result.HighFinish.ShouldBe(2);
@@ -260,7 +263,7 @@ public sealed class LegacySeasonStatsCalculatorTests
         };
 
         // Act
-        var result = ComputeSingle(qualifyingStats: qualifying, results: results);
+        var result = ComputeSingle(seasonTournaments: EligibleTournaments(100, 101, 102), qualifyingStats: qualifying, results: results);
 
         // Assert
         result.HighFinish.ShouldBe(2);
@@ -371,6 +374,83 @@ public sealed class LegacySeasonStatsCalculatorTests
         result.TotalEntries.ShouldBe(2);
         // TOC points are excluded entirely for the winner - only the Non-Champions win's 100 points count.
         result.BowlerOfTheYearPoints.ShouldBe(100);
+    }
+
+    [Fact(DisplayName = "Compute should give the Non-Champions winner no stats or points of any kind from the Tournament of Champions, but keep its prize money")]
+    public void Compute_ShouldExcludeAllTocStatsAndPointsButKeepWinnings_ForNonChampionsWinner()
+    {
+        // Arrange - a 62-year-old woman (so Senior, Super Senior and Woman all apply) wins the
+        // single-day Non-Champions event, which forces her into the TOC. Nothing from the TOC may
+        // feed any stat or any award points; only the prize money counts.
+        var seasonTournaments = new[]
+        {
+            new LegacySeasonTournamentRow(100, DateTime.Today, DateTime.Today, true, 1), // Non-Champions, single-day
+            new LegacySeasonTournamentRow(101, DateTime.Today, DateTime.Today, true, 4) // Champions (TOC)
+        };
+        var qualifying = new[]
+        {
+            new LegacyQualifyingStatsRow(1, 100, 1, 200, 1, 200),
+            new LegacyQualifyingStatsRow(1, 101, 5, 1200, 5, 290)
+        };
+        var matchPlay = new[]
+        {
+            new LegacyMatchPlayStatsRow(1, 100, 210, 1, 210, true),
+            new LegacyMatchPlayStatsRow(1, 101, 250, 1, 250, true),
+            new LegacyMatchPlayStatsRow(1, 101, 240, 1, 240, false)
+        };
+        var results = new[]
+        {
+            new LegacyBowlerResultRow(1, 100, 1, 500m, 100, null),
+            new LegacyBowlerResultRow(1, 101, 2, 1000m, 80, null)
+        };
+        var bowlers = new[] { new LegacyBowlerRow(1, 1, new DateTime(1964, 1, 1, 0, 0, 0, DateTimeKind.Utc)) };
+
+        // Act
+        var result = ComputeSingle(seasonTournaments: seasonTournaments, qualifyingStats: qualifying, matchPlayStats: matchPlay, results: results, bowlers: bowlers);
+
+        // Assert
+        result.BowlerOfTheYearPoints.ShouldBe(100);
+        result.SeniorOfTheYearPoints.ShouldBe(100);
+        result.SuperSeniorOfTheYearPoints.ShouldBe(100);
+        result.WomanOfTheYearPoints.ShouldBe(100);
+        result.EligibleTournaments.ShouldBe(1);
+        result.EligibleEntries.ShouldBe(1);
+        result.Finals.ShouldBe(1);
+        result.Cashes.ShouldBe(1);
+        result.MatchPlayWins.ShouldBe(1);
+        result.MatchPlayLosses.ShouldBe(0);
+        result.MatchPlayHighGame.ShouldBe(210);
+        result.QualifyingHighGame.ShouldBe(200);
+        result.HighBlock.ShouldBe(0);
+        result.TotalGames.ShouldBe(2);
+        result.TotalPinfall.ShouldBe(410);
+        result.HighFinish.ShouldBe(1);
+        result.AverageFinish.ShouldBe(1m);
+        result.TournamentWinnings.ShouldBe(1500m);
+    }
+
+    [Fact(DisplayName = "Compute should exclude the Tournament of Champions from YouthOfTheYearPoints for the Non-Champions winner")]
+    public void Compute_ShouldExcludeTocFromYouthPoints_ForNonChampionsWinner()
+    {
+        // Arrange
+        var seasonTournaments = new[]
+        {
+            new LegacySeasonTournamentRow(100, DateTime.Today, DateTime.Today, true, 1),
+            new LegacySeasonTournamentRow(101, DateTime.Today, DateTime.Today, true, 4)
+        };
+        var qualifying = new[] { new LegacyQualifyingStatsRow(1, 100, 1, 200, 1, 200) };
+        var results = new[]
+        {
+            new LegacyBowlerResultRow(1, 100, 1, 500m, 100, null),
+            new LegacyBowlerResultRow(1, 101, 2, 1000m, 80, null)
+        };
+        var bowlers = new[] { new LegacyBowlerRow(1, 0, new DateTime(2012, 1, 1, 0, 0, 0, DateTimeKind.Utc)) };
+
+        // Act
+        var result = ComputeSingle(seasonTournaments: seasonTournaments, qualifyingStats: qualifying, results: results, bowlers: bowlers);
+
+        // Assert
+        result.YouthOfTheYearPoints.ShouldBe(100);
     }
 
     [Fact(DisplayName = "Compute should compute BowlerOfTheYearPoints from main-cut results only, plus a flat bonus per side-cut finals appearance")]
@@ -591,11 +671,11 @@ public sealed class LegacySeasonStatsCalculatorTests
         result.IsYouth.ShouldBeTrue();
     }
 
-    [Fact(DisplayName = "Compute should scope QualifyingHighGame and MatchPlay stats across the whole season, not just eligible tournaments")]
-    public void Compute_ShouldScopeQualifyingHighGameAndMatchPlayStats_AcrossWholeSeason()
+    [Fact(DisplayName = "Compute should scope QualifyingHighGame, Finals, and MatchPlay stats to stat-eligible tournaments only, matching the live report")]
+    public void Compute_ShouldScopeQualifyingHighGameAndMatchPlayStats_ToEligibleTournaments()
     {
-        // Arrange - BowlerSeasonStats has no Eligible/Total split for these fields, so (unlike
-        // Tournaments/Entries) they intentionally span every tournament entered, eligible or not.
+        // Arrange - the live Dump derives these from eligible tournaments only, so a bowler whose
+        // only match play came in a non-stat-eligible event (e.g. Non-Champions) shows 0-0.
         var seasonTournaments = new[]
         {
             new LegacySeasonTournamentRow(100, DateTime.Today, DateTime.Today, true, 0),
@@ -604,22 +684,24 @@ public sealed class LegacySeasonStatsCalculatorTests
         var qualifying = new[]
         {
             new LegacyQualifyingStatsRow(1, 100, 1, 500, 2, 250),
-            new LegacyQualifyingStatsRow(1, 101, 2, 550, 2, 280) // ineligible tournament, still counts
+            new LegacyQualifyingStatsRow(1, 101, 2, 550, 2, 280) // ineligible tournament, excluded
         };
         var matchPlay = new[]
         {
             new LegacyMatchPlayStatsRow(1, 100, 200, 1, 200, true),
-            new LegacyMatchPlayStatsRow(1, 101, 210, 1, 210, false) // ineligible tournament, still counts
+            new LegacyMatchPlayStatsRow(1, 101, 210, 1, 210, false), // ineligible tournament, excluded
+            new LegacyMatchPlayStatsRow(1, 101, 220, 1, 220, true) // ineligible tournament, excluded
         };
 
         // Act
         var result = ComputeSingle(seasonTournaments: seasonTournaments, qualifyingStats: qualifying, matchPlayStats: matchPlay);
 
         // Assert
-        result.QualifyingHighGame.ShouldBe(280);
+        result.QualifyingHighGame.ShouldBe(250);
         result.MatchPlayWins.ShouldBe(1);
-        result.MatchPlayLosses.ShouldBe(1);
-        result.MatchPlayHighGame.ShouldBe(210);
+        result.MatchPlayLosses.ShouldBe(0);
+        result.MatchPlayHighGame.ShouldBe(200);
+        result.Finals.ShouldBe(1);
     }
 
     [Fact(DisplayName = "Compute should net FieldAverage as the bowler's qualifying average minus the field's average across the eligible tournaments the bowler personally entered")]

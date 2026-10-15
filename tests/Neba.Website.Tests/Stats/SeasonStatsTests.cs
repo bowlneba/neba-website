@@ -55,6 +55,30 @@ public sealed class SeasonStatsTests : IDisposable
         cut.Markup.ShouldContain("2024-2025");
     }
 
+    [Fact(DisplayName = "Should render ranks as ordinals in standings tables")]
+    public void Render_ShouldRenderOrdinalRanks_WhenStandingsLoaded()
+    {
+        // Arrange
+        var model = StatsPageViewModelFactory.Create(
+            availableSeasons: new Dictionary<int, string> { [s_firstSeasonYear] = "2024-2025" },
+            bowlerOfTheYear:
+            [
+                BowlerOfTheYearStandingRowViewModelFactory.Create(rank: 1, bowlerName: "First Bowler"),
+                BowlerOfTheYearStandingRowViewModelFactory.Create(rank: 2, bowlerName: "Second Bowler"),
+                BowlerOfTheYearStandingRowViewModelFactory.Create(rank: 11, bowlerName: "Eleventh Bowler"),
+            ]);
+        _statsApi.EnqueueResult(model);
+
+        // Act
+        var cut = _ctx.Render<SeasonStatsPage>();
+
+        // Assert
+        var ranks = cut.FindAll(".rank-cell").Select(c => c.TextContent.Trim()).ToList();
+        ranks.ShouldContain("1st");
+        ranks.ShouldContain("2nd");
+        ranks.ShouldContain("11th");
+    }
+
     [Fact(DisplayName = "Should show loading skeleton while initial stats request is pending")]
     public void Render_ShouldShowSkeletonLoader_WhenInitialRequestIsPending()
     {

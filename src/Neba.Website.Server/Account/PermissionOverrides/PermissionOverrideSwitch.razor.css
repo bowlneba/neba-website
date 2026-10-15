@@ -1,0 +1,97 @@
+.override-switch {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.6rem;
+}
+
+.override-track {
+    position: relative;
+    display: inline-grid;
+    grid-template-columns: repeat(3, 2rem);
+    height: 2rem;
+    padding: 2px;
+    border-radius: 999px;
+    background: var(--neba-gray-200);
+    border: 1px solid var(--neba-gray-300);
+}
+
+.override-track input {
+    position: absolute;
+    opacity: 0;
+    pointer-events: none;
+}
+
+.override-track label {
+    position: relative;
+    z-index: 1;
+    display: grid;
+    place-items: center;
+    cursor: pointer;
+    border-radius: 999px;
+    color: var(--neba-text-muted);
+}
+
+.override-track label svg {
+    width: 14px;
+    height: 14px;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 2.6;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+
+.override-track input:disabled + label {
+    cursor: not-allowed;
+    opacity: 0.35;
+}
+
+.override-track input:focus-visible + label {
+    outline: 3px solid rgba(62, 79, 217, 0.45);
+    outline-offset: 2px;
+}
+
+.override-thumb {
+    position: absolute;
+    top: 2px;
+    left: 2px;
+    width: 2rem;
+    height: calc(2rem - 6px);
+    border-radius: 999px;
+    background: var(--neba-gray-500);
+    transition: transform 150ms ease, background-color 150ms ease;
+}
+
+.override-track[data-state="added"] .override-thumb { transform: translateX(0); background: var(--neba-success); }
+.override-track[data-state="default"] .override-thumb { transform: translateX(2rem); background: var(--neba-gray-500); }
+.override-track[data-state="removed"] .override-thumb { transform: translateX(4rem); background: var(--neba-accent-red); }
+
+/* The chosen position's icon sits on the thumb, so it turns white. */
+.override-track[data-state="added"] input[value="added"] + label,
+.override-track[data-state="default"] input[value="default"] + label,
+.override-track[data-state="removed"] input[value="removed"] + label {
+    color: #fff;
+}
+
+.override-state-label {
+    min-width: 4.2rem;
+    font-size: 0.85rem;
+    font-weight: 600;
+}
+
+.override-state-label[data-state="added"] { color: var(--neba-success); }
+.override-state-label[data-state="removed"] { color: var(--neba-accent-red); }
+.override-state-label[data-state="default"] { color: var(--neba-gray-600); }
+
+.visually-hidden {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .override-thumb { transition: none; }
+}

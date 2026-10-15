@@ -33,6 +33,8 @@ You need the `Tournaments.ManageSponsors` permission, enforced via the dynamic `
 - **Removing**: a "Sponsor Removed" toast confirms the sponsor was detached, and it disappears from the list.
 - **Failure** (either action): an alert appears in the panel explaining the problem, and the sponsor list is left unchanged.
 
+If the tournament has no logo of its own, it displays the title sponsor's logo (as long as the title sponsor has one) on the tournament list and detail pages — see the Logo bullet in [`docs/help/create-tournament.md`](create-tournament.md) and [`docs/help/edit-tournament.md`](edit-tournament.md).
+
 ## Troubleshooting
 
 | What you see | What it means |

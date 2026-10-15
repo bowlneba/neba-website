@@ -409,6 +409,50 @@ public sealed class UsersTests : IDisposable
         _toastService.Current.Severity.ShouldBe(NotifySeverity.Error);
     }
 
+    // ── Edit link ────────────────────────────────────────────────────────────
+
+    [Fact(DisplayName = "Should show an edit link to the user's edit page when the caller holds EditUser")]
+    public void Render_ShouldShowEditLink_WhenCallerHoldsEditUser()
+    {
+        // Arrange
+        _authContext.SetPolicies(Permissions.GetUsers.PolicyName, Permissions.EditUser.PolicyName);
+        var user = UserSummaryResponseFactory.Create(roles: ["Webmaster"]);
+        SetupSuccessResponse([user], totalItems: 1);
+
+        // Act
+        var cut = _ctx.Render<UsersPage>();
+
+        // Assert
+        cut.Find("a.users-edit-link").GetAttribute("href").ShouldBe("/account/users/" + user.UserId + "/edit");
+    }
+
+    [Fact(DisplayName = "Should hide the edit link when the caller lacks EditUser")]
+    public void Render_ShouldHideEditLink_WhenCallerLacksEditUser()
+    {
+        // Arrange
+        SetupSuccessResponse([UserSummaryResponseFactory.Create(roles: ["Webmaster"])], totalItems: 1);
+
+        // Act
+        var cut = _ctx.Render<UsersPage>();
+
+        // Assert
+        cut.FindAll("a.users-edit-link").ShouldBeEmpty();
+    }
+
+    [Fact(DisplayName = "Should hide the edit link on an Admin row")]
+    public void Render_ShouldHideEditLink_ForAdminRow()
+    {
+        // Arrange
+        _authContext.SetPolicies(Permissions.GetUsers.PolicyName, Permissions.EditUser.PolicyName);
+        SetupSuccessResponse([UserSummaryResponseFactory.Create(roles: ["Admin"])], totalItems: 1);
+
+        // Act
+        var cut = _ctx.Render<UsersPage>();
+
+        // Assert
+        cut.FindAll("a.users-edit-link").ShouldBeEmpty();
+    }
+
     // ── Helpers ──────────────────────────────────────────────────────────────
 
     private void NavigateToPage(int page)

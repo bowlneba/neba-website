@@ -38,6 +38,14 @@ internal sealed class CreateTournamentCommandHandler(
 
         var (season, patternLengthCategory, patternRatioCategory) = resolveResult.Value;
 
+        var logoClaim = await TournamentLogoClaim.EnsureClaimableAsync(
+            appDbContext, command.Logo, null, cancellationToken);
+
+        if (logoClaim.IsError)
+        {
+            return logoClaim.Errors;
+        }
+
         var tournamentResult = Tournament.Create(
             name: command.Name,
             tournamentType: command.TournamentType,

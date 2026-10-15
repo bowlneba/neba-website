@@ -228,6 +228,8 @@ export const MOCK_SEASON_TOURNAMENTS = {
       startDate: '2026-03-15',
       endDate: '2026-03-15',
       tournamentType: 'Singles',
+      status: 'Completed',
+      titleEligible: true,
       entryFee: 75,
       registrationUrl: null,
       addedMoney: 500,
@@ -307,6 +309,8 @@ export const MOCK_TOURNAMENT_DETAIL = {
   startDate: '2024-09-21',
   endDate: '2024-09-21',
   statsEligible: true,
+  status: 'Completed',
+  titleEligible: true,
   tournamentType: 'Open',
   entryFee: 75,
   registrationUrl: null,
@@ -361,6 +365,8 @@ const MOCK_TOURNAMENT_OIL_REVEAL_PENDING = {
   startDate: '2026-06-01',
   endDate: '2026-06-01',
   statsEligible: true,
+  status: 'Completed',
+  titleEligible: true,
   tournamentType: 'Singles',
   entryFee: 60,
   registrationUrl: null,
@@ -386,6 +392,8 @@ const MOCK_TOURNAMENT_OIL_REVEALED = {
   startDate: '2026-06-01',
   endDate: '2026-06-01',
   statsEligible: true,
+  status: 'Completed',
+  titleEligible: true,
   tournamentType: 'Singles',
   entryFee: 60,
   registrationUrl: null,
@@ -412,6 +420,8 @@ const MOCK_TOURNAMENT_OIL_REVEAL_MGMT = {
   startDate: '2026-06-01',
   endDate: '2026-06-01',
   statsEligible: true,
+  status: 'Completed',
+  titleEligible: true,
   tournamentType: 'Singles',
   entryFee: 60,
   registrationUrl: null,
@@ -441,6 +451,8 @@ const MOCK_TOURNAMENT_SPONSOR_MGMT = {
   startDate: '2026-06-01',
   endDate: '2026-06-01',
   statsEligible: true,
+  status: 'Completed',
+  titleEligible: true,
   tournamentType: 'Singles',
   entryFee: 60,
   registrationUrl: null,
@@ -457,11 +469,140 @@ const MOCK_TOURNAMENT_SPONSOR_MGMT = {
   results: [],
 };
 
+// Dedicated tournament for the Truncate/Cancel status-action E2E flow, kept separate from
+// MOCK_TOURNAMENT_DETAIL so mutating its status via the PATCH handlers below never leaks into
+// the other tournament-detail tests that assert a fixed "Completed" status.
+export const MOCK_TOURNAMENT_STATUS_ACTIONS_ID = '01JX0000000000000000000050';
+
+const MOCK_TOURNAMENT_STATUS_ACTIONS = {
+  id: MOCK_TOURNAMENT_STATUS_ACTIONS_ID,
+  name: 'NEBA Status Actions Classic',
+  season: '2025-2026 Season',
+  startDate: '2026-06-01',
+  endDate: '2026-06-01',
+  statsEligible: true,
+  status: 'Scheduled',
+  titleEligible: false,
+  tournamentType: 'Singles',
+  entryFee: 60,
+  registrationUrl: null,
+  addedMoney: null,
+  reservations: null,
+  entryCount: null,
+  patternLengthCategory: null,
+  patternRatioCategory: null,
+  logoUrl: null,
+  bowlingCenter: { name: 'Lucky Strike Lanes', city: 'Boston', state: 'MA' },
+  sponsors: [] as TournamentSponsorFixture[],
+  oilPatterns: [],
+  winners: [],
+  results: [],
+};
+
+// A second, separate tournament for the Truncate happy-path test specifically — Truncate and
+// Cancel each finalize their tournament (a one-way transition), so the Truncate happy-path test
+// can't share MOCK_TOURNAMENT_STATUS_ACTIONS_ID with the Cancel happy-path test without one of
+// them observing the other's finalized status.
+export const MOCK_TOURNAMENT_TRUNCATE_ACTIONS_ID = '01JX0000000000000000000051';
+
+const MOCK_TOURNAMENT_TRUNCATE_ACTIONS = {
+  ...MOCK_TOURNAMENT_STATUS_ACTIONS,
+  id: MOCK_TOURNAMENT_TRUNCATE_ACTIONS_ID,
+  name: 'NEBA Truncate Actions Classic',
+};
+
+// Added money breakdown fixtures. Separate from MOCK_TOURNAMENT_DETAIL so its fixed sponsor list
+// stays valid for the other tournament-detail tests.
+export const MOCK_TOURNAMENT_ADDED_MONEY_UPCOMING_ID = '01JX0000000000000000000060';
+export const MOCK_TOURNAMENT_ADDED_MONEY_PAST_ID = '01JX0000000000000000000061';
+
+const MOCK_TOURNAMENT_ADDED_MONEY_UPCOMING = {
+  ...MOCK_TOURNAMENT_SPONSOR_MGMT,
+  id: MOCK_TOURNAMENT_ADDED_MONEY_UPCOMING_ID,
+  name: 'NEBA Added Money Upcoming Open',
+  startDate: '2099-01-15',
+  endDate: '2099-01-15',
+  status: 'Scheduled',
+  addedMoney: 1550,
+  nebaAddedMoney: 300,
+  sponsors: [
+    {
+      sponsorId: '01JX0000000000000000000201',
+      name: 'Pro Shop Plus',
+      slug: 'pro-shop-plus',
+      logoUrl: null,
+      websiteUrl: null,
+      tagPhrase: null,
+      titleSponsor: false,
+      sponsorshipAmount: 1000,
+    },
+    {
+      sponsorId: '01JX0000000000000000000202',
+      name: 'Greater Boston Area Bowling Proprietors Association & Friends of NEBA',
+      slug: 'greater-boston-proprietors',
+      logoUrl: null,
+      websiteUrl: null,
+      tagPhrase: null,
+      titleSponsor: false,
+      sponsorshipAmount: 250,
+    },
+  ],
+  results: [],
+};
+
+const MOCK_TOURNAMENT_ADDED_MONEY_PAST = {
+  ...MOCK_TOURNAMENT_SPONSOR_MGMT,
+  id: MOCK_TOURNAMENT_ADDED_MONEY_PAST_ID,
+  name: 'NEBA Added Money Past Open',
+  startDate: '2024-03-02',
+  endDate: '2024-03-02',
+  status: 'Completed',
+  addedMoney: 1500,
+  nebaAddedMoney: 100,
+  sponsors: [
+    {
+      sponsorId: '01JX0000000000000000000211',
+      name: 'Presenting Co',
+      slug: 'presenting-co',
+      logoUrl: null,
+      websiteUrl: null,
+      tagPhrase: null,
+      titleSponsor: true,
+      sponsorshipAmount: 0,
+    },
+    {
+      sponsorId: '01JX0000000000000000000212',
+      name: 'Zenith Lanes',
+      slug: 'zenith-lanes',
+      logoUrl: null,
+      websiteUrl: null,
+      tagPhrase: null,
+      titleSponsor: false,
+      sponsorshipAmount: 700,
+    },
+    {
+      sponsorId: '01JX0000000000000000000213',
+      name: 'Regional Lanes',
+      slug: 'regional-lanes',
+      logoUrl: null,
+      websiteUrl: null,
+      tagPhrase: null,
+      titleSponsor: false,
+      sponsorshipAmount: 700,
+    },
+  ],
+  results: [],
+};
+
 const EXTRA_TOURNAMENT_DETAILS = new Map<string, object>([
   [MOCK_TOURNAMENT_OIL_REVEAL_PENDING_ID, MOCK_TOURNAMENT_OIL_REVEAL_PENDING],
   [MOCK_TOURNAMENT_OIL_REVEALED_ID, MOCK_TOURNAMENT_OIL_REVEALED],
   [MOCK_TOURNAMENT_OIL_REVEAL_MGMT_ID, MOCK_TOURNAMENT_OIL_REVEAL_MGMT],
   [MOCK_TOURNAMENT_SPONSOR_MGMT_ID, MOCK_TOURNAMENT_SPONSOR_MGMT],
+  [MOCK_TOURNAMENT_STATUS_ACTIONS_ID, MOCK_TOURNAMENT_STATUS_ACTIONS],
+  [MOCK_TOURNAMENT_TRUNCATE_ACTIONS_ID, MOCK_TOURNAMENT_TRUNCATE_ACTIONS],
+  [MOCK_TOURNAMENT_ADDED_MONEY_UPCOMING_ID, MOCK_TOURNAMENT_ADDED_MONEY_UPCOMING],
+  [MOCK_TOURNAMENT_ADDED_MONEY_PAST_ID, MOCK_TOURNAMENT_ADDED_MONEY_PAST],
 ]);
 
 type SeasonVariants = {
@@ -816,15 +957,103 @@ const MOCK_USERS = {
       emailConfirmed: false,
       roles: ['Journalist'],
     },
+    {
+      userId: '01JX0000000000000000000498',
+      email: 'admin@bowlneba.com',
+      emailConfirmed: true,
+      roles: ['Admin'],
+    },
   ],
-  totalItems: 2,
+  totalItems: 3,
   pageNumber: 1,
   pageSize: 20,
 };
 
+const ALL_PERMISSION_VALUES = [
+  'BackgroundJobs.ViewDashboard',
+  'Cache.Clear',
+  'Documents.RefreshDocument',
+  'News.CreateArticle',
+  'News.DeleteArticle',
+  'News.EditArticle',
+  'Sponsors.CreateSponsor',
+  'Sponsors.EditSponsor',
+  'System.CreateUser',
+  'System.EditUser',
+  'System.GetUsers',
+  'System.ResetUserPassword',
+  'Tournaments.CreateTournament',
+  'Tournaments.DeleteTournament',
+  'Tournaments.EditTournament',
+  'Tournaments.EditTournamentLogo',
+  'Tournaments.ManageSponsors',
+  'Tournaments.ManageTournamentStatus',
+];
+
+const MOCK_ROLES = {
+  roles: [
+    { name: 'Admin', permissions: ALL_PERMISSION_VALUES },
+    {
+      name: 'Journalist',
+      permissions: ['News.CreateArticle', 'News.DeleteArticle', 'News.EditArticle'],
+    },
+    {
+      name: 'Manager',
+      permissions: [
+        'News.CreateArticle',
+        'News.DeleteArticle',
+        'News.EditArticle',
+        'Sponsors.CreateSponsor',
+        'Sponsors.EditSponsor',
+        'Tournaments.CreateTournament',
+        'Tournaments.EditTournament',
+        'Tournaments.EditTournamentLogo',
+        'Tournaments.ManageSponsors',
+        'Tournaments.ManageTournamentStatus',
+      ],
+    },
+    { name: 'Member', permissions: [] },
+    {
+      name: 'Tournament Director',
+      permissions: [
+        'Tournaments.CreateTournament',
+        'Tournaments.EditTournament',
+        'Tournaments.EditTournamentLogo',
+        'Tournaments.ManageSponsors',
+        'Tournaments.ManageTournamentStatus',
+      ],
+    },
+    {
+      name: 'Webmaster',
+      permissions: [
+        'BackgroundJobs.ViewDashboard',
+        'Documents.RefreshDocument',
+        'News.CreateArticle',
+        'News.DeleteArticle',
+        'News.EditArticle',
+        'Sponsors.CreateSponsor',
+        'Sponsors.EditSponsor',
+        'System.CreateUser',
+        'System.EditUser',
+        'System.GetUsers',
+        'System.ResetUserPassword',
+        'Tournaments.CreateTournament',
+        'Tournaments.DeleteTournament',
+        'Tournaments.EditTournament',
+        'Tournaments.ManageSponsors',
+        'Tournaments.ManageTournamentStatus',
+      ],
+    },
+  ],
+};
+
+// Bodies of the last non-GET request per "METHOD /path", so specs can assert what the UI sent.
+const lastRequestBodies = new Map<string, string>();
+
 const routes: Record<string, unknown> = {
   '/health': { status: 'healthy' },
   '/security/users': MOCK_USERS,
+  '/security/roles': MOCK_ROLES,
   '/documents/tournament-rules': { html: MOCK_TOURNAMENT_RULES_HTML },
   '/documents/bylaws': { html: MOCK_BYLAWS_HTML },
   '/reference-data/us-states': MOCK_US_STATES,
@@ -883,6 +1112,15 @@ function resolveSponsorDetailRoute(pathname: string): object | null {
   return createdSponsors.get(slug) ?? null;
 }
 
+function resolveUserDetailRoute(pathname: string): object | null {
+  if (!pathname.startsWith('/security/users/')) return null;
+
+  const userId = pathname.slice('/security/users/'.length);
+  const user = MOCK_USERS.items.find((candidate) => candidate.userId === userId);
+
+  return user ? { ...user, addedPermissions: [], removedPermissions: [] } : null;
+}
+
 function resolveGetRoute(pathname: string, searchParams: URLSearchParams): object | null {
   return (
     resolveStatsRoute(pathname, searchParams) ??
@@ -890,6 +1128,7 @@ function resolveGetRoute(pathname: string, searchParams: URLSearchParams): objec
     resolveStaticGetRoute(pathname) ??
     resolveTournamentDetailRoute(pathname) ??
     resolveSponsorDetailRoute(pathname) ??
+    resolveUserDetailRoute(pathname) ??
     (routes[pathname] as object | undefined) ??
     null
   );
@@ -1043,9 +1282,9 @@ async function handleRequest(req: IncomingMessage, res: ServerResponse): Promise
   if (req.method === 'POST' && pathname === '/security/users') {
     if (sendMockOverrideErrorIfSet(res, pathname)) return;
 
-    await readRequestBody(req);
+    lastRequestBodies.set('POST /security/users', await readRequestBody(req));
 
-    sendJsonResponse(res, { userId: '01JX0000000000000000000399', rolesAssigned: true }, 201);
+    sendJsonResponse(res, { userId: '01JX0000000000000000000399', rolesAssigned: true, permissionOverridesApplied: true }, 201);
     return;
   }
 
@@ -1116,6 +1355,8 @@ async function handleRequest(req: IncomingMessage, res: ServerResponse): Promise
       startDate: tournament.startDate ?? null,
       endDate: tournament.endDate ?? null,
       statsEligible: tournament.statsEligible ?? true,
+      status: 'Scheduled',
+      titleEligible: false,
       tournamentType: tournament.tournamentType ?? 'Singles',
       entryFee: tournament.entryFee ?? null,
       registrationUrl: tournament.externalRegistrationUrl ?? null,
@@ -1220,6 +1461,50 @@ async function handleRequest(req: IncomingMessage, res: ServerResponse): Promise
     return;
   }
 
+  if (req.method === 'PATCH' && pathname.startsWith('/tournaments/') && pathname.endsWith('/truncate')) {
+    if (sendMockOverrideErrorIfSet(res, pathname)) return;
+
+    const tournamentId = pathname.slice('/tournaments/'.length, -'/truncate'.length);
+    const tournament = resolveGetRoute(`/tournaments/${tournamentId}`, new URLSearchParams()) as
+      | { status: string; titleEligible: boolean }
+      | null;
+
+    if (tournament !== null) {
+      tournament.status = 'Truncated';
+      tournament.titleEligible = false;
+    }
+
+    res.writeHead(204);
+    res.end();
+    return;
+  }
+
+  if (req.method === 'PATCH' && pathname.startsWith('/tournaments/') && pathname.endsWith('/cancel')) {
+    if (sendMockOverrideErrorIfSet(res, pathname)) return;
+
+    const tournamentId = pathname.slice('/tournaments/'.length, -'/cancel'.length);
+    const tournament = resolveGetRoute(`/tournaments/${tournamentId}`, new URLSearchParams()) as
+      | { status: string; titleEligible: boolean }
+      | null;
+
+    if (tournament !== null) {
+      tournament.status = 'Cancelled';
+      tournament.titleEligible = false;
+    }
+
+    res.writeHead(204);
+    res.end();
+    return;
+  }
+
+  if (req.method === 'DELETE' && pathname.startsWith('/documents/') && pathname.endsWith('/cache')) {
+    if (sendMockOverrideErrorIfSet(res, pathname)) return;
+
+    res.writeHead(204);
+    res.end();
+    return;
+  }
+
   if (req.method === 'DELETE' && pathname === '/cache') {
     if (sendMockOverrideErrorIfSet(res, pathname)) return;
 
@@ -1260,6 +1545,19 @@ async function handleRequest(req: IncomingMessage, res: ServerResponse): Promise
     }
   }
 
+  if (req.method === 'GET' && pathname === '/__mock/last-request') {
+    const method = requestUrl.searchParams.get('method') ?? '';
+    const path = requestUrl.searchParams.get('path') ?? '';
+    const body = lastRequestBodies.get(method + ' ' + path);
+
+    if (body === undefined) {
+      sendJsonResponse(res, { error: 'No request recorded' }, 404);
+    } else {
+      sendJsonResponse(res, JSON.parse(body));
+    }
+    return;
+  }
+
   if (req.method === 'GET') {
     const delayMs = mockOverrides.get(pathname)?.delayMs;
     if (delayMs) {
@@ -1283,9 +1581,32 @@ async function handleRequest(req: IncomingMessage, res: ServerResponse): Promise
     return;
   }
 
+  if (req.method === 'PUT' && pathname.startsWith('/security/users/')) {
+    if (sendMockOverrideErrorIfSet(res, pathname)) return;
+
+    lastRequestBodies.set('PUT ' + pathname, await readRequestBody(req));
+
+    res.writeHead(204);
+    res.end();
+    return;
+  }
+
+  if (req.method === 'PUT' && pathname.startsWith('/tournaments/') && pathname.endsWith('/logo')) {
+    if (sendMockOverrideErrorIfSet(res, pathname)) return;
+
+    // Recorded so a test can assert on the submitted logo (null when the logo was removed).
+    lastRequestBodies.set('PUT ' + pathname, await readRequestBody(req));
+
+    res.writeHead(204);
+    res.end();
+    return;
+  }
+
   if (
     req.method === 'PUT' &&
-    (pathname.startsWith('/news/') || pathname.startsWith('/sponsors/') || pathname.startsWith('/tournaments/'))
+    (pathname.startsWith('/news/') ||
+      pathname.startsWith('/sponsors/') ||
+      pathname.startsWith('/tournaments/'))
   ) {
     if (sendMockOverrideErrorIfSet(res, pathname)) return;
 

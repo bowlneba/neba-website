@@ -12,7 +12,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
 using Neba.Api.Database;
-using Neba.Api.Email;
+using Neba.Api.Discord;
 using Neba.Api.Features.Bowlers.Domain;
 using Neba.Api.Features.HallOfFame.Domain;
 
@@ -100,7 +100,7 @@ internal sealed class NewHallOfFameInductionSyncJob(
     AppDbContext db,
     IDbConnection legacyConnection,
     IFusionCache cache,
-    IEmailSender emailSender,
+    IManualInterventionNotifier manualInterventionNotifier,
     ILogger<NewHallOfFameInductionSyncJob> logger)
 {
     [System.Diagnostics.CodeAnalysis.SuppressMessage("Major Code Smell", "S2077:Use a parameterized query instead of string formatting.",
@@ -178,12 +178,18 @@ internal sealed class NewHallOfFameInductionSyncJob(
         {
             logger.LogLegacyHallOfFameBowlerNotFound(row.Id, row.BowlerId);
 
-            await emailSender.SendAsync(new EmailMessage
-            {
-                To = "website@bowlneba.com",
-                Subject = "Manual intervention needed: Hall of Fame induction",
-                HtmlBody = new HallOfFameBowlerNotFoundEmail(row.Id, row.BowlerId, row.Year).ToHtmlBody()
-            }, ct);
+            var alert = new DiscordAlert(
+                DiscordAlertSeverity.Warning,
+                "Hall of Fame induction could not be synced",
+                "No bowler with this legacy id was found on the website. Sync the bowler first, then retry this induction manually.",
+                new Dictionary<string, string>
+                {
+                    ["LegacyHallOfFameId"] = row.Id.ToString(CultureInfo.InvariantCulture),
+                    ["LegacyBowlerId"] = row.BowlerId.ToString(CultureInfo.InvariantCulture),
+                    ["Year"] = row.Year.ToString(CultureInfo.InvariantCulture)
+                });
+
+            await manualInterventionNotifier.NotifyAsync(alert, ct);
 
             return;
         }
@@ -260,26 +266,11 @@ internal static partial class NewHallOfFameInductionSyncJobLogMessages
 
     [LoggerMessage(
         Level = LogLevel.Warning,
-        Message = "No bowler found in website data for legacy bowler id {LegacyBowlerId} (Hall of Fame row {LegacyHallOfFameId}); manual intervention email sent.")]
+        Message = "No bowler found in website data for legacy bowler id {LegacyBowlerId} (Hall of Fame row {LegacyHallOfFameId}); manual intervention alert sent.")]
     public static partial void LogLegacyHallOfFameBowlerNotFound(this ILogger<NewHallOfFameInductionSyncJob> logger, int legacyHallOfFameId, int legacyBowlerId);
 
     [LoggerMessage(
         Level = LogLevel.Information,
         Message = "Legacy Hall of Fame row {LegacyHallOfFameId} already reflected on induction {InductionId}; no new category to add.")]
     public static partial void LogLegacyHallOfFameAlreadySynced(this ILogger<NewHallOfFameInductionSyncJob> logger, int legacyHallOfFameId, HallOfFameId inductionId);
-}
-
-internal sealed class HallOfFameBowlerNotFoundEmail(int legacyHallOfFameId, int legacyBowlerId, int year)
-{
-    public string ToHtmlBody()
-    {
-        var body = $"""
-                    <p>Hall of Fame induction with legacy id <strong>{WebUtility.HtmlEncode(legacyHallOfFameId.ToString(CultureInfo.CurrentCulture))}</strong> could not be synced and needs manual intervention.</p>
-                    <p>Legacy bowler id: {WebUtility.HtmlEncode(legacyBowlerId.ToString(CultureInfo.CurrentCulture))}<br/>
-                    Induction year: {WebUtility.HtmlEncode(year.ToString(CultureInfo.CurrentCulture))}</p>
-                    <p>No bowler with this legacy id was found on the website. Sync the bowler first, then retry this induction manually.</p>
-                    """;
-
-        return EmailLayout.Wrap(body);
-    }
 }

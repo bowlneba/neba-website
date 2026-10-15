@@ -76,9 +76,7 @@
                                 </td>
                                 <td class="tt-date">@title.TournamentDate</td>
                                 <td class="tt-type">
-                                    <span class="@("type-pill " + ChampionsHelpers.TypePillClass(title.TournamentType))">
-                                        @title.TournamentType
-                                    </span>
+                                    <TournamentTypeBadge TournamentType="@title.TournamentType" />
                                 </td>
                             </tr>
                         }

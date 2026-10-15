@@ -16,6 +16,7 @@ public static class UserDtoFactory
         string? email = null,
         IReadOnlyCollection<string>? roles = null,
         IReadOnlyCollection<Permissions>? permissions = null,
+        IReadOnlyCollection<Permissions>? deniedPermissions = null,
         string? usbcId = null)
         => new()
         {
@@ -23,6 +24,7 @@ public static class UserDtoFactory
             Email = email ?? ValidEmail,
             Roles = roles ?? [ValidRole],
             Permissions = permissions ?? [Permissions.CreateArticle],
+            DeniedPermissions = deniedPermissions ?? [],
             UsbcId = usbcId
         };
 
@@ -35,6 +37,7 @@ public static class UserDtoFactory
             Email = faker.Internet.Email(),
             Roles = [faker.Random.Word()],
             Permissions = [.. faker.PickRandom(Permissions.List.ToArray(), faker.Random.Int(1, Permissions.List.Count))],
+            DeniedPermissions = [],
             UsbcId = faker.Random.Bool() ? $"{faker.Random.Int(10, 9999)}-{faker.Random.Int(1000, 99999)}" : null
         })];
     }

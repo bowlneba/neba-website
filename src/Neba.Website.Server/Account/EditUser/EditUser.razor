@@ -1,0 +1,258 @@
+@page "/account/users/{UserId}/edit"
+@using System.Security.Claims
+@using ErrorOr
+@using Microsoft.AspNetCore.Authorization
+@using Microsoft.AspNetCore.Components.Authorization
+@using Neba.Api.Contracts.Security
+@using Neba.Api.Contracts.Security.GetUser
+@using Neba.Api.Contracts.Security.ListRoles
+@using Neba.Api.Contracts.Security.UpdateUser
+@using Neba.Website.Server.Account.PermissionOverrides
+@using Neba.Website.Server.Notifications
+@using Neba.Website.Server.Services
+@rendermode @(new InteractiveServerRenderMode(prerender: false))
+
+@inject ApiExecutor ApiExecutor
+@inject ISecurityApi SecurityApi
+@inject ToastService ToastService
+@inject NavigationManager NavigationManager
+@inject AuthenticationStateProvider AuthenticationStateProvider
+@inject IAuthorizationService AuthorizationService
+
+<PageTitle>@(_user is not null ? "Edit " + _user.Email + " - BowlNEBA" : "Edit User - BowlNEBA")</PageTitle>
+
+<AuthorizeView Policy="@Permissions.EditUser.PolicyName" Context="authContext">
+    <Authorized>
+        @if (_isLoading)
+        {
+            <div class="neba-space-y-6" aria-busy="true" aria-label="Loading user">
+                <NebaSkeletonLoader Type="SkeletonType.Custom" Width="55%" Height="2rem" />
+                <NebaSkeletonLoader Type="SkeletonType.Text" Rows="6" />
+            </div>
+        }
+        else if (_notFound)
+        {
+            <div class="news-empty">
+                <p class="news-empty-text">This user could not be found.</p>
+                <a href="/account/users" class="neba-btn neba-btn-secondary">Back to Users</a>
+            </div>
+        }
+        else if (_user is null)
+        {
+            <NebaAlert Severity="NotifySeverity.Error" Title="Unable to Load User" Message="@_loadErrorMessage" Dismissible="false" />
+        }
+        else
+        {
+            <div class="neba-space-y-6">
+
+                <div class="page-title-bar">
+                    <div class="page-title-inner">
+                        <h1>Edit User</h1>
+                        <p>Change the permissions for @_user.Email.</p>
+                    </div>
+                    <div class="page-title-help">
+                        <HelpButton DocName="edit-user" Light="true" />
+                    </div>
+                </div>
+
+                @if (_errorMessage is not null)
+                {
+                    <NebaAlert Severity="NotifySeverity.Error" Title="Unable to Save User" Message="@_errorMessage" Dismissible="true"
+                               OnDismiss="@(() => _errorMessage = null)" />
+                }
+
+                <DirtyFormGuard IsDirty="@_isDirty" />
+
+                <div class="neba-card">
+                    <dl class="edit-user-meta">
+                        <dt>Email</dt><dd>@_user.Email</dd>
+                        <dt>Roles</dt><dd>@string.Join(", ", _user.Roles)</dd>
+                        <dt>Status</dt><dd>@(_user.EmailConfirmed ? "Active" : "Invite pending")</dd>
+                    </dl>
+                </div>
+
+                @if (IsAdminUser)
+                {
+                    <NebaAlert Severity="NotifySeverity.Info" Title="Admin account"
+                               Message="Admins have every permission, so overrides don't apply to this account." Dismissible="false" />
+                }
+                else
+                {
+                    @if (_isOwnAccount)
+                    {
+                        <NebaAlert Severity="NotifySeverity.Info" Title="Your own account"
+                                   Message="You can't change your own permissions. Ask another admin." Dismissible="false" />
+                    }
+
+                    <div class="neba-card">
+                        <PermissionOverridesSection Roles="@_roles"
+                                                    SelectedRoles="@_user.Roles"
+                                                    Overrides="@_overrides"
+                                                    Original="@_original"
+                                                    CallerPermissions="@_callerPermissions"
+                                                    Disabled="@_isOwnAccount"
+                                                    OnChanged="@MarkDirty" />
+                    </div>
+
+                    @if (!_isOwnAccount)
+                    {
+                        <div class="flex items-center gap-3">
+                            <button type="button" class="neba-btn neba-btn-primary" disabled="@_isSaving" @onclick="HandleSaveAsync">
+                                @(_isSaving ? "Saving…" : "Save changes")
+                            </button>
+                            <button type="button" class="neba-btn neba-btn-secondary" @onclick="HandleCancel">Cancel</button>
+                            <span class="edit-user-count">@OverrideCountText</span>
+                        </div>
+                    }
+                }
+
+            </div>
+        }
+    </Authorized>
+    <NotAuthorized>
+        <div class="news-empty">
+            <p class="news-empty-text">You don't have permission to edit users.</p>
+            <a href="/" class="neba-btn neba-btn-secondary">Back Home</a>
+        </div>
+    </NotAuthorized>
+</AuthorizeView>
+
+@code {
+    [Parameter]
+    public string UserId { get; set; } = string.Empty;
+
+    private UserDetailResponse? _user;
+    private IReadOnlyCollection<RoleResponse> _roles = [];
+    private PermissionOverrideSet _overrides = new();
+    private PermissionOverrideSet _original = new();
+    private IReadOnlyCollection<string> _callerPermissions = [];
+    private bool _isOwnAccount;
+    private bool _isLoading = true;
+    private bool _notFound;
+    private bool _isSaving;
+    private bool _isDirty;
+    private string? _loadErrorMessage;
+    private string? _errorMessage;
+
+    private bool IsAdminUser
+        => _user is not null
+            && _user.Roles.Contains(PermissionOverrideRules.AdminRoleName, StringComparer.Ordinal);
+
+    private string OverrideCountText
+        => _overrides.Count == 0
+            ? "No overrides set"
+            : "override".ToQuantity(_overrides.Count, formatProvider: DisplayCulture.English) + " set";
+
+    protected override async Task OnParametersSetAsync()
+    {
+        // AuthorizeView only gates markup, not this lifecycle method; check here so an
+        // unpermissioned viewer doesn't trigger the API calls (the endpoints enforce it too).
+        var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+        var principal = authState.User;
+
+        var authResult = await AuthorizationService.AuthorizeAsync(principal, Permissions.EditUser.PolicyName);
+        if (!authResult.Succeeded)
+        {
+            return;
+        }
+
+        _callerPermissions = [.. principal.FindAll(Permissions.ClaimType).Select(claim => claim.Value)];
+        _isOwnAccount = string.Equals(
+            principal.FindFirstValue(ClaimTypes.NameIdentifier), UserId, StringComparison.OrdinalIgnoreCase);
+
+        await LoadAsync();
+    }
+
+    private async Task LoadAsync()
+    {
+        _isLoading = true;
+        _notFound = false;
+        _loadErrorMessage = null;
+
+        var userTask = ApiExecutor.ExecuteAsync(
+            "Security", "GetUser", ct => SecurityApi.GetUserAsync(UserId, ct));
+        var rolesTask = ApiExecutor.ExecuteAsync(
+            "Security", "ListRoles", ct => SecurityApi.ListRolesAsync(ct));
+
+        await Task.WhenAll(userTask, rolesTask);
+
+        var userResult = await userTask;
+        var rolesResult = await rolesTask;
+
+        _isLoading = false;
+
+        if (userResult.IsError)
+        {
+            if (userResult.FirstError.Type == ErrorType.NotFound)
+            {
+                _notFound = true;
+                return;
+            }
+
+            _loadErrorMessage = userResult.FirstError.Description;
+            return;
+        }
+
+        if (rolesResult.IsError)
+        {
+            _loadErrorMessage = rolesResult.FirstError.Description;
+            return;
+        }
+
+        _user = userResult.Value;
+        _roles = rolesResult.Value.Roles;
+        _original = new PermissionOverrideSet(_user.AddedPermissions, _user.RemovedPermissions);
+        _overrides = _original.Clone();
+        _isDirty = false;
+    }
+
+    private void MarkDirty() => _isDirty = true;
+
+    private async Task HandleSaveAsync()
+    {
+        if (_user is null)
+        {
+            return;
+        }
+
+        _isSaving = true;
+        _errorMessage = null;
+
+        var request = new UpdateUserRequest
+        {
+            UserId = UserId,
+            User = new UpdateUserInput
+            {
+                AddedPermissions = [.. _overrides.Added.Order(StringComparer.Ordinal)],
+                RemovedPermissions = [.. _overrides.Removed.Order(StringComparer.Ordinal)]
+            }
+        };
+
+        var result = await ApiExecutor.ExecuteAsync(
+            "Security", "UpdateUser", ct => SecurityApi.UpdateUserAsync(UserId, request, ct));
+
+        _isSaving = false;
+
+        if (result.IsError)
+        {
+            _errorMessage = result.FirstError.Description;
+            return;
+        }
+
+        ToastService.Show(
+            "User Updated",
+            "Permissions for \"" + _user.Email + "\" were saved. They apply when the user's session next refreshes.",
+            NotifySeverity.Success);
+
+        // Clear and render before navigating: NavigateTo runs the NavigationLock's check against the
+        // guard's stale (still-dirty) parameter otherwise and shows the discard prompt on our own
+        // post-save navigation. See EditSponsor.razor.
+        _isDirty = false;
+        StateHasChanged();
+        await Task.Yield();
+
+        NavigationManager.NavigateTo("/account/users");
+    }
+
+    private void HandleCancel() => NavigationManager.NavigateTo("/account/users");
+}

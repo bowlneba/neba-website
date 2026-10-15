@@ -90,6 +90,14 @@ else
 
                     <h1 class="td-hero__title">@_model.Name</h1>
 
+                    @if (_model.IsTruncated || _model.IsCancelled)
+                    {
+                        <span class="td-status-badge td-status-badge--@(_model.Status.ToLowerInvariant())">
+                            <span class="material-symbols-outlined">@(_model.IsTruncated ? "warning" : "block")</span>
+                            @_model.Status
+                        </span>
+                    }
+
                     <div class="td-hero__admin-actions">
                         <AuthorizeView Policy="@Permissions.EditTournament.PolicyName">
                             <Authorized>
@@ -99,6 +107,24 @@ else
                                 </a>
                             </Authorized>
                         </AuthorizeView>
+
+                        @if (_model.IsScheduled)
+                        {
+                            <AuthorizeView Policy="@Permissions.ManageTournamentStatus.PolicyName">
+                                <Authorized>
+                                    <button type="button" class="neba-btn neba-btn-secondary td-hero__truncate-btn" @onclick="OpenTruncateConfirm">
+                                        <span class="material-symbols-outlined">warning</span>
+                                        Mark Truncated
+                                    </button>
+                                    <HelpButton DocName="truncate-tournament" Light="true" />
+                                    <button type="button" class="neba-btn neba-btn-secondary td-hero__cancel-btn" @onclick="OpenCancelConfirm">
+                                        <span class="material-symbols-outlined">block</span>
+                                        Cancel Tournament
+                                    </button>
+                                    <HelpButton DocName="cancel-tournament" Light="true" />
+                                </Authorized>
+                            </AuthorizeView>
+                        }
 
                         <AuthorizeView Policy="@Permissions.DeleteTournament.PolicyName">
                             <Authorized>
@@ -141,50 +167,65 @@ else
                                     <span class="td-hero__stat-value td-hero__stat-value--tba">To be announced</span>
                                 }
                             </div>
-                            @if (_model.EntryFee.HasValue || _model.HasAddedMoney)
+                            @if (_model.HasAddedMoney)
                             {
                                 <div class="td-hero__stat">
-                                    @if (_model.HasAddedMoney)
-                                    {
-                                        <span class="td-hero__stat-label">Added money</span>
-                                        <span class="td-hero__stat-value td-hero__stat-value--gold">
-                                            @_model.AddedMoney!.Value.ToString("C0", CurrencyCulture)
-                                        </span>
-                                        @if (_model.HasMultipleMoneySources)
-                                        {
-                                            <span class="td-hero__stat-sub">
-                                                @_model.SponsorMoney!.Value.ToString("C0", CurrencyCulture) sponsor money
-                                            </span>
-                                            <span class="td-hero__stat-sub">
-                                                @_model.NebaAddedMoney.ToString("C0", CurrencyCulture) NEBA added money
-                                            </span>
-                                        }
-                                        @if (_model.EntryFee.HasValue)
-                                        {
-                                            <span class="td-hero__stat-sub">
-                                                @_model.EntryFee.Value.ToString("C0", CurrencyCulture) entry
-                                            </span>
-                                        }
-                                    }
-                                    else
-                                    {
-                                        <span class="td-hero__stat-label">Entry fee</span>
-                                        <span class="td-hero__stat-value td-hero__stat-value--gold">
-                                            @_model.EntryFee!.Value.ToString("C0", CurrencyCulture)
-                                        </span>
-                                        <span class="td-hero__stat-sub">per bowler</span>
-                                    }
+                                    <span class="td-hero__stat-label">Added money</span>
+                                    <span class="td-hero__stat-value td-hero__stat-value--gold">
+                                        @_model.AddedMoney!.Value.ToString("C0", CurrencyCulture)
+                                    </span>
+                                </div>
+                            }
+                            @if (_model.EntryFee.HasValue)
+                            {
+                                <div class="td-hero__stat">
+                                    <span class="td-hero__stat-label">Entry fee</span>
+                                    <span class="td-hero__stat-value td-hero__stat-value--gold">
+                                        @_model.EntryFee.Value.ToString("C0", CurrencyCulture)
+                                    </span>
+                                    <span class="td-hero__stat-sub">per bowler</span>
                                 </div>
                             }
                         </div>
 
                         <div class="td-hero__chips">
-                            <span class="td-hero__chip">@_model.TournamentType</span>
+                            <TournamentTypeBadge TournamentType="@_model.TournamentType" />
                             @if (_model.PatternLengthCategory is not null)
                             {
                                 <span class="td-hero__chip">@_model.PatternLengthCategory</span>
                             }
                         </div>
+
+                        @if (_model.IsTruncated)
+                        {
+                            <div class="td-eligibility-note">
+                                <span class="material-symbols-outlined">warning</span>
+                                <div>
+                                    <strong>Does not count toward a title</strong>
+                                    <span class="sub">This tournament didn't finish as planned. Results and stats still count.</span>
+                                </div>
+                            </div>
+                        }
+                        else if (_model.IsCompleted && !_model.TitleEligible)
+                        {
+                            <div class="td-eligibility-note">
+                                <span class="material-symbols-outlined">warning</span>
+                                <div>
+                                    <strong>Completed — did not meet the minimum entries for a title</strong>
+                                    <span class="sub">Stats still count.</span>
+                                </div>
+                            </div>
+                        }
+                        else if (_model.IsCancelled)
+                        {
+                            <div class="td-eligibility-note td-eligibility-note--cancelled">
+                                <span class="material-symbols-outlined">block</span>
+                                <div>
+                                    <strong>No official results</strong>
+                                    <span class="sub">This event did not run as a sanctioned NEBA tournament.</span>
+                                </div>
+                            </div>
+                        }
 
                         @if (_model.IsUpcoming)
                         {
@@ -206,7 +247,7 @@ else
                             </div>
                         }
 
-                        @if (!_model.IsUpcoming && _model.HasWinners)
+                        @if (!_model.IsUpcoming && _model.ShowChampionBadge)
                         {
                             <div class="td-hero__champion-pill" aria-label="@("Tournament champion: " + WinnersText)">
                                 <span class="material-symbols-outlined" aria-hidden="true">emoji_events</span>
@@ -217,12 +258,14 @@ else
 
                     <div class="td-hero__tile">
                         <img src="@_model.DisplayLogoSrc" alt="@(_model.Name + " logo")" class="td-hero__logo-img" />
+                        <TournamentLogoEditButton TournamentName="@_model.Name" ShowLabel="true"
+                                                  OnClick="@(() => _isEditLogoOpen = true)" />
                     </div>
 
                 </div>
             </header>
 
-            @if (_model.IsUpcoming && _model.HasWinners)
+            @if (_model.IsUpcoming && _model.ShowChampionBadge)
             {
                 <div class="tournament-detail__champion-bar">
                     <span class="material-symbols-outlined" aria-hidden="true">emoji_events</span>
@@ -369,25 +412,7 @@ else
                                     <div class="td-rail-price">
                                         @if (_model.HasAddedMoney)
                                         {
-                                            <span class="td-rail-price__value td-rail-price__value--gold">
-                                                @_model.AddedMoney!.Value.ToString("C0", CurrencyCulture)
-                                            </span>
-                                            <span class="td-rail-price__label">Added money</span>
-                                            @if (_model.HasMultipleMoneySources)
-                                            {
-                                                <span class="td-rail-price__secondary">
-                                                    @_model.SponsorMoney!.Value.ToString("C0", CurrencyCulture) sponsor money
-                                                </span>
-                                                <span class="td-rail-price__secondary">
-                                                    @_model.NebaAddedMoney.ToString("C0", CurrencyCulture) NEBA added money
-                                                </span>
-                                            }
-                                            @if (_model.EntryFee.HasValue)
-                                            {
-                                                <span class="td-rail-price__secondary">
-                                                    @_model.EntryFee.Value.ToString("C0", CurrencyCulture) entry fee
-                                                </span>
-                                            }
+                                            @AddedMoneyPrice(true)
                                         }
                                         else
                                         {
@@ -402,6 +427,15 @@ else
                             </div>
                         }
 
+                        @if (!_model.IsUpcoming && _model.HasAddedMoney)
+                        {
+                            <div class="neba-card td-rail-card">
+                                <div class="td-rail-price">
+                                    @AddedMoneyPrice(false)
+                                </div>
+                            </div>
+                        }
+
                         @if (_model.HasSponsors)
                         {
                             <div class="td-rail-sponsors">
@@ -412,13 +446,10 @@ else
                                         <a href="/sponsors/@sponsor.Slug" class="neba-card td-rail-sponsor-card">
                                             @if (sponsor.LogoUrl is not null)
                                             {
-                                                <img src="@sponsor.LogoUrl.AbsoluteUri" alt="@(sponsor.Name + " logo")"
+                                                <img src="@sponsor.LogoUrl.AbsoluteUri" alt=""
                                                      class="td-rail-sponsor-card__logo" />
                                             }
-                                            else
-                                            {
-                                                <span class="td-rail-sponsor-card__name">@sponsor.Name</span>
-                                            }
+                                            <span class="td-rail-sponsor-card__name">@sponsor.Name</span>
                                         </a>
                                     }
                                 </div>
@@ -459,12 +490,37 @@ else
 
     </main>
 
+    <TournamentLogoEditor IsOpen="@_isEditLogoOpen"
+                          TournamentId="@Id"
+                          TournamentName="@_model!.Name"
+                          CurrentLogoUrl="@_model.LogoUrl"
+                          OnClose="@(() => _isEditLogoOpen = false)"
+                          OnSaved="HandleLogoSavedAsync" />
+
     <ConfirmActionModal IsOpen="@_isDeleteConfirmOpen"
                         Title="Delete tournament?"
                         Message="@($"This permanently removes \"{_model!.Name}\", its sponsor links, and oil pattern assignments. This can't be undone.")"
                         IsBusy="@_isDeleteBusy"
                         OnConfirm="ConfirmDeleteAsync"
                         OnCancel="@(() => _isDeleteConfirmOpen = false)" />
+
+    <ConfirmActionModal IsOpen="@_isTruncateConfirmOpen"
+                        Title="Mark tournament truncated?"
+                        Message="This tournament will count toward season stats but will never be eligible for a title. This can't be undone."
+                        ConfirmLabel="Mark Truncated"
+                        BusyLabel="Marking Truncated..."
+                        IsBusy="@_isTruncateBusy"
+                        OnConfirm="ConfirmTruncateAsync"
+                        OnCancel="@(() => _isTruncateConfirmOpen = false)" />
+
+    <ConfirmActionModal IsOpen="@_isCancelConfirmOpen"
+                        Title="Cancel this tournament?"
+                        Message="This tournament will not count toward stats or a title. This can't be undone."
+                        ConfirmLabel="Cancel Tournament"
+                        BusyLabel="Cancelling..."
+                        IsBusy="@_isCancelBusy"
+                        OnConfirm="ConfirmCancelAsync"
+                        OnCancel="@(() => _isCancelConfirmOpen = false)" />
 }
 
 @code {
@@ -474,6 +530,10 @@ else
 
     private bool _isDeleteConfirmOpen;
     private bool _isDeleteBusy;
+    private bool _isTruncateConfirmOpen;
+    private bool _isTruncateBusy;
+    private bool _isCancelConfirmOpen;
+    private bool _isCancelBusy;
 
     private TournamentDetailViewModel? _model;
     private DateTimeOffset? _oilPatternRevealLocal;
@@ -557,6 +617,14 @@ else
             c => TournamentsApi.RemoveTournamentSponsorAsync(Id, sponsorId, c),
             ct);
 
+    private bool _isEditLogoOpen;
+
+    private async Task HandleLogoSavedAsync()
+    {
+        _isEditLogoOpen = false;
+        await ReloadTournamentAsync();
+    }
+
     private void OpenDeleteConfirm()
     {
         _isDeleteConfirmOpen = true;
@@ -585,13 +653,81 @@ else
         Navigation.NavigateTo("/tournaments");
     }
 
+    private void OpenTruncateConfirm()
+    {
+        _isTruncateConfirmOpen = true;
+    }
+
+    private async Task ConfirmTruncateAsync()
+    {
+        _isTruncateBusy = true;
+
+        var result = await ApiExecutor.ExecuteAsync(
+            "TournamentsApi",
+            "TruncateTournament",
+            ct => TournamentsApi.TruncateTournamentAsync(Id, ct));
+
+        _isTruncateBusy = false;
+        _isTruncateConfirmOpen = false;
+
+        if (result.IsError)
+        {
+            ToastService.Show("Truncate Failed", result.FirstError.Description, NotifySeverity.Error);
+            return;
+        }
+
+        ToastService.Show("Tournament Truncated", "Stats will still count; this tournament will not award a title.", NotifySeverity.Success);
+        await ReloadTournamentAsync();
+    }
+
+    private void OpenCancelConfirm()
+    {
+        _isCancelConfirmOpen = true;
+    }
+
+    private async Task ConfirmCancelAsync()
+    {
+        _isCancelBusy = true;
+
+        var result = await ApiExecutor.ExecuteAsync(
+            "TournamentsApi",
+            "CancelTournament",
+            ct => TournamentsApi.CancelTournamentAsync(Id, ct));
+
+        _isCancelBusy = false;
+        _isCancelConfirmOpen = false;
+
+        if (result.IsError)
+        {
+            ToastService.Show("Cancel Failed", result.FirstError.Description, NotifySeverity.Error);
+            return;
+        }
+
+        ToastService.Show("Tournament Cancelled", "This tournament no longer counts toward stats or a title.", NotifySeverity.Success);
+        await ReloadTournamentAsync();
+    }
+
     private bool HasRailContent =>
-        _model is not null && (_model.IsUpcoming || _model.HasSponsors || _model.EntryCount.HasValue || _model.HasPayout);
+        _model is not null && (_model.IsUpcoming || _model.HasAddedMoney || _model.HasSponsors || _model.EntryCount.HasValue || _model.HasPayout);
 
     private string WinnersText =>
         _model is null ? string.Empty : string.Join(" / ", _model.Winners);
 
     private TournamentDetailViewModel Model => _model!;
+
+    private RenderFragment<bool> AddedMoneyPrice => includeEntryFee => @<text>
+        <span class="td-rail-price__value td-rail-price__value--gold">
+            @_model!.AddedMoney!.Value.ToString("C0", CurrencyCulture)
+        </span>
+        <span class="td-rail-price__label">Added money</span>
+        <TournamentAddedMoneyBreakdown Lines="@_model.AddedMoneyBreakdown" />
+        @if (includeEntryFee && _model.EntryFee.HasValue)
+        {
+            <span class="td-rail-price__secondary">
+                @_model.EntryFee.Value.ToString("C0", CurrencyCulture) entry fee
+            </span>
+        }
+    </text>;
 
     private static string GetPatternClass(int length)
     {

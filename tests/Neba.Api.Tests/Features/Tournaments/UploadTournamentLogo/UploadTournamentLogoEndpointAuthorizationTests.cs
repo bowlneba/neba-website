@@ -83,6 +83,7 @@ public sealed class UploadTournamentLogoEndpointAuthorizationTests(SecurityDbCon
             })
             .AddVersioning();
 
+        builder.Services.AddFusionCache();
         builder.AddSecurity();
 
         _app = builder.Build();
@@ -149,8 +150,8 @@ public sealed class UploadTournamentLogoEndpointAuthorizationTests(SecurityDbCon
         response.StatusCode.ShouldBe(HttpStatusCode.Unauthorized);
     }
 
-    [Fact(DisplayName = "POST /tournaments/logo returns 403 when the token lacks the Tournaments.CreateTournament permission")]
-    public async Task Upload_ShouldReturn403_WhenTokenLacksCreateTournamentPermission()
+    [Fact(DisplayName = "POST /tournaments/logo returns 403 when the token has none of the tournament logo permissions")]
+    public async Task Upload_ShouldReturn403_WhenTokenLacksTournamentLogoPermissions()
     {
         // Arrange
         var ct = TestContext.Current.CancellationToken;
@@ -183,6 +184,22 @@ public sealed class UploadTournamentLogoEndpointAuthorizationTests(SecurityDbCon
         // Arrange
         var ct = TestContext.Current.CancellationToken;
         var token = TestAccessTokenFactory.Create(permissions: [Permissions.CreateTournament]);
+
+        // Act
+        using var response = await SendUploadAsync(token, ct);
+
+        // Assert
+        response.StatusCode.ShouldBe(HttpStatusCode.OK);
+    }
+
+    [Theory(DisplayName = "POST /tournaments/logo returns 200 when the token has the Tournaments.EditTournament or Tournaments.EditTournamentLogo permission")]
+    [InlineData("Tournaments.EditTournament")]
+    [InlineData("Tournaments.EditTournamentLogo")]
+    public async Task Upload_ShouldReturn200_WhenTokenHasEditPermission(string permission)
+    {
+        // Arrange
+        var ct = TestContext.Current.CancellationToken;
+        var token = TestAccessTokenFactory.Create(permissions: [Permissions.FromValue(permission)]);
 
         // Act
         using var response = await SendUploadAsync(token, ct);

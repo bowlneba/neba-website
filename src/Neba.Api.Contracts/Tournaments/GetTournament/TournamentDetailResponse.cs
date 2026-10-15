@@ -36,6 +36,16 @@ public sealed record TournamentDetailResponse
     public required bool StatsEligible { get; init; }
 
     /// <summary>
+    /// Current lifecycle status of the tournament ("Scheduled", "Completed", "Truncated", "Cancelled").
+    /// </summary>
+    public required string Status { get; init; }
+
+    /// <summary>
+    /// Whether this tournament counts toward a NEBA title.
+    /// </summary>
+    public required bool TitleEligible { get; init; }
+
+    /// <summary>
     /// Format category of the tournament (e.g., "Singles", "Doubles").
     /// </summary>
     public required string TournamentType { get; init; }
