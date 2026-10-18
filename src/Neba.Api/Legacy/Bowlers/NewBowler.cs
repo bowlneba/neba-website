@@ -94,16 +94,8 @@ internal sealed class NewBowlerSyncJob(
             return;
         }
 
-        var gender = row.Gender switch
-        {
-            0 => Gender.Male,
-            1 => Gender.Female,
-            _ => null
-        };
-
-        var dateOfBirth = row.DateOfBirth.HasValue
-            ? DateOnly.FromDateTime(row.DateOfBirth.Value)
-            : (DateOnly?)null;
+        var gender = LegacyBowlerMapping.MapGender(row.Gender);
+        var dateOfBirth = LegacyBowlerMapping.MapDateOfBirth(row.DateOfBirth);
 
         var existing = await db.Set<Bowler>().SingleOrDefaultAsync(b => b.LegacyId == legacyBowlerId, ct);
         if (existing is not null)
@@ -118,7 +110,12 @@ internal sealed class NewBowlerSyncJob(
             logger.LogLegacyBowlerAlreadySynced(legacyBowlerId, existing.Id);
             return;
         }
-        var suffix = MapSuffix(row.Suffix, legacyBowlerId, logger);
+
+        var suffix = LegacyBowlerMapping.MapSuffix(row.Suffix);
+        if (suffix is null && !string.IsNullOrWhiteSpace(row.Suffix))
+        {
+            logger.LogLegacySuffixUnmapped(legacyBowlerId, row.Suffix);
+        }
 
         var bowler = Bowler.CreateFromLegacy(
             row.FirstName,
@@ -137,31 +134,6 @@ internal sealed class NewBowlerSyncJob(
 
         await db.Set<Bowler>().AddAsync(bowler.Value, ct);
         await db.SaveChangesAsync(ct);
-    }
-
-    // Legacy Suffix is free text (e.g. "Jr.", "Sr.", "II"); NameSuffix is a closed SmartEnum set
-    // whose own Value strings inconsistently carry a trailing period ("Jr.", "Sr." vs. "II", "III").
-    // Strip any trailing period from both sides before comparing so "Jr"/"Jr."/"JR." all match
-    // NameSuffix.Jr. No match (including a blank/null legacy value) maps to null — logged so an
-    // unrecognized suffix is visible rather than silently dropped, but never blocks the sync.
-    private static NameSuffix? MapSuffix(string? legacySuffix, int legacyBowlerId, ILogger logger)
-    {
-        if (string.IsNullOrWhiteSpace(legacySuffix))
-        {
-            return null;
-        }
-
-        var normalized = legacySuffix.Trim().TrimEnd('.');
-
-        var match = NameSuffix.List.SingleOrDefault(s =>
-            string.Equals(s.Value.TrimEnd('.'), normalized, StringComparison.OrdinalIgnoreCase));
-
-        if (match is null)
-        {
-            logger.LogLegacySuffixUnmapped(legacyBowlerId, legacySuffix);
-        }
-
-        return match;
     }
 }
 

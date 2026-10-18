@@ -73,8 +73,6 @@ internal sealed class NewTournamentSyncJob(
     IManualInterventionNotifier manualInterventionNotifier,
     ILogger<NewTournamentSyncJob> logger)
 {
-    private static readonly TimeZoneInfo EasternTimeZone = FindEasternTimeZone();
-
     public async Task SyncAsync(int legacyTournamentId, CancellationToken ct)
     {
         using var _ = LegacyActor.EnterActorScope();
@@ -234,9 +232,9 @@ internal sealed class NewTournamentSyncJob(
 
         // Spring-forward gap: the wall-clock time never existed. Shift forward past the gap
         // rather than deriving an offset for a moment that isn't real.
-        if (EasternTimeZone.IsInvalidTime(unspecified))
+        if (LegacyTimeZones.Eastern.IsInvalidTime(unspecified))
         {
-            var delta = EasternTimeZone.GetAdjustmentRules()
+            var delta = LegacyTimeZones.Eastern.GetAdjustmentRules()
                 .FirstOrDefault(rule => unspecified >= rule.DateStart && unspecified <= rule.DateEnd)
                 ?.DaylightDelta ?? TimeSpan.FromHours(1);
 
@@ -245,19 +243,7 @@ internal sealed class NewTournamentSyncJob(
 
         // Ambiguous times (fall-back hour) resolve to standard time (EST) — TimeZoneInfo's
         // own default resolution for an ambiguous local time.
-        return new DateTimeOffset(unspecified, EasternTimeZone.GetUtcOffset(unspecified));
-    }
-
-    private static TimeZoneInfo FindEasternTimeZone()
-    {
-        try
-        {
-            return TimeZoneInfo.FindSystemTimeZoneById("America/New_York");
-        }
-        catch (TimeZoneNotFoundException)
-        {
-            return TimeZoneInfo.FindSystemTimeZoneById("Eastern Standard Time");
-        }
+        return new DateTimeOffset(unspecified, LegacyTimeZones.Eastern.GetUtcOffset(unspecified));
     }
 
     // Maps the legacy row's singles-type enum or team shape to the website's TournamentType.

@@ -2,11 +2,14 @@ using System.Data;
 
 using FluentValidation;
 
+using Hangfire;
+
 using Microsoft.Data.SqlClient;
 using Microsoft.Extensions.Options;
 
 using Neba.Api.Legacy.Bowlers;
 using Neba.Api.Legacy.Seasons.Complete;
+using Neba.Api.Legacy.Sync;
 using Neba.Api.Legacy.Tournaments;
 using Neba.Api.Legacy.Tournaments.Complete;
 using Neba.Api.Legacy.Tournaments.Stats;
@@ -59,6 +62,30 @@ internal static class LegacyConfiguration
                 .AddEndpointFilter<LegacyApiKeyFilter>();
 
             group.MapLegacyEndpoints();
+        }
+    }
+
+    extension(WebApplication app)
+    {
+        public void UseLegacyWeeklySync()
+        {
+            // Locally the Legacy connection string is usually unset (no access to the Software's
+            // database); a job that can only fail every Monday is noise, so register it only when
+            // the same condition AddLegacy() uses for the health check holds.
+            var legacyConnectionString = app.Configuration.GetSection("Legacy")["ConnectionString"];
+            if (string.IsNullOrWhiteSpace(legacyConnectionString))
+            {
+                return;
+            }
+
+            using var scope = app.Services.CreateScope();
+            var recurringJobs = scope.ServiceProvider.GetRequiredService<IRecurringJobManager>();
+
+            recurringJobs.AddOrUpdate<WeeklyLegacySyncJob>(
+                WeeklyLegacySync.RecurringJobId,
+                job => job.RunAsync(),
+                WeeklyLegacySync.Cron,
+                new RecurringJobOptions { TimeZone = LegacyTimeZones.Eastern });
         }
     }
 }
