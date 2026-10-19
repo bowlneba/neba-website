@@ -245,7 +245,7 @@ public sealed class BowlerWeeklySyncJobTests(AppDbContextFixture fixture, Legacy
 
         // Assert
         var legacyIds = await _dbContext.Set<Bowler>().Select(b => b.LegacyId).ToListAsync(ct);
-        legacyIds.OrderBy(id => id).ShouldBe([2, 3]);
+        legacyIds.Order().ShouldBe([2, 3]);
     }
 
     [Fact(DisplayName = "SyncAsync should create a bowler when the legacy id has no website record")]
