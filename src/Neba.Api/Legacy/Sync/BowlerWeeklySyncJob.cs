@@ -98,7 +98,7 @@ internal sealed class BowlerWeeklySyncJob(
                     {
                         ["FailedBowlerCount"] = failedLegacyIds.Count.ToString(CultureInfo.InvariantCulture),
                         ["LegacyBowlerIds"] = DiscordFieldFormatter.JoinLines(
-                            failedLegacyIds.Select(id => id.ToString(CultureInfo.InvariantCulture)).ToList())
+                            [.. failedLegacyIds.Select(id => id.ToString(CultureInfo.InvariantCulture))])
                     }),
                 ct);
         }
@@ -155,9 +155,7 @@ internal sealed class BowlerWeeklySyncJob(
             .Where(bowler => legacyIds.Contains(bowler.LegacyId))
             .ToDictionaryAsync(bowler => bowler.LegacyId!.Value, ct);
 
-        return chunk
-            .Select(row => (row, Apply(row, existingByLegacyId.GetValueOrDefault(row.Id))))
-            .ToList();
+        return [.. chunk.Select(row => (row, Apply(row, existingByLegacyId.GetValueOrDefault(row.Id))))];
     }
 
     private Outcome Apply(LegacyBowlerRow row, Bowler? existing)
