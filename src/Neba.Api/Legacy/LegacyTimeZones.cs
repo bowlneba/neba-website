@@ -18,7 +18,19 @@ internal static class LegacyTimeZones
         }
         catch (TimeZoneNotFoundException)
         {
+            // fall through to the Windows id
+        }
+
+        try
+        {
             return TimeZoneInfo.FindSystemTimeZoneById("Eastern Standard Time");
+        }
+        catch (TimeZoneNotFoundException)
+        {
+            // An image without tzdata (or invariant globalization) must not stop the API from
+            // starting: this is read at startup to register the weekly sync. A fixed UTC-5 offset
+            // is off by an hour in summer, which is harmless for the sync's 8-day window.
+            return TimeZoneInfo.CreateCustomTimeZone("Eastern (fixed)", TimeSpan.FromHours(-5), "Eastern (fixed)", "Eastern (fixed)");
         }
     }
 }

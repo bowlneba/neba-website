@@ -58,15 +58,10 @@ internal sealed class BowlerWeeklySyncJob(
 
         foreach (var chunk in rows.Chunk(SaveBatchSize))
         {
-            var legacyIds = chunk.Select(row => (int?)row.Id).ToList();
-            var existingByLegacyId = await db.Set<Bowler>()
-                .Where(bowler => legacyIds.Contains(bowler.LegacyId))
-                .ToDictionaryAsync(bowler => bowler.LegacyId!.Value, ct);
+            var outcomes = await SaveChunkAsync(chunk, ct);
 
-            foreach (var row in chunk)
+            foreach (var (row, outcome) in outcomes)
             {
-                var outcome = Apply(row, existingByLegacyId.GetValueOrDefault(row.Id));
-
                 switch (outcome)
                 {
                     case Outcome.Created:
@@ -83,18 +78,13 @@ internal sealed class BowlerWeeklySyncJob(
                         break;
                 }
             }
-
-            await db.SaveChangesAsync(ct);
-            db.ChangeTracker.Clear();
         }
 
         logger.LogBowlerWeeklySyncCompleted(rows.Count, created, updated, unchanged, failedLegacyIds.Count);
 
-        // The job is temporary, so a full eviction is fine and avoids working out which cached
-        // queries show bowler fields.
         if (created + updated > 0)
         {
-            await cache.RemoveByTagAsync("neba", token: ct);
+            await cache.RemoveByTagAsync("neba:bowlers", token: ct);
         }
 
         if (failedLegacyIds.Count > 0)
@@ -112,6 +102,62 @@ internal sealed class BowlerWeeklySyncJob(
                     }),
                 ct);
         }
+    }
+
+    // Saves the chunk in one call. If the database rejects it (a unique-key race with NewBowlerSyncJob,
+    // a concurrency conflict), retry row by row so one bad bowler goes to the alert and the rest still
+    // save, instead of the whole run failing and retrying.
+    private async Task<List<(LegacyBowlerRow Row, Outcome Outcome)>> SaveChunkAsync(LegacyBowlerRow[] chunk, CancellationToken ct)
+    {
+        try
+        {
+            var outcomes = await ApplyAsync(chunk, ct);
+            await db.SaveChangesAsync(ct);
+            return outcomes;
+        }
+        catch (DbUpdateException exception)
+        {
+            logger.LogBowlerWeeklySyncChunkFailed(exception, chunk.Length);
+        }
+        finally
+        {
+            db.ChangeTracker.Clear();
+        }
+
+        var results = new List<(LegacyBowlerRow, Outcome)>(chunk.Length);
+
+        foreach (var row in chunk)
+        {
+            try
+            {
+                var outcome = (await ApplyAsync([row], ct)).Single();
+                await db.SaveChangesAsync(ct);
+                results.Add(outcome);
+            }
+            catch (DbUpdateException exception)
+            {
+                logger.LogBowlerWeeklySyncRowSaveFailed(exception, row.Id);
+                results.Add((row, Outcome.Failed));
+            }
+            finally
+            {
+                db.ChangeTracker.Clear();
+            }
+        }
+
+        return results;
+    }
+
+    private async Task<List<(LegacyBowlerRow Row, Outcome Outcome)>> ApplyAsync(LegacyBowlerRow[] chunk, CancellationToken ct)
+    {
+        var legacyIds = chunk.Select(row => (int?)row.Id).ToList();
+        var existingByLegacyId = await db.Set<Bowler>()
+            .Where(bowler => legacyIds.Contains(bowler.LegacyId))
+            .ToDictionaryAsync(bowler => bowler.LegacyId!.Value, ct);
+
+        return chunk
+            .Select(row => (row, Apply(row, existingByLegacyId.GetValueOrDefault(row.Id))))
+            .ToList();
     }
 
     private Outcome Apply(LegacyBowlerRow row, Bowler? existing)
@@ -147,6 +193,10 @@ internal sealed class BowlerWeeklySyncJob(
             db.Set<Bowler>().Add(bowler.Value);
             return Outcome.Created;
         }
+
+        // The Software has no nickname field, so a name without quotes says nothing about the nickname.
+        // Keep the one on the website; only a quoted nickname in the legacy first name replaces it.
+        nickname ??= existing.Name.Nickname;
 
         var name = Name.Create(firstName, row.LastName, row.MiddleInitial, suffix, nickname);
         if (name.IsError)
@@ -208,4 +258,14 @@ internal static partial class BowlerWeeklySyncJobLogMessages
         Level = LogLevel.Warning,
         Message = "Could not map legacy suffix '{LegacySuffix}' (bowler {LegacyBowlerId}) to a known NameSuffix; leaving suffix blank.")]
     public static partial void LogLegacySuffixUnmappedForWeeklySync(this ILogger<BowlerWeeklySyncJob> logger, int legacyBowlerId, string legacySuffix);
+
+    [LoggerMessage(
+        Level = LogLevel.Warning,
+        Message = "Weekly sync could not save a chunk of {Count} bowlers; retrying each bowler on its own.")]
+    public static partial void LogBowlerWeeklySyncChunkFailed(this ILogger<BowlerWeeklySyncJob> logger, Exception exception, int count);
+
+    [LoggerMessage(
+        Level = LogLevel.Error,
+        Message = "Weekly sync could not save legacy bowler {LegacyBowlerId}.")]
+    public static partial void LogBowlerWeeklySyncRowSaveFailed(this ILogger<BowlerWeeklySyncJob> logger, Exception exception, int legacyBowlerId);
 }

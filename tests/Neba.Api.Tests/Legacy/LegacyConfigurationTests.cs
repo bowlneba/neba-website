@@ -111,11 +111,12 @@ public sealed class LegacyConfigurationTests
         registeredOptions.TimeZone.ShouldBe(LegacyTimeZones.Eastern);
     }
 
-    [Fact(DisplayName = "UseLegacyWeeklySync should register nothing when the connection string is blank")]
-    public void UseLegacyWeeklySync_ShouldRegisterNothing_WhenConnectionStringIsBlank()
+    [Fact(DisplayName = "UseLegacyWeeklySync should remove the weekly job when the connection string is blank")]
+    public void UseLegacyWeeklySync_ShouldRemoveRecurringJob_WhenConnectionStringIsBlank()
     {
         // Arrange
         var manager = new Mock<Hangfire.IRecurringJobManager>(MockBehavior.Strict);
+        manager.Setup(m => m.RemoveIfExists(Neba.Api.Legacy.Sync.WeeklyLegacySync.RecurringJobId));
         var builder = WebApplication.CreateSlimBuilder();
         builder.Services.AddSingleton(manager.Object);
         using var app = builder.Build();
@@ -123,7 +124,7 @@ public sealed class LegacyConfigurationTests
         // Act
         app.UseLegacyWeeklySync();
 
-        // Assert — the strict mock throws on any call, so reaching here means nothing registered
-        manager.Invocations.ShouldBeEmpty();
+        // Assert — the strict mock throws on AddOrUpdate, so reaching here means nothing registered
+        manager.Invocations.ShouldHaveSingleItem().Method.Name.ShouldBe(nameof(Hangfire.IRecurringJobManager.RemoveIfExists));
     }
 }

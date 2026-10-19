@@ -42,9 +42,20 @@ internal sealed class WeeklyLegacySyncJob(
 
         logger.LogWeeklyLegacySyncStarted(since, WeeklyLegacySync.Tables.Count);
 
+        // A failed enqueue is logged and skipped, not thrown: a retry of this job would enqueue the
+        // tables that already succeeded a second time. The 8-day window lets next week's run catch up.
         foreach (var enqueue in WeeklyLegacySync.Tables)
         {
-            enqueue(jobs, since);
+            try
+            {
+                enqueue(jobs, since);
+            }
+#pragma warning disable CA1031 // One table failing to enqueue must not block the others.
+            catch (Exception exception)
+#pragma warning restore CA1031
+            {
+                logger.LogWeeklyLegacySyncEnqueueFailed(exception);
+            }
         }
 
         return Task.CompletedTask;
@@ -57,4 +68,9 @@ internal static partial class WeeklyLegacySyncJobLogMessages
         Level = LogLevel.Information,
         Message = "Weekly legacy sync started: syncing {TableCount} tables changed since {Since:u}.")]
     public static partial void LogWeeklyLegacySyncStarted(this ILogger<WeeklyLegacySyncJob> logger, DateTime since, int tableCount);
+
+    [LoggerMessage(
+        Level = LogLevel.Error,
+        Message = "Weekly legacy sync could not enqueue a table job; next week's run will pick up its changes.")]
+    public static partial void LogWeeklyLegacySyncEnqueueFailed(this ILogger<WeeklyLegacySyncJob> logger, Exception exception);
 }

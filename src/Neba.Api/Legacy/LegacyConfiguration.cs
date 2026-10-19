@@ -32,8 +32,7 @@ internal static class LegacyConfiguration
 
             // Locally the Legacy connection string is typically unset (no access to the Software's
             // database outside production) - only register the check when one is actually configured.
-            var legacyConnectionString = builder.Configuration.GetSection("Legacy")["ConnectionString"];
-            if (!string.IsNullOrWhiteSpace(legacyConnectionString))
+            if (HasConnectionString(builder.Configuration))
             {
                 builder.Services.AddHealthChecks()
                     .AddSqlServer(
@@ -69,17 +68,18 @@ internal static class LegacyConfiguration
     {
         public void UseLegacyWeeklySync()
         {
-            // Locally the Legacy connection string is usually unset (no access to the Software's
-            // database); a job that can only fail every Monday is noise, so register it only when
-            // the same condition AddLegacy() uses for the health check holds.
-            var legacyConnectionString = app.Configuration.GetSection("Legacy")["ConnectionString"];
-            if (string.IsNullOrWhiteSpace(legacyConnectionString))
-            {
-                return;
-            }
-
             using var scope = app.Services.CreateScope();
             var recurringJobs = scope.ServiceProvider.GetRequiredService<IRecurringJobManager>();
+
+            // Locally the Legacy connection string is usually unset (no access to the Software's
+            // database); a job that can only fail every Monday is noise, so register it only when
+            // the same condition AddLegacy() uses for the health check holds. Remove any job an
+            // earlier config registered, or it keeps firing against the missing connection.
+            if (!HasConnectionString(app.Configuration))
+            {
+                recurringJobs.RemoveIfExists(WeeklyLegacySync.RecurringJobId);
+                return;
+            }
 
             recurringJobs.AddOrUpdate<WeeklyLegacySyncJob>(
                 WeeklyLegacySync.RecurringJobId,
@@ -88,4 +88,7 @@ internal static class LegacyConfiguration
                 new RecurringJobOptions { TimeZone = LegacyTimeZones.Eastern });
         }
     }
+
+    private static bool HasConnectionString(IConfiguration configuration)
+        => !string.IsNullOrWhiteSpace(configuration.GetSection("Legacy")["ConnectionString"]);
 }

@@ -92,6 +92,25 @@ public sealed class WeeklyLegacySyncJobTests
         bowlerJob.Args[0].ShouldBe(now.UtcDateTime.AddDays(-8));
     }
 
+    [Fact(DisplayName = "RunAsync should log the failure and not throw when a table cannot be enqueued")]
+    public async Task RunAsync_ShouldLogAndNotThrow_WhenEnqueueFails()
+    {
+        // Arrange
+        var jobs = new Mock<IBackgroundJobClient>(MockBehavior.Strict);
+        jobs
+            .Setup(j => j.Create(It.IsAny<Job>(), It.IsAny<IState>()))
+            .Throws(new InvalidOperationException("storage unavailable"));
+        var logger = new FakeLogger<WeeklyLegacySyncJob>();
+        var job = new WeeklyLegacySyncJob(jobs.Object, new FakeTimeProvider(), logger);
+
+        // Act
+        await job.RunAsync();
+
+        // Assert
+        logger.Collector.GetSnapshot().ShouldContain(record =>
+            record.Level == LogLevel.Error && record.Exception is InvalidOperationException);
+    }
+
     [Fact(DisplayName = "RunAsync should log how many tables it is syncing")]
     public async Task RunAsync_ShouldLogTableCount()
     {
@@ -295,7 +314,7 @@ public sealed class BowlerWeeklySyncJobTests(AppDbContextFixture fixture, Legacy
         await job.SyncAsync(Since, ct);
 
         var cache = _serviceProvider.GetRequiredService<IFusionCache>();
-        await cache.GetOrSetAsync("weekly-sync-test", _ => Task.FromResult("cached"), tags: ["neba"], token: ct);
+        await cache.GetOrSetAsync("weekly-sync-test", _ => Task.FromResult("cached"), tags: ["neba:bowlers"], token: ct);
         logger.Collector.Clear();
 
         // Act
@@ -308,22 +327,93 @@ public sealed class BowlerWeeklySyncJobTests(AppDbContextFixture fixture, Legacy
         logger.Collector.GetSnapshot().Single().Message.ShouldContain("1 already current");
     }
 
-    [Fact(DisplayName = "SyncAsync should evict the whole cache when it creates or updates a bowler")]
-    public async Task SyncAsync_ShouldEvictWholeCache_WhenBowlerChanges()
+    [Fact(DisplayName = "SyncAsync should evict only the bowlers cache tag when it creates or updates a bowler")]
+    public async Task SyncAsync_ShouldEvictBowlersTagOnly_WhenBowlerChanges()
     {
         // Arrange
         var ct = TestContext.Current.CancellationToken;
         await InsertLegacyBowlerAsync(1, Since.AddDays(1));
         var cache = _serviceProvider.GetRequiredService<IFusionCache>();
-        await cache.GetOrSetAsync("weekly-sync-test", _ => Task.FromResult("stale"), tags: ["neba"], token: ct);
+        await cache.GetOrSetAsync("weekly-sync-bowlers", _ => Task.FromResult("stale"), tags: ["neba", "neba:bowlers"], token: ct);
+        await cache.GetOrSetAsync("weekly-sync-other", _ => Task.FromResult("kept"), tags: ["neba", "neba:documents"], token: ct);
         var job = CreateJob();
 
         // Act
         await job.SyncAsync(Since, ct);
 
         // Assert
-        var value = await cache.GetOrSetAsync("weekly-sync-test", _ => Task.FromResult("fresh"), token: ct);
-        value.ShouldBe("fresh");
+        var bowlers = await cache.GetOrSetAsync("weekly-sync-bowlers", _ => Task.FromResult("fresh"), token: ct);
+        var other = await cache.GetOrSetAsync("weekly-sync-other", _ => Task.FromResult("fresh"), token: ct);
+        bowlers.ShouldBe("fresh");
+        other.ShouldBe("kept");
+    }
+
+    [Fact(DisplayName = "SyncAsync should keep the website nickname when the legacy first name has no quoted nickname")]
+    public async Task SyncAsync_ShouldKeepNickname_WhenLegacyNameHasNoQuotes()
+    {
+        // Arrange
+        var ct = TestContext.Current.CancellationToken;
+        await SeedExistingBowlerAsync(
+            1,
+            name: NameFactory.Create(firstName: "William", lastName: "Smith", nickname: "Bill"));
+        await InsertLegacyBowlerAsync(1, Since.AddDays(1), firstName: "William", lastName: "Smythe");
+        var job = CreateJob();
+
+        // Act
+        await job.SyncAsync(Since, ct);
+
+        // Assert
+        var bowler = await _dbContext.Set<Bowler>().SingleAsync(ct);
+        bowler.Name.LastName.ShouldBe("Smythe");
+        bowler.Name.Nickname.ShouldBe("Bill");
+    }
+
+    [Fact(DisplayName = "SyncAsync should replace the website nickname when the legacy first name has a quoted nickname")]
+    public async Task SyncAsync_ShouldReplaceNickname_WhenLegacyNameHasQuotedNickname()
+    {
+        // Arrange
+        var ct = TestContext.Current.CancellationToken;
+        await SeedExistingBowlerAsync(
+            1,
+            name: NameFactory.Create(firstName: "William", lastName: "Smith", nickname: "Bill"));
+        await InsertLegacyBowlerAsync(1, Since.AddDays(1), firstName: "William \"Will\"", lastName: "Smith");
+        var job = CreateJob();
+
+        // Act
+        await job.SyncAsync(Since, ct);
+
+        // Assert
+        var bowler = await _dbContext.Set<Bowler>().SingleAsync(ct);
+        bowler.Name.Nickname.ShouldBe("Will");
+    }
+
+    [Fact(DisplayName = "SyncAsync should save the other bowlers and alert when the database rejects one row")]
+    public async Task SyncAsync_ShouldSaveRestAndAlert_WhenDatabaseRejectsOneRow()
+    {
+        // Arrange
+        var ct = TestContext.Current.CancellationToken;
+        // Passes domain validation but exceeds the bowlers.last_name column length.
+        await InsertLegacyBowlerAsync(1, Since.AddDays(1), lastName: new string('x', 100));
+        await InsertLegacyBowlerAsync(2, Since.AddDays(1), lastName: "Jones");
+
+        DiscordAlert? alert = null;
+        var notifier = new Mock<IManualInterventionNotifier>(MockBehavior.Strict);
+        notifier
+            .Setup(n => n.NotifyAsync(It.IsAny<DiscordAlert>(), It.IsAny<CancellationToken>()))
+            .Callback<DiscordAlert, CancellationToken>((a, _) => alert = a)
+            .Returns(Task.CompletedTask);
+        var logger = new FakeLogger<BowlerWeeklySyncJob>();
+        var job = CreateJob(logger, notifier);
+
+        // Act
+        await job.SyncAsync(Since, ct);
+
+        // Assert
+        (await _dbContext.Set<Bowler>().SingleAsync(ct)).LegacyId.ShouldBe(2);
+        logger.Collector.GetSnapshot().ShouldContain(record => record.Level == LogLevel.Error && record.Exception != null);
+        alert.ShouldNotBeNull();
+        alert.Metadata.ShouldNotBeNull();
+        alert.Metadata["LegacyBowlerIds"].ShouldContain("1");
     }
 
     [Fact(DisplayName = "SyncAsync should skip a bad row, save the rest, and send one alert")]
