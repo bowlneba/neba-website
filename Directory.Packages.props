@@ -21,7 +21,7 @@
     <PackageVersion Include="AspNetCore.HealthChecks.Hangfire" Version="9.0.0" />
     <PackageVersion Include="AspNetCore.HealthChecks.SqlServer" Version="9.0.0" />
     <PackageVersion Include="Aspire.Hosting.PostgreSQL" Version="13.6.2" />
-    <PackageVersion Include="Aspire.Hosting.Testing" Version="13.6.1" />
+    <PackageVersion Include="Aspire.Hosting.Testing" Version="13.6.2" />
     <!-- v33 reviewed against Verify.XunitV3's v33 paid-tier precedent: unlike Verify, Audit.NET's
          v33 stayed MIT-licensed with no pricing change. Its one breaking change (EfEntitySettings
          override callbacks gaining a PropertyOverrideContext argument) has no call site in this
@@ -37,7 +37,7 @@
     <PackageVersion Include="Azure.ResourceManager" Version="1.14.0" />
     <PackageVersion Include="Blazor-ApexCharts" Version="7.0.0" />
     <PackageVersion Include="Bogus" Version="35.6.5" />
-    <PackageVersion Include="bunit" Version="2.11.3" />
+    <PackageVersion Include="bunit" Version="2.12.5" />
     <PackageVersion Include="Community.Microsoft.Extensions.Caching.PostgreSql" Version="6.0.2" />
     <PackageVersion Include="CommunityToolkit.Aspire.Hosting.MailPit" Version="13.6.0" />
     <PackageVersion Include="coverlet.collector" Version="10.1.0" />
@@ -49,7 +49,7 @@
     <PackageVersion Include="FastEndpoints.AspVersioning" Version="8.3.0" />
     <PackageVersion Include="FastEndpoints.Swagger" Version="8.3.0" />
     <PackageVersion Include="Google.Apis.Auth" Version="1.77.0" />
-    <PackageVersion Include="Google.Apis.Drive.v3" Version="1.77.0.4276" />
+    <PackageVersion Include="Google.Apis.Drive.v3" Version="1.77.0.4301" />
     <PackageVersion Include="Hangfire.AspNetCore" Version="1.8.25" />
     <PackageVersion Include="Hangfire.Console" Version="1.4.3" />
     <PackageVersion Include="Hangfire.InMemory" Version="1.0.0" />
@@ -58,7 +58,7 @@
     <PackageVersion Include="HtmlSanitizer" Version="9.2.1039" />
     <PackageVersion Include="Humanizer.Core" Version="3.0.10" />
     <PackageVersion Include="MailKit" Version="4.18.1" />
-    <PackageVersion Include="Markdig" Version="1.4.0" />
+    <PackageVersion Include="Markdig" Version="1.4.2" />
     <PackageVersion Include="MessagePack" Version="3.1.12" />
     <PackageVersion Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="10.0.13" />
     <PackageVersion Include="Microsoft.AspNetCore.Components.WebAssembly" Version="10.0.13" />
@@ -85,22 +85,22 @@
     <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="18.11.0" />
     <!-- Hard-pinned to 2.x: Microsoft.AspNetCore.OpenApi's XmlCommentGenerator emits code against the
          2.x object model (settable IOpenApiMediaType.Example); 3.x made it read-only and breaks the build. -->
-    <PackageVersion Include="Microsoft.OpenApi" Version="[2.12.2,3.0.0)" />
+    <PackageVersion Include="Microsoft.OpenApi" Version="[2.13.0,3.0.0)" />
     <PackageVersion Include="Microsoft.Testing.Extensions.CodeCoverage" Version="18.12.0" />
     <PackageVersion Include="Microsoft.Testing.Extensions.TrxReport" Version="2.5.1" />
     <PackageVersion Include="Microsoft.VisualStudio.Threading.Analyzers" Version="18.12.1" />
     <PackageVersion Include="Moq" Version="4.21.0" />
     <PackageVersion Include="Newtonsoft.Json" Version="13.0.4" />
-    <PackageVersion Include="OpenTelemetry.Exporter.OpenTelemetryProtocol" Version="1.19.1" />
-    <PackageVersion Include="OpenTelemetry.Extensions.Hosting" Version="1.19.1" />
-    <PackageVersion Include="OpenTelemetry.Instrumentation.AspNetCore" Version="1.19.0" />
-    <PackageVersion Include="OpenTelemetry.Instrumentation.Http" Version="1.19.0" />
-    <PackageVersion Include="OpenTelemetry.Instrumentation.Runtime" Version="1.19.0" />
-    <PackageVersion Include="Refit" Version="16.3.0" />
-    <PackageVersion Include="Refit.HttpClientFactory" Version="16.3.0" />
-    <PackageVersion Include="Refit.Testing" Version="16.3.0" />
+    <PackageVersion Include="OpenTelemetry.Exporter.OpenTelemetryProtocol" Version="1.20.1" />
+    <PackageVersion Include="OpenTelemetry.Extensions.Hosting" Version="1.20.1" />
+    <PackageVersion Include="OpenTelemetry.Instrumentation.AspNetCore" Version="1.20.0" />
+    <PackageVersion Include="OpenTelemetry.Instrumentation.Http" Version="1.20.0" />
+    <PackageVersion Include="OpenTelemetry.Instrumentation.Runtime" Version="1.20.0" />
+    <PackageVersion Include="Refit" Version="16.4.0" />
+    <PackageVersion Include="Refit.HttpClientFactory" Version="16.4.0" />
+    <PackageVersion Include="Refit.Testing" Version="16.4.0" />
     <PackageVersion Include="Roslynator.Analyzers" Version="5.0.1" />
-    <PackageVersion Include="Scalar.AspNetCore" Version="2.18.0" />
+    <PackageVersion Include="Scalar.AspNetCore" Version="2.18.2" />
     <PackageVersion Include="Scrutor.AspNetCore" Version="3.3.0" />
     <PackageVersion Include="Shouldly" Version="4.3.0" />
     <PackageVersion Include="SonarAnalyzer.CSharp" Version="10.35.0.4138" />
