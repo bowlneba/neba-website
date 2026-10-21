@@ -4,14 +4,17 @@ using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Http.HttpResults;
 
+using Neba.Website.Server.Services;
+
 namespace Neba.Website.Server.Account.Session;
 
 /// <summary>
 /// Lets a Blazor circuit read and rewrite the browser's auth cookie. A circuit can't set cookies
 /// itself (its response started long ago), so <c>session-tokens.js</c> calls these endpoints from
 /// the browser on its behalf. Tokens only travel as <see cref="SessionTokenProtector"/> blobs.
-/// A blob stays valid for its short lifetime and can be replayed within it, which is accepted:
-/// <see cref="PersistTokensAsync"/> only lets it rewrite the cookie of the user it was issued for.
+/// A blob stays valid for its short lifetime and can be replayed within it, so
+/// <see cref="PersistTokensAsync"/> only lets it rewrite the cookie of the user it was issued for,
+/// and never replaces the cookie's tokens with an older pair.
 /// </summary>
 internal static class SessionTokenEndpoints
 {
@@ -58,11 +61,27 @@ internal static class SessionTokenEndpoints
         if (tokens.UserId != httpContext.User.FindFirstValue(ClaimTypes.NameIdentifier))
             return TypedResults.StatusCode(StatusCodes.Status403Forbidden);
 
+        // A delayed or replayed blob must not roll the cookie back to an already-rotated refresh token.
+        var current = await SessionTokenReader.ReadAsync(httpContext);
+        if (current is not null && IsOlder(tokens, current))
+            return TypedResults.NoContent();
+
         var principal = SecurityClaimsBuilder.BuildPrincipal(tokens.AccessToken, tokens.UserId, tokens.Email);
         var properties = SecurityClaimsBuilder.BuildAuthenticationProperties(tokens.AccessToken, tokens.RefreshToken);
 
         await httpContext.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, principal, properties);
 
         return TypedResults.NoContent();
+    }
+
+    private static bool IsOlder(SessionTokens candidate, SessionTokens current)
+    {
+        if (candidate.RefreshToken == current.RefreshToken)
+            return false;
+
+        var candidateExpiry = BearerTokenHandler.ReadExpiry(candidate.AccessToken);
+        var currentExpiry = BearerTokenHandler.ReadExpiry(current.AccessToken);
+
+        return candidateExpiry is { } candidateAt && currentExpiry is { } currentAt && candidateAt <= currentAt;
     }
 }

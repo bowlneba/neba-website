@@ -27,22 +27,25 @@ internal sealed class SessionTokenCache
 
     // The handler is shared across users, so a per-handler expiry cache would thrash between them.
     // Caches the expiry time, not a yes/no answer, because the answer changes as time passes.
-    private TokenExpiry? _lastExpiry;
+    // A refresh compares the old and the new token, so one slot would miss on every alternation.
+    private const int MaxCachedExpiries = 4;
+    private readonly Dictionary<string, DateTimeOffset?> _expiries = [];
 
     /// <summary>
-    /// Returns <paramref name="jwt"/>'s expiry, calling <paramref name="readExpiry"/> only when it
-    /// isn't the token this cache parsed last. Null means the token can't be parsed.
+    /// Returns <paramref name="jwt"/>'s expiry, calling <paramref name="readExpiry"/> only when this
+    /// cache hasn't parsed the token yet. Null means the token can't be parsed.
     /// </summary>
     public DateTimeOffset? ExpiryOf(string jwt, Func<string, DateTimeOffset?> readExpiry)
     {
-        var cached = _lastExpiry;
-        if (cached is null || cached.Token != jwt)
-        {
-            cached = new TokenExpiry(jwt, readExpiry(jwt));
-            _lastExpiry = cached;
-        }
+        if (_expiries.TryGetValue(jwt, out var cached))
+            return cached;
 
-        return cached.ExpiresAt;
+        if (_expiries.Count >= MaxCachedExpiries)
+            _expiries.Clear();
+
+        var expiry = readExpiry(jwt);
+        _expiries[jwt] = expiry;
+        return expiry;
     }
 
     public void Set(SessionTokens? tokens)
@@ -53,5 +56,3 @@ internal sealed class SessionTokenCache
         RefreshToken = tokens?.RefreshToken;
     }
 }
-
-internal sealed record TokenExpiry(string Token, DateTimeOffset? ExpiresAt);

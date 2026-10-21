@@ -233,7 +233,7 @@ internal sealed class BearerTokenHandler(
         => cache.ExpiryOf(jwt, ReadExpiry) is not { } expiresAt
             || expiresAt <= timeProvider.GetUtcNow().Add(ExpiryBuffer);
 
-    private static DateTimeOffset? ReadExpiry(string jwt)
+    internal static DateTimeOffset? ReadExpiry(string jwt)
     {
         var parts = jwt.Split('.');
 

@@ -1,7 +1,10 @@
 // Called from a Blazor circuit (SessionCookieSync) to read or rewrite the auth cookie, which the
 // circuit can't do itself. Blobs are encrypted server-side; this file never sees raw tokens.
 // redirect: 'manual' turns the cookie handler's login redirect into a failed response.
+// The fetch gives up after the same time as the server-side interop timeout, so a call the server
+// has stopped waiting for can't land later and overwrite a newer cookie.
 const endpoint = '/account/session-tokens';
+const fetchTimeoutMs = 5000;
 
 export async function persist(blob) {
   try {
@@ -9,6 +12,7 @@ export async function persist(blob) {
       method: 'POST',
       credentials: 'same-origin',
       redirect: 'manual',
+      signal: AbortSignal.timeout(fetchTimeoutMs),
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ blob }),
     });
@@ -25,6 +29,7 @@ export async function read() {
       credentials: 'same-origin',
       redirect: 'manual',
       cache: 'no-store',
+      signal: AbortSignal.timeout(fetchTimeoutMs),
     });
     if (response.status !== 200) {
       return null;

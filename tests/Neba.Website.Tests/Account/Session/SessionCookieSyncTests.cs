@@ -167,6 +167,42 @@ public sealed class SessionCookieSyncTests
         result.ShouldBeNull();
     }
 
+    [Fact(DisplayName = "PersistAsync should rethrow when the caller cancels")]
+    public async Task PersistAsync_ShouldThrow_WhenCallerCancels()
+    {
+        // Arrange
+        var (jsRuntime, module) = CreateJs();
+        module
+            .Setup(m => m.InvokeAsync<bool>("persist", It.IsAny<CancellationToken>(), It.IsAny<object?[]?>()))
+            .Returns((string _, CancellationToken ct, object?[]? _) => HangAsync<bool>(ct));
+        await using var sut = new SessionCookieSync(jsRuntime.Object, _protector, new FakeTimeProvider(), NullLogger<SessionCookieSync>.Instance);
+        using var cts = new CancellationTokenSource();
+
+        // Act
+        await cts.CancelAsync();
+
+        // Assert
+        await Should.ThrowAsync<OperationCanceledException>(() => sut.PersistAsync(Tokens, cts.Token));
+    }
+
+    [Fact(DisplayName = "ReadAsync should rethrow when the caller cancels")]
+    public async Task ReadAsync_ShouldThrow_WhenCallerCancels()
+    {
+        // Arrange
+        var (jsRuntime, module) = CreateJs();
+        module
+            .Setup(m => m.InvokeAsync<string?>("read", It.IsAny<CancellationToken>(), It.IsAny<object?[]?>()))
+            .Returns((string _, CancellationToken ct, object?[]? _) => HangAsync<string?>(ct));
+        await using var sut = new SessionCookieSync(jsRuntime.Object, _protector, new FakeTimeProvider(), NullLogger<SessionCookieSync>.Instance);
+        using var cts = new CancellationTokenSource();
+
+        // Act
+        await cts.CancelAsync();
+
+        // Assert
+        await Should.ThrowAsync<OperationCanceledException>(() => sut.ReadAsync(cts.Token));
+    }
+
     private static async ValueTask<T> HangAsync<T>(CancellationToken cancellationToken)
     {
         await Task.Delay(Timeout.Infinite, cancellationToken);

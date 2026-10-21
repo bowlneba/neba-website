@@ -20,6 +20,7 @@ internal sealed class SessionCookieSync(
     internal static readonly TimeSpan InteropTimeout = TimeSpan.FromSeconds(5);
 
     private IJSObjectReference? _module;
+    private Task<IJSObjectReference>? _import;
 
     public async Task<bool> PersistAsync(SessionTokens tokens, CancellationToken cancellationToken)
     {
@@ -36,7 +37,16 @@ internal sealed class SessionCookieSync(
 
             return persisted;
         }
-        catch (Exception ex) when (ex is JSException or JSDisconnectedException or OperationCanceledException or InvalidOperationException)
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+            throw;
+        }
+        catch (OperationCanceledException ex)
+        {
+            logger.LogSessionCookieInteropTimedOut(ex);
+            return false;
+        }
+        catch (Exception ex) when (ex is JSException or JSDisconnectedException or InvalidOperationException)
         {
             logger.LogSessionCookiePersistFailed(ex);
             return false;
@@ -55,7 +65,16 @@ internal sealed class SessionCookieSync(
 
             return blob is null ? null : protector.Unprotect(blob);
         }
-        catch (Exception ex) when (ex is JSException or JSDisconnectedException or OperationCanceledException or InvalidOperationException)
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+            throw;
+        }
+        catch (OperationCanceledException ex)
+        {
+            logger.LogSessionCookieInteropTimedOut(ex);
+            return null;
+        }
+        catch (Exception ex) when (ex is JSException or JSDisconnectedException or InvalidOperationException)
         {
             logger.LogSessionCookieReadFailed(ex);
             return null;
@@ -78,14 +97,33 @@ internal sealed class SessionCookieSync(
         }
     }
 
+    // The import runs on its own task so a timeout can't orphan the module reference: the task keeps
+    // going, and the next call awaits the same import instead of starting another.
     private async Task<IJSObjectReference> GetModuleAsync(CancellationToken cancellationToken)
-        => _module ??= await jsRuntime.InvokeAsync<IJSObjectReference>("import", cancellationToken, ModulePath);
+    {
+        _import ??= ImportAsync();
+        try
+        {
+            return await _import.WaitAsync(cancellationToken);
+        }
+        catch (Exception ex) when (ex is not OperationCanceledException)
+        {
+            _import = null;
+            throw;
+        }
+    }
+
+    private async Task<IJSObjectReference> ImportAsync()
+        => _module = await jsRuntime.InvokeAsync<IJSObjectReference>("import", CancellationToken.None, ModulePath);
 }
 
 internal static partial class SessionCookieSyncLogMessages
 {
     [LoggerMessage(Level = LogLevel.Warning, Message = "Could not write refreshed tokens to the auth cookie; the next page load may sign the user out.")]
     public static partial void LogSessionCookiePersistFailed(this ILogger<SessionCookieSync> logger, Exception exception);
+
+    [LoggerMessage(Level = LogLevel.Warning, Message = "The browser did not answer the session-cookie call in time; the next page load may sign the user out.")]
+    public static partial void LogSessionCookieInteropTimedOut(this ILogger<SessionCookieSync> logger, Exception exception);
 
     [LoggerMessage(Level = LogLevel.Warning, Message = "The session-token endpoint rejected refreshed tokens; the next page load may sign the user out.")]
     public static partial void LogSessionCookiePersistRejected(this ILogger<SessionCookieSync> logger);

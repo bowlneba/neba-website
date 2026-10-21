@@ -24,6 +24,7 @@ describe('session-tokens', () => {
         method: 'POST',
         credentials: 'same-origin',
         redirect: 'manual',
+        signal: expect.any(AbortSignal),
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ blob: 'encrypted-blob' }),
       });
@@ -59,6 +60,7 @@ describe('session-tokens', () => {
         credentials: 'same-origin',
         redirect: 'manual',
         cache: 'no-store',
+        signal: expect.any(AbortSignal),
       });
     });
 
