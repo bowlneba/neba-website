@@ -33,7 +33,7 @@ public sealed class MainLayoutTests : IDisposable
 
         _ctx.Services.AddSingleton(mockWebHostEnvironment.Object);
         _ctx.Services.AddScoped<ToastService>();
-        _ctx.Services.AddScoped<CircuitTokenCache>();
+        _ctx.Services.AddScoped<SessionTokenCache>();
 
         var httpContextAccessorMock = new Mock<IHttpContextAccessor>(MockBehavior.Strict);
         httpContextAccessorMock.SetupGet(m => m.HttpContext).Returns((HttpContext?)null);

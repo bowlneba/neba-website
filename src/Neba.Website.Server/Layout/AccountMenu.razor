@@ -7,7 +7,7 @@
 @using Neba.Website.Server.Services
 @implements IAsyncDisposable
 @inject IHttpContextAccessor HttpContextAccessor
-@inject CircuitTokenCache TokenCache
+@inject SessionTokenCache TokenCache
 @inject IJSRuntime JsRuntime
 @inject ToastService ToastService
 @inject NebaApiConfiguration ApiConfiguration
@@ -102,12 +102,17 @@
         }
     }
 
+    // Once filled, the circuit's cache holds the newest token; inside a circuit the HttpContext
+    // cookie is the one from when the connection opened.
     private async Task<string?> GetAccessTokenAsync()
     {
+        if (TokenCache.IsSeeded)
+            return TokenCache.AccessToken;
+
         var httpContext = HttpContextAccessor.HttpContext;
         return httpContext is not null
             ? await httpContext.GetTokenAsync(CookieAuthenticationDefaults.AuthenticationScheme, SecurityClaimsBuilder.AccessTokenName)
-            : TokenCache.AccessToken;
+            : null;
     }
 
     private async Task CopyTokenAsync()
