@@ -247,12 +247,9 @@ internal sealed class BearerTokenHandler(
             var payloadBytes = Base64UrlDecode(parts[1]);
             using var payload = JsonDocument.Parse(payloadBytes);
 
-            if (!payload.RootElement.TryGetProperty("exp", out var expElement))
-            {
-                return null;
-            }
-
-            return DateTimeOffset.FromUnixTimeSeconds(expElement.GetInt64());
+            return !payload.RootElement.TryGetProperty("exp", out var expElement)
+                ? null
+                : DateTimeOffset.FromUnixTimeSeconds(expElement.GetInt64());
         }
         catch (Exception ex) when (ex is FormatException or JsonException or InvalidOperationException)
         {

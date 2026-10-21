@@ -80,7 +80,7 @@ public sealed class BearerTokenHandlerTests
         httpContextAccessorMock.SetupGet(a => a.HttpContext).Returns((HttpContext?)null);
         var factoryMock = new Mock<IHttpClientFactory>(MockBehavior.Strict);
         var circuitToken = BuildJwt(DateTimeOffset.UtcNow.AddMinutes(10));
-        using var circuit = CreateCircuit(SeededCache(circuitToken));
+        await using var circuit = CreateCircuit(SeededCache(circuitToken));
         using var sut = CreateHandler(innerHandler, httpContextAccessorMock.Object, factoryMock.Object, circuit);
         using var client = new HttpClient(sut, disposeHandler: false);
 
@@ -123,7 +123,7 @@ public sealed class BearerTokenHandlerTests
 
         var expiredToken = BuildJwt(DateTimeOffset.UtcNow.AddMinutes(-1));
         var tokenCache = SeededCache(expiredToken);
-        using var circuit = CreateCircuit(tokenCache, CreateCookieSync(persistResult: true));
+        await using var circuit = CreateCircuit(tokenCache, CreateCookieSync(persistResult: true));
         using var sut = CreateHandler(innerHandler, httpContextAccessorMock.Object, factoryMock.Object, circuit);
         using var client = new HttpClient(sut, disposeHandler: false);
 
@@ -149,7 +149,7 @@ public sealed class BearerTokenHandlerTests
         var factoryMock = new Mock<IHttpClientFactory>(MockBehavior.Strict);
 
         var validToken = BuildJwt(DateTimeOffset.UtcNow.AddMinutes(10));
-        using var circuit = CreateCircuit(SeededCache(validToken));
+        await using var circuit = CreateCircuit(SeededCache(validToken));
         using var sut = CreateHandler(innerHandler, httpContextAccessorMock.Object, factoryMock.Object, circuit);
         using var client = new HttpClient(sut, disposeHandler: false);
 
@@ -194,7 +194,7 @@ public sealed class BearerTokenHandlerTests
         var oldToken = BuildJwt(DateTimeOffset.UtcNow.AddMinutes(10));
         var tokenCache = SeededCache(oldToken);
         var cookieSync = CreateCookieSync(persistResult: true);
-        using var circuit = CreateCircuit(tokenCache, cookieSync);
+        await using var circuit = CreateCircuit(tokenCache, cookieSync);
         using var sut = CreateHandler(innerHandler, httpContextAccessorMock.Object, factoryMock.Object, circuit);
         using var client = new HttpClient(sut, disposeHandler: false);
 
@@ -354,7 +354,7 @@ public sealed class BearerTokenHandlerTests
         // Shared across both handlers, matching two calls on the same Blazor circuit going through
         // separate transient BearerTokenHandler instances but the same circuit-scoped SessionTokenCache.
         var tokenCache = SeededCache(expiredToken);
-        using var circuit = CreateCircuit(tokenCache, CreateCookieSync(persistResult: true));
+        await using var circuit = CreateCircuit(tokenCache, CreateCookieSync(persistResult: true));
 
         using var sutA = CreateHandler(innerHandler, httpContextAccessorMock.Object, factoryMock.Object, circuit);
         using var sutB = CreateHandler(innerHandler, httpContextAccessorMock.Object, factoryMock.Object, circuit);
@@ -464,10 +464,10 @@ public sealed class BearerTokenHandlerTests
         {
             var body = await request.Content!.ReadFromJsonAsync<JsonElement>(TestContext.Current.CancellationToken);
             var presented = body.GetProperty("refreshToken").GetString()!;
-            if (presented != "refresh-0" || !redeemed.Add(presented))
-                return new HttpResponseMessage(HttpStatusCode.Unauthorized);
-
-            return RefreshResponse(newAccessToken, "refresh-1");
+            
+            return presented != "refresh-0" || !redeemed.Add(presented)
+                ? new HttpResponseMessage(HttpStatusCode.Unauthorized)
+                : RefreshResponse(newAccessToken, "refresh-1");
         });
 
         // Inside a live circuit the accessor returns the connection's HttpContext: its cookie never
@@ -481,7 +481,7 @@ public sealed class BearerTokenHandlerTests
         var factoryMock = new Mock<IHttpClientFactory>(MockBehavior.Strict);
         factoryMock.Setup(f => f.CreateClient(string.Empty)).Returns(() => new HttpClient(refreshHandler));
 
-        using var circuit = CreateCircuit(cookieSync: CreateCookieSync(persistResult: true));
+        await using var circuit = CreateCircuit(cookieSync: CreateCookieSync(persistResult: true));
         using var sut = CreateHandler(innerHandler, httpContextAccessorMock.Object, factoryMock.Object, circuit);
         using var client = new HttpClient(sut, disposeHandler: false);
         var ct = TestContext.Current.CancellationToken;
@@ -520,8 +520,8 @@ public sealed class BearerTokenHandlerTests
         httpContextAccessorMock.SetupGet(a => a.HttpContext).Returns(() => current);
 
         var circuitServicesAccessor = new CircuitServicesAccessor();
-        using var circuitA = CreateCircuit(cookieSync: CreateCookieSync(persistResult: true));
-        using var circuitB = CreateCircuit(cookieSync: CreateCookieSync(persistResult: true, readResult: null));
+        await using var circuitA = CreateCircuit(cookieSync: CreateCookieSync(persistResult: true));
+        await using var circuitB = CreateCircuit(cookieSync: CreateCookieSync(persistResult: true, readResult: null));
         using var sut = CreateHandler(innerHandler, httpContextAccessorMock.Object, factoryMock.Object, circuitServicesAccessor: circuitServicesAccessor);
         using var client = new HttpClient(sut, disposeHandler: false);
         var ct = TestContext.Current.CancellationToken;
@@ -557,7 +557,7 @@ public sealed class BearerTokenHandlerTests
             persistResult: true,
             readResult: new SessionTokens("user-123", "admin@bowlneba.com", otherTabToken, "other-tab-refresh"));
         var tokenCache = SeededCache(BuildJwt(DateTimeOffset.UtcNow.AddMinutes(-1)), refreshToken: "already-redeemed");
-        using var circuit = CreateCircuit(tokenCache, cookieSync);
+        await using var circuit = CreateCircuit(tokenCache, cookieSync);
         using var sut = CreateHandler(innerHandler, httpContextAccessorMock.Object, factoryMock.Object, circuit);
         using var client = new HttpClient(sut, disposeHandler: false);
 
@@ -595,7 +595,7 @@ public sealed class BearerTokenHandlerTests
         var cookieSync = CreateCookieSync(
             persistResult: true,
             readResult: new SessionTokens("user-123", "admin@bowlneba.com", BuildJwt(DateTimeOffset.UtcNow.AddMinutes(-2)), "other-tab-refresh"));
-        using var circuit = CreateCircuit(SeededCache(expiredToken, refreshToken: "already-redeemed"), cookieSync);
+        await using var circuit = CreateCircuit(SeededCache(expiredToken, refreshToken: "already-redeemed"), cookieSync);
         using var sut = CreateHandler(innerHandler, httpContextAccessorMock.Object, factoryMock.Object, circuit);
         using var client = new HttpClient(sut, disposeHandler: false);
 
@@ -624,7 +624,7 @@ public sealed class BearerTokenHandlerTests
         var cookieSync = CreateCookieSync(
             persistResult: true,
             readResult: new SessionTokens("user-123", "admin@bowlneba.com", token, "refresh-abc"));
-        using var circuit = CreateCircuit(SeededCache(token), cookieSync);
+        await using var circuit = CreateCircuit(SeededCache(token), cookieSync);
         using var sut = CreateHandler(innerHandler, httpContextAccessorMock.Object, factoryMock.Object, circuit);
         using var client = new HttpClient(sut, disposeHandler: false);
 
@@ -651,7 +651,7 @@ public sealed class BearerTokenHandlerTests
         factoryMock.Setup(f => f.CreateClient(string.Empty)).Returns(() => new HttpClient(refreshHandler));
 
         var tokenCache = SeededCache(BuildJwt(DateTimeOffset.UtcNow.AddMinutes(-1)));
-        using var circuit = CreateCircuit(tokenCache, CreateCookieSync(persistResult: false));
+        await using var circuit = CreateCircuit(tokenCache, CreateCookieSync(persistResult: false));
         using var sut = CreateHandler(innerHandler, httpContextAccessorMock.Object, factoryMock.Object, circuit);
         using var client = new HttpClient(sut, disposeHandler: false);
 
@@ -677,7 +677,7 @@ public sealed class BearerTokenHandlerTests
         var cookieSync = CreateCookieSync(
             persistResult: true,
             readResult: new SessionTokens("user-123", "admin@bowlneba.com", cookieToken, "refresh-abc"));
-        using var circuit = CreateCircuit(cookieSync: cookieSync);
+        await using var circuit = CreateCircuit(cookieSync: cookieSync);
         using var sut = CreateHandler(innerHandler, httpContextAccessorMock.Object, factoryMock.Object, circuit);
         using var client = new HttpClient(sut, disposeHandler: false);
         var ct = TestContext.Current.CancellationToken;
@@ -735,7 +735,7 @@ public sealed class BearerTokenHandlerTests
         factoryMock.Setup(f => f.CreateClient(string.Empty)).Returns(() => new HttpClient(refreshHandler));
 
         var oldToken = BuildJwt(clock.GetUtcNow().AddMinutes(5));
-        using var circuit = CreateCircuit(SeededCache(oldToken), CreateCookieSync(persistResult: true));
+        await using var circuit = CreateCircuit(SeededCache(oldToken), CreateCookieSync(persistResult: true));
         // One handler for both calls, as IHttpClientFactory shares it for its whole lifetime.
         using var sut = CreateHandler(innerHandler, httpContextAccessorMock.Object, factoryMock.Object, circuit, timeProvider: clock);
         using var client = new HttpClient(sut, disposeHandler: false);
