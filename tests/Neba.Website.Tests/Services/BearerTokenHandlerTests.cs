@@ -464,7 +464,7 @@ public sealed class BearerTokenHandlerTests
         {
             var body = await request.Content!.ReadFromJsonAsync<JsonElement>(TestContext.Current.CancellationToken);
             var presented = body.GetProperty("refreshToken").GetString()!;
-            
+
             return presented != "refresh-0" || !redeemed.Add(presented)
                 ? new HttpResponseMessage(HttpStatusCode.Unauthorized)
                 : RefreshResponse(newAccessToken, "refresh-1");
