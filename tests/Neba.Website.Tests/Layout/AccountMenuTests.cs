@@ -11,6 +11,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Neba.Api.Contracts.Cache;
 using Neba.Api.Contracts.Security;
 using Neba.TestFactory.Attributes;
+using Neba.Website.Server.Account.Session;
 using Neba.Website.Server.Layout;
 using Neba.Website.Server.Notifications;
 using Neba.Website.Server.Services;
@@ -33,7 +34,7 @@ public sealed class AccountMenuTests : IDisposable
     {
         _ctx = new BunitContext();
         _authContext = _ctx.AddAuthorization();
-        _ctx.Services.AddScoped<CircuitTokenCache>();
+        _ctx.Services.AddScoped<SessionTokenCache>();
 
         _toastService = new ToastService();
         _ctx.Services.AddSingleton(_toastService);
@@ -158,7 +159,7 @@ public sealed class AccountMenuTests : IDisposable
     public void Render_ShouldShowBackgroundJobsLink_WhenUserHoldsPolicyAndTokenIsAvailable()
     {
         // Arrange
-        _ctx.Services.GetRequiredService<CircuitTokenCache>().AccessToken = "test-token";
+        _ctx.Services.GetRequiredService<SessionTokenCache>().Set(new SessionTokens("test-user", "test-user@bowlneba.com", "test-token", "test-refresh"));
         _authContext.SetAuthorized("test-user");
         _authContext.SetPolicies(Permissions.ViewBackgroundJobsDashboard.PolicyName);
 
@@ -176,7 +177,7 @@ public sealed class AccountMenuTests : IDisposable
     public void Render_ShouldNotShowBackgroundJobsLink_WhenUserLacksPolicy()
     {
         // Arrange
-        _ctx.Services.GetRequiredService<CircuitTokenCache>().AccessToken = "test-token";
+        _ctx.Services.GetRequiredService<SessionTokenCache>().Set(new SessionTokens("test-user", "test-user@bowlneba.com", "test-token", "test-refresh"));
         _authContext.SetAuthorized("test-user");
         _authContext.SetPolicies();
 
@@ -227,7 +228,7 @@ public sealed class AccountMenuTests : IDisposable
         // Arrange - production relies on the shared auth cookie, not the query string, so a
         // cached token must never leak into the link even when one happens to be available.
         SetEnvironment("Production");
-        _ctx.Services.GetRequiredService<CircuitTokenCache>().AccessToken = "test-token";
+        _ctx.Services.GetRequiredService<SessionTokenCache>().Set(new SessionTokens("test-user", "test-user@bowlneba.com", "test-token", "test-refresh"));
         _authContext.SetAuthorized("test-user");
         _authContext.SetPolicies(Permissions.ViewBackgroundJobsDashboard.PolicyName);
 

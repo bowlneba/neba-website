@@ -1,5 +1,6 @@
 using System.Net;
 
+using Microsoft.AspNetCore.Components.Server.Circuits;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
@@ -7,6 +8,7 @@ using Microsoft.Extensions.Options;
 using Neba.Api.Contracts.Documents;
 using Neba.Api.Contracts.Security;
 using Neba.TestFactory.Attributes;
+using Neba.Website.Server.Account.Session;
 using Neba.Website.Server.Services;
 
 using Refit;
@@ -39,6 +41,25 @@ public sealed class ApiServicesConfigurationTests
         // Assert
         services.ShouldContain(sd => sd.ServiceType == typeof(ApiExecutor) && sd.Lifetime == ServiceLifetime.Scoped);
         services.ShouldContain(sd => sd.ServiceType == typeof(BearerTokenHandler) && sd.Lifetime == ServiceLifetime.Transient);
+    }
+
+    [Fact(DisplayName = "AddApiServices should register the circuit token services with lifetimes that keep tokens per circuit")]
+    public void AddApiServices_ShouldRegisterCircuitTokenServices()
+    {
+        // Arrange
+        var services = new ServiceCollection();
+        var configuration = BuildConfiguration("https://api.example.com");
+
+        // Act
+        services.AddApiServices(configuration);
+
+        // Assert
+        services.ShouldContain(sd => sd.ServiceType == typeof(SessionTokenCache) && sd.Lifetime == ServiceLifetime.Scoped);
+        services.ShouldContain(sd => sd.ServiceType == typeof(CircuitServicesAccessor) && sd.Lifetime == ServiceLifetime.Singleton);
+        services.ShouldContain(sd => sd.ServiceType == typeof(CircuitHandler) && sd.ImplementationType == typeof(CircuitServicesActivityHandler) && sd.Lifetime == ServiceLifetime.Scoped);
+        services.ShouldContain(sd => sd.ServiceType == typeof(ISessionCookieSync) && sd.ImplementationType == typeof(SessionCookieSync) && sd.Lifetime == ServiceLifetime.Scoped);
+        services.ShouldContain(sd => sd.ServiceType == typeof(SessionTokenProtector) && sd.Lifetime == ServiceLifetime.Singleton);
+        services.ShouldContain(sd => sd.ServiceType == typeof(TimeProvider) && sd.Lifetime == ServiceLifetime.Singleton);
     }
 
     [Fact(DisplayName = "AddApiServices should resolve each Refit endpoint with the configured BaseUrl applied")]

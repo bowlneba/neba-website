@@ -1,29 +1,36 @@
 using System.Net;
 using System.Net.Http.Headers;
-using System.Security.Claims;
 using System.Text.Json;
 
-using Microsoft.AspNetCore.Authentication;
-using Microsoft.AspNetCore.Authentication.Cookies;
-
 using Neba.Api.Contracts.Security.RefreshToken;
-using Neba.Website.Server.Account;
+using Neba.Website.Server.Account.Session;
 
 namespace Neba.Website.Server.Services;
 
 /// <summary>
 /// A delegating handler that adds a bearer token to outgoing HTTP requests.
 /// </summary>
-/// <param name="httpContextAccessor">The HTTP context accessor. Only populated for the duration of an actual HTTP request — null for calls made purely over an established SignalR circuit (e.g. from a <c>prerender: false</c> component), in which case <paramref name="tokenCache"/> is used instead.</param>
-/// <param name="tokenCache">Circuit-scoped fallback token cache, seeded once per circuit by <c>Routes.razor</c>.</param>
+/// <remarks>
+/// <c>IHttpClientFactory</c> builds this handler in its own DI scope and shares it across every
+/// user for the handler's lifetime, so it must hold no per-user state. Tokens come from an
+/// <see cref="ITokenSession"/> chosen per call: the current circuit's when there is one
+/// (<see cref="CircuitServicesAccessor"/>), otherwise the current HTTP request's cookie.
+/// </remarks>
+/// <param name="httpContextAccessor">
+/// The HTTP context accessor. Inside a circuit this returns the HttpContext of the request that
+/// opened the connection, whose cookie never changes, so it's only used to fill an empty circuit cache.
+/// </param>
+/// <param name="circuitServicesAccessor">The current circuit's services, or null outside a circuit.</param>
 /// <param name="httpClientFactory">Used to build a plain HTTP client for the silent-refresh call (bypasses Refit to avoid a circular dependency on this same handler).</param>
 /// <param name="apiConfiguration">The base URL of the security API.</param>
+/// <param name="timeProvider">Clock used to decide whether a token is about to expire.</param>
 /// <param name="logger">Logger for silent-refresh failures.</param>
 internal sealed class BearerTokenHandler(
     IHttpContextAccessor httpContextAccessor,
-    CircuitTokenCache tokenCache,
+    CircuitServicesAccessor circuitServicesAccessor,
     IHttpClientFactory httpClientFactory,
     NebaApiConfiguration apiConfiguration,
+    TimeProvider timeProvider,
     ILogger<BearerTokenHandler> logger)
     : DelegatingHandler
 {
@@ -36,34 +43,28 @@ internal sealed class BearerTokenHandler(
     // before expiry rather than racing it - avoids sending a token that expires mid-flight.
     private static readonly TimeSpan ExpiryBuffer = TimeSpan.FromSeconds(30);
 
-    // HttpClientFactory reuses a handler instance across many outgoing calls (default ~2 minute
-    // handler lifetime), and a single Blazor request/circuit turn commonly fires several downstream
-    // API calls with the same unchanged token. Caching just the last decode avoids re-parsing the
-    // same JWT payload on every one of those calls; a wrong cache hit under concurrent access from a
-    // different token just falls through to a fresh decode, so no locking is needed.
-    private TokenExpiryCacheEntry? _lastExpiryCheck;
-
-    private sealed record TokenExpiryCacheEntry(string Token, bool IsExpiredOrExpiringSoon);
-
     /// <inheritdoc />
     protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(request);
 
-        var httpContext = httpContextAccessor.HttpContext;
-        var token = httpContext is not null
-            ? await httpContext.GetTokenAsync(CookieAuthenticationDefaults.AuthenticationScheme, SecurityClaimsBuilder.AccessTokenName)
-            : tokenCache.AccessToken;
+        var session = ResolveSession();
+        string? token = null;
 
-        // Proactively refresh an expired (or about-to-expire) token instead of only reacting to a
-        // 401 below. This matters for AllowAnonymous endpoints that read the caller's identity when
-        // present (e.g. GetTournamentEndpoint's permission-gated fields) - they never return 401 for
-        // a stale token, so without this the caller silently gets treated as anonymous instead of
-        // getting a refreshed token. It also avoids an extra round trip on authenticated endpoints
-        // for the common case of a circuit that's simply been open longer than the token's lifetime.
-        if (token is not null && IsExpiredOrExpiringSoon(token))
+        if (session is not null)
         {
-            token = await RefreshWithLockAsync(httpContext, token, cancellationToken) ?? token;
+            await EnsureSeededAsync(session, cancellationToken);
+            token = session.Cache.AccessToken;
+
+            // Proactively refresh an expired (or about-to-expire) token instead of only reacting to a
+            // 401 below. This matters for AllowAnonymous endpoints that read the caller's identity when
+            // present (e.g. GetTournamentEndpoint's permission-gated fields) - they never return 401 for
+            // a stale token, so without this the caller silently gets treated as anonymous instead of
+            // getting a refreshed token.
+            if (token is not null && IsExpiredOrExpiringSoon(token, session.Cache))
+            {
+                token = await RefreshWithLockAsync(session, token, cancellationToken) ?? token;
+            }
         }
 
         if (token is not null)
@@ -83,9 +84,9 @@ internal sealed class BearerTokenHandler(
 
         var response = await base.SendAsync(request, cancellationToken);
 
-        if (response.StatusCode == HttpStatusCode.Unauthorized)
+        if (response.StatusCode == HttpStatusCode.Unauthorized && session is not null)
         {
-            var refreshedToken = await RefreshWithLockAsync(httpContext, token, cancellationToken);
+            var refreshedToken = await RefreshWithLockAsync(session, token, cancellationToken);
 
             if (refreshedToken is not null)
             {
@@ -101,43 +102,86 @@ internal sealed class BearerTokenHandler(
         return response;
     }
 
-    /// <summary>
-    /// Wraps <see cref="TryRefreshAsync"/> in <see cref="CircuitTokenCache.RefreshLock"/> so a burst
-    /// of concurrent calls on the same circuit (e.g. several near-simultaneous uploads whose access
-    /// tokens all go stale together) serialize through one refresh instead of each racing the server
-    /// with the same soon-to-be-rotated-out refresh token. <paramref name="tokenAtCallTime"/> is the
-    /// token this caller observed before deciding it needed refreshing; if another caller already
-    /// refreshed past that token by the time this one gets the lock, that newer token is reused
-    /// instead of hitting the network again.
-    /// </summary>
-    private async Task<string?> RefreshWithLockAsync(HttpContext? httpContext, string? tokenAtCallTime, CancellationToken cancellationToken)
+    private ITokenSession? ResolveSession()
     {
-        await tokenCache.RefreshLock.WaitAsync(cancellationToken);
+        var httpContext = httpContextAccessor.HttpContext;
+        var circuitServices = circuitServicesAccessor.Services;
+
+        if (circuitServices is not null)
+        {
+            return new CircuitTokenSession(
+                circuitServices.GetRequiredService<SessionTokenCache>(),
+                httpContext,
+                circuitServices.GetRequiredService<ISessionCookieSync>());
+        }
+
+        return httpContext is null ? null : new CookieTokenSession(httpContext);
+    }
+
+    // Under the lock so a fill can't overwrite tokens a concurrent call has just refreshed.
+    private static async Task EnsureSeededAsync(ITokenSession session, CancellationToken cancellationToken)
+    {
+        if (session.Cache.IsSeeded)
+            return;
+
+        await session.Cache.RefreshLock.WaitAsync(cancellationToken);
 
         try
         {
-            var latest = httpContext is not null
-                ? await httpContext.GetTokenAsync(CookieAuthenticationDefaults.AuthenticationScheme, SecurityClaimsBuilder.AccessTokenName)
-                : tokenCache.AccessToken;
-
-            return latest is not null && latest != tokenAtCallTime && !IsExpiredOrExpiringSoon(latest)
-                ? latest
-                : await TryRefreshAsync(httpContext, cancellationToken);
+            if (!session.Cache.IsSeeded)
+                session.Cache.Set(await session.ReadInitialTokensAsync(cancellationToken));
         }
         finally
         {
-            tokenCache.RefreshLock.Release();
+            session.Cache.RefreshLock.Release();
         }
     }
 
-    private async Task<string?> TryRefreshAsync(HttpContext? httpContext, CancellationToken cancellationToken)
+    /// <summary>
+    /// Wraps <see cref="TryRefreshAsync"/> in <see cref="SessionTokenCache.RefreshLock"/> so a burst
+    /// of concurrent calls in the same session serialize through one refresh instead of each racing
+    /// the server with the same soon-to-be-rotated-out refresh token. <paramref name="tokenAtCallTime"/>
+    /// is the token this caller saw before deciding it needed refreshing; if another caller already
+    /// refreshed past it, that newer token is reused instead of hitting the network again.
+    /// </summary>
+    private async Task<string?> RefreshWithLockAsync(ITokenSession session, string? tokenAtCallTime, CancellationToken cancellationToken)
     {
-        var refreshToken = httpContext is not null
-            ? await httpContext.GetTokenAsync(CookieAuthenticationDefaults.AuthenticationScheme, SecurityClaimsBuilder.RefreshTokenName)
-            : tokenCache.RefreshToken;
-        var userId = httpContext is not null
-            ? httpContext.User.FindFirst(ClaimTypes.NameIdentifier)?.Value
-            : tokenCache.UserId;
+        await session.Cache.RefreshLock.WaitAsync(cancellationToken);
+
+        try
+        {
+            if (NewerUsableToken(session.Cache.AccessToken, tokenAtCallTime, session.Cache) is { } newer)
+                return newer;
+
+            if (await TryRefreshAsync(session, cancellationToken) is { } refreshed)
+                return refreshed;
+
+            // Another tab sharing this cookie may have already redeemed this refresh token and
+            // written its new pair to the cookie. Pick that up instead of signing the user out.
+            var latest = await session.ReadLatestCookieTokensAsync(cancellationToken);
+            if (latest is null || latest.RefreshToken == session.Cache.RefreshToken)
+                return null;
+
+            session.Cache.Set(latest);
+
+            return NewerUsableToken(latest.AccessToken, tokenAtCallTime, session.Cache)
+                ?? await TryRefreshAsync(session, cancellationToken);
+        }
+        finally
+        {
+            session.Cache.RefreshLock.Release();
+        }
+    }
+
+    private string? NewerUsableToken(string? candidate, string? tokenAtCallTime, SessionTokenCache cache)
+        => candidate is not null && candidate != tokenAtCallTime && !IsExpiredOrExpiringSoon(candidate, cache)
+            ? candidate
+            : null;
+
+    private async Task<string?> TryRefreshAsync(ITokenSession session, CancellationToken cancellationToken)
+    {
+        var refreshToken = session.Cache.RefreshToken;
+        var userId = session.Cache.UserId;
 
         if (refreshToken is null || userId is null)
             return null;
@@ -166,23 +210,14 @@ internal sealed class BearerTokenHandler(
         if (refreshed is null)
             return null;
 
-        // Keep the circuit-scoped cache current regardless of whether the cookie itself can be
-        // rewritten below, so later HttpContext-less calls on this circuit keep using a live token.
-        tokenCache.AccessToken = refreshed.AccessToken;
-        tokenCache.RefreshToken = refreshed.RefreshToken;
+        var tokens = new SessionTokens(refreshed.UserId, refreshed.Email, refreshed.AccessToken, refreshed.RefreshToken);
 
-        if (httpContext?.Response.HasStarted != false)
-        {
-            if (httpContext is not null)
-                logger.LogSilentRefreshCookieSkipped();
+        // The cache is updated first so later calls in this session use the new pair even if the
+        // cookie can't be rewritten below.
+        session.Cache.Set(tokens);
 
-            return refreshed.AccessToken;
-        }
-
-        var principal = SecurityClaimsBuilder.BuildPrincipal(refreshed.AccessToken, refreshed.UserId, refreshed.Email);
-        var properties = SecurityClaimsBuilder.BuildAuthenticationProperties(refreshed.AccessToken, refreshed.RefreshToken);
-
-        await httpContext.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, principal, properties);
+        if (!await session.PersistAsync(tokens, cancellationToken))
+            logger.LogSilentRefreshCookieSkipped();
 
         return refreshed.AccessToken;
     }
@@ -194,26 +229,17 @@ internal sealed class BearerTokenHandler(
     /// Treats a token that can't be parsed as expired, so it falls through to a refresh attempt
     /// rather than being sent as-is.
     /// </summary>
-    private bool IsExpiredOrExpiringSoon(string jwt)
-    {
-        var cached = _lastExpiryCheck;
-        if (cached is not null && cached.Token == jwt)
-        {
-            return cached.IsExpiredOrExpiringSoon;
-        }
+    private bool IsExpiredOrExpiringSoon(string jwt, SessionTokenCache cache)
+        => cache.ExpiryOf(jwt, ReadExpiry) is not { } expiresAt
+            || expiresAt <= timeProvider.GetUtcNow().Add(ExpiryBuffer);
 
-        var result = ComputeIsExpiredOrExpiringSoon(jwt);
-        _lastExpiryCheck = new TokenExpiryCacheEntry(jwt, result);
-        return result;
-    }
-
-    private static bool ComputeIsExpiredOrExpiringSoon(string jwt)
+    internal static DateTimeOffset? ReadExpiry(string jwt)
     {
         var parts = jwt.Split('.');
 
         if (parts.Length < 2)
         {
-            return true;
+            return null;
         }
 
         try
@@ -223,15 +249,14 @@ internal sealed class BearerTokenHandler(
 
             if (!payload.RootElement.TryGetProperty("exp", out var expElement))
             {
-                return true;
+                return null;
             }
 
-            var expiresAt = DateTimeOffset.FromUnixTimeSeconds(expElement.GetInt64());
-            return expiresAt <= DateTimeOffset.UtcNow.Add(ExpiryBuffer);
+            return DateTimeOffset.FromUnixTimeSeconds(expElement.GetInt64());
         }
         catch (Exception ex) when (ex is FormatException or JsonException or InvalidOperationException)
         {
-            return true;
+            return null;
         }
     }
 
@@ -273,6 +298,6 @@ internal static partial class BearerTokenHandlerLogMessages
     [LoggerMessage(Level = LogLevel.Warning, Message = "Silent token refresh failed.")]
     public static partial void LogSilentRefreshFailed(this ILogger<BearerTokenHandler> logger, Exception exception);
 
-    [LoggerMessage(Level = LogLevel.Debug, Message = "Silent token refresh succeeded but the auth cookie could not be updated because the response had already started.")]
+    [LoggerMessage(Level = LogLevel.Debug, Message = "Silent token refresh succeeded but the auth cookie could not be updated.")]
     public static partial void LogSilentRefreshCookieSkipped(this ILogger<BearerTokenHandler> logger);
 }

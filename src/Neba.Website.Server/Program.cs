@@ -2,6 +2,7 @@ using ApexCharts;
 
 using Neba.Website.Server;
 using Neba.Website.Server.Account;
+using Neba.Website.Server.Account.Session;
 using Neba.Website.Server.Clock;
 using Neba.Website.Server.FeatureManagement;
 using Neba.Website.Server.Help;
@@ -65,6 +66,7 @@ app.UseOutputCache();
 
 app.MapStaticAssets();
 app.MapHelpImageEndpoints();
+app.MapSessionTokenEndpoints();
 
 app.MapRazorComponents<App>()
     .AddInteractiveServerRenderMode()
