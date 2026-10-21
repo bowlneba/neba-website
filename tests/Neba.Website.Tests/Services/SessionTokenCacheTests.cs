@@ -69,4 +69,70 @@ public sealed class SessionTokenCacheTests
         sut.RefreshToken.ShouldBeNull();
         sut.UserId.ShouldBeNull();
     }
+
+    [Fact(DisplayName = "ExpiryOf should parse a token once and reuse the result for the same token")]
+    public void ExpiryOf_ShouldParseOnce_ForSameToken()
+    {
+        // Arrange
+        var sut = new SessionTokenCache();
+        var expiry = new DateTimeOffset(2026, 10, 21, 12, 0, 0, TimeSpan.Zero);
+        var parses = 0;
+        DateTimeOffset? Parse(string _)
+        {
+            parses++;
+            return expiry;
+        }
+
+        // Act
+        var first = sut.ExpiryOf("token-1", Parse);
+        var second = sut.ExpiryOf("token-1", Parse);
+
+        // Assert
+        first.ShouldBe(expiry);
+        second.ShouldBe(expiry);
+        parses.ShouldBe(1);
+    }
+
+    [Fact(DisplayName = "ExpiryOf should parse again when the token changes")]
+    public void ExpiryOf_ShouldParseAgain_ForDifferentToken()
+    {
+        // Arrange
+        var sut = new SessionTokenCache();
+        var parsed = new List<string>();
+        DateTimeOffset? Parse(string jwt)
+        {
+            parsed.Add(jwt);
+            return null;
+        }
+
+        // Act
+        sut.ExpiryOf("token-1", Parse);
+        sut.ExpiryOf("token-2", Parse);
+
+        // Assert
+        parsed.ShouldBe(["token-1", "token-2"]);
+    }
+
+    [Fact(DisplayName = "ExpiryOf should keep separate results per cache, so users sharing a handler don't evict each other")]
+    public void ExpiryOf_ShouldNotShareResultsAcrossCaches()
+    {
+        // Arrange
+        var first = new SessionTokenCache();
+        var second = new SessionTokenCache();
+        var parses = 0;
+        DateTimeOffset? Parse(string _)
+        {
+            parses++;
+            return null;
+        }
+
+        // Act
+        first.ExpiryOf("token-a", Parse);
+        second.ExpiryOf("token-b", Parse);
+        first.ExpiryOf("token-a", Parse);
+        second.ExpiryOf("token-b", Parse);
+
+        // Assert
+        parses.ShouldBe(2);
+    }
 }

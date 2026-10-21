@@ -25,6 +25,26 @@ internal sealed class SessionTokenCache
     /// </summary>
     public SemaphoreSlim RefreshLock { get; } = new(1, 1);
 
+    // The handler is shared across users, so a per-handler expiry cache would thrash between them.
+    // Caches the expiry time, not a yes/no answer, because the answer changes as time passes.
+    private TokenExpiry? _lastExpiry;
+
+    /// <summary>
+    /// Returns <paramref name="jwt"/>'s expiry, calling <paramref name="readExpiry"/> only when it
+    /// isn't the token this cache parsed last. Null means the token can't be parsed.
+    /// </summary>
+    public DateTimeOffset? ExpiryOf(string jwt, Func<string, DateTimeOffset?> readExpiry)
+    {
+        var cached = _lastExpiry;
+        if (cached is null || cached.Token != jwt)
+        {
+            cached = new TokenExpiry(jwt, readExpiry(jwt));
+            _lastExpiry = cached;
+        }
+
+        return cached.ExpiresAt;
+    }
+
     public void Set(SessionTokens? tokens)
     {
         IsSeeded = true;
@@ -33,3 +53,5 @@ internal sealed class SessionTokenCache
         RefreshToken = tokens?.RefreshToken;
     }
 }
+
+internal sealed record TokenExpiry(string Token, DateTimeOffset? ExpiresAt);

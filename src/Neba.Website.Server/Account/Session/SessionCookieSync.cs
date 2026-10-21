@@ -4,15 +4,20 @@ namespace Neba.Website.Server.Account.Session;
 
 /// <summary>
 /// Circuit-scoped <see cref="ISessionCookieSync"/> that asks the browser to call
-/// <see cref="SessionTokenEndpoints"/>.
+/// <see cref="SessionTokenEndpoints"/>. Each browser call gives up after <see cref="InteropTimeout"/>,
+/// because callers hold the token refresh lock while they wait.
 /// </summary>
 internal sealed class SessionCookieSync(
     IJSRuntime jsRuntime,
     SessionTokenProtector protector,
+    TimeProvider timeProvider,
     ILogger<SessionCookieSync> logger)
     : ISessionCookieSync, IAsyncDisposable
 {
     private const string ModulePath = "./js/session-tokens.js";
+
+    // Blazor's own JS interop timeout is a minute, and a stalled tab would hold the refresh lock that long.
+    internal static readonly TimeSpan InteropTimeout = TimeSpan.FromSeconds(5);
 
     private IJSObjectReference? _module;
 
@@ -20,8 +25,11 @@ internal sealed class SessionCookieSync(
     {
         try
         {
-            var module = await GetModuleAsync(cancellationToken);
-            var persisted = await module.InvokeAsync<bool>("persist", cancellationToken, protector.Protect(tokens));
+            using var timeout = new CancellationTokenSource(InteropTimeout, timeProvider);
+            using var linked = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, timeout.Token);
+
+            var module = await GetModuleAsync(linked.Token);
+            var persisted = await module.InvokeAsync<bool>("persist", linked.Token, protector.Protect(tokens));
 
             if (!persisted)
                 logger.LogSessionCookiePersistRejected();
@@ -39,8 +47,11 @@ internal sealed class SessionCookieSync(
     {
         try
         {
-            var module = await GetModuleAsync(cancellationToken);
-            var blob = await module.InvokeAsync<string?>("read", cancellationToken);
+            using var timeout = new CancellationTokenSource(InteropTimeout, timeProvider);
+            using var linked = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, timeout.Token);
+
+            var module = await GetModuleAsync(linked.Token);
+            var blob = await module.InvokeAsync<string?>("read", linked.Token);
 
             return blob is null ? null : protector.Unprotect(blob);
         }

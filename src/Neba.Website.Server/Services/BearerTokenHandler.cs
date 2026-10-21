@@ -43,17 +43,6 @@ internal sealed class BearerTokenHandler(
     // before expiry rather than racing it - avoids sending a token that expires mid-flight.
     private static readonly TimeSpan ExpiryBuffer = TimeSpan.FromSeconds(30);
 
-    // HttpClientFactory reuses a handler instance across many outgoing calls (default ~2 minute
-    // handler lifetime), and a single Blazor request/circuit turn commonly fires several downstream
-    // API calls with the same unchanged token. Caching the last decoded expiry avoids re-parsing the
-    // same JWT payload on every one of those calls. It caches the expiry time, not the yes/no answer,
-    // because the answer changes as time passes. A wrong cache hit under concurrent access from a
-    // different token just falls through to a fresh decode, so no locking is needed.
-    private TokenExpiryCacheEntry? _lastExpiryCheck;
-
-    // ExpiresAt is null when the token can't be parsed; such a token is always treated as expired.
-    private sealed record TokenExpiryCacheEntry(string Token, DateTimeOffset? ExpiresAt);
-
     /// <inheritdoc />
     protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
     {
@@ -72,7 +61,7 @@ internal sealed class BearerTokenHandler(
             // present (e.g. GetTournamentEndpoint's permission-gated fields) - they never return 401 for
             // a stale token, so without this the caller silently gets treated as anonymous instead of
             // getting a refreshed token.
-            if (token is not null && IsExpiredOrExpiringSoon(token))
+            if (token is not null && IsExpiredOrExpiringSoon(token, session.Cache))
             {
                 token = await RefreshWithLockAsync(session, token, cancellationToken) ?? token;
             }
@@ -161,7 +150,7 @@ internal sealed class BearerTokenHandler(
 
         try
         {
-            if (NewerUsableToken(session.Cache.AccessToken, tokenAtCallTime) is { } newer)
+            if (NewerUsableToken(session.Cache.AccessToken, tokenAtCallTime, session.Cache) is { } newer)
                 return newer;
 
             if (await TryRefreshAsync(session, cancellationToken) is { } refreshed)
@@ -175,7 +164,7 @@ internal sealed class BearerTokenHandler(
 
             session.Cache.Set(latest);
 
-            return NewerUsableToken(latest.AccessToken, tokenAtCallTime)
+            return NewerUsableToken(latest.AccessToken, tokenAtCallTime, session.Cache)
                 ?? await TryRefreshAsync(session, cancellationToken);
         }
         finally
@@ -184,8 +173,8 @@ internal sealed class BearerTokenHandler(
         }
     }
 
-    private string? NewerUsableToken(string? candidate, string? tokenAtCallTime)
-        => candidate is not null && candidate != tokenAtCallTime && !IsExpiredOrExpiringSoon(candidate)
+    private string? NewerUsableToken(string? candidate, string? tokenAtCallTime, SessionTokenCache cache)
+        => candidate is not null && candidate != tokenAtCallTime && !IsExpiredOrExpiringSoon(candidate, cache)
             ? candidate
             : null;
 
@@ -240,18 +229,9 @@ internal sealed class BearerTokenHandler(
     /// Treats a token that can't be parsed as expired, so it falls through to a refresh attempt
     /// rather than being sent as-is.
     /// </summary>
-    private bool IsExpiredOrExpiringSoon(string jwt)
-    {
-        var cached = _lastExpiryCheck;
-        if (cached is null || cached.Token != jwt)
-        {
-            cached = new TokenExpiryCacheEntry(jwt, ReadExpiry(jwt));
-            _lastExpiryCheck = cached;
-        }
-
-        return cached.ExpiresAt is not { } expiresAt
+    private bool IsExpiredOrExpiringSoon(string jwt, SessionTokenCache cache)
+        => cache.ExpiryOf(jwt, ReadExpiry) is not { } expiresAt
             || expiresAt <= timeProvider.GetUtcNow().Add(ExpiryBuffer);
-    }
 
     private static DateTimeOffset? ReadExpiry(string jwt)
     {
