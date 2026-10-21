@@ -24,7 +24,7 @@ public sealed class SessionTokenEndpointsTests
     public async Task GetTokensAsync_ShouldReturnProtectedBlob_WhenCookieHasTokens()
     {
         // Arrange
-        var httpContext = BuildHttpContext(userId: "user-123", accessToken: "access-1", refreshToken: "refresh-1");
+        var httpContext = SessionHttpContext.Build(userId: "user-123", accessToken: "access-1", refreshToken: "refresh-1");
 
         // Act
         var result = await SessionTokenEndpoints.GetTokensAsync(httpContext, _protector);
@@ -39,7 +39,7 @@ public sealed class SessionTokenEndpointsTests
     public async Task GetTokensAsync_ShouldReturnNoContent_WhenCookieHasNoTokens()
     {
         // Arrange
-        var httpContext = BuildHttpContext(userId: "user-123", accessToken: "access-1", refreshToken: null);
+        var httpContext = SessionHttpContext.Build(userId: "user-123", accessToken: "access-1", refreshToken: null);
 
         // Act
         var result = await SessionTokenEndpoints.GetTokensAsync(httpContext, _protector);
@@ -58,7 +58,7 @@ public sealed class SessionTokenEndpointsTests
             .Setup(s => s.SignInAsync(It.IsAny<HttpContext>(), CookieAuthenticationDefaults.AuthenticationScheme, It.IsAny<ClaimsPrincipal>(), It.IsAny<AuthenticationProperties>()))
             .Callback<HttpContext, string, ClaimsPrincipal, AuthenticationProperties>((_, _, _, props) => captured = props)
             .Returns(Task.CompletedTask);
-        var httpContext = BuildHttpContext(userId: "user-123", accessToken: "access-1", refreshToken: "refresh-1", authServiceMock: authServiceMock);
+        var httpContext = SessionHttpContext.Build(userId: "user-123", accessToken: "access-1", refreshToken: "refresh-1", authServiceMock: authServiceMock);
         var blob = new SessionTokenBlob(_protector.Protect(new SessionTokens("user-123", "admin@bowlneba.com", "access-2", "refresh-2")));
 
         // Act
@@ -75,7 +75,7 @@ public sealed class SessionTokenEndpointsTests
     public async Task PersistTokensAsync_ShouldReturnForbidden_WhenBlobIsForAnotherUser()
     {
         // Arrange - strict auth mock with no SignInAsync setup: signing in would throw.
-        var httpContext = BuildHttpContext(userId: "user-123", accessToken: "access-1", refreshToken: "refresh-1");
+        var httpContext = SessionHttpContext.Build(userId: "user-123", accessToken: "access-1", refreshToken: "refresh-1");
         var blob = new SessionTokenBlob(_protector.Protect(new SessionTokens("someone-else", "other@bowlneba.com", "access-2", "refresh-2")));
 
         // Act
@@ -89,42 +89,12 @@ public sealed class SessionTokenEndpointsTests
     public async Task PersistTokensAsync_ShouldReturnBadRequest_WhenBlobIsInvalid()
     {
         // Arrange
-        var httpContext = BuildHttpContext(userId: "user-123", accessToken: "access-1", refreshToken: "refresh-1");
+        var httpContext = SessionHttpContext.Build(userId: "user-123", accessToken: "access-1", refreshToken: "refresh-1");
 
         // Act
         var result = await SessionTokenEndpoints.PersistTokensAsync(httpContext, new SessionTokenBlob("forged"), _protector);
 
         // Assert
         result.Result.ShouldBeOfType<BadRequest>();
-    }
-
-    private static DefaultHttpContext BuildHttpContext(
-        string userId,
-        string? accessToken,
-        string? refreshToken,
-        Mock<IAuthenticationService>? authServiceMock = null)
-    {
-        var principal = new ClaimsPrincipal(new ClaimsIdentity(
-            [new Claim(ClaimTypes.NameIdentifier, userId), new Claim(ClaimTypes.Email, "admin@bowlneba.com")],
-            CookieAuthenticationDefaults.AuthenticationScheme));
-
-        var tokens = new List<AuthenticationToken>();
-        if (accessToken is not null)
-            tokens.Add(new AuthenticationToken { Name = SecurityClaimsBuilder.AccessTokenName, Value = accessToken });
-        if (refreshToken is not null)
-            tokens.Add(new AuthenticationToken { Name = SecurityClaimsBuilder.RefreshTokenName, Value = refreshToken });
-
-        var properties = new AuthenticationProperties();
-        properties.StoreTokens(tokens);
-
-        var httpContext = new DefaultHttpContext { User = principal };
-
-        var auth = authServiceMock ?? new Mock<IAuthenticationService>(MockBehavior.Strict);
-        auth.Setup(s => s.AuthenticateAsync(httpContext, CookieAuthenticationDefaults.AuthenticationScheme))
-            .ReturnsAsync(AuthenticateResult.Success(new AuthenticationTicket(principal, properties, CookieAuthenticationDefaults.AuthenticationScheme)));
-
-        httpContext.RequestServices = new ServiceCollection().AddSingleton(auth.Object).BuildServiceProvider();
-
-        return httpContext;
     }
 }

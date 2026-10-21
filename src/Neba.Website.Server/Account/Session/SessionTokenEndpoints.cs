@@ -10,6 +10,8 @@ namespace Neba.Website.Server.Account.Session;
 /// Lets a Blazor circuit read and rewrite the browser's auth cookie. A circuit can't set cookies
 /// itself (its response started long ago), so <c>session-tokens.js</c> calls these endpoints from
 /// the browser on its behalf. Tokens only travel as <see cref="SessionTokenProtector"/> blobs.
+/// A blob stays valid for its short lifetime and can be replayed within it, which is accepted:
+/// <see cref="PersistTokensAsync"/> only lets it rewrite the cookie of the user it was issued for.
 /// </summary>
 internal static class SessionTokenEndpoints
 {
