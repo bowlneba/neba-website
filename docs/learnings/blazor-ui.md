@@ -119,3 +119,15 @@ Every routable page must have a `<PageTitle>` component. Sub-components (cards, 
 ### Display text: ordinals and plurals (Humanizer)
 
 See [ADR-0010](../adr/0010-humanizer-for-ui-display-formatting.md). Use `ToOrdinal()` (wraps `Ordinalize(DisplayCulture.English)`) for places and ranks, and `ToQuantity` for counts, instead of hand-written ternaries. `ToQuantity(n, ShowQuantityAs.None)` returns only the noun, for markup where the number sits in its own element. Do not use Humanizer for dates or currency. CA1304 fails the build on culture-less calls.
+
+### Auth tokens inside a Blazor circuit
+
+Three framework facts drive how `BearerTokenHandler` gets its tokens. Getting any of them wrong logs active users out about 15 minutes after a page opens (the access-token lifetime).
+
+1. **`IHttpClientFactory` builds `DelegatingHandler`s in its own DI scope and shares one handler across every user for about 2 minutes.** A scoped service injected into a handler is not the circuit's instance, and any state it holds leaks between users. Reach circuit services through `CircuitServicesAccessor` (set by `CircuitServicesActivityHandler`, the pattern from the ASP.NET Core docs). Inbound activity covers circuit start, `UpdateRootComponents`, events, JS calls and navigation, so every component data load sees it.
+2. **Inside a circuit, `IHttpContextAccessor.HttpContext` is the request that opened the SignalR connection.** Its cookie never changes for the life of the connection. Use it only to fill an empty circuit cache, never as the source of the current token.
+3. **A circuit can't write cookies** (its response started long ago). After an in-circuit refresh, `SessionCookieSync` hands an encrypted blob to `wwwroot/js/session-tokens.js`, which posts it to `/account/session-tokens` to rewrite the cookie. Without this, the next page load uses a refresh token the API has already rotated (30-second grace window) and the user is signed out. The same endpoint's GET lets a circuit pick up a refresh another tab already made.
+
+`Routes.razor` renders statically, so anything it puts in a scoped service reaches only the request's scope, never the circuit's.
+
+Cache a JWT's expiry time, not a yes/no "is it expiring" answer: the handler lives across calls, and the answer changes as time passes.

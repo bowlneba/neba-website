@@ -1,6 +1,8 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
+using Microsoft.AspNetCore.Components.Server.Circuits;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Http.Resilience;
 using Microsoft.Extensions.Options;
 
@@ -18,6 +20,7 @@ using Neba.Api.Contracts.Security;
 using Neba.Api.Contracts.Sponsors;
 using Neba.Api.Contracts.Stats;
 using Neba.Api.Contracts.Tournaments;
+using Neba.Website.Server.Account.Session;
 
 using Refit;
 
@@ -61,7 +64,12 @@ internal static class ApiServicesConfiguration
 
             services.AddSingleton(sp => sp.GetRequiredService<IOptions<NebaApiConfiguration>>().Value);
             services.AddScoped<ApiExecutor>();
-            services.AddScoped<CircuitTokenCache>();
+            services.AddScoped<SessionTokenCache>();
+            services.AddSingleton<CircuitServicesAccessor>();
+            services.AddScoped<CircuitHandler, CircuitServicesActivityHandler>();
+            services.AddSingleton<SessionTokenProtector>();
+            services.AddScoped<ISessionCookieSync, SessionCookieSync>();
+            services.TryAddSingleton(TimeProvider.System);
             services.AddTransient<BearerTokenHandler>();
             services.AddMemoryCache();
 
