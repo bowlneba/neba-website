@@ -123,18 +123,15 @@ internal sealed class UpdateBowlerSyncJob(
             return;
         }
 
-        var gender = row.Gender switch
+        var gender = LegacyBowlerMapping.MapGender(row.Gender);
+        var dateOfBirth = LegacyBowlerMapping.MapDateOfBirth(row.DateOfBirth);
+
+        var suffix = LegacyBowlerMapping.MapSuffix(row.Suffix);
+        if (suffix is null && !string.IsNullOrWhiteSpace(row.Suffix))
         {
-            0 => Gender.Male,
-            1 => Gender.Female,
-            _ => null
-        };
+            logger.LogLegacySuffixUnmappedForUpdate(legacyBowlerId, row.Suffix);
+        }
 
-        var dateOfBirth = row.DateOfBirth.HasValue
-            ? DateOnly.FromDateTime(row.DateOfBirth.Value)
-            : (DateOnly?)null;
-
-        var suffix = MapSuffix(row.Suffix, legacyBowlerId, logger);
         var (firstName, nickname) = row.FirstName.ExtractQuotedNickname();
 
         var existing = await db.Set<Bowler>().SingleOrDefaultAsync(bowler => bowler.LegacyId == legacyBowlerId, ct);
@@ -198,30 +195,6 @@ internal sealed class UpdateBowlerSyncJob(
         await db.SaveChangesAsync(ct);
 
         await cache.RemoveByTagAsync("neba:bowlers", token: ct);
-    }
-
-    // Identical to NewBowlerSyncJob.MapSuffix - see that file's comment for the full rationale.
-    // Not yet extracted into the shared LegacyNameParsing.cs file since suffix mapping isn't part of
-    // the nickname-parsing concern that file owns; if a third action needs it, that's the trigger to
-    // extract a LegacySuffixParsing.cs alongside it rather than duplicating a third copy.
-    private static NameSuffix? MapSuffix(string? legacySuffix, int legacyBowlerId, ILogger logger)
-    {
-        if (string.IsNullOrWhiteSpace(legacySuffix))
-        {
-            return null;
-        }
-
-        var normalized = legacySuffix.Trim().TrimEnd('.');
-
-        var match = NameSuffix.List.SingleOrDefault(s =>
-            string.Equals(s.Value.TrimEnd('.'), normalized, StringComparison.OrdinalIgnoreCase));
-
-        if (match is null)
-        {
-            logger.LogLegacySuffixUnmappedForUpdate(legacyBowlerId, legacySuffix);
-        }
-
-        return match;
     }
 }
 

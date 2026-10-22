@@ -9,6 +9,7 @@ using Neba.Api.Discord;
 using Neba.Api.Documents;
 using Neba.Api.Email;
 using Neba.Api.Features.Seasons;
+using Neba.Api.Legacy;
 using Neba.Api.RateLimiting;
 using Neba.Api.Storage;
 using Neba.Api.Telemetry.Tracing;
@@ -87,6 +88,7 @@ public static class InfrastructureConfiguration
             app.UseDocumentSyncJobs();
             app.UseUploadCleanupJob();
             app.UseSeasonRolloverJob();
+            app.UseLegacyWeeklySync();
             app.UseApiAuditMiddleware();
 
             return app;
