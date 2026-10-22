@@ -83,6 +83,7 @@ public sealed class UploadArticleHeaderImageEndpointAuthorizationTests(SecurityD
             })
             .AddVersioning();
 
+        builder.Services.AddFusionCache();
         builder.AddSecurity();
 
         _app = builder.Build();

@@ -31,6 +31,14 @@ test.describe('Tournaments page', () => {
     await expect(page.locator('.tournament-past-card__title', { hasText: pastTournament.name })).toBeVisible();
   });
 
+  test('Past tab card shows the tournament type badge', async ({ page }) => {
+    await page.locator('.neba-segment-button', { hasText: 'Past' }).click();
+    await page.waitForSelector('.tournament-past-card');
+    const badge = page.locator('.tournament-past-card .type-pill').first();
+    await expect(badge).toBeVisible();
+    await expect(badge).toHaveClass(/type-singles/);
+  });
+
   test('Past tab card links to tournament detail', async ({ page }) => {
     await page.locator('.neba-segment-button', { hasText: 'Past' }).click();
     await page.waitForSelector('.tournament-past-card');

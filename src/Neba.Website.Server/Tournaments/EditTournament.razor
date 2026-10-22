@@ -23,6 +23,7 @@
 @inject ITournamentsApi TournamentsApi
 @inject IBowlingCentersApi BowlingCentersApi
 @inject IOilPatternsApi OilPatternsApi
+@inject ISecurityApi SecurityApi
 @inject NavigationManager NavigationManager
 @inject ToastService ToastService
 @inject IClientTimeZoneService ClientTimeZoneService
@@ -184,14 +185,27 @@
                                         {
                                             <img src="@_logo.Url.AbsoluteUri" alt="" class="edit-tournament-logo-preview" />
                                         }
-                                        <button type="button" class="neba-btn neba-btn-secondary" @onclick="RemoveLogo">Remove current logo</button>
+                                        @if (!_isLogoLocked)
+                                        {
+                                            <button type="button" class="neba-btn neba-btn-secondary" @onclick="RemoveLogo">Remove current logo</button>
+                                        }
                                     </div>
                                 }
-                                <FileUpload MaxFiles="1" Accept="image/*" MaxFileSizeBytes="@(5 * 1024 * 1024)" Label="Upload a replacement logo"
-                                            OnUploadRequestedAsync="UploadLogoAsync"
-                                            OnFileUploaded="@(response => { _logo = ToLogoRef(response); MarkDirty(); })"
-                                            OnFileRemoved="@(_ => { _logo = null; MarkDirty(); })"
-                                            OnBusyChanged="@(busy => _isLogoUploading = busy)" />
+
+                                @if (_isLogoLocked)
+                                {
+                                    <p class="edit-tournament-logo-locked text-sm text-[var(--neba-gray-500)]">
+                                        An admin turned off logo changes for your account, so the logo is read only. Your other changes still save.
+                                    </p>
+                                }
+                                else
+                                {
+                                    <FileUpload MaxFiles="1" Accept="image/*" MaxFileSizeBytes="@(5 * 1024 * 1024)" Label="Upload a replacement logo"
+                                                OnUploadRequestedAsync="UploadLogoAsync"
+                                                OnFileUploaded="@(response => { _logo = ToLogoRef(response); MarkDirty(); })"
+                                                OnFileRemoved="@(_ => { _logo = null; MarkDirty(); })"
+                                                OnBusyChanged="@(busy => _isLogoUploading = busy)" />
+                                }
                             </section>
 
                             @if (_isLogoUploading)
@@ -243,6 +257,7 @@
     private DateTime? _oilPatternRevealLocal;
     private LogoRef? _logo;
     private bool _isLogoUploading;
+    private bool _isLogoLocked;
 
     private IReadOnlyCollection<BowlingCenterSummaryResponse> _bowlingCenters = [];
     private IReadOnlyCollection<TournamentTypeSummaryResponse> _tournamentTypes = [];
@@ -288,6 +303,18 @@
         if (!oilPatternsResult.IsError)
         {
             _oilPatterns = oilPatternsResult.Value.Items;
+        }
+
+        // A missing permission is not a denial, so the page asks which permissions an admin withheld.
+        // If the lookup fails the logo stays editable; the API refuses a denied change either way.
+        var currentUserResult = await ApiExecutor.ExecuteAsync(
+            "Security",
+            "GetCurrentUser",
+            SecurityApi.GetCurrentUserAsync);
+
+        if (!currentUserResult.IsError)
+        {
+            _isLogoLocked = currentUserResult.Value.DeniedPermissions.Contains(Permissions.EditTournamentLogo.Value);
         }
 
         var result = await ApiExecutor.ExecuteAsync(

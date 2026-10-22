@@ -5,6 +5,8 @@
         <div class="tournament-past-card__logo">
             <img src="@Tournament.DisplayLogoSrc"
                  alt="@Tournament.Name logo" class="tournament-past-card__logo-img" />
+            <TournamentLogoEditButton TournamentName="@Tournament.Name"
+                                      OnClick="@(() => OnEditLogo.InvokeAsync(Tournament))" />
         </div>
 
         <div class="tournament-past-card__content">
@@ -15,6 +17,14 @@
                     <span aria-hidden="true">·</span>
                 }
                 <time>@Tournament.FormatDateRange()</time>
+                @if (Tournament.IsTruncated || Tournament.IsCancelled)
+                {
+                    <span aria-hidden="true">·</span>
+                    <span class="tournament-past-card__status-pill tournament-past-card__status-pill--@(Tournament.IsTruncated ? "truncated" : "cancelled")">
+                        <span class="material-symbols-outlined" aria-hidden="true">@(Tournament.IsTruncated ? "warning" : "block")</span>
+                        @Tournament.Status
+                    </span>
+                }
             </div>
 
             <h3 class="tournament-past-card__title">
@@ -30,21 +40,29 @@
             }
 
             <div class="tournament-past-card__chips">
-                <span class="tournament-past-card__chip">@Tournament.TournamentType</span>
+                <TournamentTypeBadge TournamentType="@Tournament.TournamentType" />
             </div>
         </div>
 
         <div class="tournament-past-card__champion">
-            @if (Tournament.HasWinners)
+            @if (Tournament.ShowChampionBadge)
             {
                 <div class="tournament-past-card__champion-pill">
                     <span class="material-symbols-outlined" aria-hidden="true">emoji_events</span>
                     <span class="tournament-past-card__champion-name">@string.Join(" / ", Tournament.Winners)</span>
                 </div>
             }
+            else if (Tournament.HasWinners)
+            {
+                <p class="tournament-past-card__status-note">
+                    @string.Join(" / ", Tournament.Winners) — not a title win
+                </p>
+            }
             else
             {
-                <p class="tournament-past-card__results-pending">Results pending</p>
+                <p class="tournament-past-card__results-pending">
+                    @(Tournament.IsCancelled ? "No official results — event cancelled" : "Results pending")
+                </p>
             }
             <a href="/tournaments/@Tournament.Id"
                class="neba-link tournament-past-card__results-link">
@@ -55,6 +73,9 @@
 </div>
 
 @code {
+    [Parameter]
+    public EventCallback<SeasonTournamentViewModel> OnEditLogo { get; set; }
+
     [Parameter][EditorRequired]
     public SeasonTournamentViewModel Tournament { get; set; } = default!;
 }

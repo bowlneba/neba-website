@@ -1,5 +1,5 @@
 using Neba.Api.Features.Bowlers.Domain;
-using Neba.Api.Features.Seasons.ListSeasons;
+using Neba.Api.Features.Seasons.Domain;
 using Neba.Api.Features.Tournaments.Domain;
 using Neba.Api.Features.Tournaments.ListTournamentsInSeason;
 using Neba.TestFactory.Bowlers;
@@ -12,10 +12,12 @@ public static class SeasonTournamentDtoFactory
     public static SeasonTournamentDto Create(
         TournamentId? id = null,
         string? name = null,
-        SeasonDto? season = null,
+        SeasonTournamentSeasonDto? season = null,
         DateOnly? startDate = null,
         DateOnly? endDate = null,
         bool? statsEligible = null,
+        TournamentStatus? status = null,
+        bool? titleEligible = null,
         TournamentType? tournamentType = null,
         decimal? entryFee = null,
         Uri? registrationUrl = null,
@@ -34,10 +36,12 @@ public static class SeasonTournamentDtoFactory
             {
                 Id = id ?? TournamentId.New(),
                 Name = name ?? "Test Tournament",
-                Season = season ?? SeasonDtoFactory.Create(),
+                Season = season ?? new SeasonTournamentSeasonDto { Id = SeasonId.New(), Description = SeasonDtoFactory.ValidDescription, StartDate = SeasonDtoFactory.ValidStartDate, EndDate = SeasonDtoFactory.ValidEndDate },
                 StartDate = startDate ?? DateOnly.FromDateTime(DateTime.Today),
                 EndDate = endDate ?? DateOnly.FromDateTime(DateTime.Today),
                 StatsEligible = statsEligible ?? true,
+                Status = status?.Name ?? TournamentStatus.Scheduled.Name,
+                TitleEligible = titleEligible ?? false,
                 TournamentType = tournamentType?.Name ?? TournamentType.Singles.Name,
                 EntryFee = entryFee,
                 RegistrationUrl = registrationUrl ?? new Uri("https://example.com/register"),
@@ -56,7 +60,15 @@ public static class SeasonTournamentDtoFactory
 
     public static IReadOnlyCollection<SeasonTournamentDto> Bogus(int count, int? seed = null)
     {
-        var seasons = SeasonDtoFactory.Bogus(5, seed).ToArray();
+        var seasons = SeasonDtoFactory.Bogus(5, seed)
+            .Select(season => new SeasonTournamentSeasonDto
+            {
+                Id = season.Id,
+                Description = season.Description,
+                StartDate = season.StartDate,
+                EndDate = season.EndDate
+            })
+            .ToArray();
         var winners = NameFactory.Bogus(count * 200, seed).ToArray();
         var bowlingCenters = SeasonTournamentBowlingCenterDtoFactory.Bogus(10, seed).ToArray();
         var sponsors = SeasonTournamentSponsorDtoFactory.Bogus(25, seed).ToArray();
@@ -74,6 +86,8 @@ public static class SeasonTournamentDtoFactory
                     StartDate = startDate,
                     EndDate = startDate.AddDays(f.Random.Int(0, 3)),
                     StatsEligible = f.Random.Bool(),
+                    Status = f.PickRandom(TournamentStatus.List.ToArray()).Name,
+                    TitleEligible = f.Random.Bool(),
                     TournamentType = f.PickRandom(TournamentType.List.ToArray()).Name,
                     EntryFee = f.Random.Decimal(50, 200),
                     RegistrationUrl = new Uri(f.Internet.Url()),

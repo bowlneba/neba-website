@@ -1,6 +1,7 @@
 using Neba.Api.Contracts.Tournaments.AddTournamentSponsor;
 using Neba.Api.Contracts.Tournaments.CreateTournament;
 using Neba.Api.Contracts.Tournaments.EditTournament;
+using Neba.Api.Contracts.Tournaments.EditTournamentLogo;
 using Neba.Api.Contracts.Tournaments.GetTournament;
 using Neba.Api.Contracts.Tournaments.ListChampions;
 using Neba.Api.Contracts.Tournaments.ListTournamentTypes;
@@ -48,7 +49,8 @@ public interface ITournamentsApi
     Task<IApiResponse<CollectionResponse<TournamentTypeSummaryResponse>>> ListTournamentTypesAsync(CancellationToken cancellationToken = default);
 
     /// <summary>
-    /// Uploads a tournament logo. Requires the Tournaments.CreateTournament permission.
+    /// Uploads a tournament logo. Requires the Tournaments.CreateTournament, Tournaments.EditTournament,
+    /// or Tournaments.EditTournamentLogo permission.
     /// </summary>
     /// <param name="file">
     /// The logo image file to upload.
@@ -84,9 +86,27 @@ public interface ITournamentsApi
     Task<IApiResponse> EditTournamentAsync(string id, EditTournamentRequest request, CancellationToken cancellationToken = default);
 
     /// <summary>
+    /// Replaces or removes a tournament's logo. Requires the Tournaments.EditTournamentLogo permission.
+    /// </summary>
+    [Put("/tournaments/{id}/logo")]
+    Task<IApiResponse> EditTournamentLogoAsync(string id, EditTournamentLogoRequest request, CancellationToken cancellationToken = default);
+
+    /// <summary>
     /// Deletes a tournament. Returns 204 whether or not a tournament with the given ID existed. Refuses with 409
     /// if the tournament has recorded championship, entry, or result history.
     /// </summary>
     [Delete("/tournaments/{id}")]
     Task<IApiResponse> DeleteTournamentAsync(string id, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Marks a tournament truncated — held, but didn't finish as planned. Never title-eligible.
+    /// </summary>
+    [Patch("/tournaments/{id}/truncate")]
+    Task<IApiResponse> TruncateTournamentAsync(string id, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Marks a tournament cancelled — no official NEBA event took place under this record.
+    /// </summary>
+    [Patch("/tournaments/{id}/cancel")]
+    Task<IApiResponse> CancelTournamentAsync(string id, CancellationToken cancellationToken = default);
 }

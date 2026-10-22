@@ -87,7 +87,7 @@ test.describe('Users page (authenticated)', () => {
     await page.waitForSelector('.neba-table');
 
     const rows = page.locator('.neba-table tbody tr');
-    await expect(rows).toHaveCount(2);
+    await expect(rows).toHaveCount(3);
     await expect(rows.nth(0)).toContainText('webmaster@bowlneba.com');
     await expect(rows.nth(0)).toContainText('Webmaster');
     await expect(rows.nth(0)).toContainText('Active');
@@ -159,5 +159,29 @@ test.describe('Users page (authenticated)', () => {
     await page.locator('.confirm-action-modal-confirm').click();
 
     await expect(page.locator('.neba-toast')).toContainText('Reset Password Failed');
+  });
+});
+
+test.describe('Users page (EditUser)', () => {
+  test.use({ viewport: { width: 1200, height: 800 } });
+
+  test('shows an edit link per non-Admin user and none on an Admin row', async ({ page }) => {
+    await page.request.post('/__test/login?permissions=System.GetUsers,System.EditUser');
+
+    await page.goto('/account/users');
+    await page.waitForSelector('.neba-table');
+
+    await expect(page.getByRole('link', { name: 'Edit webmaster@bowlneba.com' })).toBeVisible();
+    await expect(page.getByRole('link', { name: 'Edit invited.staff@bowlneba.com' })).toBeVisible();
+    await expect(page.getByRole('link', { name: 'Edit admin@bowlneba.com' })).toHaveCount(0);
+  });
+
+  test('hides the edit links without the EditUser permission', async ({ page }) => {
+    await page.request.post('/__test/login?permissions=System.GetUsers');
+
+    await page.goto('/account/users');
+    await page.waitForSelector('.neba-table');
+
+    await expect(page.getByRole('link', { name: /^Edit / })).toHaveCount(0);
   });
 });

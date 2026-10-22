@@ -186,6 +186,7 @@
 
 /* ── Right column – logo tile ── */
 .tournament-hero__tile-wrapper {
+    position: relative;
     min-height: 280px;
 }
 

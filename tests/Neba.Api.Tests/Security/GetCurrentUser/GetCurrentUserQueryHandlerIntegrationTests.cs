@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.DependencyInjection;
 
+using Neba.Api.Contracts.Security;
 using Neba.Api.Security.Domain;
 using Neba.Api.Security.GetCurrentUser;
 using Neba.TestFactory.Attributes;
@@ -21,8 +22,8 @@ public sealed class GetCurrentUserQueryHandlerIntegrationTests(SecurityDbContext
     public ValueTask DisposeAsync()
         => ValueTask.CompletedTask;
 
-    private static GetCurrentUserQueryHandler CreateHandler(UserManager<ApplicationUser> userManager, RoleManager<ApplicationRole> roleManager)
-        => new(userManager, roleManager);
+    private GetCurrentUserQueryHandler CreateHandler(UserManager<ApplicationUser> userManager)
+        => new(userManager, fixture.CreateDbContext());
 
     private static async Task<ApplicationUser> SeedUserAsync(UserManager<ApplicationUser> userManager)
     {
@@ -39,11 +40,10 @@ public sealed class GetCurrentUserQueryHandlerIntegrationTests(SecurityDbContext
         var ct = TestContext.Current.CancellationToken;
         using var scope = fixture.CreateScope();
         var userManager = scope.ServiceProvider.GetRequiredService<UserManager<ApplicationUser>>();
-        var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<ApplicationRole>>();
         var query = new GetCurrentUserQuery { UserId = Ulid.NewUlid() };
 
         // Act
-        var result = await CreateHandler(userManager, roleManager).HandleAsync(query, ct);
+        var result = await CreateHandler(userManager).HandleAsync(query, ct);
 
         // Assert
         result.IsError.ShouldBeTrue();
@@ -58,12 +58,11 @@ public sealed class GetCurrentUserQueryHandlerIntegrationTests(SecurityDbContext
         var ct = TestContext.Current.CancellationToken;
         using var scope = fixture.CreateScope();
         var userManager = scope.ServiceProvider.GetRequiredService<UserManager<ApplicationUser>>();
-        var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<ApplicationRole>>();
         var user = await SeedUserAsync(userManager);
         var query = new GetCurrentUserQuery { UserId = user.Id };
 
         // Act
-        var result = await CreateHandler(userManager, roleManager).HandleAsync(query, ct);
+        var result = await CreateHandler(userManager).HandleAsync(query, ct);
 
         // Assert
         result.IsError.ShouldBeFalse();
@@ -78,12 +77,11 @@ public sealed class GetCurrentUserQueryHandlerIntegrationTests(SecurityDbContext
         var ct = TestContext.Current.CancellationToken;
         using var scope = fixture.CreateScope();
         var userManager = scope.ServiceProvider.GetRequiredService<UserManager<ApplicationUser>>();
-        var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<ApplicationRole>>();
         var user = await SeedUserAsync(userManager);
         var query = new GetCurrentUserQuery { UserId = user.Id };
 
         // Act
-        var result = await CreateHandler(userManager, roleManager).HandleAsync(query, ct);
+        var result = await CreateHandler(userManager).HandleAsync(query, ct);
 
         // Assert
         result.IsError.ShouldBeFalse();
@@ -108,7 +106,7 @@ public sealed class GetCurrentUserQueryHandlerIntegrationTests(SecurityDbContext
         var query = new GetCurrentUserQuery { UserId = user.Id };
 
         // Act
-        var result = await CreateHandler(userManager, roleManager).HandleAsync(query, ct);
+        var result = await CreateHandler(userManager).HandleAsync(query, ct);
 
         // Assert
         result.IsError.ShouldBeFalse();
@@ -124,12 +122,11 @@ public sealed class GetCurrentUserQueryHandlerIntegrationTests(SecurityDbContext
         var ct = TestContext.Current.CancellationToken;
         using var scope = fixture.CreateScope();
         var userManager = scope.ServiceProvider.GetRequiredService<UserManager<ApplicationUser>>();
-        var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<ApplicationRole>>();
         var user = await SeedUserAsync(userManager);
         var query = new GetCurrentUserQuery { UserId = user.Id };
 
         // Act
-        var result = await CreateHandler(userManager, roleManager).HandleAsync(query, ct);
+        var result = await CreateHandler(userManager).HandleAsync(query, ct);
 
         // Assert
         result.IsError.ShouldBeFalse();
@@ -143,16 +140,53 @@ public sealed class GetCurrentUserQueryHandlerIntegrationTests(SecurityDbContext
         var ct = TestContext.Current.CancellationToken;
         using var scope = fixture.CreateScope();
         var userManager = scope.ServiceProvider.GetRequiredService<UserManager<ApplicationUser>>();
-        var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<ApplicationRole>>();
         var user = ApplicationUserFactory.Create(usbcId: "123-45678");
         await userManager.CreateAsync(user, LoginRequestFactory.ValidPassword);
         var query = new GetCurrentUserQuery { UserId = user.Id };
 
         // Act
-        var result = await CreateHandler(userManager, roleManager).HandleAsync(query, ct);
+        var result = await CreateHandler(userManager).HandleAsync(query, ct);
 
         // Assert
         result.IsError.ShouldBeFalse();
         result.Value.UsbcId.ShouldBe("123-45678");
+    }
+
+    [Fact(DisplayName = "HandleAsync returns the permissions stored as denied for the user")]
+    public async Task HandleAsync_ShouldReturnDeniedPermissions_WhenUserHasStoredDenial()
+    {
+        // Arrange
+        var ct = TestContext.Current.CancellationToken;
+        using var scope = fixture.CreateScope();
+        var userManager = scope.ServiceProvider.GetRequiredService<UserManager<ApplicationUser>>();
+        var user = await SeedUserAsync(userManager);
+        await userManager.AddClaimAsync(user, new System.Security.Claims.Claim(
+            Permissions.DeniedClaimType, Permissions.EditTournamentLogo.Value));
+        var query = new GetCurrentUserQuery { UserId = user.Id };
+
+        // Act
+        var result = await CreateHandler(userManager).HandleAsync(query, ct);
+
+        // Assert
+        result.IsError.ShouldBeFalse();
+        result.Value.DeniedPermissions.ShouldHaveSingleItem().ShouldBe(Permissions.EditTournamentLogo);
+    }
+
+    [Fact(DisplayName = "HandleAsync returns no denied permissions when the user has no stored denial")]
+    public async Task HandleAsync_ShouldReturnNoDeniedPermissions_WhenUserHasNoStoredDenial()
+    {
+        // Arrange
+        var ct = TestContext.Current.CancellationToken;
+        using var scope = fixture.CreateScope();
+        var userManager = scope.ServiceProvider.GetRequiredService<UserManager<ApplicationUser>>();
+        var user = await SeedUserAsync(userManager);
+        var query = new GetCurrentUserQuery { UserId = user.Id };
+
+        // Act
+        var result = await CreateHandler(userManager).HandleAsync(query, ct);
+
+        // Assert
+        result.IsError.ShouldBeFalse();
+        result.Value.DeniedPermissions.ShouldBeEmpty();
     }
 }

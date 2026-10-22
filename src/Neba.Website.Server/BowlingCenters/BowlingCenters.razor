@@ -82,7 +82,7 @@
 
                 <!-- Results Count -->
                 <div class="flex items-center text-sm text-[var(--neba-gray-700)] whitespace-nowrap">
-                    Showing <span class="font-semibold mx-1">@_displayedCenters.Count</span> of @_filteredCenters.Count centers
+                    Showing <span class="font-semibold mx-1">@_displayedCenters.Count</span> of @_filteredCenters.Count @("center".ToQuantity(_filteredCenters.Count, ShowQuantityAs.None))
                 </div>
             </div>
         }

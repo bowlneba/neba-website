@@ -3,12 +3,14 @@ using ErrorOr;
 using Microsoft.EntityFrameworkCore;
 
 using Neba.Api.BackgroundJobs;
+using Neba.Api.Caching;
 using Neba.Api.Database;
 using Neba.Api.Features.Seasons.Domain;
 using Neba.Api.Features.Storage.Domain;
 using Neba.Api.Features.Tournaments.Domain;
 using Neba.Api.Features.Tournaments.EvictOilPatternRevealCache;
 using Neba.Api.Messaging;
+using Neba.Api.Security.Infrastructure.Authorization;
 
 using ZiggyCreatures.Caching.Fusion;
 
@@ -18,7 +20,8 @@ internal sealed class EditTournamentCommandHandler(
         AppDbContext appDbContext,
         IFusionCache cache,
         IBackgroundJobScheduler backgroundJobScheduler,
-        TimeProvider timeProvider)
+        TimeProvider timeProvider,
+        IPermissionDenialReader permissionDenialReader)
     : ICommandHandler<EditTournamentCommand, Updated>
 {
     public async Task<ErrorOr<Updated>> HandleAsync(EditTournamentCommand command, CancellationToken cancellationToken)
@@ -30,6 +33,22 @@ internal sealed class EditTournamentCommandHandler(
         if (tournament is null)
         {
             return TournamentErrors.TournamentNotFound(command.TournamentId);
+        }
+
+        // A denial is read only when the logo changes, so an edit that leaves it alone skips the lookup.
+        if (!TournamentLogoClaim.IsSameFile(command.Logo, tournament.Logo)
+            && await permissionDenialReader.IsDeniedAsync(
+                command.CallerUserId, Contracts.Security.Permissions.EditTournamentLogo, cancellationToken))
+        {
+            return TournamentErrors.LogoChangeDenied;
+        }
+
+        var logoClaim = await TournamentLogoClaim.EnsureClaimableAsync(
+            appDbContext, command.Logo, tournament.Logo, cancellationToken);
+
+        if (logoClaim.IsError)
+        {
+            return logoClaim.Errors;
         }
 
         var resolveResult = await TournamentSeasonAndPatternResolver.ResolveAsync(
@@ -50,6 +69,8 @@ internal sealed class EditTournamentCommandHandler(
         (Season season, PatternLengthCategory? patternLengthCategory, PatternRatioCategory? patternRatioCategory) = resolveResult.Value;
 
         var previousSeasonId = tournament.SeasonId;
+        var previousStatsEligible = tournament.StatsEligible;
+        var previousChampionDetails = (tournament.Name, tournament.EndDate, tournament.TournamentType);
 
         // Must snapshot before Update() — Logo is mutated in place, so reading it after the call
         // would return the new value, not the one being replaced (see EditSponsorCommandHandler).
@@ -66,7 +87,7 @@ internal sealed class EditTournamentCommandHandler(
             nebaAddedMoney: command.NebaAddedMoney,
             bowlingCenterId: command.BowlingCenterId,
             externalRegistrationUrl: command.ExternalRegistrationUrl,
-            logo: command.Logo,
+            logo: TournamentLogoClaim.Resolve(command.Logo, previousLogo),
             patternLengthCategory: patternLengthCategory,
             patternRatioCategory: patternRatioCategory,
             oilPatternRevealDateTime: command.OilPatternRevealDateTime);
@@ -96,7 +117,13 @@ internal sealed class EditTournamentCommandHandler(
 
         await appDbContext.SaveChangesAsync(cancellationToken);
 
-        await EvictCachesAsync(tournament.Id, previousSeasonId, season.Id, cancellationToken);
+        await EvictCachesAsync(
+            tournament.Id,
+            previousSeasonId,
+            season.Id,
+            previousStatsEligible != tournament.StatsEligible,
+            previousChampionDetails != (tournament.Name, tournament.EndDate, tournament.TournamentType),
+            cancellationToken);
 
         ScheduleBackgroundJobs(command, previousLogo, tournament.Id, season.Id);
 
@@ -104,7 +131,12 @@ internal sealed class EditTournamentCommandHandler(
     }
 
     private async Task EvictCachesAsync(
-        TournamentId tournamentId, SeasonId previousSeasonId, SeasonId currentSeasonId, CancellationToken cancellationToken)
+        TournamentId tournamentId,
+        SeasonId previousSeasonId,
+        SeasonId currentSeasonId,
+        bool statsEligibleChanged,
+        bool championDetailsChanged,
+        CancellationToken cancellationToken)
     {
         await cache.RemoveByTagAsync($"neba:tournaments:{tournamentId}", token: cancellationToken);
         await cache.RemoveByTagAsync($"neba:tournaments:{previousSeasonId}", token: cancellationToken);
@@ -113,21 +145,31 @@ internal sealed class EditTournamentCommandHandler(
         {
             await cache.RemoveByTagAsync($"neba:tournaments:{currentSeasonId}", token: cancellationToken);
         }
+
+        // The champions list and each bowler's titles project the tournament's name, end date and type.
+        if (championDetailsChanged)
+        {
+            await cache.RemoveByTagAsync("neba:tournaments:champions", token: cancellationToken);
+            await cache.RemoveByTagAsync("neba:bowlers", token: cancellationToken);
+        }
+
+        // Season stat minimums count stats-eligible tournaments, so flipping eligibility or moving a
+        // tournament between seasons makes the cached season stats stale.
+        if (statsEligibleChanged || currentSeasonId != previousSeasonId)
+        {
+            await cache.RemoveByTagAsync(CacheDescriptors.Stats.SeasonTag(previousSeasonId), token: cancellationToken);
+
+            if (currentSeasonId != previousSeasonId)
+            {
+                await cache.RemoveByTagAsync(CacheDescriptors.Stats.SeasonTag(currentSeasonId), token: cancellationToken);
+            }
+        }
     }
 
     private void ScheduleBackgroundJobs(
         EditTournamentCommand command, StoredFile? previousLogo, TournamentId tournamentId, SeasonId seasonId)
     {
-        if (previousLogo is not null && previousLogo != command.Logo)
-        {
-            backgroundJobScheduler.Enqueue(new DeleteTournamentFilesJob
-            {
-                Files =
-                [
-                    new TournamentFileReference { Container = previousLogo.Container, Path = previousLogo.Path }
-                ]
-            });
-        }
+        TournamentLogoCleanup.ScheduleDeleteOfReplacedLogo(backgroundJobScheduler, previousLogo, command.Logo);
 
         if (command.OilPatternRevealDateTime is { } revealAt && revealAt > timeProvider.GetUtcNow())
         {

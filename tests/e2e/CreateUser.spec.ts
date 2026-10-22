@@ -1,6 +1,11 @@
-import { test, expect } from '@playwright/test';
+import { test, expect, type Locator } from '@playwright/test';
 
 test.describe.configure({ mode: 'serial' });
+
+// The radios are visually hidden; users click the labels, so the specs do too.
+async function choose(row: Locator, state: 'added' | 'default' | 'removed'): Promise<void> {
+  await row.locator('label[for$="-' + state + '"]').click();
+}
 
 test.describe('Create User page (unauthenticated)', () => {
   test.use({ viewport: { width: 1200, height: 800 } });
@@ -76,6 +81,28 @@ test.describe('Create User page (authenticated)', () => {
     await expect(page.locator('.neba-alert-title')).toContainText('Invite Sent');
     await expect(page.locator('.neba-alert')).toContainText('new.staff@bowlneba.com');
     await expect(page).toHaveURL(/\/account\/create-user$/);
+  });
+
+  test('sends the added and removed permissions chosen in the overrides section', async ({ page }) => {
+    await page.request.post('/__test/login?permissions=System.CreateUser,Cache.Clear,Tournaments.DeleteTournament');
+
+    await page.goto('/account/create-user');
+    await page.waitForSelector('#email');
+
+    await page.locator('#email').fill('overrides.staff@bowlneba.com');
+    await page.getByRole('checkbox', { name: 'Webmaster' }).check();
+
+    await choose(page.getByRole('row', { name: /Clear Cache/ }), 'added');
+    await choose(page.getByRole('row', { name: /Delete Tournament/ }), 'removed');
+
+    await page.locator('button[type="submit"]').click();
+    await expect(page.locator('.neba-alert-title')).toContainText('Invite Sent');
+
+    const sent = await (
+      await page.request.get('http://localhost:5151/__mock/last-request?method=POST&path=/security/users')
+    ).json();
+    expect(sent.user.addedPermissions).toEqual(['Cache.Clear']);
+    expect(sent.user.removedPermissions).toEqual(['Tournaments.DeleteTournament']);
   });
 
   test('shows an error alert and stays on the page when creation fails', async ({ page }) => {

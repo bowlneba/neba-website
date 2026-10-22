@@ -1,0 +1,160 @@
+@namespace Neba.Website.Server.Account.PermissionOverrides
+@using Neba.Api.Contracts.Security
+@using Neba.Api.Contracts.Security.ListRoles
+
+<div class="neba-space-y-4">
+    <div>
+        <h2 class="permission-overrides-title">Permission overrides</h2>
+        <p class="permission-overrides-intro">
+            Roles give a baseline. Use these switches to change one permission for this person only.
+            Rows with a blue edge differ from the default.
+        </p>
+    </div>
+
+    <div class="permission-overrides-explain">
+        <dl>
+            <dt>Default</dt><dd>Their roles decide.</dd>
+            <dt>Added</dt><dd>They can do this, even if no role allows it.</dd>
+            <dt>Removed</dt><dd>They can't do this, even if a role allows it.</dd>
+        </dl>
+        <p>Changes apply the next time the user's session refreshes, within about 15 minutes.</p>
+    </div>
+
+    <div class="permission-overrides-scroll">
+        <table class="neba-table permission-overrides-table">
+            <thead>
+                <tr>
+                    <th scope="col">Permission</th>
+                    <th scope="col">Granted by role</th>
+                    <th scope="col">Override</th>
+                    <th scope="col" class="permission-overrides-result">Result</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var area in _areas)
+                {
+                    <tr class="permission-overrides-area">
+                        <th scope="rowgroup" colspan="4">@area.DisplayName</th>
+                    </tr>
+
+                    @foreach (var permission in area.Permissions)
+                    {
+                        var state = Overrides.StateOf(permission.Value);
+                        var originalState = (Original ?? _empty).StateOf(permission.Value);
+                        var grantingRoles = GrantingRoles(permission.Value);
+                        var allowed = PermissionOverrideRules.IsAllowed(state, grantingRoles.Count > 0);
+
+                        <tr class="@(state != PermissionOverrideState.Default ? "permission-overrides-changed" : null)">
+                            <td>@permission.Name</td>
+                            <td class="permission-overrides-via">
+                                @(grantingRoles.Count > 0 ? string.Join(", ", grantingRoles) : "—")
+                            </td>
+                            <td>
+                                <PermissionOverrideSwitch Label="@permission.Name"
+                                                          Value="@state"
+                                                          Disabled="@Disabled"
+                                                          DisabledStates="@BlockedStates(permission.Value, originalState)"
+                                                          DisabledReason="You don't hold this permission, so you can't give it to someone else."
+                                                          ValueChanged="@(next => HandleChangedAsync(permission.Value, next))" />
+                            </td>
+                            <td class="permission-overrides-result @(allowed ? "permission-overrides-allowed" : null)">
+                                @(allowed ? "Allowed" : "Not allowed")
+                            </td>
+                        </tr>
+                    }
+                }
+            </tbody>
+        </table>
+    </div>
+</div>
+
+@code {
+    private static readonly PermissionOverrideSet _empty = new();
+
+    private IReadOnlyList<AreaGroup> _areas = [];
+    private IReadOnlyDictionary<string, IReadOnlyList<string>> _grantingRoles = new Dictionary<string, IReadOnlyList<string>>();
+
+    [Parameter, EditorRequired]
+    public IReadOnlyCollection<RoleResponse> Roles { get; set; } = [];
+
+    /// <summary>The roles the user holds (Edit) or has ticked (Create).</summary>
+    [Parameter, EditorRequired]
+    public IReadOnlyCollection<string> SelectedRoles { get; set; } = [];
+
+    /// <summary>The page-owned set this section edits in place.</summary>
+    [Parameter, EditorRequired]
+    public PermissionOverrideSet Overrides { get; set; } = new();
+
+    /// <summary>The set as loaded. Null on Create (nothing is stored yet).</summary>
+    [Parameter]
+    public PermissionOverrideSet? Original { get; set; }
+
+    /// <summary>The signed-in caller's permission values, for the escalation guard.</summary>
+    [Parameter, EditorRequired]
+    public IReadOnlyCollection<string> CallerPermissions { get; set; } = [];
+
+    [Parameter]
+    public bool Disabled { get; set; }
+
+    /// <summary>Raised after a switch changes. The page calls MarkDirty().</summary>
+    [Parameter]
+    public EventCallback OnChanged { get; set; }
+
+    protected override void OnInitialized()
+    {
+        _areas =
+        [
+            .. Permissions.List
+                .GroupBy(permission => PermissionOverrideRules.AreaOf(permission.Value))
+                .OrderBy(group => PermissionOverrideRules.AreaSortKey(group.Key))
+                .ThenBy(group => group.Key, StringComparer.Ordinal)
+                .Select(group => new AreaGroup(
+                    PermissionOverrideRules.AreaDisplayName(group.Key),
+                    [.. group.OrderBy(permission => permission.Name, StringComparer.Ordinal)]))
+        ];
+    }
+
+    protected override void OnParametersSet()
+    {
+        // Built once per parameter change, not per permission per render: toggling a switch re-renders
+        // this section without changing Roles or SelectedRoles.
+        var selected = Roles
+            .Where(role => SelectedRoles.Contains(role.Name, StringComparer.Ordinal))
+            .OrderBy(role => role.Name, StringComparer.Ordinal)
+            .ToList();
+
+        _grantingRoles = selected
+            .SelectMany(role => role.Permissions.Select(permission => (permission, role.Name)))
+            .GroupBy(pair => pair.permission, pair => pair.Name, StringComparer.Ordinal)
+            .ToDictionary(group => group.Key, group => (IReadOnlyList<string>)[.. group], StringComparer.Ordinal);
+    }
+
+    private IReadOnlyList<string> GrantingRoles(string permissionValue)
+        => _grantingRoles.TryGetValue(permissionValue, out var roles) ? roles : [];
+
+    /// <summary>
+    /// A position is blocked when moving to it would give more access than the loaded state and the
+    /// caller doesn't hold the permission. Mirrors the server's guard; the server stays the authority.
+    /// </summary>
+    private IReadOnlySet<PermissionOverrideState> BlockedStates(string permissionValue, PermissionOverrideState original)
+    {
+        if (CallerPermissions.Contains(permissionValue, StringComparer.Ordinal))
+        {
+            return _none;
+        }
+
+        return new HashSet<PermissionOverrideState>(
+            Enum.GetValues<PermissionOverrideState>()
+                .Where(next => PermissionOverrideRules.IsGain(original, next)));
+    }
+
+    private static readonly IReadOnlySet<PermissionOverrideState> _none = new HashSet<PermissionOverrideState>();
+
+    private async Task HandleChangedAsync(string permissionValue, PermissionOverrideState next)
+    {
+        Overrides.Set(permissionValue, next);
+        await OnChanged.InvokeAsync();
+    }
+
+    private sealed record AreaGroup(string DisplayName, IReadOnlyList<Permissions> Permissions);
+}

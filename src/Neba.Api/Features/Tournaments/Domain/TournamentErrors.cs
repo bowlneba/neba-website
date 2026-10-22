@@ -55,6 +55,12 @@ internal static class TournamentErrors
             });
     }
 
+    public static Error LogoChangeDenied
+        => Error.Forbidden("Tournament.Logo.ChangeDenied", "Your account is not allowed to change tournament logos.");
+
+    public static Error LogoNotUploaded
+        => Error.Validation("Tournament.Logo.NotUploaded", "Logo must be a file uploaded through the logo upload endpoint.");
+
     public static Error NameRequired
         => Error.Validation("Tournament.Name.Required", "Name must not be empty.");
 
@@ -157,15 +163,15 @@ internal static class TournamentErrors
             code: "Tournament.Squad.NotFound",
             description: $"Squad '{squadId}' was not found on this tournament.");
 
-    public static Error AlreadyComplete
+    public static Error TournamentAlreadyFinalized
         => Error.Conflict(
-            code: "Tournament.AlreadyComplete",
-            description: "This tournament is already complete.");
+            code: "Tournament.AlreadyFinalized",
+            description: "This tournament has already been completed, truncated, or cancelled.");
 
-    public static Error TournamentNotComplete
+    public static Error TournamentNotFinalized
         => Error.Conflict(
-            code: "Tournament.NotComplete",
-            description: "Results may only be recorded for a completed tournament.");
+            code: "Tournament.NotFinalized",
+            description: "Results may only be recorded for a completed or truncated tournament.");
 
     public static Error ResultAlreadyRecorded(BowlerId bowlerId)
         => Error.Conflict(

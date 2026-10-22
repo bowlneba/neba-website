@@ -16,8 +16,8 @@
                 <div class="count-group" @key="@group.Count">
                     <div class="count-group__head">
                         <span class="count-group__num">@group.Count</span>
-                        <span class="count-group__label">@(group.Count == 1 ? "title" : "titles")</span>
-                        <span class="count-group__tally">@group.Bowlers.Count @(group.Bowlers.Count == 1 ? "bowler" : "bowlers")</span>
+                        <span class="count-group__label">@("title".ToQuantity(group.Count, ShowQuantityAs.None))</span>
+                        <span class="count-group__tally">@("bowler".ToQuantity(group.Bowlers.Count, formatProvider: DisplayCulture.English))</span>
                     </div>
                     <div class="count-group__grid">
                         @foreach (var bowler in group.Bowlers)
@@ -59,8 +59,8 @@
                 <div class="count-group" @key="@group.Count">
                     <div class="count-group__head">
                         <span class="count-group__num">@group.Count</span>
-                        <span class="count-group__label">@(group.Count == 1 ? "title" : "titles")</span>
-                        <span class="count-group__tally">@group.Bowlers.Count @(group.Bowlers.Count == 1 ? "bowler" : "bowlers")</span>
+                        <span class="count-group__label">@("title".ToQuantity(group.Count, ShowQuantityAs.None))</span>
+                        <span class="count-group__tally">@("bowler".ToQuantity(group.Bowlers.Count, formatProvider: DisplayCulture.English))</span>
                     </div>
                     <div class="count-group__grid">
                         @foreach (var bowler in group.Bowlers)
@@ -102,8 +102,8 @@
                 <div class="count-group" @key="@group.Count">
                     <div class="count-group__head">
                         <span class="count-group__num">@group.Count</span>
-                        <span class="count-group__label">@(group.Count == 1 ? "title" : "titles")</span>
-                        <span class="count-group__tally">@group.Bowlers.Count @(group.Bowlers.Count == 1 ? "bowler" : "bowlers")</span>
+                        <span class="count-group__label">@("title".ToQuantity(group.Count, ShowQuantityAs.None))</span>
+                        <span class="count-group__tally">@("bowler".ToQuantity(group.Bowlers.Count, formatProvider: DisplayCulture.English))</span>
                     </div>
                     <div class="count-group__grid">
                         @foreach (var bowler in group.Bowlers)

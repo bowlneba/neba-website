@@ -61,8 +61,20 @@ public static class CacheDescriptors
             => new()
             {
                 Key = $"neba:document:{documentKey}:content",
-                Tags = ["neba", "neba:documents", $"neba:document:{documentKey}"]
+                Tags = ["neba", "neba:documents", Tag(documentKey)]
             };
+
+        /// <summary>
+        /// Returns the tag that groups every cache entry for a single document, for evicting just that document.
+        /// </summary>
+        /// <param name="documentKey">
+        /// The key of the document.
+        /// </param>
+        /// <returns>
+        /// The document's cache tag.
+        /// </returns>
+        public static string Tag(string documentKey)
+            => $"neba:document:{documentKey}";
     }
 
     /// <summary>
@@ -217,6 +229,18 @@ public static class CacheDescriptors
     public static class Stats
     {
         /// <summary>
+        /// The tag carried by every cached stats entry for the given season; evict it when the season's stats change.
+        /// </summary>
+        /// <param name="seasonId">
+        /// The season identifier.
+        /// </param>
+        /// <returns>
+        /// The season's stats cache tag.
+        /// </returns>
+        public static string SeasonTag(SeasonId seasonId)
+            => $"neba:stats:seasons:{seasonId}";
+
+        /// <summary>
         /// Returns a cache descriptor for the list of seasons with stats.
         /// </summary>
         public static CacheDescriptor ListSeasonsWithStats
@@ -239,7 +263,7 @@ public static class CacheDescriptors
             => new()
             {
                 Key = $"neba:stats:seasons:{seasonId}:bowlers",
-                Tags = ["neba", "neba:stats", "neba:stats:seasons", $"neba:stats:seasons:{seasonId}"]
+                Tags = ["neba", "neba:stats", "neba:stats:seasons", SeasonTag(seasonId)]
             };
 
         /// <summary>
@@ -255,7 +279,7 @@ public static class CacheDescriptors
             => new()
             {
                 Key = $"neba:stats:seasons:{seasonId}:boy-progressions",
-                Tags = ["neba", "neba:stats", "neba:stats:seasons", $"neba:stats:seasons:{seasonId}"]
+                Tags = ["neba", "neba:stats", "neba:stats:seasons", SeasonTag(seasonId)]
             };
     }
 
@@ -391,6 +415,22 @@ public static class CacheDescriptors
             {
                 Key = $"{Tag}:types:list",
                 Tags = ["neba", Tag, $"{Tag}:types"]
+            };
+    }
+
+    /// <summary>
+    /// Cache descriptors for security data.
+    /// </summary>
+    public static class Security
+    {
+        /// <summary>
+        /// Returns a cache descriptor for the list of roles with the permissions each grants.
+        /// </summary>
+        public static CacheDescriptor ListRoles
+            => new()
+            {
+                Key = "neba:security:roles:list",
+                Tags = ["neba", "neba:security", "neba:security:roles"]
             };
     }
 

@@ -1,0 +1,56 @@
+using ErrorOr;
+
+using Microsoft.EntityFrameworkCore;
+
+using Neba.Api.BackgroundJobs;
+using Neba.Api.Database;
+using Neba.Api.Features.Tournaments.Domain;
+using Neba.Api.Messaging;
+
+using ZiggyCreatures.Caching.Fusion;
+
+namespace Neba.Api.Features.Tournaments.EditTournamentLogo;
+
+internal sealed class EditTournamentLogoCommandHandler(
+        AppDbContext appDbContext,
+        IFusionCache cache,
+        IBackgroundJobScheduler backgroundJobScheduler)
+    : ICommandHandler<EditTournamentLogoCommand, Updated>
+{
+    public async Task<ErrorOr<Updated>> HandleAsync(EditTournamentLogoCommand command, CancellationToken cancellationToken)
+    {
+        var tournament = await appDbContext.Tournaments
+            .SingleOrDefaultAsync(t => t.Id == command.TournamentId, cancellationToken);
+
+        if (tournament is null)
+        {
+            return TournamentErrors.TournamentNotFound(command.TournamentId);
+        }
+
+        var logoClaim = await TournamentLogoClaim.EnsureClaimableAsync(
+            appDbContext, command.Logo, tournament.Logo, cancellationToken);
+
+        if (logoClaim.IsError)
+        {
+            return logoClaim.Errors;
+        }
+
+        // Snapshot before ChangeLogo: Logo is mutated in place, so reading it afterwards returns the new value.
+        var previousLogo = tournament.Logo;
+
+        var logo = TournamentLogoClaim.Resolve(command.Logo, previousLogo);
+
+        tournament.ChangeLogo(logo);
+
+        await TournamentPendingUploadCleaner.RemoveClaimedAsync(appDbContext, logo, cancellationToken);
+
+        await appDbContext.SaveChangesAsync(cancellationToken);
+
+        await cache.RemoveByTagAsync($"neba:tournaments:{tournament.Id}", token: cancellationToken);
+        await cache.RemoveByTagAsync($"neba:tournaments:{tournament.SeasonId}", token: cancellationToken);
+
+        TournamentLogoCleanup.ScheduleDeleteOfReplacedLogo(backgroundJobScheduler, previousLogo, logo);
+
+        return Result.Updated;
+    }
+}

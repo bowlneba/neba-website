@@ -28,6 +28,8 @@ internal sealed class ListTournamentsInSeasonSummary
                         StartDate = new DateOnly(2025, 3, 15),
                         EndDate = new DateOnly(2025, 3, 15),
                         TournamentType = "Singles",
+                        Status = "Completed",
+                        TitleEligible = true,
                         EntryFee = 75.00m,
                         RegistrationUrl = null,
                         AddedMoney = 500m,

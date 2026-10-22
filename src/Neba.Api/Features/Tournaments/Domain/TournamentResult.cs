@@ -5,9 +5,10 @@ using Neba.Api.Features.Bowlers.Domain;
 namespace Neba.Api.Features.Tournaments.Domain;
 
 /// <summary>
-/// One bowler's outcome in a completed Tournament: finishing place, prize money earned, and
+/// One bowler's outcome in a finalized Tournament: finishing place, prize money earned, and
 /// points earned. Constructed and mutated only through the owning Tournament, once
-/// <see cref="Tournament.Complete"/> is <see langword="true"/>.
+/// <see cref="Tournament.Status"/> is <see cref="TournamentStatus.Completed"/> or
+/// <see cref="TournamentStatus.Truncated"/>.
 /// </summary>
 public sealed class TournamentResult
 {

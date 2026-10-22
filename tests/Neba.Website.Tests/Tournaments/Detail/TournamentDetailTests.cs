@@ -215,17 +215,18 @@ public sealed class TournamentDetailTests : IDisposable
         var cut = _ctx.Render<TournamentDetail>(p => p.Add(x => x.Id, TournamentDetailResponseFactory.ValidId));
 
         // Assert
-        cut.FindAll(".td-hero__chips .td-hero__chip").Count.ShouldBe(1);
+        cut.FindAll(".td-hero__chips .type-pill").Count.ShouldBe(1);
+        cut.FindAll(".td-hero__chips .td-hero__chip").Count.ShouldBe(0);
     }
 
     // ── Champion bar ─────────────────────────────────────────────────────────
 
-    [Fact(DisplayName = "Should render champion bar when winners are present")]
-    public void Render_ShouldRenderChampionBar_WhenWinnersPresent()
+    [Fact(DisplayName = "Should render champion bar when winners are present and the tournament is title eligible")]
+    public void Render_ShouldRenderChampionBar_WhenWinnersPresentAndTitleEligible()
     {
         // Arrange
         SetupSuccessResponse(TournamentDetailResponseFactory.Create(
-            winners: ["Alex Example", "Jamie Sample"]));
+titleEligible: true, winners: ["Alex Example", "Jamie Sample"]));
 
         // Act
         var cut = _ctx.Render<TournamentDetail>(p => p.Add(x => x.Id, TournamentDetailResponseFactory.ValidId));
@@ -238,13 +239,28 @@ public sealed class TournamentDetailTests : IDisposable
     public void Render_ShouldNotRenderChampionBar_WhenNoWinners()
     {
         // Arrange
-        SetupSuccessResponse(TournamentDetailResponseFactory.Create(winners: []));
+        SetupSuccessResponse(TournamentDetailResponseFactory.Create(titleEligible: true, winners: []));
 
         // Act
         var cut = _ctx.Render<TournamentDetail>(p => p.Add(x => x.Id, TournamentDetailResponseFactory.ValidId));
 
         // Assert
         cut.FindAll(".tournament-detail__champion-bar").ShouldBeEmpty();
+    }
+
+    [Fact(DisplayName = "Should not render champion bar when winners are present but the tournament is not title eligible")]
+    public void Render_ShouldNotRenderChampionBar_WhenNotTitleEligible()
+    {
+        // Arrange
+        SetupSuccessResponse(TournamentDetailResponseFactory.Create(
+status: TournamentStatus.Truncated, titleEligible: false, winners: ["Alex Example"]));
+
+        // Act
+        var cut = _ctx.Render<TournamentDetail>(p => p.Add(x => x.Id, TournamentDetailResponseFactory.ValidId));
+
+        // Assert
+        cut.FindAll(".tournament-detail__champion-bar").ShouldBeEmpty();
+        cut.FindAll(".td-hero__champion-pill").ShouldBeEmpty();
     }
 
     // ── Info card (upcoming) ─────────────────────────────────────────────────
@@ -302,6 +318,120 @@ public sealed class TournamentDetailTests : IDisposable
 
         // Assert
         cut.Markup.ShouldNotContain("Register");
+    }
+
+    // ── Added money breakdown ────────────────────────────────────────────────
+
+    [Fact(DisplayName = "Should render the added money breakdown in the rail for an upcoming tournament")]
+    public void Render_ShouldRenderBreakdownInRail_ForUpcomingTournament()
+    {
+        // Arrange
+        var futureDate = DateOnly.FromDateTime(DateTime.Today.AddDays(30));
+        SetupSuccessResponse(TournamentDetailResponseFactory.Create(
+            startDate: futureDate,
+            endDate: futureDate,
+            addedMoney: 2500m,
+            nebaAddedMoney: 100m,
+            sponsors:
+            [
+                TournamentDetailSponsorResponseFactory.Create(name: "Sponsor B", sponsorshipAmount: 700m),
+                TournamentDetailSponsorResponseFactory.Create(name: "Sponsor A", sponsorshipAmount: 1000m),
+                TournamentDetailSponsorResponseFactory.Create(name: "Sponsor C", sponsorshipAmount: 700m)
+            ]));
+
+        // Act
+        var cut = _ctx.Render<TournamentDetail>(p => p.Add(x => x.Id, TournamentDetailResponseFactory.ValidId));
+
+        // Assert
+        var lines = cut.FindAll(".td-rail-card .tamb__line").Select(l => l.TextContent.Trim()).ToArray();
+        lines.Length.ShouldBe(4);
+        lines[0].ShouldContain("Sponsor A");
+        lines[0].ShouldContain("$1,000");
+        lines[1].ShouldContain("Sponsor B");
+        lines[2].ShouldContain("Sponsor C");
+        lines[3].ShouldContain("NEBA");
+        lines[3].ShouldContain("$100");
+    }
+
+    [Fact(DisplayName = "Should render an added money rail card with the breakdown for a past tournament")]
+    public void Render_ShouldRenderBreakdownCard_ForPastTournament()
+    {
+        // Arrange
+        var pastDate = DateOnly.FromDateTime(DateTime.Today.AddDays(-30));
+        SetupSuccessResponse(TournamentDetailResponseFactory.Create(
+            startDate: pastDate,
+            endDate: pastDate,
+            addedMoney: 1000m,
+            sponsors:
+            [
+                TournamentDetailSponsorResponseFactory.Create(name: "Presenting Co", titleSponsor: true, sponsorshipAmount: 0m),
+                TournamentDetailSponsorResponseFactory.Create(name: "Sponsor A", sponsorshipAmount: 1000m)
+            ]));
+
+        // Act
+        var cut = _ctx.Render<TournamentDetail>(p => p.Add(x => x.Id, TournamentDetailResponseFactory.ValidId));
+
+        // Assert
+        cut.FindAll(".td-rail-card").Count.ShouldBe(1);
+        var lines = cut.FindAll(".td-rail-card .tamb__line");
+        lines.Count.ShouldBe(1);
+        lines[0].TextContent.ShouldContain("Sponsor A");
+        cut.FindAll(".td-rail-card .tamb").ShouldNotBeEmpty();
+        cut.Find(".td-rail-card").TextContent.ShouldNotContain("Presenting Co");
+        cut.Markup.ShouldContain("Presented by");
+    }
+
+    [Fact(DisplayName = "Should render no breakdown when the tournament has no added money")]
+    public void Render_ShouldRenderNoBreakdown_WhenNoAddedMoney()
+    {
+        // Arrange
+        var futureDate = DateOnly.FromDateTime(DateTime.Today.AddDays(30));
+        SetupSuccessResponse(TournamentDetailResponseFactory.Create(startDate: futureDate, endDate: futureDate));
+
+        // Act
+        var cut = _ctx.Render<TournamentDetail>(p => p.Add(x => x.Id, TournamentDetailResponseFactory.ValidId));
+
+        // Assert
+        cut.FindAll(".tamb").ShouldBeEmpty();
+        cut.Markup.ShouldNotContain("Added money");
+    }
+
+    [Fact(DisplayName = "Should render the total only when no sponsor or NEBA money is attributed")]
+    public void Render_ShouldRenderTotalOnly_WhenNoLinesAttributed()
+    {
+        // Arrange
+        var futureDate = DateOnly.FromDateTime(DateTime.Today.AddDays(30));
+        SetupSuccessResponse(TournamentDetailResponseFactory.Create(
+            startDate: futureDate,
+            endDate: futureDate,
+            addedMoney: 1000m));
+
+        // Act
+        var cut = _ctx.Render<TournamentDetail>(p => p.Add(x => x.Id, TournamentDetailResponseFactory.ValidId));
+
+        // Assert
+        cut.Markup.ShouldContain("$1,000");
+        cut.FindAll(".tamb").ShouldBeEmpty();
+    }
+
+    [Fact(DisplayName = "Should not render the old sponsor money and NEBA added money sub-lines in the hero")]
+    public void Render_ShouldNotRenderOldSubLines_InHero()
+    {
+        // Arrange
+        var futureDate = DateOnly.FromDateTime(DateTime.Today.AddDays(30));
+        SetupSuccessResponse(TournamentDetailResponseFactory.Create(
+            startDate: futureDate,
+            endDate: futureDate,
+            addedMoney: 1300m,
+            nebaAddedMoney: 300m,
+            sponsors: [TournamentDetailSponsorResponseFactory.Create(sponsorshipAmount: 1000m)]));
+
+        // Act
+        var cut = _ctx.Render<TournamentDetail>(p => p.Add(x => x.Id, TournamentDetailResponseFactory.ValidId));
+
+        // Assert
+        cut.Markup.ShouldNotContain("sponsor money");
+        cut.Markup.ShouldNotContain("NEBA added money");
     }
 
     // ── Entry count ──────────────────────────────────────────────────────────
@@ -541,20 +671,23 @@ tournamentType: TournamentType.Doubles, logoUrl: null));
         cut.Markup.ShouldContain("/sponsors/acme-corp");
     }
 
-    [Fact(DisplayName = "Should render sponsor logo image when logo URL is present")]
-    public void Render_ShouldRenderSponsorLogo_WhenLogoUrlPresent()
+    [Fact(DisplayName = "Should render sponsor logo image and name when logo URL is present")]
+    public void Render_ShouldRenderSponsorLogoAndName_WhenLogoUrlPresent()
     {
         // Arrange
         SetupSuccessResponse(TournamentDetailResponseFactory.Create(
             sponsors: [TournamentDetailSponsorResponseFactory.Create(
+                name: "Acme Corp",
                 logoUrl: new Uri("https://cdn.example.com/acme-logo.png"))]));
 
         // Act
         var cut = _ctx.Render<TournamentDetail>(p => p.Add(x => x.Id, TournamentDetailResponseFactory.ValidId));
 
         // Assert
-        cut.Markup.ShouldContain("https://cdn.example.com/acme-logo.png");
-        cut.FindAll(".td-rail-sponsor-card__name").ShouldBeEmpty();
+        var logo = cut.Find(".td-rail-sponsor-card__logo");
+        logo.GetAttribute("src").ShouldBe("https://cdn.example.com/acme-logo.png");
+        logo.GetAttribute("alt").ShouldBe(string.Empty);
+        cut.Find(".td-rail-sponsor-card__name").TextContent.ShouldBe("Acme Corp");
     }
 
     [Fact(DisplayName = "Should render sponsor name text when no logo URL")]
@@ -693,6 +826,85 @@ tournamentType: TournamentType.Doubles, logoUrl: null));
         cut.Markup.ShouldContain("$2,500");
     }
 
+    // ── Edit logo ────────────────────────────────────────────────────────────
+
+    [Fact(DisplayName = "Should not render the edit-logo button when caller lacks the policy")]
+    public void Render_ShouldNotRenderEditLogoButton_WhenNotAuthorized()
+    {
+        // Arrange
+        SetupSuccessResponse(TournamentDetailResponseFactory.Create());
+
+        // Act
+        var cut = _ctx.Render<TournamentDetail>(p => p.Add(x => x.Id, TournamentDetailResponseFactory.ValidId));
+
+        // Assert
+        cut.FindAll("button.tournament-logo-edit").ShouldBeEmpty();
+    }
+
+    [Fact(DisplayName = "Should open the edit-logo modal when an authorized caller clicks the edit-logo button")]
+    public async Task EditLogo_ShouldOpenModal_WhenAuthorizedCallerClicksButton()
+    {
+        // Arrange
+        _authContext.SetAuthorized("test-user");
+        _authContext.SetPolicies(Permissions.EditTournamentLogo.PolicyName);
+        _ctx.JSInterop.SetupModule("./Components/FileUpload.razor.js")
+            .Setup<string?[]>("getPreviewUrls", _ => true).SetResult([]);
+
+        SetupSuccessResponse(TournamentDetailResponseFactory.Create(name: "Spring Open"));
+
+        var cut = _ctx.Render<TournamentDetail>(p => p.Add(x => x.Id, TournamentDetailResponseFactory.ValidId));
+
+        // Act
+        await cut.Find("button.tournament-logo-edit").ClickAsync();
+
+        // Assert
+        cut.Find(".elm-subtitle").TextContent.Trim().ShouldBe("Spring Open");
+    }
+
+    [Fact(DisplayName = "Should save a removed logo and reload the tournament when the edit-logo modal is saved")]
+    public async Task EditLogo_ShouldSaveAndReload_WhenLogoRemoved()
+    {
+        // Arrange
+        _authContext.SetAuthorized("test-user");
+        _authContext.SetPolicies(Permissions.EditTournamentLogo.PolicyName);
+        _ctx.JSInterop.SetupModule("./Components/FileUpload.razor.js")
+            .Setup<string?[]>("getPreviewUrls", _ => true).SetResult([]);
+
+        var withLogo = TournamentDetailResponseFactory.Create(logoUrl: new Uri("https://storage.example.com/logo.png"));
+        var withoutLogo = TournamentDetailResponseFactory.Create(logoUrl: null);
+        SetupSuccessResponseSequence(withLogo, withoutLogo);
+
+        Neba.Api.Contracts.Tournaments.EditTournamentLogo.EditTournamentLogoRequest? captured = null;
+        using var editResponse = new StubApiResponse<object>
+        {
+            IsSuccessStatusCode = true,
+            StatusCode = System.Net.HttpStatusCode.NoContent
+        };
+        _mockApi
+            .Setup(x => x.EditTournamentLogoAsync(
+                It.IsAny<string>(),
+                It.IsAny<Neba.Api.Contracts.Tournaments.EditTournamentLogo.EditTournamentLogoRequest>(),
+                It.IsAny<CancellationToken>()))
+            .Callback<string, Neba.Api.Contracts.Tournaments.EditTournamentLogo.EditTournamentLogoRequest, CancellationToken>((_, r, _) => captured = r)
+            .ReturnsAsync(editResponse);
+
+        var cut = _ctx.Render<TournamentDetail>(p => p.Add(x => x.Id, TournamentDetailResponseFactory.ValidId));
+        await cut.Find("button.tournament-logo-edit").ClickAsync();
+        await cut.Find(".elm-link-danger").ClickAsync();
+
+        // Act
+        await cut.Find("button.neba-btn-primary").ClickAsync();
+
+        // Assert
+        captured.ShouldNotBeNull();
+        captured.Id.ShouldBe(TournamentDetailResponseFactory.ValidId);
+        captured.Input.Logo.ShouldBeNull();
+        _mockApi.Verify(
+            x => x.GetTournamentAsync(TournamentDetailResponseFactory.ValidId, It.IsAny<CancellationToken>()),
+            Times.Exactly(2));
+        cut.FindAll(".elm-subtitle").ShouldBeEmpty();
+    }
+
     // ── Footer ───────────────────────────────────────────────────────────────
 
     [Fact(DisplayName = "Should render back link to tournament schedule")]
@@ -706,6 +918,288 @@ tournamentType: TournamentType.Doubles, logoUrl: null));
 
         // Assert
         cut.Find(".tournament-detail__back-link").GetAttribute("href").ShouldBe("/tournaments");
+    }
+
+    // ── Manage tournament status ─────────────────────────────────────────────
+
+    [Fact(DisplayName = "Should not show truncate or cancel buttons when user lacks ManageTournamentStatus permission")]
+    public void Render_ShouldNotShowStatusActionButtons_WhenUserLacksPermission()
+    {
+        // Arrange
+        _authContext.SetAuthorized("test-user");
+        SetupSuccessResponse(TournamentDetailResponseFactory.Create(status: TournamentStatus.Scheduled));
+
+        // Act
+        var cut = _ctx.Render<TournamentDetail>(p => p.Add(x => x.Id, TournamentDetailResponseFactory.ValidId));
+
+        // Assert
+        cut.Markup.ShouldNotContain("td-hero__truncate-btn");
+        cut.Markup.ShouldNotContain("td-hero__cancel-btn");
+    }
+
+    [Fact(DisplayName = "Should show truncate and cancel buttons when user has ManageTournamentStatus permission and tournament is scheduled")]
+    public void Render_ShouldShowStatusActionButtons_WhenUserHasPermissionAndTournamentIsScheduled()
+    {
+        // Arrange
+        _authContext.SetAuthorized("test-user");
+        _authContext.SetPolicies(Permissions.ManageTournamentStatus.PolicyName);
+        SetupSuccessResponse(TournamentDetailResponseFactory.Create(status: TournamentStatus.Scheduled));
+
+        // Act
+        var cut = _ctx.Render<TournamentDetail>(p => p.Add(x => x.Id, TournamentDetailResponseFactory.ValidId));
+
+        // Assert
+        cut.Find("button.td-hero__truncate-btn").ShouldNotBeNull();
+        cut.Find("button.td-hero__cancel-btn").ShouldNotBeNull();
+    }
+
+    [Fact(DisplayName = "Should not show truncate or cancel buttons when the tournament is already finalized")]
+    public void Render_ShouldNotShowStatusActionButtons_WhenTournamentIsAlreadyFinalized()
+    {
+        // Arrange
+        _authContext.SetAuthorized("test-user");
+        _authContext.SetPolicies(Permissions.ManageTournamentStatus.PolicyName);
+        SetupSuccessResponse(TournamentDetailResponseFactory.Create(status: TournamentStatus.Completed, titleEligible: true));
+
+        // Act
+        var cut = _ctx.Render<TournamentDetail>(p => p.Add(x => x.Id, TournamentDetailResponseFactory.ValidId));
+
+        // Assert
+        cut.Markup.ShouldNotContain("td-hero__truncate-btn");
+        cut.Markup.ShouldNotContain("td-hero__cancel-btn");
+    }
+
+    [Fact(DisplayName = "Should render the Truncated status badge and eligibility note when the tournament is truncated")]
+    public void Render_ShouldShowTruncatedBadgeAndNote_WhenTournamentIsTruncated()
+    {
+        // Arrange
+        SetupSuccessResponse(TournamentDetailResponseFactory.Create(status: TournamentStatus.Truncated));
+
+        // Act
+        var cut = _ctx.Render<TournamentDetail>(p => p.Add(x => x.Id, TournamentDetailResponseFactory.ValidId));
+
+        // Assert
+        var badge = cut.Find(".td-status-badge");
+        badge.ClassList.ShouldContain("td-status-badge--truncated");
+        badge.TextContent.ShouldContain("Truncated");
+        cut.Markup.ShouldContain("Does not count toward a title");
+    }
+
+    [Fact(DisplayName = "Should render the Cancelled status badge and eligibility note when the tournament is cancelled")]
+    public void Render_ShouldShowCancelledBadgeAndNote_WhenTournamentIsCancelled()
+    {
+        // Arrange
+        SetupSuccessResponse(TournamentDetailResponseFactory.Create(status: TournamentStatus.Cancelled));
+
+        // Act
+        var cut = _ctx.Render<TournamentDetail>(p => p.Add(x => x.Id, TournamentDetailResponseFactory.ValidId));
+
+        // Assert
+        var badge = cut.Find(".td-status-badge");
+        badge.ClassList.ShouldContain("td-status-badge--cancelled");
+        badge.TextContent.ShouldContain("Cancelled");
+        cut.Markup.ShouldContain("No official results");
+    }
+
+    [Fact(DisplayName = "Should render the not-title-eligible note when the tournament is completed but below the minimum entries")]
+    public void Render_ShouldShowNotTitleEligibleNote_WhenTournamentIsCompletedAndNotTitleEligible()
+    {
+        // Arrange
+        SetupSuccessResponse(TournamentDetailResponseFactory.Create(status: TournamentStatus.Completed, titleEligible: false));
+
+        // Act
+        var cut = _ctx.Render<TournamentDetail>(p => p.Add(x => x.Id, TournamentDetailResponseFactory.ValidId));
+
+        // Assert
+        cut.Markup.ShouldNotContain("td-status-badge");
+        cut.Markup.ShouldContain("did not meet the minimum entries for a title");
+    }
+
+    [Fact(DisplayName = "Should not render a status badge or eligibility note for a scheduled tournament")]
+    public void Render_ShouldNotShowBadgeOrNote_WhenTournamentIsScheduled()
+    {
+        // Arrange
+        SetupSuccessResponse(TournamentDetailResponseFactory.Create(status: TournamentStatus.Scheduled));
+
+        // Act
+        var cut = _ctx.Render<TournamentDetail>(p => p.Add(x => x.Id, TournamentDetailResponseFactory.ValidId));
+
+        // Assert
+        cut.Markup.ShouldNotContain("td-status-badge");
+        cut.Markup.ShouldNotContain("td-eligibility-note");
+    }
+
+    [Fact(DisplayName = "Should open the truncate confirm dialog when the truncate button is clicked")]
+    public void Click_ShouldOpenTruncateConfirmDialog_WhenTruncateButtonIsClicked()
+    {
+        // Arrange
+        _authContext.SetAuthorized("test-user");
+        _authContext.SetPolicies(Permissions.ManageTournamentStatus.PolicyName);
+        SetupSuccessResponse(TournamentDetailResponseFactory.Create(status: TournamentStatus.Scheduled));
+        var cut = _ctx.Render<TournamentDetail>(p => p.Add(x => x.Id, TournamentDetailResponseFactory.ValidId));
+
+        // Act
+        cut.Find("button.td-hero__truncate-btn").Click();
+
+        // Assert
+        cut.Markup.ShouldContain("Mark tournament truncated?");
+    }
+
+    [Fact(DisplayName = "Should close the truncate dialog and make no API call when cancelled")]
+    public void CancelTruncate_ShouldCloseDialogAndMakeNoApiCall_WhenCancelled()
+    {
+        // Arrange
+        _authContext.SetAuthorized("test-user");
+        _authContext.SetPolicies(Permissions.ManageTournamentStatus.PolicyName);
+        SetupSuccessResponse(TournamentDetailResponseFactory.Create(status: TournamentStatus.Scheduled));
+        var cut = _ctx.Render<TournamentDetail>(p => p.Add(x => x.Id, TournamentDetailResponseFactory.ValidId));
+        cut.Find("button.td-hero__truncate-btn").Click();
+
+        // Act — a strict mock with no TruncateTournamentAsync setup would throw if called
+        cut.Find("button.confirm-action-modal-cancel").Click();
+
+        // Assert
+        cut.Markup.ShouldNotContain("Mark tournament truncated?");
+    }
+
+    [Fact(DisplayName = "Should show a success toast and reload with the updated status when truncate succeeds")]
+    public void ConfirmTruncate_ShouldShowSuccessToastAndReload_WhenTruncateSucceeds()
+    {
+        // Arrange
+        _authContext.SetAuthorized("test-user");
+        _authContext.SetPolicies(Permissions.ManageTournamentStatus.PolicyName);
+        SetupSuccessResponseSequence(
+            TournamentDetailResponseFactory.Create(id: TournamentDetailResponseFactory.ValidId, status: TournamentStatus.Scheduled),
+            TournamentDetailResponseFactory.Create(id: TournamentDetailResponseFactory.ValidId, status: TournamentStatus.Truncated));
+
+        using var truncateResponse = new StubApiResponse<object>
+        {
+            IsSuccessStatusCode = true,
+            StatusCode = System.Net.HttpStatusCode.NoContent
+        };
+        _mockApi
+            .Setup(x => x.TruncateTournamentAsync(TournamentDetailResponseFactory.ValidId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(truncateResponse);
+
+        var cut = _ctx.Render<TournamentDetail>(p => p.Add(x => x.Id, TournamentDetailResponseFactory.ValidId));
+        cut.Find("button.td-hero__truncate-btn").Click();
+
+        // Act
+        cut.Find("button.confirm-action-modal-confirm").Click();
+
+        // Assert
+        _toastService.Current.ShouldNotBeNull();
+        _toastService.Current.Severity.ShouldBe(NotifySeverity.Success);
+        cut.Markup.ShouldContain("td-status-badge--truncated");
+        cut.Markup.ShouldNotContain("td-hero__truncate-btn");
+    }
+
+    [Fact(DisplayName = "Should show an error toast and stay scheduled when truncate fails")]
+    public void ConfirmTruncate_ShouldShowErrorToastAndStayScheduled_WhenTruncateFails()
+    {
+        // Arrange
+        _authContext.SetAuthorized("test-user");
+        _authContext.SetPolicies(Permissions.ManageTournamentStatus.PolicyName);
+        SetupSuccessResponse(TournamentDetailResponseFactory.Create(id: TournamentDetailResponseFactory.ValidId, status: TournamentStatus.Scheduled));
+
+        using var truncateResponse = new StubApiResponse<object>
+        {
+            IsSuccessStatusCode = false,
+            StatusCode = System.Net.HttpStatusCode.Conflict
+        };
+        _mockApi
+            .Setup(x => x.TruncateTournamentAsync(TournamentDetailResponseFactory.ValidId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(truncateResponse);
+
+        var cut = _ctx.Render<TournamentDetail>(p => p.Add(x => x.Id, TournamentDetailResponseFactory.ValidId));
+        cut.Find("button.td-hero__truncate-btn").Click();
+
+        // Act
+        cut.Find("button.confirm-action-modal-confirm").Click();
+
+        // Assert
+        _toastService.Current.ShouldNotBeNull();
+        _toastService.Current.Severity.ShouldBe(NotifySeverity.Error);
+        cut.Markup.ShouldNotContain("Mark tournament truncated?");
+        cut.Find("button.td-hero__truncate-btn").ShouldNotBeNull();
+    }
+
+    [Fact(DisplayName = "Should open the cancel confirm dialog when the cancel button is clicked")]
+    public void Click_ShouldOpenCancelConfirmDialog_WhenCancelButtonIsClicked()
+    {
+        // Arrange
+        _authContext.SetAuthorized("test-user");
+        _authContext.SetPolicies(Permissions.ManageTournamentStatus.PolicyName);
+        SetupSuccessResponse(TournamentDetailResponseFactory.Create(status: TournamentStatus.Scheduled));
+        var cut = _ctx.Render<TournamentDetail>(p => p.Add(x => x.Id, TournamentDetailResponseFactory.ValidId));
+
+        // Act
+        cut.Find("button.td-hero__cancel-btn").Click();
+
+        // Assert
+        cut.Markup.ShouldContain("Cancel this tournament?");
+    }
+
+    [Fact(DisplayName = "Should show a success toast and reload with the updated status when cancel succeeds")]
+    public void ConfirmCancel_ShouldShowSuccessToastAndReload_WhenCancelSucceeds()
+    {
+        // Arrange
+        _authContext.SetAuthorized("test-user");
+        _authContext.SetPolicies(Permissions.ManageTournamentStatus.PolicyName);
+        SetupSuccessResponseSequence(
+            TournamentDetailResponseFactory.Create(id: TournamentDetailResponseFactory.ValidId, status: TournamentStatus.Scheduled),
+            TournamentDetailResponseFactory.Create(id: TournamentDetailResponseFactory.ValidId, status: TournamentStatus.Cancelled));
+
+        using var cancelResponse = new StubApiResponse<object>
+        {
+            IsSuccessStatusCode = true,
+            StatusCode = System.Net.HttpStatusCode.NoContent
+        };
+        _mockApi
+            .Setup(x => x.CancelTournamentAsync(TournamentDetailResponseFactory.ValidId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(cancelResponse);
+
+        var cut = _ctx.Render<TournamentDetail>(p => p.Add(x => x.Id, TournamentDetailResponseFactory.ValidId));
+        cut.Find("button.td-hero__cancel-btn").Click();
+
+        // Act
+        cut.Find("button.confirm-action-modal-confirm").Click();
+
+        // Assert
+        _toastService.Current.ShouldNotBeNull();
+        _toastService.Current.Severity.ShouldBe(NotifySeverity.Success);
+        cut.Markup.ShouldContain("td-status-badge--cancelled");
+        cut.Markup.ShouldNotContain("td-hero__cancel-btn");
+    }
+
+    [Fact(DisplayName = "Should show an error toast and stay scheduled when cancel fails")]
+    public void ConfirmCancel_ShouldShowErrorToastAndStayScheduled_WhenCancelFails()
+    {
+        // Arrange
+        _authContext.SetAuthorized("test-user");
+        _authContext.SetPolicies(Permissions.ManageTournamentStatus.PolicyName);
+        SetupSuccessResponse(TournamentDetailResponseFactory.Create(id: TournamentDetailResponseFactory.ValidId, status: TournamentStatus.Scheduled));
+
+        using var cancelResponse = new StubApiResponse<object>
+        {
+            IsSuccessStatusCode = false,
+            StatusCode = System.Net.HttpStatusCode.Conflict
+        };
+        _mockApi
+            .Setup(x => x.CancelTournamentAsync(TournamentDetailResponseFactory.ValidId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(cancelResponse);
+
+        var cut = _ctx.Render<TournamentDetail>(p => p.Add(x => x.Id, TournamentDetailResponseFactory.ValidId));
+        cut.Find("button.td-hero__cancel-btn").Click();
+
+        // Act
+        cut.Find("button.confirm-action-modal-confirm").Click();
+
+        // Assert
+        _toastService.Current.ShouldNotBeNull();
+        _toastService.Current.Severity.ShouldBe(NotifySeverity.Error);
+        cut.Markup.ShouldNotContain("Cancel this tournament?");
+        cut.Find("button.td-hero__cancel-btn").ShouldNotBeNull();
     }
 
     // ── Delete tournament ────────────────────────────────────────────────────
@@ -850,6 +1344,22 @@ tournamentType: TournamentType.Doubles, logoUrl: null));
         _mockApi
             .Setup(x => x.GetTournamentAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(response);
+    }
+
+    // First call (initial load) returns `first`; every call after that returns `second` — used to
+    // verify a mutation's follow-up ReloadTournamentAsync call picks up the mutation's effect.
+    private void SetupSuccessResponseSequence(TournamentDetailResponse first, TournamentDetailResponse second)
+    {
+        var callCount = 0;
+
+        _mockApi
+            .Setup(x => x.GetTournamentAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(() => new StubApiResponse<TournamentDetailResponse>
+            {
+                IsSuccessStatusCode = true,
+                StatusCode = System.Net.HttpStatusCode.OK,
+                Content = callCount++ == 0 ? first : second
+            });
     }
 
     private void SetupFailureResponse(System.Net.HttpStatusCode statusCode)

@@ -25,7 +25,7 @@ internal sealed class UploadTournamentLogoEndpoint(IUploadStagingService staging
             .WithVersionSet("Tournaments")
             .MapToApiVersion(new ApiVersion(1, 0)));
 
-        Policies(PermissionCatalog.CreateTournament.PolicyName);
+        Policies(PermissionCatalog.CanUploadTournamentLogoPolicyName);
 
         Description(description => description
             .WithName("UploadTournamentLogo")

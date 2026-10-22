@@ -13,6 +13,7 @@ using Neba.Api.Features.Tournaments.Domain;
 using Neba.Api.Features.Tournaments.EditTournament;
 using Neba.Api.Features.Tournaments.EvictOilPatternRevealCache;
 using Neba.Api.Features.Tournaments.GetTournament;
+using Neba.Api.Security.Infrastructure.Authorization;
 using Neba.Api.Storage;
 using Neba.TestFactory.Attributes;
 using Neba.TestFactory.BowlingCenters;
@@ -56,11 +57,30 @@ public sealed class EditTournamentCommandHandlerTests(AppDbContextFixture fixtur
     private EditTournamentCommandHandler CreateHandler(
         IBackgroundJobScheduler? backgroundJobScheduler = null,
         TimeProvider? timeProvider = null,
-        AppDbContext? dbContext = null)
+        AppDbContext? dbContext = null,
+        IPermissionDenialReader? permissionDenialReader = null)
     {
         var cache = _serviceProvider.GetRequiredService<IFusionCache>();
         var scheduler = backgroundJobScheduler ?? new Mock<IBackgroundJobScheduler>(MockBehavior.Strict).Object;
-        return new EditTournamentCommandHandler(dbContext ?? _dbContext, cache, scheduler, timeProvider ?? new FakeTimeProvider(Now));
+        return new EditTournamentCommandHandler(
+            dbContext ?? _dbContext,
+            cache,
+            scheduler,
+            timeProvider ?? new FakeTimeProvider(Now),
+            permissionDenialReader ?? DenialReader(denied: false));
+    }
+
+    private static IPermissionDenialReader DenialReader(bool denied, Action? onLookup = null)
+    {
+        var mock = new Mock<IPermissionDenialReader>(MockBehavior.Strict);
+        mock
+            .Setup(r => r.IsDeniedAsync(
+                It.IsAny<Ulid>(),
+                Neba.Api.Contracts.Security.Permissions.EditTournamentLogo,
+                It.IsAny<CancellationToken>()))
+            .Callback(() => onLookup?.Invoke())
+            .ReturnsAsync(denied);
+        return mock.Object;
     }
 
     private async Task<Season> SeedSeasonAsync(DateOnly startDate, DateOnly endDate, CancellationToken ct)
@@ -111,6 +131,7 @@ public sealed class EditTournamentCommandHandlerTests(AppDbContextFixture fixtur
             BowlingCenterId = bowlingCenterId,
             ExternalRegistrationUrl = externalRegistrationUrl,
             Logo = logo,
+            CallerUserId = Ulid.NewUlid(),
             OilPatternId = oilPatternId,
             PatternLengthCategory = patternLengthCategory,
             PatternRatioCategory = patternRatioCategory,
@@ -319,6 +340,44 @@ public sealed class EditTournamentCommandHandlerTests(AppDbContextFixture fixtur
         listAfterEdit.ShouldBe("fresh-list");
     }
 
+    [Theory(DisplayName = "HandleAsync evicts the champions and bowler titles caches only when name, end date or type changes")]
+    [InlineData(true, "fresh-value")]
+    [InlineData(false, "cached-value")]
+    public async Task HandleAsync_ShouldEvictChampionAndTitleCaches_OnlyWhenChampionDetailsChange(bool rename, string expectedValue)
+    {
+        // Arrange
+        var ct = TestContext.Current.CancellationToken;
+        var season = await SeedSeasonAsync(new DateOnly(2025, 1, 1), new DateOnly(2025, 12, 31), ct);
+        var tournament = await SeedTournamentAsync(season, ct);
+
+        var cache = _serviceProvider.GetRequiredService<IFusionCache>();
+        const string championsKey = "edit-tournament-champions-cache-test";
+        const string titlesKey = "edit-tournament-titles-cache-test";
+        await cache.GetOrSetAsync(championsKey, _ => Task.FromResult("cached-value"), tags: ["neba:tournaments:champions"], token: ct);
+        await cache.GetOrSetAsync(titlesKey, _ => Task.FromResult("cached-value"), tags: ["neba:bowlers", "neba:bowlers:any"], token: ct);
+
+        var handler = CreateHandler();
+        var command = ValidCommand(
+            tournament.Id,
+            name: rename ? "Renamed Tournament" : tournament.Name,
+            tournamentType: tournament.TournamentType,
+            startDate: tournament.StartDate,
+            endDate: tournament.EndDate,
+            statsEligible: tournament.StatsEligible,
+            entryFee: tournament.EntryFee,
+            nebaAddedMoney: tournament.NebaAddedMoney);
+
+        // Act
+        var result = await handler.HandleAsync(command, ct);
+
+        // Assert
+        result.IsError.ShouldBeFalse();
+        var champions = await cache.GetOrSetAsync(championsKey, _ => Task.FromResult("fresh-value"), token: ct);
+        champions.ShouldBe(expectedValue);
+        var titles = await cache.GetOrSetAsync(titlesKey, _ => Task.FromResult("fresh-value"), token: ct);
+        titles.ShouldBe(expectedValue);
+    }
+
     [Fact(DisplayName = "HandleAsync invalidates the new season's cache tag when the season changes")]
     public async Task HandleAsync_ShouldInvalidateNewSeasonCacheTag_WhenSeasonChanges()
     {
@@ -344,6 +403,204 @@ public sealed class EditTournamentCommandHandlerTests(AppDbContextFixture fixtur
         listAfterEdit.ShouldBe("fresh-list");
     }
 
+    [Fact(DisplayName = "HandleAsync invalidates the season stats cache tag when stats eligibility changes")]
+    public async Task HandleAsync_ShouldInvalidateSeasonStatsCacheTag_WhenStatsEligibilityChanges()
+    {
+        // Arrange
+        var ct = TestContext.Current.CancellationToken;
+        var season = await SeedSeasonAsync(new DateOnly(2025, 1, 1), new DateOnly(2025, 12, 31), ct);
+        var tournament = await SeedTournamentAsync(season, ct);
+        var cache = _serviceProvider.GetRequiredService<IFusionCache>();
+        var statsCacheKey = $"neba:stats:seasons:{season.Id}:bowlers";
+
+        await cache.GetOrSetAsync(
+            statsCacheKey, _ => Task.FromResult("cached-stats"), tags: [$"neba:stats:seasons:{season.Id}"], token: ct);
+
+        var command = ValidCommand(
+            tournament.Id,
+            startDate: season.StartDate,
+            endDate: season.StartDate,
+            statsEligible: !tournament.StatsEligible);
+
+        // Act
+        await CreateHandler().HandleAsync(command, ct);
+
+        // Assert
+        var statsAfterEdit = await cache.GetOrSetAsync(statsCacheKey, _ => Task.FromResult("fresh-stats"), token: ct);
+        statsAfterEdit.ShouldBe("fresh-stats");
+    }
+
+    [Fact(DisplayName = "HandleAsync keeps the season stats cache when neither eligibility nor season changes")]
+    public async Task HandleAsync_ShouldKeepSeasonStatsCache_WhenEligibilityAndSeasonAreUnchanged()
+    {
+        // Arrange
+        var ct = TestContext.Current.CancellationToken;
+        var season = await SeedSeasonAsync(new DateOnly(2025, 1, 1), new DateOnly(2025, 12, 31), ct);
+        var tournament = await SeedTournamentAsync(season, ct);
+        var cache = _serviceProvider.GetRequiredService<IFusionCache>();
+        var statsCacheKey = $"neba:stats:seasons:{season.Id}:bowlers";
+
+        await cache.GetOrSetAsync(
+            statsCacheKey, _ => Task.FromResult("cached-stats"), tags: [$"neba:stats:seasons:{season.Id}"], token: ct);
+
+        var command = ValidCommand(
+            tournament.Id,
+            name: "Renamed Tournament",
+            startDate: season.StartDate,
+            endDate: season.StartDate,
+            statsEligible: tournament.StatsEligible);
+
+        // Act
+        await CreateHandler().HandleAsync(command, ct);
+
+        // Assert
+        var statsAfterEdit = await cache.GetOrSetAsync(statsCacheKey, _ => Task.FromResult("fresh-stats"), token: ct);
+        statsAfterEdit.ShouldBe("cached-stats");
+    }
+
+    [Fact(DisplayName = "HandleAsync rejects a logo that is not a pending upload or the current logo")]
+    public async Task HandleAsync_ShouldReturnValidationError_WhenLogoWasNeverUploaded()
+    {
+        // Arrange
+        var ct = TestContext.Current.CancellationToken;
+        var season = await SeedSeasonAsync(new DateOnly(2025, 1, 1), new DateOnly(2025, 12, 31), ct);
+        var tournament = TournamentFactory.Create(
+            startDate: season.StartDate,
+            endDate: season.StartDate,
+            seasonId: season.Id);
+        await _dbContext.Tournaments.AddAsync(tournament, ct);
+        await _dbContext.SaveChangesAsync(ct);
+
+        var foreignLogo = StoredFileFactory.Create(container: "documents", path: "bylaws.pdf");
+        var handler = CreateHandler();
+        var command = ValidCommand(tournament.Id, startDate: season.StartDate, endDate: season.StartDate, logo: foreignLogo);
+
+        // Act
+        var result = await handler.HandleAsync(command, ct);
+
+        // Assert
+        result.IsError.ShouldBeTrue();
+        result.FirstError.Code.ShouldBe("Tournament.Logo.NotUploaded");
+    }
+
+    [Fact(DisplayName = "HandleAsync forbids a logo change when the caller is denied the logo permission")]
+    public async Task HandleAsync_ShouldReturnForbidden_WhenLogoChangeDeniedAndLogoChanges()
+    {
+        // Arrange
+        var ct = TestContext.Current.CancellationToken;
+        var season = await SeedSeasonAsync(new DateOnly(2025, 1, 1), new DateOnly(2025, 12, 31), ct);
+        var previousLogo = StoredFileFactory.Create(container: "tournament-logos", path: "old-logo.png");
+        var tournament = TournamentFactory.Create(
+            startDate: season.StartDate,
+            endDate: season.StartDate,
+            seasonId: season.Id,
+            logo: previousLogo);
+        await _dbContext.Tournaments.AddAsync(tournament, ct);
+        await _dbContext.SaveChangesAsync(ct);
+
+        var newLogo = StoredFileFactory.Create(container: "tournament-logos", path: "new-logo.png");
+        await _dbContext.PendingUploads.AddAsync(PendingUploadFactory.Create(container: newLogo.Container, path: newLogo.Path), ct);
+        await _dbContext.SaveChangesAsync(ct);
+
+        var handler = CreateHandler(permissionDenialReader: DenialReader(denied: true));
+        var command = ValidCommand(
+            tournament.Id, startDate: season.StartDate, endDate: season.StartDate, logo: newLogo);
+
+        // Act
+        var result = await handler.HandleAsync(command, ct);
+
+        // Assert
+        result.IsError.ShouldBeTrue();
+        result.FirstError.Code.ShouldBe("Tournament.Logo.ChangeDenied");
+        result.FirstError.Type.ShouldBe(ErrorType.Forbidden);
+        var persisted = await _dbContext.Tournaments.AsNoTracking().SingleAsync(t => t.Id == tournament.Id, ct);
+        persisted.Logo.ShouldNotBeNull();
+        persisted.Logo.Path.ShouldBe(previousLogo.Path);
+    }
+
+    [Fact(DisplayName = "HandleAsync allows other edits when the caller is denied the logo permission and the logo is unchanged")]
+    public async Task HandleAsync_ShouldSucceed_WhenLogoChangeDeniedAndLogoUnchanged()
+    {
+        // Arrange
+        var ct = TestContext.Current.CancellationToken;
+        var season = await SeedSeasonAsync(new DateOnly(2025, 1, 1), new DateOnly(2025, 12, 31), ct);
+        var logo = StoredFileFactory.Create(container: "tournament-logos", path: "same-logo.png");
+        var tournament = TournamentFactory.Create(
+            startDate: season.StartDate,
+            endDate: season.StartDate,
+            seasonId: season.Id,
+            logo: logo);
+        await _dbContext.Tournaments.AddAsync(tournament, ct);
+        await _dbContext.SaveChangesAsync(ct);
+
+        var handler = CreateHandler(permissionDenialReader: DenialReader(denied: true));
+        var command = ValidCommand(
+            tournament.Id,
+            name: "Renamed Tournament",
+            startDate: season.StartDate,
+            endDate: season.StartDate,
+            logo: StoredFileFactory.Create(container: logo.Container, path: logo.Path));
+
+        // Act
+        var result = await handler.HandleAsync(command, ct);
+
+        // Assert
+        result.IsError.ShouldBeFalse();
+    }
+
+    [Fact(DisplayName = "HandleAsync allows no logo before and after when the caller is denied the logo permission")]
+    public async Task HandleAsync_ShouldSucceed_WhenLogoChangeDeniedAndBothLogosAreNull()
+    {
+        // Arrange
+        var ct = TestContext.Current.CancellationToken;
+        var season = await SeedSeasonAsync(new DateOnly(2025, 1, 1), new DateOnly(2025, 12, 31), ct);
+        var tournament = TournamentFactory.Create(
+            startDate: season.StartDate,
+            endDate: season.StartDate,
+            seasonId: season.Id);
+        await _dbContext.Tournaments.AddAsync(tournament, ct);
+        await _dbContext.SaveChangesAsync(ct);
+
+        var handler = CreateHandler(permissionDenialReader: DenialReader(denied: true));
+        var command = ValidCommand(
+            tournament.Id, startDate: season.StartDate, endDate: season.StartDate, logo: null);
+
+        // Act
+        var result = await handler.HandleAsync(command, ct);
+
+        // Assert
+        result.IsError.ShouldBeFalse();
+    }
+
+    [Fact(DisplayName = "HandleAsync does not look up the logo denial when the logo is unchanged")]
+    public async Task HandleAsync_ShouldNotCheckLogoDenial_WhenLogoUnchanged()
+    {
+        // Arrange
+        var ct = TestContext.Current.CancellationToken;
+        var season = await SeedSeasonAsync(new DateOnly(2025, 1, 1), new DateOnly(2025, 12, 31), ct);
+        var tournament = TournamentFactory.Create(
+            startDate: season.StartDate,
+            endDate: season.StartDate,
+            seasonId: season.Id);
+        await _dbContext.Tournaments.AddAsync(tournament, ct);
+        await _dbContext.SaveChangesAsync(ct);
+
+        var lookups = 0;
+        var handler = CreateHandler(permissionDenialReader: DenialReader(denied: true, onLookup: () => lookups++));
+        var command = ValidCommand(
+            tournament.Id,
+            startDate: season.StartDate,
+            endDate: season.StartDate,
+            logo: null);
+
+        // Act
+        var result = await handler.HandleAsync(command, ct);
+
+        // Assert
+        result.IsError.ShouldBeFalse();
+        lookups.ShouldBe(0);
+    }
+
     [Fact(DisplayName = "HandleAsync enqueues a delete job for the previous logo when the logo is replaced")]
     public async Task HandleAsync_ShouldEnqueueDeleteJob_WhenLogoIsReplaced()
     {
@@ -360,6 +617,8 @@ public sealed class EditTournamentCommandHandlerTests(AppDbContextFixture fixtur
         await _dbContext.SaveChangesAsync(ct);
 
         var newLogo = StoredFileFactory.Create(container: "tournament-logos", path: "new-logo.png");
+        await _dbContext.PendingUploads.AddAsync(PendingUploadFactory.Create(container: newLogo.Container, path: newLogo.Path), ct);
+        await _dbContext.SaveChangesAsync(ct);
 
         DeleteTournamentFilesJob? scheduledJob = null;
         var schedulerMock = new Mock<IBackgroundJobScheduler>(MockBehavior.Strict);
@@ -380,6 +639,40 @@ public sealed class EditTournamentCommandHandlerTests(AppDbContextFixture fixtur
         var file = scheduledJob.Files.ShouldHaveSingleItem();
         file.Container.ShouldBe(previousLogo.Container);
         file.Path.ShouldBe(previousLogo.Path);
+    }
+
+    [Fact(DisplayName = "HandleAsync does not enqueue a delete job when only the logo metadata differs from the current logo")]
+    public async Task HandleAsync_ShouldNotEnqueueDeleteJob_WhenOnlyLogoMetadataDiffers()
+    {
+        // Arrange
+        var ct = TestContext.Current.CancellationToken;
+        var season = await SeedSeasonAsync(new DateOnly(2025, 1, 1), new DateOnly(2025, 12, 31), ct);
+        var logo = StoredFileFactory.Create(container: "tournament-logos", path: "same-logo.png", contentType: "image/png", sizeInBytes: 2048);
+        var tournament = TournamentFactory.Create(
+            startDate: season.StartDate,
+            endDate: season.StartDate,
+            seasonId: season.Id,
+            logo: logo);
+        await _dbContext.Tournaments.AddAsync(tournament, ct);
+        await _dbContext.SaveChangesAsync(ct);
+
+        var schedulerMock = new Mock<IBackgroundJobScheduler>(MockBehavior.Strict);
+        var handler = CreateHandler(schedulerMock.Object);
+        var command = ValidCommand(
+            tournament.Id,
+            startDate: season.StartDate,
+            endDate: season.StartDate,
+            logo: StoredFileFactory.Create(container: logo.Container, path: logo.Path, contentType: "image/jpeg", sizeInBytes: 1));
+
+        // Act
+        var result = await handler.HandleAsync(command, ct);
+
+        // Assert
+        result.IsError.ShouldBeFalse();
+        var persisted = await _dbContext.Tournaments.AsNoTracking().SingleAsync(t => t.Id == tournament.Id, ct);
+        persisted.Logo.ShouldNotBeNull();
+        persisted.Logo.ContentType.ShouldBe("image/png");
+        persisted.Logo.SizeInBytes.ShouldBe(2048);
     }
 
     [Fact(DisplayName = "HandleAsync does not enqueue a delete job when the logo is unchanged")]

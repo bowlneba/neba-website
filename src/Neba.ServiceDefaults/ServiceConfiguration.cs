@@ -31,6 +31,8 @@ public static class ServiceConfiguration
         {
             builder.ConfigureOpenTelemetry();
 
+            builder.ConfigureLogEnrichment();
+
             builder.AddDefaultHealthChecks();
 
             builder.Services.AddServiceDiscovery();

@@ -1,5 +1,4 @@
 using Neba.Api.Features.Bowlers.Domain;
-using Neba.Api.Features.Seasons.ListSeasons;
 using Neba.Api.Features.Tournaments.Domain;
 
 namespace Neba.Api.Features.Tournaments.ListTournamentsInSeason;
@@ -22,7 +21,7 @@ public sealed record SeasonTournamentDto
     /// <summary>
     /// Season this tournament belongs to.
     /// </summary>
-    public required SeasonDto Season { get; init; }
+    public required SeasonTournamentSeasonDto Season { get; init; }
 
     /// <summary>
     /// Date the first qualifying squad is held.
@@ -38,6 +37,16 @@ public sealed record SeasonTournamentDto
     /// Whether the tournament is eligible for season-long stats and awards (typically false for non-standard events like match play or special formats).
     /// </summary>
     public required bool StatsEligible { get; init; }
+
+    /// <summary>
+    /// Current lifecycle status of the tournament.
+    /// </summary>
+    public required string Status { get; init; }
+
+    /// <summary>
+    /// Whether this tournament counts toward a NEBA title.
+    /// </summary>
+    public required bool TitleEligible { get; init; }
 
     /// <summary>
     /// Format category of the tournament.

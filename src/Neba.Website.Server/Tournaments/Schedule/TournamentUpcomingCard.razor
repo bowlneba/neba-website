@@ -6,6 +6,8 @@
         <div class="tournament-upcoming-card__logo">
             <img src="@Tournament.DisplayLogoSrc"
                  alt="@Tournament.Name logo" class="tournament-upcoming-card__logo-img" />
+            <TournamentLogoEditButton TournamentName="@Tournament.Name"
+                                      OnClick="@(() => OnEditLogo.InvokeAsync(Tournament))" />
         </div>
 
         <div class="tournament-upcoming-card__content">
@@ -22,12 +24,20 @@
                 }
                 <time>@Tournament.FormatDateRange()</time>
 
-                @if (Tournament.IsUrgent)
+                @if (Tournament.IsCancelled)
+                {
+                    <span aria-hidden="true">·</span>
+                    <span class="tournament-upcoming-card__status-pill tournament-upcoming-card__status-pill--cancelled">
+                        <span class="material-symbols-outlined" aria-hidden="true">block</span>
+                        @Tournament.Status
+                    </span>
+                }
+                else if (Tournament.IsUrgent)
                 {
                     <span class="tournament-upcoming-card__urgency-tag"
-                          aria-label="Starts in @Tournament.DaysUntilStart days">
+                          aria-label="@Tournament.UrgencyAriaLabel">
                         <span class="tournament-upcoming-card__urgency-dot" aria-hidden="true"></span>
-                        In @Tournament.DaysUntilStart days
+                        @Tournament.UrgencyLabel
                     </span>
                 }
             </div>
@@ -51,7 +61,7 @@
             }
 
             <div class="tournament-upcoming-card__chips">
-                <span class="tournament-upcoming-card__chip">@Tournament.TournamentType</span>
+                <TournamentTypeBadge TournamentType="@Tournament.TournamentType" />
                 @if (Tournament.PatternDisplay is not null)
                 {
                     <span class="tournament-upcoming-card__chip">@Tournament.PatternDisplay</span>
@@ -60,6 +70,15 @@
         </div>
 
         <div class="tournament-upcoming-card__actions">
+            @if (Tournament.IsCancelled)
+            {
+                <p class="tournament-upcoming-card__status-note">This event will not be held</p>
+                <a href="/tournaments/@Tournament.Id" class="neba-link tournament-upcoming-card__details-link">
+                    View Details →
+                </a>
+            }
+            else
+            {
             <div class="tournament-upcoming-card__price">
                 @if (Tournament.DisplayPrice.HasValue)
                 {
@@ -123,12 +142,16 @@
                 <a href="/tournaments/@Tournament.Id" class="neba-link tournament-upcoming-card__details-link">
                     View Details →
                 </a>
-            </div>
+            }
         </div>
     </div>
+</div>
 
 @code {
     private static readonly CultureInfo CurrencyCulture = CultureInfo.GetCultureInfo("en-US");
+
+    [Parameter]
+    public EventCallback<SeasonTournamentViewModel> OnEditLogo { get; set; }
 
     [Parameter][EditorRequired]
     public SeasonTournamentViewModel Tournament { get; set; } = default!;

@@ -128,6 +128,24 @@ public sealed class SeasonTournamentViewModelTests
         withoutWinners.HasWinners.ShouldBeFalse();
     }
 
+    [Fact(DisplayName = "Should show the champion badge only when winners exist and the tournament is title eligible")]
+    public void ShowChampionBadge_ShouldBeTrueOnlyWhenWinnersExistAndTitleEligible_WhenEvaluated()
+    {
+        // Arrange
+        var eligibleWithWinners = SeasonTournamentViewModelFactory.Create() with
+        {
+            Winners = ["A Winner"],
+            TitleEligible = true,
+        };
+        var ineligibleWithWinners = eligibleWithWinners with { TitleEligible = false };
+        var eligibleWithoutWinners = eligibleWithWinners with { Winners = [] };
+
+        // Assert
+        eligibleWithWinners.ShowChampionBadge.ShouldBeTrue();
+        ineligibleWithWinners.ShowChampionBadge.ShouldBeFalse();
+        eligibleWithoutWinners.ShowChampionBadge.ShouldBeFalse();
+    }
+
     [Fact(DisplayName = "Should compute merged season and past flags from season and end date")]
     public void SeasonalFlags_ShouldReflectSeasonAndEndDate_WhenEvaluated()
     {
@@ -173,6 +191,26 @@ public sealed class SeasonTournamentViewModelTests
 
         yesterday.DaysUntilStart.ShouldBe(0);
         yesterday.IsUrgent.ShouldBeFalse();
+    }
+
+    [Theory(DisplayName = "Should word the urgency countdown for singular and plural days")]
+    [InlineData(0, "Today", "Starts today")]
+    [InlineData(1, "Tomorrow", "Starts tomorrow")]
+    [InlineData(2, "In 2 days", "Starts in 2 days")]
+    [InlineData(21, "In 21 days", "Starts in 21 days")]
+    public void UrgencyLabels_ShouldReadNaturally_ForDaysUntilStart(int days, string label, string ariaLabel)
+    {
+        // Arrange
+        var start = DateOnly.FromDateTime(DateTime.Today.AddDays(days));
+        var tournament = SeasonTournamentViewModelFactory.Create(startDate: start, endDate: start);
+
+        // Act
+        var actualLabel = tournament.UrgencyLabel;
+        var actualAriaLabel = tournament.UrgencyAriaLabel;
+
+        // Assert
+        actualLabel.ShouldBe(label);
+        actualAriaLabel.ShouldBe(ariaLabel);
     }
 
     [Fact(DisplayName = "Should build location text from host and city combinations")]

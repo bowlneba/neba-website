@@ -73,4 +73,17 @@ public sealed class GetDocumentQueryTests
         // Assert
         bylaws.Cache.Key.ShouldNotBe(constitution.Cache.Key);
     }
+
+    [Theory(DisplayName = "Documents.Tag should return only the specific document tag")]
+    [InlineData("bylaws")]
+    [InlineData("tournament-rules")]
+    public void DocumentsTag_ShouldReturnSpecificDocumentTag(string documentName)
+    {
+        // Act
+        var tag = Neba.Api.Caching.CacheDescriptors.Documents.Tag(documentName);
+
+        // Assert
+        tag.ShouldBe($"neba:document:{documentName}");
+        Neba.Api.Caching.CacheDescriptors.Documents.Content(documentName).Tags.ShouldContain(tag);
+    }
 }

@@ -1,0 +1,22 @@
+<span class="type-pill type-@Modifier">@TournamentType</span>
+
+@code {
+    private static readonly string[] MajorTypes = ["Tournament of Champions", "Invitational", "Masters"];
+
+    [Parameter, EditorRequired]
+    public string TournamentType { get; set; } = default!;
+
+    private string Modifier => ModifierFor(TournamentType);
+
+    internal static string ModifierFor(string tournamentType)
+    {
+        if (MajorTypes.Contains(tournamentType, StringComparer.OrdinalIgnoreCase)) return "major";
+        if (string.Equals(tournamentType, "Baker", StringComparison.OrdinalIgnoreCase)) return "baker";
+        if (string.Equals(tournamentType, "Youth", StringComparison.OrdinalIgnoreCase)) return "youth";
+        if (tournamentType.Contains("double", StringComparison.OrdinalIgnoreCase)) return "doubles";
+        if (tournamentType.Contains("trio", StringComparison.OrdinalIgnoreCase)) return "trios";
+        if (tournamentType.Contains("senior", StringComparison.OrdinalIgnoreCase)) return "senior";
+        if (tournamentType.Contains("women", StringComparison.OrdinalIgnoreCase)) return "women";
+        return "singles";
+    }
+}

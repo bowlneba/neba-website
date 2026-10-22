@@ -43,6 +43,36 @@ public sealed record TournamentDetailViewModel
     public required bool StatsEligible { get; init; }
 
     /// <summary>
+    /// Current lifecycle status of the tournament ("Scheduled", "Completed", "Truncated", "Cancelled").
+    /// </summary>
+    public required string Status { get; init; }
+
+    /// <summary>
+    /// Whether this tournament counts toward a NEBA title.
+    /// </summary>
+    public required bool TitleEligible { get; init; }
+
+    /// <summary>
+    /// True while the tournament hasn't been finalized — the only state Truncate/Cancel actions are available from.
+    /// </summary>
+    public bool IsScheduled => Status == "Scheduled";
+
+    /// <summary>
+    /// True when the tournament ran its full planned format to conclusion.
+    /// </summary>
+    public bool IsCompleted => Status == "Completed";
+
+    /// <summary>
+    /// True when the tournament was held but didn't finish as planned.
+    /// </summary>
+    public bool IsTruncated => Status == "Truncated";
+
+    /// <summary>
+    /// True when no official NEBA event took place under this record.
+    /// </summary>
+    public bool IsCancelled => Status == "Cancelled";
+
+    /// <summary>
     /// Per-bowler entry fee in USD; null if not set.
     /// </summary>
     public decimal? EntryFee { get; init; }
@@ -56,11 +86,6 @@ public sealed record TournamentDetailViewModel
     /// Total added money in USD (sponsor money plus NEBA added money); null if none.
     /// </summary>
     public decimal? AddedMoney { get; init; }
-
-    /// <summary>
-    /// Sponsor-contributed portion of added money in USD; null if none.
-    /// </summary>
-    public decimal? SponsorMoney { get; init; }
 
     /// <summary>
     /// Amount NEBA itself contributed to the prize fund in USD, independent of sponsors.
@@ -155,6 +180,14 @@ public sealed record TournamentDetailViewModel
     public bool HasWinners => Winners.Count > 0;
 
     /// <summary>
+    /// True when the champion callout (trophy pill/banner) should render. A tournament can have
+    /// recorded winners without being title eligible (Truncated, or Completed under the format's
+    /// minimum entries) - those results still appear in the Results table below, just not
+    /// headlined as a championship.
+    /// </summary>
+    public bool ShowChampionBadge => HasWinners && TitleEligible;
+
+    /// <summary>
     /// True when a host bowling center is assigned.
     /// </summary>
     public bool HasHost => BowlingCenterName is not null;
@@ -165,10 +198,28 @@ public sealed record TournamentDetailViewModel
     public bool HasAddedMoney => AddedMoney is > 0;
 
     /// <summary>
-    /// True when added money comes from more than one source (sponsors and NEBA), so a
-    /// sponsor money / NEBA added money breakdown is worth showing beneath the total.
+    /// Contributor lines for the added money breakdown: sponsors with a positive amount, largest first
+    /// (ties A to Z), then NEBA's own contribution last. Empty when no one is attributed.
     /// </summary>
-    public bool HasMultipleMoneySources => SponsorMoney is > 0 && NebaAddedMoney > 0;
+    public IReadOnlyList<AddedMoneyLineViewModel> AddedMoneyBreakdown
+    {
+        get
+        {
+            var lines = Sponsors
+                .Where(sponsor => sponsor.SponsorshipAmount > 0)
+                .OrderByDescending(sponsor => sponsor.SponsorshipAmount)
+                .ThenBy(sponsor => sponsor.Name, StringComparer.OrdinalIgnoreCase)
+                .Select(sponsor => new AddedMoneyLineViewModel { Name = sponsor.Name, Amount = sponsor.SponsorshipAmount })
+                .ToList();
+
+            if (NebaAddedMoney > 0)
+            {
+                lines.Add(new AddedMoneyLineViewModel { Name = "NEBA", Amount = NebaAddedMoney, IsNeba = true });
+            }
+
+            return lines;
+        }
+    }
 
     /// <summary>
     /// Sum of all prize money across results.

@@ -13,7 +13,11 @@ public sealed class DiscordSettingsTests
     public void Validate_WithValidWebhookUrl_Succeeds()
     {
         // Arrange
-        var settings = new DiscordSettings { WebhookUrl = "https://discord.com/api/webhooks/1/token" };
+        var settings = new DiscordSettings
+        {
+            WebhookUrl = "https://discord.com/api/webhooks/1/token",
+            ManualInterventionWebhookUrl = "https://discord.com/api/webhooks/2/token"
+        };
 
         // Act
         var isValid = TryValidate(settings, out var results);
@@ -27,7 +31,11 @@ public sealed class DiscordSettingsTests
     public void Validate_WithEmptyWebhookUrl_Fails()
     {
         // Arrange
-        var settings = new DiscordSettings { WebhookUrl = string.Empty };
+        var settings = new DiscordSettings
+        {
+            WebhookUrl = string.Empty,
+            ManualInterventionWebhookUrl = "https://discord.com/api/webhooks/2/token"
+        };
 
         // Act
         var isValid = TryValidate(settings, out var results);
@@ -35,6 +43,20 @@ public sealed class DiscordSettingsTests
         // Assert
         isValid.ShouldBeFalse();
         results.ShouldContain(r => r.MemberNames.Contains(nameof(DiscordSettings.WebhookUrl)));
+    }
+
+    [Fact(DisplayName = "Missing manual-intervention webhook URL fails validation")]
+    public void Validate_WithEmptyManualInterventionWebhookUrl_Fails()
+    {
+        // Arrange
+        var settings = new DiscordSettings { WebhookUrl = "https://discord.com/api/webhooks/1/token" };
+
+        // Act
+        var isValid = TryValidate(settings, out var results);
+
+        // Assert
+        isValid.ShouldBeFalse();
+        results.ShouldContain(r => r.MemberNames.Contains(nameof(DiscordSettings.ManualInterventionWebhookUrl)));
     }
 
     [Fact(DisplayName = "SectionName should be Discord")]

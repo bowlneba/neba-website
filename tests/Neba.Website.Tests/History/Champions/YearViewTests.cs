@@ -41,6 +41,23 @@ public sealed class YearViewTests : IDisposable
         cut.Markup.ShouldContain("2023");
     }
 
+    [Fact(DisplayName = "Should use singular wording in year header when year has one event and one champion")]
+    public void Render_ShouldUseSingularWording_WhenYearHasOneEventAndChampion()
+    {
+        // Arrange
+        var year = TitlesByYearViewModelFactory.Create(year: 2024, titles: [BowlerTitleViewModelFactory.Create()]);
+
+        // Act
+        var cut = Render([year], []);
+
+        // Assert
+        var meta = cut.Find(".year-head__meta").TextContent;
+        meta.ShouldContain("1 event");
+        meta.ShouldNotContain("events");
+        meta.ShouldContain("1 champion");
+        meta.ShouldNotContain("champions");
+    }
+
     [Fact(DisplayName = "Should give every table header a col scope")]
     public void Render_ShouldGiveEveryTableHeaderColScope()
     {

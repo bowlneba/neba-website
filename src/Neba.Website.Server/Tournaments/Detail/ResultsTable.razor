@@ -20,19 +20,7 @@
                 ? "results-table__row--podium results-table__row--" + (i +
         1).ToString(System.Globalization.CultureInfo.InvariantCulture)
                 : string.Empty;
-            var placeAriaLabel = group.FormattedPlace;
-            if (i == 0)
-            {
-                placeAriaLabel = "1st place";
-            }
-            else if (i == 1)
-            {
-                placeAriaLabel = "2nd place";
-            }
-            else if (i == 2)
-            {
-                placeAriaLabel = "3rd place";
-            }
+            var placeAriaLabel = group.FormattedPlace != "—" ? group.FormattedPlace + " place" : group.FormattedPlace;
             <tr class="@rowClass">
                 <td>
                     <span class="results-table__place" aria-label="@placeAriaLabel">@group.FormattedPlace</span>

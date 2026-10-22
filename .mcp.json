@@ -1,12 +1,5 @@
 {
   "mcpServers": {
-    "aspire": {
-      "command": "aspire",
-      "args": [
-        "agent",
-        "mcp"
-      ]
-    },
     "playwright": {
       "command": "npx",
       "args": [
@@ -29,7 +22,10 @@
     },
     "github": {
       "type": "http",
-      "url": "https://api.githubcopilot.com/mcp/"
+      "url": "https://api.githubcopilot.com/mcp/",
+      "headers": {
+        "Authorization": "Bearer ${GITHUB_MCP_TOKEN}"
+      }
     }
   }
 }

@@ -308,13 +308,16 @@ public sealed class AzureBlobStorageServiceTests : IClassFixture<AzuriteFixture>
     }
 
     [Fact(DisplayName = "DeleteAsync should not throw when file does not exist")]
-    public async Task DeleteAsync_ShouldNotThrow_WhenFileDoesNotExist()
+    public Task DeleteAsync_ShouldNotThrow_WhenFileDoesNotExist()
     {
         // Arrange
         var container = UniqueContainer();
 
         // Act & Assert — should not throw
-        await Should.NotThrowAsync(() => _sut.DeleteAsync(container, "nonexistent.txt", CancellationToken.None));
+        return
+
+        // Act & Assert — should not throw
+        Should.NotThrowAsync(() => _sut.DeleteAsync(container, "nonexistent.txt", CancellationToken.None));
     }
 
     [Fact(DisplayName = "DeleteAsync should remove file so it no longer exists")]

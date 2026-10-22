@@ -77,6 +77,7 @@ public sealed class EditArticleEndpointAuthorizationTests(SecurityDbContextFixtu
             })
             .AddVersioning();
 
+        builder.Services.AddFusionCache();
         builder.AddSecurity();
 
         _app = builder.Build();

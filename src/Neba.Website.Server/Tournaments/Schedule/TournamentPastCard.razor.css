@@ -19,6 +19,10 @@
 }
 
 /* Logo column */
+.tournament-past-card__logo {
+    position: relative;
+}
+
 .tournament-past-card__logo ::deep .tournament-logo-tile {
     height: 160px;
 }
@@ -41,6 +45,37 @@
 .tournament-past-card__sponsor {
     font-weight: 600;
     color: var(--neba-gray-500);
+}
+
+.tournament-past-card__status-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    border-radius: 999px;
+    padding: 0.1rem 0.55rem;
+    font-size: 0.72rem;
+    font-weight: 700;
+    font-family: var(--neba-font-display);
+}
+
+.tournament-past-card__status-pill .material-symbols-outlined {
+    font-size: 0.85rem;
+}
+
+.tournament-past-card__status-pill--truncated {
+    background: color-mix(in srgb, var(--neba-warning) 16%, transparent);
+    color: #92600a;
+}
+
+.tournament-past-card__status-pill--cancelled {
+    background: var(--neba-gray-200);
+    color: var(--neba-gray-500);
+}
+
+.tournament-past-card__status-note {
+    font-size: 0.8rem;
+    color: var(--neba-gray-400);
+    margin: 0;
 }
 
 .tournament-past-card__title {
@@ -79,15 +114,6 @@
     display: flex;
     flex-wrap: wrap;
     gap: 0.375rem;
-}
-
-.tournament-past-card__chip {
-    background: var(--neba-gray-100);
-    color: var(--neba-gray-500);
-    border-radius: 999px;
-    padding: 0.2rem 0.625rem;
-    font-size: 0.75rem;
-    font-weight: 500;
 }
 
 /* Champion column */

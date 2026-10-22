@@ -104,10 +104,12 @@ public sealed class HangfireBackgroundJobSchedulerTelemetryTests : IDisposable
 
     private sealed class SuccessfulJobHandler : IBackgroundJobHandler<SuccessfulJob>
     {
-        public async Task ExecuteAsync(SuccessfulJob _, CancellationToken cancellationToken)
+        public Task ExecuteAsync(SuccessfulJob _, CancellationToken cancellationToken)
         {
             // Simulate some work to ensure duration is measurable
-            await Task.Delay(10, cancellationToken);
+            return
+            // Simulate some work to ensure duration is measurable
+            Task.Delay(10, cancellationToken);
         }
     }
 

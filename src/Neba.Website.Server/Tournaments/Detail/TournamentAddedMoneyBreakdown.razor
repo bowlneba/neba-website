@@ -1,0 +1,21 @@
+@using System.Globalization
+
+@if (Lines.Count > 0)
+{
+    <ul class="tamb">
+        @foreach (var line in Lines)
+        {
+            <li class="@(line.IsNeba ? "tamb__line tamb__line--neba" : "tamb__line")">
+                <span class="tamb__name">@line.Name</span>
+                <span class="tamb__amount">@line.Amount.ToString("C0", CurrencyCulture)</span>
+            </li>
+        }
+    </ul>
+}
+
+@code {
+    private static readonly CultureInfo CurrencyCulture = CultureInfo.GetCultureInfo("en-US");
+
+    [Parameter, EditorRequired]
+    public IReadOnlyList<AddedMoneyLineViewModel> Lines { get; set; } = [];
+}

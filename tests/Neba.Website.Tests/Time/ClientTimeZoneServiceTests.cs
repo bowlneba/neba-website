@@ -153,9 +153,11 @@ public sealed class ClientTimeZoneServiceTests : IAsyncDisposable
     }
 
     [Fact(DisplayName = "DisposeAsync does nothing when no module was ever loaded")]
-    public async Task DisposeAsync_ShouldDoNothing_WhenModuleWasNeverLoaded()
+    public Task DisposeAsync_ShouldDoNothing_WhenModuleWasNeverLoaded()
     {
         // Act & Assert
-        await Should.NotThrowAsync(async () => await _service.DisposeAsync());
+        return
+        // Act & Assert
+        Should.NotThrowAsync(async () => await _service.DisposeAsync());
     }
 }

@@ -101,6 +101,7 @@ public sealed class TournamentOilPatternConfigurationTests
                 tournament.Ignore(x => x.PatternLengthCategory);
                 tournament.Ignore(x => x.PatternRatioCategory);
                 tournament.Ignore(x => x.TournamentType);
+                tournament.Ignore(x => x.Status);
                 tournament.Ignore(x => x.ExternalRegistrationUrl);
 
                 tournament.Property(x => x.Id)
