@@ -9,7 +9,7 @@ test.describe('Home page', () => {
   });
 
   test('renders the page title', async ({ page }) => {
-    await expect(page.locator('h1')).toContainText('New England Bowlers' Association');
+    await expect(page.locator('h1')).toContainText('New England Bowlers Association');
   });
 
   test('displays the tagline', async ({ page }) => {
