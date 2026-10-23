@@ -1462,6 +1462,58 @@ a:focus-visible {
   }
 }
 
+/* Mobile/tablet (<= 1100px): submenus expand inline as an accordion */
+@media (max-width: 1100px) {
+  .neba-nav-link[aria-haspopup] {
+    padding-right: 3rem;
+  }
+
+  .neba-nav-link[aria-haspopup]::before {
+    content: '';
+    position: absolute;
+    right: 1.25rem;
+    top: 50%;
+    width: 0.5rem;
+    height: 0.5rem;
+    border-right: 2px solid currentColor;
+    border-bottom: 2px solid currentColor;
+    transform: translateY(-75%) rotate(45deg);
+    transition: transform 0.2s ease;
+  }
+
+  .neba-nav-item.active > .neba-nav-link[aria-haspopup]::before {
+    transform: translateY(-25%) rotate(-135deg);
+  }
+
+  .neba-nav-item.active > .neba-nav-link[aria-haspopup] {
+    color: var(--neba-blue-700);
+  }
+
+  .neba-dropdown {
+    width: 100%;
+    padding: 0;
+    border-radius: 0;
+    background-color: var(--neba-nav-hover);
+    border-bottom: 1px solid var(--neba-border);
+    transform: none;
+  }
+
+  .neba-dropdown-link {
+    padding: 0.75rem 1rem 0.75rem 1.75rem;
+    font-size: 0.9375rem;
+    white-space: normal;
+  }
+
+  .neba-dropdown-link:hover,
+  .neba-dropdown-link:focus {
+    padding-left: 1.75rem;
+  }
+
+  .neba-dropdown-divider {
+    display: none;
+  }
+}
+
 /* Desktop (> 1100px): Full horizontal menu with fluid spacing */
 /* Fluid spacing is handled by clamp() in the base styles above */
 

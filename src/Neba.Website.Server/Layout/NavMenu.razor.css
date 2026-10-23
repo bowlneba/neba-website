@@ -86,3 +86,19 @@
     position: relative !important;
     top: auto !important;
 }
+
+/* Mobile/tablet: body scroll is locked while the menu is open, so let the
+   menu scroll itself or expanded submenu items fall below the viewport. */
+@media (max-width: 1100px) {
+    .neba-nav-menu.active {
+        max-height: calc(100dvh - 4.5rem);
+        overflow-y: auto;
+        overscroll-behavior: contain;
+        -webkit-overflow-scrolling: touch;
+    }
+}
+
+/* Submenu triggers are links without an href, so they need an explicit pointer. */
+.neba-nav-link[aria-haspopup] {
+    cursor: pointer;
+}
