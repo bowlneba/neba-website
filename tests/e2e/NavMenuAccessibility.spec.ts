@@ -217,3 +217,43 @@ test.describe('NavMenu Keyboard Accessibility', () => {
     });
   });
 });
+test.describe('NavMenu dropdown triggers', () => {
+  test.use({ viewport: { width: 1200, height: 800 } });
+
+  test('triggers are focusable buttons rather than hash links', async ({ page }) => {
+    await page.goto('/');
+    await page.waitForSelector('.neba-navbar');
+
+    const triggers = page.locator('.neba-nav-item[data-action="toggle-dropdown"] > a[aria-haspopup="true"]');
+    const count = await triggers.count();
+    expect(count).toBeGreaterThan(0);
+
+    for (let i = 0; i < count; i++) {
+      await expect(triggers.nth(i)).toHaveAttribute('role', 'button');
+      await expect(triggers.nth(i)).toHaveAttribute('tabindex', '0');
+      expect(await triggers.nth(i).evaluate(el => el.hasAttribute('href'))).toBe(false);
+    }
+  });
+});
+
+test.describe('NavMenu mobile navigation', () => {
+  test.use({ viewport: { width: 375, height: 800 } });
+
+  test('menu closes after following a link', async ({ page }) => {
+    await page.goto('/');
+    await page.waitForSelector('.neba-navbar');
+
+    const menu = page.locator('ul.neba-nav-menu');
+    await expect(async () => {
+      await page.locator('button.neba-menu-toggle').click();
+      await expect(menu).toHaveClass(/active/);
+    }).toPass();
+
+    const historyItem = page.locator('.neba-nav-item[data-action="toggle-dropdown"]', { hasText: 'History' });
+    await historyItem.locator('> a[aria-haspopup="true"]').click();
+    await historyItem.getByRole('menuitem', { name: 'Champions' }).click();
+
+    await expect(page).toHaveURL(/\/history\/champions/);
+    await expect(menu).not.toHaveClass(/active/);
+  });
+});

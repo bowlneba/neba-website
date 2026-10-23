@@ -1,5 +1,6 @@
 using Bunit;
 
+using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -72,5 +73,66 @@ public sealed class NavMenuTests : IDisposable
 
         // Assert
         cut.FindAll("ul.neba-nav-menu.active").ShouldBeEmpty();
+    }
+
+    [Fact(DisplayName = "Navigation should close the open menu when the location changes")]
+    public async Task Navigation_ShouldCloseMenu_WhenLocationChanges()
+    {
+        // Arrange
+        var cut = _ctx.Render<NavMenu>();
+        await cut.InvokeAsync(() => cut.Find("button.neba-menu-toggle").Click());
+        cut.Find("ul.neba-nav-menu.active").ShouldNotBeNull();
+
+        // Act
+        _ctx.Services.GetRequiredService<NavigationManager>().NavigateTo("/stats");
+
+        // Assert
+        await cut.WaitForAssertionAsync(() => cut.FindAll("ul.neba-nav-menu.active").ShouldBeEmpty());
+        cut.FindAll("nav.neba-navbar.menu-open").ShouldBeEmpty();
+    }
+
+    [Fact(DisplayName = "Navigation should leave the menu collapsed when it is already closed")]
+    public void Navigation_ShouldLeaveMenuCollapsed_WhenMenuIsClosed()
+    {
+        // Arrange
+        var cut = _ctx.Render<NavMenu>();
+
+        // Act
+        _ctx.Services.GetRequiredService<NavigationManager>().NavigateTo("/stats");
+
+        // Assert
+        cut.FindAll("ul.neba-nav-menu.active").ShouldBeEmpty();
+    }
+
+    [Fact(DisplayName = "Navigation should not close the menu after the component is disposed")]
+    public async Task Navigation_ShouldNotCloseMenu_WhenComponentIsDisposed()
+    {
+        // Arrange
+        var cut = _ctx.Render<NavMenu>();
+        await cut.InvokeAsync(() => cut.Find("button.neba-menu-toggle").Click());
+        await cut.Instance.DisposeAsync();
+
+        // Act
+        _ctx.Services.GetRequiredService<NavigationManager>().NavigateTo("/stats");
+
+        // Assert
+        cut.Find("ul.neba-nav-menu.active").ShouldNotBeNull();
+    }
+
+    [Fact(DisplayName = "Dropdown triggers should be keyboard-focusable buttons rather than hash links")]
+    public void Render_ShouldRenderDropdownTriggersAsButtons_WhenRendered()
+    {
+        // Act
+        var cut = _ctx.Render<NavMenu>();
+
+        // Assert
+        var triggers = cut.FindAll("[data-action='toggle-dropdown'] > a[aria-haspopup='true']");
+        triggers.Count.ShouldBeGreaterThan(0);
+        foreach (var trigger in triggers)
+        {
+            trigger.GetAttribute("role").ShouldBe("button");
+            trigger.GetAttribute("tabindex").ShouldBe("0");
+            trigger.HasAttribute("href").ShouldBeFalse();
+        }
     }
 }

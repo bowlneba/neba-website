@@ -1,8 +1,5 @@
 using ApexCharts;
 
-using Microsoft.AspNetCore.HttpOverrides;
-using Microsoft.AspNetCore.Rewrite;
-
 using Neba.Website.Server;
 using Neba.Website.Server.Account;
 using Neba.Website.Server.Account.Session;
@@ -38,14 +35,7 @@ builder.Services.AddRazorComponents()
 
 builder.Services.AddOutputCache();
 
-// Trust X-Forwarded-Proto from the Azure ingress so redirects keep the https scheme.
-// Azure ingress addresses vary, so clear the default loopback-only trust lists.
-builder.Services.Configure<ForwardedHeadersOptions>(options =>
-{
-    options.ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto;
-    options.KnownIPNetworks.Clear();
-    options.KnownProxies.Clear();
-});
+builder.Services.AddProxyHeaders();
 
 builder.Services.AddSingleton<IStopwatchProvider, StopwatchProvider>();
 builder.Services.AddScoped<Neba.Website.Server.Notifications.ToastService>();
@@ -57,9 +47,7 @@ builder.Services.AddSingleton<HelpDocumentService>();
 
 var app = builder.Build();
 
-// Must run before static files so www.* redirects to the apex for every path.
-app.UseForwardedHeaders();
-app.UseRewriter(new RewriteOptions().AddRedirectToNonWwwPermanent());
+app.UseProxyHeaders();
 
 if (!app.Environment.IsDevelopment())
 {

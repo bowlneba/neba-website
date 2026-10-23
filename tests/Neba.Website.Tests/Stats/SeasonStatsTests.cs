@@ -429,6 +429,51 @@ public sealed class SeasonStatsTests : IDisposable
             openPointsRace: PointsRaceSeriesViewModelFactory.Bogus(3, seed: 1103));
     }
 
+    [Fact(DisplayName = "Should mark every stats section collapsible with a collapsible header as its first child")]
+    public void Render_ShouldMarkSectionsCollapsible_WhenStatsLoaded()
+    {
+        // Arrange
+        var model = CreateStatsModel(firstRowName: "Alpha Bowler") with
+        {
+            HighAverage = HighAverageRowViewModelFactory.Bogus(3, seed: 1301)
+        };
+        _statsApi.EnqueueResult(model);
+
+        // Act
+        var cut = _ctx.Render<SeasonStatsPage>();
+
+        // Assert
+        var sections = cut.FindAll("section.stats-section");
+        sections.Count.ShouldBeGreaterThan(0);
+        foreach (var section in sections)
+        {
+            section.ClassList.ShouldContain("neba-collapsible");
+            section.FirstElementChild!.ClassList.ShouldContain("neba-collapsible-header");
+        }
+    }
+
+    [Fact(DisplayName = "Should mark every stats table for the responsive phone layout")]
+    public void Render_ShouldMarkTablesResponsive_WhenStatsLoaded()
+    {
+        // Arrange
+        var model = CreateStatsModel(firstRowName: "Alpha Bowler") with
+        {
+            HighAverage = HighAverageRowViewModelFactory.Bogus(3, seed: 1302)
+        };
+        _statsApi.EnqueueResult(model);
+
+        // Act
+        var cut = _ctx.Render<SeasonStatsPage>();
+
+        // Assert
+        var tables = cut.FindAll("table.stats-table");
+        tables.Count.ShouldBeGreaterThan(0);
+        foreach (var table in tables)
+        {
+            table.ClassList.ShouldContain("neba-data-table");
+        }
+    }
+
     private sealed class FakeStatsApiService
         : IStatsApiService
     {
