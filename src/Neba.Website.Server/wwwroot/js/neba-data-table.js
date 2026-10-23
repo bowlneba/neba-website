@@ -50,8 +50,35 @@ export function enhanceTable(table) {
     }
 }
 
+/**
+ * Make the header of a .neba-collapsible section a toggle on phones.
+ * @param {Element} header
+ */
+export function enhanceCollapsible(header) {
+    const section = header.closest('.neba-collapsible');
+    if (!section) {
+        return;
+    }
+
+    if (isMobile()) {
+        header.tabIndex = 0;
+        header.setAttribute('role', 'button');
+        header.setAttribute('aria-expanded', section.hasAttribute('data-collapsed') ? 'false' : 'true');
+    } else {
+        header.removeAttribute('tabindex');
+        header.removeAttribute('role');
+        header.removeAttribute('aria-expanded');
+    }
+}
+
 export function enhanceAll(root = document) {
     root.querySelectorAll('table.neba-data-table').forEach(enhanceTable);
+    root.querySelectorAll('.neba-collapsible > .neba-collapsible-header').forEach(enhanceCollapsible);
+}
+
+function toggleSection(header) {
+    const collapsed = header.closest('.neba-collapsible').toggleAttribute('data-collapsed');
+    header.setAttribute('aria-expanded', collapsed ? 'false' : 'true');
 }
 
 function toggleRow(row) {
@@ -69,6 +96,12 @@ function handleClick(event) {
         return;
     }
 
+    const header = event.target.closest('.neba-collapsible > .neba-collapsible-header');
+    if (header) {
+        toggleSection(header);
+        return;
+    }
+
     const row = event.target.closest('table.neba-data-table tbody tr[data-expandable]');
     if (row) {
         toggleRow(row);
@@ -80,7 +113,14 @@ function handleKeydown(event) {
         return;
     }
 
-    if (event.target instanceof Element && event.target.matches('table.neba-data-table tbody tr[data-expandable]')) {
+    if (!(event.target instanceof Element)) {
+        return;
+    }
+
+    if (event.target.matches('.neba-collapsible > .neba-collapsible-header')) {
+        event.preventDefault();
+        toggleSection(event.target);
+    } else if (event.target.matches('table.neba-data-table tbody tr[data-expandable]')) {
         event.preventDefault();
         toggleRow(event.target);
     }

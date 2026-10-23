@@ -1,4 +1,4 @@
-import { enhanceTable, enhanceAll, init, PRIMARY_COLUMNS } from './neba-data-table.js';
+import { enhanceTable, enhanceAll, enhanceCollapsible, init, PRIMARY_COLUMNS } from './neba-data-table.js';
 
 function setMobile(matches) {
     globalThis.matchMedia = jest.fn().mockReturnValue({
@@ -110,6 +110,51 @@ describe('neba-data-table', () => {
             row.querySelector('td:nth-child(3)').click();
 
             expect(row.hasAttribute('data-open')).toBe(false);
+        });
+    });
+
+    describe('collapsible sections', () => {
+        function renderSection() {
+            document.body.innerHTML = `
+                <section class="neba-collapsible">
+                    <div class="neba-collapsible-header"><h2>Title</h2><button id="action">Action</button></div>
+                    <div id="body">Body</div>
+                </section>`;
+            return document.querySelector('.neba-collapsible-header');
+        }
+
+        test('enhanceCollapsible makes the header a button on mobile only', () => {
+            const header = renderSection();
+
+            enhanceCollapsible(header);
+            expect(header.getAttribute('role')).toBe('button');
+            expect(header.getAttribute('aria-expanded')).toBe('true');
+
+            setMobile(false);
+            enhanceCollapsible(header);
+            expect(header.hasAttribute('role')).toBe(false);
+        });
+
+        test('tapping the header collapses and expands the section', () => {
+            const header = renderSection();
+            enhanceAll();
+            const section = header.parentElement;
+
+            header.querySelector('h2').click();
+            expect(section.hasAttribute('data-collapsed')).toBe(true);
+            expect(header.getAttribute('aria-expanded')).toBe('false');
+
+            header.querySelector('h2').click();
+            expect(section.hasAttribute('data-collapsed')).toBe(false);
+        });
+
+        test('a button inside the header does not toggle the section', () => {
+            renderSection();
+            enhanceAll();
+
+            document.getElementById('action').click();
+
+            expect(document.querySelector('.neba-collapsible').hasAttribute('data-collapsed')).toBe(false);
         });
     });
 });

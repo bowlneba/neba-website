@@ -128,3 +128,47 @@
         transition: none;
     }
 }
+
+/* ==========================================================================
+   Collapsible sections (phones, <= 767px)
+
+   A .neba-collapsible element whose first child is .neba-collapsible-header
+   folds away everything after the header when the header is tapped, so a long
+   page of grids does not need a long scroll. Pairs with .neba-data-table.
+   ========================================================================== */
+
+@media (max-width: 767px) {
+    .neba-collapsible > .neba-collapsible-header {
+        cursor: pointer;
+        user-select: none;
+    }
+
+    .neba-collapsible > .neba-collapsible-header:focus-visible {
+        outline: 2px solid var(--neba-blue-500, #3b82f6);
+        outline-offset: -2px;
+    }
+
+    .neba-collapsible > .neba-collapsible-header::after {
+        content: '';
+        flex-shrink: 0;
+        margin-left: auto;
+        width: 0.5rem;
+        height: 0.5rem;
+        border-right: 2px solid #6b7280;
+        border-bottom: 2px solid #6b7280;
+        transform: translateY(25%) rotate(-135deg);
+        transition: transform 0.2s ease;
+    }
+
+    .neba-collapsible[data-collapsed] > .neba-collapsible-header::after {
+        transform: translateY(-25%) rotate(45deg);
+    }
+
+    .neba-collapsible[data-collapsed] > :not(.neba-collapsible-header) {
+        display: none;
+    }
+
+    .neba-collapsible[data-collapsed] > .neba-collapsible-header {
+        border-bottom: none;
+    }
+}
