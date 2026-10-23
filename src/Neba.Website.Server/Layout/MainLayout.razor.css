@@ -114,6 +114,24 @@
     margin-top: 0.25rem !important;
 }
 
+.footer-right {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+@media (min-width: 768px) {
+    .footer-right {
+        align-items: flex-end;
+    }
+}
+
+.footer-version {
+    margin-top: 0.25rem !important;
+    font-size: 0.75rem;
+    opacity: 0.6;
+}
+
 .footer-powered-by a {
     color: var(--neba-gray-700);
     text-decoration: none;

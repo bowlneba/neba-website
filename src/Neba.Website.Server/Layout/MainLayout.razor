@@ -48,11 +48,14 @@
                         Powered by <a href="https://dotnet.microsoft.com/en-us/" target="_blank" rel="noopener noreferrer">@DotNetFrameworkDescription</a>
                     </p>
                 </div>
-                <nav class="footer-links" aria-label="Footer navigation">
-                    <a href="/privacy">Privacy Policy</a>
-                    <a href="/terms">Terms of Service</a>
-                    <a href="/contact">Contact</a>
-                </nav>
+                <div class="footer-right">
+                    <nav class="footer-links" aria-label="Footer navigation">
+                        <a href="/privacy">Privacy Policy</a>
+                        <a href="/terms">Terms of Service</a>
+                        <a href="/contact">Contact</a>
+                    </nav>
+                    <p class="footer-version">v@(WebsiteVersion)</p>
+                </div>
             </div>
         </div>
     </footer>
@@ -69,6 +72,18 @@
             return false;
 #endif
         }
+    }
+
+    private static string WebsiteVersion { get; } = GetWebsiteVersion();
+
+    private static string GetWebsiteVersion()
+    {
+        var version = typeof(MainLayout).Assembly
+            .GetCustomAttributes(typeof(System.Reflection.AssemblyInformationalVersionAttribute), false)
+            .OfType<System.Reflection.AssemblyInformationalVersionAttribute>().FirstOrDefault()?.InformationalVersion;
+
+        // Strip the "+commit" build metadata the SDK appends.
+        return version?.Split('+')[0] ?? "unknown";
     }
 
     private static string DotNetFrameworkDescription => System.Runtime.InteropServices.RuntimeInformation.FrameworkDescription;
