@@ -13,7 +13,7 @@ internal static class EmailLayout
     /// <param name="websiteBaseUrl">
     /// The public-facing website's base URL, used for the header logo and footer link. Defaults to
     /// production (bowlneba.com); pass the caller's own <c>WebsiteSettings.BaseUrl</c> for any email
-    /// that already carries a website link, so the logo/footer track the same domain (e.g. preview.bowlneba.com).
+    /// that already carries a website link, so the logo/footer track the same domain (e.g. localhost in development).
     /// </param>
     internal static string Wrap(string innerHtml, string websiteBaseUrl = ProductionBaseUrl)
     {
