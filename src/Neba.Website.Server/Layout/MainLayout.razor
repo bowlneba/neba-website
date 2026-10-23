@@ -13,7 +13,7 @@
         <div class="neba-banner-content">
             <div class="banner-logo-container">
                 <a href="/" aria-label="NEBA - Go to home page">
-                    <img src="images/neba-logo.png" alt="New England Bowling Association logo" class="banner-logo" />
+                    <img src="images/neba-logo.png" alt="New England Bowlers' Association logo" class="banner-logo" />
                 </a>
             </div>
             <div class="banner-actions">
@@ -43,9 +43,10 @@
         <div class="footer-content">
             <div class="footer-row">
                 <div class="footer-copyright">
-                    <p>&copy; @DateTime.Now.Year New England Bowling Association. All rights reserved.</p>
+                    <p>&copy; @DateTime.Now.Year New England Bowlers' Association. All rights reserved.</p>
                     <p class="footer-powered-by">
-                        Powered by <a href="https://dotnet.microsoft.com/en-us/" target="_blank" rel="noopener noreferrer">@DotNetFrameworkDescription</a>
+                        Powered by <a href="https://dotnet.microsoft.com/en-us/" target="_blank"
+                                      rel="noopener noreferrer">@DotNetFrameworkDescription</a>
                     </p>
                 </div>
                 <div class="footer-right">
@@ -86,5 +87,6 @@
         return version?.Split('+')[0] ?? "unknown";
     }
 
-    private static string DotNetFrameworkDescription => System.Runtime.InteropServices.RuntimeInformation.FrameworkDescription;
+    private static string DotNetFrameworkDescription =>
+System.Runtime.InteropServices.RuntimeInformation.FrameworkDescription;
 }
