@@ -26,6 +26,7 @@
     table.neba-data-table tbody tr[data-expandable] {
         position: relative;
         cursor: pointer;
+        border-bottom: 1px solid #e5e7eb;
     }
 
     table.neba-data-table tbody tr[data-expandable]:focus-visible {
@@ -42,7 +43,17 @@
         display: none;
     }
 
+    /* The row paints one background, so empty grid cells under the rank match the rest */
+    table.neba-data-table.neba-data-table tbody tr[data-expandable] {
+        background: #f9fafb;
+    }
+
+    table.neba-data-table.neba-data-table tbody tr[data-expandable][data-open] {
+        background: #eff6ff;
+    }
+
     table.neba-data-table.neba-data-table tbody tr[data-expandable] > td {
+        background: transparent !important;
         border-bottom: none;
         padding: 0.75rem 0.5rem !important;
     }
@@ -87,9 +98,11 @@
         display: flex;
         flex-direction: column;
         gap: 0.125rem;
-        padding: 0.25rem 0.5rem 0.75rem !important;
+        padding: 0.375rem 0.5rem 0.625rem !important;
         text-align: left;
+        font-variant-numeric: tabular-nums;
     }
+
 
     table.neba-data-table.neba-data-table tbody tr[data-expandable][data-open] > td[data-secondary]:nth-child(even) {
         grid-column: 2;
@@ -108,10 +121,6 @@
         color: #6b7280;
     }
 
-    /* Separate each row (and its detail) with one rule */
-    table.neba-data-table tbody tr[data-expandable] {
-        border-bottom: 1px solid #f3f4f6;
-    }
 }
 
 @media (max-width: 767px) and (prefers-reduced-motion: reduce) {
