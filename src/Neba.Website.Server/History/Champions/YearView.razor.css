@@ -119,8 +119,73 @@
 }
 
 @media (max-width: 760px) {
-    .year-table .col-month,
-    .year-table .col-type      { width: auto; }
-    .year-table thead th,
-    .year-table tbody td       { padding: 0.7rem 0.85rem; }
+    .year-head {
+        gap: 0.5rem;
+    }
+
+    .year-head__meta {
+        gap: 0.75rem;
+        font-size: 0.78rem;
+    }
+
+    /* Each event becomes a card: month and type on top, champions stacked below */
+    .year-table,
+    .year-table tbody {
+        display: block;
+    }
+
+    .year-table thead {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        overflow: hidden;
+        clip: rect(0, 0, 0, 0);
+    }
+
+    .year-table tbody tr {
+        display: grid;
+        grid-template-columns: auto 1fr;
+        grid-template-areas:
+            "month type"
+            "champs champs";
+        align-items: center;
+        column-gap: 0.75rem;
+        row-gap: 0.4rem;
+        padding: 0.75rem 0;
+        border-bottom: 1px solid var(--neba-gray-100);
+    }
+
+    .year-table tbody tr:last-child {
+        border-bottom: none;
+    }
+
+    .year-table tbody td {
+        display: block;
+        padding: 0;
+        border-bottom: none;
+        width: auto;
+    }
+
+    .year-table .col-month {
+        grid-area: month;
+        font-weight: 600;
+    }
+
+    .year-table .col-type {
+        grid-area: type;
+        width: auto;
+    }
+
+    .year-table .col-champs {
+        grid-area: champs;
+    }
+
+    .champ-link {
+        display: block;
+        padding: 0.15rem 0;
+    }
+
+    .champ-sep {
+        display: none;
+    }
 }
