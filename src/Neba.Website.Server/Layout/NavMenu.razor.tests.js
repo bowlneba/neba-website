@@ -1,6 +1,6 @@
 // NavMenu.razor.tests.js - Unit tests for NavMenu navigation interactivity
 
-import { initialize, dispose, preventBodyScroll, updateAriaCurrent } from './NavMenu.razor.js';
+import { initialize, dispose, preventBodyScroll, updateAriaCurrent, closeAllDropdowns } from './NavMenu.razor.js';
 
 // Helper to mock CSS custom properties
 function mockBreakpoint(value) {
@@ -556,6 +556,24 @@ describe('NavMenu', () => {
             preventBodyScroll(false);
 
             expect(scrollToSpy).toHaveBeenCalledWith(0, 0);
+        });
+    });
+
+    describe('closeAllDropdowns', () => {
+        test('should collapse every open dropdown and reset aria-expanded', () => {
+            document.body.innerHTML = `
+                <ul class="neba-nav-menu">
+                    <li class="neba-nav-item active"><a class="neba-nav-link" aria-haspopup="true" aria-expanded="true">History</a></li>
+                    <li class="neba-nav-item"><a class="neba-nav-link" aria-haspopup="true" aria-expanded="false">About</a></li>
+                </ul>
+            `;
+
+            closeAllDropdowns();
+
+            expect(document.querySelectorAll('.neba-nav-item.active')).toHaveLength(0);
+            document.querySelectorAll('[aria-haspopup]').forEach(link => {
+                expect(link.getAttribute('aria-expanded')).toBe('false');
+            });
         });
     });
 

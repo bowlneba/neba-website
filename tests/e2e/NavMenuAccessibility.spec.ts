@@ -217,6 +217,7 @@ test.describe('NavMenu Keyboard Accessibility', () => {
     });
   });
 });
+
 test.describe('NavMenu dropdown triggers', () => {
   test.use({ viewport: { width: 1200, height: 800 } });
 
@@ -244,9 +245,13 @@ test.describe('NavMenu mobile navigation', () => {
     await page.waitForSelector('.neba-navbar');
 
     const menu = page.locator('ul.neba-nav-menu');
+    // Click only while the menu is closed: before Blazor is interactive the first click does nothing,
+    // and a retried click on an open menu would close it again.
     await expect(async () => {
-      await page.locator('button.neba-menu-toggle').click();
-      await expect(menu).toHaveClass(/active/);
+      if (!(await menu.evaluate(el => el.classList.contains('active')))) {
+        await page.locator('button.neba-menu-toggle').click();
+      }
+      await expect(menu).toHaveClass(/active/, { timeout: 1000 });
     }).toPass();
 
     const historyItem = page.locator('.neba-nav-item[data-action="toggle-dropdown"]', { hasText: 'History' });

@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
+using Microsoft.Extensions.Logging.Testing;
 using Microsoft.JSInterop;
 
 using Neba.TestFactory.Attributes;
@@ -17,12 +18,13 @@ namespace Neba.Website.Tests.Layout;
 public sealed class NavMenuTests : IDisposable
 {
     private readonly BunitContext _ctx;
+    private readonly BunitJSModuleInterop _navMenuModule;
 
     public NavMenuTests()
     {
         _ctx = new BunitContext();
         _ctx.JSInterop.Mode = JSRuntimeMode.Loose;
-        _ctx.JSInterop.SetupModule("./Layout/NavMenu.razor.js");
+        _navMenuModule = _ctx.JSInterop.SetupModule("./Layout/NavMenu.razor.js");
         _ctx.AddAuthorization();
 
         var mockWebHostEnvironment = new Mock<IWebHostEnvironment>(MockBehavior.Strict);
@@ -134,5 +136,40 @@ public sealed class NavMenuTests : IDisposable
             trigger.GetAttribute("tabindex").ShouldBe("0");
             trigger.HasAttribute("href").ShouldBeFalse();
         }
+    }
+
+    [Fact(DisplayName = "CloseMenu should collapse open dropdowns and restore body scrolling through JS")]
+    public async Task CloseMenu_ShouldResetMenuUiThroughJs_WhenCalled()
+    {
+        // Arrange
+        var cut = _ctx.Render<NavMenu>();
+
+        // Act
+        await cut.InvokeAsync(() => cut.Instance.CloseMenu());
+
+        // Assert
+        await cut.WaitForAssertionAsync(() =>
+        {
+            _navMenuModule.VerifyInvoke("preventBodyScroll");
+            _navMenuModule.VerifyInvoke("closeAllDropdowns");
+        });
+    }
+
+    [Fact(DisplayName = "CloseMenu should log and continue when the circuit disconnects during the JS reset")]
+    public async Task CloseMenu_ShouldLogAndContinue_WhenCircuitDisconnects()
+    {
+        // Arrange
+        var logger = new FakeLogger<NavMenu>();
+        _ctx.Services.AddSingleton<ILogger<NavMenu>>(logger);
+        _navMenuModule.SetupVoid("closeAllDropdowns").SetException(new JSDisconnectedException("disconnected"));
+        var cut = _ctx.Render<NavMenu>();
+
+        // Act
+        await cut.InvokeAsync(() => cut.Instance.CloseMenu());
+
+        // Assert
+        await cut.WaitForAssertionAsync(() =>
+            logger.Collector.GetSnapshot().ShouldContain(r => r.Level == LogLevel.Information));
+        cut.FindAll("ul.neba-nav-menu.active").ShouldBeEmpty();
     }
 }

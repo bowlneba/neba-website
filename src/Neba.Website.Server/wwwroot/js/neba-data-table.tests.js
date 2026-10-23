@@ -64,6 +64,32 @@ describe('neba-data-table', () => {
         expect(document.getElementById('r1').hasAttribute('tabindex')).toBe(false);
     });
 
+    test('enhanceTable clears earlier markup when the header drops to the primary columns', () => {
+        const table = renderTable();
+        enhanceTable(table);
+        document.getElementById('r1').setAttribute('data-open', '');
+
+        table.querySelector('thead tr').innerHTML = '<th>Rank</th><th>Name</th><th>Points</th>';
+        enhanceTable(table);
+
+        expect(table.querySelector('[data-secondary]')).toBeNull();
+        expect(table.querySelector('[data-label]')).toBeNull();
+        expect(table.querySelector('[data-expandable]')).toBeNull();
+        expect(document.getElementById('r1').hasAttribute('data-open')).toBe(false);
+        expect(document.getElementById('r1').hasAttribute('tabindex')).toBe(false);
+    });
+
+    test('enhanceTable closes open rows on wider screens', () => {
+        const table = renderTable();
+        enhanceTable(table);
+        document.getElementById('r1').setAttribute('data-open', '');
+
+        setMobile(false);
+        enhanceTable(table);
+
+        expect(document.getElementById('r1').hasAttribute('data-open')).toBe(false);
+    });
+
     describe('interaction', () => {
         beforeAll(() => {
             globalThis.requestAnimationFrame = cb => cb();
@@ -100,6 +126,31 @@ describe('neba-data-table', () => {
             row.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
 
             expect(row.hasAttribute('data-open')).toBe(true);
+        });
+
+        test('the observer enhances a table added after load', async () => {
+            const holder = document.createElement('div');
+            holder.innerHTML = renderTable().outerHTML;
+            document.body.innerHTML = '';
+
+            document.body.appendChild(holder);
+            await Promise.resolve();
+
+            expect(holder.querySelector('td[data-secondary]')).not.toBeNull();
+        });
+
+        test('the observer enhances rows added to an existing table', async () => {
+            const table = renderTable();
+            enhanceTable(table);
+            await Promise.resolve();
+
+            const row = table.querySelector('tbody').appendChild(document.createElement('tr'));
+            row.id = 'late';
+            row.innerHTML = '<td>2nd</td><td>Bo</td><td>8</td><td>2</td><td>$1</td>';
+            await Promise.resolve();
+
+            expect(row.hasAttribute('data-expandable')).toBe(true);
+            expect(row.querySelector('td[data-secondary]').dataset.label).toBe('Entries');
         });
 
         test('rows do not toggle on wider screens', () => {
@@ -146,6 +197,17 @@ describe('neba-data-table', () => {
 
             header.querySelector('h2').click();
             expect(section.hasAttribute('data-collapsed')).toBe(false);
+        });
+
+        test('a collapsed section expands on wider screens', () => {
+            const header = renderSection();
+            enhanceAll();
+            header.querySelector('h2').click();
+
+            setMobile(false);
+            enhanceCollapsible(header);
+
+            expect(header.parentElement.hasAttribute('data-collapsed')).toBe(false);
         });
 
         test('a button inside the header does not toggle the section', () => {

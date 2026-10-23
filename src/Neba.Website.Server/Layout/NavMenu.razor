@@ -134,13 +134,37 @@
     {
         collapseNavMenu = true;
 
-        // Restore body scrolling when menu is closed
-        if (_jsModule is not null)
-        {
-            _ = _jsModule.InvokeVoidAsync("preventBodyScroll", false);
-        }
+        _ = ResetMenuUiAsync();
 
         StateHasChanged();
+    }
+
+    // Restores body scrolling and collapses open dropdowns. Runs unawaited from CloseMenu, so it handles its own
+    // failures: the circuit or module can be gone by the time the call runs.
+    private async Task ResetMenuUiAsync()
+    {
+        if (_jsModule is null)
+        {
+            return;
+        }
+
+        try
+        {
+            await _jsModule.InvokeVoidAsync("preventBodyScroll", false);
+            await _jsModule.InvokeVoidAsync("closeAllDropdowns");
+        }
+        catch (JSDisconnectedException ex)
+        {
+            Logger.LogInformation(ex, "[NavMenu] Menu reset skipped because the circuit disconnected.");
+        }
+        catch (ObjectDisposedException ex)
+        {
+            Logger.LogInformation(ex, "[NavMenu] Menu reset skipped because the component was disposed.");
+        }
+        catch (JSException ex)
+        {
+            Logger.LogWarning(ex, "[NavMenu] Failed to reset the menu.");
+        }
     }
 
     public async ValueTask DisposeAsync()
