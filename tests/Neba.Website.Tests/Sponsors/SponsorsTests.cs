@@ -1,10 +1,12 @@
 using Bunit;
+using Bunit.TestDoubles;
 
 using Microsoft.AspNetCore.Components;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging.Abstractions;
 
 using Neba.Api.Contracts;
+using Neba.Api.Contracts.Security;
 using Neba.Api.Contracts.Sponsors;
 using Neba.Api.Features.Sponsors.Domain;
 using Neba.TestFactory.Attributes;
@@ -25,6 +27,7 @@ public sealed class SponsorsTests : IDisposable
 {
     private readonly BunitContext _ctx;
     private readonly Mock<ISponsorsApi> _mockApi;
+    private readonly BunitAuthorizationContext _authContext;
 
     public SponsorsTests()
     {
@@ -36,7 +39,7 @@ public sealed class SponsorsTests : IDisposable
 
         _ctx = new BunitContext();
         _ctx.JSInterop.Mode = JSRuntimeMode.Loose;
-        _ctx.AddAuthorization();
+        _authContext = _ctx.AddAuthorization();
 
         _ctx.Services.AddSingleton(_mockApi.Object);
         _ctx.Services.AddSingleton(sp => new ApiExecutor(mockStopwatch.Object, sp.GetRequiredService<NavigationManager>(), NullLogger<ApiExecutor>.Instance));
@@ -307,6 +310,87 @@ public sealed class SponsorsTests : IDisposable
         // Assert
         cut.Markup.ShouldContain("https://cdn.example.com/acme-logo.png");
         cut.Markup.ShouldNotContain("/images/neba-logo.png");
+    }
+
+    // ── Sponsor tile logos ───────────────────────────────────────────────────
+
+    [Fact(DisplayName = "Should show logo image on association sponsor tile when sponsor has logo URL")]
+    public void Render_ShouldShowLogoImage_WhenAssociationSponsorHasLogoUrl()
+    {
+        // Arrange
+        var sponsor = SponsorSummaryResponseFactory.Create(
+            name: "Assoc Co",
+            logoUrl: new Uri("https://cdn.example.com/assoc-logo.png"),
+            tier: SponsorTier.Standard);
+        SetupSuccessResponse([sponsor]);
+
+        // Act
+        var cut = _ctx.Render<SponsorsPage>();
+
+        // Assert
+        var img = cut.Find(".sponsor-tile-link img");
+        img.GetAttribute("src").ShouldBe("https://cdn.example.com/assoc-logo.png");
+        img.GetAttribute("alt").ShouldBe("Assoc Co logo");
+        cut.Find(".sponsor-tile-link").InnerHtml.ShouldNotContain("storefront");
+    }
+
+    [Fact(DisplayName = "Should show storefront icon on association sponsor tile when sponsor has no logo URL")]
+    public void Render_ShouldShowStorefrontIcon_WhenAssociationSponsorHasNoLogoUrl()
+    {
+        // Arrange
+        var sponsor = SponsorSummaryResponseFactory.Create(logoUrl: null, tier: SponsorTier.Standard);
+        SetupSuccessResponse([sponsor]);
+
+        // Act
+        var cut = _ctx.Render<SponsorsPage>();
+
+        // Assert
+        var link = cut.Find(".sponsor-tile-link");
+        link.InnerHtml.ShouldContain("storefront");
+        link.QuerySelector("img").ShouldBeNull();
+    }
+
+    [Fact(DisplayName = "Should show logo image on inactive sponsor tile when sponsor has logo URL")]
+    public void Render_ShouldShowLogoImage_WhenInactiveSponsorHasLogoUrl()
+    {
+        // Arrange
+        _authContext.SetAuthorized("test-user");
+        _authContext.SetPolicies(Permissions.CanManageSponsorsPolicyName);
+        var sponsor = SponsorSummaryResponseFactory.Create(
+            name: "Old Co",
+            logoUrl: new Uri("https://cdn.example.com/old-logo.png"),
+            isCurrentSponsor: false,
+            tier: SponsorTier.Standard);
+        SetupSuccessResponse([sponsor]);
+
+        // Act
+        var cut = _ctx.Render<SponsorsPage>();
+
+        // Assert
+        var img = cut.Find(".sponsor-tile-link img");
+        img.GetAttribute("src").ShouldBe("https://cdn.example.com/old-logo.png");
+        img.GetAttribute("alt").ShouldBe("Old Co logo");
+    }
+
+    [Fact(DisplayName = "Should show storefront icon on inactive sponsor tile when sponsor has no logo URL")]
+    public void Render_ShouldShowStorefrontIcon_WhenInactiveSponsorHasNoLogoUrl()
+    {
+        // Arrange
+        _authContext.SetAuthorized("test-user");
+        _authContext.SetPolicies(Permissions.CanManageSponsorsPolicyName);
+        var sponsor = SponsorSummaryResponseFactory.Create(
+            logoUrl: null,
+            isCurrentSponsor: false,
+            tier: SponsorTier.Standard);
+        SetupSuccessResponse([sponsor]);
+
+        // Act
+        var cut = _ctx.Render<SponsorsPage>();
+
+        // Assert
+        var link = cut.Find(".sponsor-tile-link");
+        link.InnerHtml.ShouldContain("storefront");
+        link.QuerySelector("img").ShouldBeNull();
     }
 
     // ── Premier partners ─────────────────────────────────────────────────────
