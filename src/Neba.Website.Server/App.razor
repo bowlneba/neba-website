@@ -23,6 +23,7 @@
     <!-- NEBA Theme (after Tailwind so it can override) -->
     <link rel="stylesheet" href="@Assets["neba_theme.css"]" />
     <link rel="stylesheet" href="@Assets["app.css"]" />
+    <link rel="stylesheet" href="@Assets["neba-data-table.css"]" />
     <link rel="stylesheet" href="@Assets["Neba.Website.Server.styles.css"]" />
     <ImportMap />
     <link rel="icon" type="image/png" href="images/neba-logo.png" />
@@ -42,6 +43,10 @@
 <body>
     <Routes />
     <script src="@Assets["_framework/blazor.web.js"]"></script>
+    <script type="module">
+        import { init } from '/@Assets["js/neba-data-table.js"]';
+        init();
+    </script>
 
     <div id="blazor-error-ui" data-nosnippet role="alert" aria-live="assertive">
         <div class="error-content">

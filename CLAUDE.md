@@ -192,6 +192,7 @@ Detailed write-ups live in `docs/learnings/`. Read the matching file before work
 - Admin list pages add items through `FabCreateButton`.
 - Every routable page has `<PageTitle>` (`{Page} - BowlNEBA`) and `@rendermode InteractiveServer` (not `Login`/`Logout`).
 - Ordinals and plurals in the UI use Humanizer (`Ordinalize`, `ToQuantity`), not hand-written ternaries or "th" suffixes (ADR-0010). UI project only; the API returns raw numbers.
+- Tables with more than three columns get `class="neba-data-table"` for the phone layout (columns 1-3 primary, the rest expand on tap); no per-cell markup.
 - Razor `@code`: no `< N =>` patterns, no `$"{x}"` interpolation, `@` on component attribute values, `[Parameter, EditorRequired]` instead of `required`.
 - `HttpClient` handlers never inject scoped services; reach circuit state through `CircuitServicesAccessor`. In a circuit, `HttpContext` holds the cookie from when the connection opened.
 

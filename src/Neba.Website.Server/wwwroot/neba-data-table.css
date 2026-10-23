@@ -1,0 +1,121 @@
+/* ==========================================================================
+   Responsive data table (phones, <= 767px)
+
+   Opt in with class="neba-data-table" on a <table> that has a <thead>.
+   Convention: column 1 is a short identifier (rank, year), column 2 is the
+   name, column 3 is the key value. Every column after the third is secondary:
+   hidden on phones until the row is tapped. Behavior lives in
+   js/neba-data-table.js, which labels the secondary cells from the headers.
+   Wider screens render the table unchanged.
+   ========================================================================== */
+
+@media (max-width: 767px) {
+    table.neba-data-table,
+    table.neba-data-table thead,
+    table.neba-data-table tbody {
+        display: block;
+    }
+
+    table.neba-data-table thead tr,
+    table.neba-data-table tbody tr[data-expandable] {
+        display: grid;
+        grid-template-columns: 3rem minmax(0, 1fr) minmax(0, 1fr) auto 1.75rem;
+        align-items: center;
+    }
+
+    table.neba-data-table tbody tr[data-expandable] {
+        position: relative;
+        cursor: pointer;
+    }
+
+    table.neba-data-table tbody tr[data-expandable]:focus-visible {
+        outline: 2px solid var(--neba-blue-500, #3b82f6);
+        outline-offset: -2px;
+    }
+
+    /* Primary columns */
+    table.neba-data-table.neba-data-table :is(thead th, tbody td):nth-child(1) { grid-column: 1; }
+    table.neba-data-table.neba-data-table :is(thead th, tbody td):nth-child(2) { grid-column: 2 / 4; }
+    table.neba-data-table.neba-data-table :is(thead th, tbody td):nth-child(3) { grid-column: 4; text-align: right; }
+
+    table.neba-data-table.neba-data-table thead th[data-secondary] {
+        display: none;
+    }
+
+    table.neba-data-table.neba-data-table tbody tr[data-expandable] > td {
+        border-bottom: none;
+        padding: 0.75rem 0.5rem !important;
+    }
+
+    table.neba-data-table.neba-data-table tbody tr[data-expandable] > td:nth-child(1) {
+        padding-left: 1rem !important;
+    }
+
+    table.neba-data-table.neba-data-table thead th {
+        padding: 0.5rem 0.5rem !important;
+    }
+
+    table.neba-data-table.neba-data-table thead th:nth-child(1) {
+        padding-left: 1rem !important;
+    }
+
+    /* Chevron */
+    table.neba-data-table tbody tr[data-expandable]::after {
+        content: '';
+        grid-column: 5;
+        grid-row: 1;
+        justify-self: center;
+        width: 0.5rem;
+        height: 0.5rem;
+        border-right: 2px solid currentColor;
+        border-bottom: 2px solid currentColor;
+        color: #6b7280;
+        transform: translateY(-25%) rotate(45deg);
+        transition: transform 0.2s ease;
+    }
+
+    table.neba-data-table tbody tr[data-expandable][data-open]::after {
+        transform: translateY(25%) rotate(-135deg);
+    }
+
+    /* Secondary columns: hidden until the row opens, then two label/value pairs per line */
+    table.neba-data-table.neba-data-table tbody tr[data-expandable] > td[data-secondary] {
+        display: none;
+    }
+
+    table.neba-data-table.neba-data-table tbody tr[data-expandable][data-open] > td[data-secondary] {
+        display: flex;
+        flex-direction: column;
+        gap: 0.125rem;
+        padding: 0.25rem 0.5rem 0.75rem !important;
+        text-align: left;
+    }
+
+    table.neba-data-table.neba-data-table tbody tr[data-expandable][data-open] > td[data-secondary]:nth-child(even) {
+        grid-column: 2;
+    }
+
+    table.neba-data-table.neba-data-table tbody tr[data-expandable][data-open] > td[data-secondary]:nth-child(odd) {
+        grid-column: 3 / 5;
+    }
+
+    table.neba-data-table tbody tr[data-expandable][data-open] > td[data-secondary]::before {
+        content: attr(data-label);
+        font-size: 0.6875rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        color: #6b7280;
+    }
+
+    /* Separate each row (and its detail) with one rule */
+    table.neba-data-table tbody tr[data-expandable] {
+        border-bottom: 1px solid #f3f4f6;
+    }
+}
+
+@media (max-width: 767px) and (prefers-reduced-motion: reduce) {
+    table.neba-data-table tbody tr[data-expandable]::after {
+        transition: none;
+    }
+}

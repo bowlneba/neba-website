@@ -88,7 +88,7 @@
                                 </button>
                             </div>
                             <div class="stats-table-wrapper">
-                                <table class="stats-table">
+                                <table class="stats-table neba-data-table">
                                     <thead>
                                         <tr>
                                             <th scope="col">Rank</th>
@@ -144,7 +144,7 @@
                                     }
                                 </div>
                                 <div class="stats-table-wrapper">
-                                    <table class="stats-table">
+                                    <table class="stats-table neba-data-table">
                                         <thead>
                                             <tr>
                                                 <th scope="col">Rank</th>
@@ -191,7 +191,7 @@
                                         <h2 class="stats-section-title">High Block</h2>
                                     </div>
                                     <div class="stats-table-wrapper">
-                                        <table class="stats-table">
+                                        <table class="stats-table neba-data-table">
                                             <thead>
                                                 <tr>
                                                     <th scope="col">Rank</th>
@@ -239,7 +239,7 @@
                                                         }
                                                     </div>
                                                     <div class="stats-table-wrapper">
-                                                        <table class="stats-table">
+                                                        <table class="stats-table neba-data-table">
                                                             <thead>
                                                                 <tr>
                                                                     <th scope="col">Rank</th>
@@ -287,7 +287,7 @@
                                                                 <h2 class="stats-section-title">Match Play Appearances</h2>
                                                             </div>
                                                             <div class="stats-table-wrapper">
-                                                                <table class="stats-table">
+                                                                <table class="stats-table neba-data-table">
                                                                     <thead>
                                                                         <tr>
                                                                             <th scope="col">Rank</th>
@@ -334,7 +334,7 @@
                                                                     </div>
                                                                     <p class="stats-section-note">Record includes Baker team finals wins and losses, but Baker games do not count toward Games or MP Avg.</p>
                                                                     <div class="stats-table-wrapper">
-                                                                        <table class="stats-table">
+                                                                        <table class="stats-table neba-data-table">
                                                                             <thead>
                                                                                 <tr>
                                                                                     <th scope="col">Rank</th>
@@ -393,7 +393,7 @@
                                                                         }
                                                                     </div>
                                                                     <div class="stats-table-wrapper">
-                                                                        <table class="stats-table">
+                                                                        <table class="stats-table neba-data-table">
                                                                             <thead>
                                                                                 <tr>
                                                                                     <th scope="col">Rank</th>
@@ -440,7 +440,7 @@
                                                                             }
                                                                         </div>
                                                                         <div class="stats-table-wrapper">
-                                                                            <table class="stats-table">
+                                                                            <table class="stats-table neba-data-table">
                                                                                 <thead>
                                                                                     <tr>
                                                                                         <th scope="col">Rank</th>
@@ -487,7 +487,7 @@
                                                                                 }
                                                                             </div>
                                                                             <div class="stats-table-wrapper">
-                                                                                <table class="stats-table">
+                                                                                <table class="stats-table neba-data-table">
                                                                                     <thead>
                                                                                         <tr>
                                                                                             <th scope="col">Rank</th>
@@ -530,7 +530,7 @@
                                                                                     <h2 class="stats-section-title">Average Finish</h2>
                                                                                 </div>
                                                                                 <div class="stats-table-wrapper">
-                                                                                    <table class="stats-table">
+                                                                                    <table class="stats-table neba-data-table">
                                                                                         <thead>
                                                                                             <tr>
                                                                                                 <th scope="col">Rank</th>
@@ -984,7 +984,7 @@ BoyStandingsSections()
 
     private string ModalMaxWidth => _modalWide ? "1120px" : "720px";
 
-    private RenderFragment RenderBoyStandingsTable(IReadOnlyCollection<BowlerOfTheYearStandingRowViewModel> rows) => @<table class="stats-table">
+    private RenderFragment RenderBoyStandingsTable(IReadOnlyCollection<BowlerOfTheYearStandingRowViewModel> rows) => @<table class="stats-table neba-data-table">
         <thead>
             <tr>
                 <th scope="col">Rank</th>
@@ -1014,7 +1014,7 @@ BoyStandingsSections()
         </tbody>
     </table>;
 
-    private RenderFragment RenderHighAverageTable(IReadOnlyCollection<HighAverageRowViewModel> rows) => @<table class="stats-table">
+    private RenderFragment RenderHighAverageTable(IReadOnlyCollection<HighAverageRowViewModel> rows) => @<table class="stats-table neba-data-table">
         <thead>
             <tr>
                 <th scope="col">Rank</th>
@@ -1040,7 +1040,7 @@ BoyStandingsSections()
         </tbody>
     </table>;
 
-    private RenderFragment RenderHighBlockTable(IReadOnlyCollection<HighBlockRowViewModel> rows) => @<table class="stats-table">
+    private RenderFragment RenderHighBlockTable(IReadOnlyCollection<HighBlockRowViewModel> rows) => @<table class="stats-table neba-data-table">
         <thead>
             <tr>
                 <th scope="col">Rank</th>
@@ -1062,7 +1062,7 @@ BoyStandingsSections()
         </tbody>
     </table>;
 
-    private RenderFragment RenderMatchPlayAverageTable(IReadOnlyCollection<MatchPlayAverageRowViewModel> rows) => @<table class="stats-table">
+    private RenderFragment RenderMatchPlayAverageTable(IReadOnlyCollection<MatchPlayAverageRowViewModel> rows) => @<table class="stats-table neba-data-table">
         <thead>
             <tr>
                 <th scope="col">Rank</th>
@@ -1090,7 +1090,7 @@ BoyStandingsSections()
         </tbody>
     </table>;
 
-    private RenderFragment RenderMatchPlayRecordTable(IReadOnlyCollection<MatchPlayRecordRowViewModel> rows) => @<table class="stats-table">
+    private RenderFragment RenderMatchPlayRecordTable(IReadOnlyCollection<MatchPlayRecordRowViewModel> rows) => @<table class="stats-table neba-data-table">
         <thead>
             <tr>
                 <th scope="col">Rank</th>
@@ -1118,7 +1118,7 @@ BoyStandingsSections()
         </tbody>
     </table>;
 
-    private RenderFragment RenderMatchPlayAppearancesTable(IReadOnlyCollection<MatchPlayAppearancesRowViewModel> rows) => @<table class="stats-table">
+    private RenderFragment RenderMatchPlayAppearancesTable(IReadOnlyCollection<MatchPlayAppearancesRowViewModel> rows) => @<table class="stats-table neba-data-table">
         <thead>
             <tr>
                 <th scope="col">Rank</th>
@@ -1142,7 +1142,7 @@ BoyStandingsSections()
         </tbody>
     </table>;
 
-    private RenderFragment RenderPointsPerEntryTable(IReadOnlyCollection<PointsPerEntryRowViewModel> rows) => @<table class="stats-table">
+    private RenderFragment RenderPointsPerEntryTable(IReadOnlyCollection<PointsPerEntryRowViewModel> rows) => @<table class="stats-table neba-data-table">
         <thead>
             <tr>
                 <th scope="col">Rank</th>
@@ -1166,7 +1166,7 @@ BoyStandingsSections()
         </tbody>
     </table>;
 
-    private RenderFragment RenderPointsPerTournamentTable(IReadOnlyCollection<PointsPerTournamentRowViewModel> rows) => @<table class="stats-table">
+    private RenderFragment RenderPointsPerTournamentTable(IReadOnlyCollection<PointsPerTournamentRowViewModel> rows) => @<table class="stats-table neba-data-table">
         <thead>
             <tr>
                 <th scope="col">Rank</th>
@@ -1190,7 +1190,7 @@ BoyStandingsSections()
         </tbody>
     </table>;
 
-    private RenderFragment RenderFinalsPerEntryTable(IReadOnlyCollection<FinalsPerEntryRowViewModel> rows) => @<table class="stats-table">
+    private RenderFragment RenderFinalsPerEntryTable(IReadOnlyCollection<FinalsPerEntryRowViewModel> rows) => @<table class="stats-table neba-data-table">
         <thead>
             <tr>
                 <th scope="col">Rank</th>
@@ -1214,7 +1214,7 @@ BoyStandingsSections()
         </tbody>
     </table>;
 
-    private RenderFragment RenderAverageFinishTable(IReadOnlyCollection<AverageFinishRowViewModel> rows) => @<table class="stats-table">
+    private RenderFragment RenderAverageFinishTable(IReadOnlyCollection<AverageFinishRowViewModel> rows) => @<table class="stats-table neba-data-table">
         <thead>
             <tr>
                 <th scope="col">Rank</th>
