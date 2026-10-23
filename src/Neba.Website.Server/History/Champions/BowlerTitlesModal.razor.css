@@ -216,3 +216,48 @@
     .modal-summary-inline { display: none; }
     .modal-summary-card   { display: flex; }
 }
+
+/* Phone: each title becomes a card (number, tournament, then date and type) so nothing scrolls sideways */
+@media (max-width: 640px) {
+    .titles-table,
+    .titles-table tbody {
+        display: block;
+    }
+
+    .titles-table thead {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        overflow: hidden;
+        clip: rect(0, 0, 0, 0);
+    }
+
+    .titles-table tbody tr {
+        display: grid;
+        grid-template-columns: 1.75rem 1fr auto;
+        grid-template-areas:
+            "num tourn tourn"
+            "num date  type";
+        align-items: center;
+        column-gap: 0.75rem;
+        row-gap: 0.35rem;
+        padding: 0.75rem 0;
+        border-bottom: 1px solid var(--neba-gray-100);
+    }
+
+    .titles-table tbody tr:last-child {
+        border-bottom: none;
+    }
+
+    .titles-table tbody td {
+        display: block;
+        padding: 0;
+        border-bottom: none;
+        width: auto;
+    }
+
+    .titles-table .tt-num   { grid-area: num; align-self: start; }
+    .titles-table .tt-tourn { grid-area: tourn; overflow-wrap: anywhere; }
+    .titles-table .tt-date  { grid-area: date; font-size: 0.8125rem; }
+    .titles-table .tt-type  { grid-area: type; justify-self: end; }
+}
