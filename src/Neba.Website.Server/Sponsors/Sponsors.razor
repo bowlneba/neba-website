@@ -227,10 +227,22 @@
                     {
                         <div class="sponsor-tile neba-card flex flex-col items-center text-center p-4 gap-2 relative">
                             <a href="/sponsors/@sponsor.Slug" class="sponsor-tile-link" aria-label="@sponsor.Name">
-                                <span class="material-symbols-outlined text-[var(--neba-blue-500)]"
-                                      style="font-size: 2rem;" aria-hidden="true">
-                                    storefront
-                                </span>
+                                @if (sponsor.LogoUrl is not null)
+                                {
+                                    <div class="h-10 w-full flex items-center justify-center">
+                                        <img src="@sponsor.LogoUrl.AbsoluteUri"
+                                             alt="@sponsor.Name logo"
+                                             class="max-h-10 max-w-full object-contain"
+                                             loading="lazy" decoding="async" />
+                                    </div>
+                                }
+                                else
+                                {
+                                    <span class="material-symbols-outlined text-[var(--neba-blue-500)]"
+                                          style="font-size: 2rem;" aria-hidden="true">
+                                        storefront
+                                    </span>
+                                }
                                 <div class="text-xs font-medium uppercase tracking-wide text-[var(--neba-gray-500)]">
                                     @sponsor.Category
                                 </div>
@@ -284,10 +296,22 @@
                                         </AuthorizeView>
                                     </div>
                                     <a href="/sponsors/@sponsor.Slug" class="sponsor-tile-link" aria-label="@sponsor.Name (Inactive)">
-                                        <span class="material-symbols-outlined text-[var(--neba-gray-400)]"
-                                              style="font-size: 2rem;" aria-hidden="true">
-                                            storefront
-                                        </span>
+                                        @if (sponsor.LogoUrl is not null)
+                                        {
+                                            <div class="h-10 w-full flex items-center justify-center">
+                                                <img src="@sponsor.LogoUrl.AbsoluteUri"
+                                                     alt="@sponsor.Name logo"
+                                                     class="max-h-10 max-w-full object-contain"
+                                                     loading="lazy" decoding="async" />
+                                            </div>
+                                        }
+                                        else
+                                        {
+                                            <span class="material-symbols-outlined text-[var(--neba-gray-400)]"
+                                                  style="font-size: 2rem;" aria-hidden="true">
+                                                storefront
+                                            </span>
+                                        }
                                         <div class="text-xs font-medium uppercase tracking-wide text-[var(--neba-gray-500)]">
                                             @sponsor.Category
                                         </div>
