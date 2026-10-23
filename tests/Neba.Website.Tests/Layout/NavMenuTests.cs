@@ -172,4 +172,70 @@ public sealed class NavMenuTests : IDisposable
             logger.Collector.GetSnapshot().ShouldContain(r => r.Level == LogLevel.Information));
         cut.FindAll("ul.neba-nav-menu.active").ShouldBeEmpty();
     }
+
+    [Fact(DisplayName = "CloseMenu should log and continue when the component is disposed during the JS reset")]
+    public async Task CloseMenu_ShouldLogAndContinue_WhenComponentIsDisposed()
+    {
+        // Arrange
+        var logger = new FakeLogger<NavMenu>();
+        _ctx.Services.AddSingleton<ILogger<NavMenu>>(logger);
+        _navMenuModule.SetupVoid("closeAllDropdowns").SetException(new ObjectDisposedException("module"));
+        var cut = _ctx.Render<NavMenu>();
+
+        // Act
+        await cut.InvokeAsync(() => cut.Instance.CloseMenu());
+
+        // Assert
+        await cut.WaitForAssertionAsync(() =>
+            logger.Collector.GetSnapshot().ShouldContain(r => r.Level == LogLevel.Information));
+    }
+
+    [Fact(DisplayName = "CloseMenu should log a warning when the JS reset fails")]
+    public async Task CloseMenu_ShouldLogWarning_WhenJsResetFails()
+    {
+        // Arrange
+        var logger = new FakeLogger<NavMenu>();
+        _ctx.Services.AddSingleton<ILogger<NavMenu>>(logger);
+        _navMenuModule.SetupVoid("closeAllDropdowns").SetException(new JSException("failed"));
+        var cut = _ctx.Render<NavMenu>();
+
+        // Act
+        await cut.InvokeAsync(() => cut.Instance.CloseMenu());
+
+        // Assert
+        await cut.WaitForAssertionAsync(() =>
+            logger.Collector.GetSnapshot().ShouldContain(r => r.Level == LogLevel.Warning));
+    }
+
+    [Fact(DisplayName = "DisposeAsync should log and continue when the circuit disconnects during JS cleanup")]
+    public async Task DisposeAsync_ShouldLogInformation_WhenCircuitDisconnects()
+    {
+        // Arrange
+        var logger = new FakeLogger<NavMenu>();
+        _ctx.Services.AddSingleton<ILogger<NavMenu>>(logger);
+        _navMenuModule.SetupVoid("dispose").SetException(new JSDisconnectedException("disconnected"));
+        var cut = _ctx.Render<NavMenu>();
+
+        // Act
+        await cut.Instance.DisposeAsync();
+
+        // Assert
+        logger.Collector.GetSnapshot().ShouldContain(r => r.Level == LogLevel.Information);
+    }
+
+    [Fact(DisplayName = "DisposeAsync should log a warning when JS cleanup fails")]
+    public async Task DisposeAsync_ShouldLogWarning_WhenJsCleanupFails()
+    {
+        // Arrange
+        var logger = new FakeLogger<NavMenu>();
+        _ctx.Services.AddSingleton<ILogger<NavMenu>>(logger);
+        _navMenuModule.SetupVoid("dispose").SetException(new JSException("failed"));
+        var cut = _ctx.Render<NavMenu>();
+
+        // Act
+        await cut.Instance.DisposeAsync();
+
+        // Assert
+        logger.Collector.GetSnapshot().ShouldContain(r => r.Level == LogLevel.Warning);
+    }
 }
