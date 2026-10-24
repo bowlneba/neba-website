@@ -1,5 +1,6 @@
 @implements IAsyncDisposable
 @inject IJSRuntime JsRuntime
+@inject ILogger<FocalPointPicker> Logger
 
 <div id="@_rootId" class="focal-picker" data-shape="@(Shape == FocalPointShape.Circle ? "circle" : "rectangle")" data-aspect="@AspectText">
     <div class="focal-picker__stage">
@@ -125,18 +126,18 @@
             {
                 await _jsModule.InvokeVoidAsync("dispose", _rootId);
             }
-            catch (JSDisconnectedException)
+            catch (JSDisconnectedException ex)
             {
-                // Circuit already gone — nothing to clean up client-side.
+                Logger.LogInformation(ex, "[FocalPointPicker] JS cleanup skipped because the circuit disconnected.");
             }
 
             try
             {
                 await _jsModule.DisposeAsync();
             }
-            catch (JSDisconnectedException)
+            catch (JSDisconnectedException ex)
             {
-                // Circuit already gone — nothing to clean up client-side.
+                Logger.LogInformation(ex, "[FocalPointPicker] JS module disposal skipped because the circuit disconnected.");
             }
         }
 

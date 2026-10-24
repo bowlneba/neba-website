@@ -1,5 +1,8 @@
 using Bunit;
 
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Testing;
 using Microsoft.JSInterop;
 
 using Neba.TestFactory.Attributes;
@@ -15,9 +18,11 @@ public sealed class FocalPointPickerTests : IDisposable
 
     private readonly BunitContext _ctx = new();
     private readonly BunitJSModuleInterop _module;
+    private readonly FakeLogger<FocalPointPicker> _logger = new();
 
     public FocalPointPickerTests()
     {
+        _ctx.Services.AddSingleton<ILogger<FocalPointPicker>>(_logger);
         _ctx.JSInterop.Mode = JSRuntimeMode.Loose;
         _module = _ctx.JSInterop.SetupModule(ModulePath);
         _module.Mode = JSRuntimeMode.Loose;
@@ -188,17 +193,21 @@ public sealed class FocalPointPickerTests : IDisposable
         _module.Invocations["dispose"].ShouldHaveSingleItem();
     }
 
-    [Fact(DisplayName = "Dispose should not throw when the circuit is already gone")]
-    public async Task DisposeAsync_ShouldNotThrow_WhenCircuitIsDisconnected()
+    [Fact(DisplayName = "Dispose should log and not throw when the circuit is already gone")]
+    public async Task DisposeAsync_ShouldLogAndNotThrow_WhenCircuitIsDisconnected()
     {
         // Arrange
         var cut = Render();
-        _module.Setup<object>("dispose", _ => true).SetException(new JSDisconnectedException("gone"));
+        _module.SetupVoid("dispose", _ => true).SetException(new JSDisconnectedException("gone"));
 
         // Act
         var act = async () => await cut.Instance.DisposeAsync();
 
         // Assert
         await Should.NotThrowAsync(act);
+        var record = _logger.Collector.GetSnapshot().ShouldHaveSingleItem();
+        record.Level.ShouldBe(LogLevel.Information);
+        record.Message.ShouldContain("circuit disconnected");
+        record.Exception.ShouldBeOfType<JSDisconnectedException>();
     }
 }
