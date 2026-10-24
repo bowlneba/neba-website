@@ -91,4 +91,109 @@ public sealed class BowlerMembershipTests
         // Assert
         membership.Type.ShouldBe(MembershipType.Renewal);
     }
+
+    [Fact(DisplayName = "Create should use the given id")]
+    public void Create_ShouldUseGivenId_WhenIdProvided()
+    {
+        // Arrange
+        var id = BowlerMembershipId.New();
+
+        // Act
+        var result = BowlerMembership.Create(MembershipType.New, new DateOnly(2025, 3, 15), [], id);
+
+        // Assert
+        result.Value.Id.ShouldBe(id);
+    }
+
+    [Fact(DisplayName = "CreateFromLegacy should copy cost and dates exactly as stored")]
+    public void CreateFromLegacy_ShouldCopyStoredValues_WhenValid()
+    {
+        // Arrange
+        var start = new DateOnly(2019, 11, 3);
+        var end = new DateOnly(2021, 1, 15);
+
+        // Act
+        var result = BowlerMembership.CreateFromLegacy(4321, MembershipType.Renewal, 20.00m, start, end);
+
+        // Assert
+        result.IsError.ShouldBeFalse();
+        result.Value.LegacyId.ShouldBe(4321);
+        result.Value.Type.ShouldBe(MembershipType.Renewal);
+        result.Value.Cost.ShouldBe(20.00m);
+        result.Value.StartDate.ShouldBe(start);
+        result.Value.EndDate.ShouldBe(end);
+    }
+
+    [Theory(DisplayName = "CreateFromLegacy should copy records for inactive types")]
+    [InlineData("RESERVATION", TestDisplayName = "Reservation is copied")]
+    [InlineData("COURTESY", TestDisplayName = "Courtesy is copied")]
+    public void CreateFromLegacy_ShouldCopy_WhenTypeInactive(string code)
+    {
+        // Arrange
+        var type = MembershipType.FromValue(code);
+
+        // Act
+        var result = BowlerMembership.CreateFromLegacy(77, type, 0m, new DateOnly(2021, 5, 1), new DateOnly(2021, 5, 2));
+
+        // Assert
+        result.IsError.ShouldBeFalse();
+        result.Value.Type.ShouldBe(type);
+    }
+
+    [Theory(DisplayName = "CreateFromLegacy should reject a legacy id that is not positive")]
+    [InlineData(0, TestDisplayName = "Zero is rejected")]
+    [InlineData(-5, TestDisplayName = "A negative id is rejected")]
+    public void CreateFromLegacy_ShouldReturnError_WhenLegacyIdNotPositive(int legacyId)
+    {
+        // Arrange & Act
+        var result = BowlerMembership.CreateFromLegacy(legacyId, MembershipType.New, 25m, new DateOnly(2021, 1, 1), new DateOnly(2021, 12, 31));
+
+        // Assert
+        result.FirstError.ShouldBe(BowlerMembershipErrors.InvalidLegacyId);
+    }
+
+    [Fact(DisplayName = "CreateFromLegacy should reject a negative cost")]
+    public void CreateFromLegacy_ShouldReturnError_WhenCostNegative()
+    {
+        // Arrange & Act
+        var result = BowlerMembership.CreateFromLegacy(1, MembershipType.New, -0.01m, new DateOnly(2021, 1, 1), new DateOnly(2021, 12, 31));
+
+        // Assert
+        result.FirstError.ShouldBe(BowlerMembershipErrors.NegativeCost);
+    }
+
+    [Fact(DisplayName = "CreateFromLegacy should reject an end date before the start date")]
+    public void CreateFromLegacy_ShouldReturnError_WhenEndBeforeStart()
+    {
+        // Arrange & Act
+        var result = BowlerMembership.CreateFromLegacy(1, MembershipType.New, 25m, new DateOnly(2021, 12, 31), new DateOnly(2021, 1, 1));
+
+        // Assert
+        result.FirstError.Code.ShouldBe("BowlerMembership.EndDateBeforeStartDate");
+    }
+
+    [Fact(DisplayName = "CreateFromLegacy should accept an end date equal to the start date")]
+    public void CreateFromLegacy_ShouldAccept_WhenEndEqualsStart()
+    {
+        // Arrange
+        var day = new DateOnly(2021, 6, 5);
+
+        // Act
+        var result = BowlerMembership.CreateFromLegacy(1, MembershipType.NonMember, 15m, day, day);
+
+        // Assert
+        result.IsError.ShouldBeFalse();
+    }
+
+    [Fact(DisplayName = "Factory should give the same ids for the same seed")]
+    public void Factory_ShouldBeDeterministic_WhenSeedRepeated()
+    {
+        // Arrange & Act
+        var first = BowlerMembershipFactory.Bogus(5, seed: 11);
+        var second = BowlerMembershipFactory.Bogus(5, seed: 11);
+
+        // Assert
+        first.Select(m => m.Id).ShouldBe(second.Select(m => m.Id));
+        first.Select(m => m.StartDate).ShouldBe(second.Select(m => m.StartDate));
+    }
 }

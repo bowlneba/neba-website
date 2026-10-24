@@ -42,12 +42,12 @@ internal static class MembershipRules
 
         if (!type.Active)
         {
-            return MembershipErrors.TypeInactive(type);
+            return BowlerMembershipErrors.TypeInactive(type);
         }
 
         if (type.RequiresPriorMembership && !history.Any(held => held.Type.QualifiesAsPriorMembership))
         {
-            return MembershipErrors.RequiresPriorMembership(type);
+            return BowlerMembershipErrors.RequiresPriorMembership(type);
         }
 
         var repeatError = CheckRepeatPolicy(type, start, history);
@@ -61,12 +61,12 @@ internal static class MembershipRules
         if (type.Kind == MembershipKind.Temporary && current.Any(held => held.Type.Kind == MembershipKind.Temporary))
         {
             var activeEndDate = current.Where(held => held.Type.Kind == MembershipKind.Temporary).Max(held => held.EndDate);
-            return MembershipErrors.TemporaryMembershipActive(activeEndDate);
+            return BowlerMembershipErrors.TemporaryMembershipActive(activeEndDate);
         }
 
         if (current.Any(held => end <= held.EndDate))
         {
-            return MembershipErrors.ExpiresBeforeCurrent(end, current.Max(held => held.EndDate));
+            return BowlerMembershipErrors.ExpiresBeforeCurrent(end, current.Max(held => held.EndDate));
         }
 
         return Result.Success;
@@ -86,7 +86,7 @@ internal static class MembershipRules
 
             case RepeatPolicyKind.OncePerLifetime:
                 return history.Any(held => held.Type == type)
-                    ? MembershipErrors.AlreadyHeld(type)
+                    ? BowlerMembershipErrors.AlreadyHeld(type)
                     : null;
 
             case RepeatPolicyKind.MinimumDaysSinceLast:
@@ -99,7 +99,7 @@ internal static class MembershipRules
                 var daysRequired = policy.Days!.Value;
 
                 return start.DayNumber - lastStartDate.DayNumber < daysRequired
-                    ? MembershipErrors.TooSoonSinceLast(type, daysRequired, lastStartDate)
+                    ? BowlerMembershipErrors.TooSoonSinceLast(type, daysRequired, lastStartDate)
                     : null;
 
             default:

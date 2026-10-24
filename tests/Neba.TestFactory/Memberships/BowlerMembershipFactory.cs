@@ -14,12 +14,13 @@ public static class BowlerMembershipFactory
     /// </summary>
     public static BowlerMembership Create(
         MembershipType? type = null,
-        DateOnly? startDate = null)
+        DateOnly? startDate = null,
+        BowlerMembershipId? id = null)
     {
         var membershipType = type ?? ValidType;
         var start = startDate ?? ValidStartDate;
 
-        return BowlerMembership.Create(membershipType, start, PriorHistoryFor(membershipType, start)).Value;
+        return BowlerMembership.Create(membershipType, start, PriorHistoryFor(membershipType, start), id).Value;
     }
 
     internal static IReadOnlyCollection<BowlerMembership> Bogus(int count, Faker faker)
@@ -28,7 +29,8 @@ public static class BowlerMembershipFactory
 
         return [.. Enumerable.Range(0, count).Select(_ => Create(
             faker.PickRandom(MembershipType.Purchasable.ToArray()),
-            faker.Date.PastDateOnly(10)))];
+            faker.Date.PastDateOnly(10),
+            new BowlerMembershipId(Ulid.BogusString(faker))))];
     }
 
     public static IReadOnlyCollection<BowlerMembership> Bogus(int count, int? seed = null)

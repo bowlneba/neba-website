@@ -1264,7 +1264,7 @@ A Season is **Complete** once `CompleteSeason()` has been called; it may not be 
 | --- | --- |
 | `SeasonCompleted` | Raised when a Season is marked Complete. Downstream consumers (e.g., Hall of Fame point calculations) react to this event. **Not yet raised in code** — `CompleteSeason()` currently only flips `Complete` and returns `ErrorOr<Success>`; no aggregate in the codebase raises domain events yet (`AggregateRoot.AddDomainEvent` exists but is unused everywhere). Add this event at the same time `CompleteSeason()` gains a real, website-driven caller (see the note under Definition above) |
 
-> **Out of Scope (Current)**: Hall of Fame point values associated with each award type, membership type definitions (New Member, Renewal, etc.), and the formal definition of Tournament stat-eligibility are deferred to their respective modeling sessions. No concept of season templates or recurring schedule patterns is modeled at this time.
+> **Out of Scope (Current)**: Hall of Fame point values associated with each award type and the formal definition of Tournament stat-eligibility are deferred to their respective modeling sessions. No concept of season templates or recurring schedule patterns is modeled at this time.
 
 **In Code**:
 
@@ -1339,7 +1339,7 @@ Age eligibility for a category is evaluated as of each tournament date during th
 | `Woman` | Female bowlers |
 | `Senior` | Age 50 or older |
 | `SuperSenior` | Age 60 or older |
-| `Rookie` | Bowlers paying a **New Member** membership in the current season. All subsequent seasons are renewal memberships and no longer qualify. *(See Membership for full membership type definitions — deferred)* |
+| `Rookie` | Bowlers paying a **New Member** membership in the current season. All subsequent seasons are renewal memberships and no longer qualify. *(See [Membership Type](#membership-type) for the type definitions)* |
 | `Youth` | Bowlers under age 18 |
 
 **In Code**:
@@ -1858,6 +1858,7 @@ The NEBA program that formally recognizes individuals for exceptional competitiv
 - Namespace: `Neba.Api.Features.Memberships.Domain`
 - Type: `BowlerMembership` (owned by `Bowler`; added through `Bowler.AddMembership`)
 - Property: `BowlerMembership.LegacyId` (the nebamgmt-v3 membership id; null for memberships made here)
+- Legacy copy: `Bowler.AddLegacyMembership` stores a legacy record as is (cost and dates untouched, no eligibility rules); the migration and feed use it
 
 ---
 

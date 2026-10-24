@@ -12,9 +12,9 @@ namespace Neba.Api.Features.Bowlers.Domain;
 /// Represents a bowler in the NEBA system. This is an aggregate root entity that encapsulates all information and behavior related to a bowler.
 /// </summary>
 /// <remarks>
-/// The current implementation is minimal, focused on website display needs. Additional properties for member
-/// management (date of birth, gender, membership information, contact details) will be added when migrating
-/// from the organization management software.
+/// The current implementation is minimal, focused on website display needs. The bowler owns its memberships
+/// (see <see cref="AddMembership"/>). Additional properties for member management (contact details) will be
+/// added when migrating from the organization management software.
 /// </remarks>
 public sealed class Bowler
     : AggregateRoot
@@ -74,6 +74,39 @@ public sealed class Bowler
             type,
             startDate,
             [.. _memberships.Select(held => held.ToSnapshot())]);
+
+        if (membership.IsError)
+        {
+            return membership.Errors;
+        }
+
+        _memberships.Add(membership.Value);
+
+        return Result.Success;
+    }
+
+    /// <summary>
+    /// Adds a membership copied from the organization management software exactly as stored. Runs no eligibility
+    /// rules. For the legacy migration and feed only; skip legacy <c>System Import</c> records before calling.
+    /// </summary>
+    /// <param name="legacyId">The membership's identifier in the legacy database.</param>
+    /// <param name="type">The membership type, resolved with <c>MembershipType.FromLegacyId</c>.</param>
+    /// <param name="cost">The cost as stored.</param>
+    /// <param name="startDate">The start date as stored.</param>
+    /// <param name="endDate">The end date as stored.</param>
+    internal ErrorOr<Success> AddLegacyMembership(
+        int legacyId,
+        MembershipType type,
+        decimal cost,
+        DateOnly startDate,
+        DateOnly endDate)
+    {
+        if (_memberships.Any(held => held.LegacyId == legacyId))
+        {
+            return BowlerMembershipErrors.LegacyIdAlreadyAdded(legacyId);
+        }
+
+        var membership = BowlerMembership.CreateFromLegacy(legacyId, type, cost, startDate, endDate);
 
         if (membership.IsError)
         {

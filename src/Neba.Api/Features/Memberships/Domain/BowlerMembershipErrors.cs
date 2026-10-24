@@ -4,7 +4,7 @@ using Neba.Api.Contracts.Memberships;
 
 namespace Neba.Api.Features.Memberships.Domain;
 
-internal static class MembershipErrors
+internal static class BowlerMembershipErrors
 {
     public static Error TypeInactive(MembershipType type) => Error.Validation(
         code: "BowlerMembership.TypeInactive",
@@ -44,4 +44,26 @@ internal static class MembershipErrors
             { "EndDate", endDate },
             { "CurrentEndDate", currentEndDate }
         });
+
+    public static readonly Error InvalidLegacyId = Error.Validation(
+        code: "BowlerMembership.InvalidLegacyId",
+        description: "Legacy ID must be a positive integer.");
+
+    public static readonly Error NegativeCost = Error.Validation(
+        code: "BowlerMembership.NegativeCost",
+        description: "Cost cannot be negative.");
+
+    public static Error EndDateBeforeStartDate(DateOnly startDate, DateOnly endDate) => Error.Validation(
+        code: "BowlerMembership.EndDateBeforeStartDate",
+        description: $"End date {endDate:yyyy-MM-dd} cannot be before start date {startDate:yyyy-MM-dd}.",
+        metadata: new Dictionary<string, object>
+        {
+            { "StartDate", startDate },
+            { "EndDate", endDate }
+        });
+
+    public static Error LegacyIdAlreadyAdded(int legacyId) => Error.Conflict(
+        code: "BowlerMembership.LegacyIdAlreadyAdded",
+        description: $"The bowler already has the membership with legacy ID {legacyId}.",
+        metadata: new Dictionary<string, object> { { "LegacyId", legacyId } });
 }
