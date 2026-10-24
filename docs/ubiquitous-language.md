@@ -1447,6 +1447,28 @@ The NEBA program that formally recognizes individuals for exceptional competitiv
 
 ---
 
+### Induction Photo
+
+**Definition**: An optional photo of an Inductee shown in a round avatar on the Hall of Fame page. Without a photo, the page shows the Inductee's initials. The photo is a `StoredFile` that website staff with the `HallOfFame.EditHallOfFamePhoto` permission upload, replace, or remove. These edits do not change the Induction itself (year, categories); the weekly sync from the legacy software never writes the photo or its framing.
+
+**In Code**: `HallOfFameInduction.Photo` (`StoredFile?`), `HallOfFameInduction.PhotoFocalPoint` (`PhotoFocalPoint?`)
+
+---
+
+### Focal Point
+
+**Definition**: Where a photo is framed when it is cropped to a shape. It holds three whole numbers: X and Y (0 to 100) and a Zoom (100 to 300, where 100 is no zoom). X and Y are the CSS `object-position` percents, and the page scales the photo about that same point. The editor converts a click on the face into the X and Y that put the face at the center of the shape, as near as the photo allows; zooming in lets a face near the photo's edge reach the center. The original file is never cropped or rewritten.
+
+**Characteristics**:
+
+- Set together with the photo; clearing the photo clears the Focal Point
+- Without a saved Focal Point, the page centers the photo with no zoom (50, 50, 100)
+- Reusable by other photos that show in a shape (news header images later)
+
+**In Code**: `PhotoFocalPoint` (value object: `X`, `Y`, `Zoom`)
+
+---
+
 ### Inductee
 
 **Definition**: A Person who has one or more Inductions recorded in the Hall of Fame. Being an Inductee does not preclude future Induction under a different category.
