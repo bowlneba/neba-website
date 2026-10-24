@@ -3,6 +3,7 @@ using ErrorOr;
 using Microsoft.EntityFrameworkCore;
 
 using Neba.Api.BackgroundJobs;
+using Neba.Api.Caching;
 using Neba.Api.Database;
 using Neba.Api.Features.HallOfFame.Domain;
 using Neba.Api.Features.Storage.Domain;
@@ -16,7 +17,8 @@ namespace Neba.Api.Features.HallOfFame.EditHallOfFamePhoto;
 internal sealed class EditHallOfFamePhotoCommandHandler(
         AppDbContext appDbContext,
         IFusionCache cache,
-        IBackgroundJobScheduler backgroundJobScheduler)
+        IBackgroundJobScheduler backgroundJobScheduler,
+        ILogger<EditHallOfFamePhotoCommandHandler> logger)
     : ICommandHandler<EditHallOfFamePhotoCommand, Updated>
 {
     public async Task<ErrorOr<Updated>> HandleAsync(EditHallOfFamePhotoCommand command, CancellationToken cancellationToken)
@@ -40,9 +42,11 @@ internal sealed class EditHallOfFamePhotoCommandHandler(
 
         await appDbContext.SaveChangesAsync(cancellationToken);
 
-        await cache.RemoveByTagAsync("neba:hall-of-fame:inductions", token: cancellationToken);
+        await cache.RemoveByTagAsync(CacheDescriptors.HallOfFame.InductionsTag, token: cancellationToken);
 
         StoredFileCleanup.ScheduleDeleteOfReplaced(backgroundJobScheduler, previousPhoto, induction.Photo);
+
+        logger.LogHallOfFamePhotoUpdated(induction.Id, induction.Photo is not null);
 
         return Result.Updated;
     }
@@ -95,4 +99,10 @@ internal sealed class EditHallOfFamePhotoCommandHandler(
         await PendingUploadCleaner.RemoveClaimedAsync(appDbContext, command.Photo, cancellationToken);
         return Result.Success;
     }
+}
+
+internal static partial class EditHallOfFamePhotoCommandHandlerLogMessages
+{
+    [LoggerMessage(Level = LogLevel.Information, Message = "Hall of Fame photo updated for induction '{HallOfFameId}'. Has photo: {HasPhoto}.")]
+    public static partial void LogHallOfFamePhotoUpdated(this ILogger<EditHallOfFamePhotoCommandHandler> logger, HallOfFameId hallOfFameId, bool hasPhoto);
 }

@@ -24,7 +24,7 @@
     <!-- Single source of the release version: AssemblyVersion, FileVersion and InformationalVersion
          (which the log enricher reports as BuildVersion). Bump it on every change that deploys;
          CI checks it is greater than the latest v* tag. -->
-    <Version>1.1.2</Version>
+    <Version>1.2.0</Version>
 
     <Authors>G &amp; C Software</Authors>
     <Product>New England Bowlers' Association Website</Product>

@@ -154,4 +154,40 @@ test.describe('Edit Hall of Fame photo (with the permission)', () => {
     await expect(page.locator('.ehp-subtitle')).toHaveCount(0);
     await expect(avatarOf(page, TOM).locator('img.inductee-photo__img')).toHaveCount(0);
   });
+
+  test('shows the error and keeps the editor open when the save fails', async ({ page }) => {
+    await openEditor(page, TOM);
+    await uploadPhoto(page);
+
+    await page.request.post(`http://localhost:5151/__mock/fail?path=/hall-of-fame/${TOM.id}/photo&status=500`);
+    try {
+      await page.getByRole('button', { name: 'Save photo' }).click();
+
+      await expect(page.getByText("Couldn't Save Photo")).toBeVisible();
+      await expect(page.getByRole('dialog')).toContainText('Edit photo');
+      await expect(page.getByRole('button', { name: 'Save photo' })).toBeEnabled();
+    } finally {
+      await page.request.post(`http://localhost:5151/__mock/reset?path=/hall-of-fame/${TOM.id}/photo`);
+    }
+
+    await expect(avatarOf(page, TOM).locator('img.inductee-photo__img')).toHaveCount(0);
+  });
+
+  test('shows the error when the upload fails', async ({ page }) => {
+    await openEditor(page, TOM);
+
+    await page.request.post('http://localhost:5151/__mock/fail?path=/hall-of-fame/photos&status=500');
+    try {
+      await page.locator('input.neba-file-upload-input').setInputFiles({
+        name: 'photo.png',
+        mimeType: 'image/png',
+        buffer: PHOTO_PNG,
+      });
+
+      await expect(page.locator('.neba-file-upload-item-status--error')).toBeVisible();
+      await expect(page.getByRole('button', { name: 'Save photo' })).toBeDisabled();
+    } finally {
+      await page.request.post('http://localhost:5151/__mock/reset?path=/hall-of-fame/photos');
+    }
+  });
 });

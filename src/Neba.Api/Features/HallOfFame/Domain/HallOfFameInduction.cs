@@ -58,7 +58,7 @@ public sealed class HallOfFameInduction
     public StoredFile? Photo { get; private set; }
 
     /// <summary>
-    /// The point and zoom of <see cref="Photo"/> kept in frame in round avatars. Null exactly when <see cref="Photo"/> is null.
+    /// The point and zoom of <see cref="Photo"/> kept in frame in round avatars. Null when <see cref="Photo"/> is null, and for photos saved before framing existed (treat as <see cref="PhotoFocalPoint.Default"/>).
     /// </summary>
     public PhotoFocalPoint? PhotoFocalPoint { get; private set; }
 

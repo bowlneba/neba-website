@@ -1658,6 +1658,8 @@ async function handleRequest(req: IncomingMessage, res: ServerResponse): Promise
       return;
     }
 
+    // Mirrors EditHallOfFamePhotoCommandHandler: a photo sets or replaces it; no photo and no framing removes it;
+    // no photo with framing keeps the current photo. Keep the two in step when the handler's rules change.
     const input = (JSON.parse(body) as {
       input: { photo: { path: string } | null; focalX: number | null; focalY: number | null; zoom: number | null };
     }).input;

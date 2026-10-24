@@ -2,8 +2,12 @@ using ErrorOr;
 
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
+using Microsoft.Extensions.Logging.Testing;
 
 using Neba.Api.BackgroundJobs;
+using Neba.Api.Caching;
 using Neba.Api.Database;
 using Neba.Api.Features.HallOfFame.Domain;
 using Neba.Api.Features.HallOfFame.EditHallOfFamePhoto;
@@ -26,7 +30,7 @@ namespace Neba.Api.Tests.Features.HallOfFame.EditHallOfFamePhoto;
 public sealed class EditHallOfFamePhotoCommandHandlerTests(AppDbContextFixture fixture)
     : IClassFixture<AppDbContextFixture>, IAsyncLifetime
 {
-    private const string ListCacheTag = "neba:hall-of-fame:inductions";
+    private const string ListCacheTag = CacheDescriptors.HallOfFame.InductionsTag;
 
     private readonly AppDbContext _dbContext = fixture.CreateDbContext();
     private ServiceProvider _serviceProvider = null!;
@@ -49,8 +53,14 @@ public sealed class EditHallOfFamePhotoCommandHandlerTests(AppDbContextFixture f
 
     private IFusionCache Cache => _serviceProvider.GetRequiredService<IFusionCache>();
 
-    private EditHallOfFamePhotoCommandHandler CreateHandler(IBackgroundJobScheduler? scheduler = null)
-        => new(_dbContext, Cache, scheduler ?? new Mock<IBackgroundJobScheduler>(MockBehavior.Strict).Object);
+    private EditHallOfFamePhotoCommandHandler CreateHandler(
+        IBackgroundJobScheduler? scheduler = null,
+        ILogger<EditHallOfFamePhotoCommandHandler>? logger = null)
+        => new(
+            _dbContext,
+            Cache,
+            scheduler ?? new Mock<IBackgroundJobScheduler>(MockBehavior.Strict).Object,
+            logger ?? NullLogger<EditHallOfFamePhotoCommandHandler>.Instance);
 
     private async Task<HallOfFameInduction> SeedInductionAsync(
         StoredFile? photo,
@@ -167,6 +177,27 @@ public sealed class EditHallOfFamePhotoCommandHandlerTests(AppDbContextFixture f
         // Assert
         var cached = await Cache.TryGetAsync<string>("neba:hall-of-fame:inductions:list", token: ct);
         cached.HasValue.ShouldBeFalse();
+    }
+
+    [Fact(DisplayName = "HandleAsync logs the update with the induction id")]
+    public async Task HandleAsync_ShouldLogInformation_WhenPhotoChanges()
+    {
+        // Arrange
+        var ct = TestContext.Current.CancellationToken;
+        var induction = await SeedInductionAsync(photo: null, ct);
+        var photo = StoredFileFactory.Create(path: "hall-of-fame/photo/new.png");
+        await AddPendingUploadAsync(photo, ct);
+        var logger = new FakeLogger<EditHallOfFamePhotoCommandHandler>();
+        var command = EditHallOfFamePhotoCommandFactory.Create(induction.Id, photo);
+
+        // Act
+        var result = await CreateHandler(logger: logger).HandleAsync(command, ct);
+
+        // Assert
+        result.IsError.ShouldBeFalse();
+        var record = logger.Collector.GetSnapshot().ShouldHaveSingleItem();
+        record.Level.ShouldBe(LogLevel.Information);
+        record.Message.ShouldContain(induction.Id.ToString());
     }
 
     [Fact(DisplayName = "HandleAsync replaces the photo and enqueues deletion of the previous file")]
