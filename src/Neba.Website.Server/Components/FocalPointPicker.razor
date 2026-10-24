@@ -17,11 +17,11 @@
     <div class="focal-picker__side">
         <div class="focal-picker__preview @(Shape == FocalPointShape.Circle ? "focal-picker__preview--circle" : null)"
              style="@PreviewAspectStyle">
-            <img src="@ImageUrl.AbsoluteUri" alt="" style="@Current.ToImageStyle()" />
+            <img src="@ImageUrl.AbsoluteUri" alt="" style="@Current.ToImageStyle()" data-fp-preview />
         </div>
 
         <div class="focal-picker__zoom">
-            <label for="@ZoomId">Zoom <output>@ZoomText</output></label>
+            <label for="@ZoomId">Zoom <output data-fp-zoom-text>@ZoomText</output></label>
             <input id="@ZoomId" type="range" min="100" max="300" step="5" value="@Zoom" data-fp-zoom />
         </div>
 
@@ -109,7 +109,7 @@
     }
 
     /// <summary>
-    /// Called by the module after a click, drag, key press, or zoom change. At most once per animation frame.
+    /// Called by the module after a click, a key press, the end of a drag, or the release of the zoom slider. At most once per animation frame.
     /// </summary>
     [JSInvokable]
     public async Task NotifyChanged(int x, int y, int zoom)

@@ -1,10 +1,13 @@
 @page "/hall-of-fame"
+@using Microsoft.AspNetCore.Authorization
 @using Neba.Api.Contracts.HallOfFame
 @using Neba.Api.Contracts.Security
 @using Neba.Website.Server.Services
 
 @inject ApiExecutor ApiExecutor
 @inject IHallOfFameApi HallOfFameApi
+@inject AuthenticationStateProvider AuthenticationStateProvider
+@inject IAuthorizationService AuthorizationService
 
 @rendermode @(new InteractiveServerRenderMode(prerender: false))
 
@@ -90,7 +93,7 @@
                                                                   FocalX="@inductee.PhotoFocalX"
                                                                   FocalY="@inductee.PhotoFocalY"
                                                                   Zoom="@inductee.PhotoZoom"
-                                                                  OnEdit="@(() => OpenEditor(inductee))" />
+                                                                  OnEdit="@EditCallbackFor(inductee)" />
                                                 <div class="inductee-name">@inductee.BowlerName</div>
                                             </div>
                                         }
@@ -121,7 +124,7 @@
                                                               FocalX="@inductee.PhotoFocalX"
                                                               FocalY="@inductee.PhotoFocalY"
                                                               Zoom="@inductee.PhotoZoom"
-                                                              OnEdit="@(() => OpenEditor(inductee))" />
+                                                              OnEdit="@EditCallbackFor(inductee)" />
                                             <div class="inductee-name">@inductee.BowlerName</div>
                                             <div class="combined-categories">
                                                 @string.Join(" • ", inductee.Categories)
@@ -199,9 +202,18 @@
     private List<YearGroup>? _inductionsByYear;
     private string? _errorMessage;
     private HallOfFameInductionViewModel? _editing;
+    private bool _canEditPhotos;
 
-    protected override Task OnInitializedAsync()
-        => LoadAsync();
+    protected override async Task OnInitializedAsync()
+    {
+        // Checked once here so the avatars only get an edit callback (and render an edit button) for editors,
+        // not once per inductee for every visitor.
+        var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+        var authResult = await AuthorizationService.AuthorizeAsync(authState.User, Permissions.EditHallOfFamePhoto.PolicyName);
+        _canEditPhotos = authResult.Succeeded;
+
+        await LoadAsync();
+    }
 
     private async Task LoadAsync()
     {
@@ -238,6 +250,11 @@
             })
             .ToList();
     }
+
+    private EventCallback EditCallbackFor(HallOfFameInductionViewModel inductee)
+        => _canEditPhotos
+            ? EventCallback.Factory.Create(this, () => OpenEditor(inductee))
+            : default;
 
     private void OpenEditor(HallOfFameInductionViewModel inductee)
         => _editing = inductee;

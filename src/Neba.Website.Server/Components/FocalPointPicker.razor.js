@@ -30,6 +30,11 @@ export function positionFor(cx, cy, size) {
     };
 }
 
+/** The same inline style FocalPoint.ToImageStyle renders, so the preview can follow a drag without a round trip. */
+export function imageStyle(x, y, zoom) {
+    return `object-position:${x}% ${y}%;transform-origin:${x}% ${y}%;transform:scale(${zoom / 100})`;
+}
+
 export function initialize(rootId, dotNetHelper, x, y, zoom) {
     const root = document.getElementById(rootId);
     if (!root) {
@@ -45,6 +50,8 @@ export function initialize(rootId, dotNetHelper, x, y, zoom) {
         crop: surface.querySelector('[data-fp-crop]'),
         marker: surface.querySelector('[data-fp-marker]'),
         slider: root.querySelector('[data-fp-zoom]'),
+        preview: root.querySelector('[data-fp-preview]'),
+        zoomText: root.querySelector('[data-fp-zoom-text]'),
         dotNetHelper,
         x,
         y,
@@ -53,6 +60,7 @@ export function initialize(rootId, dotNetHelper, x, y, zoom) {
         shapeAspect: Number(root.dataset.aspect) || 1,
         isCircle: root.dataset.shape === 'circle',
         drag: null,
+        movedDuringDrag: false,
         notifyQueued: false,
         cleanups: [],
     };
@@ -77,6 +85,7 @@ export function initialize(rootId, dotNetHelper, x, y, zoom) {
     });
     on(surface, 'keydown', (event) => keyDown(instance, event));
     on(instance.slider, 'input', (event) => zoomChanged(instance, Number(event.target.value)));
+    on(instance.slider, 'change', () => notify(instance));
 
     instances.set(rootId, instance);
     render(instance);
@@ -121,6 +130,15 @@ function render(instance) {
     instance.marker.style.left = `${cx * 100}%`;
     instance.marker.style.top = `${cy * 100}%`;
     instance.slider.value = String(instance.zoom);
+
+    // The preview and zoom label live in .NET too, but a drag only tells .NET when it ends; these keep them live.
+    if (instance.preview) {
+        instance.preview.setAttribute('style', imageStyle(instance.x, instance.y, instance.zoom));
+    }
+
+    if (instance.zoomText) {
+        instance.zoomText.textContent = `${(instance.zoom / 100).toFixed(1)}×`;
+    }
 }
 
 /** Sends the latest value to .NET at most once per animation frame, so a fast drag does not flood SignalR. */
@@ -158,7 +176,13 @@ function moveCenterTo(instance, cx, cy) {
     instance.x = next.x;
     instance.y = next.y;
     render(instance);
-    notify(instance);
+
+    // During a drag only the final position goes to .NET (see endDrag), not every frame of it.
+    if (instance.drag) {
+        instance.movedDuringDrag = true;
+    } else {
+        notify(instance);
+    }
 }
 
 // A click jumps the window to that point; pressing on the window and dragging moves it from where it was
@@ -199,6 +223,11 @@ function endDrag(instance, event) {
 
     instance.drag = null;
     instance.surface.classList.remove('focal-picker__surface--dragging');
+    if (instance.movedDuringDrag) {
+        instance.movedDuringDrag = false;
+        notify(instance);
+    }
+
     if (instance.surface.hasPointerCapture?.(event.pointerId)) {
         instance.surface.releasePointerCapture(event.pointerId);
     }
@@ -232,7 +261,8 @@ function keyDown(instance, event) {
     notify(instance);
 }
 
-// Zooming keeps the center of the window where it is, then re-derives the position percents.
+// Zooming keeps the center of the window where it is, then re-derives the position percents. The slider's
+// "change" event (release) tells .NET; "input" (every step of a drag) only redraws.
 function zoomChanged(instance, zoom) {
     const before = centerOf(instance.x, instance.y, size(instance));
     instance.zoom = zoom;
@@ -240,5 +270,4 @@ function zoomChanged(instance, zoom) {
     instance.x = next.x;
     instance.y = next.y;
     render(instance);
-    notify(instance);
 }

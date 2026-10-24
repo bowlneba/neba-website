@@ -4,12 +4,20 @@ import {
     cropSize,
     centerOf,
     positionFor,
+    imageStyle,
     initialize,
     update,
     dispose,
 } from './FocalPointPicker.razor.js';
 
 describe('FocalPointPicker math', () => {
+    describe('imageStyle', () => {
+        test('should match the style FocalPoint.ToImageStyle renders', () => {
+            expect(imageStyle(31, 36, 150)).toBe('object-position:31% 36%;transform-origin:31% 36%;transform:scale(1.5)');
+            expect(imageStyle(50, 50, 100)).toBe('object-position:50% 50%;transform-origin:50% 50%;transform:scale(1)');
+        });
+    });
+
     describe('clamp', () => {
         test('should limit values to 0 to 100', () => {
             expect(clamp(-5)).toBe(0);
@@ -98,7 +106,9 @@ describe('FocalPointPicker module', () => {
                     <span data-fp-crop></span>
                     <span data-fp-marker></span>
                 </div>
+                <img data-fp-preview />
                 <input type="range" data-fp-zoom min="100" max="300" value="100" />
+                <output data-fp-zoom-text>1.0×</output>
             </div>`;
         surface = document.querySelector('[data-fp-surface]');
         crop = document.querySelector('[data-fp-crop]');
@@ -180,6 +190,7 @@ describe('FocalPointPicker module', () => {
 
         pointer('pointerdown', 0.6, 0.5); // inside the circle, 0.1 right of its center
         pointer('pointermove', 0.7, 0.5);
+        pointer('pointerup', 0.7, 0.5);
         flush();
 
         // The window center follows the pointer minus the grab offset: 0.7 - 0.1 = 0.6 of the photo.
@@ -195,8 +206,61 @@ describe('FocalPointPicker module', () => {
         pointer('pointermove', 0.55, 0.5);
         pointer('pointermove', 0.6, 0.5);
         pointer('pointermove', 0.65, 0.5);
+        pointer('pointerup', 0.65, 0.5);
         flush();
 
+        expect(helper.invokeMethodAsync).toHaveBeenCalledTimes(1);
+    });
+
+    test('should not tell .NET while a drag is under way, only when it ends', () => {
+        initialize(rootId, helper, 50, 50, 100);
+        loadImage(800, 600);
+
+        pointer('pointerdown', 0.5, 0.5);
+        pointer('pointermove', 0.6, 0.5);
+        flush();
+        expect(helper.invokeMethodAsync).not.toHaveBeenCalled();
+
+        pointer('pointerup', 0.6, 0.5);
+        flush();
+        expect(helper.invokeMethodAsync).toHaveBeenCalledTimes(1);
+        expect(lastNotified()[0]).toBe(90);
+    });
+
+    test('should not tell .NET when a press and release leave the framing unchanged', () => {
+        initialize(rootId, helper, 50, 50, 100);
+        loadImage(800, 600);
+
+        pointer('pointerdown', 0.5, 0.5);
+        pointer('pointerup', 0.5, 0.5);
+        flush();
+
+        expect(helper.invokeMethodAsync).not.toHaveBeenCalled();
+    });
+
+    test('should keep the preview and zoom label live during a drag', () => {
+        initialize(rootId, helper, 50, 50, 100);
+        loadImage(800, 600);
+
+        pointer('pointerdown', 0.5, 0.5);
+        pointer('pointermove', 0.6, 0.5);
+
+        expect(document.querySelector('[data-fp-preview]').getAttribute('style')).toBe(imageStyle(90, 50, 100));
+    });
+
+    test('should redraw the zoom label on every slider step but tell .NET only on release', () => {
+        initialize(rootId, helper, 50, 50, 100);
+        loadImage(800, 600);
+
+        slider.value = '150';
+        slider.dispatchEvent(new Event('input'));
+        flush();
+
+        expect(document.querySelector('[data-fp-zoom-text]').textContent).toBe('1.5×');
+        expect(helper.invokeMethodAsync).not.toHaveBeenCalled();
+
+        slider.dispatchEvent(new Event('change'));
+        flush();
         expect(helper.invokeMethodAsync).toHaveBeenCalledTimes(1);
     });
 
@@ -291,6 +355,7 @@ describe('FocalPointPicker module', () => {
 
         slider.value = '200';
         slider.dispatchEvent(new Event('input'));
+        slider.dispatchEvent(new Event('change'));
         flush();
 
         const [x, y, zoom] = lastNotified();
