@@ -28,6 +28,8 @@ internal static class SecurityRoleSeeder
             Permissions.CreateSponsor,
             Permissions.EditSponsor,
 
+            Permissions.EditHallOfFamePhoto,
+
             Permissions.CreateTournament,
             Permissions.EditTournament,
             Permissions.EditTournamentLogo,
@@ -49,6 +51,8 @@ internal static class SecurityRoleSeeder
             Permissions.CreateSponsor,
             Permissions.EditSponsor,
 
+            Permissions.EditHallOfFamePhoto,
+
             Permissions.CreateTournament,
             Permissions.EditTournament,
             Permissions.EditTournamentLogo,
@@ -69,7 +73,9 @@ internal static class SecurityRoleSeeder
         [
             Permissions.CreateArticle,
             Permissions.EditArticle,
-            Permissions.DeleteArticle
+            Permissions.DeleteArticle,
+
+            Permissions.EditHallOfFamePhoto
         ],
 
         [Roles.Member] = []
