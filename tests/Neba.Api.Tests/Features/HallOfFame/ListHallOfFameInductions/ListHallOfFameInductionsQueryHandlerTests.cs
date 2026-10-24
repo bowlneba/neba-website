@@ -132,4 +132,79 @@ public sealed class ListHallOfFameInductionsQueryHandlerTests(AppDbContextFixtur
         result.ShouldHaveSingleItem();
         result.Single().PhotoUri.ShouldBe(expectedUri);
     }
+
+    [Fact(DisplayName = "HandleAsync returns the induction id as a string")]
+    public async Task HandleAsync_ShouldReturnInductionId_WhenDataExists()
+    {
+        // Arrange
+        var ct = TestContext.Current.CancellationToken;
+        var bowler = BowlerFactory.Create();
+        await _dbContext.Bowlers.AddAsync(bowler, ct);
+        var induction = HallOfFameInductionFactory.Create(bowlerId: bowler.Id);
+        await _dbContext.HallOfFameInductions.AddAsync(induction, ct);
+        await _dbContext.SaveChangesAsync(ct);
+
+        var handler = new ListHallOfFameInductionsQueryHandler(_dbContext, new Mock<IFileStorageService>(MockBehavior.Loose).Object);
+
+        // Act
+        var result = await handler.HandleAsync(new ListHallOfFameInductionsQuery(), ct);
+
+        // Assert
+        result.Single().Id.ShouldBe(induction.Id.ToString());
+        result.Single().Id.Length.ShouldBe(26);
+    }
+
+    [Fact(DisplayName = "HandleAsync returns the focal point and zoom when the induction has a photo")]
+    public async Task HandleAsync_ShouldReturnFocalPointAndZoom_WhenInductionHasPhoto()
+    {
+        // Arrange
+        var ct = TestContext.Current.CancellationToken;
+        var bowler = BowlerFactory.Create();
+        await _dbContext.Bowlers.AddAsync(bowler, ct);
+        var induction = HallOfFameInductionFactory.Create(
+            bowlerId: bowler.Id,
+            photo: StoredFileFactory.Create(),
+            photoFocalX: 31,
+            photoFocalY: 36,
+            photoZoom: 175);
+        await _dbContext.HallOfFameInductions.AddAsync(induction, ct);
+        await _dbContext.SaveChangesAsync(ct);
+
+        var fileStorageMock = new Mock<IFileStorageService>(MockBehavior.Strict);
+        fileStorageMock
+            .Setup(s => s.GetBlobUri(StoredFileFactory.ValidContainer, StoredFileFactory.ValidPath))
+            .Returns(new Uri("https://storage.example.com/photo.jpg"));
+        var handler = new ListHallOfFameInductionsQueryHandler(_dbContext, fileStorageMock.Object);
+
+        // Act
+        var result = await handler.HandleAsync(new ListHallOfFameInductionsQuery(), ct);
+
+        // Assert
+        var dto = result.Single();
+        dto.PhotoFocalX.ShouldBe(31);
+        dto.PhotoFocalY.ShouldBe(36);
+        dto.PhotoZoom.ShouldBe(175);
+    }
+
+    [Fact(DisplayName = "HandleAsync leaves the focal point and zoom null when the induction has no photo")]
+    public async Task HandleAsync_ShouldLeaveFocalPointNull_WhenInductionHasNoPhoto()
+    {
+        // Arrange
+        var ct = TestContext.Current.CancellationToken;
+        var bowler = BowlerFactory.Create();
+        await _dbContext.Bowlers.AddAsync(bowler, ct);
+        await _dbContext.HallOfFameInductions.AddAsync(HallOfFameInductionFactory.Create(bowlerId: bowler.Id), ct);
+        await _dbContext.SaveChangesAsync(ct);
+
+        var handler = new ListHallOfFameInductionsQueryHandler(_dbContext, new Mock<IFileStorageService>(MockBehavior.Loose).Object);
+
+        // Act
+        var result = await handler.HandleAsync(new ListHallOfFameInductionsQuery(), ct);
+
+        // Assert
+        var dto = result.Single();
+        dto.PhotoFocalX.ShouldBeNull();
+        dto.PhotoFocalY.ShouldBeNull();
+        dto.PhotoZoom.ShouldBeNull();
+    }
 }

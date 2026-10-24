@@ -247,10 +247,10 @@ export const MOCK_SEASON_TOURNAMENTS = {
 
 const MOCK_HALL_OF_FAME = {
   items: [
-    { year: 2024, bowlerName: 'Jane Smith', categories: ['Superior Performance'], photoUri: null },
-    { year: 2024, bowlerName: 'Bob Johnson', categories: ['Meritorious Service'], photoUri: null },
-    { year: 2023, bowlerName: 'Alice Williams', categories: ['Friend of NEBA'], photoUri: null },
-    { year: 2023, bowlerName: 'Tom Davis', categories: ['Superior Performance', 'Meritorious Service'], photoUri: null },
+    { id: '01JX0000000000000000000001', year: 2024, bowlerName: 'Jane Smith', categories: ['Superior Performance'], photoUri: null },
+    { id: '01JX0000000000000000000002', year: 2024, bowlerName: 'Bob Johnson', categories: ['Meritorious Service'], photoUri: null },
+    { id: '01JX0000000000000000000003', year: 2023, bowlerName: 'Alice Williams', categories: ['Friend of NEBA'], photoUri: null },
+    { id: '01JX0000000000000000000004', year: 2023, bowlerName: 'Tom Davis', categories: ['Superior Performance', 'Meritorious Service'], photoUri: null },
   ],
   totalItems: 4,
 };

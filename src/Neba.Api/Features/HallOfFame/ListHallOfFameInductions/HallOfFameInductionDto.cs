@@ -9,6 +9,11 @@ namespace Neba.Api.Features.HallOfFame.ListHallOfFameInductions;
 public sealed record HallOfFameInductionDto
 {
     /// <summary>
+    /// The ULID string identifying the induction.
+    /// </summary>
+    public required string Id { get; init; }
+
+    /// <summary>
     /// The year the induction occurred.
     /// </summary>
     public required int Year { get; init; }
@@ -27,4 +32,19 @@ public sealed record HallOfFameInductionDto
     /// A public URI pointing to the bowler's photo; null if no photo is available.
     /// </summary>
     public Uri? PhotoUri { get; init; }
+
+    /// <summary>
+    /// Horizontal focal point of the photo, 0 to 100; null when none is set.
+    /// </summary>
+    public int? PhotoFocalX { get; init; }
+
+    /// <summary>
+    /// Vertical focal point of the photo, 0 to 100; null when none is set.
+    /// </summary>
+    public int? PhotoFocalY { get; init; }
+
+    /// <summary>
+    /// Zoom about the focal point, 100 to 300 percent; null when none is set.
+    /// </summary>
+    public int? PhotoZoom { get; init; }
 }
