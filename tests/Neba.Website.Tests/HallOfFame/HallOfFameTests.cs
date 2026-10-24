@@ -224,50 +224,66 @@ public sealed class HallOfFameTests : IDisposable
         cut.Markup.ShouldContain("JS");
     }
 
-    [Fact(DisplayName = "Should apply background-image style when inductee has a photo URI")]
-    public void Render_ShouldApplyPhotoStyle_WhenPhotoUriProvided()
+    [Fact(DisplayName = "Should render the photo with its saved focal point and zoom when the inductee has a photo")]
+    public void Render_ShouldRenderPhotoWithFraming_WhenPhotoUriProvided()
     {
         // Arrange
-        var photoUri = new Uri("https://example.com/photo.jpg");
         var induction = HallOfFameInductionResponseFactory.Create(
             categories: [HallOfFameCategory.SuperiorPerformance.Name],
-            photoUri: photoUri);
+            photoUri: new Uri("https://example.com/photo.jpg"),
+            photoFocalX: 31,
+            photoFocalY: 36,
+            photoZoom: 150);
         SetupSuccessResponse([induction]);
 
         // Act
         var cut = _ctx.Render<HallOfFamePage>();
 
         // Assert
-        cut.Markup.ShouldContain("background-image");
-        cut.Markup.ShouldContain("https://example.com/photo.jpg");
+        var image = cut.Find("img.inductee-photo__img");
+        image.GetAttribute("src").ShouldBe("https://example.com/photo.jpg");
+        image.GetAttribute("style").ShouldBe("object-position:31% 36%;transform-origin:31% 36%;transform:scale(1.5)");
     }
 
-    [Fact(DisplayName = "GetInitials should return first and last initials for two-part name")]
-    public void GetInitials_ShouldReturnFirstAndLastInitials_ForTwoPartName()
+    [Fact(DisplayName = "Should center the photo with no zoom when no framing is saved")]
+    public void Render_ShouldCenterPhoto_WhenNoFramingSaved()
     {
-        // Act & Assert
-        HallOfFamePage.GetInitials("Jane Smith").ShouldBe("JS");
+        // Arrange
+        var induction = HallOfFameInductionResponseFactory.Create(
+            categories: [HallOfFameCategory.SuperiorPerformance.Name],
+            photoUri: new Uri("https://example.com/photo.jpg"));
+        SetupSuccessResponse([induction]);
+
+        // Act
+        var cut = _ctx.Render<HallOfFamePage>();
+
+        // Assert
+        cut.Find("img.inductee-photo__img").GetAttribute("style")
+            .ShouldBe("object-position:50% 50%;transform-origin:50% 50%;transform:scale(1)");
     }
 
-    [Fact(DisplayName = "GetInitials should return first and last initials for multi-part name")]
-    public void GetInitials_ShouldReturnFirstAndLastInitials_ForMultiPartName()
+    [Fact(DisplayName = "Should render an avatar for single-category and combined inductees")]
+    public void Render_ShouldRenderAvatar_ForSingleCategoryAndCombinedInductees()
     {
-        // Act & Assert
-        HallOfFamePage.GetInitials("Mary Jo Johnson").ShouldBe("MJ");
-    }
+        // Arrange
+        var single = HallOfFameInductionResponseFactory.Create(
+            bowlerName: "Jane Smith",
+            categories: [HallOfFameCategory.SuperiorPerformance.Name]);
+        var combined = HallOfFameInductionResponseFactory.Create(
+            bowlerName: "Tom Davis",
+            categories:
+            [
+                HallOfFameCategory.SuperiorPerformance.Name,
+                HallOfFameCategory.MeritoriousService.Name
+            ]);
+        SetupSuccessResponse([single, combined]);
 
-    [Fact(DisplayName = "GetInitials should return single initial for one-part name")]
-    public void GetInitials_ShouldReturnSingleInitial_ForOnePartName()
-    {
-        // Act & Assert
-        HallOfFamePage.GetInitials("Cher").ShouldBe("C");
-    }
+        // Act
+        var cut = _ctx.Render<HallOfFamePage>();
 
-    [Fact(DisplayName = "GetInitials should return question mark for empty name")]
-    public void GetInitials_ShouldReturnQuestionMark_ForEmptyName()
-    {
-        // Act & Assert
-        HallOfFamePage.GetInitials(string.Empty).ShouldBe("?");
+        // Assert
+        cut.FindAll(".inductee-item .inductee-photo").Count.ShouldBe(2);
+        cut.FindAll(".inductee-photo").Select(photo => photo.TextContent.Trim()).ShouldBe(["JS", "TD"], ignoreOrder: true);
     }
 
     private void SetupSuccessResponse(IReadOnlyCollection<HallOfFameInductionResponse> inductions)

@@ -77,12 +77,11 @@
                                         @foreach (var inductee in singleCategoryInductees)
                                         {
                                             <div class="inductee-item">
-                                                <div class="inductee-photo" style="@GetPhotoStyle(inductee)">
-                                                    @if (inductee.PhotoUri is null)
-                                                    {
-                                                        @GetInitials(inductee.BowlerName)
-                                                    }
-                                                </div>
+                                                <HallOfFameAvatar BowlerName="@inductee.BowlerName"
+                                                                  PhotoUri="@inductee.PhotoUri"
+                                                                  FocalX="@inductee.PhotoFocalX"
+                                                                  FocalY="@inductee.PhotoFocalY"
+                                                                  Zoom="@inductee.PhotoZoom" />
                                                 <div class="inductee-name">@inductee.BowlerName</div>
                                             </div>
                                         }
@@ -108,12 +107,11 @@
                                     @foreach (var inductee in combinedInductees)
                                     {
                                         <div class="inductee-item">
-                                            <div class="inductee-photo" style="@GetPhotoStyle(inductee)">
-                                                @if (inductee.PhotoUri is null)
-                                                {
-                                                    @GetInitials(inductee.BowlerName)
-                                                }
-                                            </div>
+                                            <HallOfFameAvatar BowlerName="@inductee.BowlerName"
+                                                              PhotoUri="@inductee.PhotoUri"
+                                                              FocalX="@inductee.PhotoFocalX"
+                                                              FocalY="@inductee.PhotoFocalY"
+                                                              Zoom="@inductee.PhotoZoom" />
                                             <div class="inductee-name">@inductee.BowlerName</div>
                                             <div class="combined-categories">
                                                 @string.Join(" • ", inductee.Categories)
@@ -214,28 +212,6 @@
                     .ToList()
             })
             .ToList();
-    }
-
-    internal static string GetInitials(string name)
-    {
-        var parts = name.Split(' ', StringSplitOptions.RemoveEmptyEntries);
-
-        if (parts.Length >= 2)
-        {
-            return $"{parts[0][0]}{parts[^1][0]}";
-        }
-
-        return parts.Length > 0 ? parts[0][0].ToString() : "?";
-    }
-
-    private static string GetPhotoStyle(HallOfFameInductionViewModel inductee)
-    {
-        if (inductee.PhotoUri is not null)
-        {
-            return $"background-image: url('{inductee.PhotoUri}'); background-size: cover; background-position: center;";
-        }
-
-        return string.Empty;
     }
 
     private static int GetCategoryOrder(string category) => category switch

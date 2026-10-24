@@ -13,23 +13,7 @@
     text-align: center;
 }
 
-.inductee-photo {
-    width: 140px;
-    height: 140px;
-    border-radius: 50%;
-    background: linear-gradient(135deg, var(--neba-blue-700) 0%, var(--neba-blue-brand) 100%);
-    margin-bottom: 0.75rem;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: white;
-    font-size: 3rem;
-    font-weight: 600;
-    box-shadow: 0 4px 8px rgba(0, 102, 204, 0.2);
-    transition: transform 0.2s ease;
-}
-
-.inductee-item:hover .inductee-photo {
+.inductee-item:hover ::deep .inductee-photo {
     transform: scale(1.05);
 }
 

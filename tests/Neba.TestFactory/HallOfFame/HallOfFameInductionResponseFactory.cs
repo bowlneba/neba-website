@@ -43,13 +43,24 @@ public static class HallOfFameInductionResponseFactory
         // A separate randomizer keeps ids from shifting the seeded values the other fields (and their snapshots) rely on.
         var idFaker = new Faker { Random = new Randomizer(poolSeed) };
 
-        return [.. Enumerable.Range(0, count).Select(_ => new HallOfFameInductionResponse
+        return [.. Enumerable.Range(0, count).Select(_ =>
         {
-            Id = Ulid.BogusString(idFaker),
-            Year = faker.Date.PastDateOnly(50, refDate: RefDate).Year,
-            BowlerName = bowlerNamePool.GetNext().ToFormalName(),
-            Categories = [.. faker.PickRandom(HallOfFameCategory.List.Select(c => c.Name), 2)],
-            PhotoUri = faker.Random.Bool() ? new Uri(faker.Internet.Url()) : null
+            var year = faker.Date.PastDateOnly(50, refDate: RefDate).Year;
+            var bowlerName = bowlerNamePool.GetNext().ToFormalName();
+            var categories = faker.PickRandom(HallOfFameCategory.List.Select(c => c.Name), 2).ToList();
+            var photoUri = faker.Random.Bool() ? new Uri(faker.Internet.Url()) : null;
+
+            return new HallOfFameInductionResponse
+            {
+                Id = Ulid.BogusString(idFaker),
+                Year = year,
+                BowlerName = bowlerName,
+                Categories = categories,
+                PhotoUri = photoUri,
+                PhotoFocalX = photoUri is null ? null : idFaker.Random.Int(PhotoFocalPoint.Min, PhotoFocalPoint.Max),
+                PhotoFocalY = photoUri is null ? null : idFaker.Random.Int(PhotoFocalPoint.Min, PhotoFocalPoint.Max),
+                PhotoZoom = photoUri is null ? null : idFaker.Random.Int(PhotoFocalPoint.MinZoom, PhotoFocalPoint.MaxZoom)
+            };
         })];
     }
 
