@@ -1,0 +1,481 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Hall of Fame photo - mockup</title>
+<style>
+  /* Tokens copied from src/Neba.Website.Server/wwwroot/neba_theme.css */
+  :root {
+    --neba-blue-700: #3E4FD9; --neba-blue-600: #5563DD; --neba-blue-500: #6C77E1;
+    --neba-blue-100: #D4D9F5; --neba-blue-brand: #052767;
+    --neba-gray-050: #FAFAFA; --neba-gray-100: #F5F5F5; --neba-gray-200: #E5E5E5; --neba-gray-300: #CCCCCC;
+    --neba-gray-500: #737373; --neba-gray-600: #525252; --neba-gray-700: #333333;
+    --neba-font-base: 'Inter', ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    --neba-font-display: 'Manrope', ui-sans-serif, system-ui, sans-serif;
+    --neba-radius: 0.375rem; --neba-radius-lg: 0.5rem;
+  }
+  * { box-sizing: border-box; }
+  [hidden] { display: none !important; }
+  body { margin: 0; font-family: var(--neba-font-base); background: var(--neba-gray-050); color: #1f2937; }
+
+  /* Review toolbar: mockup only, not part of the design */
+  .review-bar { position: sticky; top: 0; z-index: 5; display: flex; flex-wrap: wrap; gap: .5rem; align-items: center;
+    padding: .5rem 1rem; background: #1a1a1a; color: #fff; font-size: .8125rem; }
+  .review-bar button { font: inherit; padding: .25rem .625rem; border-radius: 4px; border: 1px solid #666; background: #333; color: #fff; cursor: pointer; }
+  .review-bar button:hover { background: #4a4a4a; }
+
+  /* ---------- Hall of Fame page excerpt ---------- */
+  .page { max-width: 760px; margin: 0 auto; padding: 1.5rem 1rem 4rem; }
+  .page h1 { font-family: var(--neba-font-display); font-size: 1.875rem; text-align: center; color: var(--neba-blue-700); margin: 0; }
+  .page .tag { text-align: center; color: var(--neba-gray-600); font-size: .875rem; margin: .25rem 0 1.5rem; }
+  .year { font-size: 1.875rem; font-weight: 700; color: var(--neba-blue-700); text-align: center; padding-bottom: 1rem; margin-bottom: 1.5rem; border-bottom: 3px solid var(--neba-blue-700); }
+  .cat { font-size: 1rem; font-weight: 600; color: var(--neba-gray-700); margin-bottom: 1.25rem; padding: .75rem 1.25rem; background: var(--neba-gray-050); border-radius: 4px; text-transform: uppercase; letter-spacing: .05em; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 1.5rem; }
+  .inductee-item { display: flex; flex-direction: column; align-items: center; text-align: center; }
+  .avatar-wrap { position: relative; margin-bottom: .75rem; }
+  .inductee-photo { width: 140px; height: 140px; border-radius: 50%; overflow: hidden;
+    background: linear-gradient(135deg, var(--neba-blue-700) 0%, var(--neba-blue-brand) 100%);
+    display: flex; align-items: center; justify-content: center; color: #fff; font-size: 3rem; font-weight: 600;
+    box-shadow: 0 4px 8px rgba(0,102,204,.2); }
+  .inductee-photo img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .inductee-name { font-weight: 600; color: var(--neba-gray-700); font-size: .95rem; }
+
+  /* Edit button on the avatar (HallOfFamePhotoEditButton). Same pattern as the tournament logo button. */
+  .photo-edit { position: absolute; right: -2px; bottom: -2px; min-width: 44px; min-height: 44px; display: inline-flex;
+    align-items: center; justify-content: center; border: 0; border-radius: 999px; background: rgba(255,255,255,.96);
+    color: var(--neba-blue-brand); box-shadow: 0 1px 3px rgba(0,0,0,.35); cursor: pointer; }
+  .photo-edit:hover { background: #fff; box-shadow: 0 2px 6px rgba(0,0,0,.4); }
+  .photo-edit:focus-visible { outline: 3px solid var(--neba-blue-500); outline-offset: 2px; }
+  .photo-edit svg { width: 18px; height: 18px; }
+  .page.no-permission .photo-edit { display: none; }
+
+  /* ---------- Modal shell (matches NebaModal) ---------- */
+  .backdrop { position: fixed; inset: 0; z-index: 1000; display: none; align-items: center; justify-content: center;
+    padding: 1rem; background: rgba(0,0,0,.5); backdrop-filter: blur(4px); }
+  .backdrop.open { display: flex; }
+  .modal { width: 100%; max-width: 640px; max-height: calc(100vh - 2rem); display: flex; flex-direction: column;
+    background: #fff; border-radius: .75rem; box-shadow: 0 20px 25px -5px rgba(0,0,0,.1), 0 10px 10px -5px rgba(0,0,0,.04); }
+  .modal-header { display: flex; justify-content: space-between; align-items: center; padding: 1.5rem; border-bottom: 1px solid rgb(229 231 235); }
+  .modal-title { font-size: 1.25rem; font-weight: 600; margin: 0; }
+  .subtitle { font-size: .8125rem; color: var(--neba-gray-500); margin-top: .125rem; }
+  .modal-close { min-width: 44px; min-height: 44px; border: 0; background: none; border-radius: 6px; cursor: pointer; color: var(--neba-gray-600); }
+  .modal-close:hover { background: var(--neba-gray-100); }
+  .modal-body { padding: 1.5rem; overflow-y: auto; }
+  .modal-footer { padding: 1rem 1.5rem; border-top: 1px solid rgb(229 231 235); display: flex; justify-content: flex-end; gap: .75rem; }
+
+  .neba-btn { display: inline-flex; align-items: center; justify-content: center; font: inherit; font-weight: 500; min-height: 40px;
+    padding: .5rem 1rem; border-radius: var(--neba-radius); border: 1px solid transparent; cursor: pointer; }
+  .neba-btn:focus-visible { outline: 2px solid var(--neba-blue-500); outline-offset: 2px; }
+  .neba-btn:disabled { opacity: .5; cursor: not-allowed; }
+  .neba-btn-primary { background: var(--neba-blue-600); color: #fff; }
+  .neba-btn-primary:hover:not(:disabled) { background: var(--neba-blue-700); }
+  .neba-btn-secondary { background: #fff; color: var(--neba-gray-700); border-color: var(--neba-gray-300); }
+  .neba-btn-secondary:hover:not(:disabled) { background: var(--neba-gray-100); }
+
+  /* ---------- Picker (FocalPointPicker) ---------- */
+  .picker { display: grid; grid-template-columns: 1fr 160px; gap: 1.25rem; align-items: start; }
+  .pick-surface { position: relative; width: min(100%, calc(320px * var(--ar, 1.3333))); aspect-ratio: var(--ar, 1.3333); margin: 0 auto;
+    border-radius: var(--neba-radius-lg); overflow: hidden; background: var(--neba-gray-100);
+    border: 1px solid var(--neba-gray-200); cursor: crosshair; touch-action: none; line-height: 0; }
+  .pick-surface.over-crop { cursor: grab; }
+  .pick-surface.dragging, .pick-surface.dragging.over-crop { cursor: grabbing; }
+  .pick-surface.dragging .crop, .pick-surface.dragging .marker { transition: none; }
+  .pick-surface:focus-visible { outline: 3px solid var(--neba-blue-500); outline-offset: 2px; }
+  .pick-surface img { width: 100%; height: 100%; object-fit: fill; display: block; user-select: none; -webkit-user-drag: none; }
+  /* The crop outline is the memorable element: it shows exactly what the round avatar will show and dims the rest. */
+  .crop { position: absolute; transform: translate(-50%, -50%); border-radius: 50%; border: 2px solid #fff; pointer-events: none;
+    box-shadow: 0 0 0 1px rgba(5,39,103,.9), 0 0 0 999px rgba(5,39,103,.5); transition: left 90ms ease-out, top 90ms ease-out; }
+  /* The marker is the memorable element: a ring with a dark halo so it reads on any photo. */
+  .marker { position: absolute; width: 12px; height: 12px; margin: -6px 0 0 -6px; border-radius: 50%; background: #fff;
+    box-shadow: 0 0 0 1.5px rgba(5,39,103,.9); pointer-events: none; transition: left 90ms ease-out, top 90ms ease-out; }
+  @media (prefers-reduced-motion: reduce) { .marker, .crop { transition: none; } }
+  .readout { margin: .5rem 0 0; font-size: .8125rem; color: var(--neba-gray-600); }
+  .readout b { color: #1f2937; font-variant-numeric: tabular-nums; }
+  .side { text-align: center; }
+  .zoom { margin: 0 0 .75rem; }
+  .zoom label { display: flex; justify-content: space-between; font-size: .8125rem; color: var(--neba-gray-600); margin-bottom: .125rem; }
+  .zoom label output { font-weight: 600; color: #1f2937; font-variant-numeric: tabular-nums; }
+  .zoom input[type=range] { width: 100%; min-height: 32px; margin: 0; accent-color: var(--neba-blue-600); cursor: pointer; }
+  .zoom input[type=range]:focus-visible { outline: 2px solid var(--neba-blue-500); outline-offset: 2px; }
+  .preview { width: 132px; height: 132px; margin: 0 auto .625rem; border-radius: 50%; overflow: hidden;
+    background: linear-gradient(135deg, var(--neba-blue-700) 0%, var(--neba-blue-brand) 100%);
+    display: flex; align-items: center; justify-content: center; color: #fff; font-size: 2.75rem; font-weight: 600;
+    box-shadow: 0 4px 8px rgba(0,102,204,.2); }
+  .preview img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .preview-cap { font-size: .8125rem; color: var(--neba-gray-500); margin: 0 0 .5rem; }
+  .badge { display: inline-block; font-size: .75rem; font-weight: 600; padding: .125rem .5rem; border-radius: 999px; background: var(--neba-blue-100); color: var(--neba-blue-brand); margin-bottom: .25rem; }
+  .state { margin: 0; font-size: .9375rem; font-weight: 600; }
+  .help { margin: .125rem 0 .25rem; font-size: .875rem; color: var(--neba-gray-600); }
+  .link-danger { background: none; border: 0; padding: .25rem 0; min-height: 44px; color: #B42318; font: inherit; font-size: .875rem; font-weight: 600; text-decoration: underline; text-underline-offset: 3px; cursor: pointer; }
+
+  .empty { display: grid; grid-template-columns: 1fr 160px; gap: 1.25rem; align-items: center; }
+  .empty-box { border: 1px dashed var(--neba-gray-300); border-radius: var(--neba-radius-lg); padding: 2rem 1rem; text-align: center; color: var(--neba-gray-600); font-size: .9375rem; background: var(--neba-gray-050); }
+  .empty-box strong { display: block; color: #1f2937; margin-bottom: .25rem; }
+
+  /* Upload dropzone (FileUpload) */
+  .dropzone { margin-top: 1.25rem; border: 2px dashed var(--neba-gray-300); border-radius: var(--neba-radius-lg); padding: 1rem; text-align: center; cursor: pointer; background: #fff; }
+  .dropzone:hover, .dropzone:focus-visible { border-color: var(--neba-blue-500); background: var(--neba-gray-050); outline: none; }
+  .dropzone .label { font-weight: 600; display: block; }
+  .dropzone .hint { font-size: .8125rem; color: var(--neba-gray-500); }
+
+  .alert-error { background: #FEF3F2; border: 1px solid #FDA29B; color: #B42318; border-radius: var(--neba-radius); padding: .75rem 1rem; margin-bottom: 1rem; font-size: .875rem; }
+
+  /* Discard confirm (ConfirmActionModal) */
+  .confirm { max-width: 420px; padding: 1.5rem; }
+  .confirm h3 { margin: 0 0 .5rem; font-size: 1.125rem; }
+  .confirm p { margin: 0 0 1.25rem; color: var(--neba-gray-600); font-size: .9375rem; }
+  .confirm .row { display: flex; justify-content: flex-end; gap: .75rem; }
+
+  .toast { position: fixed; right: 1rem; bottom: 1rem; z-index: 2000; background: #fff; border-left: 4px solid #16A34A; box-shadow: 0 4px 12px rgba(0,0,0,.2); border-radius: 6px; padding: .75rem 1rem; display: none; }
+  .toast.show { display: block; }
+  .toast b { display: block; }
+
+  .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+
+  @media (max-width: 640px) {
+    .picker, .empty { grid-template-columns: 1fr; }
+    .side { display: grid; grid-template-columns: 96px 1fr; grid-template-areas: "pv tx" "zm zm"; gap: .5rem 1rem; align-items: center; text-align: left; }
+    .side > .preview { grid-area: pv; width: 96px; height: 96px; font-size: 2rem; margin: 0; }
+    .side > .zoom { grid-area: zm; margin: 0; }
+    .side > .txt { grid-area: tx; }
+    #empty .side { grid-template-areas: none; }
+    .modal-body, .modal-header { padding: 1rem; }
+  }
+</style>
+</head>
+<body>
+
+<div class="review-bar">
+  <strong>Mockup controls:</strong>
+  <button type="button" id="rb-perm">Toggle edit permission (on)</button>
+  <span>Click the pencil on an inductee. Pat Rowan has no photo. Bob Johnson's face sits near the left edge: try zooming to center it.</span>
+</div>
+
+<main class="page" id="page">
+  <h1>Hall of Fame</h1>
+  <p class="tag">Honoring Excellence in Bowling</p>
+
+  <div class="year">Class of 2024</div>
+  <div class="cat">Superior Performance</div>
+  <div class="grid" id="grid"></div>
+</main>
+
+<!-- Edit photo modal -->
+<div class="backdrop" id="backdrop" role="presentation">
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="edit-photo-title">
+    <div class="modal-header">
+      <div>
+        <h2 class="modal-title" id="edit-photo-title">Edit photo</h2>
+        <div class="subtitle" id="who"></div>
+      </div>
+      <button type="button" class="modal-close" id="x" aria-label="Close">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>
+      </button>
+    </div>
+
+    <div class="modal-body">
+      <div class="alert-error" id="err" hidden>Couldn't save the photo. Check your connection and try again.</div>
+
+      <!-- shown when a photo is available -->
+      <div class="picker" id="picker">
+        <div>
+          <div class="pick-surface" id="surface" tabindex="0" role="slider"
+               aria-label="Photo position. Click the face to center it in the circle, or use the arrow keys; hold Shift to move further."
+               aria-valuemin="0" aria-valuemax="100" aria-valuenow="50" aria-valuetext="">
+            <img id="pick-img" alt="">
+            <span class="crop" id="crop"></span>
+            <span class="marker" id="marker"></span>
+          </div>
+          <p class="readout" id="readout"></p>
+        </div>
+        <div class="side">
+          <div class="preview" id="preview"></div>
+          <div class="zoom" id="zoom-box">
+            <label for="zoom">Zoom <output id="zval">1.0×</output></label>
+            <input type="range" id="zoom" min="100" max="300" step="5" value="100" aria-label="Zoom">
+          </div>
+          <div class="txt">
+            <span class="badge" id="badge" hidden>New photo</span>
+            <p class="state" id="state"></p>
+            <p class="help" id="help"></p>
+            <button type="button" class="link-danger" id="discard" hidden>Discard new photo</button>
+            <button type="button" class="link-danger" id="remove" hidden>Remove photo</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- shown when there is no photo (none, or removed) -->
+      <div class="empty" id="empty" hidden>
+        <div class="empty-box"><strong id="empty-title">No photo yet</strong><span id="empty-text">The page shows initials until you add one.</span></div>
+        <div class="side">
+          <div class="preview" id="empty-preview"></div>
+          <div><p class="state" id="empty-state"></p></div>
+        </div>
+      </div>
+
+      <div class="dropzone" id="drop" tabindex="0" role="button">
+        <span class="label" id="drop-label">Upload a photo</span>
+        <span class="hint">JPEG, PNG, WebP, or GIF up to 5 MB. Drag and drop, or click to browse.</span>
+      </div>
+    </div>
+
+    <div class="modal-footer">
+      <button type="button" class="neba-btn neba-btn-secondary" id="cancel">Cancel</button>
+      <button type="button" class="neba-btn neba-btn-primary" id="save" disabled>Save photo</button>
+    </div>
+  </div>
+</div>
+
+<!-- Discard confirm -->
+<div class="backdrop" id="confirm-backdrop" style="z-index:1100" role="presentation">
+  <div class="modal confirm" role="alertdialog" aria-modal="true" aria-labelledby="c-title">
+    <h3 id="c-title">Discard unsaved changes?</h3>
+    <p>You have unsaved changes. If you close this dialog now, they will be lost.</p>
+    <div class="row">
+      <button type="button" class="neba-btn neba-btn-secondary" id="keep">Keep editing</button>
+      <button type="button" class="neba-btn neba-btn-primary" id="discard-all">Discard</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast" role="status"><b>Photo saved</b>The inductee photo was updated.</div>
+
+<script>
+  // ---- throwaway review script: simulates the runtime behavior, not the real implementation ----
+  const svg = (bg1, bg2, headX, headY, shirt) => 'data:image/svg+xml;utf8,' + encodeURIComponent(
+    `<svg xmlns="http://www.w3.org/2000/svg" width="800" height="600" viewBox="0 0 800 600">
+       <defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="${bg1}"/><stop offset="1" stop-color="${bg2}"/></linearGradient></defs>
+       <rect width="800" height="600" fill="url(#g)"/>
+       <g opacity=".18" fill="#fff"><rect x="0" y="470" width="800" height="14"/><rect x="0" y="510" width="800" height="10"/><rect x="0" y="545" width="800" height="8"/></g>
+       <ellipse cx="${headX}" cy="640" rx="190" ry="230" fill="${shirt}"/>
+       <circle cx="${headX}" cy="${headY}" r="72" fill="#e8c4a0"/>
+       <path d="M${headX-72} ${headY-8} a72 72 0 0 1 144 0 q-72 -34 -144 0z" fill="#3b2b20"/>
+     </svg>`);
+
+  const photos = {
+    a: svg('#1b6a8a', '#052767', 560, 230, '#0f3b5c'),   // person right of center
+    b: svg('#c07a2b', '#7a3d12', 250, 210, '#3b2b20'),   // person left, higher
+    c: svg('#2e7d5b', '#0e3b2a', 400, 260, '#14452f'),
+    staged: svg('#6b5bd9', '#2a3aa0', 190, 250, '#1d2672') // replacement upload
+  };
+
+  const people = [
+    { id: 1, name: 'Jane Smith',  photo: photos.a, x: 100, y: 50, z: 200 },
+    { id: 2, name: 'Bob Johnson', photo: photos.b, x: 0, y: 50, z: 100 },
+    { id: 3, name: 'Alice Williams', photo: photos.c, x: 50, y: 50, z: 100 },
+    { id: 4, name: 'Pat Rowan',   photo: null, x: null, y: null, z: null }
+  ];
+
+  const $ = id => document.getElementById(id);
+  const initials = n => { const p = n.split(' '); return p[0][0] + p[p.length-1][0]; };
+  // Same three declarations the real page uses: object-position moves the photo, scale zooms about the same point.
+  const imgStyle = (x, y, z) => `object-position:${x}% ${y}%; transform-origin:${x}% ${y}%; transform:scale(${(z ?? 100) / 100})`;
+  const avatarHtml = p => p.photo
+    ? `<img src="${p.photo}" alt="" style="${imgStyle(p.x ?? 50, p.y ?? 50, p.z)}">`
+    : initials(p.name);
+
+  function renderGrid() {
+    $('grid').innerHTML = people.map(p => `
+      <div class="inductee-item">
+        <div class="avatar-wrap">
+          <div class="inductee-photo" id="av-${p.id}">${avatarHtml(p)}</div>
+          <button type="button" class="photo-edit" data-id="${p.id}" aria-label="Edit photo for ${p.name}">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
+          </button>
+        </div>
+        <div class="inductee-name">${p.name}</div>
+      </div>`).join('');
+    document.querySelectorAll('.photo-edit').forEach(b => b.addEventListener('click', () => openModal(+b.dataset.id)));
+  }
+
+  // modal state
+  let cur, savedX, savedY, savedZ, x, y, z, stagedUrl, removed;
+  let ar = 4 / 3;            // photo width / height, read from the image once it loads
+  let shownSrc = null;
+  let lastFocus;
+  const surface = $('surface');
+
+  const shownUrl = () => stagedUrl ?? (removed ? null : cur.photo);
+  const dirty = () => !!stagedUrl || removed || (!removed && cur.photo && (x !== savedX || y !== savedY || z !== savedZ));
+
+  function openModal(id) {
+    cur = people.find(p => p.id === id);
+    savedX = cur.x ?? 50; savedY = cur.y ?? 50; savedZ = cur.z ?? 100; x = savedX; y = savedY; z = savedZ;
+    stagedUrl = null; removed = false;
+    $('who').textContent = cur.name;
+    $('err').hidden = true;
+    lastFocus = document.activeElement;
+    $('backdrop').classList.add('open');
+    render();
+    $('x').focus();
+  }
+
+  function closeModal() { $('backdrop').classList.remove('open'); lastFocus && lastFocus.focus(); }
+
+  function requestClose() {
+    if (dirty()) { $('confirm-backdrop').classList.add('open'); $('keep').focus(); } else closeModal();
+  }
+
+  function render() {
+    const url = shownUrl();
+    $('picker').hidden = !url;
+    $('empty').hidden = !!url;
+    $('drop-label').textContent = url ? (stagedUrl ? 'Upload a different photo' : 'Upload a replacement photo') : 'Upload a photo';
+
+    if (url) {
+      if (shownSrc !== url) { shownSrc = url; $('pick-img').src = url; }
+      placeCrop();
+      $('preview').innerHTML = `<img src="${url}" alt="" style="${imgStyle(x, y, z)}">`;
+      $('zoom').value = z; $('zval').textContent = (z / 100).toFixed(1) + '×';
+      $('readout').textContent = 'Click the face to center it in the circle, then drag the circle to fine-tune. If the face sits near the edge, zoom in first. Arrow keys also work; hold Shift to move further.';
+      surface.setAttribute('aria-valuenow', x);
+      surface.setAttribute('aria-valuetext', `Photo positioned ${x} percent across and ${y} percent down, zoom ${(z / 100).toFixed(1)} times`);
+      $('badge').hidden = !stagedUrl;
+      $('state').textContent = stagedUrl ? 'New photo' : 'Current photo';
+      $('help').textContent = stagedUrl ? 'Replaces the current photo when you save.' : 'This is how the photo shows on the Hall of Fame page.';
+      $('discard').hidden = !stagedUrl;
+      $('remove').hidden = !!stagedUrl || !cur.photo;
+    } else {
+      $('empty-preview').textContent = initials(cur.name);
+      if (removed) {
+        $('empty-title').textContent = 'Photo will be removed';
+        $('empty-text').textContent = 'The page shows initials after you save.';
+        $('empty-state').textContent = 'Initials';
+      } else {
+        $('empty-title').textContent = 'No photo yet';
+        $('empty-text').textContent = 'The page shows initials until you add one.';
+        $('empty-state').textContent = 'Initials';
+      }
+    }
+    $('save').disabled = !dirty();
+  }
+
+  // The saved value is the CSS object-position percent. object-position lines the photo's p% mark up with the
+  // circle's p% mark, so clicking a face does not center it by itself. The picker converts the click into the
+  // percent that puts the clicked point at the circle's center, as far as the photo allows (the circle cannot
+  // leave the photo). The real version lives in FocalPointPicker.razor.js.
+  const clamp = v => Math.max(0, Math.min(100, v));
+  const cropSize = () => ({ cw: Math.min(1, 1 / ar) / (z / 100), ch: Math.min(1, ar) / (z / 100) });   // circle size as a fraction of the photo; zooming in shrinks it
+
+  function placeCrop() {
+    const { cw, ch } = cropSize();
+    const cx = cw / 2 + (x / 100) * (1 - cw);          // center of the visible circle, as a fraction of the photo
+    const cy = ch / 2 + (y / 100) * (1 - ch);
+    const crop = $('crop');
+    crop.style.width = cw * 100 + '%'; crop.style.height = ch * 100 + '%';
+    crop.style.left = cx * 100 + '%'; crop.style.top = cy * 100 + '%';
+    $('marker').style.left = cx * 100 + '%'; $('marker').style.top = cy * 100 + '%';
+  }
+
+  $('pick-img').addEventListener('load', e => {
+    ar = e.target.naturalWidth / e.target.naturalHeight;
+    surface.style.setProperty('--ar', ar);
+    placeCrop();
+  });
+
+  // Zooming keeps the center of the circle where it is, then re-derives the position percents.
+  $('zoom').addEventListener('input', e => {
+    const before = cropSize();
+    const cx = before.cw / 2 + (x / 100) * (1 - before.cw), cy = before.ch / 2 + (y / 100) * (1 - before.ch);
+    z = +e.target.value;
+    const { cw, ch } = cropSize();
+    x = cw < 1 ? clamp(Math.round((cx - cw / 2) / (1 - cw) * 100)) : 50;
+    y = ch < 1 ? clamp(Math.round((cy - ch / 2) / (1 - ch) * 100)) : 50;
+    render();
+  });
+
+  // Pointer events cover mouse, touch, and pen. A click jumps the circle to that point; pressing on the circle and
+  // dragging moves it from where it was grabbed, so it does not jump under the pointer.
+  const photoPoint = e => {
+    const r = surface.getBoundingClientRect();
+    return { fx: (e.clientX - r.left) / r.width, fy: (e.clientY - r.top) / r.height };
+  };
+  const circleCenter = () => {
+    const { cw, ch } = cropSize();
+    return { cx: cw / 2 + (x / 100) * (1 - cw), cy: ch / 2 + (y / 100) * (1 - ch), cw, ch };
+  };
+  const insideCircle = (fx, fy) => {
+    const { cx, cy, cw, ch } = circleCenter();
+    return ((fx - cx) / (cw / 2)) ** 2 + ((fy - cy) / (ch / 2)) ** 2 <= 1;
+  };
+  const moveCenterTo = (cx, cy) => {
+    const { cw, ch } = cropSize();
+    if (cw < 1) x = clamp(Math.round((cx - cw / 2) / (1 - cw) * 100));
+    if (ch < 1) y = clamp(Math.round((cy - ch / 2) / (1 - ch) * 100));
+    render();
+  };
+
+  let drag = null;   // { dx, dy }: where the pointer grabbed the circle, relative to its center
+  surface.addEventListener('pointerdown', e => {
+    if (e.button !== 0) return;
+    const { fx, fy } = photoPoint(e);
+    if (insideCircle(fx, fy)) {
+      const { cx, cy } = circleCenter();
+      drag = { dx: cx - fx, dy: cy - fy };
+    } else {
+      drag = { dx: 0, dy: 0 };
+      moveCenterTo(fx, fy);
+    }
+    surface.setPointerCapture(e.pointerId);
+    surface.classList.add('dragging');
+    surface.focus({ preventScroll: true });
+  });
+  surface.addEventListener('pointermove', e => {
+    const { fx, fy } = photoPoint(e);
+    if (!drag) { surface.classList.toggle('over-crop', insideCircle(fx, fy)); return; }
+    moveCenterTo(fx + drag.dx, fy + drag.dy);
+  });
+  const endDrag = e => {
+    if (!drag) return;
+    drag = null;
+    surface.classList.remove('dragging');
+    if (surface.hasPointerCapture(e.pointerId)) surface.releasePointerCapture(e.pointerId);
+  };
+  surface.addEventListener('pointerup', endDrag);
+  surface.addEventListener('pointercancel', endDrag);
+  surface.addEventListener('pointerleave', () => { if (!drag) surface.classList.remove('over-crop'); });
+  surface.addEventListener('keydown', e => {
+    const step = e.shiftKey ? 5 : 1;
+    const d = { ArrowLeft: [-step,0], ArrowRight: [step,0], ArrowUp: [0,-step], ArrowDown: [0,step] }[e.key];
+    if (!d) return;
+    e.preventDefault();
+    const { cw, ch } = cropSize();
+    if (cw < 1) x = clamp(x + d[0]);   // an axis with no overflow cannot move
+    if (ch < 1) y = clamp(y + d[1]);
+    render();
+  });
+
+  // upload simulation
+  const upload = () => { stagedUrl = photos.staged; removed = false; x = 50; y = 50; z = 100; render(); };
+  $('drop').addEventListener('click', upload);
+  $('drop').addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); upload(); } });
+  $('discard').addEventListener('click', () => { stagedUrl = null; x = savedX; y = savedY; z = savedZ; render(); });
+  $('remove').addEventListener('click', () => { removed = true; stagedUrl = null; render(); });
+
+  $('save').addEventListener('click', () => {
+    if (stagedUrl) { cur.photo = stagedUrl; cur.x = x; cur.y = y; cur.z = z; }
+    else if (removed) { cur.photo = null; cur.x = cur.y = cur.z = null; }
+    else { cur.x = x; cur.y = y; cur.z = z; }
+    renderGrid();
+    closeModal();
+    const t = $('toast'); t.classList.add('show'); setTimeout(() => t.classList.remove('show'), 2500);
+  });
+
+  $('cancel').addEventListener('click', requestClose);
+  $('x').addEventListener('click', requestClose);
+  $('keep').addEventListener('click', () => $('confirm-backdrop').classList.remove('open'));
+  $('discard-all').addEventListener('click', () => { $('confirm-backdrop').classList.remove('open'); closeModal(); });
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Escape' && $('backdrop').classList.contains('open') && !$('confirm-backdrop').classList.contains('open')) requestClose();
+  });
+
+  $('rb-perm').addEventListener('click', e => {
+    const off = $('page').classList.toggle('no-permission');
+    e.target.textContent = `Toggle edit permission (${off ? 'off' : 'on'})`;
+  });
+
+  renderGrid();
+</script>
+</body>
+</html>
