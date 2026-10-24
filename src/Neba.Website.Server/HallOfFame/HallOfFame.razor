@@ -1,5 +1,6 @@
 @page "/hall-of-fame"
 @using Neba.Api.Contracts.HallOfFame
+@using Neba.Api.Contracts.Security
 @using Neba.Website.Server.Services
 
 @inject ApiExecutor ApiExecutor
@@ -24,6 +25,13 @@
     <div class="text-center">
         <h1 class="text-3xl font-bold text-[var(--neba-blue-700)]">Hall of Fame</h1>
         <p class="mt-1 text-sm text-gray-600">Honoring Excellence in Bowling</p>
+        <AuthorizeView Policy="@Permissions.EditHallOfFamePhoto.PolicyName">
+            <Authorized>
+                <div class="mt-2">
+                    <HelpButton DocName="edit-hall-of-fame-photo" />
+                </div>
+            </Authorized>
+        </AuthorizeView>
     </div>
 
     <!-- Error Alert -->

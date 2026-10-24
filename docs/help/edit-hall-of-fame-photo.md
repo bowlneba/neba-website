@@ -10,13 +10,23 @@ You can only change an inductee's photo. Inductions themselves (who, which year,
 
 ## Steps
 
-1. Open the **Hall of Fame** page (`/hall-of-fame`).
-2. Click the small pencil button on the inductee's round photo. The **Edit photo** window opens with the inductee's name.
-3. Do one of:
+1. Open the **Hall of Fame** page (`/hall-of-fame`). A help button (**?**) under the page title opens this guide.
+2. Click the small pencil button on the inductee's round photo.
+
+   ![The Hall of Fame page with a pencil button on each inductee's photo](images/edit-hall-of-fame-photo/edit-buttons.png)
+
+3. The **Edit photo** window opens with the inductee's name. If the inductee has no photo yet, it says so, and the page shows their initials.
+
+   ![The Edit photo window for an inductee with no photo](images/edit-hall-of-fame-photo/no-photo.png)
+
+4. Do one of:
    - **Add or replace the photo.** Drag an image onto the upload area, or click to browse (one image, up to 5 MB; JPEG, PNG, WebP, or GIF). The photo appears in the editor and is marked **New photo**. Choose **Discard new photo** to go back to the current one.
    - **Align the photo** (see below).
    - **Remove it.** Click **Remove photo**. The page then shows the inductee's initials.
-4. Click **Save photo**. The window closes and a "Photo Saved" message appears. The page shows the change right away.
+
+   ![The Edit photo window with the inductee's current photo](images/edit-hall-of-fame-photo/current-photo.png)
+
+5. Click **Save photo**. The window closes and a "Photo Saved" message appears. The page shows the change right away.
 
 **Cancel**, **Escape**, or a click outside the window closes it. If you have an unsaved change, you're asked to confirm first ("Discard unsaved changes?").
 
@@ -29,7 +39,15 @@ The page shows the photo in a circle, so part of it is cut off. The editor shows
 - **Zoom.** Use the **Zoom** slider (1.0× to 3.0×) to move in closer. Zooming also lets you center a face that sits near the edge of the photo, because the ring gets smaller. Zooming keeps whatever is in the ring in place.
 - **Keyboard.** Click the photo area so it has focus, then use the arrow keys to nudge the ring. Hold **Shift** to move further.
 
+![A new photo zoomed in, with the ring placed on the face and the round preview beside it](images/edit-hall-of-fame-photo/new-photo-aligned.png)
+
 The original file is never cropped or changed; the page only chooses which part to show. If you save a new photo without touching the ring, the photo is centered with no zoom.
+
+## What happens after you save
+
+- **It worked.** The window closes, a "Photo Saved" message appears, and the page reloads the inductee list so the avatar shows the new photo at the framing you chose. A replaced or removed photo's old file is deleted in the background.
+- **It did not work.** The window stays open with a "Couldn't Save Photo" message that says why. Nothing was changed, so you can fix the issue and save again.
+- **You walked away without saving.** A photo you uploaded but never saved is cleaned up automatically later; it never shows on the page.
 
 ## Troubleshooting
 
@@ -41,6 +59,8 @@ The original file is never cropped or changed; the page only chooses which part 
 | A red status next to the upload (e.g. "File exceeds the maximum allowed size of 5 MB.") | The file did not upload. Try a smaller or different image. |
 | "Couldn't Save Photo" with a message | The server did not save the change; the message says why. The photo is unchanged — fix the issue and save again. |
 | "Hall of Fame induction was not found." | The induction no longer exists. Reload the Hall of Fame page. |
+| "The induction has no photo to position." | Someone removed the photo while you were editing. Close the window, reload the page, and start again. |
+| "Photo must be a file uploaded through the photo upload endpoint." | The uploaded file is no longer waiting to be saved (for example, the window sat open for a long time). Upload the photo again. |
 
 ## Related
 

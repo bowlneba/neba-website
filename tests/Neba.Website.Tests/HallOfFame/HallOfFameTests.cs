@@ -13,6 +13,7 @@ using Neba.Api.Features.HallOfFame.Domain;
 using Neba.TestFactory.Attributes;
 using Neba.TestFactory.HallOfFame;
 using Neba.Website.Server.Clock;
+using Neba.Website.Server.Help;
 using Neba.Website.Server.Notifications;
 using Neba.Website.Server.Services;
 
@@ -45,6 +46,7 @@ public sealed class HallOfFameTests : IDisposable
 
         _authContext = _ctx.AddAuthorization();
         _ctx.Services.AddSingleton(_toastService);
+        _ctx.Services.AddSingleton<HelpDocumentService>();
         _ctx.Services.AddSingleton(_mockApi.Object);
         _ctx.Services.AddSingleton(sp => new ApiExecutor(mockStopwatch.Object, sp.GetRequiredService<NavigationManager>(), NullLogger<ApiExecutor>.Instance));
     }
@@ -295,6 +297,35 @@ public sealed class HallOfFameTests : IDisposable
         // Assert
         cut.FindAll(".inductee-item .inductee-photo").Count.ShouldBe(2);
         cut.FindAll(".inductee-photo").Select(photo => photo.TextContent.Trim()).ShouldBe(["JS", "TD"], ignoreOrder: true);
+    }
+
+    [Fact(DisplayName = "Should show the help button to a user with the edit-photo permission")]
+    public void Render_ShouldShowHelpButton_WithPermission()
+    {
+        // Arrange
+        _authContext.SetAuthorized("editor");
+        _authContext.SetPolicies(Permissions.EditHallOfFamePhoto.PolicyName);
+        SetupSuccessResponse([HallOfFameInductionResponseFactory.Create()]);
+
+        // Act
+        var cut = _ctx.Render<HallOfFamePage>();
+
+        // Assert
+        cut.FindAll("button.neba-help-btn").Count.ShouldBe(1);
+    }
+
+    [Fact(DisplayName = "Should not show the help button to a user without the edit-photo permission")]
+    public void Render_ShouldHideHelpButton_WithoutPermission()
+    {
+        // Arrange
+        _authContext.SetAuthorized("member");
+        SetupSuccessResponse([HallOfFameInductionResponseFactory.Create()]);
+
+        // Act
+        var cut = _ctx.Render<HallOfFamePage>();
+
+        // Assert
+        cut.FindAll("button.neba-help-btn").ShouldBeEmpty();
     }
 
     [Fact(DisplayName = "Should not show edit-photo buttons to a user without the permission")]
