@@ -1,3 +1,5 @@
+using System.Text.Json.Serialization;
+
 namespace Neba.Api.Contracts.Memberships;
 
 /// <summary>
@@ -15,6 +17,7 @@ public sealed record RepeatPolicy
     /// </summary>
     public int? Days { get; }
 
+    [JsonConstructor]
     private RepeatPolicy(RepeatPolicyKind kind, int? days)
         => (Kind, Days) = (kind, days);
 

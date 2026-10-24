@@ -1,3 +1,5 @@
+using System.Text.RegularExpressions;
+
 using Ardalis.SmartEnum;
 
 namespace Neba.Api.Contracts.Memberships;
@@ -12,13 +14,24 @@ namespace Neba.Api.Contracts.Memberships;
 /// <see cref="SmartEnum{TEnum, TValue}.Name"/> is the display label and may change freely.
 /// </remarks>
 [SmartEnumStringComparer(StringComparison.InvariantCultureIgnoreCase)]
-public sealed class MembershipType
+public sealed partial class MembershipType
     : SmartEnum<MembershipType, string>
 {
     /// <summary>
     /// Longest allowed code.
     /// </summary>
     public const int MaxCodeLength = 32;
+
+    private const int GuestMinimumDaysBetweenUses = 730;
+
+    private static readonly Lazy<IReadOnlyDictionary<int, MembershipType>> ByLegacyId
+        = new(() => List.ToDictionary(t => t.LegacyId));
+
+    private static readonly Lazy<IReadOnlyList<MembershipType>> PurchasableTypes
+        = new(() => [.. List.Where(t => t.Active)]);
+
+    [GeneratedRegex("^[A-Z]+(_[A-Z]+)*$")]
+    private static partial Regex UpperSnakeCase();
 
     /// <summary>
     /// A bowler's first yearly membership; once per lifetime.
@@ -56,11 +69,11 @@ public sealed class MembershipType
         RepeatPolicy.Unlimited, requiresPriorMembership: false, qualifiesAsPriorMembership: false, active: true);
 
     /// <summary>
-    /// A short free membership for a guest; 730 days between uses.
+    /// A short free membership for a guest, limited by a minimum gap between uses.
     /// </summary>
     public static readonly MembershipType Guest = new(
         "GUEST", "Guest", legacyId: 6, MembershipKind.Temporary, cost: 0.00m, lengthInDays: 2,
-        RepeatPolicy.MinimumDaysSinceLast(730), requiresPriorMembership: false, qualifiesAsPriorMembership: false, active: true);
+        RepeatPolicy.MinimumDaysSinceLast(GuestMinimumDaysBetweenUses), requiresPriorMembership: false, qualifiesAsPriorMembership: false, active: true);
 
     /// <summary>
     /// Inactive; no reservation membership has been issued since 2022. Kept so history resolves.
@@ -82,6 +95,11 @@ public sealed class MembershipType
     public static readonly MembershipType TimeHonored = new(
         "TIME_HONORED", "Time Honored Member", legacyId: 10, MembershipKind.Yearly, cost: 0.00m, lengthInDays: null,
         RepeatPolicy.Unlimited, requiresPriorMembership: true, qualifiesAsPriorMembership: true, active: true);
+
+    /// <summary>
+    /// The types that can be bought today: every <see cref="Active"/> type. Use this for pickers.
+    /// </summary>
+    public static IReadOnlyList<MembershipType> Purchasable => PurchasableTypes.Value;
 
     /// <summary>
     /// The legacy system's membership id. Used only to match the legacy feed and migration; remove after cutover.
@@ -144,12 +162,22 @@ public sealed class MembershipType
             throw new ArgumentException($"Code '{value}' exceeds {MaxCodeLength} characters.", nameof(value));
         }
 
+        if (!UpperSnakeCase().IsMatch(value))
+        {
+            throw new ArgumentException($"Code '{value}' must be UPPER_SNAKE_CASE.", nameof(value));
+        }
+
         switch (kind)
         {
             case MembershipKind.Temporary when lengthInDays is null or < 1:
                 throw new ArgumentException("A temporary membership needs a length of at least 1 day.", nameof(lengthInDays));
             case MembershipKind.Yearly when lengthInDays is not null:
                 throw new ArgumentException("A yearly membership cannot have a length in days.", nameof(lengthInDays));
+            case MembershipKind.Temporary:
+            case MembershipKind.Yearly:
+                break;
+            default:
+                throw new ArgumentOutOfRangeException(nameof(kind), kind, "Unknown membership kind.");
         }
 
         LegacyId = legacyId;
@@ -179,7 +207,6 @@ public sealed class MembershipType
     /// <returns>True if a type matched.</returns>
     public static bool TryFromLegacyId(int legacyId, [System.Diagnostics.CodeAnalysis.NotNullWhen(true)] out MembershipType? type)
     {
-        type = List.FirstOrDefault(t => t.LegacyId == legacyId);
-        return type is not null;
+        return ByLegacyId.Value.TryGetValue(legacyId, out type);
     }
 }

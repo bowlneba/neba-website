@@ -11,7 +11,7 @@ public enum MembershipKind
     Temporary = 0,
 
     /// <summary>
-    /// Valid through the end of the calendar year, rolling to the next year late in the current one.
+    /// Valid through Dec 31, or through Dec 31 of the next year when bought on or after Nov 1.
     /// </summary>
     Yearly = 1,
 }

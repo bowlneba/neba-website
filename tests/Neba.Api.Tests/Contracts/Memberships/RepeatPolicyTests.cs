@@ -74,4 +74,26 @@ public sealed class RepeatPolicyTests
         // Assert
         first.ShouldBe(second);
     }
+
+    [Theory(DisplayName = "RepeatPolicy round-trips through System.Text.Json")]
+    [InlineData(RepeatPolicyKind.Unlimited, null)]
+    [InlineData(RepeatPolicyKind.OncePerLifetime, null)]
+    [InlineData(RepeatPolicyKind.MinimumDaysSinceLast, 730)]
+    public void RepeatPolicy_ShouldRoundTripThroughJson(RepeatPolicyKind kind, int? days)
+    {
+        // Arrange
+        var policy = kind switch
+        {
+            RepeatPolicyKind.Unlimited => RepeatPolicy.Unlimited,
+            RepeatPolicyKind.OncePerLifetime => RepeatPolicy.OncePerLifetime,
+            _ => RepeatPolicy.MinimumDaysSinceLast(days!.Value)
+        };
+
+        // Act
+        var json = System.Text.Json.JsonSerializer.Serialize(policy);
+        var result = System.Text.Json.JsonSerializer.Deserialize<RepeatPolicy>(json);
+
+        // Assert
+        result.ShouldBe(policy);
+    }
 }

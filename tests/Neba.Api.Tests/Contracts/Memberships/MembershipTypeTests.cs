@@ -179,4 +179,19 @@ public sealed partial class MembershipTypeTests
             }
         }
     }
+
+    [Fact(DisplayName = "Purchasable contains exactly the active types")]
+    public void Purchasable_ShouldContainOnlyActiveTypes()
+    {
+        // Arrange
+        var expected = Seeds.Where(s => s.Active).Select(s => s.Code);
+
+        // Act
+        var codes = MembershipType.Purchasable.Select(t => t.Value);
+
+        // Assert
+        codes.ShouldBe(expected, ignoreOrder: true);
+        MembershipType.Purchasable.ShouldNotContain(MembershipType.Reservation);
+        MembershipType.Purchasable.ShouldNotContain(MembershipType.Courtesy);
+    }
 }
