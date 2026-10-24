@@ -114,3 +114,8 @@ Confirmed and fixed for `Sponsor.PhoneNumbers`, `Sponsor.TournamentsSponsored`, 
 - `Microsoft.Extensions.Diagnostics.ResourceMonitoring` supports Linux and Windows only, so registration is skipped on macOS. Its instrument names are internal, so the meter name is a literal in `TelemetryConfiguration`. `IResourceMonitor` is obsolete; use the instruments.
 - Not adopted: `Microsoft.AspNetCore.Diagnostics.Middleware` request logging. Audit.WebApi (`Neba.Api/Auditing`) and OpenTelemetry request telemetry already record each request.
 
+### Bowler memberships
+
+- A bowler owns its memberships (`Bowler.AddMembership`). The eligibility rules read the loaded `Bowler.Memberships`, so every handler that adds one must load the bowler with `Include(b => b.Memberships)`. A bowler loaded without them passes every rule.
+- `Bowler.AddLegacyMembership` copies a legacy record as stored (no eligibility rules, cost and dates untouched). Skip legacy `System Import` (id 8) before calling; resolve the type with `MembershipType.TryFromLegacyId`.
+

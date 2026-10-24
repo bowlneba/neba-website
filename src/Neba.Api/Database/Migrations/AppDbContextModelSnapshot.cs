@@ -18,7 +18,7 @@ namespace Neba.Api.Database.Migrations
         {
 #pragma warning disable 612, 618
             modelBuilder
-                .HasAnnotation("ProductVersion", "10.0.12")
+                .HasAnnotation("ProductVersion", "10.0.13")
                 .HasAnnotation("Relational:MaxIdentifierLength", 63);
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
@@ -346,6 +346,67 @@ namespace Neba.Api.Database.Migrations
                         .HasDatabaseName("ix_hall_of_fame_inductions_induction_year");
 
                     b.ToTable("hall_of_fame_inductions", "app");
+                });
+
+            modelBuilder.Entity("Neba.Api.Features.Memberships.Domain.BowlerMembership", b =>
+                {
+                    b.Property<int>("db_id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasColumnName("id");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityAlwaysColumn(b.Property<int>("db_id"));
+
+                    b.Property<decimal>("Cost")
+                        .HasPrecision(5, 2)
+                        .HasColumnType("numeric(5,2)")
+                        .HasColumnName("cost");
+
+                    b.Property<DateOnly>("EndDate")
+                        .HasColumnType("date")
+                        .HasColumnName("end_date");
+
+                    b.Property<string>("Id")
+                        .IsRequired()
+                        .HasMaxLength(26)
+                        .HasColumnType("character(26)")
+                        .HasColumnName("domain_id")
+                        .IsFixedLength();
+
+                    b.Property<int?>("LegacyId")
+                        .HasColumnType("integer")
+                        .HasColumnName("legacy_id");
+
+                    b.Property<DateOnly>("StartDate")
+                        .HasColumnType("date")
+                        .HasColumnName("start_date");
+
+                    b.Property<string>("Type")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .HasColumnType("character varying(32)")
+                        .HasColumnName("membership_type");
+
+                    b.Property<int>("bowler_id")
+                        .HasColumnType("integer")
+                        .HasColumnName("bowler_id");
+
+                    b.HasKey("db_id")
+                        .HasName("pk_bowler_memberships");
+
+                    b.HasAlternateKey("Id")
+                        .HasName("ak_bowler_memberships_domain_id");
+
+                    b.HasIndex("LegacyId")
+                        .IsUnique()
+                        .HasDatabaseName("ix_bowler_memberships_legacy_id");
+
+                    NpgsqlIndexBuilderExtensions.AreNullsDistinct(b.HasIndex("LegacyId"), true);
+
+                    b.HasIndex("bowler_id", "StartDate")
+                        .HasDatabaseName("ix_bowler_memberships_bowler_id_start_date");
+
+                    b.ToTable("bowler_memberships", "app");
                 });
 
             modelBuilder.Entity("Neba.Api.Features.News.Domain.Article", b =>
@@ -1748,6 +1809,16 @@ namespace Neba.Api.Database.Migrations
                     b.Navigation("Bowler");
                 });
 
+            modelBuilder.Entity("Neba.Api.Features.Memberships.Domain.BowlerMembership", b =>
+                {
+                    b.HasOne("Neba.Api.Features.Bowlers.Domain.Bowler", null)
+                        .WithMany("Memberships")
+                        .HasForeignKey("bowler_id")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_bowler_memberships_bowlers_bowler_id");
+                });
+
             modelBuilder.Entity("Neba.Api.Features.News.Domain.Article", b =>
                 {
                     b.HasOne("Neba.Api.Features.Tournaments.Domain.Tournament", "Tournament")
@@ -2197,6 +2268,8 @@ namespace Neba.Api.Database.Migrations
 
             modelBuilder.Entity("Neba.Api.Features.Bowlers.Domain.Bowler", b =>
                 {
+                    b.Navigation("Memberships");
+
                     b.Navigation("SeasonStats");
                 });
 
