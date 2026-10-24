@@ -14,6 +14,7 @@ using Neba.Api.Discord;
 using Neba.Api.Features.Bowlers.Domain;
 using Neba.Api.Features.BowlingCenters.Domain;
 using Neba.Api.Features.HallOfFame.Domain;
+using Neba.Api.Features.Memberships.Domain;
 using Neba.Api.Features.News.Domain;
 using Neba.Api.Features.Seasons.Domain;
 using Neba.Api.Features.Sponsors.Domain;
@@ -65,6 +66,7 @@ internal static class AuditingConfiguration
             // Without this, a change to just the name (with no other Bowler property touched)
             // produces no audit row at all.
             .Include<Name>()
+            .Include<BowlerMembership>()
             .Include<Season>()
             .Include<Tournament>()
             .Include<OilPattern>()
