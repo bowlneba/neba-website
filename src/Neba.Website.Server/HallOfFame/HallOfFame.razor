@@ -81,7 +81,8 @@
                                                                   PhotoUri="@inductee.PhotoUri"
                                                                   FocalX="@inductee.PhotoFocalX"
                                                                   FocalY="@inductee.PhotoFocalY"
-                                                                  Zoom="@inductee.PhotoZoom" />
+                                                                  Zoom="@inductee.PhotoZoom"
+                                                                  OnEdit="@(() => OpenEditor(inductee))" />
                                                 <div class="inductee-name">@inductee.BowlerName</div>
                                             </div>
                                         }
@@ -111,7 +112,8 @@
                                                               PhotoUri="@inductee.PhotoUri"
                                                               FocalX="@inductee.PhotoFocalX"
                                                               FocalY="@inductee.PhotoFocalY"
-                                                              Zoom="@inductee.PhotoZoom" />
+                                                              Zoom="@inductee.PhotoZoom"
+                                                              OnEdit="@(() => OpenEditor(inductee))" />
                                             <div class="inductee-name">@inductee.BowlerName</div>
                                             <div class="combined-categories">
                                                 @string.Join(" • ", inductee.Categories)
@@ -172,14 +174,28 @@
             </div>
         </div>
     </div>
+
+    <HallOfFamePhotoEditor IsOpen="@(_editing is not null)"
+                           InductionId="@(_editing?.Id ?? string.Empty)"
+                           BowlerName="@(_editing?.BowlerName ?? string.Empty)"
+                           CurrentPhotoUrl="@_editing?.PhotoUri"
+                           CurrentFocalX="@_editing?.PhotoFocalX"
+                           CurrentFocalY="@_editing?.PhotoFocalY"
+                           CurrentZoom="@_editing?.PhotoZoom"
+                           OnClose="CloseEditor"
+                           OnSaved="HandleSavedAsync" />
 </div>
 
 @code {
     private bool _isLoading = true;
     private List<YearGroup>? _inductionsByYear;
     private string? _errorMessage;
+    private HallOfFameInductionViewModel? _editing;
 
-    protected override async Task OnInitializedAsync()
+    protected override Task OnInitializedAsync()
+        => LoadAsync();
+
+    private async Task LoadAsync()
     {
         var result = await ApiExecutor.ExecuteAsync(
             "HallOfFame",
@@ -194,6 +210,7 @@
             return;
         }
 
+        _errorMessage = null;
         _inductionsByYear = result.Value.Items
             .Select(r => r.ToViewModel())
             .GroupBy(i => i.InductionYear)
@@ -212,6 +229,18 @@
                     .ToList()
             })
             .ToList();
+    }
+
+    private void OpenEditor(HallOfFameInductionViewModel inductee)
+        => _editing = inductee;
+
+    private void CloseEditor()
+        => _editing = null;
+
+    private async Task HandleSavedAsync()
+    {
+        _editing = null;
+        await LoadAsync();
     }
 
     private static int GetCategoryOrder(string category) => category switch
