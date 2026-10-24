@@ -1,5 +1,9 @@
 
+using ErrorOr;
+
+using Neba.Api.Contracts.Memberships;
 using Neba.Api.Domain;
+using Neba.Api.Features.Memberships.Domain;
 using Neba.Api.Features.Stats.Domain;
 
 namespace Neba.Api.Features.Bowlers.Domain;
@@ -48,5 +52,37 @@ public sealed class Bowler
     private readonly List<BowlerSeasonStats> _seasonStats = [];
     internal IReadOnlyCollection<BowlerSeasonStats> SeasonStats
         => _seasonStats.AsReadOnly();
+
+    private readonly List<BowlerMembership> _memberships = [];
+
+    /// <summary>
+    /// The bowler's memberships, past and current. Must be loaded before calling <see cref="AddMembership"/>:
+    /// the eligibility rules read this collection, and an unloaded one would let every purchase pass.
+    /// </summary>
+    internal IReadOnlyCollection<BowlerMembership> Memberships
+        => _memberships.AsReadOnly();
+
+    /// <summary>
+    /// Adds a membership of <paramref name="type"/> starting on <paramref name="startDate"/>, or returns
+    /// the first eligibility rule the bowler's existing memberships break.
+    /// </summary>
+    /// <param name="type">The membership type to buy.</param>
+    /// <param name="startDate">The first day of the membership, derived from <see cref="TimeProvider"/> by the caller.</param>
+    public ErrorOr<Success> AddMembership(MembershipType type, DateOnly startDate)
+    {
+        var membership = BowlerMembership.Create(
+            type,
+            startDate,
+            [.. _memberships.Select(held => held.ToSnapshot())]);
+
+        if (membership.IsError)
+        {
+            return membership.Errors;
+        }
+
+        _memberships.Add(membership.Value);
+
+        return Result.Success;
+    }
 
 }

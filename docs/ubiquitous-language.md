@@ -1843,6 +1843,24 @@ The NEBA program that formally recognizes individuals for exceptional competitiv
 
 ---
 
+### Bowler Membership
+
+**Definition**: A Membership Type a bowler holds over a date range (start and end, both inclusive), with the cost paid at purchase. Owned by the Bowler; the Bowler adds one only if the bowler's existing memberships allow it:
+
+1. The type is active.
+2. The bowler has a prior qualifying membership, if the type requires one.
+3. The type's Repeat Policy allows it.
+4. No other temporary membership is valid on the start date, when buying a temporary one.
+5. The new end date is later than the end date of every membership valid on the start date.
+
+**In Code**:
+
+- Namespace: `Neba.Api.Features.Memberships.Domain`
+- Type: `BowlerMembership` (owned by `Bowler`; added through `Bowler.AddMembership`)
+- Property: `BowlerMembership.LegacyId` (the nebamgmt-v3 membership id; null for memberships made here)
+
+---
+
 ### Membership Kind
 
 **Definition**: How long a membership lasts. **Temporary** memberships last a fixed number of days, counting the start date. **Yearly** memberships last through Dec 31, or through Dec 31 of the next year when bought on or after Nov 1.
