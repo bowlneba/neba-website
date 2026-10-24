@@ -1851,6 +1851,36 @@ The NEBA program that formally recognizes individuals for exceptional competitiv
 
 ---
 
+## Memberships
+
+### Membership Type
+
+**Definition**: A kind of NEBA membership a bowler can hold (New Member, Renewal, Non-Member, Guest, and so on). Defined in code, not in the database. Each type has a permanent code, a display name, a Membership Kind, a cost, an active flag, a Repeat Policy, and two eligibility flags: whether it requires a prior membership, and whether holding it counts as one. Inactive types stay so historical memberships resolve; new memberships cannot use them.
+
+**In Code**:
+
+- Namespace: `Neba.Api.Contracts.Memberships`
+- Type: `MembershipType` (SmartEnum, string value = the code, e.g. `NON_MEMBER`)
+- Property: `MembershipType.LegacyId` (temporary; removed after cutover)
+
+---
+
+### Membership Kind
+
+**Definition**: How long a membership lasts. **Temporary** memberships last a fixed number of days, counting the start date. **Yearly** memberships last through Dec 31, or through Dec 31 of the next year when bought on or after Nov 1.
+
+**In Code**: `MembershipKind`
+
+---
+
+### Repeat Policy
+
+**Definition**: How often a bowler may buy a Membership Type: unlimited, once per lifetime, or a minimum number of days since the start of the bowler's latest membership of any type.
+
+**In Code**: `RepeatPolicy`, `RepeatPolicyKind`
+
+---
+
 ## Security
 
 ### Application User
