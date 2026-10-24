@@ -1,3 +1,4 @@
+using Neba.Api.Contracts.HallOfFame.EditHallOfFamePhoto;
 using Neba.Api.Contracts.HallOfFame.ListHallOfFameInductions;
 using Neba.Api.Contracts.Uploads;
 
@@ -39,4 +40,19 @@ public interface IHallOfFameApi
     Task<IApiResponse<UploadedFileResponse>> UploadHallOfFamePhotoAsync(
         [AliasAs("File")] StreamPart file,
         CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Sets, replaces, or removes an inductee's photo and its framing. Requires the HallOfFame.EditHallOfFamePhoto permission.
+    /// </summary>
+    /// <param name="id">
+    /// The ULID string identifying the induction.
+    /// </param>
+    /// <param name="request">
+    /// The photo change to apply.
+    /// </param>
+    /// <param name="cancellationToken">
+    /// A token to cancel the operation.
+    /// </param>
+    [Put("/hall-of-fame/{id}/photo")]
+    Task<IApiResponse> EditHallOfFamePhotoAsync(string id, EditHallOfFamePhotoRequest request, CancellationToken cancellationToken = default);
 }
