@@ -128,8 +128,8 @@ Confirmed and fixed for `Sponsor.PhoneNumbers`, `Sponsor.TournamentsSponsored`, 
 - **Local:** put `sixlabors.lic` in the repo root. It is git-ignored; never commit it. `Directory.Build.props` points `SixLaborsLicenseFile` at it, because the package only searches inside each project folder.
 - **CI/CD:** the `SIXLABORS_LICENSE_KEY` repository secret holds the full text of the license file. `ci.yml`, `sonarcloud.yml`, `cd.yml`, and `hotfix.yml` export it as an environment variable, and `Directory.Build.props` maps it to `SixLaborsLicenseKey`. New workflows that build or publish `Neba.Api` need the same. Dependabot runs need the secret under Dependabot secrets too.
 - **Use:** `IImageResizer` (`ImageSharpResizer`) decodes, applies EXIF orientation, shrinks to a maximum side (never enlarges), strips EXIF/XMP/IPTC, and re-encodes in the decoded format. It judges the type by the decoded format, not the client's `Content-Type`. Stage its output with the `Stream` overload of `IUploadStagingService.StageUploadAsync`.
+
 ### Bowler memberships
 
 - A bowler owns its memberships (`Bowler.AddMembership`). The eligibility rules read the loaded `Bowler.Memberships`, so every handler that adds one must load the bowler with `Include(b => b.Memberships)`. A bowler loaded without them passes every rule.
 - `Bowler.AddLegacyMembership` copies a legacy record as stored (no eligibility rules, cost and dates untouched). Skip legacy `System Import` (id 8) before calling; resolve the type with `MembershipType.TryFromLegacyId`.
-
