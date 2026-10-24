@@ -245,15 +245,37 @@ export const MOCK_SEASON_TOURNAMENTS = {
   ],
 };
 
-const MOCK_HALL_OF_FAME = {
+interface MockInduction {
+  id: string;
+  year: number;
+  bowlerName: string;
+  categories: string[];
+  photoUri: string | null;
+  photoFocalX: number | null;
+  photoFocalY: number | null;
+  photoZoom: number | null;
+}
+
+// Stateful: PUT /hall-of-fame/{id}/photo updates the matching item so the page shows the saved photo after it reloads.
+// Bob and Alice start with photos, Jane and Tom do not, so each e2e test has an inductee of its own.
+const MOCK_HALL_OF_FAME: { items: MockInduction[]; totalItems: number } = {
   items: [
-    { id: '01JX0000000000000000000001', year: 2024, bowlerName: 'Jane Smith', categories: ['Superior Performance'], photoUri: null },
-    { id: '01JX0000000000000000000002', year: 2024, bowlerName: 'Bob Johnson', categories: ['Meritorious Service'], photoUri: null },
-    { id: '01JX0000000000000000000003', year: 2023, bowlerName: 'Alice Williams', categories: ['Friend of NEBA'], photoUri: null },
-    { id: '01JX0000000000000000000004', year: 2023, bowlerName: 'Tom Davis', categories: ['Superior Performance', 'Meritorious Service'], photoUri: null },
+    { id: '01JX0000000000000000000001', year: 2024, bowlerName: 'Jane Smith', categories: ['Superior Performance'], photoUri: null, photoFocalX: null, photoFocalY: null, photoZoom: null },
+    { id: '01JX0000000000000000000002', year: 2024, bowlerName: 'Bob Johnson', categories: ['Meritorious Service'], photoUri: 'http://localhost:5151/mock-storage/hall-of-fame/photo/bob.png', photoFocalX: 20, photoFocalY: 50, photoZoom: 100 },
+    { id: '01JX0000000000000000000003', year: 2023, bowlerName: 'Alice Williams', categories: ['Friend of NEBA'], photoUri: 'http://localhost:5151/mock-storage/hall-of-fame/photo/alice.png', photoFocalX: 50, photoFocalY: 50, photoZoom: 100 },
+    { id: '01JX0000000000000000000004', year: 2023, bowlerName: 'Tom Davis', categories: ['Superior Performance', 'Meritorious Service'], photoUri: null, photoFocalX: null, photoFocalY: null, photoZoom: null },
   ],
   totalItems: 4,
 };
+
+const INITIAL_HALL_OF_FAME_ITEMS: MockInduction[] = structuredClone(MOCK_HALL_OF_FAME.items);
+
+// An 800x600 picture with a head-and-shoulders figure, so the focal point picker has a real image to measure.
+const MOCK_HALL_OF_FAME_PHOTO_SVG = `<svg xmlns="http://www.w3.org/2000/svg" width="800" height="600" viewBox="0 0 800 600">
+  <rect width="800" height="600" fill="#3E4FD9"/>
+  <ellipse cx="560" cy="640" rx="190" ry="230" fill="#052767"/>
+  <circle cx="560" cy="230" r="72" fill="#e8c4a0"/>
+</svg>`;
 
 const MOCK_BOWLER_OF_THE_YEAR_AWARDS = {
   items: [
@@ -1378,6 +1400,24 @@ async function handleRequest(req: IncomingMessage, res: ServerResponse): Promise
     return;
   }
 
+  if (req.method === 'POST' && pathname === '/hall-of-fame/photos') {
+    if (sendMockOverrideErrorIfSet(res, pathname)) return;
+
+    // Body content is discarded — the mock only needs to acknowledge the multipart upload and
+    // hand back a StoredFile pointer, same shape as the real UploadHallOfFamePhoto endpoint.
+    await readRequestBody(req);
+
+    sendJsonResponse(res, {
+      container: 'bowlneba-public',
+      path: 'hall-of-fame/photo/e2e-test-photo.png',
+      fileName: 'e2e-test-photo.png',
+      contentType: 'image/png',
+      sizeInBytes: 4,
+      url: 'http://localhost:5151/mock-storage/hall-of-fame/photo/e2e-test-photo.png',
+    }, 200);
+    return;
+  }
+
   if (req.method === 'POST' && pathname === '/tournaments/logo') {
     if (sendMockOverrideErrorIfSet(res, pathname)) return;
 
@@ -1545,6 +1585,13 @@ async function handleRequest(req: IncomingMessage, res: ServerResponse): Promise
     }
   }
 
+  if (req.method === 'POST' && pathname === '/__mock/hall-of-fame/reset') {
+    MOCK_HALL_OF_FAME.items = structuredClone(INITIAL_HALL_OF_FAME_ITEMS);
+    res.writeHead(204);
+    res.end();
+    return;
+  }
+
   if (req.method === 'GET' && pathname === '/__mock/last-request') {
     const method = requestUrl.searchParams.get('method') ?? '';
     const path = requestUrl.searchParams.get('path') ?? '';
@@ -1555,6 +1602,12 @@ async function handleRequest(req: IncomingMessage, res: ServerResponse): Promise
     } else {
       sendJsonResponse(res, JSON.parse(body));
     }
+    return;
+  }
+
+  if (req.method === 'GET' && pathname.startsWith('/mock-storage/hall-of-fame/')) {
+    res.writeHead(200, { 'Content-Type': 'image/svg+xml' });
+    res.end(MOCK_HALL_OF_FAME_PHOTO_SVG);
     return;
   }
 
@@ -1585,6 +1638,39 @@ async function handleRequest(req: IncomingMessage, res: ServerResponse): Promise
     if (sendMockOverrideErrorIfSet(res, pathname)) return;
 
     lastRequestBodies.set('PUT ' + pathname, await readRequestBody(req));
+
+    res.writeHead(204);
+    res.end();
+    return;
+  }
+
+  const hallOfFamePhotoMatch = pathname.match(/^\/hall-of-fame\/([^/]+)\/photo$/);
+  if (req.method === 'PUT' && hallOfFamePhotoMatch) {
+    if (sendMockOverrideErrorIfSet(res, pathname)) return;
+
+    const body = await readRequestBody(req);
+    // Recorded so a test can assert on the submitted photo and framing.
+    lastRequestBodies.set('PUT ' + pathname, body);
+
+    const induction = MOCK_HALL_OF_FAME.items.find((item) => item.id === hallOfFamePhotoMatch[1]);
+    if (!induction) {
+      sendJsonResponse(res, { error: 'Not Found' }, 404);
+      return;
+    }
+
+    const input = (JSON.parse(body) as {
+      input: { photo: { path: string } | null; focalX: number | null; focalY: number | null; zoom: number | null };
+    }).input;
+
+    if (input.photo) {
+      induction.photoUri = `http://localhost:5151/mock-storage/${input.photo.path}`;
+    } else if (input.focalX === null || input.focalX === undefined) {
+      induction.photoUri = null;
+    }
+
+    induction.photoFocalX = induction.photoUri ? input.focalX ?? induction.photoFocalX : null;
+    induction.photoFocalY = induction.photoUri ? input.focalY ?? induction.photoFocalY : null;
+    induction.photoZoom = induction.photoUri ? input.zoom ?? induction.photoZoom : null;
 
     res.writeHead(204);
     res.end();
