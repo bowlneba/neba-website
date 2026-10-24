@@ -1,4 +1,5 @@
 using Neba.Api.Contracts.HallOfFame.ListHallOfFameInductions;
+using Neba.Api.Contracts.Uploads;
 
 using Refit;
 
@@ -20,4 +21,22 @@ public interface IHallOfFameApi
     /// </returns>
     [Get("/hall-of-fame/inductions")]
     Task<IApiResponse<CollectionResponse<HallOfFameInductionResponse>>> ListHallOfFameInductionsAsync(CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Uploads a Hall of Fame photo to staging. Requires the HallOfFame.EditHallOfFamePhoto permission.
+    /// </summary>
+    /// <param name="file">
+    /// The photo image file to upload.
+    /// </param>
+    /// <param name="cancellationToken">
+    /// A token to cancel the operation.
+    /// </param>
+    /// <returns>
+    /// The uploaded file's metadata.
+    /// </returns>
+    [Multipart]
+    [Post("/hall-of-fame/photos")]
+    Task<IApiResponse<UploadedFileResponse>> UploadHallOfFamePhotoAsync(
+        [AliasAs("File")] StreamPart file,
+        CancellationToken cancellationToken = default);
 }
