@@ -1,4 +1,6 @@
 
+using ErrorOr;
+
 using Neba.Api.Domain;
 using Neba.Api.Features.Bowlers.Domain;
 using Neba.Api.Features.Storage.Domain;
@@ -53,5 +55,64 @@ public sealed class HallOfFameInduction
     /// <summary>
     /// An optional photo associated with the induction, such as a picture of the bowler receiving the award or a commemorative image. This is represented as a <see cref="StoredFile"/> value object, which contains information about the file's storage location, content type, and other relevant metadata. This allows for flexible handling of associated media while keeping the core induction data focused on the essential attributes of the Hall of Fame entry.
     /// </summary>
-    public StoredFile? Photo { get; init; }
+    public StoredFile? Photo { get; private set; }
+
+    /// <summary>
+    /// The point and zoom of <see cref="Photo"/> kept in frame in round avatars. Null exactly when <see cref="Photo"/> is null.
+    /// </summary>
+    public PhotoFocalPoint? PhotoFocalPoint { get; private set; }
+
+    /// <summary>
+    /// Sets the photo and its focal point and zoom together.
+    /// </summary>
+    /// <param name="photo">The stored photo.</param>
+    /// <param name="focalX">Percent from the left edge, 0 to 100.</param>
+    /// <param name="focalY">Percent from the top edge, 0 to 100.</param>
+    /// <param name="zoom">Zoom in percent, 100 to 300.</param>
+    public ErrorOr<Success> SetPhoto(StoredFile photo, int focalX, int focalY, int zoom)
+    {
+        ArgumentNullException.ThrowIfNull(photo);
+
+        var focalPoint = PhotoFocalPoint.Create(focalX, focalY, zoom);
+        if (focalPoint.IsError)
+        {
+            return focalPoint.Errors;
+        }
+
+        Photo = photo;
+        PhotoFocalPoint = focalPoint.Value;
+        return Result.Success;
+    }
+
+    /// <summary>
+    /// Removes the photo and its focal point. Does nothing when there is no photo.
+    /// </summary>
+    public void ClearPhoto()
+    {
+        Photo = null;
+        PhotoFocalPoint = null;
+    }
+
+    /// <summary>
+    /// Moves the focal point and changes the zoom of the current photo.
+    /// </summary>
+    /// <param name="x">Percent from the left edge, 0 to 100.</param>
+    /// <param name="y">Percent from the top edge, 0 to 100.</param>
+    /// <param name="zoom">Zoom in percent, 100 to 300.</param>
+    public ErrorOr<Success> SetFocalPoint(int x, int y, int zoom)
+    {
+        if (Photo is null)
+        {
+            return HallOfFameErrors.NoPhoto;
+        }
+
+        var focalPoint = PhotoFocalPoint.Create(x, y, zoom);
+        if (focalPoint.IsError)
+        {
+            return focalPoint.Errors;
+        }
+
+        PhotoFocalPoint = focalPoint.Value;
+        return Result.Success;
+    }
 }
