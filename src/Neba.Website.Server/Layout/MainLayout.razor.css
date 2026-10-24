@@ -110,8 +110,8 @@
     margin: 0;
 }
 
-.footer-powered-by {
-    margin-top: 0.25rem !important;
+.footer-copyright .footer-powered-by {
+    margin-top: 0.25rem;
 }
 
 .footer-right {
@@ -127,7 +127,7 @@
 }
 
 .footer-version {
-    margin-top: 0.25rem !important;
+    margin-top: 0.25rem;
     font-size: 0.75rem;
     opacity: 0.6;
 }
