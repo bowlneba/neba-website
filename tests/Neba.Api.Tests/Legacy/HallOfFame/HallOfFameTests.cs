@@ -31,6 +31,7 @@ using Neba.Api.Legacy.Tournaments.Stats;
 using Neba.TestFactory.Attributes;
 using Neba.TestFactory.Bowlers;
 using Neba.TestFactory.HallOfFame;
+using Neba.TestFactory.Storage;
 using Neba.TestFactory.Infrastructure;
 
 using ZiggyCreatures.Caching.Fusion;
@@ -549,6 +550,41 @@ public sealed class NewHallOfFameInductionSyncJobTests(AppDbContextFixture fixtu
         inductions[0].Categories.ShouldBe(
             [HallOfFameCategory.SuperiorPerformance, HallOfFameCategory.MeritoriousService],
             ignoreOrder: true);
+    }
+
+    [Fact(DisplayName = "SyncAsync should leave the website photo and framing unchanged when a legacy row merges into the induction")]
+    public async Task SyncAsync_ShouldLeavePhotoAndFramingUnchanged_WhenLegacyRowMergesIntoInductionWithPhoto()
+    {
+        // Arrange
+        var ct = TestContext.Current.CancellationToken;
+        var bowler = await CreateSyncedBowlerAsync(legacyBowlerId: 5, ct);
+        var photo = StoredFileFactory.Create(container: "bowlneba-public", path: "hall-of-fame/photo/website.png");
+        var induction = HallOfFameInductionFactory.Create(
+            year: 2025,
+            bowlerId: bowler.Id,
+            categories: [HallOfFameCategory.SuperiorPerformance],
+            photo: photo,
+            photoFocalX: 31,
+            photoFocalY: 36,
+            photoZoom: 175);
+        await _dbContext.HallOfFameInductions.AddAsync(induction, ct);
+        await _dbContext.SaveChangesAsync(ct);
+        _dbContext.ChangeTracker.Clear();
+
+        await InsertLegacyHallOfFameRowAsync(1, bowlerId: 5, category: 200, year: 2025);
+        var job = CreateJob();
+
+        // Act
+        await job.SyncAsync([1], ct);
+
+        // Assert - the sync adds the category and never writes the photo or its framing: the website owns them.
+        _dbContext.ChangeTracker.Clear();
+        var persisted = await _dbContext.HallOfFameInductions.SingleAsync(i => i.BowlerId == bowler.Id, ct);
+        persisted.Categories.ShouldBe(
+            [HallOfFameCategory.SuperiorPerformance, HallOfFameCategory.MeritoriousService],
+            ignoreOrder: true);
+        persisted.Photo.ShouldNotBeNull().Path.ShouldBe(photo.Path);
+        persisted.PhotoFocalPoint.ShouldBe(PhotoFocalPointFactory.Create(31, 36, 175));
     }
 
     [Fact(DisplayName = "SyncAsync should be a no-op and should log information when the legacy row's category was already synced")]
