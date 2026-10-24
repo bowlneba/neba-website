@@ -22,7 +22,7 @@ For membership requirements, see the <a href="/bylaws">NEBA Bylaws</a>.</p>
 const MOCK_BYLAWS_HTML = `
 <h1>NEBA Bylaws</h1>
 <h2>Article I: Name</h2>
-<p>This organization shall be known as the New England Bowling Association.</p>
+<p>This organization shall be known as the New England Bowlers' Association.</p>
 <h2>Article II: Mission</h2>
 <p>The mission of NEBA is to promote amateur bowling throughout New England.</p>
 `;

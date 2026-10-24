@@ -82,11 +82,10 @@ internal static class SecurityConfiguration
 
     private static WebsiteSettings ReadWebsiteSettings(IConfiguration configuration)
     {
-        var websiteSettings = (configuration
+        var websiteSettings = configuration
             .GetSection("WebsiteSettings")
             .Get<WebsiteSettings>()
-            ?? throw new InvalidOperationException("WebsiteSettings configuration section is missing."))
-            .WithPreviewOverride();
+            ?? throw new InvalidOperationException("WebsiteSettings configuration section is missing.");
 
         return string.IsNullOrWhiteSpace(websiteSettings.BaseUrl)
             ? throw new InvalidOperationException("WebsiteSettings:BaseUrl must not be empty.")

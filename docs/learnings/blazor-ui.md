@@ -131,3 +131,18 @@ Three framework facts drive how `BearerTokenHandler` gets its tokens. Getting an
 `Routes.razor` renders statically, so anything it puts in a scoped service reaches only the request's scope, never the circuit's.
 
 Cache a JWT's expiry time, not a yes/no "is it expiring" answer: the handler lives across calls, and the answer changes as time passes.
+
+### Responsive data tables — `neba-data-table`
+
+Any table with more than three columns gets a phone layout (<= 767px) by adding `class="neba-data-table"` to the `<table>`. Nothing else is needed: no per-cell attributes and no page script.
+
+- **Convention:** column 1 is a short identifier (rank, year), column 2 is the name, column 3 is the key value. Columns 4+ are secondary: hidden on phones until the row is tapped, then shown as label/value pairs. Wider screens render the table unchanged.
+- **How it works:** `wwwroot/neba-data-table.css` holds the layout. `wwwroot/js/neba-data-table.js` (started once by `neba-data-table.start.js`, loaded from `App.razor`) copies each header's text onto its secondary cells as `data-label`, marks rows `data-expandable`, and toggles `data-open` on tap or Enter/Space. A `MutationObserver` re-applies it after Blazor renders, so tables built in `RenderFragment`s and modals work too.
+- **Collapsible sections:** a container with `class="neba-collapsible"` whose first child has `class="neba-collapsible-header"` folds everything after the header when the header is tapped on a phone (a chevron appears). Buttons and links inside the header still work. Used for each stats section so long pages need less scrolling.
+- **Rows that do not match the header** (group rows, `colspan` empty states) are skipped and render as normal rows.
+- **Open rows stay open** until tapped again; Blazor never rewrites `data-open`, so re-renders keep them open.
+- **Not yet adopted, and why** (this keeps the PR to the stats pages; convert a table by adding the class and removing its own mobile handling):
+  - `YearView` and `BowlerTitlesModal` (Champions) have their own phone card layouts from earlier commits on this branch. Using both would conflict.
+  - The Awards tables (`HighAverage`, `HighBlock`) hide columns with Tailwind `hidden sm:table-cell`, so the helper would see a different column count than the header.
+  - `ResultsTable` (tournament detail) has podium row styling and multi-bowler cells that need their own design pass.
+  - Admin tables (`Users`, `PermissionOverridesSection`) are desktop-first; `PermissionOverridesSection` also uses `colspan` group rows.

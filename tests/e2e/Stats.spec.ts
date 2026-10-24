@@ -62,3 +62,74 @@ test.describe('Individual stats — points race modal', () => {
     await expect(page.locator('.neba-modal-content')).not.toBeVisible();
   });
 });
+
+test.describe('Stats phone layout', () => {
+  test.use({ viewport: { width: 375, height: 800 } });
+
+  test.beforeEach(async ({ page }) => {
+    await page.goto(`/stats?season=${CURRENT_SEASON_YEAR}`);
+    await page.waitForSelector('.stats-section.neba-collapsible table.neba-data-table tbody tr[data-expandable]');
+  });
+
+  test('secondary columns are hidden until the row is tapped', async ({ page }) => {
+    const row = page.locator('table.neba-data-table tbody tr[data-expandable]').first();
+    const secondaryCell = row.locator('td[data-secondary]').first();
+
+    await expect(secondaryCell).toBeHidden();
+
+    await row.click({ position: { x: 5, y: 5 } });
+
+    await expect(row).toHaveAttribute('data-open', '');
+    await expect(row).toHaveAttribute('aria-expanded', 'true');
+    await expect(secondaryCell).toBeVisible();
+
+    await row.click({ position: { x: 5, y: 5 } });
+
+    await expect(row).not.toHaveAttribute('data-open', '');
+    await expect(secondaryCell).toBeHidden();
+  });
+
+  test('tapping a section header collapses and expands the section', async ({ page }) => {
+    const section = page.locator('.stats-section.neba-collapsible').first();
+    const header = section.locator('> .neba-collapsible-header');
+    const table = section.locator('table.neba-data-table');
+
+    await expect(header).toHaveAttribute('aria-expanded', 'true');
+
+    await header.locator('h2').click();
+
+    await expect(section).toHaveAttribute('data-collapsed', '');
+    await expect(header).toHaveAttribute('aria-expanded', 'false');
+    await expect(table).toBeHidden();
+
+    await header.locator('h2').click();
+
+    await expect(section).not.toHaveAttribute('data-collapsed', '');
+    await expect(table).toBeVisible();
+  });
+
+  test('section header toggles from the keyboard', async ({ page }) => {
+    const section = page.locator('.stats-section.neba-collapsible').first();
+    const header = section.locator('> .neba-collapsible-header');
+
+    await header.focus();
+    await page.keyboard.press('Enter');
+
+    await expect(section).toHaveAttribute('data-collapsed', '');
+  });
+});
+
+test.describe('Stats desktop layout', () => {
+  test.use({ viewport: { width: 1200, height: 900 } });
+
+  test('tapping a row does not expand it on wider screens', async ({ page }) => {
+    await page.goto(`/stats?season=${CURRENT_SEASON_YEAR}`);
+    await page.waitForSelector('table.neba-data-table tbody tr[data-expandable]');
+
+    const row = page.locator('table.neba-data-table tbody tr[data-expandable]').first();
+    await row.click({ position: { x: 5, y: 5 } });
+
+    await expect(row).not.toHaveAttribute('data-open', '');
+    await expect(row.locator('td[data-secondary]').first()).toBeVisible();
+  });
+});

@@ -202,42 +202,11 @@ public sealed class SecurityConfigurationTests(SecurityDbContextFixture fixture)
         options.Extensions.ShouldNotBeEmpty();
     }
 
-    [Fact(DisplayName = "AddSecurity should register WebsiteSettings with the preview BaseUrl override applied when InPreview is true")]
-    public void AddSecurity_ShouldRegisterWebsiteSettingsWithPreviewOverride_WhenInPreviewIsTrue()
-    {
-        // Arrange
-        var builder = WebApplication.CreateSlimBuilder();
-        builder.Configuration.AddInMemoryCollection(new Dictionary<string, string?>
-        {
-            ["JwtSettings:Issuer"] = "https://bowlneba.com",
-            ["JwtSettings:Audience"] = "https://bowlneba.com",
-            ["JwtSettings:SigningKey"] = new string('a', 32),
-            ["WebsiteSettings:InPreview"] = "true",
-            ["WebsiteSettings:BaseUrl"] = "https://bowlneba.com",
-        });
-        builder.Services.AddSingleton(new NpgsqlDataSourceBuilder("Host=localhost;Database=x;Username=y;Pwd=z").Build());
-
-        // Act
-        builder.AddSecurity();
-        var provider = builder.Services.BuildServiceProvider();
-        var websiteSettings = provider.GetRequiredService<WebsiteSettings>();
-
-        // Assert
-        websiteSettings.BaseUrl.ShouldBe("https://preview.bowlneba.com");
-    }
-
-    [Fact(DisplayName = "AddSecurity should register WebsiteSettings with the configured BaseUrl unchanged when InPreview is false")]
-    public void AddSecurity_ShouldRegisterWebsiteSettingsWithConfiguredBaseUrl_WhenInPreviewIsFalse()
+    [Fact(DisplayName = "AddSecurity should register WebsiteSettings with the configured BaseUrl")]
+    public void AddSecurity_ShouldRegisterWebsiteSettingsWithConfiguredBaseUrl()
     {
         // Arrange
         var builder = CreateBuilderWithValidJwtSettings();
-        // CreateSlimBuilder() picks up the test host's own appsettings.json, which sets
-        // WebsiteSettings:InPreview to true (mirroring production) - override it explicitly
-        // so this test exercises the "false" branch regardless of that ambient default.
-        builder.Configuration.AddInMemoryCollection(new Dictionary<string, string?>
-        {
-            ["WebsiteSettings:InPreview"] = "false",
-        });
         builder.Services.AddSingleton(new NpgsqlDataSourceBuilder("Host=localhost;Database=x;Username=y;Pwd=z").Build());
 
         // Act

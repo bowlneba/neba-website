@@ -110,8 +110,26 @@
     margin: 0;
 }
 
-.footer-powered-by {
-    margin-top: 0.25rem !important;
+.footer-copyright .footer-powered-by {
+    margin-top: 0.25rem;
+}
+
+.footer-right {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+@media (min-width: 768px) {
+    .footer-right {
+        align-items: flex-end;
+    }
+}
+
+.footer-version {
+    margin-top: 0.25rem;
+    font-size: 0.75rem;
+    opacity: 0.6;
 }
 
 .footer-powered-by a {

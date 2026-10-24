@@ -35,6 +35,8 @@ builder.Services.AddRazorComponents()
 
 builder.Services.AddOutputCache();
 
+builder.Services.AddProxyHeaders();
+
 builder.Services.AddSingleton<IStopwatchProvider, StopwatchProvider>();
 builder.Services.AddScoped<Neba.Website.Server.Notifications.ToastService>();
 builder.Services.AddHttpContextAccessor();
@@ -44,6 +46,8 @@ builder.Services.AddScoped<IClientTimeZoneService, ClientTimeZoneService>();
 builder.Services.AddSingleton<HelpDocumentService>();
 
 var app = builder.Build();
+
+app.UseProxyHeaders();
 
 if (!app.Environment.IsDevelopment())
 {

@@ -440,4 +440,4 @@ export function dispose() {
 }
 
 // Export functions for Blazor interop
-export { preventBodyScroll, updateAriaCurrent };
+export { preventBodyScroll, updateAriaCurrent, closeAllDropdowns };
