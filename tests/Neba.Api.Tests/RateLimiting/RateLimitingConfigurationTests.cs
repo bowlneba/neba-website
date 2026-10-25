@@ -110,6 +110,30 @@ public sealed class RateLimitingConfigurationValidationTests
             .Message.ShouldContain("AuthenticatedWindowSeconds");
     }
 
+    [Theory(DisplayName = "AddRateLimiting throws when a password recovery setting is zero or negative")]
+    [InlineData("RateLimiting:PasswordRecoveryPermitLimit", "PasswordRecoveryPermitLimit")]
+    [InlineData("RateLimiting:PasswordRecoveryWindowSeconds", "PasswordRecoveryWindowSeconds")]
+    public void AddRateLimiting_ShouldThrow_WhenPasswordRecoverySettingIsNotPositive(string key, string expectedInMessage)
+    {
+        // Arrange
+        var config = new ConfigurationBuilder()
+            .AddInMemoryCollection(new Dictionary<string, string?>
+            {
+                ["RateLimiting:PermitLimit"] = "10",
+                ["RateLimiting:WindowSeconds"] = "60",
+                [key] = "0",
+            })
+            .Build();
+        var services = new ServiceCollection();
+
+        // Act
+        var act = () => services.AddRateLimiting(config);
+
+        // Assert
+        act.ShouldThrow<InvalidOperationException>()
+            .Message.ShouldContain(expectedInMessage);
+    }
+
     [Fact(DisplayName = "AddRateLimiting configures ForwardedHeaders with XForwardedFor and RFC 1918 networks")]
     public void AddRateLimiting_ShouldConfigureForwardedHeaders_WithRfc1918KnownNetworks()
     {
@@ -377,5 +401,92 @@ public sealed class RateLimitingConfigurationAuthenticatedPartitionTests : IAsyn
         // Assert
         first.StatusCode.ShouldNotBe(HttpStatusCode.TooManyRequests);
         second.StatusCode.ShouldBe(HttpStatusCode.TooManyRequests);
+    }
+}
+
+[IntegrationTest]
+[Component("Api.RateLimiting")]
+public sealed class PasswordRecoveryRateLimitTests : IAsyncLifetime
+{
+    private WebApplication? _app;
+    private HttpClient _client = null!;
+
+    public async ValueTask InitializeAsync()
+    {
+        // The public ceiling is high; the password recovery ceiling is 2 per window.
+        var config = new ConfigurationBuilder()
+            .AddInMemoryCollection(new Dictionary<string, string?>
+            {
+                ["RateLimiting:PermitLimit"] = "100",
+                ["RateLimiting:WindowSeconds"] = "60",
+                ["RateLimiting:PasswordRecoveryPermitLimit"] = "2",
+                ["RateLimiting:PasswordRecoveryWindowSeconds"] = "60",
+            })
+            .Build();
+
+        var builder = WebApplication.CreateSlimBuilder();
+        builder.WebHost.UseSetting(WebHostDefaults.ServerUrlsKey, "http://127.0.0.1:0");
+        builder.Services.AddRateLimiting(config);
+
+        _app = builder.Build();
+        _app.UseRateLimiter();
+
+        // Same shape as production: the group applies the public policy, the endpoint adds its own.
+        var group = _app.MapGroup(string.Empty).RequireRateLimiting(RateLimitingConfiguration.PublicPolicy);
+        group.MapPost("/forgot", () => Results.NoContent())
+            .RequireRateLimiting(RateLimitingConfiguration.PasswordRecoveryPolicy);
+        group.MapPost("/other", () => Results.NoContent());
+
+        await _app.StartAsync();
+
+        var addresses = _app.Services
+            .GetRequiredService<IServer>()
+            .Features.Get<IServerAddressesFeature>()!
+            .Addresses;
+
+        _client = new HttpClient { BaseAddress = new Uri(addresses.First()) };
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        _client.Dispose();
+        if (_app is not null)
+            await _app.DisposeAsync();
+    }
+
+    [Fact(DisplayName = "Third request to a password recovery endpoint returns 429 even though the public limit is higher")]
+    public async Task PasswordRecovery_ShouldReturn429_WhenItsOwnLimitIsExceeded()
+    {
+        // Arrange
+        var ct = TestContext.Current.CancellationToken;
+        var uri = new Uri("/forgot", UriKind.Relative);
+
+        // Act
+        var first = await _client.PostAsync(uri, null, ct);
+        var second = await _client.PostAsync(uri, null, ct);
+        var third = await _client.PostAsync(uri, null, ct);
+
+        // Assert
+        first.StatusCode.ShouldBe(HttpStatusCode.NoContent);
+        second.StatusCode.ShouldBe(HttpStatusCode.NoContent);
+        third.StatusCode.ShouldBe(HttpStatusCode.TooManyRequests);
+    }
+
+    [Fact(DisplayName = "Other endpoints in the same group keep the public limit")]
+    public async Task PublicEndpoints_ShouldKeepPublicLimit_WhenPasswordRecoveryIsExhausted()
+    {
+        // Arrange
+        var ct = TestContext.Current.CancellationToken;
+        var forgot = new Uri("/forgot", UriKind.Relative);
+        for (var i = 0; i < 3; i++)
+        {
+            await _client.PostAsync(forgot, null, ct);
+        }
+
+        // Act
+        var other = await _client.PostAsync(new Uri("/other", UriKind.Relative), null, ct);
+
+        // Assert
+        other.StatusCode.ShouldBe(HttpStatusCode.NoContent);
     }
 }
