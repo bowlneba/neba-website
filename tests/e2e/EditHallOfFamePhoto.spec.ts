@@ -178,7 +178,8 @@ test.describe('Edit Hall of Fame photo (with the permission)', () => {
   test('shows the error when the upload fails', async ({ page }) => {
     await openEditor(page, TOM);
 
-    await page.request.post('http://localhost:5151/__mock/fail?path=/hall-of-fame/photos&status=500');
+    // 409, not 500: the HTTP client retries 5xx with backoff, which outlasts the assertion timeout.
+    await page.request.post('http://localhost:5151/__mock/fail?path=/hall-of-fame/photos&status=409');
     try {
       await page.locator('input.neba-file-upload-input').setInputFiles({
         name: 'photo.png',
