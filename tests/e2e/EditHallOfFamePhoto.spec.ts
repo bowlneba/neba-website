@@ -159,7 +159,9 @@ test.describe('Edit Hall of Fame photo (with the permission)', () => {
     await openEditor(page, TOM);
     await uploadPhoto(page);
 
-    await page.request.post(`http://localhost:5151/__mock/fail?path=/hall-of-fame/${TOM.id}/photo&status=500`);
+    // 409, not 500: the HTTP client retries 5xx with backoff, which outlasts the assertion timeout and can
+    // succeed after the override is reset.
+    await page.request.post(`http://localhost:5151/__mock/fail?path=/hall-of-fame/${TOM.id}/photo&status=409`);
     try {
       await page.getByRole('button', { name: 'Save photo' }).click();
 
