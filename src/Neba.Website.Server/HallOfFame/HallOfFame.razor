@@ -1,9 +1,13 @@
 @page "/hall-of-fame"
+@using Microsoft.AspNetCore.Authorization
 @using Neba.Api.Contracts.HallOfFame
+@using Neba.Api.Contracts.Security
 @using Neba.Website.Server.Services
 
 @inject ApiExecutor ApiExecutor
 @inject IHallOfFameApi HallOfFameApi
+@inject AuthenticationStateProvider AuthenticationStateProvider
+@inject IAuthorizationService AuthorizationService
 
 @rendermode @(new InteractiveServerRenderMode(prerender: false))
 
@@ -24,6 +28,13 @@
     <div class="text-center">
         <h1 class="text-3xl font-bold text-[var(--neba-blue-700)]">Hall of Fame</h1>
         <p class="mt-1 text-sm text-gray-600">Honoring Excellence in Bowling</p>
+        <AuthorizeView Policy="@Permissions.EditHallOfFamePhoto.PolicyName">
+            <Authorized>
+                <div class="mt-2">
+                    <HelpButton DocName="edit-hall-of-fame-photo" />
+                </div>
+            </Authorized>
+        </AuthorizeView>
     </div>
 
     <!-- Error Alert -->
@@ -77,12 +88,12 @@
                                         @foreach (var inductee in singleCategoryInductees)
                                         {
                                             <div class="inductee-item">
-                                                <div class="inductee-photo" style="@GetPhotoStyle(inductee)">
-                                                    @if (inductee.PhotoUri is null)
-                                                    {
-                                                        @GetInitials(inductee.BowlerName)
-                                                    }
-                                                </div>
+                                                <HallOfFameAvatar BowlerName="@inductee.BowlerName"
+                                                                  PhotoUri="@inductee.PhotoUri"
+                                                                  FocalX="@inductee.PhotoFocalX"
+                                                                  FocalY="@inductee.PhotoFocalY"
+                                                                  Zoom="@inductee.PhotoZoom"
+                                                                  OnEdit="@EditCallbackFor(inductee)" />
                                                 <div class="inductee-name">@inductee.BowlerName</div>
                                             </div>
                                         }
@@ -108,12 +119,12 @@
                                     @foreach (var inductee in combinedInductees)
                                     {
                                         <div class="inductee-item">
-                                            <div class="inductee-photo" style="@GetPhotoStyle(inductee)">
-                                                @if (inductee.PhotoUri is null)
-                                                {
-                                                    @GetInitials(inductee.BowlerName)
-                                                }
-                                            </div>
+                                            <HallOfFameAvatar BowlerName="@inductee.BowlerName"
+                                                              PhotoUri="@inductee.PhotoUri"
+                                                              FocalX="@inductee.PhotoFocalX"
+                                                              FocalY="@inductee.PhotoFocalY"
+                                                              Zoom="@inductee.PhotoZoom"
+                                                              OnEdit="@EditCallbackFor(inductee)" />
                                             <div class="inductee-name">@inductee.BowlerName</div>
                                             <div class="combined-categories">
                                                 @string.Join(" • ", inductee.Categories)
@@ -174,14 +185,37 @@
             </div>
         </div>
     </div>
+
+    <HallOfFamePhotoEditor IsOpen="@(_editing is not null)"
+                           InductionId="@(_editing?.Id ?? string.Empty)"
+                           BowlerName="@(_editing?.BowlerName ?? string.Empty)"
+                           CurrentPhotoUrl="@_editing?.PhotoUri"
+                           CurrentFocalX="@_editing?.PhotoFocalX"
+                           CurrentFocalY="@_editing?.PhotoFocalY"
+                           CurrentZoom="@_editing?.PhotoZoom"
+                           OnClose="CloseEditor"
+                           OnSaved="HandleSavedAsync" />
 </div>
 
 @code {
     private bool _isLoading = true;
     private List<YearGroup>? _inductionsByYear;
     private string? _errorMessage;
+    private HallOfFameInductionViewModel? _editing;
+    private bool _canEditPhotos;
 
     protected override async Task OnInitializedAsync()
+    {
+        // Checked once here so the avatars only get an edit callback (and render an edit button) for editors,
+        // not once per inductee for every visitor.
+        var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+        var authResult = await AuthorizationService.AuthorizeAsync(authState.User, Permissions.EditHallOfFamePhoto.PolicyName);
+        _canEditPhotos = authResult.Succeeded;
+
+        await LoadAsync();
+    }
+
+    private async Task LoadAsync()
     {
         var result = await ApiExecutor.ExecuteAsync(
             "HallOfFame",
@@ -196,6 +230,7 @@
             return;
         }
 
+        _errorMessage = null;
         _inductionsByYear = result.Value.Items
             .Select(r => r.ToViewModel())
             .GroupBy(i => i.InductionYear)
@@ -216,26 +251,21 @@
             .ToList();
     }
 
-    internal static string GetInitials(string name)
+    private EventCallback EditCallbackFor(HallOfFameInductionViewModel inductee)
+        => _canEditPhotos
+            ? EventCallback.Factory.Create(this, () => OpenEditor(inductee))
+            : default;
+
+    private void OpenEditor(HallOfFameInductionViewModel inductee)
+        => _editing = inductee;
+
+    private void CloseEditor()
+        => _editing = null;
+
+    private async Task HandleSavedAsync()
     {
-        var parts = name.Split(' ', StringSplitOptions.RemoveEmptyEntries);
-
-        if (parts.Length >= 2)
-        {
-            return $"{parts[0][0]}{parts[^1][0]}";
-        }
-
-        return parts.Length > 0 ? parts[0][0].ToString() : "?";
-    }
-
-    private static string GetPhotoStyle(HallOfFameInductionViewModel inductee)
-    {
-        if (inductee.PhotoUri is not null)
-        {
-            return $"background-image: url('{inductee.PhotoUri}'); background-size: cover; background-position: center;";
-        }
-
-        return string.Empty;
+        _editing = null;
+        await LoadAsync();
     }
 
     private static int GetCategoryOrder(string category) => category switch

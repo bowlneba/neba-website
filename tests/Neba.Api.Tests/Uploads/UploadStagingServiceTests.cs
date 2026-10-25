@@ -3,6 +3,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Time.Testing;
 
 using Neba.Api.Database;
+using Neba.Api.Features.Storage.Domain;
 using Neba.Api.Storage;
 using Neba.Api.Uploads;
 using Neba.TestFactory.Attributes;
@@ -239,5 +240,82 @@ public sealed class UploadStagingServiceTests(AppDbContextFixture fixture)
         result.Path.ShouldEndWith("-returned.png");
         result.ContentType.ShouldBe("image/png");
         result.SizeInBytes.ShouldBe(2048);
+    }
+
+    [Fact(DisplayName = "StageUploadAsync should stage the given stream with its own content type and length")]
+    public async Task StageUploadAsync_ShouldStageGivenStream_WithItsContentTypeAndLength()
+    {
+        // Arrange
+        var ct = TestContext.Current.CancellationToken;
+        await using var content = new MemoryStream([1, 2, 3, 4, 5]);
+        string? uploadedPath = null;
+
+        _fileStorageServiceMock
+            .Setup(s => s.UploadFileAsync(
+                "bowlneba-public",
+                It.IsAny<string>(),
+                It.IsAny<Stream>(),
+                "image/jpeg",
+                It.IsAny<IDictionary<string, string>>(),
+                ct))
+            .Callback<string, string, Stream, string, IDictionary<string, string>, CancellationToken>(
+                (_, path, _, _, _, _) => uploadedPath = path)
+            .Returns(Task.CompletedTask);
+
+        var sut = CreateSut();
+
+        // Act
+        var result = await sut.StageUploadAsync(content, "../photo.jpg", "image/jpeg", "bowlneba-public", "hall-of-fame/photo", null, ct);
+
+        // Assert
+        result.ContentType.ShouldBe("image/jpeg");
+        result.SizeInBytes.ShouldBe(5);
+        result.Path.ShouldBe(uploadedPath);
+        result.Path.ShouldStartWith("uploads/hall-of-fame/photo/");
+        result.Path.ShouldEndWith("-photo.jpg");
+        (await _dbContext.PendingUploads.AnyAsync(p => p.Path == result.Path, ct)).ShouldBeTrue();
+    }
+
+    [Fact(DisplayName = "StageUploadAsync should report only the bytes from the stream's current position")]
+    public async Task StageUploadAsync_ShouldReportRemainingBytes_WhenStreamIsPartlyRead()
+    {
+        // Arrange
+        var ct = TestContext.Current.CancellationToken;
+        await using var content = new MemoryStream([1, 2, 3, 4, 5]) { Position = 2 };
+
+        _fileStorageServiceMock
+            .Setup(s => s.UploadFileAsync(
+                "bowlneba-public",
+                It.IsAny<string>(),
+                It.IsAny<Stream>(),
+                "image/jpeg",
+                It.IsAny<IDictionary<string, string>>(),
+                ct))
+            .Returns(Task.CompletedTask);
+
+        var sut = CreateSut();
+
+        // Act
+        var result = await sut.StageUploadAsync(content, "photo.jpg", "image/jpeg", "bowlneba-public", "hall-of-fame/photo", null, ct);
+
+        // Assert
+        result.SizeInBytes.ShouldBe(3);
+    }
+
+    [Fact(DisplayName = "StageUploadAsync should throw when the given stream is not seekable")]
+    public async Task StageUploadAsync_ShouldThrow_WhenStreamIsNotSeekable()
+    {
+        // Arrange
+        var ct = TestContext.Current.CancellationToken;
+        var content = new Mock<Stream>(MockBehavior.Strict);
+        content.SetupGet(s => s.CanSeek).Returns(false);
+
+        var sut = CreateSut();
+
+        // Act
+        Task<StoredFile> Act() => sut.StageUploadAsync(content.Object, "photo.jpg", "image/jpeg", "bowlneba-public", "hall-of-fame/photo", null, ct);
+
+        // Assert
+        await Should.ThrowAsync<ArgumentException>(Act);
     }
 }

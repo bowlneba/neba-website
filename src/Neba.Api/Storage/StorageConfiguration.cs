@@ -29,6 +29,7 @@ internal static class StorageConfiguration
 
             builder.Services.AddSingleton<IFileStorageService, AzureBlobStorageService>();
             builder.Services.AddScoped<IUploadStagingService, UploadStagingService>();
+            builder.Services.AddSingleton<IImageResizer, ImageSharpResizer>();
 
             builder.AddSharedDataProtection();
 

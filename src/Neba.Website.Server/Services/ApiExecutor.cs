@@ -288,7 +288,7 @@ internal sealed class ApiExecutor(
     /// generic "detail" text. Returns null on anything that doesn't parse, so callers can fall back to a
     /// generic message instead of showing raw JSON.
     /// </summary>
-    private static string? TryExtractErrorDetail(string? content)
+    private string? TryExtractErrorDetail(string? content)
     {
         if (string.IsNullOrWhiteSpace(content))
         {
@@ -311,8 +311,9 @@ internal sealed class ApiExecutor(
 
             return string.IsNullOrWhiteSpace(payload?.Detail) ? null : payload.Detail;
         }
-        catch (JsonException)
+        catch (JsonException ex)
         {
+            logger.LogErrorDetailUnparseable(ex);
             return null;
         }
     }
@@ -386,4 +387,9 @@ internal static partial class ApiExecutorLogMessages
         Level = LogLevel.Error,
         Message = "API call exception: {ApiName}.{OperationName} (Duration: {DurationMs}ms)")]
     public static partial void LogApiException(this ILogger<ApiExecutor> logger, string apiName, string operationName, double durationMs, Exception exception);
+
+    [LoggerMessage(
+        Level = LogLevel.Debug,
+        Message = "The API error response body was not valid problem details; falling back to a generic message.")]
+    public static partial void LogErrorDetailUnparseable(this ILogger<ApiExecutor> logger, Exception exception);
 }

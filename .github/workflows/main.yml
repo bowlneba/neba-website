@@ -28,6 +28,7 @@ jobs:
       is_pull_request: false
     secrets:
       SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+      SIXLABORS_LICENSE_KEY: ${{ secrets.SIXLABORS_LICENSE_KEY }}
 
   cd:
     needs: ci

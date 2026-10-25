@@ -10,6 +10,12 @@ on:
     secrets:
       SONAR_TOKEN:
         required: true
+      SIXLABORS_LICENSE_KEY:
+        required: true
+
+# ImageSharp needs a Six Labors license in Release builds (see Directory.Build.props).
+env:
+  SIXLABORS_LICENSE_KEY: ${{ secrets.SIXLABORS_LICENSE_KEY }}
 
 jobs:
   build:
@@ -255,3 +261,4 @@ jobs:
     uses: ./.github/workflows/sonarcloud.yml
     secrets:
       SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+      SIXLABORS_LICENSE_KEY: ${{ secrets.SIXLABORS_LICENSE_KEY }}

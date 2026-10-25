@@ -140,6 +140,7 @@ jobs:
       is_pull_request: true
     secrets:
       SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+      SIXLABORS_LICENSE_KEY: ${{ secrets.SIXLABORS_LICENSE_KEY }}
 
   detect-apphost-changes:
     name: Detect AppHost changes
@@ -170,6 +171,8 @@ jobs:
       azure_env_name: bowlneba-prod
       azure_location: ${{ vars.AZURE_LOCATION }}
       artifact_name: pr-azd-preview
+    secrets:
+      SIXLABORS_LICENSE_KEY: ${{ secrets.SIXLABORS_LICENSE_KEY }}
     permissions:
       contents: read
       id-token: write
