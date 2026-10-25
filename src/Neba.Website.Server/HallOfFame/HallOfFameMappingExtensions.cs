@@ -10,10 +10,14 @@ internal static class HallOfFameMappingExtensions
         {
             return new HallOfFameInductionViewModel
             {
+                Id = dto.Id,
                 BowlerName = dto.BowlerName,
                 InductionYear = dto.Year,
                 Categories = dto.Categories,
-                PhotoUri = dto.PhotoUri
+                PhotoUri = dto.PhotoUri,
+                PhotoFocalX = dto.PhotoFocalX,
+                PhotoFocalY = dto.PhotoFocalY,
+                PhotoZoom = dto.PhotoZoom
             };
         }
     }

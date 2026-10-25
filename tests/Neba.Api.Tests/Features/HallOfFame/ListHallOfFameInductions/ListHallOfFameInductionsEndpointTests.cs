@@ -35,6 +35,36 @@ public sealed class ListHallOfFameInductionsEndpointTests
         await Verify(endpoint.Response);
     }
 
+    [Fact(DisplayName = "HandleAsync should map the id, focal point, and zoom into the response")]
+    public async Task HandleAsync_ShouldMapIdFocalPointAndZoom_WhenInductionHasPhoto()
+    {
+        // Arrange
+        var cancellationToken = TestContext.Current.CancellationToken;
+        var dto = HallOfFameInductionDtoFactory.Create(
+            id: "01JZ8K3M4N5P6Q7R8S9T0V1W3Y",
+            photoUri: new Uri("https://files.example.test/jane.jpg"),
+            photoFocalX: 31,
+            photoFocalY: 36,
+            photoZoom: 175);
+
+        var queryHandlerMock = new Mock<IQueryHandler<ListHallOfFameInductionsQuery, IReadOnlyCollection<HallOfFameInductionDto>>>(MockBehavior.Strict);
+        queryHandlerMock
+            .Setup(handler => handler.HandleAsync(It.IsAny<ListHallOfFameInductionsQuery>(), cancellationToken))
+            .ReturnsAsync([dto]);
+
+        var endpoint = Factory.Create<ListHallOfFameInductionsEndpoint>(queryHandlerMock.Object);
+
+        // Act
+        await endpoint.HandleAsync(cancellationToken);
+
+        // Assert
+        var item = endpoint.Response.Items.Single();
+        item.Id.ShouldBe("01JZ8K3M4N5P6Q7R8S9T0V1W3Y");
+        item.PhotoFocalX.ShouldBe(31);
+        item.PhotoFocalY.ShouldBe(36);
+        item.PhotoZoom.ShouldBe(175);
+    }
+
     [Fact(DisplayName = "Configure should register anonymous GET route at /hall-of-fame/inductions")]
     public void Configure_ShouldRegisterAnonymousGetRoute_AtExpectedPath()
     {

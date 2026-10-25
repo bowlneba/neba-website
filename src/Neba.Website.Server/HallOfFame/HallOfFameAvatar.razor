@@ -1,0 +1,56 @@
+<div class="avatar-wrap">
+    <div class="inductee-photo">
+        @if (PhotoUri is not null)
+        {
+            <img class="inductee-photo__img" src="@PhotoUri.AbsoluteUri" alt="" style="@ImageStyle" loading="lazy" />
+        }
+        else
+        {
+            @GetInitials(BowlerName)
+        }
+    </div>
+
+    @if (OnEdit.HasDelegate)
+    {
+        <HallOfFamePhotoEditButton BowlerName="@BowlerName" OnClick="OnEdit" />
+    }
+</div>
+
+@code {
+    [Parameter, EditorRequired]
+    public string BowlerName { get; set; } = string.Empty;
+
+    [Parameter]
+    public Uri? PhotoUri { get; set; }
+
+    [Parameter]
+    public int? FocalX { get; set; }
+
+    [Parameter]
+    public int? FocalY { get; set; }
+
+    [Parameter]
+    public int? Zoom { get; set; }
+
+    /// <summary>
+    /// When set, the avatar shows the edit button (visible only to users with the permission).
+    /// </summary>
+    [Parameter]
+    public EventCallback OnEdit { get; set; }
+
+    private string ImageStyle
+        => new FocalPoint(FocalX ?? FocalPoint.Default.X, FocalY ?? FocalPoint.Default.Y, Zoom ?? FocalPoint.Default.Zoom)
+            .ToImageStyle();
+
+    internal static string GetInitials(string name)
+    {
+        var parts = name.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+
+        if (parts.Length >= 2)
+        {
+            return string.Concat(parts[0][0], parts[^1][0]);
+        }
+
+        return parts.Length > 0 ? parts[0][0].ToString() : "?";
+    }
+}

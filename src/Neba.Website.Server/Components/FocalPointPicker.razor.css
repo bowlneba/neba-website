@@ -1,0 +1,172 @@
+.focal-picker {
+    display: grid;
+    grid-template-columns: 1fr 160px;
+    gap: 1.25rem;
+    align-items: start;
+}
+
+.focal-picker__surface {
+    position: relative;
+    width: min(100%, calc(320px * var(--fp-aspect, 1.3333)));
+    aspect-ratio: var(--fp-aspect, 1.3333);
+    margin: 0 auto;
+    border-radius: var(--neba-radius-lg, 0.5rem);
+    overflow: hidden;
+    background: var(--neba-gray-100, #F5F5F5);
+    border: 1px solid var(--neba-gray-200, #E5E5E5);
+    cursor: crosshair;
+    touch-action: none;
+    line-height: 0;
+}
+
+.focal-picker__surface--over-crop {
+    cursor: grab;
+}
+
+.focal-picker__surface--dragging,
+.focal-picker__surface--dragging.focal-picker__surface--over-crop {
+    cursor: grabbing;
+}
+
+.focal-picker__surface:focus-visible {
+    outline: 3px solid var(--neba-blue-500, #6C77E1);
+    outline-offset: 2px;
+}
+
+.focal-picker__surface img {
+    width: 100%;
+    height: 100%;
+    object-fit: fill;
+    display: block;
+    user-select: none;
+    -webkit-user-drag: none;
+}
+
+/* The crop outline shows exactly what the shape will display and dims the rest. */
+.focal-picker__crop {
+    position: absolute;
+    transform: translate(-50%, -50%);
+    border: 2px solid #fff;
+    pointer-events: none;
+    box-shadow: 0 0 0 1px rgba(5, 39, 103, 0.9), 0 0 0 999px rgba(5, 39, 103, 0.5);
+    transition: left 90ms ease-out, top 90ms ease-out;
+}
+
+.focal-picker__marker {
+    position: absolute;
+    width: 12px;
+    height: 12px;
+    margin: -6px 0 0 -6px;
+    border-radius: 50%;
+    background: #fff;
+    box-shadow: 0 0 0 1.5px rgba(5, 39, 103, 0.9);
+    pointer-events: none;
+    transition: left 90ms ease-out, top 90ms ease-out;
+}
+
+.focal-picker__surface--dragging .focal-picker__crop,
+.focal-picker__surface--dragging .focal-picker__marker {
+    transition: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .focal-picker__crop,
+    .focal-picker__marker {
+        transition: none;
+    }
+}
+
+.focal-picker__hint {
+    margin: 0.5rem 0 0;
+    font-size: 0.8125rem;
+    color: var(--neba-gray-600, #525252);
+}
+
+.focal-picker__side {
+    text-align: center;
+}
+
+.focal-picker__preview {
+    width: 132px;
+    margin: 0 auto 0.625rem;
+    overflow: hidden;
+    background: var(--neba-gray-100, #F5F5F5);
+    box-shadow: 0 4px 8px rgba(0, 102, 204, 0.2);
+}
+
+.focal-picker__preview--circle {
+    height: 132px;
+    border-radius: 50%;
+}
+
+.focal-picker__preview img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+}
+
+.focal-picker__zoom {
+    margin: 0 0 0.75rem;
+}
+
+.focal-picker__zoom label {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.8125rem;
+    color: var(--neba-gray-600, #525252);
+    margin-bottom: 0.125rem;
+}
+
+.focal-picker__zoom output {
+    font-weight: 600;
+    color: #1f2937;
+    font-variant-numeric: tabular-nums;
+}
+
+.focal-picker__zoom input[type="range"] {
+    width: 100%;
+    min-height: 32px;
+    margin: 0;
+    accent-color: var(--neba-blue-600, #5563DD);
+    cursor: pointer;
+}
+
+.focal-picker__zoom input[type="range"]:focus-visible {
+    outline: 2px solid var(--neba-blue-500, #6C77E1);
+    outline-offset: 2px;
+}
+
+@media (max-width: 640px) {
+    .focal-picker {
+        grid-template-columns: 1fr;
+    }
+
+    .focal-picker__side {
+        display: grid;
+        grid-template-columns: 96px 1fr;
+        grid-template-areas: "pv tx" "zm zm";
+        gap: 0.5rem 1rem;
+        align-items: center;
+        text-align: left;
+    }
+
+    .focal-picker__side > .focal-picker__preview {
+        grid-area: pv;
+        width: 96px;
+        margin: 0;
+    }
+
+    .focal-picker__side > .focal-picker__preview--circle {
+        height: 96px;
+    }
+
+    .focal-picker__side > .focal-picker__zoom {
+        grid-area: zm;
+        margin: 0;
+    }
+
+    .focal-picker__side > .focal-picker__side-content {
+        grid-area: tx;
+    }
+}

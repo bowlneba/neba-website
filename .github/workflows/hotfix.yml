@@ -25,6 +25,10 @@ on:
 permissions:
   contents: read
 
+# ImageSharp needs a Six Labors license in Release builds (see Directory.Build.props).
+env:
+  SIXLABORS_LICENSE_KEY: ${{ secrets.SIXLABORS_LICENSE_KEY }}
+
 jobs:
   guard:
     name: Guard

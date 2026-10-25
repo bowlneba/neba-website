@@ -82,3 +82,11 @@ This applies to any `ISchemaProcessor`, startup-cached registries, or other stat
 
 All classes that use `[LoggerMessage]` source-generated log methods have dedicated log-assertion tests using `FakeLogger<T>`. When adding a new class that logs, add `Microsoft.Extensions.Diagnostics.Testing` to its test project (if not already present) and add log-assertion tests covering every log level/path.
 
+### Running Jest on a Mac: `node_modules` is the Linux install
+
+The repo's `node_modules` comes from a `node:24-slim` container (see the lockfile rule), so it holds the Linux native bindings. `npx jest` on macOS fails with "Module <rootDir>/jest.setup.js ... was not found" because the native resolver binding for macOS is missing. Run the JS tests, and `tsx`-based scripts such as the e2e mock API, in the same image instead:
+
+```bash
+docker run --rm -v "$PWD":/app -w /app node:24-slim npx jest src/Neba.Website.Server/Components/FocalPointPicker.razor.tests.js
+```
+

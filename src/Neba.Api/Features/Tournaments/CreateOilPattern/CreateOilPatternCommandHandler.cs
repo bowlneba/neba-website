@@ -10,7 +10,7 @@ using ZiggyCreatures.Caching.Fusion;
 
 namespace Neba.Api.Features.Tournaments.CreateOilPattern;
 
-internal sealed class CreateOilPatternCommandHandler(AppDbContext appDbContext, IFusionCache cache)
+internal sealed class CreateOilPatternCommandHandler(AppDbContext appDbContext, IFusionCache cache, ILogger<CreateOilPatternCommandHandler> logger)
     : ICommandHandler<CreateOilPatternCommand, CreatedOilPattern>
 {
     public async Task<ErrorOr<CreatedOilPattern>> HandleAsync(CreateOilPatternCommand command, CancellationToken cancellationToken)
@@ -38,7 +38,8 @@ internal sealed class CreateOilPatternCommandHandler(AppDbContext appDbContext, 
         }
         catch (UniqueConstraintException ex) when (ex.ConstraintProperties.Contains(nameof(OilPattern.KegelId)))
         {
-            return OilPatternErrors.KegelIdAlreadyExists(command.KegelId!.Value);
+            logger.LogKegelIdAlreadyExists(ex, command.KegelId!.Value);
+            return OilPatternErrors.KegelIdAlreadyExists(command.KegelId.Value);
         }
 
         await cache.RemoveByTagAsync("neba:oil-patterns", token: cancellationToken);
@@ -52,4 +53,10 @@ internal sealed class CreateOilPatternCommandHandler(AppDbContext appDbContext, 
             RatioCategory = oilPattern.RatioCategory
         };
     }
+}
+
+internal static partial class CreateOilPatternCommandHandlerLogMessages
+{
+    [LoggerMessage(Level = LogLevel.Information, Message = "Oil pattern not created: Kegel ID {KegelId} already exists.")]
+    public static partial void LogKegelIdAlreadyExists(this ILogger<CreateOilPatternCommandHandler> logger, Exception exception, Guid kegelId);
 }

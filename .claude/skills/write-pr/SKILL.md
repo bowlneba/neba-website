@@ -93,4 +93,4 @@ Tell the user:
 - `pr-description.md` has been written
 - The file is ready to copy and paste into GitHub
 - Remind them to delete `pr-description.md` after opening the PR (it should not be committed)
-- The label(s) recommended from step 2, with a one-line reason each; if recommending a new label, say so explicitly and note it needs to be created first
+- The label(s) recommended from step 2, in alphabetical order (the order GitHub lists them), with a one-line reason each; if recommending a new label, say so explicitly and note it needs to be created first

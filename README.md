@@ -118,6 +118,7 @@ src/
 | **Local Development** | .NET Aspire |
 | **Production** | Azure (Container Apps, Monitor, Key Vault, Blob Storage, Maps) |
 | **Background Jobs** | Hangfire |
+| **Image Processing** | SixLabors ImageSharp (Hall of Fame photo resize; commercial license) |
 | **Caching** | FusionCache |
 | **API Documentation** | Scalar |
 | **HTTP Client** | Refit |

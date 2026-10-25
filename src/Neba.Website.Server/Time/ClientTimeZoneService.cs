@@ -51,9 +51,10 @@ internal sealed class ClientTimeZoneService(IJSRuntime jsRuntime, ILogger<Client
             {
                 await _module.DisposeAsync();
             }
-            catch (JSDisconnectedException)
+            catch (JSDisconnectedException ex)
             {
                 // Circuit already gone — nothing to clean up.
+                logger.LogClientTimeZoneModuleDisposeSkipped(ex);
             }
         }
     }
@@ -65,4 +66,9 @@ internal static partial class ClientTimeZoneServiceLogMessages
         Level = LogLevel.Warning,
         Message = "Failed to resolve the client's browser time zone; falling back to UTC.")]
     public static partial void LogClientTimeZoneResolutionFailed(this ILogger<ClientTimeZoneService> logger, Exception exception);
+
+    [LoggerMessage(
+        Level = LogLevel.Debug,
+        Message = "Skipped disposing the browser time zone module; the circuit had already disconnected.")]
+    public static partial void LogClientTimeZoneModuleDisposeSkipped(this ILogger<ClientTimeZoneService> logger, Exception exception);
 }

@@ -1,0 +1,146 @@
+@implements IAsyncDisposable
+@inject IJSRuntime JsRuntime
+@inject ILogger<FocalPointPicker> Logger
+
+<div id="@_rootId" class="focal-picker" data-shape="@(Shape == FocalPointShape.Circle ? "circle" : "rectangle")" data-aspect="@AspectText">
+    <div class="focal-picker__stage">
+        <div class="focal-picker__surface" data-fp-surface tabindex="0" role="slider"
+             aria-label="@AriaLabel" aria-valuemin="0" aria-valuemax="100" aria-valuenow="@X"
+             aria-valuetext="@ValueText">
+            <img src="@ImageUrl.AbsoluteUri" alt="" draggable="false" />
+            <span class="focal-picker__crop" data-fp-crop aria-hidden="true"></span>
+            <span class="focal-picker__marker" data-fp-marker aria-hidden="true"></span>
+        </div>
+        <p class="focal-picker__hint">@Hint</p>
+    </div>
+
+    <div class="focal-picker__side">
+        <div class="focal-picker__preview @(Shape == FocalPointShape.Circle ? "focal-picker__preview--circle" : null)"
+             style="@PreviewAspectStyle">
+            <img src="@ImageUrl.AbsoluteUri" alt="" style="@Current.ToImageStyle()" data-fp-preview />
+        </div>
+
+        <div class="focal-picker__zoom">
+            <label for="@ZoomId">Zoom <output data-fp-zoom-text>@ZoomText</output></label>
+            <input id="@ZoomId" type="range" min="100" max="300" step="5" value="@Zoom" data-fp-zoom />
+        </div>
+
+        <div class="focal-picker__side-content">@SideContent</div>
+    </div>
+</div>
+
+@code {
+    private readonly string _rootId = "focal-picker-" + Guid.NewGuid().ToString("N");
+    private DotNetObjectReference<FocalPointPicker>? _dotNetHelper;
+    private IJSObjectReference? _jsModule;
+    private FocalPoint _lastSentToJs;
+
+    [Parameter, EditorRequired]
+    public Uri ImageUrl { get; set; } = default!;
+
+    [Parameter]
+    public int X { get; set; } = 50;
+
+    [Parameter]
+    public int Y { get; set; } = 50;
+
+    [Parameter]
+    public int Zoom { get; set; } = 100;
+
+    [Parameter]
+    public FocalPointShape Shape { get; set; } = FocalPointShape.Circle;
+
+    /// <summary>
+    /// Width divided by height of the shape. Ignored for a circle.
+    /// </summary>
+    [Parameter]
+    public double Aspect { get; set; } = 1;
+
+    [Parameter, EditorRequired]
+    public string AriaLabel { get; set; } = string.Empty;
+
+    [Parameter]
+    public string Hint { get; set; } =
+        "Click the face to center it in the circle, then drag the circle to fine-tune. If the face sits near the edge, zoom in first. Arrow keys also work; hold Shift to move further.";
+
+    /// <summary>
+    /// Extra content under the preview and zoom (state label, remove button).
+    /// </summary>
+    [Parameter]
+    public RenderFragment? SideContent { get; set; }
+
+    [Parameter, EditorRequired]
+    public EventCallback<FocalPoint> OnChange { get; set; }
+
+    private string ZoomId => _rootId + "-zoom";
+
+    private FocalPoint Current => new(X, Y, Zoom);
+
+    private string AspectText
+        => Shape == FocalPointShape.Circle ? "1" : Aspect.ToString("0.####", System.Globalization.CultureInfo.InvariantCulture);
+
+    private string PreviewAspectStyle
+        => Shape == FocalPointShape.Circle ? string.Empty : "aspect-ratio:" + AspectText;
+
+    private string ZoomText
+        => (Zoom / 100.0).ToString("0.0", System.Globalization.CultureInfo.InvariantCulture) + "×";
+
+    private string ValueText
+        => "Photo positioned " + X + " percent across and " + Y + " percent down, zoom " + ZoomText;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            _dotNetHelper = DotNetObjectReference.Create(this);
+            _jsModule = await JsRuntime.InvokeAsync<IJSObjectReference>(
+                "import", "./Components/FocalPointPicker.razor.js");
+            await _jsModule.InvokeVoidAsync("initialize", _rootId, _dotNetHelper, X, Y, Zoom);
+            _lastSentToJs = Current;
+            return;
+        }
+
+        // The parent changed the value (new photo staged, discard): tell the module, which owns the geometry.
+        if (_jsModule is not null && Current != _lastSentToJs)
+        {
+            _lastSentToJs = Current;
+            await _jsModule.InvokeVoidAsync("update", _rootId, X, Y, Zoom);
+        }
+    }
+
+    /// <summary>
+    /// Called by the module after a click, a key press, the end of a drag, or the release of the zoom slider. At most once per animation frame.
+    /// </summary>
+    [JSInvokable]
+    public async Task NotifyChanged(int x, int y, int zoom)
+    {
+        _lastSentToJs = new FocalPoint(x, y, zoom);
+        await OnChange.InvokeAsync(_lastSentToJs);
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        if (_jsModule is not null)
+        {
+            try
+            {
+                await _jsModule.InvokeVoidAsync("dispose", _rootId);
+            }
+            catch (JSDisconnectedException ex)
+            {
+                Logger.LogInformation(ex, "[FocalPointPicker] JS cleanup skipped because the circuit disconnected.");
+            }
+
+            try
+            {
+                await _jsModule.DisposeAsync();
+            }
+            catch (JSDisconnectedException ex)
+            {
+                Logger.LogInformation(ex, "[FocalPointPicker] JS module disposal skipped because the circuit disconnected.");
+            }
+        }
+
+        _dotNetHelper?.Dispose();
+    }
+}

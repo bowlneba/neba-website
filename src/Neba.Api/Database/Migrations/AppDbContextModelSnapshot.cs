@@ -18,7 +18,7 @@ namespace Neba.Api.Database.Migrations
         {
 #pragma warning disable 612, 618
             modelBuilder
-                .HasAnnotation("ProductVersion", "10.0.12")
+                .HasAnnotation("ProductVersion", "10.0.13")
                 .HasAnnotation("Relational:MaxIdentifierLength", 63);
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
@@ -328,6 +328,21 @@ namespace Neba.Api.Database.Migrations
                             b1.Property<long>("SizeInBytes")
                                 .HasColumnType("bigint")
                                 .HasColumnName("photo_size_in_bytes");
+                        });
+
+                    b.ComplexProperty(typeof(Dictionary<string, object>), "PhotoFocalPoint", "Neba.Api.Features.HallOfFame.Domain.HallOfFameInduction.PhotoFocalPoint#PhotoFocalPoint", b1 =>
+                        {
+                            b1.Property<int>("X")
+                                .HasColumnType("integer")
+                                .HasColumnName("photo_focal_x");
+
+                            b1.Property<int>("Y")
+                                .HasColumnType("integer")
+                                .HasColumnName("photo_focal_y");
+
+                            b1.Property<int>("Zoom")
+                                .HasColumnType("integer")
+                                .HasColumnName("photo_zoom");
                         });
 
                     b.HasKey("db_id")

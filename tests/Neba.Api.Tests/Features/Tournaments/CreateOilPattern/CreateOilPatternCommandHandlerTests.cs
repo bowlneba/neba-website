@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging.Abstractions;
 
 using Neba.Api.Database;
 using Neba.Api.Features.Tournaments.CreateOilPattern;
@@ -39,7 +40,7 @@ public sealed class CreateOilPatternCommandHandlerTests(AppDbContextFixture fixt
     private CreateOilPatternCommandHandler CreateHandler()
     {
         var cache = _serviceProvider.GetRequiredService<IFusionCache>();
-        return new CreateOilPatternCommandHandler(_dbContext, cache);
+        return new CreateOilPatternCommandHandler(_dbContext, cache, NullLogger<CreateOilPatternCommandHandler>.Instance);
     }
 
     private static CreateOilPatternCommand ValidCommand(

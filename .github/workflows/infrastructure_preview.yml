@@ -20,11 +20,17 @@ on:
       artifact-name:
         description: Name of the uploaded artifact containing preview output
         value: ${{ jobs.preview.outputs.artifact-name }}
+    secrets:
+      SIXLABORS_LICENSE_KEY:
+        description: Six Labors license key; azd builds the AppHost, which builds Neba.Api (ImageSharp)
+        required: false
 
 jobs:
   preview:
     name: Infrastructure Preview
     runs-on: ubuntu-latest
+    env:
+      SIXLABORS_LICENSE_KEY: ${{ secrets.SIXLABORS_LICENSE_KEY }}
     permissions:
       contents: read
       id-token: write

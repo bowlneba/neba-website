@@ -20,11 +20,15 @@ internal sealed class ListHallOfFameInductionsQueryHandler(
         var rows = await _hallOfFameInductions
             .Select(induction => new
             {
+                induction.Id,
                 induction.Year,
                 BowlerName = induction.Bowler.Name,
                 induction.Categories,
                 PhotoContainer = induction.Photo != null ? induction.Photo.Container : null,
-                PhotoPath = induction.Photo != null ? induction.Photo.Path : null
+                PhotoPath = induction.Photo != null ? induction.Photo.Path : null,
+                PhotoFocalX = induction.PhotoFocalPoint != null ? (int?)induction.PhotoFocalPoint.X : null,
+                PhotoFocalY = induction.PhotoFocalPoint != null ? (int?)induction.PhotoFocalPoint.Y : null,
+                PhotoZoom = induction.PhotoFocalPoint != null ? (int?)induction.PhotoFocalPoint.Zoom : null
             })
             .OrderBy(row => row.BowlerName.LastName)
             .ThenBy(row => row.BowlerName.FirstName)
@@ -32,12 +36,16 @@ internal sealed class ListHallOfFameInductionsQueryHandler(
 
         return [.. rows.Select(row => new HallOfFameInductionDto
         {
+            Id = row.Id.ToString(),
             Year = row.Year,
             BowlerName = row.BowlerName,
             Categories = row.Categories,
             PhotoUri = row.PhotoContainer != null && row.PhotoPath != null
                 ? _fileStorageService.GetBlobUri(row.PhotoContainer, row.PhotoPath)
-                : null
+                : null,
+            PhotoFocalX = row.PhotoFocalX,
+            PhotoFocalY = row.PhotoFocalY,
+            PhotoZoom = row.PhotoZoom
         })];
     }
 }
