@@ -32,12 +32,9 @@ internal sealed class UploadStagingService(
     {
         ArgumentNullException.ThrowIfNull(content);
 
-        if (!content.CanSeek)
-        {
-            throw new ArgumentException("The stream must be seekable so its size is known.", nameof(content));
-        }
-
-        return StageAsync(content, new UploadDescriptor(fileName, contentType, content.Length - content.Position), container, pathPrefix, metadata, cancellationToken);
+        return !content.CanSeek 
+            ? throw new ArgumentException("The stream must be seekable so its size is known.", nameof(content)) 
+            : StageAsync(content, new UploadDescriptor(fileName, contentType, content.Length - content.Position), container, pathPrefix, metadata, cancellationToken);
     }
 
     private async Task<StoredFile> StageAsync(
