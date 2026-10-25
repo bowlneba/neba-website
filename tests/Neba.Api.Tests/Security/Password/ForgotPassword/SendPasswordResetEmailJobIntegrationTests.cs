@@ -60,7 +60,7 @@ public sealed class SendPasswordResetEmailJobIntegrationTests(SecurityDbContextF
         sent.HtmlBody.ShouldContain($"{BaseUrl}/account/set-password?userId={user.Id}&amp;token=");
         sent.HtmlBody.ShouldContain("&amp;reason=reset");
 
-        var marker = "&amp;token=";
+        const string marker = "&amp;token=";
         var start = sent.HtmlBody.IndexOf(marker, StringComparison.Ordinal) + marker.Length;
         var end = sent.HtmlBody.IndexOf('&', start);
         var token = WebUtility.UrlDecode(sent.HtmlBody[start..end]);

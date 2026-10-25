@@ -47,13 +47,12 @@ public sealed class SecurityMetricsTests
 
     private static MeterListener BuildListener(List<(string Instrument, long Value, KeyValuePair<string, object?>[] Tags)> measurements)
     {
-        var listener = new MeterListener();
-
-        listener.InstrumentPublished = (instrument, l) =>
-        {
-            if (instrument.Meter.Name == SecurityMetrics.MeterName)
+        var listener = new MeterListener { InstrumentPublished = (instrument, l) =>
             {
-                l.EnableMeasurementEvents(instrument);
+                if (instrument.Meter.Name == SecurityMetrics.MeterName)
+                {
+                    l.EnableMeasurementEvents(instrument);
+                }
             }
         };
 

@@ -1,3 +1,4 @@
+using System.Runtime.CompilerServices;
 using System.Security.Cryptography;
 using System.Text;
 
@@ -68,7 +69,7 @@ internal sealed class ForgotPasswordCommandHandler(
 
         // GetOrSet runs the factory for one caller only, so two concurrent requests cannot both pass. The job is
         // queued inside the factory: if queuing fails the cooldown is not stored and the user can try again.
-        var firstRequest = false;
+        var firstRequest = new StrongBox<bool>(false);
 
         await cache.GetOrSetAsync<bool>(
             $"password-reset-cooldown:{user.Id}",
@@ -78,13 +79,13 @@ internal sealed class ForgotPasswordCommandHandler(
                 backgroundJobClient.Enqueue<SendPasswordResetEmailJob>(
                     job => job.SendAsync(user.Id.ToString(), CancellationToken.None));
 
-                firstRequest = true;
+                firstRequest.Value = true;
                 return Task.FromResult(true);
             },
             new FusionCacheEntryOptions(Cooldown),
             token: cancellationToken);
 
-        if (!firstRequest)
+        if (!firstRequest.Value)
         {
             SecurityMetrics.RecordResetRequest("cooldown");
             return Result.Success;
