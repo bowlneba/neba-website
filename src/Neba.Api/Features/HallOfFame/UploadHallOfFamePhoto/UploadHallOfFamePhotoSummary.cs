@@ -15,5 +15,6 @@ internal sealed class UploadHallOfFamePhotoSummary : Summary<UploadHallOfFamePho
         Response(400, "File missing, wrong content type, or too large.");
         Response(401, "No valid bearer token provided.");
         Response(403, "Authenticated user does not have the HallOfFame.EditHallOfFamePhoto permission.");
+        Response(422, "The file is not a readable JPEG, PNG, WebP, or GIF image, or is more than 12000 pixels on a side.");
     }
 }

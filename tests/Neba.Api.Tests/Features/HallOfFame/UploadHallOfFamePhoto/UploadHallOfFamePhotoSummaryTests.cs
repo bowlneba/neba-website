@@ -27,7 +27,7 @@ public sealed class UploadHallOfFamePhotoSummaryTests
         summary.Description.ShouldNotBeNullOrWhiteSpace();
     }
 
-    [Fact(DisplayName = "Constructor should register 200, 400, 401, and 403 responses")]
+    [Fact(DisplayName = "Constructor should register 200, 400, 401, 403, and 422 responses")]
     public void Constructor_ShouldRegisterExpectedResponses()
     {
         // Arrange & Act
@@ -38,5 +38,6 @@ public sealed class UploadHallOfFamePhotoSummaryTests
         summary.Responses.ShouldContainKey(400);
         summary.Responses.ShouldContainKey(401);
         summary.Responses.ShouldContainKey(403);
+        summary.Responses.ShouldContainKey(422);
     }
 }

@@ -240,4 +240,38 @@ public sealed class UploadStagingServiceTests(AppDbContextFixture fixture)
         result.ContentType.ShouldBe("image/png");
         result.SizeInBytes.ShouldBe(2048);
     }
+
+    [Fact(DisplayName = "StageUploadAsync should stage the given stream with its own content type and length")]
+    public async Task StageUploadAsync_ShouldStageGivenStream_WithItsContentTypeAndLength()
+    {
+        // Arrange
+        var ct = TestContext.Current.CancellationToken;
+        await using var content = new MemoryStream([1, 2, 3, 4, 5]);
+        string? uploadedPath = null;
+
+        _fileStorageServiceMock
+            .Setup(s => s.UploadFileAsync(
+                "bowlneba-public",
+                It.IsAny<string>(),
+                It.IsAny<Stream>(),
+                "image/jpeg",
+                It.IsAny<IDictionary<string, string>>(),
+                ct))
+            .Callback<string, string, Stream, string, IDictionary<string, string>, CancellationToken>(
+                (_, path, _, _, _, _) => uploadedPath = path)
+            .Returns(Task.CompletedTask);
+
+        var sut = CreateSut();
+
+        // Act
+        var result = await sut.StageUploadAsync(content, "../photo.jpg", "image/jpeg", "bowlneba-public", "hall-of-fame/photo", null, ct);
+
+        // Assert
+        result.ContentType.ShouldBe("image/jpeg");
+        result.SizeInBytes.ShouldBe(5);
+        result.Path.ShouldBe(uploadedPath);
+        result.Path.ShouldStartWith("uploads/hall-of-fame/photo/");
+        result.Path.ShouldEndWith("-photo.jpg");
+        (await _dbContext.PendingUploads.AnyAsync(p => p.Path == result.Path, ct)).ShouldBeTrue();
+    }
 }

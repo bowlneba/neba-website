@@ -21,6 +21,7 @@ using Neba.Api.Versioning;
 using Neba.TestFactory.Attributes;
 using Neba.TestFactory.Infrastructure;
 using Neba.TestFactory.Storage;
+using Neba.TestFactory.Uploads;
 
 using Npgsql;
 
@@ -61,13 +62,25 @@ public sealed class UploadHallOfFamePhotoEndpointAuthorizationTests(SecurityDbCo
         var stagingServiceMock = new Mock<IUploadStagingService>(MockBehavior.Strict);
         stagingServiceMock
             .Setup(s => s.StageUploadAsync(
-                It.IsAny<IFormFile>(),
+                It.IsAny<Stream>(),
+                It.IsAny<string>(),
+                It.IsAny<string>(),
                 "bowlneba-public",
                 "hall-of-fame/photo",
                 null,
                 It.IsAny<CancellationToken>()))
             .ReturnsAsync(StoredFileFactory.Create());
         builder.Services.AddSingleton(stagingServiceMock.Object);
+
+        var imageResizerMock = new Mock<IImageResizer>(MockBehavior.Strict);
+        imageResizerMock
+            .Setup(r => r.ResizeAsync(
+                It.IsAny<Stream>(),
+                It.IsAny<int>(),
+                It.IsAny<IReadOnlySet<string>>(),
+                It.IsAny<CancellationToken>()))
+            .ReturnsAsync(ResizedImageFactory.Create());
+        builder.Services.AddSingleton(imageResizerMock.Object);
 
         var fileStorageServiceMock = new Mock<IFileStorageService>(MockBehavior.Strict);
         fileStorageServiceMock

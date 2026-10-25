@@ -211,6 +211,7 @@ Detailed write-ups live in `docs/learnings/`. Read the matching file before work
 - Never initialize an EF collection navigation with `= []` on an `IReadOnlyCollection<T>` auto-property (it becomes a fixed-size array); use a `List<T>` backing field. Suppress IDE0305 and IDE0028 where you must use `new List<T>()`, and add an `ICollection<T>.Add` regression test.
 - `[LogProperties]` tags are `<param>.<Property>` and skip the formatted message; log enrichers also need `Logging.EnableEnrichment()`; resource monitoring is Linux/Windows only (`docs/learnings/backend.md`).
 - Emails: inline styles, `<table>` layout, hosted logo URL, `WebUtility.HtmlEncode` on user values.
+- ImageSharp needs a license in Release builds: local `sixlabors.lic` in the repo root (git-ignored, never commit), CI `SIXLABORS_LICENSE_KEY` secret. Resize uploads through `IImageResizer`.
 
 ### Hangfire PostgreSql — `docs/learnings/hangfire-postgres.md`
 

@@ -26,6 +26,12 @@
          CI checks it is greater than the latest v* tag. -->
     <Version>1.2.0</Version>
 
+    <!-- Six Labors license for ImageSharp; a build without one fails. In CI the SIXLABORS_LICENSE_KEY secret is
+         the key. Locally, put sixlabors.lic in the repo root (git-ignored); the build only looks inside each
+         project folder, so point it at the root file. -->
+    <SixLaborsLicenseKey Condition="'$(SixLaborsLicenseKey)' == '' And '$(SIXLABORS_LICENSE_KEY)' != ''">$(SIXLABORS_LICENSE_KEY)</SixLaborsLicenseKey>
+    <SixLaborsLicenseFile Condition="'$(SixLaborsLicenseKey)' == '' And Exists('$(MSBuildThisFileDirectory)sixlabors.lic')">$(MSBuildThisFileDirectory)sixlabors.lic</SixLaborsLicenseFile>
+
     <Authors>G &amp; C Software</Authors>
     <Product>New England Bowlers' Association Website</Product>
     <RepositoryType>Git</RepositoryType>

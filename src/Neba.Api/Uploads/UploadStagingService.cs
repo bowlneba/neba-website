@@ -17,10 +17,33 @@ internal sealed class UploadStagingService(
         IDictionary<string, string>? metadata,
         CancellationToken cancellationToken)
     {
-        var path = $"uploads/{pathPrefix}/{Ulid.NewUlid()}-{SanitizeFileName(file.FileName)}";
-
         await using var stream = file.OpenReadStream();
-        await fileStorageService.UploadFileAsync(container, path, stream, file.ContentType, metadata ?? new Dictionary<string, string>(), cancellationToken);
+        return await StageAsync(stream, file.FileName, file.ContentType, file.Length, container, pathPrefix, metadata, cancellationToken);
+    }
+
+    public Task<StoredFile> StageUploadAsync(
+        Stream content,
+        string fileName,
+        string contentType,
+        string container,
+        string pathPrefix,
+        IDictionary<string, string>? metadata,
+        CancellationToken cancellationToken)
+        => StageAsync(content, fileName, contentType, content.Length, container, pathPrefix, metadata, cancellationToken);
+
+    private async Task<StoredFile> StageAsync(
+        Stream content,
+        string fileName,
+        string contentType,
+        long sizeInBytes,
+        string container,
+        string pathPrefix,
+        IDictionary<string, string>? metadata,
+        CancellationToken cancellationToken)
+    {
+        var path = $"uploads/{pathPrefix}/{Ulid.NewUlid()}-{SanitizeFileName(fileName)}";
+
+        await fileStorageService.UploadFileAsync(container, path, content, contentType, metadata ?? new Dictionary<string, string>(), cancellationToken);
 
         await appDbContext.PendingUploads.AddAsync(new PendingUpload
         {
@@ -34,8 +57,8 @@ internal sealed class UploadStagingService(
         {
             Container = container,
             Path = path,
-            ContentType = file.ContentType,
-            SizeInBytes = file.Length
+            ContentType = contentType,
+            SizeInBytes = sizeInBytes
         };
     }
 
@@ -57,6 +80,18 @@ internal interface IUploadStagingService
 {
     Task<StoredFile> StageUploadAsync(
         IFormFile file,
+        string container,
+        string pathPrefix,
+        IDictionary<string, string>? metadata,
+        CancellationToken cancellationToken);
+
+    /// <summary>
+    /// Stages bytes the caller produced, such as a resized image, instead of the uploaded form file.
+    /// </summary>
+    Task<StoredFile> StageUploadAsync(
+        Stream content,
+        string fileName,
+        string contentType,
         string container,
         string pathPrefix,
         IDictionary<string, string>? metadata,

@@ -20,7 +20,7 @@ You can only change an inductee's photo. Inductions themselves (who, which year,
    ![The Edit photo window for an inductee with no photo](images/edit-hall-of-fame-photo/no-photo.png)
 
 4. Do one of:
-   - **Add or replace the photo.** Drag an image onto the upload area, or click to browse (one image, up to 5 MB; JPEG, PNG, WebP, or GIF). The photo appears in the editor and is marked **New photo**. Choose **Discard new photo** to go back to the current one.
+   - **Add or replace the photo.** Drag an image onto the upload area, or click to browse (one image, up to 5 MB; JPEG, PNG, WebP, or GIF). The site shrinks large photos to 1600 pixels on the longest side and removes camera data such as location, so a saved photo can be smaller than the file you chose. An animated GIF keeps only its first frame. The photo appears in the editor and is marked **New photo**. Choose **Discard new photo** to go back to the current one.
    - **Align the photo** (see below).
    - **Remove it.** Click **Remove photo**. The page then shows the inductee's initials.
 
@@ -57,6 +57,7 @@ The original file is never cropped or changed; the page only chooses which part 
 | **Save photo** is greyed out | Nothing has changed yet, or an upload is still running. |
 | The ring will not move up or down (or left or right) | The photo already fits the circle in that direction. Zoom in to get room to move. |
 | A red status next to the upload (e.g. "File exceeds the maximum allowed size of 5 MB.") | The file did not upload. Try a smaller or different image. |
+| "The file could not be read as an image." or "The image must be no more than 12000 pixels on a side." | The file is damaged, is not really an image, or is far too large in pixels. Export it again as a JPEG or PNG and retry. |
 | "Couldn't Save Photo" with a message | The server did not save the change; the message says why. The photo is unchanged — fix the issue and save again. |
 | "Hall of Fame induction was not found." | The induction no longer exists. Reload the Hall of Fame page. |
 | "The induction has no photo to position." | Someone removed the photo while you were editing. Close the window, reload the page, and start again. |

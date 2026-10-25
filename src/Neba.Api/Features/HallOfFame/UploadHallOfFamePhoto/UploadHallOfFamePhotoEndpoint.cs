@@ -1,5 +1,7 @@
 using Asp.Versioning;
 
+using ErrorOr;
+
 using FastEndpoints;
 using FastEndpoints.AspVersioning;
 
@@ -12,9 +14,15 @@ using PermissionCatalog = Neba.Api.Contracts.Security.Permissions;
 
 namespace Neba.Api.Features.HallOfFame.UploadHallOfFamePhoto;
 
-internal sealed class UploadHallOfFamePhotoEndpoint(IUploadStagingService stagingService, IFileStorageService fileStorageService)
+internal sealed class UploadHallOfFamePhotoEndpoint(IUploadStagingService stagingService, IFileStorageService fileStorageService, IImageResizer imageResizer)
     : Endpoint<UploadHallOfFamePhotoRequest, UploadedFileResponse>
 {
+    /// <summary>
+    /// The longest side a stored photo keeps. A round avatar shows a window of the photo zoomed up to 3x on a
+    /// high-density screen, and the focal point picker shows it larger still.
+    /// </summary>
+    internal const int MaxPhotoDimension = 1600;
+
     public override void Configure()
     {
         Post("photos");
@@ -33,12 +41,30 @@ internal sealed class UploadHallOfFamePhotoEndpoint(IUploadStagingService stagin
             .Produces<UploadedFileResponse>(StatusCodes.Status200OK)
             .ProducesProblemDetails(StatusCodes.Status400BadRequest)
             .ProducesProblemDetails(StatusCodes.Status401Unauthorized)
-            .ProducesProblemDetails(StatusCodes.Status403Forbidden));
+            .ProducesProblemDetails(StatusCodes.Status403Forbidden)
+            .ProducesProblemDetails(StatusCodes.Status422UnprocessableEntity));
     }
 
     public override async Task HandleAsync(UploadHallOfFamePhotoRequest req, CancellationToken ct)
     {
-        var storedFile = await stagingService.StageUploadAsync(req.File, "bowlneba-public", "hall-of-fame/photo", null, ct);
+        await using var upload = req.File.OpenReadStream();
+        var resized = await imageResizer.ResizeAsync(upload, MaxPhotoDimension, UploadHallOfFamePhotoRequestValidator.AllowedContentTypes, ct);
+
+        if (resized.IsError)
+        {
+            foreach (var error in resized.Errors)
+            {
+                AddError(error.Description);
+            }
+
+            await Send.ErrorsAsync(StatusCodes.Status422UnprocessableEntity, ct);
+            // Stryker disable once Statement
+            return;
+        }
+
+        await using var content = new MemoryStream(resized.Value.Content);
+        var storedFile = await stagingService.StageUploadAsync(
+            content, req.File.FileName, resized.Value.ContentType, "bowlneba-public", "hall-of-fame/photo", null, ct);
 
         var response = new UploadedFileResponse
         {

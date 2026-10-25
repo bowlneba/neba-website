@@ -444,3 +444,6 @@ reports/
 # Written by the pull-request-prep and write-pr skills
 pr-review.md
 pr-description.md
+
+# Six Labors license (do not commit; CI uses the SIXLABORS_LICENSE_KEY secret)
+sixlabors.lic
