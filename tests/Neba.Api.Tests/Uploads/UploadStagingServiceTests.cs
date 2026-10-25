@@ -3,6 +3,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Time.Testing;
 
 using Neba.Api.Database;
+using Neba.Api.Features.Storage.Domain;
 using Neba.Api.Storage;
 using Neba.Api.Uploads;
 using Neba.TestFactory.Attributes;
@@ -312,9 +313,9 @@ public sealed class UploadStagingServiceTests(AppDbContextFixture fixture)
         var sut = CreateSut();
 
         // Act
-        var act = () => sut.StageUploadAsync(content.Object, "photo.jpg", "image/jpeg", "bowlneba-public", "hall-of-fame/photo", null, ct);
+        Task<StoredFile> Act() => sut.StageUploadAsync(content.Object, "photo.jpg", "image/jpeg", "bowlneba-public", "hall-of-fame/photo", null, ct);
 
         // Assert
-        await Should.ThrowAsync<ArgumentException>(act);
+        await Should.ThrowAsync<ArgumentException>(Act);
     }
 }

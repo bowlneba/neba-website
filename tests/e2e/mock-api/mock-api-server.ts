@@ -1644,7 +1644,7 @@ async function handleRequest(req: IncomingMessage, res: ServerResponse): Promise
     return;
   }
 
-  const hallOfFamePhotoMatch = pathname.match(/^\/hall-of-fame\/([^/]+)\/photo$/);
+  const hallOfFamePhotoMatch = /^\/hall-of-fame\/([^/]+)\/photo$/.exec(pathname);
   if (req.method === 'PUT' && hallOfFamePhotoMatch) {
     if (sendMockOverrideErrorIfSet(res, pathname)) return;
 

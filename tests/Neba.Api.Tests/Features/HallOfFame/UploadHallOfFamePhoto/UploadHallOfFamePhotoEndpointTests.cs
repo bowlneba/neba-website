@@ -104,7 +104,7 @@ public sealed class UploadHallOfFamePhotoEndpointTests
         await endpoint.HandleAsync(new UploadHallOfFamePhotoRequest { File = CreateFile() }, ct);
 
         // Assert
-        stagedBytes.ShouldBe(new byte[] { 9, 8, 7 });
+        stagedBytes.ShouldBe([9, 8, 7]);
     }
 
     [Fact(DisplayName = "HandleAsync should return 422 and stage nothing when the file is not a readable image")]

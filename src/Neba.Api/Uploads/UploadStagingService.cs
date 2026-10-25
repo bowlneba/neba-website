@@ -18,7 +18,7 @@ internal sealed class UploadStagingService(
         CancellationToken cancellationToken)
     {
         await using var stream = file.OpenReadStream();
-        return await StageAsync(stream, file.FileName, file.ContentType, file.Length, container, pathPrefix, metadata, cancellationToken);
+        return await StageAsync(stream, new UploadDescriptor(file.FileName, file.ContentType, file.Length), container, pathPrefix, metadata, cancellationToken);
     }
 
     public Task<StoredFile> StageUploadAsync(
@@ -37,22 +37,20 @@ internal sealed class UploadStagingService(
             throw new ArgumentException("The stream must be seekable so its size is known.", nameof(content));
         }
 
-        return StageAsync(content, fileName, contentType, content.Length - content.Position, container, pathPrefix, metadata, cancellationToken);
+        return StageAsync(content, new UploadDescriptor(fileName, contentType, content.Length - content.Position), container, pathPrefix, metadata, cancellationToken);
     }
 
     private async Task<StoredFile> StageAsync(
         Stream content,
-        string fileName,
-        string contentType,
-        long sizeInBytes,
+        UploadDescriptor upload,
         string container,
         string pathPrefix,
         IDictionary<string, string>? metadata,
         CancellationToken cancellationToken)
     {
-        var path = $"uploads/{pathPrefix}/{Ulid.NewUlid()}-{SanitizeFileName(fileName)}";
+        var path = $"uploads/{pathPrefix}/{Ulid.NewUlid()}-{SanitizeFileName(upload.FileName)}";
 
-        await fileStorageService.UploadFileAsync(container, path, content, contentType, metadata ?? new Dictionary<string, string>(), cancellationToken);
+        await fileStorageService.UploadFileAsync(container, path, content, upload.ContentType, metadata ?? new Dictionary<string, string>(), cancellationToken);
 
         await appDbContext.PendingUploads.AddAsync(new PendingUpload
         {
@@ -66,10 +64,12 @@ internal sealed class UploadStagingService(
         {
             Container = container,
             Path = path,
-            ContentType = contentType,
-            SizeInBytes = sizeInBytes
+            ContentType = upload.ContentType,
+            SizeInBytes = upload.SizeInBytes
         };
     }
+
+    private readonly record struct UploadDescriptor(string FileName, string ContentType, long SizeInBytes);
 
     /// <summary>
     /// Strips any directory component from a client-supplied file name before it's interpolated into

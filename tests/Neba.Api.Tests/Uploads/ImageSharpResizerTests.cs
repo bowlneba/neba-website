@@ -169,7 +169,7 @@ public sealed class ImageSharpResizerTests
     {
         // Arrange
         var ct = TestContext.Current.CancellationToken;
-        using var full = new MemoryStream();
+        await using var full = new MemoryStream();
         using (var image = new Image<Rgba32>(300, 300))
         {
             await image.SaveAsync(full, new PngEncoder(), ct);

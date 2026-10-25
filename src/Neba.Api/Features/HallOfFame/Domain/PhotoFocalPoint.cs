@@ -50,11 +50,10 @@ public sealed record PhotoFocalPoint
 
     internal static ErrorOr<PhotoFocalPoint> Create(int x, int y, int zoom)
     {
-        if (x is < Min or > Max || y is < Min or > Max || zoom is < MinZoom or > MaxZoom)
-        {
-            return HallOfFameErrors.FocalPointOutOfRange;
-        }
+        var inRange = x is >= Min and <= Max && y is >= Min and <= Max && zoom is >= MinZoom and <= MaxZoom;
 
-        return new PhotoFocalPoint { X = x, Y = y, Zoom = zoom };
+        return inRange
+            ? new PhotoFocalPoint { X = x, Y = y, Zoom = zoom }
+            : HallOfFameErrors.FocalPointOutOfRange;
     }
 }

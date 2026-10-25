@@ -201,10 +201,10 @@ public sealed class FocalPointPickerTests : IDisposable
         _module.SetupVoid("dispose", _ => true).SetException(new JSDisconnectedException("gone"));
 
         // Act
-        var act = async () => await cut.Instance.DisposeAsync();
+        async Task Act() => await cut.Instance.DisposeAsync();
 
         // Assert
-        await Should.NotThrowAsync(act);
+        await Should.NotThrowAsync(Act);
         var record = _logger.Collector.GetSnapshot().ShouldHaveSingleItem();
         record.Level.ShouldBe(LogLevel.Information);
         record.Message.ShouldContain("circuit disconnected");

@@ -37,7 +37,7 @@ internal sealed class ImageSharpResizer(ILogger<ImageSharpResizer> logger)
             source = copy;
         }
 
-        using (copy)
+        await using (copy)
         {
             ImageInfo info;
             try
@@ -92,7 +92,7 @@ internal sealed class ImageSharpResizer(ILogger<ImageSharpResizer> logger)
                 image.Metadata.XmpProfile = null;
                 image.Metadata.IptcProfile = null;
 
-                using var output = new MemoryStream();
+                await using var output = new MemoryStream();
                 await image.SaveAsync(output, format, cancellationToken);
 
                 return new ResizedImage

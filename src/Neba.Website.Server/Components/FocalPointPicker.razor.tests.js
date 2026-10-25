@@ -90,6 +90,10 @@ describe('FocalPointPicker math', () => {
     });
 });
 
+function flush() {
+    jest.advanceTimersByTime(50);
+}
+
 describe('FocalPointPicker module', () => {
     const rootId = 'picker-test';
     let helper;
@@ -129,10 +133,6 @@ describe('FocalPointPicker module', () => {
 
     function key(name, shiftKey = false) {
         surface.dispatchEvent(new KeyboardEvent('keydown', { key: name, shiftKey, bubbles: true, cancelable: true }));
-    }
-
-    function flush() {
-        jest.advanceTimersByTime(50);
     }
 
     function lastNotified() {
