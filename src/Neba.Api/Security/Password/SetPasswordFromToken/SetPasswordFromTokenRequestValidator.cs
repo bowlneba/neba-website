@@ -2,6 +2,7 @@ using FastEndpoints;
 
 using FluentValidation;
 
+using Neba.Api.Contracts.Security;
 using Neba.Api.Contracts.Security.SetPasswordFromToken;
 
 namespace Neba.Api.Security.Password.SetPasswordFromToken;
@@ -33,5 +34,11 @@ internal sealed class SetPasswordFromTokenRequestValidator : Validator<SetPasswo
             .Matches(@"\d")
             .WithErrorCode("SetPasswordFromTokenRequest.NewPasswordRequiresDigit")
             .WithMessage("Password must contain at least one digit.");
+
+        RuleFor(r => r.Purpose)
+            .Must(p => p is PasswordTokenPurpose.Reset or PasswordTokenPurpose.Invite)
+            .When(r => r.Purpose is not null)
+            .WithErrorCode("SetPasswordFromTokenRequest.PurposeInvalid")
+            .WithMessage("Purpose must be 'reset' or 'invite'.");
     }
 }

@@ -13,12 +13,14 @@ public static class SetPasswordFromTokenRequestFactory
     public static SetPasswordFromTokenRequest Create(
         string? userId = null,
         string? token = null,
-        string? newPassword = null)
+        string? newPassword = null,
+        string? purpose = null)
         => new()
         {
             UserId = userId ?? ValidUserId,
             Token = token ?? ValidToken,
-            NewPassword = newPassword ?? ValidNewPassword
+            NewPassword = newPassword ?? ValidNewPassword,
+            Purpose = purpose
         };
 
     internal static IReadOnlyCollection<SetPasswordFromTokenRequest> Bogus(int count, Faker faker)
