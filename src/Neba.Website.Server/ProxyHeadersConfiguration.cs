@@ -13,11 +13,14 @@ internal static class ProxyHeadersConfiguration
     extension(IServiceCollection services)
     {
         /// <summary>
-        /// Trusts <c>X-Forwarded-Proto</c> from the ingress so redirects keep the https scheme.
+        /// Trusts <c>X-Forwarded-Proto</c> from the ingress so redirects keep the https scheme, and
+        /// <c>X-Forwarded-For</c> so the app sees the visitor's IP.
         /// </summary>
         /// <remarks>
-        /// Only the scheme is forwarded. The app never reads the client IP, so <c>X-Forwarded-For</c> stays
-        /// ignored and a caller cannot spoof it. Ingress addresses vary, so the loopback-only trust lists are cleared.
+        /// The visitor's IP is passed on to the API (see <c>ClientIpForwardingHandler</c>) for rate limiting and
+        /// security logs. <c>ForwardLimit</c> stays at its default of 1, so the app reads the address the ingress
+        /// appended, not any value the visitor put in <c>X-Forwarded-For</c> themselves. Ingress addresses vary,
+        /// so the loopback-only trust lists are cleared.
         /// </remarks>
         /// <returns>
         /// The updated service collection.
@@ -25,7 +28,7 @@ internal static class ProxyHeadersConfiguration
         public IServiceCollection AddProxyHeaders() =>
             services.Configure<ForwardedHeadersOptions>(options =>
             {
-                options.ForwardedHeaders = ForwardedHeaders.XForwardedProto;
+                options.ForwardedHeaders = ForwardedHeaders.XForwardedProto | ForwardedHeaders.XForwardedFor;
                 options.KnownIPNetworks.Clear();
                 options.KnownProxies.Clear();
             });

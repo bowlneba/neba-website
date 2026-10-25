@@ -40,14 +40,24 @@ public sealed class ProxyHeadersConfigurationTests
         return context;
     }
 
-    [Fact(DisplayName = "AddProxyHeaders should forward only X-Forwarded-Proto")]
-    public void AddProxyHeaders_ShouldForwardOnlyProto()
+    [Fact(DisplayName = "AddProxyHeaders should forward X-Forwarded-Proto and X-Forwarded-For")]
+    public void AddProxyHeaders_ShouldForwardProtoAndFor()
     {
         // Act
         var options = ResolveForwardedHeadersOptions();
 
         // Assert
-        options.ForwardedHeaders.ShouldBe(ForwardedHeaders.XForwardedProto);
+        options.ForwardedHeaders.ShouldBe(ForwardedHeaders.XForwardedProto | ForwardedHeaders.XForwardedFor);
+    }
+
+    [Fact(DisplayName = "AddProxyHeaders should read only the last proxy hop of X-Forwarded-For")]
+    public void AddProxyHeaders_ShouldKeepForwardLimitAtOne()
+    {
+        // Act
+        var options = ResolveForwardedHeadersOptions();
+
+        // Assert
+        options.ForwardLimit.ShouldBe(1);
     }
 
     [Fact(DisplayName = "AddProxyHeaders should clear the loopback-only trust lists")]
@@ -79,8 +89,8 @@ public sealed class ProxyHeadersConfigurationTests
         context.Request.Scheme.ShouldBe("https");
     }
 
-    [Fact(DisplayName = "Forwarded headers should ignore X-Forwarded-For so a caller cannot spoof its IP")]
-    public async Task ForwardedHeaders_ShouldIgnoreForwardedFor()
+    [Fact(DisplayName = "Forwarded headers should take the visitor's IP from the address the ingress appended")]
+    public async Task ForwardedHeaders_ShouldApplyForwardedFor_FromTheIngress()
     {
         // Arrange
         var context = CreateContext("bowlneba.com");
@@ -94,7 +104,25 @@ public sealed class ProxyHeadersConfigurationTests
         await middleware.Invoke(context);
 
         // Assert
-        context.Connection.RemoteIpAddress.ShouldBe(IPAddress.Parse("203.0.113.10"));
+        context.Connection.RemoteIpAddress.ShouldBe(IPAddress.Parse("198.51.100.7"));
+    }
+
+    [Fact(DisplayName = "Forwarded headers should ignore an address the visitor put in X-Forwarded-For themselves")]
+    public async Task ForwardedHeaders_ShouldIgnoreVisitorSuppliedForwardedForEntries()
+    {
+        // Arrange: the visitor sent "192.0.2.99"; the ingress appended the real address after it.
+        var context = CreateContext("bowlneba.com");
+        context.Request.Headers["X-Forwarded-For"] = "192.0.2.99, 198.51.100.7";
+        var middleware = new ForwardedHeadersMiddleware(
+            _ => Task.CompletedTask,
+            NullLoggerFactory.Instance,
+            Options.Create(ResolveForwardedHeadersOptions()));
+
+        // Act
+        await middleware.Invoke(context);
+
+        // Assert
+        context.Connection.RemoteIpAddress.ShouldBe(IPAddress.Parse("198.51.100.7"));
     }
 
     [Theory(DisplayName = "WwwRedirectOptions should permanently redirect www hosts to the apex, keeping path and query")]

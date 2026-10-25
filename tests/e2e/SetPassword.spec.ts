@@ -79,4 +79,33 @@ test.describe('Set Password page (anonymous)', () => {
 
     await expect(page.locator('.neba-alert')).toContainText('invalid or has expired');
   });
+
+  test('shows the reset heading when the link carries reason=reset', async ({ page }) => {
+    await page.goto('/account/set-password?userId=01JX0000000000000000000399&token=valid-token&reason=reset');
+
+    await expect(page.getByRole('heading', { name: 'Choose a New Password' })).toBeVisible();
+  });
+
+  test('keeps the invite heading when the link carries reason=invite', async ({ page }) => {
+    await page.goto('/account/set-password?userId=01JX0000000000000000000399&token=valid-token&reason=invite');
+
+    await expect(page.getByRole('heading', { name: 'Set Your Password' })).toBeVisible();
+  });
+
+  test('offers a new link when a reset link has expired', async ({ page }) => {
+    await page.request.post(
+      'http://localhost:5151/__mock/fail?path=/security/password/set-from-token&status=400'
+    );
+
+    await page.goto('/account/set-password?userId=01JX0000000000000000000399&token=expired-token&reason=reset');
+    await page.waitForSelector('form');
+
+    await page.getByLabel('New Password', { exact: true }).fill('NewPassw0rd!');
+    await page.getByLabel('Confirm New Password').fill('NewPassw0rd!');
+    await expect(page.locator('button[type="submit"]')).toBeEnabled({ timeout: 15000 });
+    await page.locator('button[type="submit"]').click();
+
+    await expect(page.locator('.neba-alert')).toContainText('This reset link is invalid or has expired.');
+    await expect(page.getByRole('link', { name: 'Request a new link' })).toHaveAttribute('href', '/account/forgot-password');
+  });
 });

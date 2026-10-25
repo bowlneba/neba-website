@@ -28,6 +28,13 @@ This means a new lightweight query for an existing resource **cannot reuse the s
 - **Testing gotcha**: `FakeLogger<T>` constructed directly via `new FakeLogger<T>()` bypasses the DI logging pipeline entirely and never redacts anything, even with a classification attribute on the parameter — because it isn't wrapped by `ExtendedLogger`. Tests asserting on redaction must build a small DI container instead: `new ServiceCollection().AddLogging(l => l.AddFakeLogging().EnableRedaction()).AddRedaction(...).BuildServiceProvider()`, then resolve `ILogger<T>` and `IServiceProvider.GetFakeLogCollector()` from it. See `GoogleWorkspaceEmailSenderTests.SendAsync_ShouldMaskRecipientAddress_InFormattedMessageAndStructuredState` for the pattern. Tests that don't assert on log content (e.g. constructed with a plain `new FakeLogger<T>()`) are unaffected and don't need this.
 - `RefitSettings.ExceptionRedactor` in `src/Neba.Website.Server/Services/ApiServicesConfiguration.cs` is an unrelated, pre-existing HTTP-header-scrubbing mechanism — do not confuse it with this feature despite the similar name.
 
+### Password recovery: deliberate exceptions and gotchas
+
+- `ForgotPasswordCommandHandlerLogMessages.LogResetRequestedForUnknownEmail` logs the raw email **without** `[PersonalData]`, on purpose: the address is the evidence needed to recognise and block an enumeration probe. The log also carries a hash, the domain, the client IP and a cleaned user agent. Don't "fix" it, and don't copy the pattern to other log messages.
+- The invite and reset token providers need **different `Name` values** (`InviteTokenProviderOptions.Name`). `DataProtectorTokenProvider` derives its protector from the name, so with the default name a 1-hour reset token also verifies as a 1-day invite token (`HandleAsync_ShouldReturnInvalidOrExpiredToken_WhenResetTokenUsedWithInvitePurpose` guards this).
+- `UserManager.ChangePasswordAsync` does not count wrong passwords toward lockout. `ChangePasswordCommandHandler` checks the current password with `SignInManager.CheckPasswordSignInAsync(lockoutOnFailure: true)` first. Keep that call.
+- The API only sees the visitor's IP because `Neba.Website.Server` forwards `X-Forwarded-For` (`ClientIpForwardingHandler`) and the API trusts it from private networks. Check `RemoteIpAddress` in a real environment before relying on per-IP limits.
+
 ### FusionCache Deserialization Recovery
 
 - Cached query DTOs should use serialization-safe types; do not store domain `SmartEnum` instances directly in cached DTO properties.

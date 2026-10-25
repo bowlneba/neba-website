@@ -42,6 +42,12 @@ function readRequestBody(req: IncomingMessage): Promise<string> {
   });
 }
 
+// An unsigned JWT with a far-future "exp", so the website's token-expiry check treats it as fresh.
+function mockJwt(): string {
+  const encode = (value: object) => Buffer.from(JSON.stringify(value)).toString('base64url');
+  return `${encode({ alg: 'none', typ: 'JWT' })}.${encode({ sub: '01JX0000000000000000000001', exp: 4102444800 })}.mock`;
+}
+
 function sendJsonResponse(res: ServerResponse, data: unknown, statusCode = 200): void {
   res.writeHead(statusCode, { 'Content-Type': 'application/json' });
   res.end(JSON.stringify(data));
@@ -53,7 +59,12 @@ function sendMockOverrideErrorIfSet(res: ServerResponse, pathname: string): bool
   const override = mockOverrides.get(pathname);
 
   if (override?.status != null && override.status >= 400) {
-    sendJsonResponse(res, { error: 'Mock error' }, override.status);
+    // With a detail, answer in the same ProblemDetails shape the real API uses, so the website's
+    // ApiExecutor can show the message. Without one, a bare body (the website shows its generic text).
+    const body = override.detail
+      ? { status: override.status, errors: [{ name: 'generalErrors', reason: override.detail }] }
+      : { error: 'Mock error' };
+    sendJsonResponse(res, body, override.status);
     return true;
   }
 
@@ -1158,6 +1169,7 @@ function resolveGetRoute(pathname: string, searchParams: URLSearchParams): objec
 
 interface MockOverride {
   status?: number;
+  detail?: string;
   delayMs?: number;
 }
 
@@ -1317,6 +1329,33 @@ async function handleRequest(req: IncomingMessage, res: ServerResponse): Promise
 
     res.writeHead(204);
     res.end();
+    return;
+  }
+
+  if (req.method === 'POST' && pathname === '/security/password/forgot') {
+    if (sendMockOverrideErrorIfSet(res, pathname)) return;
+
+    lastRequestBodies.set('POST /security/password/forgot', await readRequestBody(req));
+
+    // Always 204, whether or not the email "exists", like the real endpoint.
+    res.writeHead(204);
+    res.end();
+    return;
+  }
+
+  if (req.method === 'POST' && pathname === '/security/password/change') {
+    if (sendMockOverrideErrorIfSet(res, pathname)) return;
+
+    await readRequestBody(req);
+
+    // Every required ChangePasswordResponse field, or the page fails deterministically.
+    sendJsonResponse(res, {
+      accessToken: mockJwt(),
+      refreshToken: 'mock-refresh-token-after-change',
+      expiresAt: '2099-01-01T00:00:00+00:00',
+      userId: '01JX0000000000000000000001',
+      email: 'e2e-test-user@bowlneba.com',
+    });
     return;
   }
 
@@ -1557,7 +1596,8 @@ async function handleRequest(req: IncomingMessage, res: ServerResponse): Promise
     if (pathname === '/__mock/fail') {
       const path = requestUrl.searchParams.get('path') ?? '';
       const status = Number.parseInt(requestUrl.searchParams.get('status') ?? '500', 10);
-      mockOverrides.set(path, { ...mockOverrides.get(path), status });
+      const detail = requestUrl.searchParams.get('detail') ?? undefined;
+      mockOverrides.set(path, { ...mockOverrides.get(path), status, detail });
       res.writeHead(200);
       res.end();
       return;
