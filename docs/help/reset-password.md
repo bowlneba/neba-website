@@ -36,10 +36,11 @@ This is the same set-password mechanism used for [inviting a new user](create-us
 | --- | --- |
 | No "Reset Password" button next to a row | You don't hold `System.ResetUserPassword` — ask an admin to grant it if you believe you should have it. |
 | "Reset Password Failed" toast | The server rejected the request; the toast message describes the specific problem (e.g. the account no longer exists). |
-| The user says the link doesn't work | Reset links are one-time and expire — if the user waited too long or the link was already used (e.g. requested twice), send a fresh one. |
+| The user says the link doesn't work | Reset links work once and expire after 1 hour — if the user waited too long or the link was already used (e.g. requested twice), send a fresh one. The user can also ask for one themselves with [Reset a Forgotten Password](forgot-password.md). |
 
 ## Related
 
 - [View Users](list-users.md) — where this action is triggered from.
 - [Create a User](create-user.md) — the invite flow shares the same set-password link mechanism.
+- [Reset a Forgotten Password](forgot-password.md) — the self-service version of this action.
 - [`docs/policies/README.md`](../policies/README.md) — the `Permission:{value}` policy this action requires and how it's evaluated.

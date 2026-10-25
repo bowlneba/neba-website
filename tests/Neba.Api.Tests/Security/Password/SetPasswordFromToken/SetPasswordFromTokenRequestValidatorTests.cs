@@ -207,4 +207,34 @@ public sealed class SetPasswordFromTokenRequestValidatorTests
             && e.ErrorCode == "SetPasswordFromTokenRequest.NewPasswordRequiresDigit"
             && e.ErrorMessage == "Password must contain at least one digit.");
     }
+
+    [Theory(DisplayName = "Validate should succeed when the purpose is missing, reset, or invite")]
+    [InlineData(null)]
+    [InlineData("reset")]
+    [InlineData("invite")]
+    public void Validate_ShouldSucceed_WhenPurposeIsKnown(string? purpose)
+    {
+        // Arrange
+        var request = SetPasswordFromTokenRequestFactory.Create(purpose: purpose);
+
+        // Act
+        var result = _validator.Validate(request);
+
+        // Assert
+        result.IsValid.ShouldBeTrue();
+    }
+
+    [Fact(DisplayName = "Validate should fail with PurposeInvalid when the purpose is not reset or invite")]
+    public void Validate_ShouldFailWithPurposeInvalid_WhenPurposeIsUnknown()
+    {
+        // Arrange
+        var request = SetPasswordFromTokenRequestFactory.Create(purpose: "bogus");
+
+        // Act
+        var result = _validator.Validate(request);
+
+        // Assert
+        result.IsValid.ShouldBeFalse();
+        result.Errors.ShouldContain(e => e.ErrorCode == "SetPasswordFromTokenRequest.PurposeInvalid");
+    }
 }

@@ -80,6 +80,32 @@ public sealed class AccountMenuTests : IDisposable
         cut.FindAll("div.account-menu").ShouldBeEmpty();
     }
 
+    [Fact(DisplayName = "Should show Change Password to any signed-in user")]
+    public void Render_ShouldShowChangePassword_WhenAuthorized()
+    {
+        // Arrange
+        _authContext.SetAuthorized("test-user");
+
+        // Act
+        var cut = _ctx.Render<AccountMenu>();
+
+        // Assert
+        cut.Find("a[href='/account/change-password']").TextContent.ShouldBe("Change Password");
+    }
+
+    [Fact(DisplayName = "Should not show Change Password to an anonymous visitor")]
+    public void Render_ShouldNotShowChangePassword_WhenNotAuthorized()
+    {
+        // Arrange
+        _authContext.SetNotAuthorized();
+
+        // Act
+        var cut = _ctx.Render<AccountMenu>();
+
+        // Assert
+        cut.FindAll("a[href='/account/change-password']").ShouldBeEmpty();
+    }
+
     [Fact(DisplayName = "Should render account trigger when user is authorized")]
     public void Render_ShouldRenderAccountTrigger_WhenUserIsAuthorized()
     {
@@ -123,7 +149,8 @@ public sealed class AccountMenuTests : IDisposable
 
         // Assert
         cut.Find("span.account-email").TextContent.ShouldBe("bowler@bowlneba.com");
-        cut.Find("a.account-dropdown-link").GetAttribute("href").ShouldBe("/account/logout");
+        var links = cut.FindAll("a.account-dropdown-link");
+        links[^1].GetAttribute("href").ShouldBe("/account/logout");
     }
 
     [Fact(DisplayName = "Should show the Create User link when the user holds the CreateUser policy")]

@@ -12,6 +12,7 @@ namespace Neba.Api.RateLimiting;
 internal static class RateLimitingConfiguration
 {
     internal const string PublicPolicy = "public";
+    internal const string PasswordRecoveryPolicy = "password-recovery";
 
     extension(IServiceCollection services)
     {
@@ -28,6 +29,10 @@ internal static class RateLimitingConfiguration
             // user behind that one connection into a single shared bucket.
             var authenticatedPermitLimit = config.GetValue("RateLimiting:AuthenticatedPermitLimit", 1000);
             var authenticatedWindowSeconds = config.GetValue("RateLimiting:AuthenticatedWindowSeconds", 60);
+
+            // The forgot-password form sends email, so it gets a much tighter limit than the public default.
+            var passwordRecoveryPermitLimit = config.GetValue("RateLimiting:PasswordRecoveryPermitLimit", 5);
+            var passwordRecoveryWindowSeconds = config.GetValue("RateLimiting:PasswordRecoveryWindowSeconds", 900);
 
             if (permitLimit <= 0)
             {
@@ -53,12 +58,29 @@ internal static class RateLimitingConfiguration
                     $"RateLimiting:AuthenticatedWindowSeconds must be greater than zero (configured value: {authenticatedWindowSeconds}).");
             }
 
+            if (passwordRecoveryPermitLimit <= 0)
+            {
+                throw new InvalidOperationException(
+                    $"RateLimiting:PasswordRecoveryPermitLimit must be greater than zero (configured value: {passwordRecoveryPermitLimit}).");
+            }
+
+            if (passwordRecoveryWindowSeconds <= 0)
+            {
+                throw new InvalidOperationException(
+                    $"RateLimiting:PasswordRecoveryWindowSeconds must be greater than zero (configured value: {passwordRecoveryWindowSeconds}).");
+            }
+
             // Trust X-Forwarded-For only from RFC 1918 private networks (Azure load balancers
             // and Container Apps infrastructure). RemoteIpAddress is rewritten by
             // UseForwardedHeaders() before it reaches the rate limiter.
             services.Configure<ForwardedHeadersOptions>(options =>
             {
                 options.ForwardedHeaders = ForwardedHeaders.XForwardedFor;
+                // The website adds the visitor's IP and the API's ingress then appends the website's. With the
+                // default limit of 1 the app would read only the website's address, and every visitor would share
+                // one rate-limit bucket. Without a limit, the middleware walks the chain right to left and stops at
+                // the first address outside the networks below, so a spoofed entry from outside is never trusted.
+                options.ForwardLimit = null;
 #pragma warning disable S1313 // RFC 1918 private ranges — Azure load balancers and Container Apps infrastructure
                 options.KnownIPNetworks.Add(new System.Net.IPNetwork(IPAddress.Parse("10.0.0.0"), 8));
                 options.KnownIPNetworks.Add(new System.Net.IPNetwork(IPAddress.Parse("172.16.0.0"), 12));
@@ -89,6 +111,21 @@ internal static class RateLimitingConfiguration
                         contentType: MediaTypeNames.Application.ProblemJson,
                         cancellationToken);
                 };
+
+                options.AddPolicy(PasswordRecoveryPolicy, context =>
+                {
+                    // RemoteIpAddress is the visitor's address once the website forwards X-Forwarded-For
+                    // (UseForwardedHeaders rewrites it).
+                    var ip = context.Connection.RemoteIpAddress?.ToString() ?? "unknown";
+
+                    return RateLimitPartition.GetFixedWindowLimiter($"password-recovery:{ip}",
+                        _ => new FixedWindowRateLimiterOptions
+                        {
+                            PermitLimit = passwordRecoveryPermitLimit,
+                            Window = TimeSpan.FromSeconds(passwordRecoveryWindowSeconds),
+                            QueueLimit = 0,
+                        });
+                });
 
                 options.AddPolicy(PublicPolicy, context =>
                 {
