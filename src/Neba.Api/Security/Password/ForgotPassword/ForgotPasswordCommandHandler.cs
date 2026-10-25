@@ -18,11 +18,15 @@ internal sealed class ForgotPasswordCommandHandler(
     UserManager<ApplicationUser> userManager,
     IFusionCache cache,
     IBackgroundJobClient backgroundJobClient,
+    TimeProvider timeProvider,
     ILogger<ForgotPasswordCommandHandler> logger)
     : ICommandHandler<ForgotPasswordCommand>
 {
     // One link per account per window, so the form cannot be used to flood someone's mailbox.
     private static readonly TimeSpan Cooldown = TimeSpan.FromMinutes(2);
+
+    // Every request takes at least this long, so response time does not tell a known email from an unknown one.
+    private static readonly TimeSpan MinimumDuration = TimeSpan.FromMilliseconds(300);
 
     // User agents come from the caller; cap them so a log line cannot be padded or forged.
     private const int MaxUserAgentLength = 256;
@@ -30,10 +34,28 @@ internal sealed class ForgotPasswordCommandHandler(
     // Always succeeds, whether or not the account exists. The caller must not be able to tell.
     public async Task<ErrorOr<Success>> HandleAsync(ForgotPasswordCommand command, CancellationToken cancellationToken)
     {
+        var started = timeProvider.GetTimestamp();
+
+        var result = await ProcessAsync(command, cancellationToken);
+
+        var remaining = MinimumDuration - timeProvider.GetElapsedTime(started);
+
+        if (remaining > TimeSpan.Zero)
+        {
+            await Task.Delay(remaining, timeProvider, cancellationToken);
+        }
+
+        return result;
+    }
+
+    private async Task<ErrorOr<Success>> ProcessAsync(ForgotPasswordCommand command, CancellationToken cancellationToken)
+    {
         var user = await userManager.FindByEmailAsync(command.Email);
 
         if (user is null)
         {
+            SecurityMetrics.RecordResetRequest("unknown_email");
+
             logger.LogResetRequestedForUnknownEmail(
                 command.Email,
                 HashEmail(command.Email),
@@ -44,18 +66,30 @@ internal sealed class ForgotPasswordCommandHandler(
             return Result.Success;
         }
 
-        var cooldownKey = $"password-reset-cooldown:{user.Id}";
+        // GetOrSet runs the factory for one caller only, so two concurrent requests cannot both pass.
+        var firstRequest = false;
 
-        if ((await cache.TryGetAsync<bool>(cooldownKey, token: cancellationToken)).HasValue)
+        await cache.GetOrSetAsync<bool>(
+            $"password-reset-cooldown:{user.Id}",
+            (_, _) =>
+            {
+                firstRequest = true;
+                return Task.FromResult(true);
+            },
+            new FusionCacheEntryOptions(Cooldown),
+            token: cancellationToken);
+
+        if (!firstRequest)
         {
+            SecurityMetrics.RecordResetRequest("cooldown");
             return Result.Success;
         }
-
-        await cache.SetAsync(cooldownKey, true, new FusionCacheEntryOptions(Cooldown), token: cancellationToken);
 
         // The job builds the token, so no token is written to Hangfire storage.
         backgroundJobClient.Enqueue<SendPasswordResetEmailJob>(
             job => job.SendAsync(user.Id.ToString(), CancellationToken.None));
+
+        SecurityMetrics.RecordResetRequest("sent");
 
         return Result.Success;
     }

@@ -20,10 +20,18 @@ internal sealed class ChangePasswordCommandHandler(
 {
     public async Task<ErrorOr<ChangePasswordDto>> HandleAsync(ChangePasswordCommand command, CancellationToken cancellationToken)
     {
+        // Compares two supplied values, so it reveals nothing about the account and needs no lookup.
+        if (command.NewPassword == command.CurrentPassword)
+        {
+            SecurityMetrics.RecordPasswordChange("unchanged");
+            return ChangePasswordErrors.PasswordUnchanged;
+        }
+
         var user = await userManager.FindByIdAsync(command.UserId.ToString());
 
         if (user is null)
         {
+            SecurityMetrics.RecordPasswordChange("user_not_found");
             return ChangePasswordErrors.UserNotFound;
         }
 
@@ -33,11 +41,13 @@ internal sealed class ChangePasswordCommandHandler(
 
         if (check.IsLockedOut)
         {
+            SecurityMetrics.RecordPasswordChange("locked_out");
             return ChangePasswordErrors.LockedOut;
         }
 
         if (!check.Succeeded)
         {
+            SecurityMetrics.RecordPasswordChange("incorrect_password");
             return ChangePasswordErrors.IncorrectCurrentPassword;
         }
 
@@ -45,6 +55,7 @@ internal sealed class ChangePasswordCommandHandler(
 
         if (!change.Succeeded)
         {
+            SecurityMetrics.RecordPasswordChange("policy_rejected");
             return
             [
                 .. change.Errors.Select(error => Error.Validation($"ChangePassword.{error.Code}", error.Description))
@@ -60,6 +71,8 @@ internal sealed class ChangePasswordCommandHandler(
         await RefreshTokenStore.StoreAsync(userManager, user, tokenPair.RefreshToken, timeProvider);
 
         await notifier.NotifyAsync(user, cancellationToken);
+
+        SecurityMetrics.RecordPasswordChange("success");
 
         return new ChangePasswordDto
         {

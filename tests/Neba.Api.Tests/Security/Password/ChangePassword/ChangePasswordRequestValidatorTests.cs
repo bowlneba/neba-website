@@ -78,18 +78,4 @@ public sealed class ChangePasswordRequestValidatorTests
         result.IsValid.ShouldBeFalse();
         result.Errors.ShouldContain(e => e.ErrorCode == "ChangePasswordRequest.NewPasswordRequiresDigit");
     }
-
-    [Fact(DisplayName = "Validate should fail with NewPasswordUnchanged when the new password equals the current one")]
-    public void Validate_ShouldFailWithNewPasswordUnchanged_WhenPasswordsMatch()
-    {
-        // Arrange
-        var request = ChangePasswordRequestFactory.Create(currentPassword: "SamePassword1", newPassword: "SamePassword1");
-
-        // Act
-        var result = _validator.Validate(request);
-
-        // Assert
-        result.IsValid.ShouldBeFalse();
-        result.Errors.ShouldContain(e => e.ErrorCode == "ChangePasswordRequest.NewPasswordUnchanged");
-    }
 }

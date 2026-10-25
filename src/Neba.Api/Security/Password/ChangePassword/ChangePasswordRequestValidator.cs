@@ -25,9 +25,6 @@ internal sealed class ChangePasswordRequestValidator : Validator<ChangePasswordR
             .WithMessage("Password must be at least 8 characters.")
             .Matches(@"\d")
             .WithErrorCode("ChangePasswordRequest.NewPasswordRequiresDigit")
-            .WithMessage("Password must contain at least one digit.")
-            .NotEqual(r => r.CurrentPassword)
-            .WithErrorCode("ChangePasswordRequest.NewPasswordUnchanged")
-            .WithMessage("New password must be different from the current password.");
+            .WithMessage("Password must contain at least one digit.");
     }
 }

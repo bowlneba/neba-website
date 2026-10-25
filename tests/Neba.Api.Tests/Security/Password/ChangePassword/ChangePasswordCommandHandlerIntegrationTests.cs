@@ -182,6 +182,30 @@ public sealed class ChangePasswordCommandHandlerIntegrationTests(SecurityDbConte
         (await userManager.CheckPasswordAsync(freshUser!, LoginRequestFactory.ValidPassword)).ShouldBeTrue();
     }
 
+    [Fact(DisplayName = "HandleAsync returns PasswordUnchanged when the new password equals the current one")]
+    public async Task HandleAsync_ShouldReturnPasswordUnchanged_WhenPasswordsMatch()
+    {
+        // Arrange
+        var ct = TestContext.Current.CancellationToken;
+        using var scope = fixture.CreateScope();
+        var userManager = scope.ServiceProvider.GetRequiredService<UserManager<ApplicationUser>>();
+        var user = await SeedUserAsync(userManager);
+        var command = new ChangePasswordCommand
+        {
+            UserId = user.Id,
+            CurrentPassword = LoginRequestFactory.ValidPassword,
+            NewPassword = LoginRequestFactory.ValidPassword
+        };
+
+        // Act
+        var result = await CreateHandler(scope).HandleAsync(command, ct);
+
+        // Assert
+        result.IsError.ShouldBeTrue();
+        result.FirstError.Code.ShouldBe("ChangePassword.PasswordUnchanged");
+        result.FirstError.Type.ShouldBe(ErrorOr.ErrorType.Validation);
+    }
+
     [Fact(DisplayName = "HandleAsync returns validation errors when the new password breaks the password policy")]
     public async Task HandleAsync_ShouldReturnValidationErrors_WhenNewPasswordIsWeak()
     {

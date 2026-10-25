@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Testing;
+using Microsoft.Extensions.Time.Testing;
 
 using Neba.Api.Security.Domain;
 using Neba.Api.Security.Password.ForgotPassword;
@@ -27,6 +28,7 @@ public sealed class ForgotPasswordCommandHandlerIntegrationTests(SecurityDbConte
     private readonly FusionCache _cache = new(new FusionCacheOptions());
     private readonly Mock<IBackgroundJobClient> _jobs = new(MockBehavior.Strict);
     private readonly List<Job> _enqueued = [];
+    private readonly AutoAdvanceTimeProvider _timeProvider = new();
 
     public async ValueTask InitializeAsync()
     {
@@ -45,7 +47,7 @@ public sealed class ForgotPasswordCommandHandlerIntegrationTests(SecurityDbConte
     }
 
     private ForgotPasswordCommandHandler CreateHandler(UserManager<ApplicationUser> userManager)
-        => new(userManager, _cache, _jobs.Object, _logger);
+        => new(userManager, _cache, _jobs.Object, _timeProvider, _logger);
 
     private static async Task<ApplicationUser> SeedUserAsync(UserManager<ApplicationUser> userManager)
     {
@@ -218,5 +220,64 @@ public sealed class ForgotPasswordCommandHandlerIntegrationTests(SecurityDbConte
         first.IsError.ShouldBeFalse();
         second.IsError.ShouldBeFalse();
         _enqueued.Count.ShouldBe(1);
+    }
+
+    [Fact(DisplayName = "HandleAsync enqueues one job when concurrent requests arrive for the same account")]
+    public async Task HandleAsync_ShouldEnqueueOnce_WhenRequestsAreConcurrent()
+    {
+        // Arrange
+        var ct = TestContext.Current.CancellationToken;
+        using var seedScope = fixture.CreateScope();
+        await SeedUserAsync(seedScope.ServiceProvider.GetRequiredService<UserManager<ApplicationUser>>());
+        var command = new ForgotPasswordCommand { Email = LoginRequestFactory.ValidEmail };
+
+        // Act — one scope per request, as in production, so each has its own DbContext
+        await Task.WhenAll(Enumerable.Range(0, 5).Select(async _ =>
+        {
+            using var scope = fixture.CreateScope();
+            var userManager = scope.ServiceProvider.GetRequiredService<UserManager<ApplicationUser>>();
+            await CreateHandler(userManager).HandleAsync(command, ct);
+        }));
+
+        // Assert
+        _enqueued.Count.ShouldBe(1);
+    }
+
+    [Theory(DisplayName = "HandleAsync takes at least the minimum duration whether or not the account exists")]
+    [InlineData(true, TestDisplayName = "Known email")]
+    [InlineData(false, TestDisplayName = "Unknown email")]
+    public async Task HandleAsync_ShouldTakeMinimumDuration_RegardlessOfAccount(bool known)
+    {
+        // Arrange
+        var ct = TestContext.Current.CancellationToken;
+        using var scope = fixture.CreateScope();
+        var userManager = scope.ServiceProvider.GetRequiredService<UserManager<ApplicationUser>>();
+
+        if (known)
+        {
+            await SeedUserAsync(userManager);
+        }
+
+        var command = new ForgotPasswordCommand { Email = LoginRequestFactory.ValidEmail };
+        var start = _timeProvider.GetUtcNow();
+
+        // Act
+        await CreateHandler(userManager).HandleAsync(command, ct);
+
+        // Assert
+        (_timeProvider.GetUtcNow() - start).ShouldBeGreaterThanOrEqualTo(TimeSpan.FromMilliseconds(300));
+    }
+}
+
+/// <summary>
+/// A fake clock whose timers fire as soon as they are created, so a handler that waits does not slow the test.
+/// </summary>
+internal sealed class AutoAdvanceTimeProvider : FakeTimeProvider
+{
+    public override ITimer CreateTimer(TimerCallback callback, object? state, TimeSpan dueTime, TimeSpan period)
+    {
+        var timer = base.CreateTimer(callback, state, dueTime, period);
+        ThreadPool.QueueUserWorkItem(_ => Advance(dueTime));
+        return timer;
     }
 }
