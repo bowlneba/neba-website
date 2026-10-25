@@ -38,4 +38,9 @@ internal sealed record ResizedImage
     /// The content type of <see cref="Content"/>, from the format the bytes decoded as.
     /// </summary>
     public required string ContentType { get; init; }
+
+    /// <summary>
+    /// The file extension for <see cref="ContentType"/>, without the dot, such as <c>jpg</c>.
+    /// </summary>
+    public required string FileExtension { get; init; }
 }

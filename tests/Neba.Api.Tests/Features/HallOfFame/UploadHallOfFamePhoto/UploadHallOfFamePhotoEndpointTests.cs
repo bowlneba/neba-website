@@ -18,10 +18,10 @@ namespace Neba.Api.Tests.Features.HallOfFame.UploadHallOfFamePhoto;
 [Component("HallOfFame")]
 public sealed class UploadHallOfFamePhotoEndpointTests
 {
-    private static IFormFile CreateFile(string contentType = "image/png", long length = 1024)
+    private static IFormFile CreateFile(string contentType = "image/png", long length = 1024, string fileName = "photo.png")
     {
         var stream = new MemoryStream(new byte[length]);
-        return new FormFile(stream, 0, length, "File", "photo.png")
+        return new FormFile(stream, 0, length, "File", fileName)
         {
             Headers = new HeaderDictionary(),
             ContentType = contentType
@@ -58,7 +58,7 @@ public sealed class UploadHallOfFamePhotoEndpointTests
 
         var stagingServiceMock = new Mock<IUploadStagingService>(MockBehavior.Strict);
         stagingServiceMock
-            .Setup(s => s.StageUploadAsync(It.IsAny<Stream>(), "photo.png", ResizedImageFactory.ValidContentType, "bowlneba-public", "hall-of-fame/photo", null, ct))
+            .Setup(s => s.StageUploadAsync(It.IsAny<Stream>(), "photo.jpg", ResizedImageFactory.ValidContentType, "bowlneba-public", "hall-of-fame/photo", null, ct))
             .ReturnsAsync(storedFile);
 
         var resizerMock = CreateResizerMock(ResizedImageFactory.Create());
@@ -71,7 +71,7 @@ public sealed class UploadHallOfFamePhotoEndpointTests
         endpoint.HttpContext.Response.StatusCode.ShouldBe(200);
         endpoint.Response.Container.ShouldBe(storedFile.Container);
         endpoint.Response.Path.ShouldBe(storedFile.Path);
-        endpoint.Response.FileName.ShouldBe("photo.png");
+        endpoint.Response.FileName.ShouldBe("photo.jpg");
         endpoint.Response.ContentType.ShouldBe(storedFile.ContentType);
         endpoint.Response.SizeInBytes.ShouldBe(storedFile.SizeInBytes);
         endpoint.Response.Url.ShouldBe(blobUri);
@@ -121,6 +121,33 @@ public sealed class UploadHallOfFamePhotoEndpointTests
 
         // Assert
         endpoint.HttpContext.Response.StatusCode.ShouldBe(422);
+        endpoint.ValidationFailures.ShouldContain(failure => failure.ErrorMessage == ImageErrors.Unreadable.Description);
+    }
+
+    [Fact(DisplayName = "HandleAsync should name the staged file with the extension of the decoded format")]
+    public async Task HandleAsync_ShouldUseDecodedFormatExtension_WhenClientNameDisagrees()
+    {
+        // Arrange
+        var ct = TestContext.Current.CancellationToken;
+        var resized = ResizedImageFactory.Create(contentType: "image/png", fileExtension: "png");
+        string? stagedName = null;
+
+        var stagingServiceMock = new Mock<IUploadStagingService>(MockBehavior.Strict);
+        stagingServiceMock
+            .Setup(s => s.StageUploadAsync(It.IsAny<Stream>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<IDictionary<string, string>?>(), ct))
+            .Callback<Stream, string, string, string, string, IDictionary<string, string>?, CancellationToken>(
+                (_, name, _, _, _, _, _) => stagedName = name)
+            .ReturnsAsync(StoredFileFactory.Create());
+
+        var endpoint = Factory.Create<UploadHallOfFamePhotoEndpoint>(
+            stagingServiceMock.Object, CreateFileStorageServiceMock().Object, CreateResizerMock(resized).Object);
+
+        // Act
+        await endpoint.HandleAsync(new UploadHallOfFamePhotoRequest { File = CreateFile(fileName: "photo.jpeg") }, ct);
+
+        // Assert
+        stagedName.ShouldBe("photo.png");
+        endpoint.Response.FileName.ShouldBe("photo.png");
     }
 
     [Fact(DisplayName = "Configure should register a permission-protected POST route under /hall-of-fame")]

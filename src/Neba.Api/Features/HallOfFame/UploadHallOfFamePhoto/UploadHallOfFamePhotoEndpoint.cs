@@ -62,15 +62,18 @@ internal sealed class UploadHallOfFamePhotoEndpoint(IUploadStagingService stagin
             return;
         }
 
+        // The resizer re-encodes in the format the bytes decoded as, which can differ from the client's file name.
+        var fileName = $"{Path.GetFileNameWithoutExtension(req.File.FileName)}.{resized.Value.FileExtension}";
+
         await using var content = new MemoryStream(resized.Value.Content);
         var storedFile = await stagingService.StageUploadAsync(
-            content, req.File.FileName, resized.Value.ContentType, "bowlneba-public", "hall-of-fame/photo", null, ct);
+            content, fileName, resized.Value.ContentType, "bowlneba-public", "hall-of-fame/photo", null, ct);
 
         var response = new UploadedFileResponse
         {
             Container = storedFile.Container,
             Path = storedFile.Path,
-            FileName = req.File.FileName,
+            FileName = fileName,
             ContentType = storedFile.ContentType,
             SizeInBytes = storedFile.SizeInBytes,
             Url = fileStorageService.GetBlobUri(storedFile.Container, storedFile.Path)

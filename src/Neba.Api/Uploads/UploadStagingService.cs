@@ -29,7 +29,16 @@ internal sealed class UploadStagingService(
         string pathPrefix,
         IDictionary<string, string>? metadata,
         CancellationToken cancellationToken)
-        => StageAsync(content, fileName, contentType, content.Length, container, pathPrefix, metadata, cancellationToken);
+    {
+        ArgumentNullException.ThrowIfNull(content);
+
+        if (!content.CanSeek)
+        {
+            throw new ArgumentException("The stream must be seekable so its size is known.", nameof(content));
+        }
+
+        return StageAsync(content, fileName, contentType, content.Length - content.Position, container, pathPrefix, metadata, cancellationToken);
+    }
 
     private async Task<StoredFile> StageAsync(
         Stream content,
@@ -87,6 +96,7 @@ internal interface IUploadStagingService
 
     /// <summary>
     /// Stages bytes the caller produced, such as a resized image, instead of the uploaded form file.
+    /// The stream must be seekable; staging reads from its current position to its end.
     /// </summary>
     Task<StoredFile> StageUploadAsync(
         Stream content,

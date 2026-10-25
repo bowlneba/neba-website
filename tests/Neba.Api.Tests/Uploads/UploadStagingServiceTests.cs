@@ -274,4 +274,47 @@ public sealed class UploadStagingServiceTests(AppDbContextFixture fixture)
         result.Path.ShouldEndWith("-photo.jpg");
         (await _dbContext.PendingUploads.AnyAsync(p => p.Path == result.Path, ct)).ShouldBeTrue();
     }
+
+    [Fact(DisplayName = "StageUploadAsync should report only the bytes from the stream's current position")]
+    public async Task StageUploadAsync_ShouldReportRemainingBytes_WhenStreamIsPartlyRead()
+    {
+        // Arrange
+        var ct = TestContext.Current.CancellationToken;
+        await using var content = new MemoryStream([1, 2, 3, 4, 5]) { Position = 2 };
+
+        _fileStorageServiceMock
+            .Setup(s => s.UploadFileAsync(
+                "bowlneba-public",
+                It.IsAny<string>(),
+                It.IsAny<Stream>(),
+                "image/jpeg",
+                It.IsAny<IDictionary<string, string>>(),
+                ct))
+            .Returns(Task.CompletedTask);
+
+        var sut = CreateSut();
+
+        // Act
+        var result = await sut.StageUploadAsync(content, "photo.jpg", "image/jpeg", "bowlneba-public", "hall-of-fame/photo", null, ct);
+
+        // Assert
+        result.SizeInBytes.ShouldBe(3);
+    }
+
+    [Fact(DisplayName = "StageUploadAsync should throw when the given stream is not seekable")]
+    public async Task StageUploadAsync_ShouldThrow_WhenStreamIsNotSeekable()
+    {
+        // Arrange
+        var ct = TestContext.Current.CancellationToken;
+        var content = new Mock<Stream>(MockBehavior.Strict);
+        content.SetupGet(s => s.CanSeek).Returns(false);
+
+        var sut = CreateSut();
+
+        // Act
+        var act = () => sut.StageUploadAsync(content.Object, "photo.jpg", "image/jpeg", "bowlneba-public", "hall-of-fame/photo", null, ct);
+
+        // Assert
+        await Should.ThrowAsync<ArgumentException>(act);
+    }
 }
