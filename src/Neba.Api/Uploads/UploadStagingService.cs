@@ -17,10 +17,37 @@ internal sealed class UploadStagingService(
         IDictionary<string, string>? metadata,
         CancellationToken cancellationToken)
     {
-        var path = $"uploads/{pathPrefix}/{Ulid.NewUlid()}-{SanitizeFileName(file.FileName)}";
-
         await using var stream = file.OpenReadStream();
-        await fileStorageService.UploadFileAsync(container, path, stream, file.ContentType, metadata ?? new Dictionary<string, string>(), cancellationToken);
+        return await StageAsync(stream, new UploadDescriptor(file.FileName, file.ContentType, file.Length), container, pathPrefix, metadata, cancellationToken);
+    }
+
+    public Task<StoredFile> StageUploadAsync(
+        Stream content,
+        string fileName,
+        string contentType,
+        string container,
+        string pathPrefix,
+        IDictionary<string, string>? metadata,
+        CancellationToken cancellationToken)
+    {
+        ArgumentNullException.ThrowIfNull(content);
+
+        return !content.CanSeek
+            ? throw new ArgumentException("The stream must be seekable so its size is known.", nameof(content))
+            : StageAsync(content, new UploadDescriptor(fileName, contentType, content.Length - content.Position), container, pathPrefix, metadata, cancellationToken);
+    }
+
+    private async Task<StoredFile> StageAsync(
+        Stream content,
+        UploadDescriptor upload,
+        string container,
+        string pathPrefix,
+        IDictionary<string, string>? metadata,
+        CancellationToken cancellationToken)
+    {
+        var path = $"uploads/{pathPrefix}/{Ulid.NewUlid()}-{SanitizeFileName(upload.FileName)}";
+
+        await fileStorageService.UploadFileAsync(container, path, content, upload.ContentType, metadata ?? new Dictionary<string, string>(), cancellationToken);
 
         await appDbContext.PendingUploads.AddAsync(new PendingUpload
         {
@@ -34,10 +61,12 @@ internal sealed class UploadStagingService(
         {
             Container = container,
             Path = path,
-            ContentType = file.ContentType,
-            SizeInBytes = file.Length
+            ContentType = upload.ContentType,
+            SizeInBytes = upload.SizeInBytes
         };
     }
+
+    private readonly record struct UploadDescriptor(string FileName, string ContentType, long SizeInBytes);
 
     /// <summary>
     /// Strips any directory component from a client-supplied file name before it's interpolated into
@@ -57,6 +86,19 @@ internal interface IUploadStagingService
 {
     Task<StoredFile> StageUploadAsync(
         IFormFile file,
+        string container,
+        string pathPrefix,
+        IDictionary<string, string>? metadata,
+        CancellationToken cancellationToken);
+
+    /// <summary>
+    /// Stages bytes the caller produced, such as a resized image, instead of the uploaded form file.
+    /// The stream must be seekable; staging reads from its current position to its end.
+    /// </summary>
+    Task<StoredFile> StageUploadAsync(
+        Stream content,
+        string fileName,
+        string contentType,
         string container,
         string pathPrefix,
         IDictionary<string, string>? metadata,

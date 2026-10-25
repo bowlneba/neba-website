@@ -111,6 +111,15 @@ public sealed class Permissions
 
     #endregion
 
+    #region Hall of Fame
+
+    /// <summary>
+    /// Permission to upload, replace, or remove a Hall of Fame inductee's photo and set its focal point.
+    /// </summary>
+    public static readonly Permissions EditHallOfFamePhoto = new("HallOfFame.EditHallOfFamePhoto", "Edit Hall of Fame Photo");
+
+    #endregion
+
     #region Tournaments
 
     /// <summary>

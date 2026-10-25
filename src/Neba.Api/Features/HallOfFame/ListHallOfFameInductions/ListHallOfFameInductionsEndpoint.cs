@@ -40,10 +40,14 @@ internal sealed class ListHallOfFameInductionsEndpoint(IQueryHandler<ListHallOfF
             Items = [.. result
                 .Select(i => new HallOfFameInductionResponse
                 {
+                    Id = i.Id,
                     Year = i.Year,
                     BowlerName = $"{i.BowlerName.FirstName} {i.BowlerName.LastName}",
                     Categories = [.. i.Categories.Select(c => c.Name)],
                     PhotoUri = i.PhotoUri,
+                    PhotoFocalX = i.PhotoFocalX,
+                    PhotoFocalY = i.PhotoFocalY,
+                    PhotoZoom = i.PhotoZoom,
                 })],
         };
 

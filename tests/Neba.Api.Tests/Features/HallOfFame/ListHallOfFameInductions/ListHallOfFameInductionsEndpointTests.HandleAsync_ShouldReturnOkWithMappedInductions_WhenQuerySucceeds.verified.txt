@@ -1,13 +1,16 @@
 ﻿{
   Items: [
     {
+      Id: 01FXX3YEEMXD3VPBF6W0EYT6WR,
       Year: 2025,
       BowlerName: Elbert D'Amore,
       Categories: [
+        Meritorious Service,
         Friend of NEBA
       ]
     },
     {
+      Id: 01KBRMMX96WVARFC6F983DERYD,
       Year: 2025,
       BowlerName: Elbert D'Amore,
       Categories: [
@@ -15,14 +18,19 @@
         Superior Performance,
         Meritorious Service
       ],
-      PhotoUri: http://kellen.net
+      PhotoUri: https://amara.com,
+      PhotoFocalX: 4,
+      PhotoFocalY: 47,
+      PhotoZoom: 129
     },
     {
+      Id: 01J0GXAQMAZ2CHVPBKD58PR1WE,
       Year: 2025,
       BowlerName: Elbert D'Amore,
       Categories: [
         Meritorious Service,
-        Superior Performance
+        Superior Performance,
+        Friend of NEBA
       ]
     }
   ],

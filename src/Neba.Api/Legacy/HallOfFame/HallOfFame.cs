@@ -11,6 +11,7 @@ using Hangfire;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
+using Neba.Api.Caching;
 using Neba.Api.Database;
 using Neba.Api.Discord;
 using Neba.Api.Features.Bowlers.Domain;
@@ -161,7 +162,7 @@ internal sealed class NewHallOfFameInductionSyncJob(
         // Each champion entry in the champions list (ListChampionsQueryHandler) carries a HallOfFame
         // flag sourced from HallOfFameInductions, so a new/updated induction can change that flag on
         // an already-cached champions response, not just the inductions list itself.
-        await cache.RemoveByTagAsync("neba:hall-of-fame:inductions", token: ct);
+        await cache.RemoveByTagAsync(CacheDescriptors.HallOfFame.InductionsTag, token: ct);
         await cache.RemoveByTagAsync("neba:tournaments:champions", token: ct);
     }
 

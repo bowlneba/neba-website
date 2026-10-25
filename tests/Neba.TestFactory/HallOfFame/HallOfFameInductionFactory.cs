@@ -1,3 +1,5 @@
+using ErrorOr;
+
 using Neba.Api.Features.Bowlers.Domain;
 using Neba.Api.Features.HallOfFame.Domain;
 using Neba.Api.Features.Storage.Domain;
@@ -14,15 +16,40 @@ public static class HallOfFameInductionFactory
         int? year = null,
         BowlerId? bowlerId = null,
         IReadOnlyCollection<HallOfFameCategory>? categories = null,
-        StoredFile? photo = null)
-        => new()
+        StoredFile? photo = null,
+        int? photoFocalX = null,
+        int? photoFocalY = null,
+        int? photoZoom = null)
+    {
+        var induction = new HallOfFameInduction
         {
             Id = id ?? HallOfFameId.New(),
             Year = year ?? ValidYear,
             BowlerId = bowlerId ?? BowlerId.New(),
-            Categories = categories ?? [HallOfFameCategory.SuperiorPerformance],
-            Photo = photo
+            Categories = categories ?? [HallOfFameCategory.SuperiorPerformance]
         };
+
+        if (photo is not null)
+        {
+            var result = induction.SetPhoto(
+                photo,
+                photoFocalX ?? PhotoFocalPoint.Default.X,
+                photoFocalY ?? PhotoFocalPoint.Default.Y,
+                photoZoom ?? PhotoFocalPoint.Default.Zoom);
+
+            ThrowIfInvalid(result);
+        }
+
+        return induction;
+    }
+
+    private static void ThrowIfInvalid(ErrorOr<Success> result)
+    {
+        if (result.IsError)
+        {
+            throw new InvalidOperationException($"Test factory built an invalid photo: {result.FirstError.Description}");
+        }
+    }
 
     public static IReadOnlyCollection<HallOfFameInduction> Bogus(
         int count,
@@ -33,13 +60,27 @@ public static class HallOfFameInductionFactory
         var poolSeed = faker.Random.Int();
         var uniquePhotos = UniquePool.CreateNullable(StoredFileFactory.Bogus(count, faker), poolSeed);
 
-        return [.. Enumerable.Range(0, count).Select(_ => new HallOfFameInduction
+        return [.. Enumerable.Range(0, count).Select(_ =>
         {
-            Id = new HallOfFameId(Ulid.BogusString(faker)),
-            Year = faker.Date.PastDateOnly(20).Year,
-            BowlerId = bowlerIds?.GetNext() ?? new BowlerId(Ulid.BogusString(faker)),
-            Categories = [.. faker.PickRandom(HallOfFameCategory.List, faker.Random.Int(1, HallOfFameCategory.List.Count))],
-            Photo = uniquePhotos.GetNextNullable()
+            var induction = new HallOfFameInduction
+            {
+                Id = new HallOfFameId(Ulid.BogusString(faker)),
+                Year = faker.Date.PastDateOnly(20).Year,
+                BowlerId = bowlerIds?.GetNext() ?? new BowlerId(Ulid.BogusString(faker)),
+                Categories = [.. faker.PickRandom(HallOfFameCategory.List, faker.Random.Int(1, HallOfFameCategory.List.Count))]
+            };
+
+            var photo = uniquePhotos.GetNextNullable();
+            if (photo is not null)
+            {
+                ThrowIfInvalid(induction.SetPhoto(
+                    photo,
+                    faker.Random.Int(PhotoFocalPoint.Min, PhotoFocalPoint.Max),
+                    faker.Random.Int(PhotoFocalPoint.Min, PhotoFocalPoint.Max),
+                    faker.Random.Int(PhotoFocalPoint.MinZoom, PhotoFocalPoint.MaxZoom)));
+            }
+
+            return induction;
         })];
     }
 

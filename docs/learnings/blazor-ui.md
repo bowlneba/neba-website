@@ -146,3 +146,12 @@ Any table with more than three columns gets a phone layout (<= 767px) by adding 
   - The Awards tables (`HighAverage`, `HighBlock`) hide columns with Tailwind `hidden sm:table-cell`, so the helper would see a different column count than the header.
   - `ResultsTable` (tournament detail) has podium row styling and multi-bowler cells that need their own design pass.
   - Admin tables (`Users`, `PermissionOverridesSection`) are desktop-first; `PermissionOverridesSection` also uses `colspan` group rows.
+
+### Photo framing: `FocalPoint` and `FocalPointPicker`
+
+A photo shown in a shape (round avatar, later news headers) is framed by three whole numbers: X and Y (0 to 100, the CSS `object-position` percents) and a Zoom (100 to 300). `FocalPoint.ToImageStyle()` is the one place that turns them into `object-position`, `transform-origin`, and `transform: scale()`; every `<img>` that shows a framed photo uses it.
+
+- **`object-position` does not center a point.** It lines the photo's p% mark up with the shape's p% mark, so storing the click position would leave a face off-center. `FocalPointPicker` converts each click into the percent that puts the clicked point at the shape's center, as near as the photo allows. Zoom shrinks the visible window so a point near the photo's edge can reach the center.
+- **The `.razor.js` module owns the geometry** (it needs the image's natural size) and sets `style` on the crop outline and marker. Razor never renders `style` on those elements, so a re-render cannot overwrite them. Pointer and key handling live there too, and it sends at most one update to .NET per animation frame.
+- **Reuse it** for another shape by passing `Shape` and `Aspect`; the math takes the shape's aspect ratio.
+

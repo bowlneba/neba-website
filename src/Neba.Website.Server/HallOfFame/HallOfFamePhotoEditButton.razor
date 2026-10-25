@@ -1,0 +1,17 @@
+@using Neba.Api.Contracts.Security
+
+<AuthorizeView Policy="@Permissions.EditHallOfFamePhoto.PolicyName">
+    <Authorized>
+        <button type="button" class="hof-photo-edit" aria-label="@("Edit photo for " + BowlerName)" @onclick="OnClick">
+            <span class="material-symbols-outlined" aria-hidden="true">edit</span>
+        </button>
+    </Authorized>
+</AuthorizeView>
+
+@code {
+    [Parameter, EditorRequired]
+    public string BowlerName { get; set; } = string.Empty;
+
+    [Parameter, EditorRequired]
+    public EventCallback OnClick { get; set; }
+}

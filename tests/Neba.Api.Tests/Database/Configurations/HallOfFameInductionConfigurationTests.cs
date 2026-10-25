@@ -171,6 +171,25 @@ public sealed class HallOfFameInductionConfigurationTests
         sizeInBytes.FindAnnotation(RelationalAnnotationNames.ColumnName)!.Value.ShouldBe("photo_size_in_bytes");
     }
 
+    [Fact(DisplayName = "focal point columns use custom names and are nullable")]
+    public void Configure_ShouldConfigureFocalPointColumns()
+    {
+        // Arrange
+        var complexProperty = _inductionType.FindComplexProperty(nameof(HallOfFameInduction.PhotoFocalPoint))!;
+        var focalPointType = complexProperty.ComplexType;
+
+        // Act
+        var x = focalPointType.FindProperty(nameof(PhotoFocalPoint.X))!;
+        var y = focalPointType.FindProperty(nameof(PhotoFocalPoint.Y))!;
+        var zoom = focalPointType.FindProperty(nameof(PhotoFocalPoint.Zoom))!;
+
+        // Assert
+        complexProperty.IsNullable.ShouldBeTrue();
+        x.FindAnnotation(RelationalAnnotationNames.ColumnName)!.Value.ShouldBe("photo_focal_x");
+        y.FindAnnotation(RelationalAnnotationNames.ColumnName)!.Value.ShouldBe("photo_focal_y");
+        zoom.FindAnnotation(RelationalAnnotationNames.ColumnName)!.Value.ShouldBe("photo_zoom");
+    }
+
     [Fact(DisplayName = "year and bowler_id form an alternate key")]
     public void Configure_ShouldConfigureYearAndBowlerIdAlternateKey()
     {

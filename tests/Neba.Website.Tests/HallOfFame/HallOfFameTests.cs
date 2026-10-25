@@ -1,4 +1,5 @@
 using Bunit;
+using Bunit.TestDoubles;
 
 using Microsoft.AspNetCore.Components;
 using Microsoft.Extensions.DependencyInjection;
@@ -7,10 +8,13 @@ using Microsoft.Extensions.Logging.Abstractions;
 using Neba.Api.Contracts;
 using Neba.Api.Contracts.HallOfFame;
 using Neba.Api.Contracts.HallOfFame.ListHallOfFameInductions;
+using Neba.Api.Contracts.Security;
 using Neba.Api.Features.HallOfFame.Domain;
 using Neba.TestFactory.Attributes;
 using Neba.TestFactory.HallOfFame;
 using Neba.Website.Server.Clock;
+using Neba.Website.Server.Help;
+using Neba.Website.Server.Notifications;
 using Neba.Website.Server.Services;
 
 using Refit;
@@ -26,6 +30,8 @@ public sealed class HallOfFameTests : IDisposable
 {
     private readonly BunitContext _ctx;
     private readonly Mock<IHallOfFameApi> _mockApi;
+    private readonly BunitAuthorizationContext _authContext;
+    private readonly ToastService _toastService = new();
 
     public HallOfFameTests()
     {
@@ -38,11 +44,18 @@ public sealed class HallOfFameTests : IDisposable
         _ctx = new BunitContext();
         _ctx.JSInterop.Mode = JSRuntimeMode.Loose;
 
+        _authContext = _ctx.AddAuthorization();
+        _ctx.Services.AddSingleton(_toastService);
+        _ctx.Services.AddSingleton<HelpDocumentService>();
         _ctx.Services.AddSingleton(_mockApi.Object);
         _ctx.Services.AddSingleton(sp => new ApiExecutor(mockStopwatch.Object, sp.GetRequiredService<NavigationManager>(), NullLogger<ApiExecutor>.Instance));
     }
 
-    public void Dispose() => _ctx.Dispose();
+    public void Dispose()
+    {
+        _ctx.Dispose();
+        _toastService.Dispose();
+    }
 
     [Fact(DisplayName = "Should render page title")]
     public void Render_ShouldShowPageTitle_WhenRendered()
@@ -224,50 +237,154 @@ public sealed class HallOfFameTests : IDisposable
         cut.Markup.ShouldContain("JS");
     }
 
-    [Fact(DisplayName = "Should apply background-image style when inductee has a photo URI")]
-    public void Render_ShouldApplyPhotoStyle_WhenPhotoUriProvided()
+    [Fact(DisplayName = "Should render the photo with its saved focal point and zoom when the inductee has a photo")]
+    public void Render_ShouldRenderPhotoWithFraming_WhenPhotoUriProvided()
     {
         // Arrange
-        var photoUri = new Uri("https://example.com/photo.jpg");
         var induction = HallOfFameInductionResponseFactory.Create(
             categories: [HallOfFameCategory.SuperiorPerformance.Name],
-            photoUri: photoUri);
+            photoUri: new Uri("https://example.com/photo.jpg"),
+            photoFocalX: 31,
+            photoFocalY: 36,
+            photoZoom: 150);
         SetupSuccessResponse([induction]);
 
         // Act
         var cut = _ctx.Render<HallOfFamePage>();
 
         // Assert
-        cut.Markup.ShouldContain("background-image");
-        cut.Markup.ShouldContain("https://example.com/photo.jpg");
+        var image = cut.Find("img.inductee-photo__img");
+        image.GetAttribute("src").ShouldBe("https://example.com/photo.jpg");
+        image.GetAttribute("style").ShouldBe("object-position:31% 36%;transform-origin:31% 36%;transform:scale(1.5)");
     }
 
-    [Fact(DisplayName = "GetInitials should return first and last initials for two-part name")]
-    public void GetInitials_ShouldReturnFirstAndLastInitials_ForTwoPartName()
+    [Fact(DisplayName = "Should center the photo with no zoom when no framing is saved")]
+    public void Render_ShouldCenterPhoto_WhenNoFramingSaved()
     {
-        // Act & Assert
-        HallOfFamePage.GetInitials("Jane Smith").ShouldBe("JS");
+        // Arrange
+        var induction = HallOfFameInductionResponseFactory.Create(
+            categories: [HallOfFameCategory.SuperiorPerformance.Name],
+            photoUri: new Uri("https://example.com/photo.jpg"));
+        SetupSuccessResponse([induction]);
+
+        // Act
+        var cut = _ctx.Render<HallOfFamePage>();
+
+        // Assert
+        cut.Find("img.inductee-photo__img").GetAttribute("style")
+            .ShouldBe("object-position:50% 50%;transform-origin:50% 50%;transform:scale(1)");
     }
 
-    [Fact(DisplayName = "GetInitials should return first and last initials for multi-part name")]
-    public void GetInitials_ShouldReturnFirstAndLastInitials_ForMultiPartName()
+    [Fact(DisplayName = "Should render an avatar for single-category and combined inductees")]
+    public void Render_ShouldRenderAvatar_ForSingleCategoryAndCombinedInductees()
     {
-        // Act & Assert
-        HallOfFamePage.GetInitials("Mary Jo Johnson").ShouldBe("MJ");
+        // Arrange
+        var single = HallOfFameInductionResponseFactory.Create(
+            bowlerName: "Jane Smith",
+            categories: [HallOfFameCategory.SuperiorPerformance.Name]);
+        var combined = HallOfFameInductionResponseFactory.Create(
+            bowlerName: "Tom Davis",
+            categories:
+            [
+                HallOfFameCategory.SuperiorPerformance.Name,
+                HallOfFameCategory.MeritoriousService.Name
+            ]);
+        SetupSuccessResponse([single, combined]);
+
+        // Act
+        var cut = _ctx.Render<HallOfFamePage>();
+
+        // Assert
+        cut.FindAll(".inductee-item .inductee-photo").Count.ShouldBe(2);
+        cut.FindAll(".inductee-photo").Select(photo => photo.TextContent.Trim()).ShouldBe(["JS", "TD"], ignoreOrder: true);
     }
 
-    [Fact(DisplayName = "GetInitials should return single initial for one-part name")]
-    public void GetInitials_ShouldReturnSingleInitial_ForOnePartName()
+    [Fact(DisplayName = "Should show the help button to a user with the edit-photo permission")]
+    public void Render_ShouldShowHelpButton_WithPermission()
     {
-        // Act & Assert
-        HallOfFamePage.GetInitials("Cher").ShouldBe("C");
+        // Arrange
+        _authContext.SetAuthorized("editor");
+        _authContext.SetPolicies(Permissions.EditHallOfFamePhoto.PolicyName);
+        SetupSuccessResponse([HallOfFameInductionResponseFactory.Create()]);
+
+        // Act
+        var cut = _ctx.Render<HallOfFamePage>();
+
+        // Assert
+        cut.FindAll("button.neba-help-btn").Count.ShouldBe(1);
     }
 
-    [Fact(DisplayName = "GetInitials should return question mark for empty name")]
-    public void GetInitials_ShouldReturnQuestionMark_ForEmptyName()
+    [Fact(DisplayName = "Should not show the help button to a user without the edit-photo permission")]
+    public void Render_ShouldHideHelpButton_WithoutPermission()
     {
-        // Act & Assert
-        HallOfFamePage.GetInitials(string.Empty).ShouldBe("?");
+        // Arrange
+        _authContext.SetAuthorized("member");
+        SetupSuccessResponse([HallOfFameInductionResponseFactory.Create()]);
+
+        // Act
+        var cut = _ctx.Render<HallOfFamePage>();
+
+        // Assert
+        cut.FindAll("button.neba-help-btn").ShouldBeEmpty();
+    }
+
+    [Fact(DisplayName = "Should not show edit-photo buttons to a user without the permission")]
+    public void Render_ShouldHideEditButtons_WithoutPermission()
+    {
+        // Arrange
+        _authContext.SetAuthorized("member");
+        SetupSuccessResponse([HallOfFameInductionResponseFactory.Create()]);
+
+        // Act
+        var cut = _ctx.Render<HallOfFamePage>();
+
+        // Assert
+        cut.FindAll("button.hof-photo-edit").ShouldBeEmpty();
+    }
+
+    [Fact(DisplayName = "Should show an edit-photo button for every inductee to a user with the permission")]
+    public void Render_ShouldShowEditButtons_WithPermission()
+    {
+        // Arrange
+        _authContext.SetAuthorized("editor");
+        _authContext.SetPolicies(Permissions.EditHallOfFamePhoto.PolicyName);
+        var single = HallOfFameInductionResponseFactory.Create(
+            bowlerName: "Jane Smith",
+            categories: [HallOfFameCategory.SuperiorPerformance.Name]);
+        var combined = HallOfFameInductionResponseFactory.Create(
+            bowlerName: "Tom Davis",
+            categories: [HallOfFameCategory.SuperiorPerformance.Name, HallOfFameCategory.MeritoriousService.Name]);
+        SetupSuccessResponse([single, combined]);
+
+        // Act
+        var cut = _ctx.Render<HallOfFamePage>();
+
+        // Assert
+        cut.FindAll("button.hof-photo-edit").Select(button => button.GetAttribute("aria-label"))
+            .ShouldBe(["Edit photo for Jane Smith", "Edit photo for Tom Davis"], ignoreOrder: true);
+    }
+
+    [Fact(DisplayName = "Should open the photo editor for the clicked inductee and close it on cancel")]
+    public void Click_ShouldOpenPhotoEditorForInductee_AndCloseOnCancel()
+    {
+        // Arrange
+        _authContext.SetAuthorized("editor");
+        _authContext.SetPolicies(Permissions.EditHallOfFamePhoto.PolicyName);
+        SetupSuccessResponse([HallOfFameInductionResponseFactory.Create(bowlerName: "Jane Smith")]);
+        var cut = _ctx.Render<HallOfFamePage>();
+        cut.FindAll(".ehp-subtitle").ShouldBeEmpty();
+
+        // Act
+        cut.Find("button.hof-photo-edit").Click();
+
+        // Assert
+        cut.Find(".ehp-subtitle").TextContent.ShouldBe("Jane Smith");
+
+        // Act
+        cut.FindAll("button").Single(button => button.TextContent.Trim() == "Cancel").Click();
+
+        // Assert
+        cut.FindAll(".ehp-subtitle").ShouldBeEmpty();
     }
 
     private void SetupSuccessResponse(IReadOnlyCollection<HallOfFameInductionResponse> inductions)

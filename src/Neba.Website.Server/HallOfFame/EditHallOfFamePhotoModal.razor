@@ -1,0 +1,280 @@
+@using ErrorOr
+@using Neba.Api.Contracts.HallOfFame.EditHallOfFamePhoto
+@using Neba.Api.Contracts.Uploads
+
+<DirtyFormGuard IsDirty="@(IsOpen && IsDirty)" />
+
+<ConfirmActionModal IsOpen="@_isCancelConfirmOpen"
+                    Title="Discard unsaved changes?"
+                    Message="You have unsaved changes. If you close this dialog now, they will be lost."
+                    ConfirmLabel="Discard"
+                    CancelLabel="Keep Editing"
+                    OnConfirm="ConfirmCancelAsync"
+                    OnCancel="@(() => _isCancelConfirmOpen = false)" />
+
+<NebaModal IsOpen="@IsOpen" OnClose="@HandleCancelRequestedAsync" MaxWidth="640px" CompactSize="true"
+           AriaLabelledById="edit-photo-title">
+    <HeaderContent>
+        <div>
+            <h2 class="neba-modal-title" id="edit-photo-title">Edit photo</h2>
+            <div class="ehp-subtitle">@BowlerName</div>
+        </div>
+    </HeaderContent>
+    <ChildContent>
+        @if (_errorMessage is not null)
+        {
+            <NebaAlert Severity="NotifySeverity.Error" Title="Couldn't Save Photo" Message="@_errorMessage"
+                       Dismissible="true" OnDismiss="@(() => _errorMessage = null)" />
+        }
+
+        @if (ShownPhotoUrl is not null)
+        {
+            <FocalPointPicker ImageUrl="@ShownPhotoUrl"
+                              X="@_point.X" Y="@_point.Y" Zoom="@_point.Zoom"
+                              AriaLabel="@("Photo position for " + BowlerName)"
+                              OnChange="HandlePointChanged">
+                <SideContent>
+                    @if (_staged is not null)
+                    {
+                        <span class="ehp-badge">New photo</span>
+                    }
+                    <p class="ehp-state">@(_staged is not null ? "New photo" : "Current photo")</p>
+                    <p class="ehp-help">@(_staged is not null
+                        ? "Replaces the current photo when you save."
+                        : "This is how the photo shows on the Hall of Fame page.")</p>
+
+                    @if (_staged is not null)
+                    {
+                        <button type="button" class="ehp-link-danger" @onclick="DiscardStaged">Discard new photo</button>
+                    }
+                    else
+                    {
+                        <button type="button" class="ehp-link-danger" @onclick="RemoveCurrent">Remove photo</button>
+                    }
+                </SideContent>
+            </FocalPointPicker>
+        }
+        else
+        {
+            <div class="ehp-empty">
+                <div class="ehp-empty__box">
+                    <strong>@(_removed ? "Photo will be removed" : "No photo yet")</strong>
+                    <span>@(_removed ? "The page shows initials after you save." : "The page shows initials until you add one.")</span>
+                </div>
+                <div class="ehp-empty__preview" aria-hidden="true">@HallOfFameAvatar.GetInitials(BowlerName)</div>
+            </div>
+        }
+
+        <FileUpload @key="_uploadKey" MaxFiles="1" Accept="image/*" MaxFileSizeBytes="@(5 * 1024 * 1024)"
+                    Label="@UploadLabel"
+                    OnUploadRequestedAsync="OnUploadRequestedAsync"
+                    OnFileUploaded="HandleFileUploaded"
+                    OnFileRemoved="HandleFileRemoved"
+                    OnBusyChanged="@(busy => _isUploading = busy)" />
+    </ChildContent>
+    <FooterContent>
+        <div class="ehp-actions">
+            <button type="button" class="neba-btn neba-btn-secondary" @onclick="HandleCancelRequestedAsync" disabled="@_isSubmitting">Cancel</button>
+            <button type="button" class="neba-btn neba-btn-primary" @onclick="SubmitAsync"
+                    disabled="@(!IsDirty || _isUploading || _isSubmitting)">
+                @(_isSubmitting ? "Saving..." : "Save photo")
+            </button>
+        </div>
+    </FooterContent>
+</NebaModal>
+
+@code {
+    [Parameter, EditorRequired]
+    public bool IsOpen { get; set; }
+
+    [Parameter, EditorRequired]
+    public string BowlerName { get; set; } = string.Empty;
+
+    /// <summary>
+    /// The induction's own photo, or null when it has none.
+    /// </summary>
+    [Parameter]
+    public Uri? CurrentPhotoUrl { get; set; }
+
+    [Parameter]
+    public int? CurrentFocalX { get; set; }
+
+    [Parameter]
+    public int? CurrentFocalY { get; set; }
+
+    [Parameter]
+    public int? CurrentZoom { get; set; }
+
+    [Parameter, EditorRequired]
+    public EventCallback OnSaved { get; set; }
+
+    [Parameter, EditorRequired]
+    public EventCallback OnClose { get; set; }
+
+    [Parameter, EditorRequired]
+    public Func<Stream, string, string, IProgress<int>, CancellationToken, Task<ErrorOr<UploadedFileResponse>>> OnUploadRequestedAsync { get; set; } = default!;
+
+    /// <summary>
+    /// Saves the photo. A null photo with a null framing removes the photo; a null photo with a framing keeps the
+    /// current photo and changes its framing; a photo with a framing sets or replaces it. Kept feature-agnostic,
+    /// like <c>EditTournamentLogoModal</c>; the host wires the real call.
+    /// </summary>
+    [Parameter, EditorRequired]
+    public Func<HallOfFamePhotoInput?, FocalPoint?, CancellationToken, Task<ErrorOr<Success>>> OnSubmitRequestedAsync { get; set; } = default!;
+
+    private UploadedFileResponse? _staged;
+    private bool _removed;
+    private bool _wasOpen;
+    private bool _isUploading;
+    private bool _isSubmitting;
+    private bool _isCancelConfirmOpen;
+    private string? _errorMessage;
+    private Guid _uploadKey = Guid.NewGuid();
+    private FocalPoint _saved = FocalPoint.Default;
+    private FocalPoint _point = FocalPoint.Default;
+
+    private bool IsDirty
+        => _staged is not null
+            || _removed
+            || (CurrentPhotoUrl is not null && _point != _saved);
+
+    private Uri? ShownPhotoUrl
+    {
+        get
+        {
+            if (_staged is not null)
+            {
+                return _staged.Url;
+            }
+
+            return _removed ? null : CurrentPhotoUrl;
+        }
+    }
+
+    private string UploadLabel
+    {
+        get
+        {
+            if (ShownPhotoUrl is null)
+            {
+                return "Upload a photo";
+            }
+
+            return _staged is null ? "Upload a replacement photo" : "Upload a different photo";
+        }
+    }
+
+    protected override void OnParametersSet()
+    {
+        if (IsOpen && !_wasOpen)
+        {
+            ResetForm();
+        }
+
+        _wasOpen = IsOpen;
+    }
+
+    private void HandlePointChanged(FocalPoint point)
+        => _point = point;
+
+    private Task HandleFileUploaded(UploadedFileResponse upload)
+    {
+        _staged = upload;
+        _removed = false;
+        _point = FocalPoint.Default;
+        return Task.CompletedTask;
+    }
+
+    private Task HandleFileRemoved(UploadedFileResponse removed)
+    {
+        _staged = null;
+        _point = _saved;
+        return Task.CompletedTask;
+    }
+
+    private void DiscardStaged()
+    {
+        _staged = null;
+        _point = _saved;
+        _uploadKey = Guid.NewGuid();
+    }
+
+    private void RemoveCurrent()
+        => _removed = true;
+
+    private Task HandleCancelRequestedAsync()
+    {
+        if (IsDirty)
+        {
+            _isCancelConfirmOpen = true;
+            return Task.CompletedTask;
+        }
+
+        return CloseAsync();
+    }
+
+    private Task ConfirmCancelAsync()
+    {
+        _isCancelConfirmOpen = false;
+        return CloseAsync();
+    }
+
+    private Task CloseAsync()
+    {
+        ResetForm();
+        return OnClose.InvokeAsync();
+    }
+
+    private void ResetForm()
+    {
+        _staged = null;
+        _removed = false;
+        _errorMessage = null;
+        _uploadKey = Guid.NewGuid();
+        _saved = new FocalPoint(
+            CurrentFocalX ?? FocalPoint.Default.X,
+            CurrentFocalY ?? FocalPoint.Default.Y,
+            CurrentZoom ?? FocalPoint.Default.Zoom);
+        _point = _saved;
+    }
+
+    private async Task SubmitAsync()
+    {
+        _isSubmitting = true;
+        _errorMessage = null;
+
+        HallOfFamePhotoInput? photo = null;
+        FocalPoint? framing = null;
+
+        if (_staged is not null)
+        {
+            photo = new HallOfFamePhotoInput
+            {
+                Container = _staged.Container,
+                Path = _staged.Path,
+                ContentType = _staged.ContentType,
+                SizeInBytes = _staged.SizeInBytes
+            };
+            framing = _point;
+        }
+        else if (!_removed)
+        {
+            // Same photo, new framing: a null photo with a framing keeps the current photo.
+            framing = _point;
+        }
+
+        var result = await OnSubmitRequestedAsync(photo, framing, CancellationToken.None);
+
+        _isSubmitting = false;
+
+        if (result.IsError)
+        {
+            _errorMessage = result.FirstError.Description;
+            return;
+        }
+
+        ResetForm();
+
+        await OnSaved.InvokeAsync();
+    }
+}
