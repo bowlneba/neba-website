@@ -121,6 +121,28 @@ public sealed class SecurityConfigurationTests(SecurityDbContextFixture fixture)
         result.ShouldBeSameAs(builder);
     }
 
+    [Fact(DisplayName = "AddSecurity should give reset tokens 1 hour and invite tokens 1 day, each under its own provider name")]
+    public void AddSecurity_ShouldConfigureTokenLifespans()
+    {
+        // Arrange
+        var builder = CreateBuilderWithValidJwtSettings();
+        builder.Services.AddSingleton(new NpgsqlDataSourceBuilder("Host=localhost;Database=x;Username=y;Password=z").Build());
+        builder.AddSecurity();
+        var provider = builder.Services.BuildServiceProvider();
+
+        // Act
+        var resetOptions = provider.GetRequiredService<IOptions<DataProtectionTokenProviderOptions>>().Value;
+        var inviteOptions = provider.GetRequiredService<IOptions<InviteTokenProviderOptions>>().Value;
+        var identityOptions = provider.GetRequiredService<IOptions<IdentityOptions>>().Value;
+
+        // Assert
+        resetOptions.TokenLifespan.ShouldBe(TimeSpan.FromHours(1));
+        inviteOptions.TokenLifespan.ShouldBe(TimeSpan.FromDays(1));
+        inviteOptions.Name.ShouldBe(InviteTokenProvider.ProviderName);
+        inviteOptions.Name.ShouldNotBe(resetOptions.Name);
+        identityOptions.Tokens.ProviderMap.ShouldContainKey(InviteTokenProvider.ProviderName);
+    }
+
     [Fact(DisplayName = "AddSecurity should configure identity password and lockout options")]
     public void AddSecurity_ShouldConfigureIdentityOptions()
     {

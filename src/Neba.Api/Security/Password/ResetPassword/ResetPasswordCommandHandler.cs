@@ -4,6 +4,7 @@ using ErrorOr;
 
 using Microsoft.AspNetCore.Identity;
 
+using Neba.Api.Contracts.Security;
 using Neba.Api.Email;
 using Neba.Api.Messaging;
 using Neba.Api.Security.Domain;
@@ -27,7 +28,8 @@ internal sealed class ResetPasswordCommandHandler(
         }
 
         var token = await userManager.GeneratePasswordResetTokenAsync(user);
-        var resetLink = $"{websiteSettings.BaseUrl}/account/set-password?userId={user.Id}&token={WebUtility.UrlEncode(token)}";
+        var resetLink = $"{websiteSettings.BaseUrl}/account/set-password"
+            + $"?userId={user.Id}&token={WebUtility.UrlEncode(token)}&reason={PasswordTokenPurpose.Reset}";
 
         await emailSender.SendAsync(new EmailMessage
         {

@@ -33,6 +33,9 @@ internal static class SecurityConfiguration
     private const string BackgroundJobsDashboardPath = "/background-jobs";
     private const string AccessTokenQueryParameterName = "access_token";
 
+    private static readonly TimeSpan ResetTokenLifespan = TimeSpan.FromHours(1);
+    private static readonly TimeSpan InviteTokenLifespan = TimeSpan.FromDays(1);
+
     // Combines JWT bearer (used for normal API calls) and cookie auth (recognizes a Webmaster
     // already signed in to the website, see Neba.Website.Server's AddAccountServices) behind one
     // default scheme, since the Hangfire dashboard filter just reads HttpContext.User.
@@ -130,7 +133,19 @@ internal static class SecurityConfiguration
                     options.Lockout.DefaultLockoutTimeSpan = TimeSpan.FromMinutes(5);
                 })
                 .AddEntityFrameworkStores<SecurityDbContext>()
-                .AddDefaultTokenProviders();
+                .AddDefaultTokenProviders()
+                .AddTokenProvider<InviteTokenProvider>(InviteTokenProvider.ProviderName);
+
+            // The default provider backs password-reset tokens. The invite provider has its own options
+            // type, so the two lifespans do not affect each other.
+            builder.Services.Configure<DataProtectionTokenProviderOptions>(o => o.TokenLifespan = ResetTokenLifespan);
+            // A distinct Name gives each provider its own data-protection purpose, so a reset token cannot be
+            // passed off as an invite token (or the reverse) to borrow the other's lifespan.
+            builder.Services.Configure<InviteTokenProviderOptions>(o =>
+            {
+                o.Name = InviteTokenProvider.ProviderName;
+                o.TokenLifespan = InviteTokenLifespan;
+            });
 
             var jwtSettings = ReadJwtSettings(builder.Configuration);
 

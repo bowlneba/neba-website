@@ -5,6 +5,7 @@ using Asp.Versioning;
 using FastEndpoints;
 using FastEndpoints.AspVersioning;
 
+using Neba.Api.Contracts.Security;
 using Neba.Api.Contracts.Security.SetPasswordFromToken;
 
 namespace Neba.Api.Security.Password.SetPasswordFromToken;
@@ -39,7 +40,8 @@ internal sealed class SetPasswordFromTokenEndpoint(Messaging.ICommandHandler<Set
         {
             UserId = Ulid.Parse(req.UserId, CultureInfo.InvariantCulture),
             Token = req.Token,
-            NewPassword = req.NewPassword
+            NewPassword = req.NewPassword,
+            Purpose = req.Purpose ?? PasswordTokenPurpose.Reset
         };
 
         var result = await _commandHandler.HandleAsync(command, ct);

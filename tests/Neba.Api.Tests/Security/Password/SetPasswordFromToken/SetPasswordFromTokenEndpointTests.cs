@@ -40,6 +40,31 @@ public sealed class SetPasswordFromTokenEndpointTests
         endpoint.HttpContext.Response.StatusCode.ShouldBe(204);
     }
 
+    [Theory(DisplayName = "HandleAsync should pass the request's purpose to the command, defaulting to reset")]
+    [InlineData(null, "reset")]
+    [InlineData("reset", "reset")]
+    [InlineData("invite", "invite")]
+    public async Task HandleAsync_ShouldPassPurposeToCommand(string? purpose, string expected)
+    {
+        // Arrange
+        var request = SetPasswordFromTokenRequestFactory.Create(purpose: purpose);
+        var ct = TestContext.Current.CancellationToken;
+
+        var commandHandlerMock = new Mock<NebaMessaging.ICommandHandler<SetPasswordFromTokenCommand>>(MockBehavior.Strict);
+        commandHandlerMock
+            .Setup(h => h.HandleAsync(It.Is<SetPasswordFromTokenCommand>(c => c.Purpose == expected), ct))
+            .ReturnsAsync(Result.Success);
+
+        var endpoint = Factory.Create<SetPasswordFromTokenEndpoint>(commandHandlerMock.Object);
+
+        // Act
+        await endpoint.HandleAsync(request, ct);
+
+        // Assert
+        endpoint.HttpContext.Response.StatusCode.ShouldBe(204);
+        commandHandlerMock.VerifyAll();
+    }
+
     [Fact(DisplayName = "HandleAsync should return 422 when command returns failure errors")]
     public async Task HandleAsync_ShouldReturn422_WhenCommandReturnsFailureErrors()
     {

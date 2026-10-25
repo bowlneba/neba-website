@@ -90,8 +90,10 @@ internal sealed class CreateUserCommandHandler(
             }
         }
 
-        var token = await userManager.GeneratePasswordResetTokenAsync(user);
-        var inviteLink = $"{websiteSettings.BaseUrl}/account/set-password?userId={user.Id}&token={WebUtility.UrlEncode(token)}";
+        var token = await userManager.GenerateUserTokenAsync(
+            user, InviteTokenProvider.ProviderName, UserManager<ApplicationUser>.ResetPasswordTokenPurpose);
+        var inviteLink = $"{websiteSettings.BaseUrl}/account/set-password"
+            + $"?userId={user.Id}&token={WebUtility.UrlEncode(token)}&reason={PasswordTokenPurpose.Invite}";
 
         await emailSender.SendAsync(new EmailMessage
         {

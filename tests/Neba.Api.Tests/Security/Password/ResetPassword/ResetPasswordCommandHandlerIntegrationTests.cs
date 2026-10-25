@@ -129,6 +129,7 @@ public sealed class ResetPasswordCommandHandlerIntegrationTests(SecurityDbContex
         // Assert
         sentMessage.ShouldNotBeNull();
         sentMessage.HtmlBody.ShouldContain($"{BaseUrl}/account/set-password?userId={user.Id}&amp;token=");
+        sentMessage.HtmlBody.ShouldContain("&amp;reason=reset");
     }
 
     [Fact(DisplayName = "HandleAsync generates a token the user can redeem to set a new password")]
@@ -162,7 +163,7 @@ public sealed class ResetPasswordCommandHandlerIntegrationTests(SecurityDbContex
     {
         const string marker = "&amp;token=";
         var start = htmlBody.IndexOf(marker, StringComparison.Ordinal) + marker.Length;
-        var end = htmlBody.IndexOfAny(['"', '<'], start);
+        var end = htmlBody.IndexOfAny(['"', '<', '&'], start);
         return WebUtility.UrlDecode(htmlBody[start..end]);
     }
 }

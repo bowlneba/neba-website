@@ -1,5 +1,6 @@
 using Neba.Api.Features.Stats.GetSeasonStats;
 using Neba.Api.Messaging;
+using Neba.Api.Security.Password;
 
 namespace Neba.Api;
 
@@ -28,6 +29,7 @@ public static class ApplicationConfiguration
         {
             services.AddSingleton<ISeasonStatsCalculator, SeasonStatsCalculator>();
             services.AddSingleton<IBowlerOfTheYearRaceCalculator, BowlerOfTheYearRaceCalculator>();
+            services.AddScoped<PasswordChangedNotifier>();
         }
     }
 }
