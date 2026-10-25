@@ -41,7 +41,7 @@ internal sealed class SetPasswordFromTokenEndpoint(Messaging.ICommandHandler<Set
             UserId = Ulid.Parse(req.UserId, CultureInfo.InvariantCulture),
             Token = req.Token,
             NewPassword = req.NewPassword,
-            Purpose = req.Purpose ?? PasswordTokenPurpose.Reset
+            Purpose = req.Purpose
         };
 
         var result = await _commandHandler.HandleAsync(command, ct);

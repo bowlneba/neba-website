@@ -14,6 +14,7 @@ internal sealed record SetPasswordFromTokenCommand
 
     /// <summary>
     /// A <see cref="PasswordTokenPurpose"/> value. Decides which token provider validates the token.
+    /// Null means a link emailed before purposes existed, which the default provider validates.
     /// </summary>
-    public string Purpose { get; init; } = PasswordTokenPurpose.Reset;
+    public string? Purpose { get; init; }
 }

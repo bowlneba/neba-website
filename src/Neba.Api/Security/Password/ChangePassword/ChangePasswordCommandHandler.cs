@@ -70,7 +70,8 @@ internal sealed class ChangePasswordCommandHandler(
 
         await RefreshTokenStore.StoreAsync(userManager, user, tokenPair.RefreshToken, timeProvider);
 
-        await notifier.NotifyAsync(user, cancellationToken);
+        // The old refresh token is already revoked, so a cancelled request must not fail here and lose the new pair.
+        await notifier.NotifyAsync(user, CancellationToken.None);
 
         SecurityMetrics.RecordPasswordChange("success");
 

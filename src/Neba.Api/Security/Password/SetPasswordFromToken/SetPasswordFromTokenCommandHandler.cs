@@ -23,23 +23,30 @@ internal sealed class SetPasswordFromTokenCommandHandler(
             return SetPasswordFromTokenErrors.InvalidOrExpiredToken;
         }
 
-        // An unconfirmed email means this is the first time the user sets a password (an invite). Only a
-        // real reset earns the "your password was changed" notice.
-        var isReset = user.EmailConfirmed;
+        // Only a real reset earns the "your password was changed" notice. Links emailed before purposes
+        // existed (no purpose) cannot be told apart, so they get none.
+        var isReset = command.Purpose == PasswordTokenPurpose.Reset;
         var resetToken = command.Token;
 
-        if (command.Purpose == PasswordTokenPurpose.Invite)
+        var providerName = command.Purpose switch
+        {
+            PasswordTokenPurpose.Invite => InviteTokenProvider.ProviderName,
+            PasswordTokenPurpose.Reset => ResetTokenProvider.ProviderName,
+            _ => null
+        };
+
+        if (providerName is not null)
         {
             var valid = await userManager.VerifyUserTokenAsync(
-                user, InviteTokenProvider.ProviderName, UserManager<ApplicationUser>.ResetPasswordTokenPurpose, command.Token);
+                user, providerName, UserManager<ApplicationUser>.ResetPasswordTokenPurpose, command.Token);
 
             if (!valid)
             {
                 return SetPasswordFromTokenErrors.InvalidOrExpiredToken;
             }
 
-            // ResetPasswordAsync only accepts the default provider's token, so swap the verified invite
-            // token for a fresh one and keep the password write a single Identity call.
+            // ResetPasswordAsync only accepts the default provider's token, so swap the verified token
+            // for a fresh one and keep the password write a single Identity call.
             resetToken = await userManager.GeneratePasswordResetTokenAsync(user);
         }
 
@@ -70,7 +77,8 @@ internal sealed class SetPasswordFromTokenCommandHandler(
 
         if (isReset)
         {
-            await notifier.NotifyAsync(user, cancellationToken);
+            // The password has changed and the session is revoked, so a cancelled request must not skip or fail the notice.
+            await notifier.NotifyAsync(user, CancellationToken.None);
         }
 
         return Result.Success;

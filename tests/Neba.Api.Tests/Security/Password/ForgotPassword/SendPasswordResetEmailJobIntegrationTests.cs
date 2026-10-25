@@ -65,7 +65,9 @@ public sealed class SendPasswordResetEmailJobIntegrationTests(SecurityDbContextF
         var end = sent.HtmlBody.IndexOf('&', start);
         var token = WebUtility.UrlDecode(sent.HtmlBody[start..end]);
         var freshUser = await userManager.FindByIdAsync(user.Id.ToString());
-        (await userManager.ResetPasswordAsync(freshUser!, token, "SomeNewP@ssw0rd1")).Succeeded.ShouldBeTrue();
+        (await userManager.VerifyUserTokenAsync(
+            freshUser!, ResetTokenProvider.ProviderName, UserManager<ApplicationUser>.ResetPasswordTokenPurpose, token))
+            .ShouldBeTrue();
     }
 
     [Fact(DisplayName = "SendAsync sends nothing when the user no longer exists")]

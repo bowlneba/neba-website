@@ -155,6 +155,7 @@ public sealed class RateLimitingConfigurationValidationTests
 
         // Assert
         options.ForwardedHeaders.ShouldBe(ForwardedHeaders.XForwardedFor);
+        options.ForwardLimit.ShouldBeNull();
         options.KnownIPNetworks.ShouldContain(n =>
             n.BaseAddress.Equals(IPAddress.Parse("10.0.0.0")) && n.PrefixLength == 8);
         options.KnownIPNetworks.ShouldContain(n =>

@@ -21,7 +21,7 @@ public sealed record SetPasswordFromTokenRequest
 
     /// <summary>
     /// Which kind of link the token came from (see <see cref="PasswordTokenPurpose"/>). Missing means a
-    /// reset token, so links emailed before this field existed keep working.
+    /// link emailed before this field existed, which keeps working until it expires.
     /// </summary>
     public string? Purpose { get; init; }
 }

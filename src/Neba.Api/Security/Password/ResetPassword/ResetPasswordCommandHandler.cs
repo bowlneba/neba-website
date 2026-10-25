@@ -27,7 +27,8 @@ internal sealed class ResetPasswordCommandHandler(
             return ResetPasswordErrors.UserNotFound;
         }
 
-        var token = await userManager.GeneratePasswordResetTokenAsync(user);
+        var token = await userManager.GenerateUserTokenAsync(
+            user, ResetTokenProvider.ProviderName, UserManager<ApplicationUser>.ResetPasswordTokenPurpose);
         var resetLink = $"{websiteSettings.BaseUrl}/account/set-password"
             + $"?userId={user.Id}&token={WebUtility.UrlEncode(token)}&reason={PasswordTokenPurpose.Reset}";
 

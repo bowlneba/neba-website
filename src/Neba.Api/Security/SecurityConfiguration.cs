@@ -35,6 +35,7 @@ internal static class SecurityConfiguration
 
     private static readonly TimeSpan ResetTokenLifespan = TimeSpan.FromHours(1);
     private static readonly TimeSpan InviteTokenLifespan = TimeSpan.FromDays(1);
+    private static readonly TimeSpan LegacyTokenLifespan = TimeSpan.FromDays(1);
 
     // Combines JWT bearer (used for normal API calls) and cookie auth (recognizes a Webmaster
     // already signed in to the website, see Neba.Website.Server's AddAccountServices) behind one
@@ -134,11 +135,18 @@ internal static class SecurityConfiguration
                 })
                 .AddEntityFrameworkStores<SecurityDbContext>()
                 .AddDefaultTokenProviders()
-                .AddTokenProvider<InviteTokenProvider>(InviteTokenProvider.ProviderName);
+                .AddTokenProvider<InviteTokenProvider>(InviteTokenProvider.ProviderName)
+                .AddTokenProvider<ResetTokenProvider>(ResetTokenProvider.ProviderName);
 
-            // The default provider backs password-reset tokens. The invite provider has its own options
-            // type, so the two lifespans do not affect each other.
-            builder.Services.Configure<DataProtectionTokenProviderOptions>(o => o.TokenLifespan = ResetTokenLifespan);
+            // The default provider backs links emailed before the Reset and Invite providers existed, so it keeps
+            // the one-day lifespan those links were sent with. Each provider has its own options type, so the
+            // lifespans do not affect each other.
+            builder.Services.Configure<DataProtectionTokenProviderOptions>(o => o.TokenLifespan = LegacyTokenLifespan);
+            builder.Services.Configure<ResetTokenProviderOptions>(o =>
+            {
+                o.Name = ResetTokenProvider.ProviderName;
+                o.TokenLifespan = ResetTokenLifespan;
+            });
             // A distinct Name gives each provider its own data-protection purpose, so a reset token cannot be
             // passed off as an invite token (or the reverse) to borrow the other's lifespan.
             builder.Services.Configure<InviteTokenProviderOptions>(o =>

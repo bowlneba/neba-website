@@ -44,9 +44,11 @@ public sealed class SecurityDbContextFixture : IAsyncLifetime
             })
             .AddEntityFrameworkStores<SecurityDbContext>()
             .AddDefaultTokenProviders()
-            .AddTokenProvider<InviteTokenProvider>(InviteTokenProvider.ProviderName);
+            .AddTokenProvider<InviteTokenProvider>(InviteTokenProvider.ProviderName)
+            .AddTokenProvider<ResetTokenProvider>(ResetTokenProvider.ProviderName);
 
         services.Configure<InviteTokenProviderOptions>(o => o.Name = InviteTokenProvider.ProviderName);
+        services.Configure<ResetTokenProviderOptions>(o => o.Name = ResetTokenProvider.ProviderName);
 
         _serviceProvider = services.BuildServiceProvider();
 

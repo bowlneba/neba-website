@@ -76,6 +76,11 @@ internal static class RateLimitingConfiguration
             services.Configure<ForwardedHeadersOptions>(options =>
             {
                 options.ForwardedHeaders = ForwardedHeaders.XForwardedFor;
+                // The website adds the visitor's IP and the API's ingress then appends the website's. With the
+                // default limit of 1 the app would read only the website's address, and every visitor would share
+                // one rate-limit bucket. Without a limit, the middleware walks the chain right to left and stops at
+                // the first address outside the networks below, so a spoofed entry from outside is never trusted.
+                options.ForwardLimit = null;
 #pragma warning disable S1313 // RFC 1918 private ranges — Azure load balancers and Container Apps infrastructure
                 options.KnownIPNetworks.Add(new System.Net.IPNetwork(IPAddress.Parse("10.0.0.0"), 8));
                 options.KnownIPNetworks.Add(new System.Net.IPNetwork(IPAddress.Parse("172.16.0.0"), 12));

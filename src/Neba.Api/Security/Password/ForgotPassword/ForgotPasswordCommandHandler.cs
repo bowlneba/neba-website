@@ -66,13 +66,18 @@ internal sealed class ForgotPasswordCommandHandler(
             return Result.Success;
         }
 
-        // GetOrSet runs the factory for one caller only, so two concurrent requests cannot both pass.
+        // GetOrSet runs the factory for one caller only, so two concurrent requests cannot both pass. The job is
+        // queued inside the factory: if queuing fails the cooldown is not stored and the user can try again.
         var firstRequest = false;
 
         await cache.GetOrSetAsync<bool>(
             $"password-reset-cooldown:{user.Id}",
             (_, _) =>
             {
+                // The job builds the token, so no token is written to Hangfire storage.
+                backgroundJobClient.Enqueue<SendPasswordResetEmailJob>(
+                    job => job.SendAsync(user.Id.ToString(), CancellationToken.None));
+
                 firstRequest = true;
                 return Task.FromResult(true);
             },
@@ -84,10 +89,6 @@ internal sealed class ForgotPasswordCommandHandler(
             SecurityMetrics.RecordResetRequest("cooldown");
             return Result.Success;
         }
-
-        // The job builds the token, so no token is written to Hangfire storage.
-        backgroundJobClient.Enqueue<SendPasswordResetEmailJob>(
-            job => job.SendAsync(user.Id.ToString(), CancellationToken.None));
 
         SecurityMetrics.RecordResetRequest("sent");
 

@@ -286,8 +286,67 @@ public sealed class SetPasswordFromTokenCommandHandlerIntegrationTests(SecurityD
         (await RefreshTokenStore.GetStoredJsonAsync(userManager, freshUser!)).ShouldNotBeNull();
     }
 
-    [Fact(DisplayName = "HandleAsync sends the password-changed notice when the email was already confirmed (a reset)")]
-    public async Task HandleAsync_ShouldSendNotice_WhenEmailAlreadyConfirmed()
+    [Fact(DisplayName = "HandleAsync sends the password-changed notice for a reset token with the reset purpose")]
+    public async Task HandleAsync_ShouldSendNotice_WhenPurposeIsReset()
+    {
+        // Arrange
+        var ct = TestContext.Current.CancellationToken;
+        using var scope = fixture.CreateScope();
+        var userManager = scope.ServiceProvider.GetRequiredService<UserManager<ApplicationUser>>();
+        var user = await SeedUserAsync(userManager);
+        var token = await userManager.GenerateUserTokenAsync(
+            user, ResetTokenProvider.ProviderName, UserManager<ApplicationUser>.ResetPasswordTokenPurpose);
+        var command = new SetPasswordFromTokenCommand
+        {
+            UserId = user.Id,
+            Token = token,
+            NewPassword = NewPassword,
+            Purpose = PasswordTokenPurpose.Reset
+        };
+        var handler = CreateHandler(userManager);
+
+        // Act
+        var result = await handler.HandleAsync(command, ct);
+
+        // Assert
+        result.IsError.ShouldBeFalse();
+        _emailSender.Verify(
+            sender => sender.SendAsync(
+                It.Is<EmailMessage>(m => m.To == LoginRequestFactory.ValidEmail && m.Subject == "Your BowlNEBA password was changed"),
+                It.IsAny<CancellationToken>()),
+            Times.Once);
+    }
+
+    [Fact(DisplayName = "HandleAsync sends the notice for a reset even when the email was never confirmed")]
+    public async Task HandleAsync_ShouldSendNotice_WhenPurposeIsResetAndEmailUnconfirmed()
+    {
+        // Arrange
+        var ct = TestContext.Current.CancellationToken;
+        using var scope = fixture.CreateScope();
+        var userManager = scope.ServiceProvider.GetRequiredService<UserManager<ApplicationUser>>();
+        var user = await SeedUserAsync(userManager);
+        user.EmailConfirmed.ShouldBeFalse();
+        var token = await userManager.GenerateUserTokenAsync(
+            user, ResetTokenProvider.ProviderName, UserManager<ApplicationUser>.ResetPasswordTokenPurpose);
+        var command = new SetPasswordFromTokenCommand
+        {
+            UserId = user.Id,
+            Token = token,
+            NewPassword = NewPassword,
+            Purpose = PasswordTokenPurpose.Reset
+        };
+
+        // Act
+        await CreateHandler(userManager).HandleAsync(command, ct);
+
+        // Assert
+        _emailSender.Verify(
+            sender => sender.SendAsync(It.IsAny<EmailMessage>(), It.IsAny<CancellationToken>()),
+            Times.Once);
+    }
+
+    [Fact(DisplayName = "HandleAsync sends no notice for a link with no purpose, even when the email was confirmed")]
+    public async Task HandleAsync_ShouldNotSendNotice_WhenPurposeIsMissing()
     {
         // Arrange
         var ct = TestContext.Current.CancellationToken;
@@ -298,21 +357,46 @@ public sealed class SetPasswordFromTokenCommandHandlerIntegrationTests(SecurityD
         await userManager.UpdateAsync(user);
         var token = await userManager.GeneratePasswordResetTokenAsync(user);
         var command = new SetPasswordFromTokenCommand { UserId = user.Id, Token = token, NewPassword = NewPassword };
-        var handler = CreateHandler(userManager);
 
         // Act
-        await handler.HandleAsync(command, ct);
+        var result = await CreateHandler(userManager).HandleAsync(command, ct);
+
+        // Assert
+        result.IsError.ShouldBeFalse();
+        _emailSender.Verify(
+            sender => sender.SendAsync(It.IsAny<EmailMessage>(), It.IsAny<CancellationToken>()),
+            Times.Never);
+    }
+
+    [Fact(DisplayName = "HandleAsync sends no notice for an invite")]
+    public async Task HandleAsync_ShouldNotSendNotice_WhenPurposeIsInvite()
+    {
+        // Arrange
+        var ct = TestContext.Current.CancellationToken;
+        using var scope = fixture.CreateScope();
+        var userManager = scope.ServiceProvider.GetRequiredService<UserManager<ApplicationUser>>();
+        var user = await SeedUserAsync(userManager);
+        var token = await userManager.GenerateUserTokenAsync(
+            user, InviteTokenProvider.ProviderName, UserManager<ApplicationUser>.ResetPasswordTokenPurpose);
+        var command = new SetPasswordFromTokenCommand
+        {
+            UserId = user.Id,
+            Token = token,
+            NewPassword = NewPassword,
+            Purpose = PasswordTokenPurpose.Invite
+        };
+
+        // Act
+        await CreateHandler(userManager).HandleAsync(command, ct);
 
         // Assert
         _emailSender.Verify(
-            sender => sender.SendAsync(
-                It.Is<EmailMessage>(m => m.To == LoginRequestFactory.ValidEmail && m.Subject == "Your BowlNEBA password was changed"),
-                It.IsAny<CancellationToken>()),
-            Times.Once);
+            sender => sender.SendAsync(It.IsAny<EmailMessage>(), It.IsAny<CancellationToken>()),
+            Times.Never);
     }
 
-    [Fact(DisplayName = "HandleAsync sends no notice for a first-time password (an invite)")]
-    public async Task HandleAsync_ShouldNotSendNotice_WhenEmailNotYetConfirmed()
+    [Fact(DisplayName = "HandleAsync rejects a default-provider token when the purpose is reset")]
+    public async Task HandleAsync_ShouldReturnInvalidOrExpiredToken_WhenLegacyTokenUsedWithResetPurpose()
     {
         // Arrange
         var ct = TestContext.Current.CancellationToken;
@@ -320,16 +404,40 @@ public sealed class SetPasswordFromTokenCommandHandlerIntegrationTests(SecurityD
         var userManager = scope.ServiceProvider.GetRequiredService<UserManager<ApplicationUser>>();
         var user = await SeedUserAsync(userManager);
         var token = await userManager.GeneratePasswordResetTokenAsync(user);
-        var command = new SetPasswordFromTokenCommand { UserId = user.Id, Token = token, NewPassword = NewPassword };
-        var handler = CreateHandler(userManager);
+        var command = new SetPasswordFromTokenCommand
+        {
+            UserId = user.Id,
+            Token = token,
+            NewPassword = NewPassword,
+            Purpose = PasswordTokenPurpose.Reset
+        };
 
         // Act
-        await handler.HandleAsync(command, ct);
+        var result = await CreateHandler(userManager).HandleAsync(command, ct);
 
         // Assert
-        _emailSender.Verify(
-            sender => sender.SendAsync(It.IsAny<EmailMessage>(), It.IsAny<CancellationToken>()),
-            Times.Never);
+        result.IsError.ShouldBeTrue();
+        result.FirstError.Code.ShouldBe("Security.InvalidOrExpiredToken");
+    }
+
+    [Fact(DisplayName = "HandleAsync rejects a reset-provider token when the purpose is missing")]
+    public async Task HandleAsync_ShouldReturnInvalidOrExpiredToken_WhenResetProviderTokenUsedWithoutPurpose()
+    {
+        // Arrange
+        var ct = TestContext.Current.CancellationToken;
+        using var scope = fixture.CreateScope();
+        var userManager = scope.ServiceProvider.GetRequiredService<UserManager<ApplicationUser>>();
+        var user = await SeedUserAsync(userManager);
+        var token = await userManager.GenerateUserTokenAsync(
+            user, ResetTokenProvider.ProviderName, UserManager<ApplicationUser>.ResetPasswordTokenPurpose);
+        var command = new SetPasswordFromTokenCommand { UserId = user.Id, Token = token, NewPassword = NewPassword };
+
+        // Act
+        var result = await CreateHandler(userManager).HandleAsync(command, ct);
+
+        // Assert
+        result.IsError.ShouldBeTrue();
+        result.FirstError.Code.ShouldBe("Security.InvalidOrExpiredToken");
     }
 
     [Fact(DisplayName = "HandleAsync accepts an invite token when the purpose is invite")]

@@ -121,7 +121,7 @@ public sealed class SecurityConfigurationTests(SecurityDbContextFixture fixture)
         result.ShouldBeSameAs(builder);
     }
 
-    [Fact(DisplayName = "AddSecurity should give reset tokens 1 hour and invite tokens 1 day, each under its own provider name")]
+    [Fact(DisplayName = "AddSecurity should give reset tokens 1 hour, invite tokens 1 day and older links 1 day, each under its own provider name")]
     public void AddSecurity_ShouldConfigureTokenLifespans()
     {
         // Arrange
@@ -131,16 +131,20 @@ public sealed class SecurityConfigurationTests(SecurityDbContextFixture fixture)
         var provider = builder.Services.BuildServiceProvider();
 
         // Act
-        var resetOptions = provider.GetRequiredService<IOptions<DataProtectionTokenProviderOptions>>().Value;
+        var legacyOptions = provider.GetRequiredService<IOptions<DataProtectionTokenProviderOptions>>().Value;
+        var resetOptions = provider.GetRequiredService<IOptions<ResetTokenProviderOptions>>().Value;
         var inviteOptions = provider.GetRequiredService<IOptions<InviteTokenProviderOptions>>().Value;
         var identityOptions = provider.GetRequiredService<IOptions<IdentityOptions>>().Value;
 
         // Assert
+        legacyOptions.TokenLifespan.ShouldBe(TimeSpan.FromDays(1));
         resetOptions.TokenLifespan.ShouldBe(TimeSpan.FromHours(1));
+        resetOptions.Name.ShouldBe(ResetTokenProvider.ProviderName);
         inviteOptions.TokenLifespan.ShouldBe(TimeSpan.FromDays(1));
         inviteOptions.Name.ShouldBe(InviteTokenProvider.ProviderName);
         inviteOptions.Name.ShouldNotBe(resetOptions.Name);
         identityOptions.Tokens.ProviderMap.ShouldContainKey(InviteTokenProvider.ProviderName);
+        identityOptions.Tokens.ProviderMap.ShouldContainKey(ResetTokenProvider.ProviderName);
     }
 
     [Fact(DisplayName = "AddSecurity should configure identity password and lockout options")]

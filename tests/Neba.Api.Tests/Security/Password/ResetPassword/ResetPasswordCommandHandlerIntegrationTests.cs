@@ -155,8 +155,9 @@ public sealed class ResetPasswordCommandHandlerIntegrationTests(SecurityDbContex
         sentMessage.ShouldNotBeNull();
         var token = ExtractTokenFromLink(sentMessage.HtmlBody);
         var freshUser = await userManager.FindByEmailAsync(LoginRequestFactory.ValidEmail);
-        var resetResult = await userManager.ResetPasswordAsync(freshUser!, token, "SomeNewP@ssw0rd1");
-        resetResult.Succeeded.ShouldBeTrue();
+        var valid = await userManager.VerifyUserTokenAsync(
+            freshUser!, ResetTokenProvider.ProviderName, UserManager<ApplicationUser>.ResetPasswordTokenPurpose, token);
+        valid.ShouldBeTrue();
     }
 
     private static string ExtractTokenFromLink(string htmlBody)
