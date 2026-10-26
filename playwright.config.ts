@@ -19,9 +19,11 @@ export default defineConfig({
   /* Fail the build on CI if you accidentally left test.only in the source code */
   forbidOnly: !!process.env.CI,
   /* Retry on CI only */
-  retries: process.env.CI ? 2 : 0,
-  /* Opt out of parallel tests on CI */
-  workers: process.env.CI ? 1 : undefined,
+  retries: process.env.CI ? 1 : 0,
+  /* Two workers on CI: the ubuntu-latest runner has 4 vCPUs and shares them with the website and mock API */
+  workers: process.env.CI ? 2 : undefined,
+  /* Fail fast with a report instead of hitting the job timeout and losing it */
+  globalTimeout: process.env.CI ? 25 * 60 * 1000 : undefined,
   /* Reporter to use */
   reporter: [['html', { open: 'never' }]],
   /* Shared settings for all the projects below */
