@@ -264,13 +264,17 @@ if (builder.ExecutionContext.IsPublishMode)
     // so www must reach the container app over HTTPS, which needs its own binding and managed
     // certificate. Same two-step flow as above; leave AZURE_WEB_WWW_CUSTOM_DOMAIN unset to skip.
     var wwwCustomDomainValue = Environment.GetEnvironmentVariable("AZURE_WEB_WWW_CUSTOM_DOMAIN");
-    var webWwwCustomDomain = string.IsNullOrWhiteSpace(wwwCustomDomainValue)
-        ? null
-        : builder.AddParameter("webWwwCustomDomain", wwwCustomDomainValue, publishValueAsDefault: true);
-    var webWwwCertificateName = builder.AddParameter(
-        "webWwwCertificateName",
-        Environment.GetEnvironmentVariable("AZURE_WEB_WWW_CERTIFICATE_NAME") ?? string.Empty,
-        publishValueAsDefault: true);
+    IResourceBuilder<ParameterResource>? webWwwCustomDomain = null;
+    IResourceBuilder<ParameterResource>? webWwwCertificateName = null;
+
+    if (!string.IsNullOrWhiteSpace(wwwCustomDomainValue))
+    {
+        webWwwCustomDomain = builder.AddParameter("webWwwCustomDomain", wwwCustomDomainValue, publishValueAsDefault: true);
+        webWwwCertificateName = builder.AddParameter(
+            "webWwwCertificateName",
+            Environment.GetEnvironmentVariable("AZURE_WEB_WWW_CERTIFICATE_NAME") ?? string.Empty,
+            publishValueAsDefault: true);
+    }
 
     Action<AzureResourceInfrastructure, ContainerApp> configureScale = ConfigureScale;
 
@@ -280,7 +284,7 @@ if (builder.ExecutionContext.IsPublishMode)
     {
         app.ConfigureCustomDomain(webCustomDomain, webCertificateName);
 
-        if (webWwwCustomDomain is not null)
+        if (webWwwCustomDomain is not null && webWwwCertificateName is not null)
         {
             app.ConfigureCustomDomain(webWwwCustomDomain, webWwwCertificateName);
         }
