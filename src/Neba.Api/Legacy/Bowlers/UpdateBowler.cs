@@ -123,17 +123,6 @@ internal sealed class UpdateBowlerSyncJob(
             return;
         }
 
-        var gender = LegacyBowlerMapping.MapGender(row.Gender);
-        var dateOfBirth = LegacyBowlerMapping.MapDateOfBirth(row.DateOfBirth);
-
-        var suffix = LegacyBowlerMapping.MapSuffix(row.Suffix);
-        if (suffix is null && !string.IsNullOrWhiteSpace(row.Suffix))
-        {
-            logger.LogLegacySuffixUnmappedForUpdate(legacyBowlerId, row.Suffix);
-        }
-
-        var (firstName, nickname) = row.FirstName.ExtractQuotedNickname();
-
         var existing = await db.Set<Bowler>().SingleOrDefaultAsync(bowler => bowler.LegacyId == legacyBowlerId, ct);
 
         if (existing is null)
@@ -144,15 +133,7 @@ internal sealed class UpdateBowlerSyncJob(
             // the update because create-and-update happened to race.
             logger.LogLegacyBowlerNotSyncedYetForUpdate(legacyBowlerId);
 
-            var created = Bowler.CreateFromLegacy(
-                firstName,
-                row.LastName,
-                middleName: row.MiddleInitial,
-                suffix: suffix,
-                nickname: nickname,
-                legacyId: row.Id,
-                gender: gender,
-                dateOfBirth: dateOfBirth);
+            var created = LegacyBowlerMapping.CreateBowler(row, logger);
 
             if (created.IsError)
             {
@@ -167,6 +148,17 @@ internal sealed class UpdateBowlerSyncJob(
 
             return;
         }
+
+        var gender = LegacyBowlerMapping.MapGender(row.Gender);
+        var dateOfBirth = LegacyBowlerMapping.MapDateOfBirth(row.DateOfBirth);
+
+        var suffix = LegacyBowlerMapping.MapSuffix(row.Suffix);
+        if (suffix is null && !string.IsNullOrWhiteSpace(row.Suffix))
+        {
+            logger.LogLegacySuffixUnmappedForUpdate(legacyBowlerId, row.Suffix);
+        }
+
+        var (firstName, nickname) = row.FirstName.ExtractQuotedNickname();
 
         var updated = existing.ApplyLegacyUpdate(
             firstName,

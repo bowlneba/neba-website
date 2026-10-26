@@ -1,3 +1,5 @@
+using ErrorOr;
+
 using Neba.Api.Features.Bowlers.Domain;
 
 namespace Neba.Api.Legacy.Bowlers;
@@ -35,5 +37,31 @@ internal static class LegacyBowlerMapping
 
         return NameSuffix.List.SingleOrDefault(suffix =>
             string.Equals(suffix.Value.TrimEnd('.'), normalized, StringComparison.OrdinalIgnoreCase));
+    }
+
+    // Builds a new Bowler from a Software row: gender, date of birth, suffix and quoted nickname. Logs an
+    // unmapped suffix; the caller logs a returned error, since the log message carries its own job's type.
+    public static ErrorOr<Bowler> CreateBowler(LegacyBowlerRow row, ILogger logger)
+    {
+        ArgumentNullException.ThrowIfNull(row);
+        ArgumentNullException.ThrowIfNull(logger);
+
+        var suffix = MapSuffix(row.Suffix);
+        if (suffix is null && !string.IsNullOrWhiteSpace(row.Suffix))
+        {
+            logger.LogLegacySuffixUnmapped(row.Id, row.Suffix);
+        }
+
+        var (firstName, nickname) = row.FirstName.ExtractQuotedNickname();
+
+        return Bowler.CreateFromLegacy(
+            firstName,
+            row.LastName,
+            middleName: row.MiddleInitial,
+            suffix: suffix,
+            nickname: nickname,
+            legacyId: row.Id,
+            gender: MapGender(row.Gender),
+            dateOfBirth: MapDateOfBirth(row.DateOfBirth));
     }
 }

@@ -24,6 +24,7 @@ using Neba.Api.Features.Bowlers.Domain;
 using Neba.Api.Features.Seasons.Domain;
 using Neba.Api.Features.Tournaments.Domain;
 using Neba.Api.Legacy;
+using Neba.Api.Legacy.BowlerMemberships;
 using Neba.Api.Legacy.Bowlers;
 using Neba.Api.Legacy.HallOfFame;
 using Neba.Api.Legacy.Seasons.Complete;
@@ -108,6 +109,9 @@ public sealed class SyncSquadScoresEndpointTests : IAsyncLifetime
         // called.
         builder.Services.AddScoped<IValidator<NewBowlerRequest>, NewBowlerRequestValidator>();
         builder.Services.AddScoped<IValidator<UpdateBowlerRequest>, UpdateBowlerRequestValidator>();
+        builder.Services.AddScoped<IValidator<NewBowlerMembershipRequest>, NewBowlerMembershipRequestValidator>();
+        builder.Services.AddScoped<IValidator<UpdateBowlerMembershipRequest>, UpdateBowlerMembershipRequestValidator>();
+        builder.Services.AddScoped<IValidator<DeleteBowlerMembershipRequest>, DeleteBowlerMembershipRequestValidator>();
         builder.Services.AddScoped<IValidator<NewTournamentRequest>, NewTournamentRequestValidator>();
         builder.Services.AddScoped<IValidator<NewHallOfFameInductionRequest>, NewHallOfFameInductionRequestValidator>();
         builder.Services.AddScoped<IValidator<CompleteSeasonRequest>, CompleteSeasonRequestValidator>();
