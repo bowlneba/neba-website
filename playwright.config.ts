@@ -29,9 +29,10 @@ export default defineConfig({
   /* Shared settings for all the projects below */
   use: {
     /* Base URL to use in actions like `await page.goto('/')` */
-    baseURL: process.env.PLAYWRIGHT_BASE_URL || 'https://localhost:5200',
+    baseURL: process.env.PLAYWRIGHT_BASE_URL || 'http://localhost:5200',
 
-    /* Ignore HTTPS errors for local development with self-signed certs */
+    /* The site runs over plain HTTP: over HTTPS with the self-signed dev cert, WebKit on Linux CI ran
+     * Blazor interactions ~5x slower than Chrome. Kept so a PLAYWRIGHT_BASE_URL override can be HTTPS. */
     ignoreHTTPSErrors: true,
 
     /* Collect trace when retrying the failed test */
@@ -66,8 +67,8 @@ export default defineConfig({
     },
     {
       command:
-        'NebaApi__BaseUrl=http://localhost:5151 AzureMaps__SubscriptionKey=mock-key-for-e2e dotnet run --project src/Neba.Website.Server --urls https://localhost:5200',
-      url: 'https://localhost:5200',
+        'NebaApi__BaseUrl=http://localhost:5151 AzureMaps__SubscriptionKey=mock-key-for-e2e dotnet run --project src/Neba.Website.Server --urls http://localhost:5200',
+      url: 'http://localhost:5200',
       reuseExistingServer: !process.env.CI,
       timeout: 120 * 1000,
       stdout: 'pipe',
