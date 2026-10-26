@@ -1,4 +1,5 @@
 using System.Diagnostics.CodeAnalysis;
+using System.Diagnostics.Metrics;
 
 using Hangfire;
 using Hangfire.Common;
@@ -399,6 +400,89 @@ public sealed class BowlerMembershipWeeklySyncJobTests(AppDbContextFixture fixtu
         (await WebsiteLegacyIdsAsync()).ShouldBe([2]);
         logger.Collector.GetSnapshot().ShouldContain(record => record.Level == LogLevel.Error && record.Message.Contains("99", StringComparison.Ordinal));
         alerts.ShouldContain(alert => alert.Metadata != null && alert.Metadata["LegacyBowlerMembershipIds"] == "1");
+    }
+
+    [Fact(DisplayName = "SyncAsync should alert once, not retry or alert again, for a row that failed in the window step")]
+    public async Task SyncAsync_ShouldAlertOnce_WhenWindowRowFailed()
+    {
+        // Arrange
+        var ct = TestContext.Current.CancellationToken;
+        await SeedWebsiteBowlerAsync(1);
+        await InsertLegacyBowlerAsync(1);
+        await InsertLegacyMembershipAsync(1, Since.AddDays(1), membershipId: UnmappedMembershipId);
+        var alerts = new List<DiscordAlert>();
+        var logger = new FakeLogger<BowlerMembershipWeeklySyncJob>();
+        var job = CreateJob(logger, alerts);
+
+        // Act
+        await job.SyncAsync(Since, ct);
+
+        // Assert
+        alerts.ShouldHaveSingleItem();
+        logger.Collector.GetSnapshot()
+            .Count(record => record.Level == LogLevel.Error && record.Message.Contains("has membership type", StringComparison.Ordinal))
+            .ShouldBe(1);
+    }
+
+    [Fact(DisplayName = "SyncAsync should count a deleted membership on the deleted metric")]
+    public async Task SyncAsync_ShouldRecordDeletedMetric_WhenExtraIsDeleted()
+    {
+        // Arrange
+        var ct = TestContext.Current.CancellationToken;
+        await SeedWebsiteBowlerAsync(1, 1, 9);
+        await InsertLegacyBowlerAsync(1);
+        await InsertLegacyMembershipAsync(1, Old);
+        var job = CreateJob();
+        var recorded = new List<long>();
+        using var listener = ListenFor("neba.api.legacy.membership_sync.deleted", recorded);
+
+        // Act
+        await job.SyncAsync(Since, ct);
+
+        // Assert
+        recorded.ShouldContain(1L);
+    }
+
+    [Fact(DisplayName = "SyncAsync should count a tripped delete guard on the guard metric")]
+    public async Task SyncAsync_ShouldRecordGuardMetric_WhenGuardTrips()
+    {
+        // Arrange
+        var ct = TestContext.Current.CancellationToken;
+        await SeedWebsiteBowlerAsync(1, 1, 8, 9);
+        await InsertLegacyBowlerAsync(1);
+        await InsertLegacyMembershipAsync(1, Old);
+        var job = CreateJob();
+        var recorded = new List<long>();
+        using var listener = ListenFor("neba.api.legacy.membership_sync.delete_guard_tripped", recorded);
+
+        // Act
+        await job.SyncAsync(Since, ct);
+
+        // Assert
+        recorded.ShouldContain(1L);
+    }
+
+    private static MeterListener ListenFor(string instrumentName, List<long> recorded)
+    {
+        var listener = new MeterListener
+        {
+            InstrumentPublished = (instrument, meterListener) =>
+            {
+                if (instrument.Name == instrumentName)
+                {
+                    meterListener.EnableMeasurementEvents(instrument);
+                }
+            }
+        };
+        listener.SetMeasurementEventCallback<long>((_, measurement, _, _) =>
+        {
+            lock (recorded)
+            {
+                recorded.Add(measurement);
+            }
+        });
+        listener.Start();
+        return listener;
     }
 
     // ---- pass 2 ----

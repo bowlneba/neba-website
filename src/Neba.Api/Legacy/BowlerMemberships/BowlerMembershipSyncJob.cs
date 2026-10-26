@@ -1,4 +1,5 @@
 using System.Data;
+using System.Runtime.CompilerServices;
 
 using Dapper;
 
@@ -43,14 +44,31 @@ internal static class LegacyBowlerMembershipExtensions
                 return BowlerMembershipErrors.EndDateBeforeStartDate(startDate, endDate);
             }
 
-            membership.Type = type;
-            membership.Cost = cost;
-            membership.StartDate = startDate;
-            membership.EndDate = endDate;
+            // The setters stay private on the domain type so deleting Legacy/ leaves it untouched.
+            BowlerMembershipAccessors.SetType(membership, type);
+            BowlerMembershipAccessors.SetCost(membership, cost);
+            BowlerMembershipAccessors.SetStartDate(membership, startDate);
+            BowlerMembershipAccessors.SetEndDate(membership, endDate);
 
             return Result.Updated;
         }
     }
+}
+
+// Reaches BowlerMembership's private setters without widening them on the domain type.
+internal static class BowlerMembershipAccessors
+{
+    [UnsafeAccessor(UnsafeAccessorKind.Method, Name = "set_Type")]
+    public static extern void SetType(BowlerMembership membership, MembershipType type);
+
+    [UnsafeAccessor(UnsafeAccessorKind.Method, Name = "set_Cost")]
+    public static extern void SetCost(BowlerMembership membership, decimal cost);
+
+    [UnsafeAccessor(UnsafeAccessorKind.Method, Name = "set_StartDate")]
+    public static extern void SetStartDate(BowlerMembership membership, DateOnly startDate);
+
+    [UnsafeAccessor(UnsafeAccessorKind.Method, Name = "set_EndDate")]
+    public static extern void SetEndDate(BowlerMembership membership, DateOnly endDate);
 }
 
 // Shared by BowlerMembershipSyncJob and BowlerMembershipWeeklySyncJob so both decide the same way.

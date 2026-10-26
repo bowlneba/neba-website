@@ -1,4 +1,5 @@
 using System.Data;
+using System.Diagnostics.Metrics;
 using System.Globalization;
 
 using Dapper;
@@ -88,12 +89,12 @@ internal sealed class BowlerMembershipWeeklySyncJob(
                 ct);
         }
 
-        await CompareIdsAsync(ct);
+        await CompareIdsAsync(counts.FailedLegacyIds, ct);
     }
 
     // A timestamp cannot show a hard delete, so compare the full id sets every run. A count gate would
     // pass when one extra and one missing row offset each other.
-    private async Task CompareIdsAsync(CancellationToken ct)
+    private async Task CompareIdsAsync(List<int> alreadyFailed, CancellationToken ct)
     {
 #pragma warning disable DAP005
         var softwareIds = (await legacyConnection.QueryAsync<int>(
@@ -120,7 +121,8 @@ internal sealed class BowlerMembershipWeeklySyncJob(
 
         // A gap means a push call and the changed-since window both missed the row. Healing it is safe
         // even when the delete guard below trips.
-        var missingCounts = await UpsertMissingAsync(missing, ct);
+        // Rows that just failed in the window step are not retried or alerted a second time.
+        var missingCounts = await UpsertMissingAsync(missing.Except(alreadyFailed).ToList(), ct);
 
         if (softwareIds.Count == 0 && websiteIds.Count > 0)
         {
@@ -142,6 +144,7 @@ internal sealed class BowlerMembershipWeeklySyncJob(
         if (deleted.Count > 0)
         {
             logger.LogBowlerMembershipsDeleted(deleted.Count);
+            SyncMetrics.MembershipsDeleted.Add(deleted.Count);
 
             await manualInterventionNotifier.NotifyAsync(
                 new DiscordAlert(
@@ -161,6 +164,7 @@ internal sealed class BowlerMembershipWeeklySyncJob(
     private async Task GuardAsync(string reason, List<int> extra, int websiteCount, CancellationToken ct)
     {
         logger.LogBowlerMembershipDeleteGuardTripped(reason, extra.Count, websiteCount);
+        SyncMetrics.DeleteGuardTripped.Add(1);
 
         await manualInterventionNotifier.NotifyAsync(
             new DiscordAlert(
@@ -413,6 +417,19 @@ internal sealed class BowlerMembershipWeeklySyncJob(
         }
 
         return results;
+    }
+
+    internal static class SyncMetrics
+    {
+        private static readonly Meter Meter = new("Neba.Api.Legacy.Sync");
+
+        public static readonly Counter<long> MembershipsDeleted = Meter.CreateCounter<long>(
+            "neba.api.legacy.membership_sync.deleted",
+            description: "Bowler memberships the weekly sync deleted because the Software no longer has them");
+
+        public static readonly Counter<long> DeleteGuardTripped = Meter.CreateCounter<long>(
+            "neba.api.legacy.membership_sync.delete_guard_tripped",
+            description: "Weekly sync runs where the delete guard skipped deletes for a person to decide");
     }
 
     private sealed class UpsertCounts
