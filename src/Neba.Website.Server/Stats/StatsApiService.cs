@@ -77,6 +77,7 @@ internal sealed class StatsApiService(ApiExecutor executor, IStatsApi statsApi) 
                 Games = m.Games,
                 Wins = m.Wins,
                 Loses = m.Losses,
+                WinPercentage = m.WinPercentage,
                 Winnings = m.Winnings
             })],
             MatchPlayRecord = [.. response.MatchPlayRecord.Select((m, i) => new MatchPlayRecordRowViewModel
