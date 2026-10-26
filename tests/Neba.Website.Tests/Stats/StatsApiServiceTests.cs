@@ -99,6 +99,7 @@ public sealed class StatsApiServiceTests
         result.HighAverage.First().Rank.ShouldBe(1);
         result.HighBlock.First().Rank.ShouldBe(1);
         result.MatchPlayAverage.First().Rank.ShouldBe(1);
+        result.MatchPlayAverage.First().WinPercentage.ShouldBe(MatchPlayAverageResponseFactory.ValidWinPercentage);
         result.MatchPlayRecord.First().Rank.ShouldBe(1);
         result.MatchPlayAppearances.First().Rank.ShouldBe(1);
         result.PointsPerEntry.First().Rank.ShouldBe(1);

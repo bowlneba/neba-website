@@ -133,8 +133,8 @@ internal sealed class SeasonStatsCalculator
                 BowlerId = bs.BowlerId,
                 BowlerName = bs.BowlerName,
                 Finals = bs.Finals,
-                Tournaments = bs.TotalTournaments,
-                Entries = bs.TotalEntries
+                Tournaments = bs.EligibleTournaments,
+                Entries = bs.EligibleEntries
             })
             .ToArray();
 

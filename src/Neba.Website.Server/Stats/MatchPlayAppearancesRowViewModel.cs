@@ -26,12 +26,12 @@ public sealed record MatchPlayAppearancesRowViewModel
     public required int Finals { get; init; }
 
     /// <summary>
-    /// Gets the number of tournaments the bowler has participated in for match play. This is a required property that indicates the level of experience and participation of the bowler in match play competitions, providing context for their finals appearances and overall performance in the sport.
+    /// Gets the number of Stat-Eligible Tournaments the bowler participated in during the season, giving context for their finals appearances.
     /// </summary>
     public required int Tournaments { get; init; }
 
     /// <summary>
-    /// Gets the total number of entries the bowler has made in match play competitions. This is a required property that indicates the total number of times the bowler has entered match play tournaments, which can be used to assess their commitment and involvement in the sport, as well as to provide context for their finals appearances and tournament participation.
+    /// Gets the number of entries the bowler made in Stat-Eligible Tournaments during the season.
     /// </summary>
     public required int Entries { get; init; }
 }

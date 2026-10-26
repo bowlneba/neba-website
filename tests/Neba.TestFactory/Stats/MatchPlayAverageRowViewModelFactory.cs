@@ -10,6 +10,7 @@ public static class MatchPlayAverageRowViewModelFactory
     public const int ValidGames = 10;
     public const int ValidWins = 5;
     public const int ValidLoses = 5;
+    public const decimal ValidWinPercentage = 50m;
     public const decimal ValidWinnings = 1000m;
 
     public static MatchPlayAverageRowViewModel Create(
@@ -20,6 +21,7 @@ public static class MatchPlayAverageRowViewModelFactory
         int? games = null,
         int? wins = null,
         int? loses = null,
+        decimal? winPercentage = null,
         decimal? winnings = null)
         => new()
         {
@@ -30,6 +32,7 @@ public static class MatchPlayAverageRowViewModelFactory
             Games = games ?? ValidGames,
             Wins = wins ?? ValidWins,
             Loses = loses ?? ValidLoses,
+            WinPercentage = winPercentage ?? ValidWinPercentage,
             Winnings = winnings ?? ValidWinnings
         };
 
@@ -54,6 +57,7 @@ public static class MatchPlayAverageRowViewModelFactory
                 Games = faker.Random.Int(0, 20),
                 Wins = faker.Random.Int(0, 20),
                 Loses = faker.Random.Int(0, 20),
+                WinPercentage = decimal.Round(faker.Random.Decimal(0, 100), 2),
                 Winnings = faker.Random.Decimal(0, 10000)
             };
         })];
