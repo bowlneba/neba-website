@@ -41,11 +41,11 @@ public sealed record MatchPlayAverageRowViewModel
     public required int Loses { get; init; }
 
     /// <summary>
-    /// The win percentage of the bowler in match play games across all tournaments in the season, calculated by dividing the number of wins by the total number of games played and multiplying by 100 to get a percentage. This provides a quick and easy way to assess the bowler's success rate in competitive match play situations, with higher percentages indicating better performance. This field is nullable because if a bowler has not played any match play games, the win percentage cannot be calculated and should be represented as null.
+    /// The win percentage of the bowler in match play games across all tournaments in the season, calculated by dividing the number of wins by the total of wins and losses and multiplying by 100 to get a percentage. This provides a quick and easy way to assess the bowler's success rate in competitive match play situations, with higher percentages indicating better performance. This field is nullable because if a bowler has no match play wins or losses, the win percentage cannot be calculated and should be represented as null.
     /// </summary>
     public decimal? WinPercentage
-        => Games > 0
-            ? decimal.Round(Wins * 100m / Games, 2)
+        => Wins + Loses > 0
+            ? decimal.Round(Wins * 100m / (Wins + Loses), 2)
             : null;
 
     /// <summary>
