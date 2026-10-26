@@ -182,6 +182,7 @@ Detailed write-ups live in `docs/learnings/`. Read the matching file before work
 
 - **No `/api` prefix** — the API is served from `api.bowlneba.com`, so routes start directly with the resource (e.g. `/documents/{DocumentName}`, not `/api/documents/{DocumentName}`)
 - **No version in path** — API versioning is handled via request headers, not URL segments (no `/v1/`, `/api/v1/`, etc.)
+- **Standard REST outside `/legacy`** — a resource path with the id in the URL, and the HTTP verb names the action (POST create, PUT/PATCH update, DELETE remove). The `/legacy` backdoor's action-in-path POST routes (`/bowlers/new`, `/bowler-memberships/delete`) exist only because the whole folder is deleted at Software sunset; never copy that shape into a permanent route.
 
 ### Blazor and UI — `docs/learnings/blazor-ui.md`
 
