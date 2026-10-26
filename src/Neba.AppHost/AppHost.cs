@@ -260,11 +260,31 @@ if (builder.ExecutionContext.IsPublishMode)
         Environment.GetEnvironmentVariable("AZURE_API_CERTIFICATE_NAME") ?? string.Empty,
         publishValueAsDefault: true);
 
+    // Optional second hostname on the web app (www.<apex>). The app redirects www to the apex,
+    // so www must reach the container app over HTTPS, which needs its own binding and managed
+    // certificate. Same two-step flow as above; leave AZURE_WEB_WWW_CUSTOM_DOMAIN unset to skip.
+    var wwwCustomDomainValue = Environment.GetEnvironmentVariable("AZURE_WEB_WWW_CUSTOM_DOMAIN");
+    var webWwwCustomDomain = string.IsNullOrWhiteSpace(wwwCustomDomainValue)
+        ? null
+        : builder.AddParameter("webWwwCustomDomain", wwwCustomDomainValue, publishValueAsDefault: true);
+    var webWwwCertificateName = builder.AddParameter(
+        "webWwwCertificateName",
+        Environment.GetEnvironmentVariable("AZURE_WEB_WWW_CERTIFICATE_NAME") ?? string.Empty,
+        publishValueAsDefault: true);
+
     Action<AzureResourceInfrastructure, ContainerApp> configureScale = ConfigureScale;
 
 #pragma warning disable ASPIREACADOMAINS001
     api.PublishAsAzureContainerApp(configureScale + ((_, app) => app.ConfigureCustomDomain(apiCustomDomain, apiCertificateName)));
-    web.PublishAsAzureContainerApp(configureScale + ((_, app) => app.ConfigureCustomDomain(webCustomDomain, webCertificateName)));
+    web.PublishAsAzureContainerApp(configureScale + ((_, app) =>
+    {
+        app.ConfigureCustomDomain(webCustomDomain, webCertificateName);
+
+        if (webWwwCustomDomain is not null)
+        {
+            app.ConfigureCustomDomain(webWwwCustomDomain, webWwwCertificateName);
+        }
+    }));
 #pragma warning restore ASPIREACADOMAINS001
 
     // Manually-triggered jobs, not started automatically by azd deploy - cd.yml deploys these
