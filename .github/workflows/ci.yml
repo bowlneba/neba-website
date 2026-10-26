@@ -161,21 +161,24 @@ jobs:
     needs: build
     runs-on: ubuntu-latest
     timeout-minutes: 30
+    # The image ships the browsers and their system libraries, so no apt install is needed.
+    # Keep the tag and PLAYWRIGHT_VERSION equal to @playwright/test in package-lock.json (checked below).
+    container:
+      image: mcr.microsoft.com/playwright:v1.63.0-noble
+      options: --ipc=host
     permissions:
       contents: read
     env:
       HUSKY: 0
+      PLAYWRIGHT_VERSION: 1.63.0
 
     strategy:
       fail-fast: false
       matrix:
         include:
           - project: chrome
-            browser: chromium
           - project: mobile-chrome
-            browser: chromium
           - project: mobile-safari
-            browser: webkit
 
     steps:
       - uses: actions/checkout@v7
@@ -209,20 +212,13 @@ jobs:
       - name: Install Node dependencies
         run: npm ci --ignore-scripts
 
-      - name: Cache Playwright browsers
-        uses: actions/cache@v6
-        id: playwright-cache
-        with:
-          path: ~/.cache/ms-playwright
-          key: ${{ runner.os }}-playwright-${{ matrix.browser }}-${{ hashFiles('package-lock.json') }}
-
-      - name: Install Playwright Browsers
-        run: npx playwright install --with-deps ${{ matrix.browser }}
-        if: steps.playwright-cache.outputs.cache-hit != 'true'
-
-      - name: Install Playwright system dependencies only
-        run: npx playwright install-deps ${{ matrix.browser }}
-        if: steps.playwright-cache.outputs.cache-hit == 'true'
+      - name: Check Playwright image matches package-lock.json
+        run: |
+          locked=$(node -p "require('./package-lock.json').packages['node_modules/@playwright/test'].version")
+          if [ "$locked" != "$PLAYWRIGHT_VERSION" ]; then
+            echo "::error::package-lock.json has @playwright/test $locked but the job container is v$PLAYWRIGHT_VERSION. Update the container tag and PLAYWRIGHT_VERSION in ci.yml."
+            exit 1
+          fi
 
       - name: Run Playwright tests
         run: npx playwright test --project="${{ matrix.project }}"
