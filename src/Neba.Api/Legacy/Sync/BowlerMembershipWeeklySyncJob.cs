@@ -122,7 +122,7 @@ internal sealed class BowlerMembershipWeeklySyncJob(
         // A gap means a push call and the changed-since window both missed the row. Healing it is safe
         // even when the delete guard below trips.
         // Rows that just failed in the window step are not retried or alerted a second time.
-        var missingCounts = await UpsertMissingAsync(missing.Except(alreadyFailed).ToList(), ct);
+        var missingCounts = await UpsertMissingAsync([.. missing.Except(alreadyFailed)], ct);
 
         if (softwareIds.Count == 0 && websiteIds.Count > 0)
         {
