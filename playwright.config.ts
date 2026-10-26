@@ -24,8 +24,10 @@ export default defineConfig({
   workers: process.env.CI ? 2 : undefined,
   /* Fail fast with a report instead of hitting the job timeout and losing it */
   globalTimeout: process.env.CI ? 25 * 60 * 1000 : undefined,
-  /* Reporter to use */
-  reporter: [['html', { open: 'never' }]],
+  /* Reporter to use. CI also prints each test with its duration so slow ones show in the job log. */
+  reporter: process.env.CI
+    ? [['list'], ['html', { open: 'never' }]]
+    : [['html', { open: 'never' }]],
   /* Shared settings for all the projects below */
   use: {
     /* Base URL to use in actions like `await page.goto('/')` */
