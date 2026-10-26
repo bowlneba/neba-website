@@ -394,7 +394,7 @@ public sealed class SeasonStatsCalculatorTests
         // Finals only come from eligible tournaments, so the totals (which include special,
         // non-stat-eligible events) must not appear beside them.
         var bowler = BowlerSeasonStatsDtoFactory.Create(
-            finals: 13, eligibleTournaments: 15, totalTournaments: 16, eligibleEntries: 21, totalEntries: 23);
+eligibleTournaments: 15, totalTournaments: 16, eligibleEntries: 21, totalEntries: 23, finals: 13);
 
         // Act
         var summary = _calculator.CalculateSeasonStatsSummary(
