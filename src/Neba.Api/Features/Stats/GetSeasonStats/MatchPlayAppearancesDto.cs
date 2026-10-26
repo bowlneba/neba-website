@@ -25,12 +25,12 @@ public sealed record MatchPlayAppearancesDto
     public required int Finals { get; init; }
 
     /// <summary>
-    /// The number of distinct tournaments the bowler participated in during the season.
+    /// The number of Stat-Eligible Tournaments the bowler participated in during the season.
     /// </summary>
     public required int Tournaments { get; init; }
 
     /// <summary>
-    /// The total number of tournament entries during the season.
+    /// The number of entries in Stat-Eligible Tournaments during the season.
     /// </summary>
     public required int Entries { get; init; }
 }
