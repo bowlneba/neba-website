@@ -385,6 +385,28 @@ public sealed class SeasonStatsCalculatorTests
         summary.TotalEntries.ShouldBe(13);
     }
 
+    // ─── MatchPlayAppearancesLeaderboard ─────────────────────────────────────
+
+    [Fact(DisplayName = "MatchPlayAppearancesLeaderboard should count only stat-eligible tournaments and entries")]
+    public void MatchPlayAppearancesLeaderboard_ShouldUseEligibleTournamentsAndEntries()
+    {
+        // Arrange
+        // Finals only come from eligible tournaments, so the totals (which include special,
+        // non-stat-eligible events) must not appear beside them.
+        var bowler = BowlerSeasonStatsDtoFactory.Create(
+eligibleTournaments: 15, totalTournaments: 16, eligibleEntries: 21, totalEntries: 23, finals: 13);
+
+        // Act
+        var summary = _calculator.CalculateSeasonStatsSummary(
+            [bowler], minimumGames: 1, minimumTournaments: 1, minimumEntries: 1);
+
+        // Assert
+        var row = summary.MatchPlayAppearancesLeaderboard.ShouldHaveSingleItem();
+        row.Finals.ShouldBe(13);
+        row.Tournaments.ShouldBe(15);
+        row.Entries.ShouldBe(21);
+    }
+
     // ─── Smoke test ──────────────────────────────────────────────────────────
 
     [Fact(DisplayName = "CalculateSeasonStatsSummary should return well-formed summary with realistic bogus data")]
