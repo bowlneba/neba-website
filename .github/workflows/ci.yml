@@ -203,11 +203,13 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-nuget-
 
-      - name: Restore .NET dependencies
-        run: dotnet restore
+      # The website is the only .NET project the tests need (the API is the mock server). Build it in
+      # Debug, the configuration `dotnet run` uses in playwright.config.ts, so that run finds it up to date.
+      - name: Restore website dependencies
+        run: dotnet restore src/Neba.Website.Server
 
-      - name: Build .NET projects
-        run: dotnet build --configuration Release --no-restore
+      - name: Build website
+        run: dotnet build src/Neba.Website.Server --no-restore
 
       - name: Install Node dependencies
         run: npm ci --ignore-scripts
