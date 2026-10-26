@@ -1,3 +1,4 @@
+using Neba.Api.Legacy.BowlerMemberships;
 using Neba.Api.Legacy.Bowlers;
 using Neba.Api.Legacy.HallOfFame;
 using Neba.Api.Legacy.Seasons.Complete;
@@ -15,6 +16,10 @@ internal static class LegacyEndpoints
         {
             app.MapNewBowler();
             app.MapUpdateBowler();
+
+            app.MapNewBowlerMembership();
+            app.MapUpdateBowlerMembership();
+            app.MapDeleteBowlerMembership();
 
             app.MapNewTournament();
             app.MapSyncSquadScores();
