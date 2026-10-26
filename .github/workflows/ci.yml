@@ -157,7 +157,7 @@ jobs:
           retention-days: 30
 
   playwright:
-    name: Playwright E2E (${{ matrix.project }})
+    name: Playwright E2E (${{ matrix.project }}${{ matrix.shard && format(' {0}/{1}', matrix.shard, matrix.shards) || '' }})
     needs: build
     runs-on: ubuntu-latest
     timeout-minutes: 30
@@ -178,7 +178,16 @@ jobs:
         include:
           - project: chrome
           - project: mobile-chrome
+          # WebKit runs ~4x slower than Chrome on the runner, so split it across three jobs.
           - project: mobile-safari
+            shard: 1
+            shards: 3
+          - project: mobile-safari
+            shard: 2
+            shards: 3
+          - project: mobile-safari
+            shard: 3
+            shards: 3
 
     steps:
       - uses: actions/checkout@v7
@@ -223,7 +232,7 @@ jobs:
           fi
 
       - name: Run Playwright tests
-        run: npx playwright test --project="${{ matrix.project }}"
+        run: npx playwright test --project="${{ matrix.project }}" ${{ matrix.shards && format('--shard={0}/{1}', matrix.shard, matrix.shards) || '' }}
         env:
           CI: true
 
@@ -231,7 +240,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v7
         with:
-          name: playwright-report-${{ matrix.project }}
+          name: playwright-report-${{ matrix.project }}${{ matrix.shard && format('-{0}', matrix.shard) || '' }}
           path: playwright-report/
           retention-days: 30
 
@@ -239,7 +248,7 @@ jobs:
         if: failure()
         uses: actions/upload-artifact@v7
         with:
-          name: playwright-traces-${{ matrix.project }}
+          name: playwright-traces-${{ matrix.project }}${{ matrix.shard && format('-{0}', matrix.shard) || '' }}
           path: test-results/
           retention-days: 7
 
