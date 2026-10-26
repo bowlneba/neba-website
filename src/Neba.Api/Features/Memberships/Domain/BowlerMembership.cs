@@ -31,22 +31,22 @@ public sealed class BowlerMembership
     /// <summary>
     /// The kind of membership held.
     /// </summary>
-    public MembershipType Type { get; private set; } = null!;
+    public MembershipType Type { get; internal set; } = null!;
 
     /// <summary>
     /// The amount paid, fixed at purchase. Never derived from <see cref="Type"/>, whose cost can change.
     /// </summary>
-    public decimal Cost { get; private set; }
+    public decimal Cost { get; internal set; }
 
     /// <summary>
     /// The first day the membership is valid.
     /// </summary>
-    public DateOnly StartDate { get; private set; }
+    public DateOnly StartDate { get; internal set; }
 
     /// <summary>
     /// The last day the membership is valid. Inclusive.
     /// </summary>
-    public DateOnly EndDate { get; private set; }
+    public DateOnly EndDate { get; internal set; }
 
     /// <summary>
     /// Whether the membership is valid on <paramref name="date"/>. The end date is inclusive.
