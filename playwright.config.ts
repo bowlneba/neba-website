@@ -19,17 +19,22 @@ export default defineConfig({
   /* Fail the build on CI if you accidentally left test.only in the source code */
   forbidOnly: !!process.env.CI,
   /* Retry on CI only */
-  retries: process.env.CI ? 2 : 0,
-  /* Opt out of parallel tests on CI */
-  workers: process.env.CI ? 1 : undefined,
-  /* Reporter to use */
-  reporter: [['html', { open: 'never' }]],
+  retries: process.env.CI ? 1 : 0,
+  /* Two workers on CI: the ubuntu-latest runner has 4 vCPUs and shares them with the website and mock API */
+  workers: process.env.CI ? 2 : undefined,
+  /* Fail fast with a report instead of hitting the job timeout and losing it */
+  globalTimeout: process.env.CI ? 25 * 60 * 1000 : undefined,
+  /* Reporter to use. CI also prints each test with its duration so slow ones show in the job log. */
+  reporter: process.env.CI
+    ? [['list'], ['html', { open: 'never' }]]
+    : [['html', { open: 'never' }]],
   /* Shared settings for all the projects below */
   use: {
     /* Base URL to use in actions like `await page.goto('/')` */
-    baseURL: process.env.PLAYWRIGHT_BASE_URL || 'https://localhost:5200',
+    baseURL: process.env.PLAYWRIGHT_BASE_URL || 'http://localhost:5200',
 
-    /* Ignore HTTPS errors for local development with self-signed certs */
+    /* The site runs over plain HTTP: over HTTPS with the self-signed dev cert, WebKit on Linux CI ran
+     * Blazor interactions ~5x slower than Chrome. Kept so a PLAYWRIGHT_BASE_URL override can be HTTPS. */
     ignoreHTTPSErrors: true,
 
     /* Collect trace when retrying the failed test */
@@ -64,8 +69,8 @@ export default defineConfig({
     },
     {
       command:
-        'NebaApi__BaseUrl=http://localhost:5151 AzureMaps__SubscriptionKey=mock-key-for-e2e dotnet run --project src/Neba.Website.Server --urls https://localhost:5200',
-      url: 'https://localhost:5200',
+        'NebaApi__BaseUrl=http://localhost:5151 AzureMaps__SubscriptionKey=mock-key-for-e2e dotnet run --project src/Neba.Website.Server --urls http://localhost:5200',
+      url: 'http://localhost:5200',
       reuseExistingServer: !process.env.CI,
       timeout: 120 * 1000,
       stdout: 'pipe',

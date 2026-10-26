@@ -385,6 +385,54 @@ public sealed class SeasonStatsCalculatorTests
         summary.TotalEntries.ShouldBe(13);
     }
 
+    // ─── MatchPlayAppearancesLeaderboard ─────────────────────────────────────
+
+    [Fact(DisplayName = "MatchPlayAppearancesLeaderboard should count only stat-eligible tournaments and entries")]
+    public void MatchPlayAppearancesLeaderboard_ShouldUseEligibleTournamentsAndEntries()
+    {
+        // Arrange
+        // Finals only come from eligible tournaments, so the totals (which include special,
+        // non-stat-eligible events) must not appear beside them.
+        var bowler = BowlerSeasonStatsDtoFactory.Create(
+            eligibleTournaments: 15, totalTournaments: 16, eligibleEntries: 21, totalEntries: 23, finals: 13);
+
+        // Act
+        var summary = _calculator.CalculateSeasonStatsSummary(
+            [bowler], minimumGames: 1, minimumTournaments: 1, minimumEntries: 1);
+
+        // Assert
+        var row = summary.MatchPlayAppearancesLeaderboard.ShouldHaveSingleItem();
+        row.Finals.ShouldBe(13);
+        row.Tournaments.ShouldBe(15);
+        row.Entries.ShouldBe(21);
+    }
+
+    [Fact(DisplayName = "MatchPlayAppearancesLeaderboard should exclude bowlers with no finals, ignore minimums, and order by finals descending")]
+    public void MatchPlayAppearancesLeaderboard_ShouldExcludeBowlersWithoutFinals_AndOrderByFinals()
+    {
+        // Arrange
+        // Minimums are far above every bowler's totals, so a threshold filter (on eligible or total counts)
+        // would empty the leaderboard. Totals exceed eligible counts to catch a swapped field.
+        var fewFinals = BowlerSeasonStatsDtoFactory.Create(
+            eligibleTournaments: 4, totalTournaments: 6, eligibleEntries: 5, totalEntries: 9, finals: 1);
+        var manyFinals = BowlerSeasonStatsDtoFactory.Create(
+            eligibleTournaments: 8, totalTournaments: 10, eligibleEntries: 11, totalEntries: 14, finals: 6);
+        var noFinals = BowlerSeasonStatsDtoFactory.Create(
+            eligibleTournaments: 9, totalTournaments: 12, eligibleEntries: 12, totalEntries: 15, finals: 0);
+
+        // Act
+        var summary = _calculator.CalculateSeasonStatsSummary(
+            [fewFinals, noFinals, manyFinals],
+            minimumGames: 1000, minimumTournaments: 1000, minimumEntries: 1000);
+
+        // Assert
+        summary.MatchPlayAppearancesLeaderboard.Count.ShouldBe(2);
+        var rows = summary.MatchPlayAppearancesLeaderboard.ToArray();
+        rows.Select(r => r.BowlerId).ShouldBe([manyFinals.BowlerId, fewFinals.BowlerId]);
+        rows.Select(r => r.Tournaments).ShouldBe([8, 4]);
+        rows.Select(r => r.Entries).ShouldBe([11, 5]);
+    }
+
     // ─── Smoke test ──────────────────────────────────────────────────────────
 
     [Fact(DisplayName = "CalculateSeasonStatsSummary should return well-formed summary with realistic bogus data")]
