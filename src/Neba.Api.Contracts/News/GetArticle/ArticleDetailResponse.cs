@@ -66,6 +66,12 @@ public sealed record ArticleDetailResponse
     public required DateTimeOffset PublishDateUtc { get; init; }
 
     /// <summary>
+    /// The UTC date and time the article was announced on Discord, or null if it has not been. Populated
+    /// only when the caller has article management permission; null for anonymous callers.
+    /// </summary>
+    public DateTimeOffset? AnnouncedAtUtc { get; init; }
+
+    /// <summary>
     /// The ULID string of an associated tournament, or null if the article is not linked to a tournament.
     /// </summary>
     public string? TournamentId { get; init; }

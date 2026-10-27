@@ -23,7 +23,8 @@ public static class ArticleDetailResponseFactory
         long? headerImageSizeInBytes = null,
         DateTimeOffset? publishDateUtc = null,
         string? tournamentId = null,
-        IReadOnlyCollection<ArticleAttachmentResponse>? attachments = null)
+        IReadOnlyCollection<ArticleAttachmentResponse>? attachments = null,
+        DateTimeOffset? announcedAtUtc = null)
         => new()
         {
             ArticleId = articleId ?? Ulid.NewUlid().ToString(),
@@ -37,6 +38,7 @@ public static class ArticleDetailResponseFactory
             HeaderImageContentType = headerImageContentType,
             HeaderImageSizeInBytes = headerImageSizeInBytes,
             PublishDateUtc = publishDateUtc ?? ValidPublishDateUtc,
+            AnnouncedAtUtc = announcedAtUtc,
             TournamentId = tournamentId,
             Attachments = attachments ?? [],
         };
