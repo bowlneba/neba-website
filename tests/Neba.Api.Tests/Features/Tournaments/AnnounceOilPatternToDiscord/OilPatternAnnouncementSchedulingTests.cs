@@ -48,10 +48,10 @@ public sealed class OilPatternAnnouncementSchedulingTests
         var scheduler = new Mock<IBackgroundJobScheduler>(MockBehavior.Strict);
 
         // Act
-        var act = () => scheduler.Object.ScheduleOilPatternAnnouncement(tournament, Now, Delay);
+        void Act() => scheduler.Object.ScheduleOilPatternAnnouncement(tournament, Now, Delay);
 
         // Assert
-        Should.NotThrow(act); // the strict mock has no setup, so any Schedule call would throw
+        Should.NotThrow(Act); // the strict mock has no setup, so any Schedule call would throw
     }
 
     [Fact(DisplayName = "ScheduleOilPatternAnnouncement schedules nothing when the reveal date is in the past")]
@@ -62,10 +62,10 @@ public sealed class OilPatternAnnouncementSchedulingTests
         var scheduler = new Mock<IBackgroundJobScheduler>(MockBehavior.Strict);
 
         // Act
-        var act = () => scheduler.Object.ScheduleOilPatternAnnouncement(tournament, Now, Delay);
+        void Act() => scheduler.Object.ScheduleOilPatternAnnouncement(tournament, Now, Delay);
 
         // Assert
-        Should.NotThrow(act); // the strict mock has no setup, so any Schedule call would throw
+        Should.NotThrow(Act); // the strict mock has no setup, so any Schedule call would throw
     }
 
     [Fact(DisplayName = "ScheduleOilPatternAnnouncement schedules nothing when the reveal was already announced")]
@@ -78,10 +78,10 @@ public sealed class OilPatternAnnouncementSchedulingTests
         var scheduler = new Mock<IBackgroundJobScheduler>(MockBehavior.Strict);
 
         // Act
-        var act = () => scheduler.Object.ScheduleOilPatternAnnouncement(tournament, Now, Delay);
+        void Act() => scheduler.Object.ScheduleOilPatternAnnouncement(tournament, Now, Delay);
 
         // Assert
-        Should.NotThrow(act); // the strict mock has no setup, so any Schedule call would throw
+        Should.NotThrow(Act); // the strict mock has no setup, so any Schedule call would throw
     }
 
     [Fact(DisplayName = "ScheduleOilPatternAnnouncement schedules nothing when the reveal date is unchanged from the earlier save")]
@@ -93,10 +93,10 @@ public sealed class OilPatternAnnouncementSchedulingTests
         var scheduler = new Mock<IBackgroundJobScheduler>(MockBehavior.Strict);
 
         // Act
-        var act = () => scheduler.Object.ScheduleOilPatternAnnouncement(tournament, Now, Delay, previousRevealDateTime: revealAt);
+        void Act() => scheduler.Object.ScheduleOilPatternAnnouncement(tournament, Now, Delay, previousRevealDateTime: revealAt);
 
         // Assert
-        Should.NotThrow(act); // the strict mock has no setup, so any Schedule call would throw
+        Should.NotThrow(Act); // the strict mock has no setup, so any Schedule call would throw
     }
 
     [Fact(DisplayName = "ScheduleOilPatternAnnouncement treats dates that differ only below a microsecond as unchanged")]
@@ -108,10 +108,10 @@ public sealed class OilPatternAnnouncementSchedulingTests
         var scheduler = new Mock<IBackgroundJobScheduler>(MockBehavior.Strict);
 
         // Act
-        var act = () => scheduler.Object.ScheduleOilPatternAnnouncement(tournament, Now, Delay, previousRevealDateTime: revealAt);
+        void Act() => scheduler.Object.ScheduleOilPatternAnnouncement(tournament, Now, Delay, previousRevealDateTime: revealAt);
 
         // Assert
-        Should.NotThrow(act);
+        Should.NotThrow(Act);
     }
 
     [Fact(DisplayName = "ScheduleOilPatternAnnouncement schedules when the reveal date differs from the earlier save")]

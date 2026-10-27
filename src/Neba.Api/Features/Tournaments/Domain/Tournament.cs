@@ -161,14 +161,11 @@ public sealed class Tournament
     /// </summary>
     public DateTimeOffset? GetOilPatternAnnouncementTime(DateTimeOffset now, TimeSpan delay)
     {
-        if (OilPatternRevealDateTime is not { } revealAt
+        return OilPatternRevealDateTime is not { } revealAt
             || revealAt <= now
-            || OilPatternAnnouncedAtUtc is not null)
-        {
-            return null;
-        }
-
-        return revealAt + delay;
+            || OilPatternAnnouncedAtUtc is not null
+            ? null
+            : (revealAt + delay);
     }
 
     /// <summary>
