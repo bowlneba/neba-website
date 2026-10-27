@@ -1,9 +1,11 @@
 using ErrorOr;
 
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
 
 using Neba.Api.BackgroundJobs;
 using Neba.Api.Database;
+using Neba.Api.Features.Tournaments.AnnounceOilPatternToDiscord;
 using Neba.Api.Features.Tournaments.Domain;
 using Neba.Api.Features.Tournaments.EvictOilPatternRevealCache;
 using Neba.Api.Messaging;
@@ -16,7 +18,8 @@ internal sealed class CreateTournamentCommandHandler(
     AppDbContext appDbContext,
     IFusionCache cache,
     IBackgroundJobScheduler jobScheduler,
-    TimeProvider timeProvider)
+    TimeProvider timeProvider,
+    IOptions<OilPatternAnnouncementSettings> announcementSettings)
     : ICommandHandler<CreateTournamentCommand, TournamentId>
 {
     public async Task<ErrorOr<TournamentId>> HandleAsync(CreateTournamentCommand command, CancellationToken cancellationToken)
@@ -97,6 +100,9 @@ internal sealed class CreateTournamentCommandHandler(
                 new EvictOilPatternRevealCacheJob { TournamentId = tournament.Id, SeasonId = season.Id },
                 revealAt);
         }
+
+        jobScheduler.ScheduleOilPatternAnnouncement(
+            tournament, timeProvider.GetUtcNow(), announcementSettings.Value.Delay);
 
         return tournament.Id;
     }

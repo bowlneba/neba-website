@@ -2,6 +2,7 @@ using ErrorOr;
 
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Options;
 using Microsoft.Extensions.Time.Testing;
 
 using Neba.Api.BackgroundJobs;
@@ -9,7 +10,9 @@ using Neba.Api.Database;
 using Neba.Api.Features.BowlingCenters.Domain;
 using Neba.Api.Features.Seasons.Domain;
 using Neba.Api.Features.Storage.Domain;
+using Neba.Api.Features.Tournaments.AnnounceOilPatternToDiscord;
 using Neba.Api.Features.Tournaments.Domain;
+using Neba.Api.Features.Tournaments;
 using Neba.Api.Features.Tournaments.EditTournament;
 using Neba.Api.Features.Tournaments.EvictOilPatternRevealCache;
 using Neba.Api.Features.Tournaments.GetTournament;
@@ -67,7 +70,8 @@ public sealed class EditTournamentCommandHandlerTests(AppDbContextFixture fixtur
             cache,
             scheduler,
             timeProvider ?? new FakeTimeProvider(Now),
-            permissionDenialReader ?? DenialReader(denied: false));
+            permissionDenialReader ?? DenialReader(denied: false),
+            Options.Create(new OilPatternAnnouncementSettings()));
     }
 
     private static IPermissionDenialReader DenialReader(bool denied, Action? onLookup = null)
@@ -822,6 +826,9 @@ public sealed class EditTournamentCommandHandlerTests(AppDbContextFixture fixtur
         schedulerMock
             .Setup(scheduler => scheduler.Schedule(It.IsAny<EvictOilPatternRevealCacheJob>(), revealAt))
             .Returns("job-id");
+        schedulerMock
+            .Setup(scheduler => scheduler.Schedule(It.IsAny<AnnounceOilPatternToDiscordJob>(), It.IsAny<DateTimeOffset>()))
+            .Returns("announce-job-id");
 
         var handler = CreateHandler(schedulerMock.Object, timeProvider);
         var command = ValidCommand(
@@ -845,6 +852,84 @@ public sealed class EditTournamentCommandHandlerTests(AppDbContextFixture fixtur
         var handler = CreateHandler(schedulerMock.Object);
         var command = ValidCommand(
             tournament.Id, startDate: season.StartDate, endDate: season.StartDate, oilPatternRevealDateTime: null);
+
+        // Act
+        var result = await handler.HandleAsync(command, ct);
+
+        // Assert
+        result.IsError.ShouldBeFalse();
+    }
+
+    [Fact(DisplayName = "HandleAsync schedules the Discord announcement at the reveal date plus the configured delay when a future reveal date is provided")]
+    public async Task HandleAsync_ShouldScheduleAnnouncementJob_WhenOilPatternRevealDateTimeIsInFuture()
+    {
+        // Arrange
+        var ct = TestContext.Current.CancellationToken;
+        var season = await SeedSeasonAsync(new DateOnly(2025, 1, 1), new DateOnly(2025, 12, 31), ct);
+        var tournament = await SeedTournamentAsync(season, ct);
+        var revealAt = Now.AddDays(3);
+        AnnounceOilPatternToDiscordJob? scheduled = null;
+        var schedulerMock = new Mock<IBackgroundJobScheduler>(MockBehavior.Strict);
+        schedulerMock
+            .Setup(scheduler => scheduler.Schedule(It.IsAny<EvictOilPatternRevealCacheJob>(), revealAt))
+            .Returns("job-id");
+        schedulerMock
+            .Setup(scheduler => scheduler.Schedule(It.IsAny<AnnounceOilPatternToDiscordJob>(), revealAt + TimeSpan.FromMinutes(2)))
+            .Callback<AnnounceOilPatternToDiscordJob, DateTimeOffset>((job, _) => scheduled = job)
+            .Returns("announce-job-id");
+        var handler = CreateHandler(schedulerMock.Object);
+        var command = ValidCommand(
+            tournament.Id, startDate: season.StartDate, endDate: season.StartDate, oilPatternRevealDateTime: revealAt);
+
+        // Act
+        var result = await handler.HandleAsync(command, ct);
+
+        // Assert
+        result.IsError.ShouldBeFalse();
+        scheduled.ShouldNotBeNull();
+        scheduled.TournamentId.ShouldBe(tournament.Id);
+        scheduled.ExpectedRevealDateTime.ShouldBe(revealAt);
+    }
+
+    [Fact(DisplayName = "HandleAsync does not schedule the Discord announcement when the reveal was already announced")]
+    public async Task HandleAsync_ShouldNotScheduleAnnouncementJob_WhenAlreadyAnnounced()
+    {
+        // Arrange
+        var ct = TestContext.Current.CancellationToken;
+        var season = await SeedSeasonAsync(new DateOnly(2025, 1, 1), new DateOnly(2025, 12, 31), ct);
+        var tournament = await SeedTournamentAsync(season, ct);
+        tournament.MarkOilPatternAnnounced(Now.AddDays(-1));
+        await _dbContext.SaveChangesAsync(ct);
+        var revealAt = Now.AddDays(3);
+        var schedulerMock = new Mock<IBackgroundJobScheduler>(MockBehavior.Strict);
+        schedulerMock
+            .Setup(scheduler => scheduler.Schedule(It.IsAny<EvictOilPatternRevealCacheJob>(), revealAt))
+            .Returns("job-id");
+        var handler = CreateHandler(schedulerMock.Object);
+        var command = ValidCommand(
+            tournament.Id, startDate: season.StartDate, endDate: season.StartDate, oilPatternRevealDateTime: revealAt);
+
+        // Act
+        var result = await handler.HandleAsync(command, ct);
+
+        // Assert
+        result.IsError.ShouldBeFalse();
+        schedulerMock.Verify(
+            scheduler => scheduler.Schedule(It.IsAny<AnnounceOilPatternToDiscordJob>(), It.IsAny<DateTimeOffset>()),
+            Times.Never);
+    }
+
+    [Fact(DisplayName = "HandleAsync does not schedule the Discord announcement when the reveal date is in the past")]
+    public async Task HandleAsync_ShouldNotScheduleAnnouncementJob_WhenOilPatternRevealDateTimeIsInPast()
+    {
+        // Arrange
+        var ct = TestContext.Current.CancellationToken;
+        var season = await SeedSeasonAsync(new DateOnly(2025, 1, 1), new DateOnly(2025, 12, 31), ct);
+        var tournament = await SeedTournamentAsync(season, ct);
+        var schedulerMock = new Mock<IBackgroundJobScheduler>(MockBehavior.Strict);
+        var handler = CreateHandler(schedulerMock.Object);
+        var command = ValidCommand(
+            tournament.Id, startDate: season.StartDate, endDate: season.StartDate, oilPatternRevealDateTime: Now.AddDays(-1));
 
         // Act
         var result = await handler.HandleAsync(command, ct);

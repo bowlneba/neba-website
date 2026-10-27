@@ -1,12 +1,14 @@
 using ErrorOr;
 
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
 
 using Neba.Api.BackgroundJobs;
 using Neba.Api.Caching;
 using Neba.Api.Database;
 using Neba.Api.Features.Seasons.Domain;
 using Neba.Api.Features.Storage.Domain;
+using Neba.Api.Features.Tournaments.AnnounceOilPatternToDiscord;
 using Neba.Api.Features.Tournaments.Domain;
 using Neba.Api.Features.Tournaments.EvictOilPatternRevealCache;
 using Neba.Api.Messaging;
@@ -21,7 +23,8 @@ internal sealed class EditTournamentCommandHandler(
         IFusionCache cache,
         IBackgroundJobScheduler backgroundJobScheduler,
         TimeProvider timeProvider,
-        IPermissionDenialReader permissionDenialReader)
+        IPermissionDenialReader permissionDenialReader,
+        IOptions<OilPatternAnnouncementSettings> announcementSettings)
     : ICommandHandler<EditTournamentCommand, Updated>
 {
     public async Task<ErrorOr<Updated>> HandleAsync(EditTournamentCommand command, CancellationToken cancellationToken)
@@ -125,7 +128,7 @@ internal sealed class EditTournamentCommandHandler(
             previousChampionDetails != (tournament.Name, tournament.EndDate, tournament.TournamentType),
             cancellationToken);
 
-        ScheduleBackgroundJobs(command, previousLogo, tournament.Id, season.Id);
+        ScheduleBackgroundJobs(command, previousLogo, tournament, season.Id);
 
         return Result.Updated;
     }
@@ -167,15 +170,18 @@ internal sealed class EditTournamentCommandHandler(
     }
 
     private void ScheduleBackgroundJobs(
-        EditTournamentCommand command, StoredFile? previousLogo, TournamentId tournamentId, SeasonId seasonId)
+        EditTournamentCommand command, StoredFile? previousLogo, Tournament tournament, SeasonId seasonId)
     {
         TournamentLogoCleanup.ScheduleDeleteOfReplacedLogo(backgroundJobScheduler, previousLogo, command.Logo);
 
         if (command.OilPatternRevealDateTime is { } revealAt && revealAt > timeProvider.GetUtcNow())
         {
             backgroundJobScheduler.Schedule(
-                new EvictOilPatternRevealCacheJob { TournamentId = tournamentId, SeasonId = seasonId },
+                new EvictOilPatternRevealCacheJob { TournamentId = tournament.Id, SeasonId = seasonId },
                 revealAt);
         }
+
+        backgroundJobScheduler.ScheduleOilPatternAnnouncement(
+            tournament, timeProvider.GetUtcNow(), announcementSettings.Value.Delay);
     }
 }

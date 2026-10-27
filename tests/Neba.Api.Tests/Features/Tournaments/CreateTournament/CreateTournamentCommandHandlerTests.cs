@@ -2,6 +2,7 @@ using ErrorOr;
 
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Options;
 using Microsoft.Extensions.Time.Testing;
 
 using Neba.Api.BackgroundJobs;
@@ -9,8 +10,10 @@ using Neba.Api.Database;
 using Neba.Api.Features.BowlingCenters.Domain;
 using Neba.Api.Features.Seasons.Domain;
 using Neba.Api.Features.Storage.Domain;
+using Neba.Api.Features.Tournaments;
 using Neba.Api.Features.Tournaments.CreateTournament;
 using Neba.Api.Features.Tournaments.Domain;
+using Neba.Api.Features.Tournaments.AnnounceOilPatternToDiscord;
 using Neba.Api.Features.Tournaments.EvictOilPatternRevealCache;
 using Neba.Api.Features.Tournaments.GetTournament;
 using Neba.Api.Storage;
@@ -59,7 +62,8 @@ public sealed class CreateTournamentCommandHandlerTests(AppDbContextFixture fixt
     {
         var cache = _serviceProvider.GetRequiredService<IFusionCache>();
         var scheduler = backgroundJobScheduler ?? new Mock<IBackgroundJobScheduler>(MockBehavior.Strict).Object;
-        return new CreateTournamentCommandHandler(_dbContext, cache, scheduler, timeProvider ?? new FakeTimeProvider(Now));
+        return new CreateTournamentCommandHandler(_dbContext, cache, scheduler, timeProvider ?? new FakeTimeProvider(Now),
+            Options.Create(new OilPatternAnnouncementSettings()));
     }
 
     private async Task<Season> SeedSeasonAsync(CancellationToken ct)
@@ -549,6 +553,9 @@ public sealed class CreateTournamentCommandHandlerTests(AppDbContextFixture fixt
         schedulerMock
             .Setup(scheduler => scheduler.Schedule(It.IsAny<EvictOilPatternRevealCacheJob>(), revealAt))
             .Returns("job-id");
+        schedulerMock
+            .Setup(scheduler => scheduler.Schedule(It.IsAny<AnnounceOilPatternToDiscordJob>(), It.IsAny<DateTimeOffset>()))
+            .Returns("announce-job-id");
 
         var handler = CreateHandler(schedulerMock.Object, timeProvider);
         var command = ValidCommand(name: "Tournament With Future Reveal Date", oilPatternRevealDateTime: revealAt);
@@ -593,5 +600,34 @@ public sealed class CreateTournamentCommandHandlerTests(AppDbContextFixture fixt
 
         // Assert
         result.IsError.ShouldBeFalse();
+    }
+
+    [Fact(DisplayName = "HandleAsync schedules the Discord announcement at the reveal date plus the configured delay when a future reveal date is provided")]
+    public async Task HandleAsync_ShouldScheduleAnnouncementJob_WhenOilPatternRevealDateTimeIsInFuture()
+    {
+        // Arrange
+        var ct = TestContext.Current.CancellationToken;
+        await SeedSeasonAsync(ct);
+        var revealAt = Now.AddDays(3);
+        AnnounceOilPatternToDiscordJob? scheduled = null;
+        var schedulerMock = new Mock<IBackgroundJobScheduler>(MockBehavior.Strict);
+        schedulerMock
+            .Setup(scheduler => scheduler.Schedule(It.IsAny<EvictOilPatternRevealCacheJob>(), revealAt))
+            .Returns("job-id");
+        schedulerMock
+            .Setup(scheduler => scheduler.Schedule(It.IsAny<AnnounceOilPatternToDiscordJob>(), revealAt + TimeSpan.FromMinutes(2)))
+            .Callback<AnnounceOilPatternToDiscordJob, DateTimeOffset>((job, _) => scheduled = job)
+            .Returns("announce-job-id");
+        var handler = CreateHandler(schedulerMock.Object);
+        var command = ValidCommand(name: "Tournament With Future Reveal Date", oilPatternRevealDateTime: revealAt);
+
+        // Act
+        var result = await handler.HandleAsync(command, ct);
+
+        // Assert
+        result.IsError.ShouldBeFalse();
+        scheduled.ShouldNotBeNull();
+        scheduled.TournamentId.ShouldBe(result.Value);
+        scheduled.ExpectedRevealDateTime.ShouldBe(revealAt);
     }
 }
