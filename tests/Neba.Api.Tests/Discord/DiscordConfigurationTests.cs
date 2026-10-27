@@ -19,8 +19,9 @@ public sealed class DiscordConfigurationTests
         var builder = WebApplication.CreateSlimBuilder();
         builder.Configuration.AddInMemoryCollection(new Dictionary<string, string?>
         {
-            ["Discord:WebhookUrl"] = "https://discord.com/api/webhooks/1/token",
-            ["Discord:ManualInterventionWebhookUrl"] = "https://discord.com/api/webhooks/2/token"
+            ["Discord:ApiLogsWebhookUrl"] = "https://discord.com/api/webhooks/1/token",
+            ["Discord:ManualInterventionWebhookUrl"] = "https://discord.com/api/webhooks/2/token",
+            ["Discord:NewsWebhookUrl"] = "https://discord.com/api/webhooks/3/token"
         });
 
         // Act
@@ -29,8 +30,9 @@ public sealed class DiscordConfigurationTests
         // Assert
         var settings = builder.Services.BuildServiceProvider()
             .GetRequiredService<IOptions<DiscordSettings>>().Value;
-        settings.WebhookUrl.ShouldBe("https://discord.com/api/webhooks/1/token");
+        settings.ApiLogsWebhookUrl.ShouldBe("https://discord.com/api/webhooks/1/token");
         settings.ManualInterventionWebhookUrl.ShouldBe("https://discord.com/api/webhooks/2/token");
+        settings.NewsWebhookUrl.ShouldBe("https://discord.com/api/webhooks/3/token");
     }
 
     [Fact(DisplayName = "AddDiscord should throw on start when the Discord section is absent")]
@@ -54,8 +56,9 @@ public sealed class DiscordConfigurationTests
         var builder = WebApplication.CreateSlimBuilder();
         builder.Configuration.AddInMemoryCollection(new Dictionary<string, string?>
         {
-            ["Discord:WebhookUrl"] = "https://discord.com/api/webhooks/1/token",
-            ["Discord:ManualInterventionWebhookUrl"] = "https://discord.com/api/webhooks/2/token"
+            ["Discord:ApiLogsWebhookUrl"] = "https://discord.com/api/webhooks/1/token",
+            ["Discord:ManualInterventionWebhookUrl"] = "https://discord.com/api/webhooks/2/token",
+            ["Discord:NewsWebhookUrl"] = "https://discord.com/api/webhooks/3/token"
         });
         builder.Services.AddSingleton(TimeProvider.System);
 
@@ -75,8 +78,9 @@ public sealed class DiscordConfigurationTests
         var builder = WebApplication.CreateSlimBuilder();
         builder.Configuration.AddInMemoryCollection(new Dictionary<string, string?>
         {
-            ["Discord:WebhookUrl"] = "https://discord.com/api/webhooks/1/token",
-            ["Discord:ManualInterventionWebhookUrl"] = "https://discord.com/api/webhooks/2/token"
+            ["Discord:ApiLogsWebhookUrl"] = "https://discord.com/api/webhooks/1/token",
+            ["Discord:ManualInterventionWebhookUrl"] = "https://discord.com/api/webhooks/2/token",
+            ["Discord:NewsWebhookUrl"] = "https://discord.com/api/webhooks/3/token"
         });
 
         // Act
@@ -100,8 +104,29 @@ public sealed class DiscordConfigurationTests
         var builder = WebApplication.CreateSlimBuilder();
         builder.Configuration.AddInMemoryCollection(new Dictionary<string, string?>
         {
-            ["Discord:WebhookUrl"] = "https://discord.com/api/webhooks/1/token",
-            ["Discord:ManualInterventionWebhookUrl"] = ""
+            ["Discord:ApiLogsWebhookUrl"] = "https://discord.com/api/webhooks/1/token",
+            ["Discord:ManualInterventionWebhookUrl"] = "",
+            ["Discord:NewsWebhookUrl"] = "https://discord.com/api/webhooks/3/token"
+        });
+
+        // Act
+        builder.AddDiscord();
+
+        // Assert
+        var serviceProvider = builder.Services.BuildServiceProvider();
+        Should.Throw<OptionsValidationException>(() => serviceProvider.GetRequiredService<IOptions<DiscordSettings>>().Value);
+    }
+
+    [Fact(DisplayName = "AddDiscord should throw on start when the news webhook URL is blank")]
+    public void AddDiscord_ShouldThrowOnStart_WhenNewsWebhookUrlIsBlank()
+    {
+        // Arrange
+        var builder = WebApplication.CreateSlimBuilder();
+        builder.Configuration.AddInMemoryCollection(new Dictionary<string, string?>
+        {
+            ["Discord:ApiLogsWebhookUrl"] = "https://discord.com/api/webhooks/1/token",
+            ["Discord:ManualInterventionWebhookUrl"] = "https://discord.com/api/webhooks/2/token",
+            ["Discord:NewsWebhookUrl"] = ""
         });
 
         // Act
@@ -119,8 +144,9 @@ public sealed class DiscordConfigurationTests
         var builder = WebApplication.CreateSlimBuilder();
         builder.Configuration.AddInMemoryCollection(new Dictionary<string, string?>
         {
-            ["Discord:WebhookUrl"] = "https://discord.com/api/webhooks/1/token",
-            ["Discord:ManualInterventionWebhookUrl"] = "https://discord.com/api/webhooks/2/token"
+            ["Discord:ApiLogsWebhookUrl"] = "https://discord.com/api/webhooks/1/token",
+            ["Discord:ManualInterventionWebhookUrl"] = "https://discord.com/api/webhooks/2/token",
+            ["Discord:NewsWebhookUrl"] = "https://discord.com/api/webhooks/3/token"
         });
         builder.Services.AddSingleton(TimeProvider.System);
 

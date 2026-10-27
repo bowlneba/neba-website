@@ -15,7 +15,7 @@ internal static class DiscordConfiguration
                 .ValidateOnStart();
 
             builder.Services.AddHttpClient<IDiscordNotifier, DiscordNotifier>((sp, client) =>
-                    client.BaseAddress = new Uri(sp.GetRequiredService<IOptions<DiscordSettings>>().Value.WebhookUrl))
+                    client.BaseAddress = new Uri(sp.GetRequiredService<IOptions<DiscordSettings>>().Value.ApiLogsWebhookUrl))
                 .AddStandardResilienceHandler(ConfigureResilience);
 
             builder.Services.AddHttpClient<IManualInterventionNotifier, ManualInterventionNotifier>((sp, client) =>

@@ -15,8 +15,9 @@ public sealed class DiscordSettingsTests
         // Arrange
         var settings = new DiscordSettings
         {
-            WebhookUrl = "https://discord.com/api/webhooks/1/token",
-            ManualInterventionWebhookUrl = "https://discord.com/api/webhooks/2/token"
+            ApiLogsWebhookUrl = "https://discord.com/api/webhooks/1/token",
+            ManualInterventionWebhookUrl = "https://discord.com/api/webhooks/2/token",
+            NewsWebhookUrl = "https://discord.com/api/webhooks/3/token"
         };
 
         // Act
@@ -27,13 +28,50 @@ public sealed class DiscordSettingsTests
         results.ShouldBeEmpty();
     }
 
-    [Fact(DisplayName = "Missing webhook URL fails validation")]
-    public void Validate_WithEmptyWebhookUrl_Fails()
+    [Fact(DisplayName = "Missing api-logs webhook URL fails validation")]
+    public void Validate_WithEmptyApiLogsWebhookUrl_Fails()
     {
         // Arrange
         var settings = new DiscordSettings
         {
-            WebhookUrl = string.Empty,
+            ApiLogsWebhookUrl = string.Empty,
+            ManualInterventionWebhookUrl = "https://discord.com/api/webhooks/2/token",
+            NewsWebhookUrl = "https://discord.com/api/webhooks/3/token"
+        };
+
+        // Act
+        var isValid = TryValidate(settings, out var results);
+
+        // Assert
+        isValid.ShouldBeFalse();
+        results.ShouldContain(r => r.MemberNames.Contains(nameof(DiscordSettings.ApiLogsWebhookUrl)));
+    }
+
+    [Fact(DisplayName = "Missing manual-intervention webhook URL fails validation")]
+    public void Validate_WithEmptyManualInterventionWebhookUrl_Fails()
+    {
+        // Arrange
+        var settings = new DiscordSettings
+        {
+            ApiLogsWebhookUrl = "https://discord.com/api/webhooks/1/token",
+            NewsWebhookUrl = "https://discord.com/api/webhooks/3/token"
+        };
+
+        // Act
+        var isValid = TryValidate(settings, out var results);
+
+        // Assert
+        isValid.ShouldBeFalse();
+        results.ShouldContain(r => r.MemberNames.Contains(nameof(DiscordSettings.ManualInterventionWebhookUrl)));
+    }
+
+    [Fact(DisplayName = "Missing news webhook URL fails validation")]
+    public void Validate_WithEmptyNewsWebhookUrl_Fails()
+    {
+        // Arrange
+        var settings = new DiscordSettings
+        {
+            ApiLogsWebhookUrl = "https://discord.com/api/webhooks/1/token",
             ManualInterventionWebhookUrl = "https://discord.com/api/webhooks/2/token"
         };
 
@@ -42,21 +80,7 @@ public sealed class DiscordSettingsTests
 
         // Assert
         isValid.ShouldBeFalse();
-        results.ShouldContain(r => r.MemberNames.Contains(nameof(DiscordSettings.WebhookUrl)));
-    }
-
-    [Fact(DisplayName = "Missing manual-intervention webhook URL fails validation")]
-    public void Validate_WithEmptyManualInterventionWebhookUrl_Fails()
-    {
-        // Arrange
-        var settings = new DiscordSettings { WebhookUrl = "https://discord.com/api/webhooks/1/token" };
-
-        // Act
-        var isValid = TryValidate(settings, out var results);
-
-        // Assert
-        isValid.ShouldBeFalse();
-        results.ShouldContain(r => r.MemberNames.Contains(nameof(DiscordSettings.ManualInterventionWebhookUrl)));
+        results.ShouldContain(r => r.MemberNames.Contains(nameof(DiscordSettings.NewsWebhookUrl)));
     }
 
     [Fact(DisplayName = "SectionName should be Discord")]
