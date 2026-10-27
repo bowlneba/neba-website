@@ -56,6 +56,11 @@ public sealed class Article
     /// </summary>
     public TournamentId? TournamentId { get; private set; }
 
+    /// <summary>
+    /// When the article was announced, or <see langword="null"/> if it has not been. Set once.
+    /// </summary>
+    public DateTimeOffset? AnnouncedAtUtc { get; private set; }
+
     internal Tournament? Tournament { get; init; }
 
     private readonly List<ArticleAttachment> _attachments = [];
@@ -158,6 +163,27 @@ public sealed class Article
 
         return Result.Updated;
     }
+
+    /// <summary>
+    /// When the article should be announced: <paramref name="delay"/> after the later of <paramref name="now"/> and
+    /// <see cref="PublishDateUtc"/>. The delay lets the page go live before the link is clicked.
+    /// <see langword="null"/> for a draft or an already announced article.
+    /// </summary>
+    public DateTimeOffset? GetAnnouncementTime(DateTimeOffset now, TimeSpan delay)
+    {
+        if (PublicationStatus != PublicationStatus.Published || AnnouncedAtUtc is not null)
+        {
+            return null;
+        }
+
+        return (PublishDateUtc > now ? PublishDateUtc : now) + delay;
+    }
+
+    /// <summary>
+    /// Records that the article was announced. A second call keeps the first timestamp.
+    /// </summary>
+    public void MarkAnnounced(DateTimeOffset now)
+        => AnnouncedAtUtc ??= now;
 
     /// <summary>
     /// Adds an attachment to the article. Returns a validation error if the display name is empty.
