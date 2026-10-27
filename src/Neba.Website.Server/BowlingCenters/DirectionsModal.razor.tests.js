@@ -300,10 +300,9 @@ describe('DirectionsModal', () => {
       expect(result).toEqual([]);
     });
 
-    test('should log "no results" message when features array is empty', async () => {
+    test('should return an empty array when features array is empty', async () => {
       // Arrange
       globalThis.azureMapsAuthConfig = { subscriptionKey: 'test-key-123' };
-      const logSpy = jest.spyOn(console, 'log').mockImplementation(() => {});
       globalThis.fetch = jest.fn().mockResolvedValue({
         ok: true,
         json: jest.fn().mockResolvedValue({ features: [] }),
@@ -312,15 +311,8 @@ describe('DirectionsModal', () => {
       // Act
       const result = await searchAddress('NothingHere');
 
-      // Assert — if ConditionalExpression mutant removes the length===0 check,
-      // map([]) still returns [] but the specific log message won't be called
+      // Assert
       expect(result).toEqual([]);
-      expect(logSpy).toHaveBeenCalledWith(
-        '[DirectionsModal] No results found for query:',
-        'NothingHere'
-      );
-
-      logSpy.mockRestore();
     });
 
     test('should return empty array without error when data.features is null', async () => {

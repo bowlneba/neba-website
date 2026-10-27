@@ -181,7 +181,6 @@ async function createInitializedMap(mapConfig = defaultMapConfig, locations = []
 
 describe('NebaMap', () => {
   beforeEach(() => {
-    jest.spyOn(console, 'log').mockImplementation(() => {});
     jest.spyOn(console, 'warn').mockImplementation(() => {});
     jest.spyOn(console, 'error').mockImplementation(() => {});
 
@@ -483,7 +482,6 @@ describe('NebaMap', () => {
       updateMarkers(locations); // same IDs → same hash
 
       expect(mockDataSource.add.mock.calls.length).toBe(addCount);
-      expect(console.log).toHaveBeenCalledWith(expect.stringContaining('Locations unchanged'));
     });
 
     test('re-renders when the location ID set changes', async () => {
@@ -1082,15 +1080,6 @@ describe('NebaMap', () => {
 
       // All sampled coordinates must be valid [lon, lat] pairs — catches wrong arithmetic on step
       expect(coordinates.every((c) => Array.isArray(c) && c.length === 2)).toBe(true);
-
-      // Compaction log fires when sampling occurred (originalPointCount > maxPoints)
-      expect(console.log).toHaveBeenCalledWith(
-        '[NebaMap] Compacted route geometry for interop payload:',
-        expect.objectContaining({
-          originalPointCount: 1200,
-          compactPointCount: coordinates.length,
-        }),
-      );
     });
 
     test('does not compact route geometry when point count is exactly maxPoints (220)', async () => {

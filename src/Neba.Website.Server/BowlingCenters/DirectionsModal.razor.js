@@ -15,7 +15,6 @@ export async function getCurrentLocation() {
             (position) => {
                 const longitude = position.coords.longitude;
                 const latitude = position.coords.latitude;
-                console.log('[DirectionsModal] Got current location:', { latitude, longitude });
                 resolve([longitude, latitude]);
             },
             (error) => {
@@ -55,8 +54,6 @@ const MAX_GEOCODE_RESULTS = 10;
  * @returns {Promise<Array>} Promise that resolves to array of address suggestions
  */
 export async function searchAddress(query) {
-    console.log('[DirectionsModal] Searching for address:', query);
-
     // Wait for Azure Maps SDK to be loaded
     if (typeof atlas === 'undefined') {
         console.error('[DirectionsModal] Azure Maps SDK not loaded');
@@ -83,11 +80,9 @@ export async function searchAddress(query) {
         // Determine authentication method
         if (authConfig.subscriptionKey) {
             // Local development: Use subscription key
-            console.log('[DirectionsModal] Using subscription key authentication');
             url += `&subscription-key=${authConfig.subscriptionKey}`;
         } else if (authConfig.accountId) {
             // Production: Use Azure AD authentication
-            console.log('[DirectionsModal] Using Azure AD authentication');
             const token = await getAzureADToken();
             if (!token) {
                 console.error('[DirectionsModal] Failed to get Azure AD token');
@@ -100,7 +95,6 @@ export async function searchAddress(query) {
             return [];
         }
 
-        console.log('[DirectionsModal] Fetching from Azure Maps Search API...');
         const response = await fetch(url, { headers });
 
         if (!response.ok) {
@@ -116,7 +110,6 @@ export async function searchAddress(query) {
             .slice(0, MAX_SUGGESTIONS);
 
         if (usFeatures.length === 0) {
-            console.log('[DirectionsModal] No results found for query:', query);
             return [];
         }
 
@@ -136,7 +129,6 @@ export async function searchAddress(query) {
             };
         });
 
-        console.log('[DirectionsModal] Found address suggestions:', suggestions.length, suggestions);
         return suggestions;
     } catch (error) {
         console.error('[DirectionsModal] Error searching address:', error);

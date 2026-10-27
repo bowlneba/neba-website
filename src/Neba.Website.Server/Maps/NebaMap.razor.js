@@ -53,12 +53,7 @@ function waitForAtlas() {
  * @param {Object} dotNetRef - Reference to .NET component for callbacks
  */
 export async function initializeMap(authConfig, mapConfig, locations, dotNetRef) {
-    console.log('[NebaMap] Initializing Azure Maps...');
-    console.log('[NebaMap] Auth config:', { hasAccountId: !!authConfig.accountId, hasSubscriptionKey: !!authConfig.subscriptionKey });
-    console.log('[NebaMap] Locations count:', locations.length);
-
     await waitForAtlas();
-    console.log('[NebaMap] Azure Maps SDK loaded');
 
     dotNetHelper = dotNetRef;
 
@@ -66,7 +61,6 @@ export async function initializeMap(authConfig, mapConfig, locations, dotNetRef)
 
     let authOptions;
     if (authConfig.subscriptionKey) {
-        console.log('[NebaMap] Using subscription key authentication');
         subscriptionKey = authConfig.subscriptionKey;
         globalThis.azureMapsSubscriptionKey = subscriptionKey;
         authOptions = {
@@ -74,7 +68,6 @@ export async function initializeMap(authConfig, mapConfig, locations, dotNetRef)
             subscriptionKey: authConfig.subscriptionKey
         };
     } else if (authConfig.accountId) {
-        console.log('[NebaMap] Using Azure AD authentication with account:', authConfig.accountId);
         authOptions = {
             authType: 'aad',
             clientId: authConfig.accountId,
@@ -112,8 +105,6 @@ export async function initializeMap(authConfig, mapConfig, locations, dotNetRef)
         });
 
         map.events.add('ready', () => {
-            console.log('[NebaMap] Map ready');
-
             dataSource = new atlas.source.DataSource(null, {
                 cluster: mapConfig.enableClustering,
                 clusterRadius: 50,
@@ -258,12 +249,9 @@ export function updateMarkers(locations) {
         .sort((a, b) => String(a).localeCompare(String(b), undefined, { numeric: true }))
         .join('|');
     if (locationHash === lastLocationHash) {
-        console.log('[NebaMap] Locations unchanged, skipping marker update (cached)');
         return;
     }
     lastLocationHash = locationHash;
-
-    console.log('[NebaMap] Updating markers:', locations.length);
 
     dataSource.clear();
     markers.clear();
@@ -296,7 +284,6 @@ export function updateMarkers(locations) {
             return feature;
         });
 
-    console.log(`[NebaMap] Adding ${features.length} valid markers to map`);
     dataSource.add(features);
 }
 
@@ -571,7 +558,6 @@ function buildRouteOptionData(route) {
     const instructions = extractGuidanceInstructions(route);
 
     const routeCoordinates = buildCompactRouteCoordinates(route);
-    const originalPointCount = getRoutePathPoints(route).length;
 
     const routeGeoJson = routeCoordinates.length >= 2
         ? JSON.stringify({
@@ -580,14 +566,6 @@ function buildRouteOptionData(route) {
             properties: {}
         })
         : null;
-
-    if (routeCoordinates.length < originalPointCount) {
-        console.log('[NebaMap] Compacted route geometry for interop payload:', {
-            originalPointCount,
-            compactPointCount: routeCoordinates.length,
-            routeGeoJsonLength: routeGeoJson?.length ?? 0
-        });
-    }
 
     return {
         DistanceMeters: Number(summary?.distanceInMeters) || 0,
@@ -637,8 +615,6 @@ export async function showRoute(origin, destination) {
         timer.stop(false, { error: 'auth_not_configured' });
         throw error;
     }
-
-    console.log('[NebaMap] Calculating route from', origin, 'to', destination);
 
     try {
         let url = buildRouteDirectionsUrl();
@@ -723,7 +699,6 @@ export async function showRoute(origin, destination) {
             instruction_count: selectedRoute.Instructions.length
         });
 
-        console.log('[NebaMap] Route calculated:', routeData);
         return routeData;
     } catch (error) {
         if (error.name === 'AbortError') {
@@ -744,8 +719,6 @@ export async function showRoute(origin, destination) {
  * Exits directions mode and returns to overview
  */
 export function exitDirectionsMode() {
-    console.log('[NebaMap] Exiting directions mode');
-
     if (!map) {
         console.warn('[NebaMap] Cannot exit directions mode - map not initialized');
         return;
@@ -808,8 +781,6 @@ async function getAzureADTokenForRoute() {
  * Cleans up the map instance and removes all event listeners
  */
 export function dispose() {
-    console.log('[NebaMap] Disposing map resources...');
-
     if (boundsChangeTimeout) {
         clearTimeout(boundsChangeTimeout);
         boundsChangeTimeout = null;
@@ -831,6 +802,4 @@ export function dispose() {
     lastLocationHash = null;
     markerClickInProgress = false;
     subscriptionKey = null;
-
-    console.log('[NebaMap] Map disposed successfully');
 }
