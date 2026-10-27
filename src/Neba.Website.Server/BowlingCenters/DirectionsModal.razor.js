@@ -110,7 +110,6 @@ export async function searchAddress(query) {
         }
 
         const data = await response.json();
-        console.log('[DirectionsModal] Search API response:', data);
 
         const usFeatures = (data.features ?? [])
             .filter(feature => feature.properties?.address?.countryRegion?.ISO === 'US')
