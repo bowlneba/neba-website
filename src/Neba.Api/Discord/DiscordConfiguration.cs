@@ -22,9 +22,19 @@ internal static class DiscordConfiguration
                     client.BaseAddress = new Uri(sp.GetRequiredService<IOptions<DiscordSettings>>().Value.ManualInterventionWebhookUrl))
                 .AddStandardResilienceHandler(ConfigureResilience);
 
+            // No resilience handler: the standard one cannot disable retries (Polly needs
+            // MaxRetryAttempts >= 1), and a retry after a timeout could post the announcement twice.
+            builder.Services.AddHttpClient<INewsAnnouncementNotifier, NewsAnnouncementNotifier>((sp, client) =>
+            {
+                client.BaseAddress = new Uri(sp.GetRequiredService<IOptions<DiscordSettings>>().Value.NewsWebhookUrl);
+                client.Timeout = NewsAnnouncementTimeout;
+            });
+
             return builder;
         }
     }
+
+    private static readonly TimeSpan NewsAnnouncementTimeout = TimeSpan.FromSeconds(10);
 
     private static void ConfigureResilience(HttpStandardResilienceOptions options)
     {

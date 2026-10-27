@@ -5,6 +5,7 @@ using Microsoft.Extensions.Options;
 
 using Neba.Api.Discord;
 using Neba.TestFactory.Attributes;
+using Neba.TestFactory.Discord;
 
 namespace Neba.Api.Tests.Discord;
 
@@ -97,6 +98,59 @@ public sealed class DiscordConfigurationTests
         manualInterventionClient.BaseAddress.ShouldBe(new Uri("https://discord.com/api/webhooks/2/token"));
     }
 
+    [Fact(DisplayName = "AddDiscord should register INewsAnnouncementNotifier with the news webhook as its base address")]
+    public void AddDiscord_ShouldRegisterNewsAnnouncementNotifier_WithNewsWebhookBaseAddress()
+    {
+        // Arrange
+        var builder = WebApplication.CreateSlimBuilder();
+        builder.Configuration.AddInMemoryCollection(new Dictionary<string, string?>
+        {
+            ["Discord:ApiLogsWebhookUrl"] = "https://discord.com/api/webhooks/1/token",
+            ["Discord:ManualInterventionWebhookUrl"] = "https://discord.com/api/webhooks/2/token",
+            ["Discord:NewsWebhookUrl"] = "https://discord.com/api/webhooks/3/token"
+        });
+
+        // Act
+        builder.AddDiscord();
+
+        // Assert
+        using var serviceProvider = builder.Services.BuildServiceProvider();
+        using var scope = serviceProvider.CreateScope();
+        scope.ServiceProvider.GetRequiredService<INewsAnnouncementNotifier>().ShouldBeOfType<NewsAnnouncementNotifier>();
+
+        var httpClientFactory = scope.ServiceProvider.GetRequiredService<IHttpClientFactory>();
+        using var client = httpClientFactory.CreateClient(nameof(INewsAnnouncementNotifier));
+        client.BaseAddress.ShouldBe(new Uri("https://discord.com/api/webhooks/3/token"));
+    }
+
+    [Fact(DisplayName = "AddDiscord should not retry a failed news announcement post")]
+    public async Task AddDiscord_ShouldNotRetryNewsAnnouncementPost_WhenWebhookFails()
+    {
+        // Arrange
+        var requestCount = 0;
+        var builder = WebApplication.CreateSlimBuilder();
+        builder.Configuration.AddInMemoryCollection(new Dictionary<string, string?>
+        {
+            ["Discord:ApiLogsWebhookUrl"] = "https://discord.com/api/webhooks/1/token",
+            ["Discord:ManualInterventionWebhookUrl"] = "https://discord.com/api/webhooks/2/token",
+            ["Discord:NewsWebhookUrl"] = "https://discord.com/api/webhooks/3/token"
+        });
+        builder.AddDiscord();
+        builder.Services.AddHttpClient(nameof(INewsAnnouncementNotifier))
+            .ConfigurePrimaryHttpMessageHandler(() => new CountingFailureHandler(() => requestCount++));
+
+        using var serviceProvider = builder.Services.BuildServiceProvider();
+        using var scope = serviceProvider.CreateScope();
+        var notifier = scope.ServiceProvider.GetRequiredService<INewsAnnouncementNotifier>();
+
+        // Act
+        await Should.ThrowAsync<HttpRequestException>(
+            () => notifier.NotifyAsync(NewsAnnouncementFactory.Create(), TestContext.Current.CancellationToken));
+
+        // Assert
+        requestCount.ShouldBe(1);
+    }
+
     [Fact(DisplayName = "AddDiscord should throw on start when the manual-intervention webhook URL is blank")]
     public void AddDiscord_ShouldThrowOnStart_WhenManualInterventionWebhookUrlIsBlank()
     {
@@ -157,5 +211,15 @@ public sealed class DiscordConfigurationTests
         using var serviceProvider = builder.Services.BuildServiceProvider();
         using var scope = serviceProvider.CreateScope();
         scope.ServiceProvider.GetRequiredService<IManualInterventionNotifier>().ShouldBeOfType<ManualInterventionNotifier>();
+    }
+
+    private sealed class CountingFailureHandler(Action onRequest) : HttpMessageHandler
+    {
+        protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
+        {
+            onRequest();
+
+            return Task.FromResult(new HttpResponseMessage(System.Net.HttpStatusCode.InternalServerError));
+        }
     }
 }
