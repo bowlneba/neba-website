@@ -754,4 +754,31 @@ public sealed class EditArticleCommandHandlerTests(AppDbContextFixture fixture)
         result.IsError.ShouldBeFalse();
         scheduler.VerifyNoOtherCalls();
     }
+
+    [Fact(DisplayName = "HandleAsync does not schedule another announcement when neither status nor publish date changed")]
+    public async Task HandleAsync_ShouldNotScheduleAnnouncement_WhenStatusAndPublishDateUnchanged()
+    {
+        // Arrange
+        var ct = TestContext.Current.CancellationToken;
+        var publishDate = Now.AddDays(2);
+        var article = await SeedArticleAsync(
+            ct,
+            slug: "title-only-edit-announcement",
+            publicationStatus: PublicationStatus.Published,
+            publishDateUtc: publishDate);
+        var scheduler = new Mock<IBackgroundJobScheduler>(MockBehavior.Strict);
+        var handler = CreateHandler(scheduler.Object);
+        var command = ValidCommand(
+            article.Id,
+            title: "Retitled Article",
+            publicationStatus: PublicationStatus.Published,
+            publishDate: publishDate);
+
+        // Act
+        var result = await handler.HandleAsync(command, ct);
+
+        // Assert
+        result.IsError.ShouldBeFalse();
+        scheduler.VerifyNoOtherCalls();
+    }
 }

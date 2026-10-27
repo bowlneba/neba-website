@@ -47,12 +47,15 @@ internal sealed class EditArticleCommandHandler(
         // Must snapshot before Update() — HeaderImage is mutated in place, so reading it after the
         // call would return the new value, not the one being replaced.
         var previousHeaderImage = article.HeaderImage;
+        var previousPublicationStatus = article.PublicationStatus;
+        var previousPublishDateUtc = article.PublishDateUtc;
+        var publishDateUtc = command.PublishDate.ToUniversalTime();
 
         var updateResult = article.Update(
             command.Title,
             sanitizedContent,
             command.PublicationStatus,
-            command.PublishDate.ToUniversalTime(),
+            publishDateUtc,
             command.TournamentId,
             command.HeaderImage);
 
@@ -94,7 +97,12 @@ internal sealed class EditArticleCommandHandler(
             });
         }
 
-        backgroundJobScheduler.ScheduleAnnouncement(article, timeProvider.GetUtcNow(), announcementSettings.Value.Delay);
+        // Only a change to status or publish date moves the announcement. The job already scheduled for
+        // the unchanged values still runs, so another one would only add a Hangfire row.
+        if (article.PublicationStatus != previousPublicationStatus || article.PublishDateUtc != previousPublishDateUtc)
+        {
+            backgroundJobScheduler.ScheduleAnnouncement(article, timeProvider.GetUtcNow(), announcementSettings.Value.Delay);
+        }
 
         return Result.Updated;
     }
