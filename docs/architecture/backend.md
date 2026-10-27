@@ -2376,8 +2376,9 @@ Best-effort Discord webhook notifications (`#api-logs` for unattended errors, `#
 
 ### Design
 
-- `IDiscordNotifier.NotifyAsync(DiscordAlert, CancellationToken)` posts a single embed to a configured webhook URL (`Discord:WebhookUrl` → `DiscordSettings`). `DiscordConfiguration.AddDiscord()` wires an `HttpClient` with a standard resilience handler (5s per-attempt timeout, 10s total timeout, 2 retries).
+- `IDiscordNotifier.NotifyAsync(DiscordAlert, CancellationToken)` posts a single embed to a configured webhook URL (`Discord:ApiLogsWebhookUrl` → `DiscordSettings`). `DiscordConfiguration.AddDiscord()` wires an `HttpClient` with a standard resilience handler (5s per-attempt timeout, 10s total timeout, 2 retries).
 - `IManualInterventionNotifier` posts to a second webhook (`Discord:ManualInterventionWebhookUrl`). It is its own `ManualInterventionNotifier` class behind a second typed `HttpClient`. Unlike `DiscordNotifier` it throws when the post fails, so Hangfire retries the job and `DiscordJobFailureFilter` reports it. It also mirrors `Critical` alerts to `IDiscordNotifier`, so on-call watching `#api-logs` still sees them. Use it when an alert asks a person to fix or re-trigger something; use `IDiscordNotifier` for errors nobody needs to act on directly.
+- `INewsAnnouncementNotifier` posts one embed (the article title linked to the article, plus the header image when there is one) to the public news channel (`Discord:NewsWebhookUrl`). It is not an alert: it announces a published news article, and it sits on its own typed `HttpClient`. That client has a 10s timeout and **no resilience handler**, because a retry after a timeout could post the same announcement twice. It throws when the post fails. The announcement job opts out of Hangfire's automatic retry with `[NoAutomaticRetry]` for the same reason (see News announcements below).
 - Embed field values go through `DiscordFieldFormatter`: `JoinIds` caps an id list at 20 ("+N more"), and `JoinLines` drops trailing lines to stay under Discord's 1024-character field limit. Send one alert per job run, not one per record — webhooks are rate limited.
 - `DiscordNotifier` (not `ManualInterventionNotifier`) never throws — every non-cancellation exception (connectivity failure, non-2xx response) is logged and swallowed, so a Discord outage can never break the operation the alert is reporting.
 - `DiscordAlert(Severity, Title, Body, Metadata?)` — `DiscordAlertSeverity` (`Info`/`Warning`/`Critical`) maps to an embed color (blue/yellow/red).
@@ -2405,6 +2406,17 @@ Best-effort Discord webhook notifications (`#api-logs` for unattended errors, `#
 ### Testing
 
 `IDiscordNotifier` and `IManualInterventionNotifier` are mocked (`MockBehavior.Strict`) in unit tests; alert content is asserted against a captured `DiscordAlert`, not a live webhook call.
+
+### News announcements
+
+A published news article is announced once in the public Discord news channel (`INewsAnnouncementNotifier`, above). The aim is **at most one post per article, ever**: a missed post is fixed by hand, a duplicate in a public channel cannot be taken back.
+
+- **When.** `CreateArticleCommandHandler` and `EditArticleCommandHandler` call `Article.GetAnnouncementTime(now, delay)` after saving. It returns `max(now, PublishDateUtc) + delay` for a `Published`, unannounced article and `null` for a draft or an announced one. `delay` is `NewsAnnouncement:DelaySeconds` (120 in production, 10 in development). When it returns a time, the handler schedules `AnnounceArticleToDiscordJob` for it. The job carries the `PublishDateUtc` it was scheduled for, truncated to the microsecond PostgreSQL stores.
+- **Jobs are never cancelled.** A moved date, a draft, or a delete leaves the old job in place. When it runs it reloads the article and exits without posting if the article is missing, a draft, has a different publish date, or has `AnnouncedAtUtc` set. Each skip is logged at Information.
+- **Claim, then post.** The job sets `AnnouncedAtUtc` with one `UPDATE ... WHERE announced_at_utc IS NULL` (also re-checking status and publish date) and posts only if a row changed, so two jobs running at once produce one post. The claim is never undone. If the post fails, the article stays marked announced and nobody posts it again automatically.
+- **No retries.** The job record is marked `[NoAutomaticRetry]`; `OptOutAutomaticRetryAttribute` skips Hangfire's retry for any job whose argument type carries it (a per-handler `[AutomaticRetry]` would do nothing, because every job runs through `HangfireBackgroundJobScheduler.ExecuteJobAsync`). The news `HttpClient` has no resilience handler. A failure throws, so `DiscordJobFailureFilter` posts a job-failure alert naming the job and article, and the team posts it by hand.
+- **Cache.** After a successful post the job evicts the article's `neba:news:{slug}` cache tag, so staff see the new announced time on the article page. Only callers with a news permission get `AnnouncedAtUtc` in the detail response.
+- **Existing articles.** The `AddArticleAnnouncedAt` migration sets `announced_at_utc = publish_date_utc` for every article already published, so none is announced retroactively.
 
 ---
 

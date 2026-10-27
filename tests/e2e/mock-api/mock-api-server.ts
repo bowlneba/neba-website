@@ -941,6 +941,7 @@ const MOCK_ARTICLE_JUNE_LANE_PATTERN: object = {
   content: '<p>The June monthly at Southside Bowl will feature the WTBA London sport pattern. Download the PDF below and check qualifying details.</p><p>Registration opens May 20th. Entry fee is $75 per bowler.</p>',
   headerImageUrl: null,
   publishDateUtc: '2026-05-01T12:00:00+00:00',
+  announcedAtUtc: '2026-05-01T12:02:00+00:00',
   tournamentId: null,
   attachments: [
     { displayName: 'Lane Pattern PDF', contentType: 'application/pdf', url: 'https://files.bowlneba.com/news/june-lane-pattern/pattern.pdf', isInline: false, container: 'news', path: 'june-lane-pattern/pattern.pdf', sizeInBytes: 156672 },

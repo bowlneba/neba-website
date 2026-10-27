@@ -37,6 +37,28 @@ public sealed class GetArticleEndpointTests
         await Verify(endpoint.Response);
     }
 
+    [Fact(DisplayName = "HandleAsync should map the announced time from the DTO to the response")]
+    public async Task HandleAsync_ShouldMapAnnouncedAt_FromDtoToResponse()
+    {
+        // Arrange
+        var cancellationToken = TestContext.Current.CancellationToken;
+        var announcedAt = new DateTimeOffset(2026, 10, 20, 18, 2, 0, TimeSpan.Zero);
+        var dto = ArticleDetailDtoFactory.Create(announcedAtUtc: announcedAt);
+
+        var queryHandlerMock = new Mock<IQueryHandler<GetArticleQuery, ErrorOr<ArticleDetailDto>>>(MockBehavior.Strict);
+        queryHandlerMock
+            .Setup(h => h.HandleAsync(It.IsAny<GetArticleQuery>(), cancellationToken))
+            .ReturnsAsync(dto);
+
+        var endpoint = Factory.Create<GetArticleEndpoint>(queryHandlerMock.Object);
+
+        // Act
+        await endpoint.HandleAsync(new GetArticleRequest { Slug = dto.Slug }, cancellationToken);
+
+        // Assert
+        endpoint.Response.AnnouncedAtUtc.ShouldBe(announcedAt);
+    }
+
     [Fact(DisplayName = "HandleAsync should return 404 when article is not found")]
     public async Task HandleAsync_ShouldReturn404_WhenArticleIsNotFound()
     {

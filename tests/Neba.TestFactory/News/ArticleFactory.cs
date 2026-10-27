@@ -23,7 +23,8 @@ public static class ArticleFactory
         DateTimeOffset? publishDateUtc = null,
         StoredFile? headerImage = null,
         TournamentId? tournamentId = null,
-        IReadOnlyCollection<ArticleAttachment>? attachments = null)
+        IReadOnlyCollection<ArticleAttachment>? attachments = null,
+        DateTimeOffset? announcedAtUtc = null)
     {
         var createResult = Article.Create(
             title ?? ValidTitle,
@@ -41,6 +42,11 @@ public static class ArticleFactory
         }
 
         var article = createResult.Value;
+
+        if (announcedAtUtc is not null)
+        {
+            article.MarkAnnounced(announcedAtUtc.Value);
+        }
 
         foreach (var attachment in attachments ?? [])
         {

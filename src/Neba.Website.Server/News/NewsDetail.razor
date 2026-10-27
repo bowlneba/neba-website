@@ -117,8 +117,25 @@ else if (_article is not null)
                 <div class="sidebar-panel">
                     <div class="sidebar-panel-header">Article Info</div>
                     <div class="sidebar-panel-body">
-                        <div class="sidebar-meta-label">Published</div>
-                        <div class="sidebar-meta-value">@_localPublishDate.ToString("MMMM d, yyyy")</div>
+                        <div class="sidebar-meta">
+                            <div class="sidebar-meta-label">Published</div>
+                            <div class="sidebar-meta-value">@_localPublishDate.ToString("MMMM d, yyyy")</div>
+                        </div>
+                        <AuthorizeView Policy="@Permissions.CanManageArticlesPolicyName">
+                            <Authorized>
+                                <div class="sidebar-meta">
+                                    <div class="sidebar-meta-label">Announced</div>
+                                    @if (_localAnnouncedDate is not null)
+                                    {
+                                        <div class="sidebar-meta-value">@_localAnnouncedDate.Value.ToString("MMMM d, yyyy h:mm tt")</div>
+                                    }
+                                    else
+                                    {
+                                        <div class="sidebar-meta-value sidebar-meta-value--muted">Not announced</div>
+                                    }
+                                </div>
+                            </Authorized>
+                        </AuthorizeView>
                     </div>
                     @if (_article.TournamentId is not null)
                     {
@@ -224,6 +241,7 @@ else if (_article is not null)
     private bool _isDeleteBusy;
 
     private DateTimeOffset _localPublishDate;
+    private DateTimeOffset? _localAnnouncedDate;
 
     private static string GetFileTypeLabel(string contentType) => contentType switch
     {
@@ -242,6 +260,7 @@ else if (_article is not null)
         _notFound = false;
         _errorMessage = null;
         _article = null;
+        _localAnnouncedDate = null;
 
         var result = await ApiExecutor.ExecuteAsync(
             "News",
@@ -264,6 +283,9 @@ else if (_article is not null)
 
         _article = result.Value;
         _localPublishDate = await ClientTimeZoneService.ToLocalAsync(_article.PublishDateUtc);
+        _localAnnouncedDate = _article.AnnouncedAtUtc is { } announcedAtUtc
+            ? await ClientTimeZoneService.ToLocalAsync(announcedAtUtc)
+            : null;
     }
 
     private void OpenDeleteConfirm()

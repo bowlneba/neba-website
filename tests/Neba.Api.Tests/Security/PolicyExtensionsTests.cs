@@ -12,13 +12,16 @@ namespace Neba.Api.Tests.Security;
 [Component("Security")]
 public sealed class PolicyExtensionsTests
 {
-    [Fact(DisplayName = "AddNebaPolicies should succeed when caller has an article management permission")]
-    public async Task AddNebaPolicies_ShouldSucceed_WhenCallerHasArticleManagementPermission()
+    [Theory(DisplayName = "AddNebaPolicies should succeed when caller has an article management permission")]
+    [InlineData("News.CreateArticle")]
+    [InlineData("News.EditArticle")]
+    [InlineData("News.DeleteArticle")]
+    public async Task AddNebaPolicies_ShouldSucceed_WhenCallerHasArticleManagementPermission(string permission)
     {
         // Arrange
         var provider = BuildAuthorizationServiceProvider();
         var authorizationService = provider.GetRequiredService<IAuthorizationService>();
-        var identity = new ClaimsIdentity([new Claim(Permissions.ClaimType, Permissions.DeleteArticle.Value)]);
+        var identity = new ClaimsIdentity([new Claim(Permissions.ClaimType, permission)]);
         var principal = new ClaimsPrincipal(identity);
 
         // Act
