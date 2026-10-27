@@ -372,6 +372,10 @@ namespace Neba.Api.Database.Migrations
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityAlwaysColumn(b.Property<int>("db_id"));
 
+                    b.Property<DateTimeOffset?>("AnnouncedAtUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("announced_at_utc");
+
                     b.Property<string>("Content")
                         .IsRequired()
                         .HasColumnType("text")

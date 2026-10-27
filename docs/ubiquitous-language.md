@@ -183,9 +183,11 @@ An Article is only publicly visible when its Publication Status is `Published` *
 | `PublishDate` | DateTimeOffset | No | The date and time the article becomes publicly visible. Required when status is `Published` |
 | `HeaderImage` | `StoredFile?` | No | Storage address of the article's header image. When absent, the NEBA logo is displayed as a fallback (presentation layer — not a domain concept) |
 | `TournamentId` | `TournamentId?` | No | Optional reference to a related Tournament. Enables navigation between the article and the Tournament detail page, and surfaces related articles on the Tournament detail page |
+| `AnnouncedAtUtc` | DateTimeOffset? | No | When the article was announced (posted to an outside channel such as Discord). Null until then. Set once and never cleared, so an article is announced at most once |
 
 **Business Rules**:
 
+- An Article is announced at most once: a Published Article that has not been announced is due an announcement after its Publish Date (and after the later of the Publish Date and the save time, when the date has already passed), plus a configured delay. A `Draft` Article is never announced. Articles Published before announcements existed are treated as already announced
 - An Article is publicly visible only when `PublicationStatus == Published` and `PublishDate <= UtcNow`
 - A `Draft` article is never publicly visible, regardless of `PublishDate`
 - `PublishDate` is required regardless of status — there is no rule tying its value to `PublicationStatus`; visibility is a query-time concern, not a creation-time invariant

@@ -69,6 +69,12 @@ public sealed record ArticleDetailDto
     public required DateTimeOffset PublishDateUtc { get; init; }
 
     /// <summary>
+    /// When the article was announced on Discord, or null if it has not been. Populated only when the
+    /// caller has article management permission; null for everyone else.
+    /// </summary>
+    public DateTimeOffset? AnnouncedAtUtc { get; init; }
+
+    /// <summary>
     /// A list of attachments associated with the news article. Attachments can include images, documents, or any other file types that are relevant to the article's content. Each attachment is represented by an ArticleAttachmentDto object, which contains information about the attachment such as its display name, reference to the stored file, and URL for accessing the attachment. This list allows for multiple attachments to be associated with a single article, providing additional context and resources for readers. The attachments are exposed as a read-only collection to ensure that they cannot be modified directly from external code, maintaining the integrity of the article's data.
     /// </summary>
     public IReadOnlyCollection<ArticleAttachmentDto> Attachments { get; init; } = [];

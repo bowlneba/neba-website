@@ -8,6 +8,7 @@ using Neba.Api.Database;
 using Neba.Api.Discord;
 using Neba.Api.Documents;
 using Neba.Api.Email;
+using Neba.Api.Features.News;
 using Neba.Api.Features.Seasons;
 using Neba.Api.Legacy;
 using Neba.Api.RateLimiting;
@@ -52,6 +53,7 @@ public static class InfrastructureConfiguration
             builder.Services.AddCaching();
             builder.Services.AddBackgroundJobs(builder.Configuration);
             builder.Services.AddGoogleDrive(builder.Configuration);
+            builder.Services.AddNews(builder.Configuration);
 
             builder.Services.AddSingleton(TimeProvider.System);
             builder.Services.AddSingleton<IStopwatchProvider, StopwatchProvider>();

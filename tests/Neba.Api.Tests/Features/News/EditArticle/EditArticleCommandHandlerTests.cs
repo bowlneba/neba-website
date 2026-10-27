@@ -2,9 +2,13 @@ using ErrorOr;
 
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Options;
+using Microsoft.Extensions.Time.Testing;
 
 using Neba.Api.BackgroundJobs;
 using Neba.Api.Database;
+using Neba.Api.Features.News;
+using Neba.Api.Features.News.AnnounceArticleToDiscord;
 using Neba.Api.Features.News.DeleteArticle;
 using Neba.Api.Features.News.Domain;
 using Neba.Api.Features.News.EditArticle;
@@ -51,7 +55,23 @@ public sealed class EditArticleCommandHandlerTests(AppDbContextFixture fixture)
     {
         var cache = _serviceProvider.GetRequiredService<IFusionCache>();
         var scheduler = backgroundJobScheduler ?? new Mock<IBackgroundJobScheduler>(MockBehavior.Strict).Object;
-        return new EditArticleCommandHandler(_dbContext, scheduler, cache);
+        var settings = Options.Create(new NewsAnnouncementSettings { DelaySeconds = (int)AnnouncementDelay.TotalSeconds });
+
+        return new EditArticleCommandHandler(_dbContext, scheduler, new FakeTimeProvider(Now), settings, cache);
+    }
+
+    private static readonly DateTimeOffset Now = new(2026, 10, 27, 12, 0, 0, TimeSpan.Zero);
+    private static readonly TimeSpan AnnouncementDelay = TimeSpan.FromSeconds(120);
+
+    private static Mock<IBackgroundJobScheduler> CreateSchedulerCapturing(List<(AnnounceArticleToDiscordJob Job, DateTimeOffset At)> scheduled)
+    {
+        var scheduler = new Mock<IBackgroundJobScheduler>(MockBehavior.Strict);
+        scheduler
+            .Setup(s => s.Schedule(It.IsAny<AnnounceArticleToDiscordJob>(), It.IsAny<DateTimeOffset>()))
+            .Callback<AnnounceArticleToDiscordJob, DateTimeOffset>((job, at) => scheduled.Add((job, at)))
+            .Returns("job-1");
+
+        return scheduler;
     }
 
 #pragma warning disable S107
@@ -77,9 +97,22 @@ public sealed class EditArticleCommandHandlerTests(AppDbContextFixture fixture)
         };
 #pragma warning restore S107
 
-    private async Task<Article> SeedArticleAsync(CancellationToken ct, string? slug = null, StoredFile? headerImage = null, IReadOnlyCollection<ArticleAttachment>? attachments = null)
+    private async Task<Article> SeedArticleAsync(
+        CancellationToken ct,
+        string? slug = null,
+        StoredFile? headerImage = null,
+        IReadOnlyCollection<ArticleAttachment>? attachments = null,
+        PublicationStatus? publicationStatus = null,
+        DateTimeOffset? publishDateUtc = null,
+        DateTimeOffset? announcedAtUtc = null)
     {
-        var article = ArticleFactory.Create(slug: slug, headerImage: headerImage, attachments: attachments);
+        var article = ArticleFactory.Create(
+            slug: slug,
+            publicationStatus: publicationStatus,
+            publishDateUtc: publishDateUtc,
+            headerImage: headerImage,
+            attachments: attachments,
+            announcedAtUtc: announcedAtUtc);
         await _dbContext.Articles.AddAsync(article, ct);
         await _dbContext.SaveChangesAsync(ct);
         return article;
@@ -217,7 +250,7 @@ public sealed class EditArticleCommandHandlerTests(AppDbContextFixture fixture)
         // Arrange
         var ct = TestContext.Current.CancellationToken;
         var article = await SeedArticleAsync(ct, slug: "updated-fields-edit-article");
-        var handler = CreateHandler();
+        var handler = CreateHandler(CreateSchedulerCapturing([]).Object);
         var command = ValidCommand(
             article.Id,
             title: "Updated Title",
@@ -628,5 +661,124 @@ public sealed class EditArticleCommandHandlerTests(AppDbContextFixture fixture)
         var stillPending = await _dbContext.PendingUploads.AsNoTracking()
             .AnyAsync(p => p.Container == "unrelated-edit-container" && p.Path == "unrelated-edit-file.jpg", ct);
         stillPending.ShouldBeTrue();
+    }
+
+    [Fact(DisplayName = "HandleAsync schedules an announcement when a draft is published with a future date")]
+    public async Task HandleAsync_ShouldScheduleAnnouncement_WhenDraftIsPublishedWithFutureDate()
+    {
+        // Arrange
+        var ct = TestContext.Current.CancellationToken;
+        var article = await SeedArticleAsync(ct, slug: "publish-draft-announcement");
+        var scheduled = new List<(AnnounceArticleToDiscordJob Job, DateTimeOffset At)>();
+        var handler = CreateHandler(CreateSchedulerCapturing(scheduled).Object);
+        var publishDate = Now.AddDays(2);
+        var command = ValidCommand(article.Id, publicationStatus: PublicationStatus.Published, publishDate: publishDate);
+
+        // Act
+        var result = await handler.HandleAsync(command, ct);
+
+        // Assert
+        result.IsError.ShouldBeFalse();
+        var (job, at) = scheduled.ShouldHaveSingleItem();
+        at.ShouldBe(publishDate + AnnouncementDelay);
+        job.ArticleId.ShouldBe(article.Id);
+        job.ExpectedPublishDateUtc.ShouldBe(publishDate);
+    }
+
+    [Fact(DisplayName = "HandleAsync schedules a new announcement for the new date when an unannounced article's date moves")]
+    public async Task HandleAsync_ShouldScheduleAnnouncementForNewDate_WhenPublishDateMoves()
+    {
+        // Arrange
+        var ct = TestContext.Current.CancellationToken;
+        var article = await SeedArticleAsync(
+            ct,
+            slug: "move-date-announcement",
+            publicationStatus: PublicationStatus.Published,
+            publishDateUtc: Now.AddDays(2));
+        var scheduled = new List<(AnnounceArticleToDiscordJob Job, DateTimeOffset At)>();
+        var handler = CreateHandler(CreateSchedulerCapturing(scheduled).Object);
+        var newDate = Now.AddDays(5);
+        var command = ValidCommand(article.Id, publicationStatus: PublicationStatus.Published, publishDate: newDate);
+
+        // Act
+        var result = await handler.HandleAsync(command, ct);
+
+        // Assert
+        result.IsError.ShouldBeFalse();
+        var (job, at) = scheduled.ShouldHaveSingleItem();
+        at.ShouldBe(newDate + AnnouncementDelay);
+        job.ExpectedPublishDateUtc.ShouldBe(newDate);
+    }
+
+    [Fact(DisplayName = "HandleAsync does not schedule an announcement when the article is saved as a draft")]
+    public async Task HandleAsync_ShouldNotScheduleAnnouncement_WhenArticleIsDraft()
+    {
+        // Arrange
+        var ct = TestContext.Current.CancellationToken;
+        var article = await SeedArticleAsync(
+            ct,
+            slug: "draft-no-announcement",
+            publicationStatus: PublicationStatus.Published,
+            publishDateUtc: Now.AddDays(2));
+        var scheduler = new Mock<IBackgroundJobScheduler>(MockBehavior.Strict);
+        var handler = CreateHandler(scheduler.Object);
+        var command = ValidCommand(article.Id, publicationStatus: PublicationStatus.Draft, publishDate: Now.AddDays(2));
+
+        // Act
+        var result = await handler.HandleAsync(command, ct);
+
+        // Assert
+        result.IsError.ShouldBeFalse();
+        scheduler.VerifyNoOtherCalls();
+    }
+
+    [Fact(DisplayName = "HandleAsync does not schedule an announcement when the article was already announced")]
+    public async Task HandleAsync_ShouldNotScheduleAnnouncement_WhenArticleAlreadyAnnounced()
+    {
+        // Arrange
+        var ct = TestContext.Current.CancellationToken;
+        var article = await SeedArticleAsync(
+            ct,
+            slug: "already-announced",
+            publicationStatus: PublicationStatus.Published,
+            publishDateUtc: Now.AddDays(-2),
+            announcedAtUtc: Now.AddDays(-2));
+        var scheduler = new Mock<IBackgroundJobScheduler>(MockBehavior.Strict);
+        var handler = CreateHandler(scheduler.Object);
+        var command = ValidCommand(article.Id, publicationStatus: PublicationStatus.Published, publishDate: Now.AddDays(-2));
+
+        // Act
+        var result = await handler.HandleAsync(command, ct);
+
+        // Assert
+        result.IsError.ShouldBeFalse();
+        scheduler.VerifyNoOtherCalls();
+    }
+
+    [Fact(DisplayName = "HandleAsync does not schedule another announcement when neither status nor publish date changed")]
+    public async Task HandleAsync_ShouldNotScheduleAnnouncement_WhenStatusAndPublishDateUnchanged()
+    {
+        // Arrange
+        var ct = TestContext.Current.CancellationToken;
+        var publishDate = Now.AddDays(2);
+        var article = await SeedArticleAsync(
+            ct,
+            slug: "title-only-edit-announcement",
+            publicationStatus: PublicationStatus.Published,
+            publishDateUtc: publishDate);
+        var scheduler = new Mock<IBackgroundJobScheduler>(MockBehavior.Strict);
+        var handler = CreateHandler(scheduler.Object);
+        var command = ValidCommand(
+            article.Id,
+            title: "Retitled Article",
+            publicationStatus: PublicationStatus.Published,
+            publishDate: publishDate);
+
+        // Act
+        var result = await handler.HandleAsync(command, ct);
+
+        // Assert
+        result.IsError.ShouldBeFalse();
+        scheduler.VerifyNoOtherCalls();
     }
 }
