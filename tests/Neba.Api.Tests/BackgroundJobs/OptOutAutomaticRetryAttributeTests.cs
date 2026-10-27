@@ -28,14 +28,17 @@ public sealed class OptOutAutomaticRetryAttributeTests
 
     private static class SampleJobs
     {
-        public static void NoRetryJob()
+        public static void NoRetryJob(NoRetryArgument argument)
         {
-            // Stand-in job method; never actually invoked in these tests.
+            // Stand-in job method; never actually invoked in these tests. It takes the argument
+            // because Hangfire's Job constructor requires the argument count to match.
+            ArgumentNullException.ThrowIfNull(argument);
         }
 
-        public static void OrdinaryJob()
+        public static void OrdinaryJob(OrdinaryArgument argument)
         {
             // Stand-in job method; never actually invoked in these tests.
+            ArgumentNullException.ThrowIfNull(argument);
         }
     }
 

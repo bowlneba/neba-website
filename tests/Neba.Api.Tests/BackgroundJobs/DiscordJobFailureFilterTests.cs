@@ -55,9 +55,11 @@ public sealed class DiscordJobFailureFilterTests
 
     private static class JobWithArgument
     {
-        public static void JobWithArgumentMethod()
+        public static void JobWithArgumentMethod(NamedJobArgument argument)
         {
-            // Stand-in job method; never actually invoked in these tests.
+            // Stand-in job method; never actually invoked in these tests. It takes the argument
+            // because Hangfire's Job constructor requires the argument count to match.
+            ArgumentNullException.ThrowIfNull(argument);
         }
     }
 
