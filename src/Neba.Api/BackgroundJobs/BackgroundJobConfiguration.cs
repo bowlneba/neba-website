@@ -107,11 +107,15 @@ internal static class BackgroundJobsConfiguration
                 HangfireSettings settings = serviceProvider.GetRequiredService<HangfireSettings>();
                 var dataSource = serviceProvider.GetRequiredService<NpgsqlDataSource>();
 
+                // Hangfire registers its own AutomaticRetryAttribute by default. OptOutAutomaticRetryAttribute
+                // wraps ours, so the default must go or it would still retry jobs marked [NoAutomaticRetry].
+                GlobalJobFilters.Filters.Remove<AutomaticRetryAttribute>();
+
                 options
                     .SetDataCompatibilityLevel(CompatibilityLevel.Version_180)
                     .UseSimpleAssemblyNameTypeSerializer()
                     .UseRecommendedSerializerSettings()
-                    .UseFilter(new AutomaticRetryAttribute { Attempts = settings.AutomaticRetryAttempts })
+                    .UseFilter(new OptOutAutomaticRetryAttribute(new AutomaticRetryAttribute { Attempts = settings.AutomaticRetryAttempts }))
                     .UseFilter(new HangfireJobExpirationFilterAttribute(settings))
                     .UseFilter(new HangfireConsoleServerFilter())
                     .UseFilter(new DiscordJobFailureFilter(serviceProvider.GetRequiredService<IDiscordNotifier>()))

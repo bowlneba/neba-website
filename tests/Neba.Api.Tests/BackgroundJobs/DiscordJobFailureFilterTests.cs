@@ -47,7 +47,21 @@ public sealed class DiscordJobFailureFilterTests
         }
     }
 
-    private static ElectStateContext CreateElectStateContext(IState candidateState, MethodInfo? method = null, string jobId = "1", bool jobIsNull = false)
+    // A job record like the ones HangfireBackgroundJobScheduler passes as the first job argument.
+    public sealed record NamedJobArgument : IBackgroundJob
+    {
+        public string JobName => "NamedJobArgument: article 7";
+    }
+
+    private static class JobWithArgument
+    {
+        public static void JobWithArgumentMethod(NamedJobArgument argument)
+        {
+            // Stand-in job method; never actually invoked in these tests.
+        }
+    }
+
+    private static ElectStateContext CreateElectStateContext(IState candidateState, MethodInfo? method = null, string jobId = "1", bool jobIsNull = false, object[]? args = null)
     {
         var storage = new Mock<JobStorage>(MockBehavior.Strict).Object;
         var connection = new Mock<IStorageConnection>(MockBehavior.Strict).Object;
@@ -57,7 +71,7 @@ public sealed class DiscordJobFailureFilterTests
         if (!jobIsNull)
         {
             method ??= typeof(SampleJob).GetMethod(nameof(SampleJob.SampleJobMethod))!;
-            job = new Job(method.DeclaringType!, method);
+            job = new Job(method.DeclaringType!, method, args ?? []);
         }
 
         // Job is null when Hangfire could not deserialize the job invocation itself (see
@@ -141,6 +155,40 @@ public sealed class DiscordJobFailureFilterTests
         postedAlert.Body.ShouldBe("Boom");
         postedAlert.Metadata.ShouldNotBeNull();
         postedAlert.Metadata["JobName"].ShouldBe("42");
+    }
+
+    [Fact(DisplayName = "OnStateElection should use the job argument's JobName when the job carries an IBackgroundJob argument")]
+    public async Task OnStateElection_ShouldUseJobArgumentJobName_WhenJobHasBackgroundJobArgument()
+    {
+        // Arrange
+        var method = typeof(JobWithArgument).GetMethod(nameof(JobWithArgument.JobWithArgumentMethod))!;
+        var context = CreateElectStateContext(
+            new FailedState(new InvalidOperationException("Boom")),
+            method,
+            args: [new NamedJobArgument()]);
+
+        var notified = new TaskCompletionSource();
+        var discordNotifier = new Mock<IDiscordNotifier>(MockBehavior.Strict);
+        DiscordAlert? postedAlert = null;
+        discordNotifier
+            .Setup(n => n.NotifyAsync(It.IsAny<DiscordAlert>(), It.IsAny<CancellationToken>()))
+            .Callback<DiscordAlert, CancellationToken>((alert, _) =>
+            {
+                postedAlert = alert;
+                notified.SetResult();
+            })
+            .Returns(Task.CompletedTask);
+
+        var filter = new DiscordJobFailureFilter(discordNotifier.Object);
+
+        // Act
+        filter.OnStateElection(context);
+        await notified.Task.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
+
+        // Assert
+        postedAlert.ShouldNotBeNull();
+        postedAlert.Metadata.ShouldNotBeNull();
+        postedAlert.Metadata["JobName"].ShouldBe("NamedJobArgument: article 7");
     }
 
     [Fact(DisplayName = "OnStateElection should prefix JobName with the declaring type to disambiguate jobs sharing a method name")]
