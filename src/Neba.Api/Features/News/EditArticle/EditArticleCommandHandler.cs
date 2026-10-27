@@ -1,9 +1,11 @@
 using ErrorOr;
 
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
 
 using Neba.Api.BackgroundJobs;
 using Neba.Api.Database;
+using Neba.Api.Features.News.AnnounceArticleToDiscord;
 using Neba.Api.Features.News.CreateArticle;
 using Neba.Api.Features.News.DeleteArticle;
 using Neba.Api.Features.News.Domain;
@@ -17,6 +19,8 @@ namespace Neba.Api.Features.News.EditArticle;
 internal sealed class EditArticleCommandHandler(
         AppDbContext appDbContext,
         IBackgroundJobScheduler backgroundJobScheduler,
+        TimeProvider timeProvider,
+        IOptions<NewsAnnouncementSettings> announcementSettings,
         IFusionCache cache)
     : ICommandHandler<EditArticleCommand, Updated>
 {
@@ -89,6 +93,8 @@ internal sealed class EditArticleCommandHandler(
                 Files = orphanedFiles
             });
         }
+
+        backgroundJobScheduler.ScheduleAnnouncement(article, timeProvider.GetUtcNow(), announcementSettings.Value.Delay);
 
         return Result.Updated;
     }
