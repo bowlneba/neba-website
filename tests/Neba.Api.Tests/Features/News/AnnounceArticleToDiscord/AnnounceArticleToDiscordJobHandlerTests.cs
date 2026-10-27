@@ -69,12 +69,12 @@ public sealed class AnnounceArticleToDiscordJobHandlerTests(AppDbContextFixture 
         DateTimeOffset? publishDateUtc = null)
     {
         var article = ArticleFactory.Create(
-            slug: slug,
             title: "Season Champions Crowned",
+            slug: slug,
             publicationStatus: publicationStatus ?? PublicationStatus.Published,
             publishDateUtc: publishDateUtc ?? PublishDate,
-            announcedAtUtc: announcedAtUtc,
-            headerImage: headerImage);
+            headerImage: headerImage,
+            announcedAtUtc: announcedAtUtc);
         await _dbContext.Articles.AddAsync(article, ct);
         await _dbContext.SaveChangesAsync(ct);
 

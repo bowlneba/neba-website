@@ -176,7 +176,9 @@ public sealed class Article
             return null;
         }
 
-        return (PublishDateUtc > now ? PublishDateUtc : now) + delay;
+        return (PublishDateUtc > now
+            ? PublishDateUtc
+            : now) + delay;
     }
 
     /// <summary>

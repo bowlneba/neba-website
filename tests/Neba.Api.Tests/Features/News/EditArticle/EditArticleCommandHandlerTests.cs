@@ -108,10 +108,10 @@ public sealed class EditArticleCommandHandlerTests(AppDbContextFixture fixture)
     {
         var article = ArticleFactory.Create(
             slug: slug,
-            headerImage: headerImage,
-            attachments: attachments,
             publicationStatus: publicationStatus,
             publishDateUtc: publishDateUtc,
+            headerImage: headerImage,
+            attachments: attachments,
             announcedAtUtc: announcedAtUtc);
         await _dbContext.Articles.AddAsync(article, ct);
         await _dbContext.SaveChangesAsync(ct);

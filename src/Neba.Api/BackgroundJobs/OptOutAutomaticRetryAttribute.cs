@@ -51,6 +51,5 @@ internal sealed class OptOutAutomaticRetryAttribute
         => Inner.OnStateUnapplied(context, transaction);
 
     private static bool OptsOut(Job? job)
-        => job is not null
-            && job.Args.Any(arg => arg?.GetType().GetCustomAttribute<NoAutomaticRetryAttribute>() is not null);
+        => job?.Args.Any(arg => arg?.GetType().GetCustomAttribute<NoAutomaticRetryAttribute>() is not null) == true;
 }

@@ -55,7 +55,7 @@ public sealed class DiscordJobFailureFilterTests
 
     private static class JobWithArgument
     {
-        public static void JobWithArgumentMethod(NamedJobArgument argument)
+        public static void JobWithArgumentMethod()
         {
             // Stand-in job method; never actually invoked in these tests.
         }

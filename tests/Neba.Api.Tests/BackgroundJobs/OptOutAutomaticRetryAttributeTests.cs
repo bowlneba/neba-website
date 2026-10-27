@@ -28,12 +28,12 @@ public sealed class OptOutAutomaticRetryAttributeTests
 
     private static class SampleJobs
     {
-        public static void NoRetryJob(NoRetryArgument argument)
+        public static void NoRetryJob()
         {
             // Stand-in job method; never actually invoked in these tests.
         }
 
-        public static void OrdinaryJob(OrdinaryArgument argument)
+        public static void OrdinaryJob()
         {
             // Stand-in job method; never actually invoked in these tests.
         }

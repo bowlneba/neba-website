@@ -141,7 +141,7 @@ public sealed class DiscordConfigurationTests
         builder.Services.AddHttpClient(nameof(INewsAnnouncementNotifier))
             .ConfigurePrimaryHttpMessageHandler(() => new CountingFailureHandler(() => requestCount++));
 
-        using var serviceProvider = builder.Services.BuildServiceProvider();
+        await using var serviceProvider = builder.Services.BuildServiceProvider();
         using var scope = serviceProvider.CreateScope();
         var notifier = scope.ServiceProvider.GetRequiredService<INewsAnnouncementNotifier>();
 
