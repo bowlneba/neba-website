@@ -116,6 +116,10 @@ Detailed write-ups live in `docs/learnings/`. Read the matching file before work
 - **No version in path** — API versioning is handled via request headers, not URL segments (no `/v1/`, `/api/v1/`, etc.)
 - **Standard REST outside `/legacy`** — a resource path with the id in the URL, and the HTTP verb names the action (POST create, PUT/PATCH update, DELETE remove). The `/legacy` backdoor's action-in-path POST routes (`/bowlers/new`, `/bowler-memberships/delete`) exist only because the whole folder is deleted at Software sunset; never copy that shape into a permanent route.
 
+### Software data migration
+
+- Once a Software (legacy) table is migrated, read the website's own copy, not the legacy database. When you port data, also move the jobs that still query the migrated legacy table (stats, awards) onto the website tables. Migrated so far: bowler memberships.
+
 ### Blazor and UI — `docs/learnings/blazor-ui.md`
 
 - Per-keystroke input behavior (auto-advance, key filtering) lives in a colocated `.razor.js` module, never in C# `@onkeydown` handlers (SignalR round-trips race).

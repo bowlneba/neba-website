@@ -1,3 +1,5 @@
+using Neba.Api.Contracts.Memberships;
+
 namespace Neba.Api.Legacy.Tournaments.Stats;
 
 // Pure mapping logic - no I/O - so it's unit-testable in isolation from GenerateSeasonStatsJob's
@@ -46,7 +48,7 @@ internal static class LegacySeasonStatsCalculator
     private const int SideCutFinalsBonusPoints = 5;
 
     // Raw source rows for a single season - bundled purely to keep Compute's parameter count within
-    // the analyzer's limit. seasonEndDate/newMembershipTypeId stay as direct Compute parameters since
+    // the analyzer's limit. seasonEndDate stays a direct Compute parameter since
     // they're scalar context, not source data.
     public sealed record LegacySeasonStatsInput(
         IReadOnlyCollection<LegacySeasonTournamentRow> SeasonTournaments,
@@ -54,13 +56,12 @@ internal static class LegacySeasonStatsCalculator
         IReadOnlyCollection<LegacyMatchPlayStatsRow> MatchPlayStats,
         IReadOnlyCollection<LegacyBowlerResultRow> Results,
         IReadOnlyCollection<LegacyBowlerRow> Bowlers,
-        IReadOnlyCollection<LegacyMembershipRow> Memberships,
+        IReadOnlyCollection<MembershipRow> Memberships,
         IReadOnlyCollection<LegacyCreditRow> Credits,
         IReadOnlyCollection<LegacyCupResultRow> CupResults);
 
     public static IReadOnlyCollection<LegacyBowlerSeasonStatsResult> Compute(
         DateOnly seasonEndDate,
-        int newMembershipTypeId,
         LegacySeasonStatsInput input)
     {
         var seasonTournaments = input.SeasonTournaments;
@@ -144,7 +145,7 @@ internal static class LegacySeasonStatsCalculator
             var isWoman = bowler?.Gender == 1;
 
             var bowlerMemberships = membershipsByBowlerId.GetValueOrDefault(bowlerId, []);
-            var (isMember, isRookie) = ComputeMembershipStatus(bowlerMemberships, seasonEndDate, newMembershipTypeId);
+            var (isMember, isRookie) = ComputeMembershipStatus(bowlerMemberships, seasonEndDate);
 
             var cashes = eligibleBowlerResults.Count(r => r.PrizeMoney > 0);
             var finals = eligibleMatchPlay.Select(m => m.TournamentId).Distinct().Count();
@@ -233,13 +234,13 @@ internal static class LegacySeasonStatsCalculator
     }
 
     private static (bool IsMember, bool IsRookie) ComputeMembershipStatus(
-        List<LegacyMembershipRow> bowlerMemberships, DateOnly seasonEndDate, int newMembershipTypeId)
+        List<MembershipRow> bowlerMemberships, DateOnly seasonEndDate)
     {
-        var isMember = bowlerMemberships.Any(m => DateOnly.FromDateTime(m.EndDate) == seasonEndDate);
+        var isMember = bowlerMemberships.Any(m => m.EndDate == seasonEndDate);
         var isRookie = isMember
             && bowlerMemberships
                 .OrderByDescending(m => m.EndDate)
-                .First().MembershipId == newMembershipTypeId;
+                .First().Type == MembershipType.New;
 
         return (isMember, isRookie);
     }

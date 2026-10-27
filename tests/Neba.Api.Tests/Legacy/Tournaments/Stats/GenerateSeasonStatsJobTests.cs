@@ -8,6 +8,7 @@ using Microsoft.Extensions.Logging.Testing;
 
 using Neba.Api.Database;
 using Neba.Api.Discord;
+using Neba.Api.Contracts.Memberships;
 using Neba.Api.Features.Bowlers.Domain;
 using Neba.Api.Features.Seasons.Domain;
 using Neba.Api.Features.Tournaments.Domain;
@@ -23,7 +24,7 @@ using ZiggyCreatures.Caching.Fusion;
 namespace Neba.Api.Tests.Legacy.Tournaments.Stats;
 
 // Exercises GenerateSeasonStatsJob end to end against real Dapper queries (a real SQL Server schema
-// standing in for neba-fwk's Tournaments/Stats/Bowlers/Memberships/Credits/Cups tables, matching
+// standing in for neba-fwk's Tournaments/Stats/Bowlers/Credits/Cups tables, matching
 // neba-fwk's actual engine) and a real AppDbContext - proves the raw SQL joins return the rows
 // LegacySeasonStatsCalculator (covered in isolation elsewhere) expects, and covers the
 // delete-then-regenerate idempotency contract this backdoor action requires. Mirrors
@@ -34,7 +35,6 @@ namespace Neba.Api.Tests.Legacy.Tournaments.Stats;
 public sealed class GenerateSeasonStatsJobTests(AppDbContextFixture fixture, LegacySqlServerFixture legacyFixture)
     : IClassFixture<AppDbContextFixture>, IClassFixture<LegacySqlServerFixture>, IAsyncLifetime
 {
-    private const int NewMemberMembershipTypeId = 1;
 
     private readonly AppDbContext _dbContext = fixture.CreateDbContext();
 
@@ -61,15 +61,6 @@ public sealed class GenerateSeasonStatsJobTests(AppDbContextFixture fixture, Leg
         // LegacySqlServerFixture) and reused across its tests; Respawn resets the data before each.
         _legacyDatabase = await legacyFixture.GetOrCreateDatabaseAsync(nameof(GenerateSeasonStatsJobTests), CreateSchemaAsync);
         await _legacyDatabase.ResetAsync();
-
-        // Every SyncAsync call unconditionally looks up the "New Member" membership type - every
-        // test needs at least this one row present, and Respawn just wiped it along with everything
-        // else, so it's reinserted here rather than as part of the (one-time) schema setup.
-        await using var insertMembershipType = _legacyConnection.CreateCommand();
-        insertMembershipType.CommandText = "INSERT INTO Memberships (Id, Name) VALUES (@Id, @Name)";
-        insertMembershipType.Parameters.AddWithValue("@Id", NewMemberMembershipTypeId);
-        insertMembershipType.Parameters.AddWithValue("@Name", "New Member");
-        await insertMembershipType.ExecuteNonQueryAsync();
     }
 
     private static async Task CreateSchemaAsync(SqlConnection connection)
@@ -113,16 +104,6 @@ public sealed class GenerateSeasonStatsJobTests(AppDbContextFixture fixture, Leg
                 Id int PRIMARY KEY,
                 Gender int NULL,
                 DateOfBirth date NULL
-            );
-            CREATE TABLE Memberships (
-                Id int PRIMARY KEY,
-                Name varchar(30) NOT NULL
-            );
-            CREATE TABLE BowlerMemberships (
-                Id int PRIMARY KEY,
-                BowlerId int NOT NULL,
-                MembershipId int NOT NULL,
-                EndDate date NOT NULL
             );
             CREATE TABLE Credits (
                 Id int PRIMARY KEY,
@@ -291,6 +272,39 @@ public sealed class GenerateSeasonStatsJobTests(AppDbContextFixture fixture, Leg
         row.BowlerOfTheYearPoints.ShouldBe(100);
         row.TournamentWinnings.ShouldBe(500m);
         row.QualifyingHighGame.ShouldBe(220);
+    }
+
+    [Fact(DisplayName = "SyncAsync should mark a bowler a member and rookie from the website's own memberships")]
+    public async Task SyncAsync_ShouldMarkMemberAndRookie_FromWebsiteMemberships()
+    {
+        // Arrange
+        var ct = TestContext.Current.CancellationToken;
+        var (season, tournament) = await CreateSeasonAndTournamentAsync(
+            legacyTournamentId: 42, seasonStart: new DateOnly(2026, 1, 1), seasonEnd: new DateOnly(2026, 12, 31), ct);
+        var bowler = await CreateBowlerAsync(legacyBowlerId: 100, ct);
+        bowler.AddLegacyMembership(
+            legacyId: 1, MembershipType.New, cost: 25m, startDate: new DateOnly(2026, 1, 1), endDate: new DateOnly(2026, 12, 31))
+            .IsError.ShouldBeFalse();
+
+        await InsertLegacyTournamentAsync(42, new DateTime(2026, 3, 1, 0, 0, 0, DateTimeKind.Utc), new DateTime(2026, 3, 2, 0, 0, 0, DateTimeKind.Utc), yearlyStatEligible: true);
+        var statsId = await InsertStatsAsync(100, 42);
+        await InsertQualifyingStatsAsync(statsId, squadId: 1, score: 1200, games: 6, highGame: 220);
+        await InsertResultsStatsAsync(statsId, sideCut: null);
+
+        tournament.CompleteTournament(entryCount: 100);
+        tournament.AddResult(bowler.Id, place: 1, prizeMoney: 500m, points: 100);
+        await _dbContext.SaveChangesAsync(ct);
+        _dbContext.ChangeTracker.Clear();
+
+        var job = CreateJob();
+
+        // Act
+        await job.SyncAsync(42, ct);
+
+        // Assert
+        var row = await _dbContext.BowlerSeasonStats.SingleAsync(s => s.SeasonId == season.Id && s.BowlerId == bowler.Id, ct);
+        row.IsMember.ShouldBeTrue();
+        row.IsRookie.ShouldBeTrue();
     }
 
     [Fact(DisplayName = "SyncAsync should delete stale rows and converge to the same result when run twice for the same tournament")]

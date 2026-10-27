@@ -95,12 +95,17 @@ internal sealed class GenerateSeasonStatsJob(
             .Distinct()
             .ToList();
 
-        var (bowlerRows, newMembershipTypeId, membershipRows, creditRows, cupResultRows) =
+        var (bowlerRows, creditRows, cupResultRows) =
             await FetchBowlerStatsAsync(legacyBowlerIds, seasonStart, seasonEndExclusive);
+
+        var membershipRows = await db.Bowlers
+            .Where(bowler => bowler.LegacyId != null && legacyBowlerIds.Contains(bowler.LegacyId.Value))
+            .SelectMany(bowler => bowler.Memberships.Select(
+                membership => new MembershipRow(bowler.LegacyId!.Value, membership.Type, membership.EndDate)))
+            .ToListAsync(ct);
 
         var computedResults = LegacySeasonStatsCalculator.Compute(
             season.EndDate,
-            newMembershipTypeId,
             new LegacySeasonStatsCalculator.LegacySeasonStatsInput(
                 seasonTournaments,
                 qualifyingStats,
@@ -284,17 +289,12 @@ internal sealed class GenerateSeasonStatsJob(
 #pragma warning disable DAP005
     [System.Diagnostics.CodeAnalysis.SuppressMessage("Major Code Smell", "S2077:Use a parameterized query instead of string formatting.",
         Justification = "The interpolated segments below are only generated placeholder names (@BowlerId0, ...) from BuildInClauseParameters, never a data value - every id value itself is bound as a real DynamicParameters entry, not concatenated into the SQL text.")]
-    private async Task<(List<LegacyBowlerRow> Bowlers, int NewMembershipTypeId, List<LegacyMembershipRow> Memberships, List<LegacyCreditRow> Credits, List<LegacyCupResultRow> CupResults)>
+    private async Task<(List<LegacyBowlerRow> Bowlers, List<LegacyCreditRow> Credits, List<LegacyCupResultRow> CupResults)>
         FetchBowlerStatsAsync(List<int> legacyBowlerIds, DateTime seasonStart, DateTime seasonEndExclusive)
     {
-        var newMembershipTypeId = await legacyConnection.QuerySingleAsync<int>(
-            """
-            SELECT Id FROM Memberships WHERE Name LIKE '%New Member%'
-            """);
-
         if (legacyBowlerIds.Count == 0)
         {
-            return ([], newMembershipTypeId, [], [], []);
+            return ([], [], []);
         }
 
         var (parameters, placeholders) = BuildInClauseParameters("BowlerId", legacyBowlerIds);
@@ -309,19 +309,6 @@ internal sealed class GenerateSeasonStatsJob(
                 Bowlers
             WHERE
                 Id IN ({placeholders})
-            """,
-            parameters)).ToList();
-
-        var membershipRows = (await legacyConnection.QueryAsync<LegacyMembershipRow>(
-            $"""
-            SELECT
-                bm.BowlerId,
-                bm.MembershipId,
-                bm.EndDate
-            FROM
-                BowlerMemberships bm
-            WHERE
-                bm.BowlerId IN ({placeholders})
             """,
             parameters)).ToList();
 
@@ -356,7 +343,7 @@ internal sealed class GenerateSeasonStatsJob(
             """,
             parameters)).ToList();
 
-        return (bowlerRows, newMembershipTypeId, membershipRows, creditRows, cupResultRows);
+        return (bowlerRows, creditRows, cupResultRows);
     }
 #pragma warning restore DAP005
 
