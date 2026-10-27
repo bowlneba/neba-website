@@ -2407,6 +2407,17 @@ Best-effort Discord webhook notifications (`#api-logs` for unattended errors, `#
 
 `IDiscordNotifier` and `IManualInterventionNotifier` are mocked (`MockBehavior.Strict`) in unit tests; alert content is asserted against a captured `DiscordAlert`, not a live webhook call.
 
+### News announcements
+
+A published news article is announced once in the public Discord news channel (`INewsAnnouncementNotifier`, above). The aim is **at most one post per article, ever**: a missed post is fixed by hand, a duplicate in a public channel cannot be taken back.
+
+- **When.** `CreateArticleCommandHandler` and `EditArticleCommandHandler` call `Article.GetAnnouncementTime(now, delay)` after saving. It returns `max(now, PublishDateUtc) + delay` for a `Published`, unannounced article and `null` for a draft or an announced one. `delay` is `NewsAnnouncement:DelaySeconds` (120 in production, 10 in development). When it returns a time, the handler schedules `AnnounceArticleToDiscordJob` for it. The job carries the `PublishDateUtc` it was scheduled for, truncated to the microsecond PostgreSQL stores.
+- **Jobs are never cancelled.** A moved date, a draft, or a delete leaves the old job in place. When it runs it reloads the article and exits without posting if the article is missing, a draft, has a different publish date, or has `AnnouncedAtUtc` set. Each skip is logged at Information.
+- **Claim, then post.** The job sets `AnnouncedAtUtc` with one `UPDATE ... WHERE announced_at_utc IS NULL` (also re-checking status and publish date) and posts only if a row changed, so two jobs running at once produce one post. The claim is never undone. If the post fails, the article stays marked announced and nobody posts it again automatically.
+- **No retries.** The job record is marked `[NoAutomaticRetry]`; `OptOutAutomaticRetryAttribute` skips Hangfire's retry for any job whose argument type carries it (a per-handler `[AutomaticRetry]` would do nothing, because every job runs through `HangfireBackgroundJobScheduler.ExecuteJobAsync`). The news `HttpClient` has no resilience handler. A failure throws, so `DiscordJobFailureFilter` posts a job-failure alert naming the job and article, and the team posts it by hand.
+- **Cache.** After a successful post the job evicts the article's `neba:news:{slug}` cache tag, so staff see the new announced time on the article page. Only callers with a news permission get `AnnouncedAtUtc` in the detail response.
+- **Existing articles.** The `AddArticleAnnouncedAt` migration sets `announced_at_utc = publish_date_utc` for every article already published, so none is announced retroactively.
+
 ---
 
 ## Application Auditing
