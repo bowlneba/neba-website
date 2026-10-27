@@ -13,6 +13,7 @@ using Microsoft.Extensions.Options;
 
 using Neba.Api.Auditing;
 using Neba.Api.Discord;
+using Neba.Api.Security;
 
 using Npgsql;
 
@@ -176,8 +177,13 @@ internal static class BackgroundJobsConfiguration
             // This allows test to remove Hangfire services without breaking middleware
             if (app.Services.GetService(typeof(JobStorage)) is not null)
             {
+                var websiteSettings = app.Services.GetService<WebsiteSettings>();
+
                 app.UseHangfireDashboard("/background-jobs", new DashboardOptions
                 {
+                    // "Back to site" link: point at the website, not the API. Tests that remove
+                    // security services leave this unset, which keeps Hangfire's default ("/").
+                    AppPath = websiteSettings?.BaseUrl,
                     Authorization = [new HangfireApiDashboardAuthorizationFilter()],
                     DashboardTitle = "Background Jobs - API",
                     StatsPollingInterval = 5000,
