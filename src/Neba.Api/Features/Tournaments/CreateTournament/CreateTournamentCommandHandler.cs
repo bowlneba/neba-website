@@ -94,7 +94,9 @@ internal sealed class CreateTournamentCommandHandler(
 
         await cache.RemoveByTagAsync($"neba:tournaments:{season.Id}", token: cancellationToken);
 
-        if (command.OilPatternRevealDateTime is { } revealAt && revealAt > timeProvider.GetUtcNow())
+        var now = timeProvider.GetUtcNow();
+
+        if (tournament.OilPatternRevealDateTime is { } revealAt && revealAt > now)
         {
             jobScheduler.Schedule(
                 new EvictOilPatternRevealCacheJob { TournamentId = tournament.Id, SeasonId = season.Id },
@@ -102,7 +104,7 @@ internal sealed class CreateTournamentCommandHandler(
         }
 
         jobScheduler.ScheduleOilPatternAnnouncement(
-            tournament, timeProvider.GetUtcNow(), announcementSettings.Value.Delay);
+            tournament, now, announcementSettings.Value.Delay);
 
         return tournament.Id;
     }

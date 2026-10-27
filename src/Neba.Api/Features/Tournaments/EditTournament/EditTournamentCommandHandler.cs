@@ -175,7 +175,9 @@ internal sealed class EditTournamentCommandHandler(
     {
         TournamentLogoCleanup.ScheduleDeleteOfReplacedLogo(backgroundJobScheduler, previousLogo, command.Logo);
 
-        if (command.OilPatternRevealDateTime is { } revealAt && revealAt > timeProvider.GetUtcNow())
+        var now = timeProvider.GetUtcNow();
+
+        if (tournament.OilPatternRevealDateTime is { } revealAt && revealAt > now)
         {
             backgroundJobScheduler.Schedule(
                 new EvictOilPatternRevealCacheJob { TournamentId = tournament.Id, SeasonId = seasonId },
@@ -183,6 +185,6 @@ internal sealed class EditTournamentCommandHandler(
         }
 
         backgroundJobScheduler.ScheduleOilPatternAnnouncement(
-            tournament, timeProvider.GetUtcNow(), announcementSettings.Value.Delay, previousRevealDateTime);
+            tournament, now, announcementSettings.Value.Delay, previousRevealDateTime);
     }
 }
