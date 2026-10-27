@@ -135,6 +135,8 @@ public sealed class DiscordConfigurationTests
             ["Discord:ManualInterventionWebhookUrl"] = "https://discord.com/api/webhooks/2/token",
             ["Discord:NewsWebhookUrl"] = "https://discord.com/api/webhooks/3/token"
         });
+        // Neba.ServiceDefaults gives every HttpClient the standard resilience handler, retries included.
+        builder.Services.ConfigureHttpClientDefaults(http => http.AddStandardResilienceHandler());
         builder.AddDiscord();
         builder.Services.AddHttpClient(nameof(INewsAnnouncementNotifier))
             .ConfigurePrimaryHttpMessageHandler(() => new CountingFailureHandler(() => requestCount++));

@@ -24,11 +24,16 @@ internal static class DiscordConfiguration
 
             // No resilience handler: the standard one cannot disable retries (Polly needs
             // MaxRetryAttempts >= 1), and a retry after a timeout could post the announcement twice.
+            // AddServiceDefaults gives every client the standard handler, so remove it here. The API is
+            // marked experimental (EXTEXP0001); the notifier test fails if a package update changes it.
+#pragma warning disable EXTEXP0001
             builder.Services.AddHttpClient<INewsAnnouncementNotifier, NewsAnnouncementNotifier>((sp, client) =>
-            {
-                client.BaseAddress = new Uri(sp.GetRequiredService<IOptions<DiscordSettings>>().Value.NewsWebhookUrl);
-                client.Timeout = NewsAnnouncementTimeout;
-            });
+                {
+                    client.BaseAddress = new Uri(sp.GetRequiredService<IOptions<DiscordSettings>>().Value.NewsWebhookUrl);
+                    client.Timeout = NewsAnnouncementTimeout;
+                })
+                .RemoveAllResilienceHandlers();
+#pragma warning restore EXTEXP0001
 
             return builder;
         }

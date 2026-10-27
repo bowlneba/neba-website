@@ -54,7 +54,7 @@ internal sealed class AnnounceArticleToDiscordJobHandler(
             return;
         }
 
-        if (row.PublishDateUtc != job.ExpectedPublishDateUtc)
+        if (!IsSameInstant(row.PublishDateUtc, job.ExpectedPublishDateUtc))
         {
             logger.LogAnnouncementSkippedStaleDate(articleId, job.ExpectedPublishDateUtc, row.PublishDateUtc);
             return;
@@ -70,11 +70,15 @@ internal sealed class AnnounceArticleToDiscordJobHandler(
         // clause repeats the checks above, so an edit between the read and this statement still blocks
         // the post. Never undone: a failed post is not retried, because a timeout after Discord accepted
         // it looks the same as a failure. Article.MarkAnnounced is the same rule for in-memory callers.
+        var publishDateFloor = job.ExpectedPublishDateUtc - PublishDateTolerance;
+        var publishDateCeiling = job.ExpectedPublishDateUtc + PublishDateTolerance;
+
         var claimed = await appDbContext.Articles
             .Where(article => article.Id == job.ArticleId
                 && article.AnnouncedAtUtc == null
                 && article.PublicationStatus == PublicationStatus.Published
-                && article.PublishDateUtc == job.ExpectedPublishDateUtc)
+                && article.PublishDateUtc >= publishDateFloor
+                && article.PublishDateUtc <= publishDateCeiling)
             .ExecuteUpdateAsync(
                 set => set.SetProperty(article => article.AnnouncedAtUtc, timeProvider.GetUtcNow()),
                 cancellationToken);
@@ -102,6 +106,13 @@ internal sealed class AnnounceArticleToDiscordJobHandler(
 
         logger.LogArticleAnnounced(articleId);
     }
+
+    // Absorbs sub-millisecond rounding between the date the job was scheduled with and the stored one.
+    // A real edit moves the date by far more than this.
+    private static readonly TimeSpan PublishDateTolerance = TimeSpan.FromMilliseconds(1);
+
+    private static bool IsSameInstant(DateTimeOffset stored, DateTimeOffset expected)
+        => (stored - expected).Duration() <= PublishDateTolerance;
 
     private sealed class ArticleRow
     {

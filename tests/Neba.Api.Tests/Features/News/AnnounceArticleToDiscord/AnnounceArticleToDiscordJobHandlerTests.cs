@@ -358,4 +358,40 @@ public sealed class AnnounceArticleToDiscordJobHandlerTests(AppDbContextFixture 
         // Assert
         _notifier.Verify(n => n.NotifyAsync(It.IsAny<NewsAnnouncement>(), It.IsAny<CancellationToken>()), Times.Once);
     }
+
+    [Fact(DisplayName = "ExecuteAsync posts when the job's date is within the tolerance of the stored date")]
+    public async Task ExecuteAsync_ShouldPost_WhenScheduledDateIsWithinTolerance()
+    {
+        // Arrange
+        var ct = TestContext.Current.CancellationToken;
+        var article = await SeedArticleAsync(ct);
+        _notifier
+            .Setup(n => n.NotifyAsync(It.IsAny<NewsAnnouncement>(), It.IsAny<CancellationToken>()))
+            .Returns(Task.CompletedTask);
+        var handler = CreateHandler();
+        var job = AnnounceArticleToDiscordJobFactory.Create(article.Id, PublishDate.AddTicks(5_000));
+
+        // Act
+        await handler.ExecuteAsync(job, ct);
+
+        // Assert
+        (await ReadAnnouncedAtAsync(article.Id, ct)).ShouldNotBeNull();
+    }
+
+    [Fact(DisplayName = "ExecuteAsync skips when the job's date is just outside the tolerance of the stored date")]
+    public async Task ExecuteAsync_ShouldSkip_WhenScheduledDateIsOutsideTolerance()
+    {
+        // Arrange
+        var ct = TestContext.Current.CancellationToken;
+        var article = await SeedArticleAsync(ct);
+        var handler = CreateHandler();
+        var job = AnnounceArticleToDiscordJobFactory.Create(article.Id, PublishDate.AddMilliseconds(2));
+
+        // Act
+        await handler.ExecuteAsync(job, ct);
+
+        // Assert
+        _notifier.VerifyNoOtherCalls();
+        (await ReadAnnouncedAtAsync(article.Id, ct)).ShouldBeNull();
+    }
 }
