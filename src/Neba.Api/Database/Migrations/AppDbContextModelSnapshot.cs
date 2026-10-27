@@ -18,7 +18,7 @@ namespace Neba.Api.Database.Migrations
         {
 #pragma warning disable 612, 618
             modelBuilder
-                .HasAnnotation("ProductVersion", "10.0.13")
+                .HasAnnotation("ProductVersion", "10.0.14")
                 .HasAnnotation("Relational:MaxIdentifierLength", 63);
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
@@ -1317,6 +1317,10 @@ namespace Neba.Api.Database.Migrations
                         .HasPrecision(9, 2)
                         .HasColumnType("numeric(9,2)")
                         .HasColumnName("neba_added_money");
+
+                    b.Property<DateTimeOffset?>("OilPatternAnnouncedAtUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("oil_pattern_announced_at_utc");
 
                     b.Property<DateTimeOffset?>("OilPatternRevealDateTime")
                         .HasColumnType("timestamp with time zone")

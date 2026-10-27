@@ -140,6 +140,34 @@ public sealed class Tournament
     /// </summary>
     public DateTimeOffset? OilPatternRevealDateTime { get; private set; }
 
+    /// <summary>
+    /// When the oil pattern reveal was announced, or <see langword="null"/> if it has not been. Set once.
+    /// </summary>
+    public DateTimeOffset? OilPatternAnnouncedAtUtc { get; private set; }
+
+    /// <summary>
+    /// When the oil pattern reveal should be announced: <paramref name="delay"/> after the reveal time, so the
+    /// page shows the pattern before the link is clicked. <see langword="null"/> when there is no reveal time,
+    /// it has passed, or the reveal was already announced.
+    /// </summary>
+    public DateTimeOffset? GetOilPatternAnnouncementTime(DateTimeOffset now, TimeSpan delay)
+    {
+        if (OilPatternRevealDateTime is not { } revealAt
+            || revealAt <= now
+            || OilPatternAnnouncedAtUtc is not null)
+        {
+            return null;
+        }
+
+        return revealAt + delay;
+    }
+
+    /// <summary>
+    /// Records that the oil pattern reveal was announced. A second call keeps the first timestamp.
+    /// </summary>
+    public void MarkOilPatternAnnounced(DateTimeOffset now)
+        => OilPatternAnnouncedAtUtc ??= now;
+
     private readonly List<Squad> _squads = [];
 
     /// <summary>
