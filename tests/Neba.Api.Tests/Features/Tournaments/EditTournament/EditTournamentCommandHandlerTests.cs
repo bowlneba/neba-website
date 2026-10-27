@@ -934,4 +934,69 @@ public sealed class EditTournamentCommandHandlerTests(AppDbContextFixture fixtur
         // Assert
         result.IsError.ShouldBeFalse();
     }
+
+    [Fact(DisplayName = "HandleAsync does not schedule another Discord announcement when the reveal date is unchanged")]
+    public async Task HandleAsync_ShouldNotScheduleAnnouncementJob_WhenRevealDateIsUnchanged()
+    {
+        // Arrange
+        var ct = TestContext.Current.CancellationToken;
+        var season = await SeedSeasonAsync(new DateOnly(2025, 1, 1), new DateOnly(2025, 12, 31), ct);
+        var revealAt = Now.AddDays(3);
+        var tournament = TournamentFactory.Create(
+            startDate: season.StartDate,
+            endDate: season.StartDate,
+            seasonId: season.Id,
+            oilPatternRevealDateTime: revealAt);
+        await _dbContext.Tournaments.AddAsync(tournament, ct);
+        await _dbContext.SaveChangesAsync(ct);
+        var schedulerMock = new Mock<IBackgroundJobScheduler>(MockBehavior.Strict);
+        schedulerMock
+            .Setup(scheduler => scheduler.Schedule(It.IsAny<EvictOilPatternRevealCacheJob>(), revealAt))
+            .Returns("job-id");
+        var handler = CreateHandler(schedulerMock.Object);
+        var command = ValidCommand(
+            tournament.Id, startDate: season.StartDate, endDate: season.StartDate, oilPatternRevealDateTime: revealAt);
+
+        // Act
+        var result = await handler.HandleAsync(command, ct);
+
+        // Assert
+        result.IsError.ShouldBeFalse();
+    }
+
+    [Fact(DisplayName = "HandleAsync schedules the Discord announcement again when the reveal date moves")]
+    public async Task HandleAsync_ShouldScheduleAnnouncementJob_WhenRevealDateMoves()
+    {
+        // Arrange
+        var ct = TestContext.Current.CancellationToken;
+        var season = await SeedSeasonAsync(new DateOnly(2025, 1, 1), new DateOnly(2025, 12, 31), ct);
+        var tournament = TournamentFactory.Create(
+            startDate: season.StartDate,
+            endDate: season.StartDate,
+            seasonId: season.Id,
+            oilPatternRevealDateTime: Now.AddDays(3));
+        await _dbContext.Tournaments.AddAsync(tournament, ct);
+        await _dbContext.SaveChangesAsync(ct);
+        var newRevealAt = Now.AddDays(5);
+        AnnounceOilPatternToDiscordJob? scheduled = null;
+        var schedulerMock = new Mock<IBackgroundJobScheduler>(MockBehavior.Strict);
+        schedulerMock
+            .Setup(scheduler => scheduler.Schedule(It.IsAny<EvictOilPatternRevealCacheJob>(), newRevealAt))
+            .Returns("job-id");
+        schedulerMock
+            .Setup(scheduler => scheduler.Schedule(It.IsAny<AnnounceOilPatternToDiscordJob>(), newRevealAt + TimeSpan.FromMinutes(2)))
+            .Callback<AnnounceOilPatternToDiscordJob, DateTimeOffset>((job, _) => scheduled = job)
+            .Returns("announce-job-id");
+        var handler = CreateHandler(schedulerMock.Object);
+        var command = ValidCommand(
+            tournament.Id, startDate: season.StartDate, endDate: season.StartDate, oilPatternRevealDateTime: newRevealAt);
+
+        // Act
+        var result = await handler.HandleAsync(command, ct);
+
+        // Assert
+        result.IsError.ShouldBeFalse();
+        scheduled.ShouldNotBeNull();
+        scheduled.ExpectedRevealDateTime.ShouldBe(newRevealAt);
+    }
 }

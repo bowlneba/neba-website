@@ -78,6 +78,7 @@ internal sealed class EditTournamentCommandHandler(
         // Must snapshot before Update() — Logo is mutated in place, so reading it after the call
         // would return the new value, not the one being replaced (see EditSponsorCommandHandler).
         var previousLogo = tournament.Logo;
+        var previousRevealDateTime = tournament.OilPatternRevealDateTime;
 
         var updateResult = tournament.Update(
             name: command.Name,
@@ -128,7 +129,7 @@ internal sealed class EditTournamentCommandHandler(
             previousChampionDetails != (tournament.Name, tournament.EndDate, tournament.TournamentType),
             cancellationToken);
 
-        ScheduleBackgroundJobs(command, previousLogo, tournament, season.Id);
+        ScheduleBackgroundJobs(command, previousLogo, previousRevealDateTime, tournament, season.Id);
 
         return Result.Updated;
     }
@@ -170,7 +171,7 @@ internal sealed class EditTournamentCommandHandler(
     }
 
     private void ScheduleBackgroundJobs(
-        EditTournamentCommand command, StoredFile? previousLogo, Tournament tournament, SeasonId seasonId)
+        EditTournamentCommand command, StoredFile? previousLogo, DateTimeOffset? previousRevealDateTime, Tournament tournament, SeasonId seasonId)
     {
         TournamentLogoCleanup.ScheduleDeleteOfReplacedLogo(backgroundJobScheduler, previousLogo, command.Logo);
 
@@ -182,6 +183,6 @@ internal sealed class EditTournamentCommandHandler(
         }
 
         backgroundJobScheduler.ScheduleOilPatternAnnouncement(
-            tournament, timeProvider.GetUtcNow(), announcementSettings.Value.Delay);
+            tournament, timeProvider.GetUtcNow(), announcementSettings.Value.Delay, previousRevealDateTime);
     }
 }

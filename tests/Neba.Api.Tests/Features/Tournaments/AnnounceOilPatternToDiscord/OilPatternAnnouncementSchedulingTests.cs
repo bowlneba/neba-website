@@ -104,4 +104,55 @@ public sealed class OilPatternAnnouncementSchedulingTests
         // Assert
         Should.NotThrow(act); // the strict mock has no setup, so any Schedule call would throw
     }
+
+    [Fact(DisplayName = "ScheduleOilPatternAnnouncement schedules nothing when the reveal date is unchanged from the earlier save")]
+    public void ScheduleOilPatternAnnouncement_ShouldScheduleNothing_WhenRevealDateIsUnchanged()
+    {
+        // Arrange
+        var revealAt = Now.AddDays(3);
+        var tournament = TournamentFactory.Create(oilPatternRevealDateTime: revealAt);
+        var scheduler = new Mock<IBackgroundJobScheduler>(MockBehavior.Strict);
+
+        // Act
+        var act = () => scheduler.Object.ScheduleOilPatternAnnouncement(tournament, Now, Delay, previousRevealDateTime: revealAt);
+
+        // Assert
+        Should.NotThrow(act); // the strict mock has no setup, so any Schedule call would throw
+    }
+
+    [Fact(DisplayName = "ScheduleOilPatternAnnouncement treats dates that differ only below a microsecond as unchanged")]
+    public void ScheduleOilPatternAnnouncement_ShouldScheduleNothing_WhenRevealDatesDifferBelowAMicrosecond()
+    {
+        // Arrange
+        var revealAt = Now.AddDays(3);
+        var tournament = TournamentFactory.Create(oilPatternRevealDateTime: revealAt.AddTicks(7));
+        var scheduler = new Mock<IBackgroundJobScheduler>(MockBehavior.Strict);
+
+        // Act
+        var act = () => scheduler.Object.ScheduleOilPatternAnnouncement(tournament, Now, Delay, previousRevealDateTime: revealAt);
+
+        // Assert
+        Should.NotThrow(act);
+    }
+
+    [Fact(DisplayName = "ScheduleOilPatternAnnouncement schedules when the reveal date differs from the earlier save")]
+    public void ScheduleOilPatternAnnouncement_ShouldSchedule_WhenRevealDateChanged()
+    {
+        // Arrange
+        var revealAt = Now.AddDays(3);
+        var tournament = TournamentFactory.Create(oilPatternRevealDateTime: revealAt);
+        AnnounceOilPatternToDiscordJob? scheduled = null;
+        var scheduler = new Mock<IBackgroundJobScheduler>(MockBehavior.Strict);
+        scheduler
+            .Setup(s => s.Schedule(It.IsAny<AnnounceOilPatternToDiscordJob>(), revealAt + Delay))
+            .Callback<AnnounceOilPatternToDiscordJob, DateTimeOffset>((job, _) => scheduled = job)
+            .Returns("job-id");
+
+        // Act
+        scheduler.Object.ScheduleOilPatternAnnouncement(tournament, Now, Delay, previousRevealDateTime: revealAt.AddDays(-1));
+
+        // Assert
+        scheduled.ShouldNotBeNull();
+        scheduled.ExpectedRevealDateTime.ShouldBe(revealAt);
+    }
 }
