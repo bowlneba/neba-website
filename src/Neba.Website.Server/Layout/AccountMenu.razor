@@ -99,7 +99,7 @@
         var token = await GetAccessTokenAsync();
         if (!string.IsNullOrEmpty(token))
         {
-            _backgroundJobsDashboardUrl = new Uri(ApiConfiguration.BaseUrl, "background-jobs")
+            _backgroundJobsDashboardUrl = new Uri(ApiConfiguration.BrowserBaseUrl ?? ApiConfiguration.BaseUrl, "background-jobs")
                 + "?access_token=" + Uri.EscapeDataString(token);
         }
     }
