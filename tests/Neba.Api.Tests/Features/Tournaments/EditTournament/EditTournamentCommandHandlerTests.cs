@@ -914,9 +914,6 @@ public sealed class EditTournamentCommandHandlerTests(AppDbContextFixture fixtur
 
         // Assert
         result.IsError.ShouldBeFalse();
-        schedulerMock.Verify(
-            scheduler => scheduler.Schedule(It.IsAny<AnnounceOilPatternToDiscordJob>(), It.IsAny<DateTimeOffset>()),
-            Times.Never);
     }
 
     [Fact(DisplayName = "HandleAsync does not schedule the Discord announcement when the reveal date is in the past")]

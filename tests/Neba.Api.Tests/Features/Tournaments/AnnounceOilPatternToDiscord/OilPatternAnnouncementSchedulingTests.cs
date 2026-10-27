@@ -18,18 +18,26 @@ public sealed class OilPatternAnnouncementSchedulingTests
         // Arrange
         var revealAt = Now.AddDays(3);
         var tournament = TournamentFactory.Create(oilPatternRevealDateTime: revealAt);
+        AnnounceOilPatternToDiscordJob? scheduled = null;
+        DateTimeOffset? scheduledAt = null;
         var scheduler = new Mock<IBackgroundJobScheduler>(MockBehavior.Strict);
         scheduler
-            .Setup(s => s.Schedule(
-                It.Is<AnnounceOilPatternToDiscordJob>(job => job.TournamentId == tournament.Id && job.ExpectedRevealDateTime == revealAt),
-                revealAt + Delay))
+            .Setup(s => s.Schedule(It.IsAny<AnnounceOilPatternToDiscordJob>(), It.IsAny<DateTimeOffset>()))
+            .Callback<AnnounceOilPatternToDiscordJob, DateTimeOffset>((job, at) =>
+            {
+                scheduled = job;
+                scheduledAt = at;
+            })
             .Returns("job-id");
 
         // Act
         scheduler.Object.ScheduleOilPatternAnnouncement(tournament, Now, Delay);
 
         // Assert
-        scheduler.VerifyAll();
+        scheduled.ShouldNotBeNull();
+        scheduled.TournamentId.ShouldBe(tournament.Id);
+        scheduled.ExpectedRevealDateTime.ShouldBe(revealAt);
+        scheduledAt.ShouldBe(revealAt + Delay);
     }
 
     [Fact(DisplayName = "ScheduleOilPatternAnnouncement truncates the expected reveal date to microseconds")]
@@ -38,18 +46,19 @@ public sealed class OilPatternAnnouncementSchedulingTests
         // Arrange
         var revealAt = Now.AddDays(3).AddTicks(7);
         var tournament = TournamentFactory.Create(oilPatternRevealDateTime: revealAt);
+        AnnounceOilPatternToDiscordJob? scheduled = null;
         var scheduler = new Mock<IBackgroundJobScheduler>(MockBehavior.Strict);
         scheduler
-            .Setup(s => s.Schedule(
-                It.Is<AnnounceOilPatternToDiscordJob>(job => job.ExpectedRevealDateTime == Now.AddDays(3)),
-                revealAt + Delay))
+            .Setup(s => s.Schedule(It.IsAny<AnnounceOilPatternToDiscordJob>(), revealAt + Delay))
+            .Callback<AnnounceOilPatternToDiscordJob, DateTimeOffset>((job, _) => scheduled = job)
             .Returns("job-id");
 
         // Act
         scheduler.Object.ScheduleOilPatternAnnouncement(tournament, Now, Delay);
 
         // Assert
-        scheduler.VerifyAll();
+        scheduled.ShouldNotBeNull();
+        scheduled.ExpectedRevealDateTime.ShouldBe(Now.AddDays(3));
     }
 
     [Fact(DisplayName = "ScheduleOilPatternAnnouncement schedules nothing when there is no reveal date")]
@@ -60,10 +69,10 @@ public sealed class OilPatternAnnouncementSchedulingTests
         var scheduler = new Mock<IBackgroundJobScheduler>(MockBehavior.Strict);
 
         // Act
-        scheduler.Object.ScheduleOilPatternAnnouncement(tournament, Now, Delay);
+        var act = () => scheduler.Object.ScheduleOilPatternAnnouncement(tournament, Now, Delay);
 
         // Assert
-        scheduler.VerifyNoOtherCalls();
+        Should.NotThrow(act); // the strict mock has no setup, so any Schedule call would throw
     }
 
     [Fact(DisplayName = "ScheduleOilPatternAnnouncement schedules nothing when the reveal date is in the past")]
@@ -74,10 +83,10 @@ public sealed class OilPatternAnnouncementSchedulingTests
         var scheduler = new Mock<IBackgroundJobScheduler>(MockBehavior.Strict);
 
         // Act
-        scheduler.Object.ScheduleOilPatternAnnouncement(tournament, Now, Delay);
+        var act = () => scheduler.Object.ScheduleOilPatternAnnouncement(tournament, Now, Delay);
 
         // Assert
-        scheduler.VerifyNoOtherCalls();
+        Should.NotThrow(act); // the strict mock has no setup, so any Schedule call would throw
     }
 
     [Fact(DisplayName = "ScheduleOilPatternAnnouncement schedules nothing when the reveal was already announced")]
@@ -90,9 +99,9 @@ public sealed class OilPatternAnnouncementSchedulingTests
         var scheduler = new Mock<IBackgroundJobScheduler>(MockBehavior.Strict);
 
         // Act
-        scheduler.Object.ScheduleOilPatternAnnouncement(tournament, Now, Delay);
+        var act = () => scheduler.Object.ScheduleOilPatternAnnouncement(tournament, Now, Delay);
 
         // Assert
-        scheduler.VerifyNoOtherCalls();
+        Should.NotThrow(act); // the strict mock has no setup, so any Schedule call would throw
     }
 }
