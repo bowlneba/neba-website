@@ -6,9 +6,9 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Testing;
 
+using Neba.Api.Contracts.Memberships;
 using Neba.Api.Database;
 using Neba.Api.Discord;
-using Neba.Api.Contracts.Memberships;
 using Neba.Api.Features.Bowlers.Domain;
 using Neba.Api.Features.Seasons.Domain;
 using Neba.Api.Features.Tournaments.Domain;
