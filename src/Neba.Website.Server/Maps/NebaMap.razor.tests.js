@@ -142,7 +142,7 @@ function makeRoute({
           distanceInMeters: distance,
           durationInSeconds: duration,
           // The API omits traffic time when it was not calculated; pass null to model that.
-          ...(trafficDuration === null ? {} : { durationTrafficInSeconds: trafficDuration }),
+          ...(typeof trafficDuration === 'number' ? { durationTrafficInSeconds: trafficDuration } : {}),
         },
       },
     ],

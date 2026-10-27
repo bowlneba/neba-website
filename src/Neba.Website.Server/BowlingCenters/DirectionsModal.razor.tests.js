@@ -1,6 +1,26 @@
 import { describe, test, expect, beforeEach, afterEach, jest } from '@jest/globals';
 import { getCurrentLocation, searchAddress, openInNewTab, initializeRouteMap, disposeRouteMap } from './DirectionsModal.razor.js';
 
+/** Builds one Geocoding 2026-01-01 feature (GeoJSON, [lon, lat]). */
+function makeFeature({
+  formattedAddress = '123 Main St, Boston, MA 02129',
+  locality = 'Boston',
+  adminDistricts = [{ shortName: 'MA' }, { shortName: 'Suffolk County' }],
+  iso = 'US',
+  coordinates = [-71.0589, 42.3601],
+  geocodePoints,
+} = {}) {
+  return {
+    type: 'Feature',
+    geometry: { type: 'Point', coordinates },
+    properties: {
+      type: 'Address',
+      address: { formattedAddress, locality, adminDistricts, countryRegion: { ISO: iso } },
+      geocodePoints,
+    },
+  };
+}
+
 describe('DirectionsModal', () => {
   beforeEach(() => {
     jest.clearAllMocks();
@@ -160,26 +180,6 @@ describe('DirectionsModal', () => {
   });
 
   describe('searchAddress', () => {
-    /** Builds one Geocoding 2026-01-01 feature (GeoJSON, [lon, lat]). */
-    function makeFeature({
-      formattedAddress = '123 Main St, Boston, MA 02129',
-      locality = 'Boston',
-      adminDistricts = [{ shortName: 'MA' }, { shortName: 'Suffolk County' }],
-      iso = 'US',
-      coordinates = [-71.0589, 42.3601],
-      geocodePoints,
-    } = {}) {
-      return {
-        type: 'Feature',
-        geometry: { type: 'Point', coordinates },
-        properties: {
-          type: 'Address',
-          address: { formattedAddress, locality, adminDistricts, countryRegion: { ISO: iso } },
-          geocodePoints,
-        },
-      };
-    }
-
     beforeEach(() => {
       // Mock atlas
       globalThis.atlas = {};
