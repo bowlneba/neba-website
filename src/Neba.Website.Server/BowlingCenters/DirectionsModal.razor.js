@@ -45,8 +45,11 @@ export async function getCurrentLocation() {
     });
 }
 
+const MAX_SUGGESTIONS = 5;
+const MAX_GEOCODE_RESULTS = 10;
+
 /**
- * Searches for address suggestions using Azure Maps Search API
+ * Searches for address suggestions using the Azure Maps Search Geocoding API (2026-01-01)
  * Supports both subscription key (local dev) and Azure AD (production) authentication
  * @param {string} query - The address search query
  * @returns {Promise<Array>} Promise that resolves to array of address suggestions
@@ -69,12 +72,11 @@ export async function searchAddress(query) {
             return [];
         }
 
-        let url = `https://atlas.microsoft.com/search/address/json?` +
-            `api-version=1.0` +
+        // countryRegion cannot be combined with query, so ask for extra results and keep US ones below
+        let url = `https://atlas.microsoft.com/geocode?` +
+            `api-version=2026-01-01` +
             `&query=${encodeURIComponent(query)}` +
-            `&limit=5` +
-            `&countrySet=US` +
-            `&view=Auto`;
+            `&top=${MAX_GEOCODE_RESULTS}`;
 
         let headers = {};
 
@@ -110,19 +112,30 @@ export async function searchAddress(query) {
         const data = await response.json();
         console.log('[DirectionsModal] Search API response:', data);
 
-        if (!data.results || data.results.length === 0) {
+        const usFeatures = (data.features ?? [])
+            .filter(feature => feature.properties?.address?.countryRegion?.ISO === 'US')
+            .slice(0, MAX_SUGGESTIONS);
+
+        if (usFeatures.length === 0) {
             console.log('[DirectionsModal] No results found for query:', query);
             return [];
         }
 
         // Transform results to our format
         // Note: Using PascalCase to match C# AddressSuggestion class for proper deserialization
-        const suggestions = data.results.map(result => ({
-            Address: result.address.freeformAddress,
-            Locality: result.address.municipality || result.address.countrySubdivision,
-            Latitude: result.position.lat,
-            Longitude: result.position.lon
-        }));
+        const suggestions = usFeatures.map(feature => {
+            const address = feature.properties.address;
+            // Prefer the point meant for routing; geometry.coordinates is the display point
+            const routePoint = feature.properties.geocodePoints?.find(point => point.usageTypes?.includes('Route'));
+            const [longitude, latitude] = (routePoint ?? feature).geometry.coordinates;
+
+            return {
+                Address: address.formattedAddress,
+                Locality: address.locality || address.adminDistricts?.[0]?.shortName,
+                Latitude: latitude,
+                Longitude: longitude
+            };
+        });
 
         console.log('[DirectionsModal] Found address suggestions:', suggestions.length, suggestions);
         return suggestions;
