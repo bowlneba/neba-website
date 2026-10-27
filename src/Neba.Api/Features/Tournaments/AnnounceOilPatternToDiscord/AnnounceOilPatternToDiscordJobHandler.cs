@@ -24,15 +24,31 @@ internal sealed class AnnounceOilPatternToDiscordJobHandler(
 
         var tournamentId = job.TournamentId.ToString();
 
+        // The only place that decides whether to post: one atomic statement, so concurrent jobs produce
+        // one post and an edit after the job was scheduled still blocks it. Never undone: a failed post
+        // is not retried, because a timeout after Discord accepted it looks the same as a failure.
+        // Tournament.MarkOilPatternAnnounced is the same rule for in-memory callers.
+        var claimed = await appDbContext.Tournaments
+            .Where(tournament => tournament.Id == job.TournamentId
+                && tournament.OilPatternRevealDateTime == job.ExpectedRevealDateTime
+                && tournament.OilPatternAnnouncedAtUtc == null
+                && tournament.OilPatterns.Any())
+            .ExecuteUpdateAsync(
+                set => set.SetProperty(tournament => tournament.OilPatternAnnouncedAtUtc, timeProvider.GetUtcNow()),
+                cancellationToken);
+
+        if (claimed == 0)
+        {
+            await LogSkipReasonAsync(job, tournamentId, cancellationToken);
+            return;
+        }
+
         var row = await appDbContext.Tournaments
             .AsNoTracking()
             .Where(tournament => tournament.Id == job.TournamentId)
             .Select(tournament => new TournamentRow
             {
                 Name = tournament.Name,
-                RevealDateTime = tournament.OilPatternRevealDateTime,
-                AnnouncedAtUtc = tournament.OilPatternAnnouncedAtUtc,
-                HasOilPattern = tournament.OilPatterns.Any(),
                 LogoContainer = tournament.Logo != null ? tournament.Logo.Container : null,
                 LogoPath = tournament.Logo != null ? tournament.Logo.Path : null,
                 Sponsors = tournament.Sponsors
@@ -45,56 +61,10 @@ internal sealed class AnnounceOilPatternToDiscordJobHandler(
             })
             .SingleOrDefaultAsync(cancellationToken);
 
+        // Deleted between the claim and this read: nothing left to announce.
         if (row is null)
         {
             logger.LogAnnouncementSkippedMissing(tournamentId);
-            return;
-        }
-
-        if (row.RevealDateTime is not { } revealDateTime)
-        {
-            logger.LogAnnouncementSkippedNoRevealDate(tournamentId);
-            return;
-        }
-
-        if (!IsSameInstant(revealDateTime, job.ExpectedRevealDateTime))
-        {
-            logger.LogAnnouncementSkippedStaleDate(tournamentId, job.ExpectedRevealDateTime, revealDateTime);
-            return;
-        }
-
-        if (!row.HasOilPattern)
-        {
-            logger.LogAnnouncementSkippedNoPattern(tournamentId);
-            return;
-        }
-
-        if (row.AnnouncedAtUtc is not null)
-        {
-            logger.LogAnnouncementSkippedAlreadyAnnounced(tournamentId);
-            return;
-        }
-
-        // Claim before posting, in one atomic statement, so concurrent jobs produce one post. The WHERE
-        // clause repeats the checks above, so an edit between the read and this statement still blocks
-        // the post. Never undone: a failed post is not retried, because a timeout after Discord accepted
-        // it looks the same as a failure. Tournament.MarkOilPatternAnnounced is the same rule in memory.
-        var revealFloor = job.ExpectedRevealDateTime - RevealDateTolerance;
-        var revealCeiling = job.ExpectedRevealDateTime + RevealDateTolerance;
-
-        var claimed = await appDbContext.Tournaments
-            .Where(tournament => tournament.Id == job.TournamentId
-                && tournament.OilPatternAnnouncedAtUtc == null
-                && tournament.OilPatterns.Any()
-                && tournament.OilPatternRevealDateTime >= revealFloor
-                && tournament.OilPatternRevealDateTime <= revealCeiling)
-            .ExecuteUpdateAsync(
-                set => set.SetProperty(tournament => tournament.OilPatternAnnouncedAtUtc, timeProvider.GetUtcNow()),
-                cancellationToken);
-
-        if (claimed == 0)
-        {
-            logger.LogAnnouncementSkippedClaimLost(tournamentId);
             return;
         }
 
@@ -114,19 +84,56 @@ internal sealed class AnnounceOilPatternToDiscordJobHandler(
         logger.LogOilPatternAnnounced(tournamentId);
     }
 
-    // Absorbs sub-millisecond rounding between the time the job was scheduled with and the stored one.
-    // A real edit moves the time by far more than this.
-    private static readonly TimeSpan RevealDateTolerance = TimeSpan.FromMilliseconds(1);
+    // Reads the tournament only to say why the claim changed no row. It never decides whether to post.
+    private async Task LogSkipReasonAsync(AnnounceOilPatternToDiscordJob job, string tournamentId, CancellationToken cancellationToken)
+    {
+        var state = await appDbContext.Tournaments
+            .AsNoTracking()
+            .Where(tournament => tournament.Id == job.TournamentId)
+            .Select(tournament => new SkipState
+            {
+                RevealDateTime = tournament.OilPatternRevealDateTime,
+                AnnouncedAtUtc = tournament.OilPatternAnnouncedAtUtc,
+                HasOilPattern = tournament.OilPatterns.Any()
+            })
+            .SingleOrDefaultAsync(cancellationToken);
 
-    private static bool IsSameInstant(DateTimeOffset stored, DateTimeOffset expected)
-        => (stored - expected).Duration() <= RevealDateTolerance;
+        if (state is null)
+        {
+            logger.LogAnnouncementSkippedMissing(tournamentId);
+        }
+        else if (state.RevealDateTime is not { } revealDateTime)
+        {
+            logger.LogAnnouncementSkippedNoRevealDate(tournamentId);
+        }
+        else if (revealDateTime != job.ExpectedRevealDateTime)
+        {
+            logger.LogAnnouncementSkippedStaleDate(tournamentId, job.ExpectedRevealDateTime, revealDateTime);
+        }
+        else if (!state.HasOilPattern)
+        {
+            logger.LogAnnouncementSkippedNoPattern(tournamentId);
+        }
+        else if (state.AnnouncedAtUtc is not null)
+        {
+            logger.LogAnnouncementSkippedAlreadyAnnounced(tournamentId);
+        }
+        else
+        {
+            logger.LogAnnouncementSkippedClaimLost(tournamentId);
+        }
+    }
+
+    private sealed class SkipState
+    {
+        public DateTimeOffset? RevealDateTime { get; init; }
+        public DateTimeOffset? AnnouncedAtUtc { get; init; }
+        public required bool HasOilPattern { get; init; }
+    }
 
     private sealed class TournamentRow
     {
         public required string Name { get; init; }
-        public DateTimeOffset? RevealDateTime { get; init; }
-        public DateTimeOffset? AnnouncedAtUtc { get; init; }
-        public required bool HasOilPattern { get; init; }
         public string? LogoContainer { get; init; }
         public string? LogoPath { get; init; }
         public required List<SponsorLogoRow> Sponsors { get; init; }

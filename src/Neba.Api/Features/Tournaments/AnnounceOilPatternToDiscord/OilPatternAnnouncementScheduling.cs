@@ -5,11 +5,6 @@ namespace Neba.Api.Features.Tournaments.AnnounceOilPatternToDiscord;
 
 internal static class OilPatternAnnouncementScheduling
 {
-    // PostgreSQL stores timestamps to the microsecond, but a reveal time saved from the API can carry
-    // finer ticks. The job compares the time it was scheduled for with the stored one, so schedule with
-    // the value the database will return.
-    private const long TicksPerMicrosecond = 10;
-
     extension(IBackgroundJobScheduler scheduler)
     {
         /// <summary>
@@ -30,8 +25,7 @@ internal static class OilPatternAnnouncementScheduling
                 return;
             }
 
-            if (previousRevealDateTime is { } previous
-                && TruncateToMicroseconds(previous) == TruncateToMicroseconds(tournament.OilPatternRevealDateTime!.Value))
+            if (previousRevealDateTime == tournament.OilPatternRevealDateTime)
             {
                 return;
             }
@@ -40,12 +34,10 @@ internal static class OilPatternAnnouncementScheduling
                 new AnnounceOilPatternToDiscordJob
                 {
                     TournamentId = tournament.Id,
-                    ExpectedRevealDateTime = TruncateToMicroseconds(tournament.OilPatternRevealDateTime!.Value)
+                    ExpectedRevealDateTime = tournament.OilPatternRevealDateTime!.Value
                 },
                 announceAt.Value);
         }
     }
 
-    private static DateTimeOffset TruncateToMicroseconds(DateTimeOffset value)
-        => new(value.Ticks - (value.Ticks % TicksPerMicrosecond), value.Offset);
 }

@@ -40,27 +40,6 @@ public sealed class OilPatternAnnouncementSchedulingTests
         scheduledAt.ShouldBe(revealAt + Delay);
     }
 
-    [Fact(DisplayName = "ScheduleOilPatternAnnouncement truncates the expected reveal date to microseconds")]
-    public void ScheduleOilPatternAnnouncement_ShouldTruncateExpectedRevealDateToMicroseconds()
-    {
-        // Arrange
-        var revealAt = Now.AddDays(3).AddTicks(7);
-        var tournament = TournamentFactory.Create(oilPatternRevealDateTime: revealAt);
-        AnnounceOilPatternToDiscordJob? scheduled = null;
-        var scheduler = new Mock<IBackgroundJobScheduler>(MockBehavior.Strict);
-        scheduler
-            .Setup(s => s.Schedule(It.IsAny<AnnounceOilPatternToDiscordJob>(), revealAt + Delay))
-            .Callback<AnnounceOilPatternToDiscordJob, DateTimeOffset>((job, _) => scheduled = job)
-            .Returns("job-id");
-
-        // Act
-        scheduler.Object.ScheduleOilPatternAnnouncement(tournament, Now, Delay);
-
-        // Assert
-        scheduled.ShouldNotBeNull();
-        scheduled.ExpectedRevealDateTime.ShouldBe(Now.AddDays(3));
-    }
-
     [Fact(DisplayName = "ScheduleOilPatternAnnouncement schedules nothing when there is no reveal date")]
     public void ScheduleOilPatternAnnouncement_ShouldScheduleNothing_WhenNoRevealDate()
     {

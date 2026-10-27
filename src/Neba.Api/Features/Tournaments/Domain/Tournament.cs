@@ -140,6 +140,15 @@ public sealed class Tournament
     /// </summary>
     public DateTimeOffset? OilPatternRevealDateTime { get; private set; }
 
+    // PostgreSQL stores timestamps to the microsecond. Dropping finer ticks here keeps the in-memory reveal
+    // time equal to the stored one, so a job scheduled with it matches the row exactly.
+    private const long TicksPerMicrosecond = 10;
+
+    private static DateTimeOffset? TruncateToMicroseconds(DateTimeOffset? value)
+        => value is { } instant
+            ? new DateTimeOffset(instant.Ticks - (instant.Ticks % TicksPerMicrosecond), instant.Offset)
+            : null;
+
     /// <summary>
     /// When the oil pattern reveal was announced, or <see langword="null"/> if it has not been. Set once.
     /// </summary>
@@ -309,7 +318,7 @@ public sealed class Tournament
             Logo = logo,
             PatternLengthCategory = patternLengthCategory,
             PatternRatioCategory = patternRatioCategory,
-            OilPatternRevealDateTime = oilPatternRevealDateTime,
+            OilPatternRevealDateTime = TruncateToMicroseconds(oilPatternRevealDateTime),
             LegacyId = legacyId
         };
 
@@ -368,7 +377,7 @@ public sealed class Tournament
         Logo = logo;
         PatternLengthCategory = patternLengthCategory;
         PatternRatioCategory = patternRatioCategory;
-        OilPatternRevealDateTime = oilPatternRevealDateTime;
+        OilPatternRevealDateTime = TruncateToMicroseconds(oilPatternRevealDateTime);
 
         return Result.Updated;
     }

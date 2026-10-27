@@ -363,31 +363,14 @@ public sealed class AnnounceOilPatternToDiscordJobHandlerTests(AppDbContextFixtu
         _notifier.Verify(n => n.NotifyAsync(It.IsAny<NewsAnnouncement>(), It.IsAny<CancellationToken>()), Times.Once);
     }
 
-    [Fact(DisplayName = "ExecuteAsync posts when the date the job was scheduled for carries sub-microsecond ticks the database drops")]
-    public async Task ExecuteAsync_ShouldPost_WhenJobDateHasSubMicrosecondTicks()
-    {
-        // Arrange
-        var ct = TestContext.Current.CancellationToken;
-        var tournament = await SeedTournamentAsync(ct, revealAt: RevealAt);
-        SetupNotifier();
-        var handler = CreateHandler();
-        var job = AnnounceOilPatternToDiscordJobFactory.Create(tournament.Id, RevealAt.AddTicks(7));
-
-        // Act
-        await handler.ExecuteAsync(job, ct);
-
-        // Assert
-        _notifier.Verify(n => n.NotifyAsync(It.IsAny<NewsAnnouncement>(), It.IsAny<CancellationToken>()), Times.Once);
-    }
-
-    [Fact(DisplayName = "ExecuteAsync skips when the job's date is just outside the tolerance of the stored date")]
-    public async Task ExecuteAsync_ShouldSkip_WhenJobDateIsOutsideTolerance()
+    [Fact(DisplayName = "ExecuteAsync skips when the job's date differs from the stored date by even one microsecond")]
+    public async Task ExecuteAsync_ShouldSkip_WhenJobDateDiffersByAMicrosecond()
     {
         // Arrange
         var ct = TestContext.Current.CancellationToken;
         var tournament = await SeedTournamentAsync(ct, revealAt: RevealAt);
         var handler = CreateHandler();
-        var job = AnnounceOilPatternToDiscordJobFactory.Create(tournament.Id, RevealAt.AddMilliseconds(2));
+        var job = AnnounceOilPatternToDiscordJobFactory.Create(tournament.Id, RevealAt.AddTicks(10));
 
         // Act
         await handler.ExecuteAsync(job, ct);

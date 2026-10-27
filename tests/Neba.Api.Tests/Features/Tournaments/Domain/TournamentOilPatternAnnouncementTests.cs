@@ -104,4 +104,46 @@ public sealed class TournamentOilPatternAnnouncementTests
         // Assert
         tournament.OilPatternAnnouncedAtUtc.ShouldBe(Now);
     }
+
+    [Fact(DisplayName = "Create drops sub-microsecond ticks from the reveal date")]
+    public void Create_ShouldTruncateRevealDateToMicroseconds()
+    {
+        // Arrange
+        var revealAt = Now.AddDays(3);
+
+        // Act
+        var tournament = TournamentFactory.Create(oilPatternRevealDateTime: revealAt.AddTicks(7));
+
+        // Assert
+        tournament.OilPatternRevealDateTime.ShouldBe(revealAt);
+    }
+
+    [Fact(DisplayName = "Update drops sub-microsecond ticks from the reveal date")]
+    public void Update_ShouldTruncateRevealDateToMicroseconds()
+    {
+        // Arrange
+        var tournament = TournamentFactory.Create();
+        var revealAt = Now.AddDays(3);
+
+        // Act
+        var result = tournament.Update(
+            name: tournament.Name,
+            tournamentType: tournament.TournamentType,
+            startDate: tournament.StartDate,
+            endDate: tournament.EndDate,
+            seasonId: tournament.SeasonId,
+            statsEligible: tournament.StatsEligible,
+            entryFee: tournament.EntryFee,
+            nebaAddedMoney: tournament.NebaAddedMoney,
+            bowlingCenterId: null,
+            externalRegistrationUrl: null,
+            logo: null,
+            patternLengthCategory: null,
+            patternRatioCategory: null,
+            oilPatternRevealDateTime: revealAt.AddTicks(7));
+
+        // Assert
+        result.IsError.ShouldBeFalse();
+        tournament.OilPatternRevealDateTime.ShouldBe(revealAt);
+    }
 }
