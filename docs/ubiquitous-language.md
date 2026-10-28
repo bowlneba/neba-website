@@ -1118,6 +1118,19 @@ Titles are the authoritative source for:
 
 ---
 
+### Oil Pattern Announcement
+
+**Definition**: The one-time Discord post in the public news channel saying a Tournament's oil pattern has been revealed, with a link to the tournament page. It is sent shortly after the reveal date passes, only for a Tournament that has an oil pattern assigned, and never more than once for the same Tournament. It names the Tournament but does not describe the pattern.
+
+**In Code**:
+
+- Namespace: `Neba.Api.Features.Tournaments.Domain`
+- Type: `Tournament` (state and scheduling rule)
+- Announced time: `Tournament.OilPatternAnnouncedAtUtc`
+- Scheduling rule: `Tournament.GetOilPatternAnnouncementTime`
+
+---
+
 ## Side Cuts
 
 ### Side Cut

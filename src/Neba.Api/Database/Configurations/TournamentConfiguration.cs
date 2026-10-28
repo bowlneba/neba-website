@@ -59,6 +59,9 @@ internal sealed class TournamentConfiguration
         builder.Property(tournament => tournament.OilPatternRevealDateTime)
             .HasColumnName("oil_pattern_reveal_date_utc");
 
+        builder.Property(tournament => tournament.OilPatternAnnouncedAtUtc)
+            .HasColumnName("oil_pattern_announced_at_utc");
+
         builder.Property(tournament => tournament.LegacyId)
             .ValueGeneratedNever();
 
