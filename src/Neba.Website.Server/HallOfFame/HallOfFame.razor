@@ -50,7 +50,7 @@
 
     <!-- About — static content, always visible -->
     <section class="hof-about" aria-labelledby="hof-about-title">
-        <img class="hof-about__logo" src="/images/neba-hof.jpg" alt="NEBA Hall of Fame logo" width="973" height="885" />
+        <img class="hof-about__logo" src="/images/neba-hof-480.jpg" alt="NEBA Hall of Fame logo" width="480" height="436" />
         <div class="hof-about__main">
             <div class="hof-about__intro">
                 <h2 id="hof-about-title" class="hof-about__title">About the Hall of Fame</h2>
@@ -149,7 +149,7 @@
                                                       OnEdit="@EditCallbackFor(inductee)" />
                                     <div class="inductee-name">@inductee.BowlerName</div>
                                     <div class="inductee-categories">
-                                        @foreach (var category in inductee.Categories.OrderBy(HallOfFameCategories.OrderOf))
+                                        @foreach (var category in inductee.Categories)
                                         {
                                             <span class="inductee-category"><span class="hof-dot @HallOfFameCategories.DotClass(category)"></span>@category</span>
                                         }

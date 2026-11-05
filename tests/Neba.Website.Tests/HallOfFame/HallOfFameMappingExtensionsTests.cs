@@ -20,4 +20,18 @@ public sealed class HallOfFameMappingExtensionsTests
         // Assert
         await Verify(viewModels);
     }
+
+    [Fact(DisplayName = "Orders categories in display order regardless of the order the API sent them")]
+    public void ToViewModel_ShouldOrderCategories_InDisplayOrder()
+    {
+        // Arrange
+        var response = HallOfFameInductionResponseFactory.Create(
+            categories: ["Friend of NEBA", "Superior Performance", "Meritorious Service"]);
+
+        // Act
+        var viewModel = response.ToViewModel();
+
+        // Assert
+        viewModel.Categories.ShouldBe(["Superior Performance", "Meritorious Service", "Friend of NEBA"]);
+    }
 }

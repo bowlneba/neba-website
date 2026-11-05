@@ -8,15 +8,17 @@ internal static class HallOfFameCategories
     /// <summary>
     /// The category names in display order.
     /// </summary>
-    public static IReadOnlyList<string> Names { get; } = ["Superior Performance", "Meritorious Service", "Friend of NEBA"];
+    public static IReadOnlyList<string> Names => OrderedNames;
+
+    private static readonly string[] OrderedNames = ["Superior Performance", "Meritorious Service", "Friend of NEBA"];
 
     /// <summary>
     /// Position of a category in the display order; unknown names sort last.
     /// </summary>
     public static int OrderOf(string category)
     {
-        var index = Names.ToList().IndexOf(category);
-        return index < 0 ? Names.Count : index;
+        var index = Array.IndexOf(OrderedNames, category);
+        return index < 0 ? OrderedNames.Length : index;
     }
 
     /// <summary>

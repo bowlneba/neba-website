@@ -17,8 +17,8 @@
     BowlerName: Myron Okuneva,
     InductionYear: 2006,
     Categories: [
-      Friend of NEBA,
-      Superior Performance
+      Superior Performance,
+      Friend of NEBA
     ]
   },
   {

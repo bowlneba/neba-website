@@ -13,7 +13,7 @@ internal static class HallOfFameMappingExtensions
                 Id = dto.Id,
                 BowlerName = dto.BowlerName,
                 InductionYear = dto.Year,
-                Categories = dto.Categories,
+                Categories = [.. dto.Categories.OrderBy(HallOfFameCategories.OrderOf)],
                 PhotoUri = dto.PhotoUri,
                 PhotoFocalX = dto.PhotoFocalX,
                 PhotoFocalY = dto.PhotoFocalY,
