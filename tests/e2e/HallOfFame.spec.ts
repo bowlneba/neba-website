@@ -25,7 +25,19 @@ test.describe('Hall of Fame page', () => {
 
   test('shows multi-category inductee with combined categories', async ({ page }) => {
     await expect(page.locator('.inductee-name', { hasText: 'Tom Davis' })).toBeVisible();
-    await expect(page.locator('.combined-categories')).toBeVisible();
+    await expect(page.locator('.inductee-item', { hasText: 'Tom Davis' }).locator('.inductee-category')).toHaveCount(2);
+  });
+
+  test('filters inductees by name', async ({ page }) => {
+    await page.fill('#hof-search', 'alice');
+    await expect(page.locator('.inductee-name', { hasText: 'Alice Williams' })).toBeVisible();
+    await expect(page.locator('.inductee-name', { hasText: 'Jane Smith' })).toHaveCount(0);
+  });
+
+  test('filters inductees by category', async ({ page }) => {
+    await page.getByRole('button', { name: 'Friend of NEBA' }).click();
+    await expect(page.locator('.inductee-name', { hasText: 'Alice Williams' })).toBeVisible();
+    await expect(page.locator('.inductee-name', { hasText: 'Bob Johnson' })).toHaveCount(0);
   });
 
   test('eligibility criteria section is always visible', async ({ page }) => {

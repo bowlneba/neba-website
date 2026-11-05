@@ -1,11 +1,65 @@
+/* The stage: a navy gallery wall. The gold is local to this page. */
+.hof-stage {
+    --hof-gold: #E0B454;
+    --hof-gold-deep: #B98C2D;
+    --hof-ink: #F4F6FF;
+    --hof-ink-muted: #AEB8E6;
+    background: var(--neba-blue-brand);
+    color: var(--hof-ink);
+    border-radius: 0.75rem;
+    padding: clamp(1rem, 4vw, 2.5rem);
+}
+
+.hof-year-block {
+    display: grid;
+    gap: 0.25rem 1.5rem;
+    padding-block: 2rem;
+    border-top: 1px solid rgba(255, 255, 255, 0.14);
+}
+
+.hof-year-block:first-child {
+    border-top: 0;
+    padding-top: 0;
+}
+
+.hof-year {
+    display: flex;
+    align-items: baseline;
+    gap: 0.75rem;
+    margin: 0;
+}
+
+.hof-year__label {
+    font-size: 0.8rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.14em;
+    color: var(--hof-ink-muted);
+}
+
+.hof-year__num {
+    font-size: clamp(3rem, 9vw, 5rem);
+    font-weight: 800;
+    line-height: 0.95;
+    letter-spacing: 0.02em;
+    color: transparent;
+    -webkit-text-stroke: 1.5px var(--hof-gold);
+}
+
+.hof-year__count {
+    margin: 0 0 1.25rem;
+    font-size: 0.85rem;
+    color: var(--hof-ink-muted);
+}
+
 /* Photo grid — auto-fill not achievable with standard Tailwind config */
 .inductees-photo-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
-    gap: 1.5rem;
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    gap: 1.75rem 1.5rem;
 }
 
-/* Inductee card: photo circle stacked above name */
+/* Inductee card: gold-ringed portrait above an engraved name plate */
 .inductee-item {
     display: flex;
     flex-direction: column;
@@ -13,26 +67,214 @@
     text-align: center;
 }
 
+.inductee-item ::deep .inductee-photo {
+    box-shadow: 0 0 0 3px var(--neba-blue-brand), 0 0 0 5px var(--hof-gold), 0 6px 14px rgba(0, 0, 0, 0.35);
+}
+
 .inductee-item:hover ::deep .inductee-photo {
     transform: scale(1.05);
 }
 
 .inductee-name {
-    font-weight: 600;
-    color: var(--neba-gray-700);
+    font-weight: 700;
     font-size: 0.95rem;
-    margin-top: 0.25rem;
+    line-height: 1.2;
+    padding: 0.3rem 0.6rem;
+    border-radius: 2px;
+    color: #1d1604;
+    background: linear-gradient(180deg, #E8C873, var(--hof-gold-deep));
+    letter-spacing: 0.02em;
 }
 
-.combined-categories {
-    margin-top: 0.5rem;
-    font-size: 0.8rem;
+.inductee-categories {
+    margin-top: 0.4rem;
+    display: grid;
+    gap: 0.1rem;
+    font-size: 0.72rem;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--hof-ink-muted);
+}
+
+.hof-dot {
+    display: inline-block;
+    width: 0.55em;
+    height: 0.55em;
+    margin-right: 0.4em;
+    border-radius: 50%;
+    background: var(--hof-ink-muted);
+}
+
+.hof-dot--superior { background: #6C8CFF; }
+.hof-dot--meritorious { background: #E0B454; }
+.hof-dot--friend { background: #5FD1A0; }
+
+/* Filters */
+.hof-filters {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    align-items: center;
+}
+
+.hof-search {
+    flex: 1 1 14rem;
+    min-width: 0;
+    padding: 0.55rem 1rem;
+    border: 1px solid var(--neba-gray-300);
+    border-radius: 999px;
+    background: white;
+    color: var(--neba-gray-700);
+    font: inherit;
+}
+
+.hof-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+}
+
+.hof-chip {
+    padding: 0.45rem 1rem;
+    border: 1px solid var(--neba-gray-300);
+    border-radius: 999px;
+    background: white;
+    color: var(--neba-gray-700);
+    font: inherit;
+    font-size: 0.9rem;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.hof-chip[aria-pressed="true"] {
+    background: var(--neba-blue-brand);
+    border-color: var(--neba-blue-brand);
+    color: white;
+}
+
+.hof-chip:focus-visible,
+.hof-search:focus-visible {
+    outline: 3px solid var(--neba-blue-700);
+    outline-offset: 2px;
+}
+
+.hof-empty {
+    padding: 2rem 0;
+    text-align: center;
     color: var(--neba-gray-500);
-    font-style: italic;
 }
 
 @media (max-width: 768px) {
     .inductees-photo-grid {
-        grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+        grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+    }
+}
+
+/* About */
+.hof-about {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    gap: 1.5rem 2rem;
+    align-items: center;
+    padding: clamp(1rem, 3vw, 1.75rem);
+    border: 1px solid var(--neba-gray-200);
+    border-radius: 0.75rem;
+    background: var(--neba-gray-050);
+}
+
+.hof-about__main {
+    display: grid;
+    gap: 1.5rem;
+    min-width: 0;
+}
+
+/* The logo is a JPG on white; multiply lets the card color show through. */
+.hof-about__logo {
+    width: clamp(10rem, 22vw, 15rem);
+    height: auto;
+    mix-blend-mode: multiply;
+}
+
+.hof-about__title {
+    margin: 0 0 0.5rem;
+    font-size: 1.4rem;
+    font-weight: 700;
+    color: var(--neba-blue-brand);
+}
+
+.hof-about__intro {
+    max-width: 68ch;
+    color: var(--neba-gray-700);
+    line-height: 1.6;
+}
+
+.hof-about__intro p {
+    margin: 0 0 0.6rem;
+}
+
+.hof-about__intro a {
+    color: var(--neba-blue-700);
+    font-weight: 600;
+    text-decoration: underline;
+}
+
+.hof-about__facts {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem 2.5rem;
+    margin: 0;
+}
+
+.hof-about__facts dt {
+    font-size: 1.75rem;
+    font-weight: 800;
+    line-height: 1;
+    color: var(--neba-blue-brand);
+}
+
+.hof-about__facts dd {
+    margin: 0.2rem 0 0;
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--neba-gray-500);
+}
+
+.hof-about__categories {
+    grid-column: 1 / -1;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr));
+    gap: 1.25rem;
+}
+
+.hof-about__category {
+    min-width: 0;
+    padding-top: 0.75rem;
+    border-top: 2px solid var(--neba-gray-300);
+}
+
+.hof-about__category h3 {
+    margin: 0 0 0.35rem;
+    font-size: 1rem;
+    font-weight: 700;
+    color: var(--neba-gray-700);
+}
+
+.hof-about__category p {
+    margin: 0;
+    font-size: 0.9rem;
+    line-height: 1.5;
+    color: var(--neba-gray-600);
+}
+
+@media (max-width: 700px) {
+    .hof-about {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .hof-about__logo {
+        order: -1;
+        justify-self: center;
+        width: 10rem;
     }
 }

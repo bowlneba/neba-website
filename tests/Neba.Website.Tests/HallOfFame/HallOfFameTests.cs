@@ -110,7 +110,7 @@ public sealed class HallOfFameTests : IDisposable
         var cut = _ctx.Render<HallOfFamePage>();
 
         // Assert
-        cut.Markup.ShouldContain("Class of 2019");
+        cut.Find("h2.hof-year").TextContent.ShouldBe("Class of 2019");
     }
 
     [Fact(DisplayName = "Should show category name for single-category inductee")]
@@ -128,19 +128,127 @@ public sealed class HallOfFameTests : IDisposable
         cut.Markup.ShouldContain(HallOfFameCategory.SuperiorPerformance.Name);
     }
 
-    [Fact(DisplayName = "Should show Combined section for multi-category inductee")]
-    public void Render_ShouldShowCombinedSection_WhenMultiCategoryInductee()
+    [Fact(DisplayName = "Should show every category on a single card for a multi-category inductee")]
+    public void Render_ShouldShowAllCategoriesOnOneCard_WhenMultiCategoryInductee()
     {
-        // Default factory creates inductees with two categories
         // Arrange
-        var induction = HallOfFameInductionResponseFactory.Create();
+        var induction = HallOfFameInductionResponseFactory.Create(
+            bowlerName: "Tom Davis",
+            categories:
+            [
+                HallOfFameCategory.SuperiorPerformance.Name,
+                HallOfFameCategory.MeritoriousService.Name
+            ]);
         SetupSuccessResponse([induction]);
 
         // Act
         var cut = _ctx.Render<HallOfFamePage>();
 
         // Assert
-        cut.Markup.ShouldContain("Combined");
+        cut.FindAll(".inductee-item").Count.ShouldBe(1);
+        cut.FindAll(".inductee-category").Select(c => c.TextContent.Trim())
+            .ShouldBe([HallOfFameCategory.SuperiorPerformance.Name, HallOfFameCategory.MeritoriousService.Name]);
+    }
+
+    [Fact(DisplayName = "Should filter inductees by name when the visitor types in the search box")]
+    public void Input_ShouldFilterByName_WhenSearchTyped()
+    {
+        // Arrange
+        SetupSuccessResponse([
+            HallOfFameInductionResponseFactory.Create(bowlerName: "Jane Smith", categories: [HallOfFameCategory.SuperiorPerformance.Name]),
+            HallOfFameInductionResponseFactory.Create(bowlerName: "Tom Davis", categories: [HallOfFameCategory.SuperiorPerformance.Name]),
+        ]);
+        var cut = _ctx.Render<HallOfFamePage>();
+
+        // Act
+        cut.Find("#hof-search").Input("davis");
+
+        // Assert
+        cut.FindAll(".inductee-name").Select(n => n.TextContent.Trim()).ShouldBe(["Tom Davis"]);
+    }
+
+    [Fact(DisplayName = "Should filter inductees by category when a category chip is selected")]
+    public void Click_ShouldFilterByCategory_WhenChipSelected()
+    {
+        // Arrange
+        SetupSuccessResponse([
+            HallOfFameInductionResponseFactory.Create(bowlerName: "Jane Smith", categories: [HallOfFameCategory.SuperiorPerformance.Name]),
+            HallOfFameInductionResponseFactory.Create(bowlerName: "Bob Johnson", categories: [HallOfFameCategory.FriendOfNeba.Name]),
+        ]);
+        var cut = _ctx.Render<HallOfFamePage>();
+
+        // Act
+        cut.FindAll("button.hof-chip").Single(b => b.TextContent.Trim() == HallOfFameCategory.FriendOfNeba.Name).Click();
+
+        // Assert
+        cut.FindAll(".inductee-name").Select(n => n.TextContent.Trim()).ShouldBe(["Bob Johnson"]);
+    }
+
+    [Fact(DisplayName = "Should show a no-match message when the filters match nobody")]
+    public void Input_ShouldShowNoMatchMessage_WhenNothingMatches()
+    {
+        // Arrange
+        SetupSuccessResponse([HallOfFameInductionResponseFactory.Create(bowlerName: "Jane Smith")]);
+        var cut = _ctx.Render<HallOfFamePage>();
+
+        // Act
+        cut.Find("#hof-search").Input("zzz");
+
+        // Assert
+        cut.Find(".hof-empty").TextContent.ShouldContain("No inductees match");
+        cut.FindAll(".hof-stage").ShouldBeEmpty();
+    }
+
+    [Fact(DisplayName = "Should show the about section with all three categories while loading")]
+    public void Render_ShouldShowAboutSection_WhileLoading()
+    {
+        // Arrange — never resolve — page stays in loading state
+        _mockApi
+            .Setup(x => x.ListHallOfFameInductionsAsync(It.IsAny<CancellationToken>()))
+            .Returns(new TaskCompletionSource<IApiResponse<CollectionResponse<HallOfFameInductionResponse>>>().Task);
+
+        // Act
+        var cut = _ctx.Render<HallOfFamePage>();
+
+        // Assert
+        cut.Find("#hof-about-title").TextContent.ShouldBe("About the Hall of Fame");
+        cut.FindAll(".hof-about__category h3").Select(h => h.TextContent.Trim())
+            .ShouldBe([
+                HallOfFameCategory.SuperiorPerformance.Name,
+                HallOfFameCategory.MeritoriousService.Name,
+                HallOfFameCategory.FriendOfNeba.Name]);
+    }
+
+    [Fact(DisplayName = "Should link the criteria link to the criteria section on this page")]
+    public void Render_ShouldLinkToCriteriaSection_WithPagePath()
+    {
+        // Arrange
+        SetupSuccessResponse([]);
+
+        // Act
+        var cut = _ctx.Render<HallOfFamePage>();
+
+        // Assert
+        cut.Find(".hof-about__intro a").GetAttribute("href").ShouldBe("/hall-of-fame#hof-criteria");
+        cut.FindAll("#hof-criteria").Count.ShouldBe(1);
+    }
+
+    [Fact(DisplayName = "Should render every inductee at the same portrait size, however large the class")]
+    public void Render_ShouldUseOneGridForAllClasses_RegardlessOfClassSize()
+    {
+        // Arrange
+        var charter = Enumerable.Range(1, 30)
+            .Select(i => HallOfFameInductionResponseFactory.Create(year: 2017, bowlerName: "Charter Member" + i))
+            .ToList();
+        charter.Add(HallOfFameInductionResponseFactory.Create(year: 2024, bowlerName: "Recent Star"));
+        SetupSuccessResponse(charter);
+
+        // Act
+        var cut = _ctx.Render<HallOfFamePage>();
+
+        // Assert
+        cut.FindAll(".inductees-photo-grid").Count.ShouldBe(2);
+        cut.FindAll("[class*='photo-grid--']").ShouldBeEmpty();
     }
 
     [Fact(DisplayName = "Should display newest year before older year")]
@@ -156,11 +264,9 @@ public sealed class HallOfFameTests : IDisposable
 
         // Act
         var cut = _ctx.Render<HallOfFamePage>();
-        var markup = cut.Markup;
 
         // Assert
-        markup.IndexOf("Class of 2023", StringComparison.Ordinal)
-            .ShouldBeLessThan(markup.IndexOf("Class of 2010", StringComparison.Ordinal));
+        cut.FindAll("h2.hof-year").Select(h => h.TextContent).ShouldBe(["Class of 2023", "Class of 2010"]);
     }
 
     [Fact(DisplayName = "Should show error alert when API call fails")]
