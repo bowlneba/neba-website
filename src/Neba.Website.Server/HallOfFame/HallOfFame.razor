@@ -8,6 +8,7 @@
 @inject IHallOfFameApi HallOfFameApi
 @inject AuthenticationStateProvider AuthenticationStateProvider
 @inject IAuthorizationService AuthorizationService
+@implements IDisposable
 
 @rendermode @(new InteractiveServerRenderMode(prerender: false))
 
@@ -51,22 +52,22 @@
     <section class="hof-about" aria-labelledby="hof-about-title">
         <img class="hof-about__logo" src="/images/neba-hof.jpg" alt="NEBA Hall of Fame logo" width="973" height="885" />
         <div class="hof-about__main">
-        <div class="hof-about__intro">
-            <h2 id="hof-about-title" class="hof-about__title">About the Hall of Fame</h2>
-            <p>
-                The Hall of Fame honors the people who made NEBA what it is: its best bowlers, the volunteers who ran it,
-                and the friends who supported it. NEBA has held at least one tournament every month since 1963, the
-                longest-running monthly scratch tournament in USBC history. The Hall of Fame began with the Class of 2017.
-            </p>
-            <p>
-                Inductees are honored at a banquet held every two years. Everyone honored at the same banquet forms that
-                year's class. <a href="/hall-of-fame#hof-criteria">See the eligibility criteria</a>.
-            </p>
-        </div>
-        <dl class="hof-about__facts">
-            <div><dt>1963</dt><dd>NEBA founded</dd></div>
-            <div><dt>2017</dt><dd>First Hall of Fame class</dd></div>
-        </dl>
+            <div class="hof-about__intro">
+                <h2 id="hof-about-title" class="hof-about__title">About the Hall of Fame</h2>
+                <p>
+                    The Hall of Fame honors the people who made NEBA what it is: its best bowlers, the volunteers who ran it,
+                    and the friends who supported it. NEBA has held at least one tournament every month since 1963, the
+                    longest-running monthly scratch tournament in USBC history. The Hall of Fame began with the Class of 2017.
+                </p>
+                <p>
+                    Inductees are honored at a banquet held every two years. Everyone honored at the same banquet forms that
+                    year's class. <a href="/hall-of-fame#hof-criteria">See the eligibility criteria</a>.
+                </p>
+            </div>
+            <dl class="hof-about__facts">
+                <div><dt>1963</dt><dd>NEBA founded</dd></div>
+                <div><dt>2017</dt><dd>First Hall of Fame class</dd></div>
+            </dl>
         </div>
         <div class="hof-about__categories">
             <div class="hof-about__category">
@@ -110,15 +111,14 @@
                    placeholder="Search by name"
                    aria-label="Search inductees by name"
                    autocomplete="off"
-                   @bind="Search"
-                   @bind:event="oninput" />
+                   @oninput="OnSearchInput" />
             <div class="hof-chips" role="group" aria-label="Filter by category">
                 <button type="button" class="hof-chip" aria-pressed="@PressedValue(_category is null)" @onclick="@(() => SelectCategory(null))">All</button>
-                @foreach (var category in Categories)
+                @foreach (var category in HallOfFameCategories.Names)
                 {
                     var selected = category;
                     <button type="button" class="hof-chip" aria-pressed="@PressedValue(_category == selected)" @onclick="@(() => SelectCategory(selected))">
-                        <span class="hof-dot @CategoryClass(selected)"></span>@selected
+                        <span class="hof-dot @HallOfFameCategories.DotClass(selected)"></span>@selected
                     </button>
                 }
             </div>
@@ -141,6 +141,7 @@
                             {
                                 <div class="inductee-item">
                                     <HallOfFameAvatar BowlerName="@inductee.BowlerName"
+                                                      Ringed="@true"
                                                       PhotoUri="@inductee.PhotoUri"
                                                       FocalX="@inductee.PhotoFocalX"
                                                       FocalY="@inductee.PhotoFocalY"
@@ -148,9 +149,9 @@
                                                       OnEdit="@EditCallbackFor(inductee)" />
                                     <div class="inductee-name">@inductee.BowlerName</div>
                                     <div class="inductee-categories">
-                                        @foreach (var category in inductee.Categories.OrderBy(GetCategoryOrder))
+                                        @foreach (var category in inductee.Categories.OrderBy(HallOfFameCategories.OrderOf))
                                         {
-                                            <span class="inductee-category"><span class="hof-dot @CategoryClass(category)"></span>@category</span>
+                                            <span class="inductee-category"><span class="hof-dot @HallOfFameCategories.DotClass(category)"></span>@category</span>
                                         }
                                     </div>
                                 </div>
@@ -220,26 +221,17 @@
 </div>
 
 @code {
-    private static readonly string[] Categories = ["Superior Performance", "Meritorious Service", "Friend of NEBA"];
+    private static readonly TimeSpan SearchDebounce = TimeSpan.FromMilliseconds(250);
 
     private bool _isLoading = true;
     private List<HallOfFameInductionViewModel> _inductees = [];
     private List<YearGroup> _visibleYears = [];
     private string _search = string.Empty;
+    private CancellationTokenSource? _searchDebounce;
     private string? _category;
     private string? _errorMessage;
     private HallOfFameInductionViewModel? _editing;
     private bool _canEditPhotos;
-
-    private string Search
-    {
-        get => _search;
-        set
-        {
-            _search = value;
-            ApplyFilters();
-        }
-    }
 
     protected override async Task OnInitializedAsync()
     {
@@ -270,6 +262,40 @@
         _errorMessage = null;
         _inductees = [.. result.Value.Items.Select(r => r.ToViewModel())];
         ApplyFilters();
+    }
+
+    // The input has no bound value, so Blazor never writes the text back into it while the visitor types.
+    // The filter runs once typing pauses, not on every keystroke.
+    private async Task OnSearchInput(ChangeEventArgs args)
+    {
+        var term = args.Value?.ToString() ?? string.Empty;
+
+        if (_searchDebounce is not null)
+        {
+            await _searchDebounce.CancelAsync();
+            _searchDebounce.Dispose();
+        }
+
+        var debounce = _searchDebounce = new CancellationTokenSource();
+
+        try
+        {
+            await Task.Delay(SearchDebounce, debounce.Token);
+        }
+        catch (OperationCanceledException)
+        {
+            // A newer keystroke replaced this one; that call applies the filter.
+            return;
+        }
+
+        _search = term;
+        ApplyFilters();
+    }
+
+    public void Dispose()
+    {
+        _searchDebounce?.Cancel();
+        _searchDebounce?.Dispose();
     }
 
     private void SelectCategory(string? category)
@@ -319,20 +345,6 @@
         var index = name.LastIndexOf(' ');
         return index < 0 ? name : name[(index + 1)..];
     }
-
-    private static int GetCategoryOrder(string category)
-    {
-        var index = Array.IndexOf(Categories, category);
-        return index < 0 ? Categories.Length : index;
-    }
-
-    private static string CategoryClass(string category) => category switch
-    {
-        "Superior Performance" => "hof-dot--superior",
-        "Meritorious Service" => "hof-dot--meritorious",
-        "Friend of NEBA" => "hof-dot--friend",
-        _ => string.Empty
-    };
 
     private sealed class YearGroup
     {

@@ -164,7 +164,28 @@ public sealed class HallOfFameTests : IDisposable
         cut.Find("#hof-search").Input("davis");
 
         // Assert
-        cut.FindAll(".inductee-name").Select(n => n.TextContent.Trim()).ShouldBe(["Tom Davis"]);
+        cut.WaitForAssertion(() =>
+            cut.FindAll(".inductee-name").Select(n => n.TextContent.Trim()).ShouldBe(["Tom Davis"]));
+    }
+
+    [Fact(DisplayName = "Should apply only the last search text when the visitor types several times in a row")]
+    public void Input_ShouldApplyOnlyLastSearch_WhenTypedRapidly()
+    {
+        // Arrange
+        SetupSuccessResponse([
+            HallOfFameInductionResponseFactory.Create(bowlerName: "Jane Smith", categories: [HallOfFameCategory.SuperiorPerformance.Name]),
+            HallOfFameInductionResponseFactory.Create(bowlerName: "Tom Davis", categories: [HallOfFameCategory.SuperiorPerformance.Name]),
+        ]);
+        var cut = _ctx.Render<HallOfFamePage>();
+        var search = cut.Find("#hof-search");
+
+        // Act
+        search.Input("zzz");
+        search.Input("jane");
+
+        // Assert
+        cut.WaitForAssertion(() =>
+            cut.FindAll(".inductee-name").Select(n => n.TextContent.Trim()).ShouldBe(["Jane Smith"]));
     }
 
     [Fact(DisplayName = "Should filter inductees by category when a category chip is selected")]
@@ -195,7 +216,7 @@ public sealed class HallOfFameTests : IDisposable
         cut.Find("#hof-search").Input("zzz");
 
         // Assert
-        cut.Find(".hof-empty").TextContent.ShouldContain("No inductees match");
+        cut.WaitForAssertion(() => cut.Find(".hof-empty").TextContent.ShouldContain("No inductees match"));
         cut.FindAll(".hof-stage").ShouldBeEmpty();
     }
 

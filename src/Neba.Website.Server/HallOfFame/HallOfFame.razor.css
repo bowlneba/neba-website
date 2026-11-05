@@ -1,7 +1,7 @@
 /* The stage: a navy gallery wall. The gold is local to this page. */
 .hof-stage {
-    --hof-gold: #E0B454;
-    --hof-gold-deep: #B98C2D;
+    --hof-gold: var(--neba-gold);
+    --hof-gold-deep: var(--neba-gold-deep);
     --hof-ink: #F4F6FF;
     --hof-ink-muted: #AEB8E6;
     background: var(--neba-blue-brand);
@@ -42,8 +42,7 @@
     font-weight: 800;
     line-height: 0.95;
     letter-spacing: 0.02em;
-    color: transparent;
-    -webkit-text-stroke: 1.5px var(--hof-gold);
+    color: var(--hof-gold);
 }
 
 .hof-year__count {
@@ -65,10 +64,6 @@
     flex-direction: column;
     align-items: center;
     text-align: center;
-}
-
-.inductee-item ::deep .inductee-photo {
-    box-shadow: 0 0 0 3px var(--neba-blue-brand), 0 0 0 5px var(--hof-gold), 0 6px 14px rgba(0, 0, 0, 0.35);
 }
 
 .inductee-item:hover ::deep .inductee-photo {
@@ -106,8 +101,14 @@
 }
 
 .hof-dot--superior { background: #6C8CFF; }
-.hof-dot--meritorious { background: #E0B454; }
+.hof-dot--meritorious { background: var(--neba-gold); }
 .hof-dot--friend { background: #5FD1A0; }
+
+/* The loading placeholders sit on the navy stage, so they use a light tint instead of gray. */
+.hof-stage ::deep .neba-skeleton {
+    background: linear-gradient(90deg, rgba(255, 255, 255, 0.08) 25%, rgba(255, 255, 255, 0.18) 50%, rgba(255, 255, 255, 0.08) 75%);
+    background-size: 200% 100%;
+}
 
 /* Filters */
 .hof-filters {

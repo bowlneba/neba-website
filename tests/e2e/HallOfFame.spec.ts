@@ -41,6 +41,12 @@ test.describe('Hall of Fame page', () => {
   });
 
   test('eligibility criteria section is always visible', async ({ page }) => {
-    await expect(page.locator('text=Eligibility')).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Eligibility & Criteria' })).toBeVisible();
+  });
+
+  test('the criteria link in the About section scrolls to the criteria', async ({ page }) => {
+    await page.getByRole('link', { name: 'See the eligibility criteria' }).click();
+    await expect(page).toHaveURL(/\/hall-of-fame#hof-criteria$/);
+    await expect(page.locator('#hof-criteria')).toBeInViewport();
   });
 });
