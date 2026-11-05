@@ -25,3 +25,8 @@
     object-fit: cover;
     display: block;
 }
+
+/* Gold ring for a dark stage; the gap color is the stage color. */
+.inductee-photo--ringed {
+    box-shadow: 0 0 0 3px var(--avatar-ring-gap, var(--neba-blue-brand)), 0 0 0 5px var(--neba-gold), 0 6px 14px rgba(0, 0, 0, 0.35);
+}
