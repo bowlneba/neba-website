@@ -1,18 +1,26 @@
 import { describe, test, expect, beforeEach } from '@jest/globals';
-import { normalize, matches, applyFilter, initialize, dispose } from './HallOfFame.razor.js';
+import {
+    normalize,
+    parseCategories,
+    buildIndex,
+    matches,
+    applyFilter,
+    initialize,
+    refresh,
+    dispose,
+} from './HallOfFame.razor.js';
 
 const card = (name, categories) =>
-    `<div data-hof-card data-name="${name}" data-categories="${categories.join('|')}">${name}</div>`;
+    `<div data-hof-card data-name="${name}" data-categories='${JSON.stringify(categories)}'>${name}</div>`;
 
 function render() {
     document.body.innerHTML = `
         <div id="root">
             <input data-hof-search type="search">
-            <button data-hof-category="" aria-pressed="true">All</button>
-            <button data-hof-category="Superior Performance" aria-pressed="false">Superior Performance</button>
-            <button data-hof-category="Friend of NEBA" aria-pressed="false">Friend of NEBA</button>
-            <p data-hof-status></p>
-            <p data-hof-empty hidden>No match</p>
+            <button data-hof-category="">All</button>
+            <button data-hof-category="Superior Performance">Superior Performance</button>
+            <button data-hof-category="Friend of NEBA">Friend of NEBA</button>
+            <p data-hof-status role="status"></p>
             <div data-hof-stage>
                 <section data-hof-year id="y2024"><span data-hof-shown></span>
                     ${card('Jane Smith', ['Superior Performance'])}
@@ -28,6 +36,14 @@ function render() {
 
 const visibleNames = (root) =>
     [...root.querySelectorAll('[data-hof-card]:not([hidden])')].map((c) => c.dataset.name);
+const status = (root) => root.querySelector('[data-hof-status]');
+const pressed = (root) =>
+    [...root.querySelectorAll('[data-hof-category]')].map((c) => c.getAttribute('aria-pressed'));
+const type = (root, text) => {
+    const input = root.querySelector('[data-hof-search]');
+    input.value = text;
+    input.dispatchEvent(new Event('input'));
+};
 
 describe('HallOfFame filter', () => {
     let root;
@@ -46,18 +62,30 @@ describe('HallOfFame filter', () => {
         });
     });
 
+    describe('parseCategories', () => {
+        test('should read a JSON array, including names with a pipe', () => {
+            expect(parseCategories('["A|B","C"]')).toEqual(['A|B', 'C']);
+        });
+
+        test('should return an empty list for missing, malformed or non-array data', () => {
+            expect(parseCategories(undefined)).toEqual([]);
+            expect(parseCategories('not json')).toEqual([]);
+            expect(parseCategories('{"a":1}')).toEqual([]);
+        });
+    });
+
     describe('matches', () => {
         test('should match a name fragment ignoring case and accents', () => {
-            const c = root.querySelector('[data-name="José Marchetti"]');
-            expect(matches(c, 'jose', '')).toBe(true);
-            expect(matches(c, 'march', '')).toBe(true);
-            expect(matches(c, 'smith', '')).toBe(false);
+            const entry = buildIndex(root).find((e) => e.card.dataset.name === 'José Marchetti');
+            expect(matches(entry, 'jose', '')).toBe(true);
+            expect(matches(entry, 'march', '')).toBe(true);
+            expect(matches(entry, 'smith', '')).toBe(false);
         });
 
         test('should require the chosen category exactly', () => {
-            const c = root.querySelector('[data-name="José Marchetti"]');
-            expect(matches(c, '', 'Meritorious Service')).toBe(true);
-            expect(matches(c, '', 'Friend of NEBA')).toBe(false);
+            const entry = buildIndex(root).find((e) => e.card.dataset.name === 'José Marchetti');
+            expect(matches(entry, '', 'Meritorious Service')).toBe(true);
+            expect(matches(entry, '', 'Friend of NEBA')).toBe(false);
         });
     });
 
@@ -66,7 +94,7 @@ describe('HallOfFame filter', () => {
             applyFilter(root, '', '');
 
             expect(visibleNames(root)).toHaveLength(3);
-            expect(root.querySelector('[data-hof-status]').textContent).toBe('');
+            expect(status(root).textContent).toBe('');
             expect(root.querySelector('#y2024 [data-hof-shown]').textContent).toBe('');
         });
 
@@ -77,7 +105,7 @@ describe('HallOfFame filter', () => {
             expect(root.querySelector('#y2024').hidden).toBe(true);
             expect(root.querySelector('#y2017').hidden).toBe(false);
             expect(root.querySelector('#y2017 [data-hof-shown]').textContent).toBe('1 shown');
-            expect(root.querySelector('[data-hof-status]').textContent).toBe('Showing 1 of 3');
+            expect(status(root).textContent).toBe('Showing 1 of 3');
         });
 
         test('should combine the name and category filters', () => {
@@ -88,12 +116,12 @@ describe('HallOfFame filter', () => {
             expect(visibleNames(root)).toEqual([]);
         });
 
-        test('should show the empty message and hide the stage when nothing matches', () => {
+        test('should say so in the live region and hide the stage when nothing matches', () => {
             applyFilter(root, 'zzz', '');
 
-            expect(root.querySelector('[data-hof-empty]').hidden).toBe(false);
+            expect(status(root).textContent).toBe('No inductees match your search.');
+            expect(status(root).classList.contains('hof-status--empty')).toBe(true);
             expect(root.querySelector('[data-hof-stage]').hidden).toBe(true);
-            expect(root.querySelector('[data-hof-status]').textContent).toBe('');
         });
 
         test('should bring everything back when the filters clear', () => {
@@ -101,18 +129,23 @@ describe('HallOfFame filter', () => {
             applyFilter(root, '', '');
 
             expect(visibleNames(root)).toHaveLength(3);
-            expect(root.querySelector('[data-hof-empty]').hidden).toBe(true);
+            expect(status(root).textContent).toBe('');
+            expect(status(root).classList.contains('hof-status--empty')).toBe(false);
             expect(root.querySelector('[data-hof-stage]').hidden).toBe(false);
         });
     });
 
     describe('initialize', () => {
+        test('should mark All as the pressed chip', () => {
+            initialize(root);
+
+            expect(pressed(root)).toEqual(['true', 'false', 'false']);
+        });
+
         test('should filter as the visitor types', () => {
             initialize(root);
-            const input = root.querySelector('[data-hof-search]');
 
-            input.value = 'davis';
-            input.dispatchEvent(new Event('input'));
+            type(root, 'davis');
 
             expect(visibleNames(root)).toEqual(['Tom Davis']);
         });
@@ -124,21 +157,27 @@ describe('HallOfFame filter', () => {
             chips[2].click();
 
             expect(visibleNames(root)).toEqual(['Tom Davis']);
-            expect(chips.map((c) => c.getAttribute('aria-pressed'))).toEqual(['false', 'false', 'true']);
+            expect(pressed(root)).toEqual(['false', 'false', 'true']);
 
             chips[0].click();
 
             expect(visibleNames(root)).toHaveLength(3);
-            expect(chips.map((c) => c.getAttribute('aria-pressed'))).toEqual(['true', 'false', 'false']);
+            expect(pressed(root)).toEqual(['true', 'false', 'false']);
+        });
+
+        test('should reset stale pressed states when it attaches', () => {
+            root.querySelectorAll('[data-hof-category]')[2].setAttribute('aria-pressed', 'true');
+
+            initialize(root);
+
+            expect(pressed(root)).toEqual(['true', 'false', 'false']);
         });
 
         test('should not attach twice to the same root', () => {
             initialize(root);
             initialize(root);
-            const input = root.querySelector('[data-hof-search]');
 
-            input.value = 'jane';
-            input.dispatchEvent(new Event('input'));
+            type(root, 'jane');
 
             expect(visibleNames(root)).toEqual(['Jane Smith']);
         });
@@ -150,16 +189,39 @@ describe('HallOfFame filter', () => {
         test('should stop filtering after dispose', () => {
             initialize(root);
             dispose(root);
-            const input = root.querySelector('[data-hof-search]');
 
-            input.value = 'tom';
-            input.dispatchEvent(new Event('input'));
+            type(root, 'tom');
 
             expect(visibleNames(root)).toHaveLength(3);
         });
 
         test('should ignore dispose for a root that was never initialized', () => {
             expect(() => dispose(root)).not.toThrow();
+        });
+    });
+
+    describe('refresh', () => {
+        test('should apply the current search and category to cards the page replaced', () => {
+            initialize(root);
+            type(root, 'smith');
+            root.querySelectorAll('[data-hof-category]')[1].click();
+            expect(visibleNames(root)).toEqual(['Jane Smith']);
+
+            // The page re-renders: a new card appears, and a patched one now shows a different bowler.
+            const year = root.querySelector('#y2024');
+            year.insertAdjacentHTML('beforeend', card('Ann Smithson', ['Superior Performance']));
+            root.querySelector('[data-name="Jane Smith"]').dataset.name = 'Bob Jones';
+            root.querySelector('[data-name="Bob Jones"]').hidden = false;
+
+            refresh(root);
+
+            expect(visibleNames(root)).toEqual(['Ann Smithson']);
+            expect(status(root).textContent).toBe('Showing 1 of 4');
+            expect(pressed(root)).toEqual(['false', 'true', 'false']);
+        });
+
+        test('should ignore a root that was never initialized', () => {
+            expect(() => refresh(root)).not.toThrow();
         });
     });
 });

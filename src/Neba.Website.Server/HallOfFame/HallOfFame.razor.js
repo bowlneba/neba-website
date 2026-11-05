@@ -9,29 +9,50 @@ export function normalize(text) {
         .toLowerCase();
 }
 
-/** A card matches when its name contains the term and, if a category is chosen, it carries that category. */
-export function matches(card, term, category) {
-    const name = normalize(card.dataset.name);
-    const categories = (card.dataset.categories ?? '').split('|');
-
-    return name.includes(term) && (category === '' || categories.includes(category));
+/** The page renders each card's categories as a JSON array, so a name can hold any character. */
+export function parseCategories(raw) {
+    try {
+        const value = JSON.parse(raw ?? '[]');
+        return Array.isArray(value) ? value : [];
+    } catch {
+        return [];
+    }
 }
 
-/** Hides cards that do not match, hides classes left empty, and updates the status text. Reads and writes only hidden and text. */
-export function applyFilter(root, search, category) {
+/** Reads the cards once, so typing does not re-normalize every name on every keystroke. */
+export function buildIndex(root) {
+    return [...root.querySelectorAll('[data-hof-card]')].map((card) => ({
+        card,
+        name: normalize(card.dataset.name),
+        categories: new Set(parseCategories(card.dataset.categories)),
+        year: card.closest('[data-hof-year]'),
+    }));
+}
+
+/** An entry matches when its name contains the term and, if a category is chosen, it carries that category. */
+export function matches(entry, term, category) {
+    return entry.name.includes(term) && (category === '' || entry.categories.has(category));
+}
+
+/** Hides cards that do not match, hides classes left empty, and updates the status text. Writes only hidden and text. */
+export function applyFilter(root, search, category, index = buildIndex(root)) {
     const term = normalize(search);
     const filtering = term !== '' || category !== '';
-    const cards = [...root.querySelectorAll('[data-hof-card]')];
+    const shownByYear = new Map();
     let shown = 0;
 
-    cards.forEach((card) => {
-        const visible = matches(card, term, category);
-        card.hidden = !visible;
-        shown += visible ? 1 : 0;
+    index.forEach((entry) => {
+        const visible = matches(entry, term, category);
+        entry.card.hidden = !visible;
+
+        if (visible) {
+            shown += 1;
+            shownByYear.set(entry.year, (shownByYear.get(entry.year) ?? 0) + 1);
+        }
     });
 
     root.querySelectorAll('[data-hof-year]').forEach((year) => {
-        const inYear = year.querySelectorAll('[data-hof-card]:not([hidden])').length;
+        const inYear = shownByYear.get(year) ?? 0;
         year.hidden = inYear === 0;
 
         const label = year.querySelector('[data-hof-shown]');
@@ -41,19 +62,21 @@ export function applyFilter(root, search, category) {
     });
 
     const stage = root.querySelector('[data-hof-stage]');
-    const empty = root.querySelector('[data-hof-empty]');
-    const status = root.querySelector('[data-hof-status]');
-
     if (stage) {
         stage.hidden = shown === 0;
     }
 
-    if (empty) {
-        empty.hidden = shown !== 0;
-    }
-
+    // One always-present live region, so a zero-result search is announced as a text change.
+    const status = root.querySelector('[data-hof-status]');
     if (status) {
-        status.textContent = filtering && shown > 0 ? `Showing ${shown} of ${cards.length}` : '';
+        const none = shown === 0 && index.length > 0;
+        status.classList.toggle('hof-status--empty', none);
+
+        if (none) {
+            status.textContent = 'No inductees match your search.';
+        } else {
+            status.textContent = filtering ? `Showing ${shown} of ${index.length}` : '';
+        }
     }
 }
 
@@ -64,38 +87,52 @@ export function initialize(root) {
 
     const searchInput = root.querySelector('[data-hof-search]');
     const chips = [...root.querySelectorAll('[data-hof-category]')];
-    const state = { search: searchInput?.value ?? '', category: '' };
-    const cleanups = [];
+    const instance = { index: buildIndex(root), search: searchInput?.value ?? '', category: '', cleanups: [] };
 
-    const refresh = () => applyFilter(root, state.search, state.category);
+    const refresh = () => applyFilter(root, instance.search, instance.category, instance.index);
+
+    // This script owns the pressed state; the page markup leaves aria-pressed off.
+    const press = (chosen) => chips.forEach((chip) => chip.setAttribute('aria-pressed', chip === chosen ? 'true' : 'false'));
+    press(chips.find((chip) => (chip.dataset.hofCategory ?? '') === '') ?? null);
 
     const onInput = () => {
-        state.search = searchInput.value;
+        instance.search = searchInput.value;
         refresh();
     };
     searchInput?.addEventListener('input', onInput);
-    cleanups.push(() => searchInput?.removeEventListener('input', onInput));
+    instance.cleanups.push(() => searchInput?.removeEventListener('input', onInput));
 
     chips.forEach((chip) => {
         const onClick = () => {
-            state.category = chip.dataset.hofCategory ?? '';
-            chips.forEach((other) => other.setAttribute('aria-pressed', other === chip ? 'true' : 'false'));
+            instance.category = chip.dataset.hofCategory ?? '';
+            press(chip);
             refresh();
         };
         chip.addEventListener('click', onClick);
-        cleanups.push(() => chip.removeEventListener('click', onClick));
+        instance.cleanups.push(() => chip.removeEventListener('click', onClick));
     });
 
-    instances.set(root, cleanups);
+    instances.set(root, instance);
     refresh();
 }
 
-export function dispose(root) {
-    const cleanups = instances.get(root);
-    if (!cleanups) {
+/** Called after the page re-renders the cards (a reload after a photo save): re-read them and apply the current filter again. */
+export function refresh(root) {
+    const instance = instances.get(root);
+    if (!instance) {
         return;
     }
 
-    cleanups.forEach((cleanup) => cleanup());
+    instance.index = buildIndex(root);
+    applyFilter(root, instance.search, instance.category, instance.index);
+}
+
+export function dispose(root) {
+    const instance = instances.get(root);
+    if (!instance) {
+        return;
+    }
+
+    instance.cleanups.forEach((cleanup) => cleanup());
     instances.delete(root);
 }

@@ -14,6 +14,7 @@ using Neba.TestFactory.Attributes;
 using Neba.TestFactory.HallOfFame;
 using Neba.Website.Server.Clock;
 using Neba.Website.Server.Help;
+using Neba.Website.Server.HallOfFame;
 using Neba.Website.Server.Notifications;
 using Neba.Website.Server.Services;
 
@@ -166,7 +167,8 @@ public sealed class HallOfFameTests : IDisposable
         // Assert
         var card = cut.Find("[data-hof-card]");
         card.GetAttribute("data-name").ShouldBe("Tom Davis");
-        card.GetAttribute("data-categories").ShouldBe("Superior Performance|Meritorious Service");
+        System.Text.Json.JsonSerializer.Deserialize<string[]>(card.GetAttribute("data-categories")!)
+            .ShouldBe(["Superior Performance", "Meritorious Service"]);
     }
 
     [Fact(DisplayName = "Should render a search box and an All chip plus one chip per category")]
@@ -182,8 +184,7 @@ public sealed class HallOfFameTests : IDisposable
         cut.FindAll("#hof-search[data-hof-search]").Count.ShouldBe(1);
         cut.FindAll("button.hof-chip").Select(b => b.GetAttribute("data-hof-category"))
             .ShouldBe(["", .. HallOfFameCategory.List.Select(c => c.Name)]);
-        cut.Find("button.hof-chip[data-hof-category='']").GetAttribute("aria-pressed").ShouldBe("true");
-        cut.Find("[data-hof-empty]").HasAttribute("hidden").ShouldBeTrue();
+        cut.Find("[data-hof-status]").GetAttribute("role").ShouldBe("status");
     }
 
     [Fact(DisplayName = "Should attach the filter script to the gallery once the list has loaded")]
@@ -199,6 +200,72 @@ public sealed class HallOfFameTests : IDisposable
 
         // Assert
         module.VerifyInvoke("initialize");
+    }
+
+    [Fact(DisplayName = "Should show the filter controls once the script is attached")]
+    public void Render_ShouldShowFilterControls_WhenScriptAttached()
+    {
+        // Arrange
+        var module = _ctx.JSInterop.SetupModule("./HallOfFame/HallOfFame.razor.js");
+        module.Mode = JSRuntimeMode.Loose;
+        SetupSuccessResponse([HallOfFameInductionResponseFactory.Create()]);
+
+        // Act
+        var cut = _ctx.Render<HallOfFamePage>();
+
+        // Assert
+        cut.Find(".hof-filters").HasAttribute("hidden").ShouldBeFalse();
+    }
+
+    [Fact(DisplayName = "Should keep the filter controls hidden and still show the inductees when the script cannot be attached")]
+    public void Render_ShouldKeepFiltersHidden_WhenScriptFails()
+    {
+        // Arrange
+        var module = _ctx.JSInterop.SetupModule("./HallOfFame/HallOfFame.razor.js");
+        module.Mode = JSRuntimeMode.Loose;
+        module.SetupVoid("initialize", _ => true).SetException(new Microsoft.JSInterop.JSException("failed"));
+        SetupSuccessResponse([HallOfFameInductionResponseFactory.Create(bowlerName: "Jane Smith")]);
+
+        // Act
+        var cut = _ctx.Render<HallOfFamePage>();
+
+        // Assert
+        cut.Find(".hof-filters").HasAttribute("hidden").ShouldBeTrue();
+        cut.Markup.ShouldContain("Jane Smith");
+    }
+
+    [Fact(DisplayName = "Should attach the filter script only once however many times the page renders")]
+    public void Render_ShouldInitializeFilterModuleOnce_AcrossRenders()
+    {
+        // Arrange
+        var module = _ctx.JSInterop.SetupModule("./HallOfFame/HallOfFame.razor.js");
+        module.Mode = JSRuntimeMode.Loose;
+        SetupSuccessResponse([HallOfFameInductionResponseFactory.Create()]);
+        var cut = _ctx.Render<HallOfFamePage>();
+
+        // Act
+        cut.Render();
+        cut.Render();
+
+        // Assert
+        module.VerifyInvoke("initialize", 1);
+    }
+
+    [Fact(DisplayName = "Should apply the current filter again after the list reloads following a photo save")]
+    public async Task HandleSaved_ShouldReapplyFilter_AfterReload()
+    {
+        // Arrange
+        var module = _ctx.JSInterop.SetupModule("./HallOfFame/HallOfFame.razor.js");
+        module.Mode = JSRuntimeMode.Loose;
+        SetupSuccessResponse([HallOfFameInductionResponseFactory.Create(bowlerName: "Jane Smith")]);
+        var cut = _ctx.Render<HallOfFamePage>();
+        module.VerifyNotInvoke("refresh");
+
+        // Act
+        await cut.InvokeAsync(() => cut.FindComponent<HallOfFamePhotoEditor>().Instance.OnSaved.InvokeAsync());
+
+        // Assert
+        await cut.WaitForAssertionAsync(() => module.VerifyInvoke("refresh", 1));
     }
 
     [Fact(DisplayName = "Should not attach the filter script when there are no inductees")]
@@ -271,7 +338,7 @@ public sealed class HallOfFameTests : IDisposable
     {
         // Arrange
         var charter = Enumerable.Range(1, 30)
-            .Select(i => HallOfFameInductionResponseFactory.Create(year: 2017, bowlerName: "Charter Member" + i))
+            .Select(i => HallOfFameInductionResponseFactory.Create(id: "charter" + i, year: 2017, bowlerName: "Charter Member" + i))
             .ToList();
         charter.Add(HallOfFameInductionResponseFactory.Create(year: 2024, bowlerName: "Recent Star"));
         SetupSuccessResponse(charter);
@@ -419,9 +486,11 @@ public sealed class HallOfFameTests : IDisposable
     {
         // Arrange
         var single = HallOfFameInductionResponseFactory.Create(
+            id: "single",
             bowlerName: "Jane Smith",
             categories: [HallOfFameCategory.SuperiorPerformance.Name]);
         var combined = HallOfFameInductionResponseFactory.Create(
+            id: "combined",
             bowlerName: "Tom Davis",
             categories:
             [
@@ -488,9 +557,11 @@ public sealed class HallOfFameTests : IDisposable
         _authContext.SetAuthorized("editor");
         _authContext.SetPolicies(Permissions.EditHallOfFamePhoto.PolicyName);
         var single = HallOfFameInductionResponseFactory.Create(
+            id: "single",
             bowlerName: "Jane Smith",
             categories: [HallOfFameCategory.SuperiorPerformance.Name]);
         var combined = HallOfFameInductionResponseFactory.Create(
+            id: "combined",
             bowlerName: "Tom Davis",
             categories: [HallOfFameCategory.SuperiorPerformance.Name, HallOfFameCategory.MeritoriousService.Name]);
         SetupSuccessResponse([single, combined]);

@@ -125,6 +125,22 @@ test.describe('Edit Hall of Fame photo (with the permission)', () => {
     await expect(avatarOf(page, BOB).locator('img.inductee-photo__img')).toHaveAttribute('style', /object-position:25% 50%/);
   });
 
+  test('keeps the name search applied after a photo is saved and the list reloads', async ({ page }) => {
+    await page.locator('#hof-search').fill('bob');
+    await expect(page.locator('.hof-status')).toHaveText('Showing 1 of 4');
+
+    await openEditor(page, BOB);
+    await page.locator('.focal-picker__surface').focus();
+    await page.keyboard.press('Shift+ArrowLeft');
+    await page.getByRole('button', { name: 'Save photo' }).click();
+    await expect(page.locator('.neba-toast')).toContainText('Photo Saved');
+
+    await expect(page.locator('#hof-search')).toHaveValue('bob');
+    await expect(page.locator('.hof-status')).toHaveText('Showing 1 of 4');
+    await expect(avatarOf(page, BOB)).toBeVisible();
+    await expect(avatarOf(page, JANE)).toBeHidden();
+  });
+
   test('removes a photo and shows the initials again', async ({ page }) => {
     await expect(avatarOf(page, ALICE).locator('img.inductee-photo__img')).toHaveCount(1);
 

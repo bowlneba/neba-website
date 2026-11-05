@@ -113,7 +113,8 @@
 /* JS filtering hides cards and whole classes with the hidden attribute; their display rules would otherwise win. */
 .inductee-item[hidden],
 .hof-year-block[hidden],
-.hof-stage[hidden] {
+.hof-stage[hidden],
+.hof-filters[hidden] {
     display: none;
 }
 
@@ -177,10 +178,10 @@
     outline-offset: 2px;
 }
 
-.hof-empty {
-    padding: 2rem 0;
+.hof-status--empty {
+    padding: 1.5rem 0;
     text-align: center;
-    color: var(--neba-gray-500);
+    font-size: 1rem;
 }
 
 @media (max-width: 768px) {

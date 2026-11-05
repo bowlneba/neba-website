@@ -45,11 +45,11 @@ test.describe('Hall of Fame page', () => {
 
   test('shows a message when no inductee matches, and recovers when the search clears', async ({ page }) => {
     await page.locator('#hof-search').fill('zzz');
-    await expect(page.locator('.hof-empty')).toBeVisible();
+    await expect(page.locator('.hof-status')).toHaveText('No inductees match your search.');
     await expect(page.locator('.hof-stage')).toBeHidden();
 
     await page.locator('#hof-search').fill('');
-    await expect(page.locator('.hof-empty')).toBeHidden();
+    await expect(page.locator('.hof-status')).toHaveText('');
     await expect(page.locator('.inductee-name', { hasText: 'Jane Smith' })).toBeVisible();
   });
 

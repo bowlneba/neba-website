@@ -1,4 +1,5 @@
 @page "/hall-of-fame"
+@using System.Text.Json
 @using Microsoft.AspNetCore.Authorization
 @using Neba.Api.Contracts.HallOfFame
 @using Neba.Api.Contracts.Security
@@ -108,7 +109,8 @@
     {
         @* Search and category filtering run in HallOfFame.razor.js (instant, no server round trip). It reads the data- attributes below and only toggles hidden. *@
         <div @ref="_gallery">
-            <div class="hof-filters">
+            @* Hidden until the script is attached, so the controls never show while they cannot work. *@
+            <div class="hof-filters" hidden="@(!_filtersReady)">
                 <input id="hof-search"
                        type="search"
                        class="hof-search"
@@ -117,28 +119,27 @@
                        autocomplete="off"
                        data-hof-search />
                 <div class="hof-chips" role="group" aria-label="Filter by category">
-                    <button type="button" class="hof-chip" data-hof-category="" aria-pressed="true">All</button>
+                    <button type="button" class="hof-chip" data-hof-category="">All</button>
                     @foreach (var category in HallOfFameCategories.Names)
                     {
-                        <button type="button" class="hof-chip" data-hof-category="@category" aria-pressed="false">
+                        <button type="button" class="hof-chip" data-hof-category="@category">
                             <span class="hof-dot @HallOfFameCategories.DotClass(category)"></span>@category
                         </button>
                     }
                 </div>
             </div>
             <p class="hof-status" role="status" aria-live="polite" data-hof-status></p>
-            <p class="hof-empty" role="status" data-hof-empty hidden>No inductees match your search.</p>
 
             <div class="hof-stage" data-hof-stage>
                 @foreach (var yearGroup in _years)
                 {
-                    <section class="hof-year-block" data-hof-year>
+                    <section class="hof-year-block" data-hof-year @key="yearGroup.Year">
                         <h2 class="hof-year"><span class="hof-year__label">Class of</span> <span class="hof-year__num">@yearGroup.Year</span></h2>
                         <p class="hof-year__count">@("inductee".ToQuantity(yearGroup.Inductees.Count))<span data-hof-shown></span></p>
                         <div class="inductees-photo-grid">
                             @foreach (var inductee in yearGroup.Inductees)
                             {
-                                <div class="inductee-item" data-hof-card data-name="@inductee.BowlerName" data-categories="@string.Join('|', inductee.Categories)">
+                                <div class="inductee-item" data-hof-card @key="inductee.Id" data-name="@inductee.BowlerName" data-categories="@JsonSerializer.Serialize(inductee.Categories)">
                                     <HallOfFameAvatar BowlerName="@inductee.BowlerName"
                                                       Ringed="@true"
                                                       PhotoUri="@inductee.PhotoUri"
@@ -228,6 +229,9 @@
     private bool _canEditPhotos;
     private ElementReference _gallery;
     private IJSObjectReference? _jsModule;
+    private bool _attachAttempted;
+    private bool _filtersReady;
+    private bool _refilterPending;
 
     protected override async Task OnInitializedAsync()
     {
@@ -243,11 +247,32 @@
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
         // The gallery only exists once the list has loaded, so attach the filter module on the first render that has it.
-        if (_jsModule is null && _inductees.Count > 0)
+        // One attempt only: a second render during the import, or a failed import, must not try again.
+        if (!_attachAttempted && _inductees.Count > 0)
         {
-            _jsModule = await JsRuntime.InvokeAsync<IJSObjectReference>(
-                "import", "./HallOfFame/HallOfFame.razor.js");
-            await _jsModule.InvokeVoidAsync("initialize", _gallery);
+            _attachAttempted = true;
+
+            try
+            {
+                _jsModule = await JsRuntime.InvokeAsync<IJSObjectReference>(
+                    "import", "./HallOfFame/HallOfFame.razor.js");
+                await _jsModule.InvokeVoidAsync("initialize", _gallery);
+                _filtersReady = true;
+                StateHasChanged();
+            }
+            catch (Exception ex) when (ex is JSException or JSDisconnectedException)
+            {
+                Logger.LogWarning(ex, "[HallOfFame] The search and filter script could not be attached.");
+            }
+
+            return;
+        }
+
+        // The list was reloaded (a photo was saved): the cards are new or patched, so apply the current filter again.
+        if (_refilterPending && _jsModule is not null)
+        {
+            _refilterPending = false;
+            await _jsModule.InvokeVoidAsync("refresh", _gallery);
         }
     }
 
@@ -267,6 +292,7 @@
         }
 
         _errorMessage = null;
+        _refilterPending = _jsModule is not null;
         _inductees = [.. result.Value.Items.Select(r => r.ToViewModel())];
         _years = [.. _inductees
             .GroupBy(i => i.InductionYear)
