@@ -150,74 +150,86 @@ public sealed class HallOfFameTests : IDisposable
             .ShouldBe([HallOfFameCategory.SuperiorPerformance.Name, HallOfFameCategory.MeritoriousService.Name]);
     }
 
-    [Fact(DisplayName = "Should filter inductees by name when the visitor types in the search box")]
-    public void Input_ShouldFilterByName_WhenSearchTyped()
+    [Fact(DisplayName = "Should render the data the filter script reads on every inductee card")]
+    public void Render_ShouldRenderFilterDataAttributes_OnCards()
     {
         // Arrange
         SetupSuccessResponse([
-            HallOfFameInductionResponseFactory.Create(bowlerName: "Jane Smith", categories: [HallOfFameCategory.SuperiorPerformance.Name]),
-            HallOfFameInductionResponseFactory.Create(bowlerName: "Tom Davis", categories: [HallOfFameCategory.SuperiorPerformance.Name]),
+            HallOfFameInductionResponseFactory.Create(
+                bowlerName: "Tom Davis",
+                categories: [HallOfFameCategory.MeritoriousService.Name, HallOfFameCategory.SuperiorPerformance.Name]),
         ]);
-        var cut = _ctx.Render<HallOfFamePage>();
 
         // Act
-        cut.Find("#hof-search").Input("davis");
+        var cut = _ctx.Render<HallOfFamePage>();
 
         // Assert
-        cut.WaitForAssertion(() =>
-            cut.FindAll(".inductee-name").Select(n => n.TextContent.Trim()).ShouldBe(["Tom Davis"]));
+        var card = cut.Find("[data-hof-card]");
+        card.GetAttribute("data-name").ShouldBe("Tom Davis");
+        card.GetAttribute("data-categories").ShouldBe("Superior Performance|Meritorious Service");
     }
 
-    [Fact(DisplayName = "Should apply only the last search text when the visitor types several times in a row")]
-    public void Input_ShouldApplyOnlyLastSearch_WhenTypedRapidly()
+    [Fact(DisplayName = "Should render a search box and an All chip plus one chip per category")]
+    public void Render_ShouldRenderSearchAndCategoryChips()
     {
         // Arrange
-        SetupSuccessResponse([
-            HallOfFameInductionResponseFactory.Create(bowlerName: "Jane Smith", categories: [HallOfFameCategory.SuperiorPerformance.Name]),
-            HallOfFameInductionResponseFactory.Create(bowlerName: "Tom Davis", categories: [HallOfFameCategory.SuperiorPerformance.Name]),
-        ]);
-        var cut = _ctx.Render<HallOfFamePage>();
-        var search = cut.Find("#hof-search");
+        SetupSuccessResponse([HallOfFameInductionResponseFactory.Create()]);
 
         // Act
-        search.Input("zzz");
-        search.Input("jane");
+        var cut = _ctx.Render<HallOfFamePage>();
 
         // Assert
-        cut.WaitForAssertion(() =>
-            cut.FindAll(".inductee-name").Select(n => n.TextContent.Trim()).ShouldBe(["Jane Smith"]));
+        cut.FindAll("#hof-search[data-hof-search]").Count.ShouldBe(1);
+        cut.FindAll("button.hof-chip").Select(b => b.GetAttribute("data-hof-category"))
+            .ShouldBe(["", .. HallOfFameCategory.List.Select(c => c.Name)]);
+        cut.Find("button.hof-chip[data-hof-category='']").GetAttribute("aria-pressed").ShouldBe("true");
+        cut.Find("[data-hof-empty]").HasAttribute("hidden").ShouldBeTrue();
     }
 
-    [Fact(DisplayName = "Should filter inductees by category when a category chip is selected")]
-    public void Click_ShouldFilterByCategory_WhenChipSelected()
+    [Fact(DisplayName = "Should attach the filter script to the gallery once the list has loaded")]
+    public void Render_ShouldInitializeFilterModule_WhenListLoads()
     {
         // Arrange
-        SetupSuccessResponse([
-            HallOfFameInductionResponseFactory.Create(bowlerName: "Jane Smith", categories: [HallOfFameCategory.SuperiorPerformance.Name]),
-            HallOfFameInductionResponseFactory.Create(bowlerName: "Bob Johnson", categories: [HallOfFameCategory.FriendOfNeba.Name]),
-        ]);
-        var cut = _ctx.Render<HallOfFamePage>();
+        var module = _ctx.JSInterop.SetupModule("./HallOfFame/HallOfFame.razor.js");
+        module.Mode = JSRuntimeMode.Loose;
+        SetupSuccessResponse([HallOfFameInductionResponseFactory.Create()]);
 
         // Act
-        cut.FindAll("button.hof-chip").Single(b => b.TextContent.Trim() == HallOfFameCategory.FriendOfNeba.Name).Click();
+        _ctx.Render<HallOfFamePage>();
 
         // Assert
-        cut.FindAll(".inductee-name").Select(n => n.TextContent.Trim()).ShouldBe(["Bob Johnson"]);
+        module.VerifyInvoke("initialize");
     }
 
-    [Fact(DisplayName = "Should show a no-match message when the filters match nobody")]
-    public void Input_ShouldShowNoMatchMessage_WhenNothingMatches()
+    [Fact(DisplayName = "Should not attach the filter script when there are no inductees")]
+    public void Render_ShouldNotInitializeFilterModule_WhenListIsEmpty()
     {
         // Arrange
-        SetupSuccessResponse([HallOfFameInductionResponseFactory.Create(bowlerName: "Jane Smith")]);
+        var module = _ctx.JSInterop.SetupModule("./HallOfFame/HallOfFame.razor.js");
+        module.Mode = JSRuntimeMode.Loose;
+        SetupSuccessResponse([]);
+
+        // Act
+        _ctx.Render<HallOfFamePage>();
+
+        // Assert
+        module.Invocations.ShouldBeEmpty();
+    }
+
+    [Fact(DisplayName = "Should detach the filter script when the page is disposed")]
+    public async Task DisposeAsync_ShouldDisposeFilterModule()
+    {
+        // Arrange
+        var module = _ctx.JSInterop.SetupModule("./HallOfFame/HallOfFame.razor.js");
+        module.Mode = JSRuntimeMode.Loose;
+        SetupSuccessResponse([HallOfFameInductionResponseFactory.Create()]);
         var cut = _ctx.Render<HallOfFamePage>();
 
         // Act
-        cut.Find("#hof-search").Input("zzz");
+        await cut.Instance.DisposeAsync();
 
         // Assert
-        cut.WaitForAssertion(() => cut.Find(".hof-empty").TextContent.ShouldContain("No inductees match"));
-        cut.FindAll(".hof-stage").ShouldBeEmpty();
+        module.VerifyInvoke("dispose");
     }
 
     [Fact(DisplayName = "Should show the about section with all three categories while loading")]

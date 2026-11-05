@@ -8,7 +8,9 @@
 @inject IHallOfFameApi HallOfFameApi
 @inject AuthenticationStateProvider AuthenticationStateProvider
 @inject IAuthorizationService AuthorizationService
-@implements IDisposable
+@inject IJSRuntime JsRuntime
+@inject ILogger<HallOfFame> Logger
+@implements IAsyncDisposable
 
 @rendermode @(new InteractiveServerRenderMode(prerender: false))
 
@@ -104,42 +106,39 @@
     }
     else if (_inductees.Count > 0)
     {
-        <div class="hof-filters">
-            <input id="hof-search"
-                   type="search"
-                   class="hof-search"
-                   placeholder="Search by name"
-                   aria-label="Search inductees by name"
-                   autocomplete="off"
-                   @oninput="OnSearchInput" />
-            <div class="hof-chips" role="group" aria-label="Filter by category">
-                <button type="button" class="hof-chip" aria-pressed="@PressedValue(_category is null)" @onclick="@(() => SelectCategory(null))">All</button>
-                @foreach (var category in HallOfFameCategories.Names)
-                {
-                    var selected = category;
-                    <button type="button" class="hof-chip" aria-pressed="@PressedValue(_category == selected)" @onclick="@(() => SelectCategory(selected))">
-                        <span class="hof-dot @HallOfFameCategories.DotClass(selected)"></span>@selected
-                    </button>
-                }
+        @* Search and category filtering run in HallOfFame.razor.js (instant, no server round trip). It reads the data- attributes below and only toggles hidden. *@
+        <div @ref="_gallery">
+            <div class="hof-filters">
+                <input id="hof-search"
+                       type="search"
+                       class="hof-search"
+                       placeholder="Search by name"
+                       aria-label="Search inductees by name"
+                       autocomplete="off"
+                       data-hof-search />
+                <div class="hof-chips" role="group" aria-label="Filter by category">
+                    <button type="button" class="hof-chip" data-hof-category="" aria-pressed="true">All</button>
+                    @foreach (var category in HallOfFameCategories.Names)
+                    {
+                        <button type="button" class="hof-chip" data-hof-category="@category" aria-pressed="false">
+                            <span class="hof-dot @HallOfFameCategories.DotClass(category)"></span>@category
+                        </button>
+                    }
+                </div>
             </div>
-        </div>
+            <p class="hof-status" role="status" aria-live="polite" data-hof-status></p>
+            <p class="hof-empty" role="status" data-hof-empty hidden>No inductees match your search.</p>
 
-        @if (_visibleYears.Count == 0)
-        {
-            <p class="hof-empty" role="status">No inductees match your search.</p>
-        }
-        else
-        {
-            <div class="hof-stage">
-                @foreach (var yearGroup in _visibleYears)
+            <div class="hof-stage" data-hof-stage>
+                @foreach (var yearGroup in _years)
                 {
-                    <section class="hof-year-block">
+                    <section class="hof-year-block" data-hof-year>
                         <h2 class="hof-year"><span class="hof-year__label">Class of</span> <span class="hof-year__num">@yearGroup.Year</span></h2>
-                        <p class="hof-year__count">@("inductee".ToQuantity(yearGroup.Inductees.Count))</p>
+                        <p class="hof-year__count">@("inductee".ToQuantity(yearGroup.Inductees.Count))<span data-hof-shown></span></p>
                         <div class="inductees-photo-grid">
                             @foreach (var inductee in yearGroup.Inductees)
                             {
-                                <div class="inductee-item">
+                                <div class="inductee-item" data-hof-card data-name="@inductee.BowlerName" data-categories="@string.Join('|', inductee.Categories)">
                                     <HallOfFameAvatar BowlerName="@inductee.BowlerName"
                                                       Ringed="@true"
                                                       PhotoUri="@inductee.PhotoUri"
@@ -160,7 +159,7 @@
                     </section>
                 }
             </div>
-        }
+        </div>
     }
 
     <!-- Eligibility Criteria — static content, always visible -->
@@ -221,17 +220,14 @@
 </div>
 
 @code {
-    private static readonly TimeSpan SearchDebounce = TimeSpan.FromMilliseconds(250);
-
     private bool _isLoading = true;
     private List<HallOfFameInductionViewModel> _inductees = [];
-    private List<YearGroup> _visibleYears = [];
-    private string _search = string.Empty;
-    private CancellationTokenSource? _searchDebounce;
-    private string? _category;
+    private List<YearGroup> _years = [];
     private string? _errorMessage;
     private HallOfFameInductionViewModel? _editing;
     private bool _canEditPhotos;
+    private ElementReference _gallery;
+    private IJSObjectReference? _jsModule;
 
     protected override async Task OnInitializedAsync()
     {
@@ -242,6 +238,17 @@
         _canEditPhotos = authResult.Succeeded;
 
         await LoadAsync();
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        // The gallery only exists once the list has loaded, so attach the filter module on the first render that has it.
+        if (_jsModule is null && _inductees.Count > 0)
+        {
+            _jsModule = await JsRuntime.InvokeAsync<IJSObjectReference>(
+                "import", "./HallOfFame/HallOfFame.razor.js");
+            await _jsModule.InvokeVoidAsync("initialize", _gallery);
+        }
     }
 
     private async Task LoadAsync()
@@ -261,56 +268,7 @@
 
         _errorMessage = null;
         _inductees = [.. result.Value.Items.Select(r => r.ToViewModel())];
-        ApplyFilters();
-    }
-
-    // The input has no bound value, so Blazor never writes the text back into it while the visitor types.
-    // The filter runs once typing pauses, not on every keystroke.
-    private async Task OnSearchInput(ChangeEventArgs args)
-    {
-        var term = args.Value?.ToString() ?? string.Empty;
-
-        if (_searchDebounce is not null)
-        {
-            await _searchDebounce.CancelAsync();
-            _searchDebounce.Dispose();
-        }
-
-        var debounce = _searchDebounce = new CancellationTokenSource();
-
-        try
-        {
-            await Task.Delay(SearchDebounce, debounce.Token);
-        }
-        catch (OperationCanceledException)
-        {
-            // A newer keystroke replaced this one; that call applies the filter.
-            return;
-        }
-
-        _search = term;
-        ApplyFilters();
-    }
-
-    public void Dispose()
-    {
-        _searchDebounce?.Cancel();
-        _searchDebounce?.Dispose();
-    }
-
-    private void SelectCategory(string? category)
-    {
-        _category = category;
-        ApplyFilters();
-    }
-
-    private void ApplyFilters()
-    {
-        var term = _search.Trim();
-
-        _visibleYears = [.. _inductees
-            .Where(i => _category is null || i.Categories.Contains(_category))
-            .Where(i => term.Length == 0 || i.BowlerName.Contains(term, StringComparison.OrdinalIgnoreCase))
+        _years = [.. _inductees
             .GroupBy(i => i.InductionYear)
             .OrderByDescending(g => g.Key)
             .Select(g => new YearGroup
@@ -338,12 +296,28 @@
         await LoadAsync();
     }
 
-    private static string PressedValue(bool pressed) => pressed ? "true" : "false";
-
     private static string LastName(string name)
     {
         var index = name.LastIndexOf(' ');
         return index < 0 ? name : name[(index + 1)..];
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        if (_jsModule is null)
+        {
+            return;
+        }
+
+        try
+        {
+            await _jsModule.InvokeVoidAsync("dispose", _gallery);
+            await _jsModule.DisposeAsync();
+        }
+        catch (JSDisconnectedException ex)
+        {
+            Logger.LogInformation(ex, "[HallOfFame] JS cleanup skipped because the circuit disconnected.");
+        }
     }
 
     private sealed class YearGroup

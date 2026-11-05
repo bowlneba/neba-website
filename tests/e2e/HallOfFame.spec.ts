@@ -29,15 +29,28 @@ test.describe('Hall of Fame page', () => {
   });
 
   test('filters inductees by name', async ({ page }) => {
-    await page.fill('#hof-search', 'alice');
+    await page.locator('#hof-search').pressSequentially('alice');
     await expect(page.locator('.inductee-name', { hasText: 'Alice Williams' })).toBeVisible();
-    await expect(page.locator('.inductee-name', { hasText: 'Jane Smith' })).toHaveCount(0);
+    await expect(page.locator('.inductee-name', { hasText: 'Jane Smith' })).toBeHidden();
+    await expect(page.locator('.hof-status')).toHaveText('Showing 1 of 4');
+    await expect(page.locator('.hof-year-block:visible')).toHaveCount(1);
   });
 
   test('filters inductees by category', async ({ page }) => {
     await page.getByRole('button', { name: 'Friend of NEBA' }).click();
     await expect(page.locator('.inductee-name', { hasText: 'Alice Williams' })).toBeVisible();
-    await expect(page.locator('.inductee-name', { hasText: 'Bob Johnson' })).toHaveCount(0);
+    await expect(page.locator('.inductee-name', { hasText: 'Bob Johnson' })).toBeHidden();
+    await expect(page.getByRole('button', { name: 'Friend of NEBA' })).toHaveAttribute('aria-pressed', 'true');
+  });
+
+  test('shows a message when no inductee matches, and recovers when the search clears', async ({ page }) => {
+    await page.locator('#hof-search').fill('zzz');
+    await expect(page.locator('.hof-empty')).toBeVisible();
+    await expect(page.locator('.hof-stage')).toBeHidden();
+
+    await page.locator('#hof-search').fill('');
+    await expect(page.locator('.hof-empty')).toBeHidden();
+    await expect(page.locator('.inductee-name', { hasText: 'Jane Smith' })).toBeVisible();
   });
 
   test('eligibility criteria section is always visible', async ({ page }) => {
