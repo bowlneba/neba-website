@@ -116,9 +116,11 @@ internal sealed class GenerateSeasonStatsJob(
                 creditRows,
                 cupResultRows));
 
-        var bowlerIdByLegacyId = await db.Bowlers
-            .Where(bowler => bowler.LegacyId != null && legacyBowlerIds.Contains(bowler.LegacyId.Value))
-            .ToDictionaryAsync(bowler => bowler.LegacyId!.Value, bowler => bowler.Id, ct);
+        // Inverts the map loaded above instead of querying the bowlers again.
+        var statsLegacyBowlerIds = legacyBowlerIds.ToHashSet();
+        var bowlerIdByLegacyId = bowlerLegacyIdById
+            .Where(entry => statsLegacyBowlerIds.Contains(entry.Value))
+            .ToDictionary(entry => entry.Value, entry => entry.Key);
 
         var unmappedLegacyBowlerIds = await AddBowlerSeasonStatsAsync(season.Id, computedResults, bowlerIdByLegacyId, ct);
 

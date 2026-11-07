@@ -118,7 +118,7 @@ Detailed write-ups live in `docs/learnings/`. Read the matching file before work
 
 ### Software data migration
 
-- Once a Software (legacy) table is migrated, read the website's own copy, not the legacy database. When you port data, also move the jobs that still query the migrated legacy table (stats, awards) onto the website tables. Migrated so far: bowler memberships.
+- Once a Software (legacy) table is migrated, read the website's own copy, not the legacy database. When you port data, also move the jobs that still query the migrated legacy table (stats, awards) onto the website tables. Migrated so far: bowler memberships (the stats job reads them from the website; run the membership port or sync before the stats job).
 
 ### Blazor and UI — `docs/learnings/blazor-ui.md`
 

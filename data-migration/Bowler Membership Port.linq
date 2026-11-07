@@ -37,6 +37,7 @@ async Task Main()
 	var skippedSystemImport = 0;
 	var unknownTypes = new List<LegacyBowlerMembership>();
 	var unknownBowlers = new List<LegacyBowlerMembership>();
+	var costMismatches = new List<LegacyBowlerMembership>();
 	var dumpedBowlers = new HashSet<int>();
 
 	foreach (var row in legacyRows)
@@ -65,6 +66,11 @@ async Task Main()
 			continue;
 		}
 
+		if (row.Cost != type.Cost)
+		{
+			costMismatches.Add(row);
+		}
+
 		mapped.Add(new MappedBowlerMembership(
 			row.Id, bowlerId, type.Value, row.Cost,
 			DateOnly.FromDateTime(row.BeginDate), DateOnly.FromDateTime(row.EndDate)));
@@ -77,11 +83,14 @@ async Task Main()
 		SkippedSystemImport = skippedSystemImport,
 		UnknownTypes = unknownTypes.Count,
 		UnknownBowlers = unknownBowlers.Count,
+		CostMismatches = costMismatches.Count,
+		AllCostsCurrent = costMismatches.Count == 0,
 		Reconciles = legacyRows.Count == mapped.Count + skippedSystemImport + unknownTypes.Count + unknownBowlers.Count
 	}.Dump("Summary");
 
 	unknownTypes.Dump("Unknown legacy membership ids (must be empty)");
 	unknownBowlers.Dump("Legacy bowlers with no match in new Bowlers");
+	costMismatches.Dump("Legacy cost differs from the current MembershipType.Cost (should be empty)");
 	mapped.Take(25).Dump("Sample mapped rows", 1);
 }
 
@@ -106,7 +115,8 @@ Dictionary<int, int> BuildBowlerMap()
 		.ToDictionary(b => b.LegacyId, b => b.Id);
 
 /// <summary>
-/// Legacy bowler memberships. Cost comes from the membership type (prices have never changed).
+/// Legacy bowler memberships. Cost is the Software's current price for the type, the same value BowlerMembershipSyncJob copies.
+/// No historical prices exist, so every row gets the current price.
 /// </summary>
 async Task<List<LegacyBowlerMembership>> GetLegacyBowlerMembershipsAsync()
 {
@@ -144,93 +154,6 @@ async Task DumpMissingLegacyBowlerAsync(LegacyBowlerMembership membership)
 		Bowler = table.Rows.Count > 0 ? table : null,
 		Note = table.Rows.Count > 0 ? null : $"Legacy bowler {membership.BowlerId} not found in dbo.Bowlers either"
 	}.Dump($"Legacy bowler {membership.BowlerId} missing from new Bowlers", 2);
-}
-
-#endregion
-
-#region Price History
-
-/// <summary>
-/// A price that took effect on Jan 1 of <paramref name="Year"/>.
-/// </summary>
-readonly record struct PriceChange(int Year, decimal Price);
-
-/// <summary>
-/// What each membership type cost in a given year. Each entry is the first year a price applied; it stays in effect
-/// until the next entry for that type. Types with no entries have never changed price, so they use <see cref="MembershipType.Cost"/>.
-/// </summary>
-static class MembershipPriceHistory
-{
-	private static readonly Dictionary<MembershipType, PriceChange[]> Changes = Build(
-		// (type, first year the price applied, price) - populate from the historical data. Example:
-		// (MembershipType.NonMember, 1999, 10.00m),
-		// (MembershipType.NonMember, 2006, 15.00m),
-	);
-
-	private static Dictionary<MembershipType, PriceChange[]> Build(params (MembershipType Type, int Year, decimal Price)[] entries)
-		=> entries
-			.GroupBy(e => e.Type)
-			.ToDictionary(
-				g => g.Key,
-				g =>
-				{
-					var changes = g.Select(e => new PriceChange(e.Year, e.Price)).OrderBy(c => c.Year).ToArray();
-
-					if (changes.Select(c => c.Year).Distinct().Count() != changes.Length)
-					{
-						throw new InvalidOperationException($"Duplicate year in price history for {g.Key.Value}.");
-					}
-
-					return changes;
-				});
-
-	/// <summary>
-	/// The price of <paramref name="type"/> in <paramref name="year"/>. Throws if the year is before the type's first recorded price.
-	/// </summary>
-	public static decimal GetPrice(MembershipType type, int year)
-	{
-		if (!Changes.TryGetValue(type, out var changes))
-		{
-			return type.Cost;
-		}
-
-		for (var i = changes.Length - 1; i >= 0; i--)
-		{
-			if (changes[i].Year <= year)
-			{
-				return changes[i].Price;
-			}
-		}
-
-		throw new ArgumentOutOfRangeException(nameof(year), year,
-			$"No price recorded for {type.Value} in {year}; earliest is {changes[0].Year}.");
-	}
-
-	/// <summary>
-	/// The price of <paramref name="type"/> on the year of <paramref name="date"/> (use the membership's start date).
-	/// </summary>
-	public static decimal GetPrice(MembershipType type, DateOnly date)
-		=> GetPrice(type, date.Year);
-
-	/// <summary>
-	/// Problems with the data: any type whose latest historical price differs from its current <see cref="MembershipType.Cost"/>.
-	/// </summary>
-	public static IReadOnlyList<string> Validate()
-	{
-		var problems = new List<string>();
-
-		foreach (var (type, changes) in Changes)
-		{
-			var latest = changes[^1].Price;
-
-			if (latest != type.Cost)
-			{
-				problems.Add($"{type.Value}: latest historical price {latest:C} differs from current cost {type.Cost:C}");
-			}
-		}
-
-		return problems;
-	}
 }
 
 #endregion
