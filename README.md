@@ -46,6 +46,7 @@ src/
 │   │   │   ├── ListTournamentsInSeason/
 │   │   │   └── TournamentsEndpointGroup.cs
 │   │   ├── Bowlers/
+│   │   ├── Memberships/
 │   │   ├── BowlingCenters/
 │   │   ├── Sponsors/
 │   │   ├── HallOfFame/
