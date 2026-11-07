@@ -46,7 +46,6 @@ src/
 │   │   │   ├── ListTournamentsInSeason/
 │   │   │   └── TournamentsEndpointGroup.cs
 │   │   ├── Bowlers/
-│   │   ├── Memberships/
 │   │   ├── BowlingCenters/
 │   │   ├── Sponsors/
 │   │   ├── HallOfFame/
@@ -54,7 +53,8 @@ src/
 │   │   ├── Seasons/
 │   │   ├── Stats/
 │   │   ├── News/
-│   │   └── Documents/
+│   │   ├── Documents/
+│   │   └── Memberships/
 │   ├── Database/                # AppDbContext, EF Core entity configurations, migrations
 │   ├── Messaging/                # IQueryHandler<,> / ICommandHandler<,> + handler scanning
 │   ├── Caching/                  # FusionCache setup and decorators

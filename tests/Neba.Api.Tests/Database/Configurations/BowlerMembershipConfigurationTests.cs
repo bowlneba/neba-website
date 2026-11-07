@@ -33,22 +33,16 @@ public sealed class BowlerMembershipConfigurationTests
     [Fact(DisplayName = "maps to bowler_memberships table in app schema")]
     public void Configure_ShouldMapToBowlerMembershipsTable()
     {
-        // Arrange
-        var entityType = _membershipType;
-
         // Act & Assert
-        entityType.GetTableName().ShouldBe("bowler_memberships");
-        entityType.GetSchema().ShouldBe(AppDbContext.DefaultSchema);
+        _membershipType.GetTableName().ShouldBe("bowler_memberships");
+        _membershipType.GetSchema().ShouldBe(AppDbContext.DefaultSchema);
     }
 
     [Fact(DisplayName = "domain_id is char(26), not nullable, value generated never")]
     public void Configure_ShouldConfigureDomainIdColumn()
     {
-        // Arrange
-        var entityType = _membershipType;
-
         // Act
-        var property = entityType.FindProperty(nameof(BowlerMembership.Id))!;
+        var property = _membershipType.FindProperty(nameof(BowlerMembership.Id))!;
 
         // Assert
         property.FindAnnotation(RelationalAnnotationNames.ColumnName)!.Value.ShouldBe("domain_id");
@@ -61,11 +55,8 @@ public sealed class BowlerMembershipConfigurationTests
     [Fact(DisplayName = "domain_id is an alternate key")]
     public void Configure_ShouldConfigureDomainIdAsAlternateKey()
     {
-        // Arrange
-        var entityType = _membershipType;
-
         // Act
-        var alternateKey = entityType.GetKeys()
+        var alternateKey = _membershipType.GetKeys()
             .Where(k => !k.IsPrimaryKey())
             .FirstOrDefault(k => k.Properties.Any(p => p.Name == nameof(BowlerMembership.Id)));
 
@@ -76,11 +67,8 @@ public sealed class BowlerMembershipConfigurationTests
     [Fact(DisplayName = "legacy_id is nullable, value generated never")]
     public void Configure_ShouldConfigureLegacyIdColumn()
     {
-        // Arrange
-        var entityType = _membershipType;
-
         // Act
-        var property = entityType.FindProperty(nameof(BowlerMembership.LegacyId))!;
+        var property = _membershipType.FindProperty(nameof(BowlerMembership.LegacyId))!;
 
         // Assert
         property.IsNullable.ShouldBeTrue();
@@ -90,11 +78,8 @@ public sealed class BowlerMembershipConfigurationTests
     [Fact(DisplayName = "legacy_id has a unique index that allows many nulls")]
     public void Configure_ShouldConfigureLegacyIdUniqueIndex()
     {
-        // Arrange
-        var entityType = _membershipType;
-
         // Act
-        var index = entityType.GetIndexes()
+        var index = _membershipType.GetIndexes()
             .FirstOrDefault(i => i.Properties.Any(p => p.Name == nameof(BowlerMembership.LegacyId)));
 
         // Assert
@@ -106,11 +91,8 @@ public sealed class BowlerMembershipConfigurationTests
     [Fact(DisplayName = "bowler_id shadow foreign key is not nullable")]
     public void Configure_ShouldConfigureBowlerIdShadowProperty()
     {
-        // Arrange
-        var entityType = _membershipType;
-
         // Act
-        var property = entityType.FindProperty(BowlerConfiguration.ForeignKeyName)!;
+        var property = _membershipType.FindProperty(BowlerConfiguration.ForeignKeyName)!;
 
         // Assert
         property.IsShadowProperty().ShouldBeTrue();
@@ -121,11 +103,8 @@ public sealed class BowlerMembershipConfigurationTests
     [Fact(DisplayName = "bowler foreign key targets Bowler and uses cascade delete")]
     public void Configure_ShouldConfigureBowlerForeignKeyWithCascadeDelete()
     {
-        // Arrange
-        var entityType = _membershipType;
-
         // Act
-        var foreignKey = entityType.GetForeignKeys()
+        var foreignKey = _membershipType.GetForeignKeys()
             .FirstOrDefault(fk => fk.Properties.Any(p => p.Name == BowlerConfiguration.ForeignKeyName));
 
         // Assert
@@ -137,11 +116,8 @@ public sealed class BowlerMembershipConfigurationTests
     [Fact(DisplayName = "membership_type is varchar(32), not nullable, stored as the type's code")]
     public void Configure_ShouldConfigureMembershipTypeColumn()
     {
-        // Arrange
-        var entityType = _membershipType;
-
         // Act
-        var property = entityType.FindProperty(nameof(BowlerMembership.Type))!;
+        var property = _membershipType.FindProperty(nameof(BowlerMembership.Type))!;
 
         // Assert
         property.FindAnnotation(RelationalAnnotationNames.ColumnName)!.Value.ShouldBe("membership_type");
@@ -153,11 +129,8 @@ public sealed class BowlerMembershipConfigurationTests
     [Fact(DisplayName = "cost is numeric(5,2), not nullable")]
     public void Configure_ShouldConfigureCostColumn()
     {
-        // Arrange
-        var entityType = _membershipType;
-
         // Act
-        var property = entityType.FindProperty(nameof(BowlerMembership.Cost))!;
+        var property = _membershipType.FindProperty(nameof(BowlerMembership.Cost))!;
 
         // Assert
         property.FindAnnotation(RelationalAnnotationNames.ColumnName)!.Value.ShouldBe("cost");
@@ -171,11 +144,8 @@ public sealed class BowlerMembershipConfigurationTests
     [InlineData(nameof(BowlerMembership.EndDate), "end_date", TestDisplayName = "EndDate maps to end_date")]
     public void Configure_ShouldConfigureDateColumns(string propertyName, string columnName)
     {
-        // Arrange
-        var entityType = _membershipType;
-
         // Act
-        var property = entityType.FindProperty(propertyName)!;
+        var property = _membershipType.FindProperty(propertyName)!;
 
         // Assert
         property.FindAnnotation(RelationalAnnotationNames.ColumnName)!.Value.ShouldBe(columnName);
@@ -185,11 +155,8 @@ public sealed class BowlerMembershipConfigurationTests
     [Fact(DisplayName = "bowler_id and start_date form an index")]
     public void Configure_ShouldConfigureBowlerIdStartDateIndex()
     {
-        // Arrange
-        var entityType = _membershipType;
-
         // Act
-        var index = entityType.GetIndexes()
+        var index = _membershipType.GetIndexes()
             .FirstOrDefault(i => i.Properties.Select(p => p.Name)
                 .SequenceEqual([BowlerConfiguration.ForeignKeyName, nameof(BowlerMembership.StartDate)]));
 

@@ -136,15 +136,9 @@ Confirmed and fixed for `Sponsor.PhoneNumbers`, `Sponsor.TournamentsSponsored`, 
 
 ### Legacy season stats calculator performance
 
-`LegacySeasonStatsCalculator.Compute` (run by `GenerateSeasonStatsJob`) is correct and fast enough today, but it scales worse than it looks. We plan to migrate stats calculation off the Software, so keep this list if stats generation ever slows down or when you port the calculator.
+Unmeasured, sized by reading the code (about 1k members, a few hundred bowlers per season, a few thousand qualifying rows): `LegacySeasonStatsCalculator.Compute` is fast enough today. We plan to move stats calculation off the Software, so if stats generation slows down or you port it, look here first:
 
-Measured: none. Sized by reasoning at about 1k members, 15 or so tournaments a season, a few hundred bowlers in a season's stats, and a few thousand qualifying rows. At that size the whole job is well under a second of CPU; the Software SQL queries and the save dominate.
-
-- **Field average is O(bowlers x all qualifying rows).** `ComputeFieldAverage` filters the full `qualifyingStats` list once per bowler. Fix if it shows: sum games and score per tournament once, then add up the bowler's eligible tournaments from that lookup.
-- **`List.Contains` inside `Where`.** `eligibleTournamentIdsForBowler` is a `List<int>` tested per row, so each filter is O(rows x tournaments). Fix: make it a `HashSet<int>`.
-- **Many passes per bowler.** Each stat re-filters the same eligible lists (`Count`, `Sum`, `Max`). Fine at this size; fold into one pass if a season grows by an order of magnitude.
-- **Memberships are loaded for every bowler in the stats set, all years.** `GenerateSeasonStatsJob` projects `MembershipRow` (type and end date only) and the calculator filters in memory. Fix: filter by `EndDate` in the query. The `(bowler_id, start_date)` index already serves the join.
-- **The job rewrites the whole season.** It deletes every `BowlerSeasonStats` row for the season and inserts them again on each run, and runs on every tournament completion. Cost grows with bowlers x tournaments completed.
-- **Loads every bowler id map.** `bowlerLegacyIdById` reads all bowlers with a `LegacyId`, not only those in the stats set.
-
-First step when it slows down: time the Software queries, the Compute call and `SaveChangesAsync` separately (the job has no per-phase timing yet). Do not optimize the calculator before that shows it is the slow part.
+- `ComputeFieldAverage` filters all qualifying rows once per bowler (O(bowlers x rows)); sum per tournament once instead.
+- `eligibleTournamentIdsForBowler` is a `List<int>` used in `Contains` inside `Where`; use a `HashSet<int>`.
+- `GenerateSeasonStatsJob` loads every membership for the season's bowlers (all years), and rewrites the whole season on each tournament completion.
+- Before optimizing, time the Software queries, `Compute` and `SaveChangesAsync` separately; the job has no per-phase timing yet.
