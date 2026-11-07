@@ -20,6 +20,7 @@ using Microsoft.Extensions.Options;
 using Neba.Api.Database;
 using Neba.Api.Features.Bowlers.Domain;
 using Neba.Api.Legacy;
+using Neba.Api.Legacy.BowlerMemberships;
 using Neba.Api.Legacy.Bowlers;
 using Neba.Api.Legacy.HallOfFame;
 using Neba.Api.Legacy.Seasons.Complete;
@@ -158,6 +159,9 @@ public sealed class UpdateBowlerEndpointTests : IAsyncLifetime
         _jobsMock = new Mock<IBackgroundJobClient>(MockBehavior.Strict);
         builder.Services.AddSingleton(_jobsMock.Object);
         builder.Services.AddScoped<IValidator<UpdateBowlerRequest>, UpdateBowlerRequestValidator>();
+        builder.Services.AddScoped<IValidator<NewBowlerMembershipRequest>, NewBowlerMembershipRequestValidator>();
+        builder.Services.AddScoped<IValidator<UpdateBowlerMembershipRequest>, UpdateBowlerMembershipRequestValidator>();
+        builder.Services.AddScoped<IValidator<DeleteBowlerMembershipRequest>, DeleteBowlerMembershipRequestValidator>();
         // NewBowlerRequest's and NewTournamentRequest's validators are also required here:
         // MapLegacyGroup() below maps every endpoint in the /legacy group (not just this one), and
         // ASP.NET Core builds route metadata for the whole group on the first request to any of its

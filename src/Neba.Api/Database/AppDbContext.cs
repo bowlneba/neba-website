@@ -11,6 +11,7 @@ using Neba.Api.Domain;
 using Neba.Api.Features.Bowlers.Domain;
 using Neba.Api.Features.BowlingCenters.Domain;
 using Neba.Api.Features.HallOfFame.Domain;
+using Neba.Api.Features.Memberships.Domain;
 using Neba.Api.Features.News.Domain;
 using Neba.Api.Features.Seasons.Domain;
 using Neba.Api.Features.Sponsors.Domain;
@@ -81,6 +82,7 @@ internal sealed class AppDbContext(
     {
         modelBuilder.ApplyConfiguration(new BowlingCenterConfiguration());
         modelBuilder.ApplyConfiguration(new BowlerConfiguration());
+        modelBuilder.ApplyConfiguration(new BowlerMembershipConfiguration());
         modelBuilder.ApplyConfiguration(new HallOfFameInductionConfiguration());
         modelBuilder.ApplyConfiguration(new SeasonConfiguration());
         modelBuilder.ApplyConfiguration(new BowlerOfTheYearAwardConfiguration());
@@ -113,6 +115,9 @@ internal sealed class AppDbContext(
 
         configurationBuilder.Properties<BowlerId>()
             .HaveConversion<UlidTypedIdConverter<BowlerId>>();
+
+        configurationBuilder.Properties<BowlerMembershipId>()
+            .HaveConversion<UlidTypedIdConverter<BowlerMembershipId>>();
 
         configurationBuilder.Properties<HallOfFameId>()
             .HaveConversion<UlidTypedIdConverter<HallOfFameId>>();

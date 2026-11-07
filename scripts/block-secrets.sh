@@ -16,6 +16,8 @@ fi
 exclude_paths=(
     ':(exclude,glob)**/appsettings.Development.json'
     ':(exclude,glob)**/launchSettings.json'
+    # Legacy tests configure a fake API key for the /legacy filter.
+    ':(exclude,glob)tests/**/Legacy/**'
 )
 
 # `git diff HEAD` (not `--cached`) so tracked-file changes are caught whether
@@ -30,6 +32,9 @@ staged=$(git diff HEAD --unified=0 -- . "${exclude_paths[@]}" || true)
 while IFS= read -r path; do
     [[ -f "$path" ]] || continue
     if [[ "$path" == *"appsettings.Development.json" || "$path" == *"launchSettings.json" ]]; then
+        continue
+    fi
+    if [[ "$path" == tests/*/Legacy/* ]]; then
         continue
     fi
     staged+=$'\n'"$(cat -- "$path")"

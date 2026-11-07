@@ -7,6 +7,7 @@ using Hangfire;
 using Microsoft.Data.SqlClient;
 using Microsoft.Extensions.Options;
 
+using Neba.Api.Legacy.BowlerMemberships;
 using Neba.Api.Legacy.Bowlers;
 using Neba.Api.Legacy.Seasons.Complete;
 using Neba.Api.Legacy.Sync;
@@ -43,6 +44,9 @@ internal static class LegacyConfiguration
 
             builder.Services.AddScoped<IValidator<NewBowlerRequest>, NewBowlerRequestValidator>();
             builder.Services.AddScoped<IValidator<UpdateBowlerRequest>, UpdateBowlerRequestValidator>();
+            builder.Services.AddScoped<IValidator<NewBowlerMembershipRequest>, NewBowlerMembershipRequestValidator>();
+            builder.Services.AddScoped<IValidator<UpdateBowlerMembershipRequest>, UpdateBowlerMembershipRequestValidator>();
+            builder.Services.AddScoped<IValidator<DeleteBowlerMembershipRequest>, DeleteBowlerMembershipRequestValidator>();
             builder.Services.AddScoped<IValidator<NewTournamentRequest>, NewTournamentRequestValidator>();
             builder.Services.AddScoped<IValidator<SyncSquadScoresRequest>, SyncSquadScoresRequestValidator>();
             builder.Services.AddScoped<IValidator<CompleteTournamentRequest>, CompleteTournamentRequestValidator>();
