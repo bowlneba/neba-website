@@ -20,6 +20,9 @@ namespace Neba.Api.Legacy.Tournaments.Stats;
 // the Tournament of Champions double-dip), exactly like the live Dump. A bowler whose only match play
 // came in a non-stat-eligible event (e.g. Non-Champions) therefore shows 0-0. Tournaments/Entries keep
 // their separate Eligible/Total pair; TournamentWinnings is not eligibility-scoped.
+//
+// Performance: Compute is O(bowlers x qualifying rows) by design; see "Legacy season stats calculator
+// performance" in docs/learnings/backend.md before optimizing or porting it.
 internal static class LegacySeasonStatsCalculator
 {
     private const int SeniorAge = 50;

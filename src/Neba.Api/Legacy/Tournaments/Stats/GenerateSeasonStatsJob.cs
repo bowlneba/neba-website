@@ -99,6 +99,7 @@ internal sealed class GenerateSeasonStatsJob(
             await FetchBowlerStatsAsync(legacyBowlerIds, seasonStart, seasonEndExclusive);
 
         var membershipRows = await db.Bowlers
+            .AsNoTracking()
             .Where(bowler => bowler.LegacyId != null && legacyBowlerIds.Contains(bowler.LegacyId.Value))
             .SelectMany(bowler => bowler.Memberships.Select(
                 membership => new MembershipRow(bowler.LegacyId!.Value, membership.Type, membership.EndDate)))
