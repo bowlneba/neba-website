@@ -413,3 +413,38 @@ test.describe('Tournament Detail — added money breakdown', () => {
     });
   });
 });
+
+
+test.describe('Tournament Detail page - rules link', () => {
+  test.use({ viewport: { width: 1200, height: 800 } });
+
+  test('upcoming Invitational opens the rules slide-out, closes on Escape and links to the full page', async ({ page }) => {
+    await page.goto('/tournaments/01JX0000000000000000000070');
+    await page.waitForSelector('.td-hero');
+
+    const button = page.getByRole('button', { name: 'Invitational rules' });
+    await button.click();
+
+    const dialog = page.getByRole('dialog');
+    await expect(dialog).toContainText('Rule 601');
+    await expect(dialog).not.toContainText('Rule 602');
+
+    const fullLink = dialog.getByRole('link', { name: 'Open full rules page' });
+    await expect(fullLink).toHaveAttribute('href', '/tournaments/rules#invitational');
+
+    await page.keyboard.press('Escape');
+    await expect(dialog).toBeHidden();
+    await expect(button).toBeFocused();
+
+    await button.click();
+    await page.getByRole('dialog').getByRole('link', { name: 'Open full rules page' }).click();
+    await expect(page).toHaveURL(/\/tournaments\/rules#invitational$/);
+  });
+
+  test('completed Invitational has no rules button', async ({ page }) => {
+    await page.goto('/tournaments/01JX0000000000000000000071');
+    await page.waitForSelector('.td-hero');
+
+    await expect(page.getByRole('button', { name: 'Invitational rules' })).toHaveCount(0);
+  });
+});
