@@ -116,4 +116,26 @@ public sealed class TournamentRulesLinkTests : IDisposable
         errorShown.ShouldContain("couldn't load the rules");
         cut.Find(".neba-document-slideover-content").TextContent.ShouldContain("Eligibility");
     }
+
+    [Fact(DisplayName = "Disposing the component cancels a pending load")]
+    public async Task Dispose_ShouldCancelPendingLoad()
+    {
+        // Arrange
+        CancellationToken captured = default;
+        var pending = new TaskCompletionSource<ErrorOr<RulesSection>>();
+        _mockRulesSectionService
+            .Setup(x => x.GetSectionAsync(It.IsAny<TournamentRulesAnchor>(), It.IsAny<CancellationToken>()))
+            .Callback<TournamentRulesAnchor, CancellationToken>((_, ct) => captured = ct)
+            .Returns(pending.Task);
+        var cut = RenderLink();
+        var click = cut.Find("button.td-rules-link").ClickAsync(new MouseEventArgs());
+
+        // Act
+        await _ctx.DisposeComponentsAsync();
+
+        // Assert
+        captured.IsCancellationRequested.ShouldBeTrue();
+        pending.SetCanceled(captured);
+        await click;
+    }
 }
