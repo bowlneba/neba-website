@@ -9,6 +9,18 @@ function makeVisible(el) {
   el.getClientRects = () => [{}]; // .length === 1
 }
 
+function render(headingsHtml) {
+  document.body.innerHTML = `<div id="content">${headingsHtml}</div><ul id="toc-list"></ul>`;
+  document.querySelectorAll('h3').forEach(h => { h.scrollIntoView = jest.fn(); });
+  globalThis.scrollTo = jest.fn();
+  document.getElementById('content').scrollTo = jest.fn();
+}
+
+function scrolled() {
+  return document.getElementById('content').scrollTo.mock.calls.length > 0
+    || globalThis.scrollTo.mock.calls.length > 0;
+}
+
 describe('NebaDocument', () => {
   let mockDotNetReference;
 
@@ -594,18 +606,6 @@ describe('NebaDocument', () => {
     const aliases = {
       invitational: { headingIdPrefix: 'rule-601-', titleKeyword: 'Invitational' }
     };
-
-    function render(headingsHtml) {
-      document.body.innerHTML = `<div id="content">${headingsHtml}</div><ul id="toc-list"></ul>`;
-      document.querySelectorAll('h3').forEach(h => { h.scrollIntoView = jest.fn(); });
-      globalThis.scrollTo = jest.fn();
-      document.getElementById('content').scrollTo = jest.fn();
-    }
-
-    function scrolled() {
-      return document.getElementById('content').scrollTo.mock.calls.length > 0
-        || globalThis.scrollTo.mock.calls.length > 0;
-    }
 
     test('scrolls to the rule heading and keeps the alias in the URL', () => {
       // Arrange

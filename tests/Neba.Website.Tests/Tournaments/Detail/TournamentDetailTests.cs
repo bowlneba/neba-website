@@ -129,7 +129,7 @@ public sealed class TournamentDetailTests : IDisposable
     {
         // Arrange
         SetupSuccessResponse(TournamentDetailResponseFactory.Create(
-            tournamentType: TournamentType.Invitational, status: TournamentStatus.Scheduled));
+            status: TournamentStatus.Scheduled, tournamentType: TournamentType.Invitational));
 
         // Act
         var cut = _ctx.Render<TournamentDetail>(p => p.Add(x => x.Id, TournamentDetailResponseFactory.ValidId));
@@ -143,7 +143,7 @@ public sealed class TournamentDetailTests : IDisposable
     {
         // Arrange
         SetupSuccessResponse(TournamentDetailResponseFactory.Create(
-            tournamentType: TournamentType.Invitational, status: TournamentStatus.Completed));
+            status: TournamentStatus.Completed, tournamentType: TournamentType.Invitational));
 
         // Act
         var cut = _ctx.Render<TournamentDetail>(p => p.Add(x => x.Id, TournamentDetailResponseFactory.ValidId));
