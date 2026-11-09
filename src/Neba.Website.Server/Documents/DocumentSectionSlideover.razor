@@ -59,8 +59,8 @@
     [Parameter] public MarkupString? Content { get; set; }
     [Parameter] public bool IsLoading { get; set; }
     [Parameter] public string? ErrorMessage { get; set; }
-    [Parameter] public string LoadingText { get; set; } = "Loading...";
-    [Parameter] public string CloseLabel { get; set; } = "Close";
+    [Parameter, EditorRequired] public string LoadingText { get; set; } = default!;
+    [Parameter, EditorRequired] public string CloseLabel { get; set; } = default!;
     [Parameter] public DateTimeOffset? LastUpdated { get; set; }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)

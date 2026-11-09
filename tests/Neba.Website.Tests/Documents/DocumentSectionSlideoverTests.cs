@@ -35,6 +35,8 @@ public sealed class DocumentSectionSlideoverTests : IDisposable
             .Add(x => x.FullDocumentHref, "/tournaments/rules#invitational")
             .Add(x => x.Content, content is null ? null : new MarkupString(content))
             .Add(x => x.IsLoading, isLoading)
+            .Add(x => x.LoadingText, "Loading...")
+            .Add(x => x.CloseLabel, "Close")
             .Add(x => x.ErrorMessage, error)
             .Add(x => x.LastUpdated, lastUpdated));
 
