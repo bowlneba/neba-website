@@ -3,7 +3,7 @@ using ErrorOr;
 namespace Neba.Website.Server.Documents;
 
 /// <summary>One rule section, ready to show.</summary>
-/// <param name="Html">Sanitized HTML of the section.</param>
+/// <param name="Html">HTML of the section as the API returned it, with links rewritten. This layer does not sanitize it; render it only because the API document is trusted.</param>
 /// <param name="LastUpdated">When the rules document last changed, in the viewer's time zone.</param>
 internal sealed record RulesSection(string Html, DateTimeOffset? LastUpdated);
 
