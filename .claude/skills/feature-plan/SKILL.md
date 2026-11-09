@@ -28,6 +28,7 @@ Turn a feature description into `docs/plans/{feature-name}.md` — a plan detail
 - **A "code" draft shows the actual code changes** — real class/method signatures, real field names, real routes, close enough to paste into the editor and adjust. It replaces the functional bullets for that phase in the markdown file, it doesn't just append below them.
 - **The plan file's full skeleton — both phase headings, all four stage placeholders — is written on first creation** (Step 5, before any content is drafted), not built up heading-by-heading as stages are confirmed. From then on the file is updated incrementally in place: each stage replaces its own section's placeholder/prior content, so `docs/plans/{feature-name}.md` always reflects the latest confirmed + in-progress state if the session is interrupted, and the reader can see the shape of the whole plan (including not-yet-drafted phases) from the first write onward.
 - This skill produces a plan. It does not write feature code, run `dotnet build`, or create branches — that happens afterward, driven by the user from the finished markdown file.
+- **Implementation lands as logical commits, never one large commit.** The plan carries a `## Commit plan` (Step 12). When the user later asks to implement from the plan, commit each logical commit as soon as its changes are done and its build and tests pass, in plan order, instead of saving everything for the end.
 
 ## Step 1 — Scope and clarify
 
@@ -111,6 +112,10 @@ Before drafting any content, create `docs/plans/{feature-name}.md` (kebab-case t
 ## Phase 2: UI
 
 *(Not yet drafted.)*
+
+## Commit plan
+
+*(Not yet drafted.)*
 ```
 
 If Step 1/Step 2 (if run)/Step 3/Step 4/Step 5 surfaced decisions, assumptions, or things the user explicitly ruled in/out while scoping — including the NFR targets from Step 2, the permission/role decision from Step 4, and the confirmed flow from Step 5 — capture them under a short `## Decisions locked in during scoping` section between the title and `## Phase 1` — this is where cross-phase context that isn't specific to either phase belongs, so it doesn't get lost or duplicated across both phase sections.
@@ -191,7 +196,19 @@ Do not proceed until confirmed. If the user asks for changes, update the mockup 
 
 Once Step 10 is confirmed (or skipped, per Step 10's own condition), expand each item into actual `.razor`/`.razor.cs` code: markup, `@code` blocks, event handlers, DirtyFormGuard wiring if applicable, and the Refit client call. Use the confirmed mockup(s) as the source of truth for markup structure/classes/layout, adapted into Razor. Replace the Step 9 functional bullets under `## Phase 2: UI` with this code-level detail, same fenced-code-per-item structure as Step 8.
 
-Show the update in chat and report the plan is complete: **"Phase 2 code is in. The full plan is in `docs/plans/{feature-name}.md` — let me know if you want any adjustments, or you're ready to start implementing from it."**
+Show the update in chat and ask: **"Does the Phase 2 code look right? Once you confirm, I'll draft the commit plan."** Do not proceed until confirmed. (If Step 10 and Step 11 were skipped for lack of a UI, go to Step 12 once Step 9 is confirmed.)
+
+## Step 12 — Commit plan
+
+Replace the placeholder under `## Commit plan` with an ordered list of logical commits, so implementation never ends in one large commit:
+
+- Each commit is one reviewable idea, named by its subject line in the repo's style (short, imperative, no prefix). Examples of a natural split: domain change and its tests; settings and DI; job and handler with tests; scheduling wired into existing handlers; migration with its backfill test.
+- Order them so every commit builds and passes its own tests. A commit holds the code and the tests for it; do not put all tests in a final commit.
+- Each entry lists the files it touches (from the Phase 1 and Phase 2 drafts) and a one-line body explaining why, not what.
+- Put the plan file itself in the first commit, and list any unrelated edit (such as a skill or docs change) as its own commit.
+- Commit messages end with the attribution lines the session gives for commits.
+
+Show it in chat and report the plan is complete: **"The commit plan is in. The full plan is in `docs/plans/{feature-name}.md` — let me know if you want any adjustments, or you're ready to start implementing from it. I'll commit each step as it is done."**
 
 ## Rules
 
@@ -199,4 +216,5 @@ Show the update in chat and report the plan is complete: **"Phase 2 code is in. 
 - Never write Phase 2 content before Phase 1 is fully confirmed (both stages), even if the user's description leads with UI details — reorder into the plan's fixed phase order regardless of how the request was phrased.
 - If repo review in Step 3 surfaces an existing, reusable piece (a query, a component, a contract type) that the feature could extend instead of duplicating, propose reusing it in the functional draft rather than silently planning a duplicate — flag the choice to the user if it's not obvious which is better.
 - If the user requests changes at a confirmation gate, update that stage's section in the plan file and re-show it before moving on — don't silently fold unconfirmed changes into the next stage.
+- During implementation, follow the `## Commit plan`: after each commit's changes build and pass their tests, stage only that commit's files by name (never `git add -A`) and commit before starting the next. If the work drifts from the plan, update the plan's commit list rather than merging commits. Commit only when the user has asked to implement (or to commit).
 - The plan file is the deliverable of this skill. Don't create additional scratch files for it — everything lives in the one `docs/plans/{feature-name}.md`, updated in place stage by stage.

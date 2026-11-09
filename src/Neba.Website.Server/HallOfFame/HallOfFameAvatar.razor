@@ -1,5 +1,5 @@
 <div class="avatar-wrap">
-    <div class="inductee-photo">
+    <div class="@(Ringed ? "inductee-photo inductee-photo--ringed" : "inductee-photo")">
         @if (PhotoUri is not null)
         {
             <img class="inductee-photo__img" src="@PhotoUri.AbsoluteUri" alt="" style="@ImageStyle" loading="lazy" />
@@ -31,6 +31,12 @@
 
     [Parameter]
     public int? Zoom { get; set; }
+
+    /// <summary>
+    /// Draws a gold ring around the portrait, for use on a dark background.
+    /// </summary>
+    [Parameter]
+    public bool Ringed { get; set; }
 
     /// <summary>
     /// When set, the avatar shows the edit button (visible only to users with the permission).

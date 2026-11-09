@@ -140,6 +140,40 @@ public sealed class Tournament
     /// </summary>
     public DateTimeOffset? OilPatternRevealDateTime { get; private set; }
 
+    // PostgreSQL stores timestamps to the microsecond. Dropping finer ticks here keeps the in-memory reveal
+    // time equal to the stored one, so a job scheduled with it matches the row exactly.
+    private const long TicksPerMicrosecond = 10;
+
+    private static DateTimeOffset? TruncateToMicroseconds(DateTimeOffset? value)
+        => value is { } instant
+            ? new DateTimeOffset(instant.Ticks - (instant.Ticks % TicksPerMicrosecond), instant.Offset)
+            : null;
+
+    /// <summary>
+    /// When the oil pattern reveal was announced, or <see langword="null"/> if it has not been. Set once.
+    /// </summary>
+    public DateTimeOffset? OilPatternAnnouncedAtUtc { get; private set; }
+
+    /// <summary>
+    /// When the oil pattern reveal should be announced: <paramref name="delay"/> after the reveal time, so the
+    /// page shows the pattern before the link is clicked. <see langword="null"/> when there is no reveal time,
+    /// it has passed, or the reveal was already announced.
+    /// </summary>
+    public DateTimeOffset? GetOilPatternAnnouncementTime(DateTimeOffset now, TimeSpan delay)
+    {
+        return OilPatternRevealDateTime is not { } revealAt
+            || revealAt <= now
+            || OilPatternAnnouncedAtUtc is not null
+            ? null
+            : (revealAt + delay);
+    }
+
+    /// <summary>
+    /// Records that the oil pattern reveal was announced. A second call keeps the first timestamp.
+    /// </summary>
+    public void MarkOilPatternAnnounced(DateTimeOffset now)
+        => OilPatternAnnouncedAtUtc ??= now;
+
     private readonly List<Squad> _squads = [];
 
     /// <summary>
@@ -281,7 +315,7 @@ public sealed class Tournament
             Logo = logo,
             PatternLengthCategory = patternLengthCategory,
             PatternRatioCategory = patternRatioCategory,
-            OilPatternRevealDateTime = oilPatternRevealDateTime,
+            OilPatternRevealDateTime = TruncateToMicroseconds(oilPatternRevealDateTime),
             LegacyId = legacyId
         };
 
@@ -340,7 +374,7 @@ public sealed class Tournament
         Logo = logo;
         PatternLengthCategory = patternLengthCategory;
         PatternRatioCategory = patternRatioCategory;
-        OilPatternRevealDateTime = oilPatternRevealDateTime;
+        OilPatternRevealDateTime = TruncateToMicroseconds(oilPatternRevealDateTime);
 
         return Result.Updated;
     }

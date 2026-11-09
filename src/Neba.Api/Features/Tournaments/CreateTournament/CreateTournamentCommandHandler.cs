@@ -1,9 +1,11 @@
 using ErrorOr;
 
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
 
 using Neba.Api.BackgroundJobs;
 using Neba.Api.Database;
+using Neba.Api.Features.Tournaments.AnnounceOilPatternToDiscord;
 using Neba.Api.Features.Tournaments.Domain;
 using Neba.Api.Features.Tournaments.EvictOilPatternRevealCache;
 using Neba.Api.Messaging;
@@ -16,7 +18,8 @@ internal sealed class CreateTournamentCommandHandler(
     AppDbContext appDbContext,
     IFusionCache cache,
     IBackgroundJobScheduler jobScheduler,
-    TimeProvider timeProvider)
+    TimeProvider timeProvider,
+    IOptions<OilPatternAnnouncementSettings> announcementSettings)
     : ICommandHandler<CreateTournamentCommand, TournamentId>
 {
     public async Task<ErrorOr<TournamentId>> HandleAsync(CreateTournamentCommand command, CancellationToken cancellationToken)
@@ -91,12 +94,17 @@ internal sealed class CreateTournamentCommandHandler(
 
         await cache.RemoveByTagAsync($"neba:tournaments:{season.Id}", token: cancellationToken);
 
-        if (command.OilPatternRevealDateTime is { } revealAt && revealAt > timeProvider.GetUtcNow())
+        var now = timeProvider.GetUtcNow();
+
+        if (tournament.OilPatternRevealDateTime is { } revealAt && revealAt > now)
         {
             jobScheduler.Schedule(
                 new EvictOilPatternRevealCacheJob { TournamentId = tournament.Id, SeasonId = season.Id },
                 revealAt);
         }
+
+        jobScheduler.ScheduleOilPatternAnnouncement(
+            tournament, now, announcementSettings.Value.Delay);
 
         return tournament.Id;
     }

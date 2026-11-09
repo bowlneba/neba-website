@@ -1,8 +1,11 @@
 using ErrorOr;
 
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
 
+using Neba.Api.BackgroundJobs;
 using Neba.Api.Database;
+using Neba.Api.Features.News.AnnounceArticleToDiscord;
 using Neba.Api.Features.News.Domain;
 using Neba.Api.Features.Tournaments.Domain;
 using Neba.Api.Messaging;
@@ -13,6 +16,9 @@ namespace Neba.Api.Features.News.CreateArticle;
 
 internal sealed class CreateArticleCommandHandler(
         AppDbContext appDbContext,
+        IBackgroundJobScheduler backgroundJobScheduler,
+        TimeProvider timeProvider,
+        IOptions<NewsAnnouncementSettings> announcementSettings,
         IFusionCache cache)
     : ICommandHandler<CreateArticleCommand, CreatedArticle>
 {
@@ -64,6 +70,8 @@ internal sealed class CreateArticleCommandHandler(
         await appDbContext.SaveChangesAsync(cancellationToken);
 
         await cache.RemoveByTagAsync("neba:news:articles", token: cancellationToken);
+
+        backgroundJobScheduler.ScheduleAnnouncement(article, timeProvider.GetUtcNow(), announcementSettings.Value.Delay);
 
         return new CreatedArticle
         {

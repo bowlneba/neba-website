@@ -70,6 +70,19 @@ public sealed class HallOfFameAvatarTests : IDisposable
             .ShouldBe("object-position:50% 50%;transform-origin:50% 50%;transform:scale(1)");
     }
 
+    [Fact(DisplayName = "Should add the ring class only when Ringed is set")]
+    public void Render_ShouldAddRingClass_OnlyWhenRinged()
+    {
+        // Arrange
+        // Act
+        var plain = Render();
+        var ringed = Render(p => p.Add(x => x.Ringed, true));
+
+        // Assert
+        plain.Find(".inductee-photo").ClassList.ShouldNotContain("inductee-photo--ringed");
+        ringed.Find(".inductee-photo").ClassList.ShouldContain("inductee-photo--ringed");
+    }
+
     [Fact(DisplayName = "Should not render the edit button when OnEdit is not set")]
     public void Render_ShouldNotRenderEditButton_WhenOnEditNotSet()
     {

@@ -111,32 +111,48 @@ function makeLocation(overrides = {}) {
   };
 }
 
-function makeSuccessfulRouteResponse(overrides = {}) {
+/**
+ * Builds one Route Directions 2025-01-01 route: a GeoJSON FeatureCollection holding
+ * waypoints, ManeuverPoints (turn-by-turn), and the RoutePath (summary + MultiLineString).
+ */
+function makeRoute({
+  distance = 5000,
+  duration = 300,
+  trafficDuration = 330,
+  lines = [[[-71, 42], [-70, 43]]],
+  maneuvers = [
+    { instruction: { text: 'Head north' }, distanceInMeters: 100 },
+    { instruction: { text: 'Turn right' }, distanceInMeters: 400 },
+  ],
+} = {}) {
+  return {
+    type: 'FeatureCollection',
+    features: [
+      { type: 'Feature', geometry: { type: 'Point', coordinates: [-71, 42] }, properties: { type: 'Waypoint' } },
+      ...maneuvers.map((maneuver) => ({
+        type: 'Feature',
+        geometry: { type: 'Point', coordinates: [-71, 42] },
+        properties: { type: 'ManeuverPoint', ...maneuver },
+      })),
+      {
+        type: 'Feature',
+        geometry: { type: 'MultiLineString', coordinates: lines },
+        properties: {
+          type: 'RoutePath',
+          distanceInMeters: distance,
+          durationInSeconds: duration,
+          // The API omits traffic time when it was not calculated; pass null to model that.
+          ...(typeof trafficDuration === 'number' ? { durationTrafficInSeconds: trafficDuration } : {}),
+        },
+      },
+    ],
+  };
+}
+
+function makeSuccessfulRouteResponse(route = makeRoute()) {
   return {
     ok: true,
-    json: () =>
-      Promise.resolve({
-        routes: [
-          {
-            summary: { lengthInMeters: 5000, travelTimeInSeconds: 300 },
-            guidance: {
-              instructions: [
-                { message: 'Head north', travelDistance: 100 },
-                { message: 'Turn right', travelDistance: 400 },
-              ],
-            },
-            legs: [
-              {
-                points: [
-                  { longitude: -71, latitude: 42 },
-                  { longitude: -70, latitude: 43 },
-                ],
-              },
-            ],
-          },
-        ],
-        ...overrides,
-      }),
+    json: () => Promise.resolve(route),
   };
 }
 
@@ -165,7 +181,6 @@ async function createInitializedMap(mapConfig = defaultMapConfig, locations = []
 
 describe('NebaMap', () => {
   beforeEach(() => {
-    jest.spyOn(console, 'log').mockImplementation(() => {});
     jest.spyOn(console, 'warn').mockImplementation(() => {});
     jest.spyOn(console, 'error').mockImplementation(() => {});
 
@@ -467,7 +482,6 @@ describe('NebaMap', () => {
       updateMarkers(locations); // same IDs → same hash
 
       expect(mockDataSource.add.mock.calls.length).toBe(addCount);
-      expect(console.log).toHaveBeenCalledWith(expect.stringContaining('Locations unchanged'));
     });
 
     test('re-renders when the location ID set changes', async () => {
@@ -821,56 +835,38 @@ describe('NebaMap', () => {
       await createInitializedMap();
       globalThis.fetch = jest.fn().mockResolvedValue({
         ok: true,
-        json: () => Promise.resolve({ routes: [] }),
+        json: () => Promise.resolve({ type: 'FeatureCollection', features: [] }),
       });
 
       await expect(showRoute([-71, 42], [-70, 43])).rejects.toThrow('No route found');
     });
 
-    test('returns distance and travel time from the route summary', async () => {
-      await createInitializedMap();
-      globalThis.fetch = jest.fn().mockResolvedValue(makeSuccessfulRouteResponse());
-
-      const result = await showRoute([-71, 42], [-70, 43]);
-
-      expect(result.DistanceMeters).toBe(5000);
-      expect(result.TravelTimeSeconds).toBe(300);
-    });
-
-    test('maps guidance instructions to the Instructions array', async () => {
-      await createInitializedMap();
-      globalThis.fetch = jest.fn().mockResolvedValue(makeSuccessfulRouteResponse());
-
-      const result = await showRoute([-71, 42], [-70, 43]);
-
-      expect(result.Instructions).toHaveLength(2);
-      expect(result.Instructions[0]).toMatchObject({ Text: 'Head north', DistanceMeters: 100 });
-    });
-
-    test('falls back to instructionGroups when instructions array is absent', async () => {
+    test('ignores route collections without a RoutePath feature', async () => {
       await createInitializedMap();
       globalThis.fetch = jest.fn().mockResolvedValue({
         ok: true,
         json: () =>
           Promise.resolve({
-            routes: [
-              {
-                summary: { lengthInMeters: 2000, travelTimeInSeconds: 120 },
-                guidance: {
-                  instructionGroups: [
-                    { instructions: [{ message: 'Follow the road', travelDistance: 500 }] },
-                  ],
-                },
-                legs: [{ points: [{ longitude: -71, latitude: 42 }] }],
-              },
-            ],
+            type: 'FeatureCollection',
+            features: [{ type: 'Feature', properties: { type: 'Waypoint' } }],
+            alternativeRoutes: [],
           }),
       });
 
-      const result = await showRoute([-71, 42], [-70, 43]);
+      await expect(showRoute([-71, 42], [-70, 43])).rejects.toThrow('No route found');
+    });
 
-      expect(result.Instructions).toHaveLength(1);
-      expect(result.Instructions[0].Text).toBe('Follow the road');
+    test('POSTs to the Route Directions 2025-01-01 endpoint as GeoJSON', async () => {
+      await createInitializedMap();
+      globalThis.fetch = jest.fn().mockResolvedValue(makeSuccessfulRouteResponse());
+
+      await showRoute([-71, 42], [-70, 43]);
+
+      const [url, options] = globalThis.fetch.mock.calls[0];
+      expect(url).toContain('https://atlas.microsoft.com/route/directions?api-version=2025-01-01');
+      expect(options.method).toBe('POST');
+      expect(options.headers['Content-Type']).toBe('application/geo+json');
+      expect(options.headers['Accept-Language']).toBe('en-US');
     });
 
     test('includes the subscription key in the route API URL', async () => {
@@ -879,70 +875,129 @@ describe('NebaMap', () => {
 
       await showRoute([-71, 42], [-70, 43]);
 
-      expect(globalThis.fetch.mock.calls[0][0]).toContain('subscription-key=test-key-123');
+      expect(globalThis.fetch.mock.calls[0][0]).toContain('&subscription-key=test-key-123');
     });
 
-    test('encodes origin and destination as lat,lon pairs in the query', async () => {
+    test('sends origin and destination as lon,lat waypoints in the body', async () => {
       await createInitializedMap();
       globalThis.fetch = jest.fn().mockResolvedValue(makeSuccessfulRouteResponse());
 
-      // origin: [-71, 42] → lat=42, lon=-71  |  destination: [-70, 43] → lat=43, lon=-70
+      // origin: [-71, 42] → lon=-71, lat=42  |  destination: [-70, 43] → lon=-70, lat=43
       await showRoute([-71, 42], [-70, 43]);
 
-      expect(globalThis.fetch.mock.calls[0][0]).toContain('query=42,-71:43,-70');
+      const body = JSON.parse(globalThis.fetch.mock.calls[0][1].body);
+      expect(body.type).toBe('FeatureCollection');
+      expect(body.features).toEqual([
+        {
+          type: 'Feature',
+          geometry: { type: 'Point', coordinates: [-71, 42] },
+          properties: { pointIndex: 0, pointType: 'waypoint' },
+        },
+        {
+          type: 'Feature',
+          geometry: { type: 'Point', coordinates: [-70, 43] },
+          properties: { pointIndex: 1, pointType: 'waypoint' },
+        },
+      ]);
     });
 
-    test('requests fastest traffic-aware alternatives with effective settings', async () => {
+    test('requests fastest traffic-aware driving routes with alternatives and directions', async () => {
       await createInitializedMap();
       globalThis.fetch = jest.fn().mockResolvedValue(makeSuccessfulRouteResponse());
 
       await showRoute([-71, 42], [-70, 43]);
 
-      const routeUrl = globalThis.fetch.mock.calls[0][0];
-      expect(routeUrl).toContain('routeType=fastest');
-      expect(routeUrl).toContain('traffic=true');
-      expect(routeUrl).toContain('maxAlternatives=2');
-      expect(routeUrl).toContain('report=effectiveSettings');
-      expect(routeUrl).toContain('sectionType=motorway');
+      const body = JSON.parse(globalThis.fetch.mock.calls[0][1].body);
+      expect(body.travelMode).toBe('driving');
+      expect(body.optimizeRoute).toBe('fastestWithTraffic');
+      expect(body.maxRouteCount).toBe(3);
+      expect(body.routeOutputOptions).toEqual(['routePath', 'itinerary']);
     });
 
-    test('selects the fastest returned route by travel time', async () => {
+    test('returns distance and traffic-aware travel time from the route path', async () => {
       await createInitializedMap();
+      globalThis.fetch = jest.fn().mockResolvedValue(makeSuccessfulRouteResponse());
 
+      const result = await showRoute([-71, 42], [-70, 43]);
+
+      expect(result.DistanceMeters).toBe(5000);
+      expect(result.TravelTimeSeconds).toBe(330);
+    });
+
+    test('falls back to travel time without traffic when traffic time is absent', async () => {
+      await createInitializedMap();
+      globalThis.fetch = jest.fn().mockResolvedValue(
+        makeSuccessfulRouteResponse(makeRoute({ duration: 300, trafficDuration: null })),
+      );
+
+      const result = await showRoute([-71, 42], [-70, 43]);
+
+      expect(result.TravelTimeSeconds).toBe(300);
+    });
+
+    test('maps maneuver points to the Instructions array', async () => {
+      await createInitializedMap();
+      globalThis.fetch = jest.fn().mockResolvedValue(makeSuccessfulRouteResponse());
+
+      const result = await showRoute([-71, 42], [-70, 43]);
+
+      expect(result.Instructions).toHaveLength(2);
+      expect(result.Instructions[0]).toEqual({ Text: 'Head north', DistanceMeters: 100 });
+      expect(result.Instructions[1]).toEqual({ Text: 'Turn right', DistanceMeters: 400 });
+    });
+
+    test('uses the maneuver type, then Continue, when an instruction has no text', async () => {
+      await createInitializedMap();
+      const route = makeRoute({
+        maneuvers: [
+          { instruction: { maneuverType: 'TurnLeft' }, distanceInMeters: 10 },
+          { instruction: {}, distanceInMeters: 20 },
+          { distanceInMeters: 30 },
+        ],
+      });
+      globalThis.fetch = jest.fn().mockResolvedValue(makeSuccessfulRouteResponse(route));
+
+      const result = await showRoute([-71, 42], [-70, 43]);
+
+      expect(result.Instructions.map((i) => i.Text)).toEqual(['TurnLeft', 'Continue', 'Continue']);
+    });
+
+    test('uses zero distance when a maneuver point has no distance', async () => {
+      await createInitializedMap();
+      const route = makeRoute({ maneuvers: [{ instruction: { text: 'Go' } }] });
+      globalThis.fetch = jest.fn().mockResolvedValue(makeSuccessfulRouteResponse(route));
+
+      const result = await showRoute([-71, 42], [-70, 43]);
+
+      expect(result.Instructions[0]).toEqual({ Text: 'Go', DistanceMeters: 0 });
+    });
+
+    test('returns empty instructions when the route has no maneuver points', async () => {
+      await createInitializedMap();
+      globalThis.fetch = jest.fn().mockResolvedValue(
+        makeSuccessfulRouteResponse(makeRoute({ maneuvers: [] })),
+      );
+
+      const result = await showRoute([-71, 42], [-70, 43]);
+
+      expect(result.Instructions).toHaveLength(0);
+    });
+
+    test('selects the fastest of the primary and alternative routes by travel time', async () => {
+      await createInitializedMap();
+      const slower = makeRoute({
+        distance: 5000,
+        trafficDuration: 420,
+        maneuvers: [{ instruction: { text: 'Slower option' }, distanceInMeters: 100 }],
+      });
+      const faster = makeRoute({
+        distance: 6100,
+        trafficDuration: 300,
+        maneuvers: [{ instruction: { text: 'Faster option' }, distanceInMeters: 120 }],
+      });
       globalThis.fetch = jest.fn().mockResolvedValue({
         ok: true,
-        json: () => Promise.resolve({
-          routes: [
-            {
-              summary: { lengthInMeters: 5000, travelTimeInSeconds: 420 },
-              guidance: {
-                instructions: [{ message: 'Slower option', travelDistance: 100 }],
-              },
-              legs: [
-                {
-                  points: [
-                    { longitude: -71, latitude: 42 },
-                    { longitude: -70.5, latitude: 42.5 },
-                  ],
-                },
-              ],
-            },
-            {
-              summary: { lengthInMeters: 6100, travelTimeInSeconds: 300 },
-              guidance: {
-                instructions: [{ message: 'Faster option', travelDistance: 120 }],
-              },
-              legs: [
-                {
-                  points: [
-                    { longitude: -71, latitude: 42 },
-                    { longitude: -70, latitude: 43 },
-                  ],
-                },
-              ],
-            },
-          ],
-        }),
+        json: () => Promise.resolve({ ...slower, alternativeRoutes: [faster] }),
       });
 
       const result = await showRoute([-71, 42], [-70, 43]);
@@ -958,18 +1013,12 @@ describe('NebaMap', () => {
 
     test('returns at most best route plus two alternatives', async () => {
       await createInitializedMap();
-
-      const routes = [
-        { summary: { lengthInMeters: 8000, travelTimeInSeconds: 500 }, guidance: { instructions: [] }, legs: [{ points: [{ longitude: -71, latitude: 42 }, { longitude: -70, latitude: 43 }] }] },
-        { summary: { lengthInMeters: 8100, travelTimeInSeconds: 490 }, guidance: { instructions: [] }, legs: [{ points: [{ longitude: -71, latitude: 42 }, { longitude: -70, latitude: 43 }] }] },
-        { summary: { lengthInMeters: 8200, travelTimeInSeconds: 480 }, guidance: { instructions: [] }, legs: [{ points: [{ longitude: -71, latitude: 42 }, { longitude: -70, latitude: 43 }] }] },
-        { summary: { lengthInMeters: 8300, travelTimeInSeconds: 470 }, guidance: { instructions: [] }, legs: [{ points: [{ longitude: -71, latitude: 42 }, { longitude: -70, latitude: 43 }] }] },
-        { summary: { lengthInMeters: 8400, travelTimeInSeconds: 460 }, guidance: { instructions: [] }, legs: [{ points: [{ longitude: -71, latitude: 42 }, { longitude: -70, latitude: 43 }] }] },
-      ];
-
+      const [primary, ...alternatives] = [500, 490, 480, 470, 460].map((trafficDuration) =>
+        makeRoute({ trafficDuration }),
+      );
       globalThis.fetch = jest.fn().mockResolvedValue({
         ok: true,
-        json: () => Promise.resolve({ routes }),
+        json: () => Promise.resolve({ ...primary, alternativeRoutes: alternatives }),
       });
 
       const result = await showRoute([-71, 42], [-70, 43]);
@@ -980,7 +1029,7 @@ describe('NebaMap', () => {
       expect(result.RouteOptions[2].TravelTimeSeconds).toBe(480);
     });
 
-    test('populates RouteGeoJson with a LineString built from route leg points', async () => {
+    test('populates RouteGeoJson with a LineString built from the route path', async () => {
       await createInitializedMap();
       globalThis.fetch = jest.fn().mockResolvedValue(makeSuccessfulRouteResponse());
 
@@ -992,26 +1041,29 @@ describe('NebaMap', () => {
       expect(geoJson.geometry.coordinates).toEqual([[-71, 42], [-70, 43]]);
     });
 
+    test('joins every line of a multi-line route path into one LineString', async () => {
+      await createInitializedMap();
+      const route = makeRoute({ lines: [[[-71, 42], [-70.5, 42.5]], [[-70.5, 42.5], [-70, 43]]] });
+      globalThis.fetch = jest.fn().mockResolvedValue(makeSuccessfulRouteResponse(route));
+
+      const result = await showRoute([-71, 42], [-70, 43]);
+      const geoJson = JSON.parse(result.RouteGeoJson);
+
+      expect(geoJson.geometry.coordinates).toEqual([
+        [-71, 42],
+        [-70.5, 42.5],
+        [-70.5, 42.5],
+        [-70, 43],
+      ]);
+    });
+
     test('compacts route geometry payload for long routes', async () => {
       await createInitializedMap();
 
-      const points = Array.from({ length: 1200 }, (_, i) => ({
-        longitude: -71 + (i * 0.001),
-        latitude: 42 + (i * 0.001),
-      }));
-
-      globalThis.fetch = jest.fn().mockResolvedValue({
-        ok: true,
-        json: () => Promise.resolve({
-          routes: [
-            {
-              summary: { lengthInMeters: 5000, travelTimeInSeconds: 300 },
-              guidance: { instructions: [] },
-              legs: [{ points }],
-            },
-          ],
-        }),
-      });
+      const points = Array.from({ length: 1200 }, (_, i) => [-71 + i * 0.001, 42 + i * 0.001]);
+      globalThis.fetch = jest.fn().mockResolvedValue(
+        makeSuccessfulRouteResponse(makeRoute({ lines: [points] })),
+      );
 
       const result = await showRoute([-71, 42], [-70, 43]);
       const geoJson = JSON.parse(result.RouteGeoJson);
@@ -1022,44 +1074,21 @@ describe('NebaMap', () => {
 
       const lastPoint = points.at(-1);
       expect(coordinates.at(-1)).toEqual([
-        Number(lastPoint.longitude.toFixed(6)),
-        Number(lastPoint.latitude.toFixed(6)),
+        Number(lastPoint[0].toFixed(6)),
+        Number(lastPoint[1].toFixed(6)),
       ]);
 
       // All sampled coordinates must be valid [lon, lat] pairs — catches wrong arithmetic on step
-      expect(coordinates.every(c => Array.isArray(c) && c.length === 2)).toBe(true);
-
-      // Compaction log fires when sampling occurred (originalPointCount > maxPoints)
-      expect(console.log).toHaveBeenCalledWith(
-        '[NebaMap] Compacted route geometry for interop payload:',
-        expect.objectContaining({
-          originalPointCount: 1200,
-          compactPointCount: coordinates.length,
-        }),
-      );
+      expect(coordinates.every((c) => Array.isArray(c) && c.length === 2)).toBe(true);
     });
 
     test('does not compact route geometry when point count is exactly maxPoints (220)', async () => {
       await createInitializedMap();
 
-      const points = Array.from({ length: 220 }, (_, i) => ({
-        longitude: -71 + i * 0.001,
-        latitude: 42 + i * 0.001,
-      }));
-
-      globalThis.fetch = jest.fn().mockResolvedValue({
-        ok: true,
-        json: () =>
-          Promise.resolve({
-            routes: [
-              {
-                summary: { lengthInMeters: 5000, travelTimeInSeconds: 300 },
-                guidance: { instructions: [] },
-                legs: [{ points }],
-              },
-            ],
-          }),
-      });
+      const points = Array.from({ length: 220 }, (_, i) => [-71 + i * 0.001, 42 + i * 0.001]);
+      globalThis.fetch = jest.fn().mockResolvedValue(
+        makeSuccessfulRouteResponse(makeRoute({ lines: [points] })),
+      );
 
       const result = await showRoute([-71, 42], [-70, 43]);
       const geoJson = JSON.parse(result.RouteGeoJson);
@@ -1069,24 +1098,30 @@ describe('NebaMap', () => {
 
     test('sets RouteGeoJson to null when route has only one coordinate', async () => {
       await createInitializedMap();
-
-      globalThis.fetch = jest.fn().mockResolvedValue({
-        ok: true,
-        json: () =>
-          Promise.resolve({
-            routes: [
-              {
-                summary: { lengthInMeters: 0, travelTimeInSeconds: 0 },
-                guidance: { instructions: [] },
-                legs: [{ points: [{ longitude: -71, latitude: 42 }] }],
-              },
-            ],
-          }),
-      });
+      globalThis.fetch = jest.fn().mockResolvedValue(
+        makeSuccessfulRouteResponse(makeRoute({ distance: 0, duration: 0, trafficDuration: 0, lines: [[[-71, 42]]] })),
+      );
 
       const result = await showRoute([-71, 42], [-70, 43]);
 
       expect(result.RouteGeoJson).toBeNull();
+    });
+
+    test.each([
+      ['null longitude', [null, 42]],
+      ['NaN longitude', [Number.NaN, 42]],
+      ['null latitude', [-71, null]],
+      ['missing latitude', [-71]],
+      ['non-array point', null],
+    ])('filters route path points with %s from geometry', async (_name, invalidPoint) => {
+      await createInitializedMap();
+      const route = makeRoute({ lines: [[invalidPoint, [-71, 42], [-70, 43]]] });
+      globalThis.fetch = jest.fn().mockResolvedValue(makeSuccessfulRouteResponse(route));
+
+      const result = await showRoute([-71, 42], [-70, 43]);
+      const geoJson = JSON.parse(result.RouteGeoJson);
+
+      expect(geoJson.geometry.coordinates).toEqual([[-71, 42], [-70, 43]]);
     });
 
     test('re-throws an AbortError as a user-friendly timeout message', async () => {
@@ -1117,133 +1152,6 @@ describe('NebaMap', () => {
       expect(capturedSignal.aborted).toBe(true);
 
       routePromise.catch(() => {}); // fetch never resolves; avoid an unhandled rejection warning
-    });
-
-    test('falls through to instructionGroups when the instructions array is empty', async () => {
-      await createInitializedMap();
-      globalThis.fetch = jest.fn().mockResolvedValue({
-        ok: true,
-        json: () =>
-          Promise.resolve({
-            routes: [
-              {
-                summary: { lengthInMeters: 2000, travelTimeInSeconds: 120 },
-                guidance: {
-                  instructions: [],
-                  instructionGroups: [
-                    { instructions: [{ message: 'Via the bridge', travelDistance: 750 }] },
-                  ],
-                },
-                legs: [{ points: [{ longitude: -71, latitude: 42 }, { longitude: -70, latitude: 43 }] }],
-              },
-            ],
-          }),
-      });
-
-      const result = await showRoute([-71, 42], [-70, 43]);
-
-      expect(result.Instructions[0].Text).toBe('Via the bridge');
-    });
-
-    test('returns empty instructions when guidance has neither instructions nor instructionGroups', async () => {
-      await createInitializedMap();
-      globalThis.fetch = jest.fn().mockResolvedValue({
-        ok: true,
-        json: () =>
-          Promise.resolve({
-            routes: [
-              {
-                summary: { lengthInMeters: 2000, travelTimeInSeconds: 120 },
-                guidance: {},
-                legs: [{ points: [{ longitude: -71, latitude: 42 }, { longitude: -70, latitude: 43 }] }],
-              },
-            ],
-          }),
-      });
-
-      const result = await showRoute([-71, 42], [-70, 43]);
-
-      expect(result.Instructions).toHaveLength(0);
-    });
-
-    test('filters invalid route geometry points before creating RouteGeoJson', async () => {
-      await createInitializedMap();
-
-      globalThis.fetch = jest.fn().mockResolvedValue({
-        ok: true,
-        json: () => Promise.resolve({
-          routes: [
-            {
-              summary: { lengthInMeters: 1500, travelTimeInSeconds: 120 },
-              guidance: { instructions: [] },
-              legs: [
-                {
-                  points: [
-                    { longitude: null, latitude: 42 },
-                    { longitude: -71, latitude: 42 },
-                    { longitude: -70, latitude: 43 },
-                  ],
-                },
-              ],
-            },
-          ],
-        }),
-      });
-
-      const result = await showRoute([-71, 42], [-70, 43]);
-      const geoJson = JSON.parse(result.RouteGeoJson);
-
-      expect(geoJson.geometry.coordinates).toEqual([[-71, 42], [-70, 43]]);
-    });
-
-    test('filters route leg points with NaN longitude from geometry', async () => {
-      await createInitializedMap();
-
-      globalThis.fetch = jest.fn().mockResolvedValue({
-        ok: true,
-        json: () => Promise.resolve({
-          routes: [{
-            summary: { lengthInMeters: 1000, travelTimeInSeconds: 60 },
-            guidance: { instructions: [] },
-            legs: [{
-              points: [
-                { longitude: Number.NaN, latitude: 42 },
-                { longitude: -71, latitude: 42 },
-                { longitude: -70, latitude: 43 },
-              ],
-            }],
-          }],
-        }),
-      });
-
-      const result = await showRoute([-71, 42], [-70, 43]);
-      const geoJson = JSON.parse(result.RouteGeoJson);
-      expect(geoJson.geometry.coordinates).toEqual([[-71, 42], [-70, 43]]);
-    });
-
-    test('filters route leg points with null latitude from geometry', async () => {
-      await createInitializedMap();
-
-      globalThis.fetch = jest.fn().mockResolvedValue({
-        ok: true,
-        json: () => Promise.resolve({
-          routes: [{
-            summary: { lengthInMeters: 1000, travelTimeInSeconds: 60 },
-            guidance: { instructions: [] },
-            legs: [{
-              points: [
-                { longitude: -71, latitude: null },
-                { longitude: -71, latitude: 42 },
-                { longitude: -70, latitude: 43 },
-              ],
-            }],
-          }],
-        }),
-      });
-
-      const result = await showRoute([-71, 42], [-70, 43]);
-      const geoJson = JSON.parse(result.RouteGeoJson);
-      expect(geoJson.geometry.coordinates).toEqual([[-71, 42], [-70, 43]]);
     });
   });
 

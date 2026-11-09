@@ -46,6 +46,11 @@ test.describe('edit-hall-of-fame-photo help screenshots', () => {
 
   test('the Hall of Fame page with edit buttons', async ({ page }) => {
     await expect(page.locator('button.hof-photo-edit').first()).toBeVisible();
+    // The page opens with the About section; scroll to the portraits (clear of the sticky header) so the pencil buttons are in the shot.
+    await page.locator('.hof-stage').evaluate((stage) => {
+      stage.scrollIntoView();
+      window.scrollBy(0, -100);
+    });
 
     await page.screenshot({ path: path.join(outDir, 'edit-buttons.png') });
   });
