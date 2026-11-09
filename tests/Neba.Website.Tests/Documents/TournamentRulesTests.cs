@@ -153,6 +153,23 @@ public sealed class TournamentRulesTests : IDisposable
         document.Instance.DocumentId.ShouldBe("tournament-rules");
     }
 
+    [Fact(DisplayName = "Should pass the tournament rules anchor aliases to scrollToHash")]
+    public void Render_ShouldPassAnchorAliasesToScrollToHash()
+    {
+        // Arrange
+        SetupSuccessResponse("<h2>Rule 601- Invitational</h2><p>Content</p>");
+        _ctx.JSInterop.SetupModule("./Documents/NebaDocument.razor.js")
+            .Setup<bool>("initialize", _ => true).SetResult(true);
+
+        // Act
+        var cut = _ctx.Render<TournamentRules>();
+        cut.WaitForState(() => _ctx.JSInterop.Invocations["scrollToHash"].Any());
+
+        // Assert
+        var invocation = _ctx.JSInterop.Invocations["scrollToHash"].Single();
+        invocation.Arguments[2].ShouldBeSameAs(TournamentRulesAnchors.AnchorAliases);
+    }
+
     private void SetupSuccessResponse(string html)
     {
         using var response = new StubApiResponse<GetDocumentResponse>

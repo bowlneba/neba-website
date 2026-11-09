@@ -19,6 +19,19 @@ test.describe('Tournament Rules page', () => {
   });
 });
 
+test.describe('Tournament Rules anchors', () => {
+  test.use({ viewport: { width: 1200, height: 800 } });
+
+  test('#invitational scrolls the Invitational rule heading into view', async ({ page }) => {
+    await page.goto('/tournaments/rules#invitational');
+    await page.waitForSelector('.neba-document-container');
+
+    const heading = page.locator('#rule-601-invitational-tournament-rules');
+    await expect(heading).toBeInViewport();
+    expect(page.url()).toContain('#invitational');
+  });
+});
+
 test.describe('Bylaws page', () => {
   test.use({ viewport: { width: 1200, height: 800 } });
 
