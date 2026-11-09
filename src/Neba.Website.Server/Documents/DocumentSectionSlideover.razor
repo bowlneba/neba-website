@@ -62,6 +62,7 @@
     [Parameter, EditorRequired] public string LoadingText { get; set; } = default!;
     [Parameter, EditorRequired] public string CloseLabel { get; set; } = default!;
     [Parameter] public DateTimeOffset? LastUpdated { get; set; }
+    [Parameter] public ElementReference? ReturnFocusTo { get; set; }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
@@ -76,14 +77,16 @@
 
             if (IsOpen && !_wasOpen)
             {
-                await _module.InvokeVoidAsync("rememberFocus");
                 await _module.InvokeVoidAsync("focusElement", _dialog);
                 await _module.InvokeVoidAsync("enableFocusTrap", _dialog);
             }
             else if (!IsOpen && _wasOpen)
             {
                 await _module.InvokeVoidAsync("disableFocusTrap");
-                await _module.InvokeVoidAsync("restoreFocus");
+                if (ReturnFocusTo is { } returnFocusTo)
+                {
+                    await _module.InvokeVoidAsync("focusElement", returnFocusTo);
+                }
             }
         }
 

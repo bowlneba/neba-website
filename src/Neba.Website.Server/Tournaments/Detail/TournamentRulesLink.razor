@@ -7,7 +7,7 @@
 
 @if (_anchor is not null)
 {
-    <button type="button" class="td-rules-link" aria-haspopup="dialog" @onclick="OpenAsync">
+    <button type="button" class="td-rules-link" aria-haspopup="dialog" @ref="_trigger" @onclick="OpenAsync">
         <span class="material-symbols-outlined" aria-hidden="true">menu_book</span>
         @(TournamentType + " rules")
     </button>
@@ -21,11 +21,13 @@
                               ErrorMessage="@_errorMessage"
                               LoadingText="Loading rules..."
                               CloseLabel="Close rules"
-                              LastUpdated="@_lastUpdated" />
+                              LastUpdated="@_lastUpdated"
+                              ReturnFocusTo="@_trigger" />
 }
 
 @code {
     private TournamentRulesAnchor? _anchor;
+    private ElementReference _trigger;
     private bool _isOpen;
     private bool _isLoading;
     private bool _loaded;
