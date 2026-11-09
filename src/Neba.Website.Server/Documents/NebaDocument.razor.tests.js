@@ -1,5 +1,5 @@
 import { describe, test, expect, beforeEach, jest } from '@jest/globals';
-import { initialize, scrollToHash, extractSectionHtml, openSlideover, closeSlideover, initializeSlideoverContent, dispose } from './NebaDocument.razor.js';
+import { initialize, scrollToHash, openSlideover, closeSlideover, initializeSlideoverContent, dispose } from './NebaDocument.razor.js';
 
 /**
  * Makes an element appear "visible" to isFocusable by overriding getClientRects
@@ -679,46 +679,6 @@ describe('NebaDocument', () => {
       expect(() => scrollToHash('content', 'toc-list', aliases)).not.toThrow();
       expect(scrolled()).toBe(false);
       expect(console.warn).toHaveBeenCalled();
-    });
-  });
-
-  describe('extractSectionHtml', () => {
-    const alias = { headingIdPrefix: 'rule-601-', titleKeyword: 'Invitational' };
-    const doc = `
-      <style>ol.lst-kix{list-style:none}</style>
-      <h2 id="rule-600-toc">Rule 600- Tournament of Champions</h2>
-      <p>TOC text</p>
-      <h2 id="rule-601-invitational-tournament-rules">Rule 601- Invitational Tournament Rules</h2>
-      <p>Eligibility <a href="#rule-602-masters">see 602</a></p>
-      <h3 id="sub">Sub heading</h3>
-      <p>Sub text</p>
-      <h2 id="rule-602-masters">Rule 602- Masters</h2>
-      <p>Masters text</p>`;
-
-    test('returns the heading and content up to the next same-level heading', () => {
-      // Act
-      const html = extractSectionHtml(doc, alias, '/tournaments/rules');
-
-      // Assert
-      expect(html).toContain('Rule 601- Invitational');
-      expect(html).toContain('Eligibility');
-      expect(html).toContain('Sub heading');
-      expect(html).toContain('Sub text');
-      expect(html).not.toContain('Masters text');
-      expect(html).not.toContain('TOC text');
-    });
-
-    test('copies style blocks', () => {
-      expect(extractSectionHtml(doc, alias, '/tournaments/rules')).toContain('<style>');
-    });
-
-    test('rewrites same-document links to the rules page', () => {
-      expect(extractSectionHtml(doc, alias, '/tournaments/rules'))
-        .toContain('href="/tournaments/rules#rule-602-masters"');
-    });
-
-    test('returns null when nothing matches', () => {
-      expect(extractSectionHtml('<h2 id="rule-100-x">Rule 100</h2>', alias, '/tournaments/rules')).toBeNull();
     });
   });
 

@@ -493,39 +493,6 @@ function resolveAliasHeading(headings, alias) {
 }
 
 /**
- * Returns the HTML of one rule section from a full document, for the detail-page slide-out.
- * The section runs from the matched heading up to the next heading of the same or higher level.
- * Same-document links (#...) are rewritten to point at the rules page. Returns null if no heading matches.
- * @param {string} html
- * @param {{headingIdPrefix: string, titleKeyword: string}} alias
- * @param {string} rulesPath
- * @returns {string|null}
- */
-export function extractSectionHtml(html, alias, rulesPath) {
-    const doc = new DOMParser().parseFromString(html, 'text/html');
-    const start = resolveAliasHeading(doc.body.querySelectorAll('h1, h2, h3, h4, h5, h6'), alias);
-    if (!start) return null;
-
-    const level = Number(start.tagName[1]);
-    const section = doc.createElement('div');
-
-    // Google Docs list numbering lives in <style> blocks, so carry them over.
-    doc.querySelectorAll('style').forEach(style => section.appendChild(style.cloneNode(true)));
-
-    for (let node = start; node; node = node.nextElementSibling) {
-        const isHeading = /^H[1-6]$/.test(node.tagName);
-        if (node !== start && isHeading && Number(node.tagName[1]) <= level) break;
-        section.appendChild(node.cloneNode(true));
-    }
-
-    section.querySelectorAll('a[href^="#"]').forEach(a => {
-        a.setAttribute('href', rulesPath + a.getAttribute('href'));
-    });
-
-    return section.innerHTML;
-}
-
-/**
  * Scrolls to a URL hash target within the content and updates the active TOC link.
  * @param {string} contentId - ID of the content container
  * @param {string} tocListId - ID of the TOC list container

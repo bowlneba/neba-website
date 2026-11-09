@@ -3,9 +3,7 @@ using Bunit;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Web;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
-using Microsoft.Extensions.Logging.Testing;
 
 using Neba.Api.Contracts.Documents;
 using Neba.Api.Contracts.Documents.GetDocument;
@@ -23,12 +21,15 @@ namespace Neba.Website.Tests.Tournaments.Detail;
 [Component("Website.Tournaments.Detail.TournamentRulesLink")]
 public sealed class TournamentRulesLinkTests : IDisposable
 {
-    private const string JsModule = "./Documents/NebaDocument.razor.js";
+    private const string Html =
+        "<h3 id=\"rule-601-invitational-tournament-rules\">Rule 601- Invitational Tournament Rules</h3><p>Eligibility</p>" +
+        "<h3 id=\"rule-602-masters-tournament-rules\">Rule 602 - Masters Tournament Rules</h3><p>Masters text</p>";
+    private const string HtmlWithoutInvitational =
+        "<h3 id=\"rule-100-general\">Rule 100 - General</h3><p>General text</p>";
 
     private readonly BunitContext _ctx = new();
     private readonly Mock<IDocumentsApi> _mockDocumentsApi = new(MockBehavior.Strict);
     private readonly Mock<IClientTimeZoneService> _mockClientTimeZoneService = new(MockBehavior.Strict);
-    private readonly FakeLogger<TournamentRulesLink> _logger = new();
 
     public TournamentRulesLinkTests()
     {
@@ -39,18 +40,17 @@ public sealed class TournamentRulesLinkTests : IDisposable
         _ctx.JSInterop.Mode = JSRuntimeMode.Loose;
         _ctx.Services.AddSingleton(_mockDocumentsApi.Object);
         _ctx.Services.AddSingleton(_mockClientTimeZoneService.Object);
-        _ctx.Services.AddSingleton<ILogger<TournamentRulesLink>>(_logger);
         _ctx.Services.AddSingleton(sp => new ApiExecutor(mockStopwatch.Object, sp.GetRequiredService<NavigationManager>(), NullLogger<ApiExecutor>.Instance));
     }
 
     public void Dispose() => _ctx.Dispose();
 
-    private void SetupDocument(bool success = true)
+    private void SetupDocument(bool success = true, string? html = null)
     {
         using var response = new StubApiResponse<GetDocumentResponse>
         {
             IsSuccessStatusCode = success,
-            Content = success ? new GetDocumentResponse { Html = "<h3 id=\"rule-601-invitational-tournament-rules\">Rule 601</h3>" } : null,
+            Content = success ? new GetDocumentResponse { Html = html ?? Html } : null,
             StatusCode = success ? System.Net.HttpStatusCode.OK : System.Net.HttpStatusCode.InternalServerError
         };
 
@@ -77,8 +77,6 @@ public sealed class TournamentRulesLinkTests : IDisposable
     {
         // Arrange
         SetupDocument();
-        var module = _ctx.JSInterop.SetupModule(JsModule);
-        module.Setup<string?>("extractSectionHtml", _ => true).SetResult("<h3>Rule 601</h3><p>Eligibility</p>");
         var cut = RenderLink();
 
         // Act
@@ -88,6 +86,7 @@ public sealed class TournamentRulesLinkTests : IDisposable
 
         // Assert
         cut.Find(".neba-document-slideover-content").TextContent.ShouldContain("Eligibility");
+        cut.Find(".neba-document-slideover-content").TextContent.ShouldNotContain("Masters text");
         cut.Find(".neba-document-slideover-footer a").GetAttribute("href").ShouldBe("/tournaments/rules#invitational");
         _mockDocumentsApi.Verify(x => x.GetDocumentAsync("tournament-rules", It.IsAny<CancellationToken>()), Times.Once);
     }
@@ -107,13 +106,11 @@ public sealed class TournamentRulesLinkTests : IDisposable
         cut.Find(".neba-document-slideover-footer a").GetAttribute("href").ShouldBe("/tournaments/rules#invitational");
     }
 
-    [Fact(DisplayName = "A null extraction result shows the could-not-find message")]
-    public async Task Open_ShouldShowNotFound_WhenExtractionReturnsNull()
+    [Fact(DisplayName = "A document without the section shows the could-not-find message")]
+    public async Task Open_ShouldShowNotFound_WhenSectionMissing()
     {
         // Arrange
-        SetupDocument();
-        var module = _ctx.JSInterop.SetupModule(JsModule);
-        module.Setup<string?>("extractSectionHtml", _ => true).SetResult(null);
+        SetupDocument(html: HtmlWithoutInvitational);
         var cut = RenderLink();
 
         // Act
@@ -121,22 +118,5 @@ public sealed class TournamentRulesLinkTests : IDisposable
 
         // Assert
         cut.Find(".neba-document-slideover-status").TextContent.ShouldContain("couldn't find this section");
-    }
-
-    [Fact(DisplayName = "A JSException from extraction is logged and shows the could-not-find message")]
-    public async Task Open_ShouldLogAndShowNotFound_WhenExtractionThrows()
-    {
-        // Arrange
-        SetupDocument();
-        var module = _ctx.JSInterop.SetupModule(JsModule);
-        module.Setup<string?>("extractSectionHtml", _ => true).SetException(new Microsoft.JSInterop.JSException("boom"));
-        var cut = RenderLink();
-
-        // Act
-        await cut.Find("button.td-rules-link").ClickAsync(new MouseEventArgs());
-
-        // Assert
-        cut.Find(".neba-document-slideover-status").TextContent.ShouldContain("couldn't find this section");
-        _logger.Collector.GetSnapshot().ShouldContain(r => r.Level == LogLevel.Warning);
     }
 }
