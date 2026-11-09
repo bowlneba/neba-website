@@ -1,5 +1,5 @@
 import { describe, test, expect, beforeEach, jest } from '@jest/globals';
-import { setBodyOverflow, focusElement, enableFocusTrap, disableFocusTrap } from './NebaModal.razor.js';
+import { setBodyOverflow, focusElement, enableFocusTrap, disableFocusTrap, rememberFocus, restoreFocus } from './NebaModal.razor.js';
 
 /**
  * Makes an element appear "visible" to isFocusable by overriding getClientRects
@@ -49,6 +49,49 @@ describe('NebaModal', () => {
 
         test('should return early without throwing when focus is not a function', () => {
             expect(() => focusElement({ focus: 'not-a-function' })).not.toThrow();
+        });
+    });
+
+    describe('rememberFocus and restoreFocus', () => {
+        test('should return focus to the remembered element', () => {
+            const trigger = document.createElement('button');
+            const other = document.createElement('button');
+            document.body.append(trigger, other);
+            trigger.focus();
+            rememberFocus();
+            other.focus();
+
+            restoreFocus();
+
+            expect(document.activeElement).toBe(trigger);
+        });
+
+        test('should do nothing when the remembered element left the page', () => {
+            const trigger = document.createElement('button');
+            const other = document.createElement('button');
+            document.body.append(trigger, other);
+            trigger.focus();
+            rememberFocus();
+            trigger.remove();
+            other.focus();
+
+            restoreFocus();
+
+            expect(document.activeElement).toBe(other);
+        });
+
+        test('should restore only once per remember', () => {
+            const trigger = document.createElement('button');
+            const other = document.createElement('button');
+            document.body.append(trigger, other);
+            trigger.focus();
+            rememberFocus();
+            restoreFocus();
+            other.focus();
+
+            restoreFocus();
+
+            expect(document.activeElement).toBe(other);
         });
     });
 

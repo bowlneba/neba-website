@@ -76,12 +76,14 @@
 
             if (IsOpen && !_wasOpen)
             {
+                await _module.InvokeVoidAsync("rememberFocus");
                 await _module.InvokeVoidAsync("focusElement", _dialog);
                 await _module.InvokeVoidAsync("enableFocusTrap", _dialog);
             }
             else if (!IsOpen && _wasOpen)
             {
                 await _module.InvokeVoidAsync("disableFocusTrap");
+                await _module.InvokeVoidAsync("restoreFocus");
             }
         }
 
