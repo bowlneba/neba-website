@@ -59,9 +59,7 @@
         else
         {
             _content = new MarkupString(result.Value.Html);
-            _lastUpdated = result.Value.LastUpdated is { } utc
-                ? await ClientTimeZoneService.ToLocalAsync(utc)
-                : null;
+            _lastUpdated = await ClientTimeZoneService.ToLocalOrNullAsync(result.Value.LastUpdated);
         }
 
         _isLoading = false;

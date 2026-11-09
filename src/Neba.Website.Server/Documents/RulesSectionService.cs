@@ -36,9 +36,7 @@ internal sealed class RulesSectionService(
                 $"No rule section found for '{anchor.Slug}'.");
         }
 
-        var lastUpdated = result.Value.LastUpdated is { } utc
-            ? await clientTimeZoneService.ToLocalAsync(utc)
-            : (DateTimeOffset?)null;
+        var lastUpdated = await clientTimeZoneService.ToLocalOrNullAsync(result.Value.LastUpdated);
 
         return new RulesSection(html, lastUpdated);
     }
