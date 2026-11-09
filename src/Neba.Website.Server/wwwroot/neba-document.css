@@ -522,3 +522,25 @@
         max-width: 100%;
     }
 }
+
+.neba-document-slideover-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    flex-wrap: wrap;
+    padding: 1rem 1.5rem;
+    border-top: 1px solid var(--neba-gray-200);
+    flex-shrink: 0;
+}
+
+.neba-document-slideover-status {
+    padding: 2rem;
+    text-align: center;
+    color: var(--neba-gray-600);
+}
+
+.neba-document-slideover-updated {
+    font-size: 0.875rem;
+    color: var(--neba-gray-600);
+}

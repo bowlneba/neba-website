@@ -194,6 +194,10 @@ else
                             {
                                 <span class="td-hero__chip">@_model.PatternLengthCategory</span>
                             }
+                            @if (_model.ShowRulesLink)
+                            {
+                                <TournamentRulesLink TournamentType="@_model.TournamentType" />
+                            }
                         </div>
 
                         @if (_model.IsTruncated)

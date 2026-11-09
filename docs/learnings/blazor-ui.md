@@ -155,3 +155,6 @@ A photo shown in a shape (round avatar, later news headers) is framed by three w
 - **The `.razor.js` module owns the geometry** (it needs the image's natural size) and sets `style` on the crop outline and marker. Razor never renders `style` on those elements, so a re-render cannot overwrite them. Pointer and key handling live there too, and it sends at most one update to .NET per animation frame.
 - **Reuse it** for another shape by passing `Shape` and `Aspect`; the math takes the shape's aspect ratio.
 
+### Tournament rules anchors
+
+- A new special tournament type with its own rule section needs an entry in `TournamentRulesAnchors` (`Documents/TournamentRulesAnchors.cs`). It drives both the `#slug` scroll on `/tournaments/rules` and the rules slide-out on the tournament detail page.

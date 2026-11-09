@@ -1,0 +1,125 @@
+@implements IAsyncDisposable
+@inject IJSRuntime JsRuntime
+@inject ILogger<DocumentSectionSlideover> Logger
+
+<link rel="stylesheet" href="/neba-document.css" />
+
+@if (IsOpen)
+{
+    <div class="neba-document-slideover active" role="dialog" aria-modal="true"
+         aria-labelledby="@_titleId" tabindex="-1" @ref="_dialog"
+         @onkeydown="HandleKeyDown" @onkeydown:stopPropagation="true">
+        <div class="neba-document-slideover-overlay" @onclick="HandleClose"></div>
+        <div class="neba-document-slideover-panel">
+            <div class="neba-document-slideover-header">
+                <h2 id="@_titleId" class="neba-document-slideover-title">@Title</h2>
+                <button type="button" class="neba-document-slideover-close" @onclick="HandleClose" aria-label="@CloseLabel">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 16 16" aria-hidden="true">
+                        <path d="M2.146 2.854a.5.5 0 1 1 .708-.708L8 7.293l5.146-5.147a.5.5 0 0 1 .708.708L8.707 8l5.147 5.146a.5.5 0 0 1-.708.708L8 8.707l-5.146 5.147a.5.5 0 0 1-.708-.708L7.293 8 2.146 2.854Z" />
+                    </svg>
+                </button>
+            </div>
+
+            <div class="neba-document-slideover-content">
+                @if (IsLoading)
+                {
+                    <div class="neba-document-slideover-status">@LoadingText</div>
+                }
+                else if (!string.IsNullOrWhiteSpace(ErrorMessage))
+                {
+                    <div class="neba-document-slideover-status">@ErrorMessage</div>
+                }
+                else if (Content.HasValue)
+                {
+                    @Content
+                }
+            </div>
+
+            <div class="neba-document-slideover-footer">
+                @if (LastUpdated is { } updated)
+                {
+                    <span class="neba-document-slideover-updated">Last updated: @updated.ToString("MMMM d, yyyy")</span>
+                }
+                <a class="neba-btn neba-btn-primary" href="@FullDocumentHref">Open full rules page</a>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    private IJSObjectReference? _module;
+    private readonly string _titleId = "neba-section-slideover-title-" + Guid.NewGuid().ToString("N");
+    private ElementReference _dialog;
+    private bool _wasOpen;
+
+    [Parameter, EditorRequired] public bool IsOpen { get; set; }
+    [Parameter, EditorRequired] public EventCallback OnClose { get; set; }
+    [Parameter, EditorRequired] public string Title { get; set; } = default!;
+    [Parameter, EditorRequired] public string FullDocumentHref { get; set; } = default!;
+    [Parameter] public MarkupString? Content { get; set; }
+    [Parameter] public bool IsLoading { get; set; }
+    [Parameter] public string? ErrorMessage { get; set; }
+    [Parameter, EditorRequired] public string LoadingText { get; set; } = default!;
+    [Parameter, EditorRequired] public string CloseLabel { get; set; } = default!;
+    [Parameter] public DateTimeOffset? LastUpdated { get; set; }
+    [Parameter] public ElementReference? ReturnFocusTo { get; set; }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            _module = await JsRuntime.InvokeAsync<IJSObjectReference>("import", "./Components/NebaModal.razor.js");
+        }
+
+        if (_module is not null)
+        {
+            await _module.InvokeVoidAsync("setBodyOverflow", IsOpen);
+
+            if (IsOpen && !_wasOpen)
+            {
+                await _module.InvokeVoidAsync("focusElement", _dialog);
+                await _module.InvokeVoidAsync("enableFocusTrap", _dialog);
+            }
+            else if (!IsOpen && _wasOpen)
+            {
+                await _module.InvokeVoidAsync("disableFocusTrap");
+                if (ReturnFocusTo is { } returnFocusTo)
+                {
+                    await _module.InvokeVoidAsync("focusElement", returnFocusTo);
+                }
+            }
+        }
+
+        _wasOpen = IsOpen;
+    }
+
+    private Task HandleClose() => OnClose.InvokeAsync();
+
+    private async Task HandleKeyDown(KeyboardEventArgs e)
+    {
+        if (e.Key is "Escape" or "Esc")
+        {
+            await HandleClose();
+        }
+    }
+
+    async ValueTask IAsyncDisposable.DisposeAsync()
+    {
+        if (_module is null) return;
+
+        try
+        {
+            await _module.InvokeVoidAsync("disableFocusTrap");
+            await _module.InvokeVoidAsync("setBodyOverflow", false);
+            await _module.DisposeAsync();
+        }
+        catch (JSDisconnectedException ex)
+        {
+            Logger.LogInformation(ex, "[DocumentSectionSlideover] JS module disposal skipped because the circuit disconnected.");
+        }
+        catch (JSException ex)
+        {
+            Logger.LogWarning(ex, "[DocumentSectionSlideover] Failed to dispose JS module.");
+        }
+    }
+}

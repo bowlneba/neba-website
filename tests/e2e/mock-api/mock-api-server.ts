@@ -17,6 +17,10 @@ For membership requirements, see the <a href="/bylaws">NEBA Bylaws</a>.</p>
 <p>All bowling equipment must conform to USBC specifications.</p>
 <h2>Section 3: Scoring</h2>
 <p>Official scoring will follow standard USBC guidelines.</p>
+<h2 id="rule-601-invitational-tournament-rules">Rule 601- Invitational Tournament Rules</h2>
+<p>Invitational eligibility is by invitation only.</p>
+<h2 id="rule-602-masters-tournament-rules">Rule 602- Masters Tournament Rules</h2>
+<p>Masters qualifiers advance by average.</p>
 `;
 
 const MOCK_BYLAWS_HTML = `
@@ -544,6 +548,38 @@ const MOCK_TOURNAMENT_TRUNCATE_ACTIONS = {
   name: 'NEBA Truncate Actions Classic',
 };
 
+// Playwright runs every spec once per browser project, all against this one mock server. The
+// status-action tests mutate their tournament (Cancel/Truncate are one-way) and set failure
+// overrides by path, so projects running in parallel would see each other's changes. Each project
+// therefore gets its own copy of those tournaments, with the same id except for a "P<n>" marker.
+export const E2E_PROJECT_NAMES = ['chrome', 'mobile-chrome', 'mobile-safari'] as const;
+
+export function perProjectTournamentId(baseId: string, projectName: string): string {
+  const index = E2E_PROJECT_NAMES.indexOf(projectName as (typeof E2E_PROJECT_NAMES)[number]);
+  if (index < 0) {
+    throw new Error(`Unknown Playwright project "${projectName}"; add it to E2E_PROJECT_NAMES.`);
+  }
+
+  return `${baseId.slice(0, -3)}P${index}${baseId.slice(-1)}`;
+}
+
+const PER_PROJECT_STATUS_TOURNAMENTS: [string, object][] = E2E_PROJECT_NAMES.flatMap((projectName) => [
+  [
+    perProjectTournamentId(MOCK_TOURNAMENT_STATUS_ACTIONS_ID, projectName),
+    {
+      ...MOCK_TOURNAMENT_STATUS_ACTIONS,
+      id: perProjectTournamentId(MOCK_TOURNAMENT_STATUS_ACTIONS_ID, projectName),
+    },
+  ],
+  [
+    perProjectTournamentId(MOCK_TOURNAMENT_TRUNCATE_ACTIONS_ID, projectName),
+    {
+      ...MOCK_TOURNAMENT_TRUNCATE_ACTIONS,
+      id: perProjectTournamentId(MOCK_TOURNAMENT_TRUNCATE_ACTIONS_ID, projectName),
+    },
+  ],
+]);
+
 // Added money breakdown fixtures. Separate from MOCK_TOURNAMENT_DETAIL so its fixed sponsor list
 // stays valid for the other tournament-detail tests.
 export const MOCK_TOURNAMENT_ADDED_MONEY_UPCOMING_ID = '01JX0000000000000000000060';
@@ -627,6 +663,31 @@ const MOCK_TOURNAMENT_ADDED_MONEY_PAST = {
   results: [],
 };
 
+// Invitational fixtures for the rules link/slide-out tests: one upcoming (link shows) and one
+// completed (link hidden, because the rules may have changed since it ran).
+export const MOCK_TOURNAMENT_INVITATIONAL_UPCOMING_ID = '01JX0000000000000000000070';
+export const MOCK_TOURNAMENT_INVITATIONAL_PAST_ID = '01JX0000000000000000000071';
+
+const MOCK_TOURNAMENT_INVITATIONAL_UPCOMING = {
+  ...MOCK_TOURNAMENT_STATUS_ACTIONS,
+  id: MOCK_TOURNAMENT_INVITATIONAL_UPCOMING_ID,
+  name: 'NEBA Upcoming Invitational',
+  startDate: '2099-02-15',
+  endDate: '2099-02-15',
+  status: 'Scheduled',
+  tournamentType: 'Invitational',
+};
+
+const MOCK_TOURNAMENT_INVITATIONAL_PAST = {
+  ...MOCK_TOURNAMENT_STATUS_ACTIONS,
+  id: MOCK_TOURNAMENT_INVITATIONAL_PAST_ID,
+  name: 'NEBA Past Invitational',
+  startDate: '2024-02-15',
+  endDate: '2024-02-15',
+  status: 'Completed',
+  tournamentType: 'Invitational',
+};
+
 const EXTRA_TOURNAMENT_DETAILS = new Map<string, object>([
   [MOCK_TOURNAMENT_OIL_REVEAL_PENDING_ID, MOCK_TOURNAMENT_OIL_REVEAL_PENDING],
   [MOCK_TOURNAMENT_OIL_REVEALED_ID, MOCK_TOURNAMENT_OIL_REVEALED],
@@ -636,6 +697,9 @@ const EXTRA_TOURNAMENT_DETAILS = new Map<string, object>([
   [MOCK_TOURNAMENT_TRUNCATE_ACTIONS_ID, MOCK_TOURNAMENT_TRUNCATE_ACTIONS],
   [MOCK_TOURNAMENT_ADDED_MONEY_UPCOMING_ID, MOCK_TOURNAMENT_ADDED_MONEY_UPCOMING],
   [MOCK_TOURNAMENT_ADDED_MONEY_PAST_ID, MOCK_TOURNAMENT_ADDED_MONEY_PAST],
+  [MOCK_TOURNAMENT_INVITATIONAL_UPCOMING_ID, MOCK_TOURNAMENT_INVITATIONAL_UPCOMING],
+  [MOCK_TOURNAMENT_INVITATIONAL_PAST_ID, MOCK_TOURNAMENT_INVITATIONAL_PAST],
+  ...PER_PROJECT_STATUS_TOURNAMENTS,
 ]);
 
 type SeasonVariants = {

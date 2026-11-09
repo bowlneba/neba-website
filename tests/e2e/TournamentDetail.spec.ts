@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+import { perProjectTournamentId } from './mock-api/mock-api-server';
 
 const MOCK_TOURNAMENT_ID = '01JX0000000000000000000010';
 const MOCK_TOURNAMENT_OIL_REVEAL_PENDING_ID = '01JX0000000000000000000030';
@@ -275,7 +276,13 @@ test.describe('Tournament Detail — manage status (authorized)', () => {
   test.use({ viewport: { width: 1200, height: 800 } });
   test.describe.configure({ mode: 'serial' });
 
-  test.beforeEach(async ({ page }) => {
+  // Per-project copies of the tournaments, so parallel browser projects don't change each other's state.
+  let statusActionsId: string;
+  let truncateActionsId: string;
+
+  test.beforeEach(async ({ page }, testInfo) => {
+    statusActionsId = perProjectTournamentId(MOCK_TOURNAMENT_STATUS_ACTIONS_ID, testInfo.project.name);
+    truncateActionsId = perProjectTournamentId(MOCK_TOURNAMENT_TRUNCATE_ACTIONS_ID, testInfo.project.name);
     await page.request.post('/__test/login?permissions=Tournaments.ManageTournamentStatus');
   });
 
@@ -283,15 +290,15 @@ test.describe('Tournament Detail — manage status (authorized)', () => {
   // as CreateTournament.spec.ts's afterEach. Harmless to call when no override is set.
   test.afterEach(async ({ page }) => {
     await page.request.post(
-      `http://localhost:5151/__mock/reset?path=/tournaments/${MOCK_TOURNAMENT_STATUS_ACTIONS_ID}/truncate`
+      `http://localhost:5151/__mock/reset?path=/tournaments/${statusActionsId}/truncate`
     );
     await page.request.post(
-      `http://localhost:5151/__mock/reset?path=/tournaments/${MOCK_TOURNAMENT_STATUS_ACTIONS_ID}/cancel`
+      `http://localhost:5151/__mock/reset?path=/tournaments/${statusActionsId}/cancel`
     );
   });
 
   test('shows the truncate and cancel buttons while the tournament is scheduled', async ({ page }) => {
-    await page.goto(`/tournaments/${MOCK_TOURNAMENT_STATUS_ACTIONS_ID}`);
+    await page.goto(`/tournaments/${statusActionsId}`);
     await page.waitForSelector('.td-hero');
     await expect(page.locator('.td-hero__truncate-btn')).toBeVisible();
     await expect(page.locator('.td-hero__cancel-btn')).toBeVisible();
@@ -299,14 +306,14 @@ test.describe('Tournament Detail — manage status (authorized)', () => {
   });
 
   test('shows a failed toast and leaves the tournament scheduled when truncating fails', async ({ page }) => {
-    await page.goto(`/tournaments/${MOCK_TOURNAMENT_STATUS_ACTIONS_ID}`);
+    await page.goto(`/tournaments/${statusActionsId}`);
     await page.waitForSelector('.td-hero');
 
     // Set the failure override only after the initial GET has loaded the page — GET and PATCH
     // share the same /tournaments/{id} path prefix, so setting it beforehand would break the
     // page load too (same pattern as the delete-tournament conflict test above).
     await page.request.post(
-      `http://localhost:5151/__mock/fail?path=/tournaments/${MOCK_TOURNAMENT_STATUS_ACTIONS_ID}/truncate&status=409`
+      `http://localhost:5151/__mock/fail?path=/tournaments/${statusActionsId}/truncate&status=409`
     );
 
     await page.locator('.td-hero__truncate-btn').click();
@@ -319,11 +326,11 @@ test.describe('Tournament Detail — manage status (authorized)', () => {
   });
 
   test('shows a failed toast and leaves the tournament scheduled when cancelling fails', async ({ page }) => {
-    await page.goto(`/tournaments/${MOCK_TOURNAMENT_STATUS_ACTIONS_ID}`);
+    await page.goto(`/tournaments/${statusActionsId}`);
     await page.waitForSelector('.td-hero');
 
     await page.request.post(
-      `http://localhost:5151/__mock/fail?path=/tournaments/${MOCK_TOURNAMENT_STATUS_ACTIONS_ID}/cancel&status=409`
+      `http://localhost:5151/__mock/fail?path=/tournaments/${statusActionsId}/cancel&status=409`
     );
 
     await page.locator('.td-hero__cancel-btn').click();
@@ -336,7 +343,7 @@ test.describe('Tournament Detail — manage status (authorized)', () => {
   });
 
   test('marks the tournament cancelled after confirming, hides the status actions, and shows the cancelled badge and note', async ({ page }) => {
-    await page.goto(`/tournaments/${MOCK_TOURNAMENT_STATUS_ACTIONS_ID}`);
+    await page.goto(`/tournaments/${statusActionsId}`);
     await page.waitForSelector('.td-hero');
 
     await page.locator('.td-hero__cancel-btn').click();
@@ -355,7 +362,7 @@ test.describe('Tournament Detail — manage status (authorized)', () => {
   // Truncate finalizes the tournament just like Cancel above, so it needs its own tournament to
   // avoid observing (or clobbering) the Cancel happy-path test's finalized status.
   test('marks the tournament truncated after confirming, hides the status actions, and shows the truncated badge and note', async ({ page }) => {
-    await page.goto(`/tournaments/${MOCK_TOURNAMENT_TRUNCATE_ACTIONS_ID}`);
+    await page.goto(`/tournaments/${truncateActionsId}`);
     await page.waitForSelector('.td-hero');
 
     await page.locator('.td-hero__truncate-btn').click();
@@ -411,5 +418,40 @@ test.describe('Tournament Detail — added money breakdown', () => {
       );
       expect(overflows).toBe(false);
     });
+  });
+});
+
+
+test.describe('Tournament Detail page - rules link', () => {
+  test.use({ viewport: { width: 1200, height: 800 } });
+
+  test('upcoming Invitational opens the rules slide-out, closes on Escape and links to the full page', async ({ page }) => {
+    await page.goto('/tournaments/01JX0000000000000000000070');
+    await page.waitForSelector('.td-hero');
+
+    const button = page.getByRole('button', { name: 'Invitational rules' });
+    await button.click();
+
+    const dialog = page.getByRole('dialog');
+    await expect(dialog).toContainText('Rule 601');
+    await expect(dialog).not.toContainText('Rule 602');
+
+    const fullLink = dialog.getByRole('link', { name: 'Open full rules page' });
+    await expect(fullLink).toHaveAttribute('href', '/tournaments/rules#invitational');
+
+    await page.keyboard.press('Escape');
+    await expect(dialog).toBeHidden();
+    await expect(button).toBeFocused();
+
+    await button.click();
+    await page.getByRole('dialog').getByRole('link', { name: 'Open full rules page' }).click();
+    await expect(page).toHaveURL(/\/tournaments\/rules#invitational$/);
+  });
+
+  test('completed Invitational has no rules button', async ({ page }) => {
+    await page.goto('/tournaments/01JX0000000000000000000071');
+    await page.waitForSelector('.td-hero');
+
+    await expect(page.getByRole('button', { name: 'Invitational rules' })).toHaveCount(0);
   });
 });
