@@ -93,4 +93,27 @@ public sealed class TournamentRulesLinkTests : IDisposable
         // Assert
         cut.Find(".neba-document-slideover-status").TextContent.ShouldContain("couldn't find this section");
     }
+
+    [Fact(DisplayName = "A thrown exception shows the could-not-load message and allows a retry")]
+    public async Task Open_ShouldShowLoadErrorAndRetry_WhenServiceThrows()
+    {
+        // Arrange
+        var calls = 0;
+        _mockRulesSectionService
+            .Setup(x => x.GetSectionAsync(It.IsAny<TournamentRulesAnchor>(), It.IsAny<CancellationToken>()))
+            .Returns(() => ++calls == 1
+                ? throw new InvalidOperationException("circuit dropped")
+                : Task.FromResult<ErrorOr<RulesSection>>(new RulesSection("<p>Eligibility</p>", null)));
+        var cut = RenderLink();
+
+        // Act
+        await cut.Find("button.td-rules-link").ClickAsync(new MouseEventArgs());
+        var errorShown = cut.Find(".neba-document-slideover-status").TextContent;
+        await cut.Find(".neba-document-slideover-close").ClickAsync(new MouseEventArgs());
+        await cut.Find("button.td-rules-link").ClickAsync(new MouseEventArgs());
+
+        // Assert
+        errorShown.ShouldContain("couldn't load the rules");
+        cut.Find(".neba-document-slideover-content").TextContent.ShouldContain("Eligibility");
+    }
 }
