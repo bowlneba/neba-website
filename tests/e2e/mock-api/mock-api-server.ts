@@ -548,6 +548,38 @@ const MOCK_TOURNAMENT_TRUNCATE_ACTIONS = {
   name: 'NEBA Truncate Actions Classic',
 };
 
+// Playwright runs every spec once per browser project, all against this one mock server. The
+// status-action tests mutate their tournament (Cancel/Truncate are one-way) and set failure
+// overrides by path, so projects running in parallel would see each other's changes. Each project
+// therefore gets its own copy of those tournaments, with the same id except for a "P<n>" marker.
+export const E2E_PROJECT_NAMES = ['chrome', 'mobile-chrome', 'mobile-safari'] as const;
+
+export function perProjectTournamentId(baseId: string, projectName: string): string {
+  const index = E2E_PROJECT_NAMES.indexOf(projectName as (typeof E2E_PROJECT_NAMES)[number]);
+  if (index < 0) {
+    throw new Error(`Unknown Playwright project "${projectName}"; add it to E2E_PROJECT_NAMES.`);
+  }
+
+  return `${baseId.slice(0, -3)}P${index}${baseId.slice(-1)}`;
+}
+
+const PER_PROJECT_STATUS_TOURNAMENTS: [string, object][] = E2E_PROJECT_NAMES.flatMap((projectName) => [
+  [
+    perProjectTournamentId(MOCK_TOURNAMENT_STATUS_ACTIONS_ID, projectName),
+    {
+      ...MOCK_TOURNAMENT_STATUS_ACTIONS,
+      id: perProjectTournamentId(MOCK_TOURNAMENT_STATUS_ACTIONS_ID, projectName),
+    },
+  ],
+  [
+    perProjectTournamentId(MOCK_TOURNAMENT_TRUNCATE_ACTIONS_ID, projectName),
+    {
+      ...MOCK_TOURNAMENT_TRUNCATE_ACTIONS,
+      id: perProjectTournamentId(MOCK_TOURNAMENT_TRUNCATE_ACTIONS_ID, projectName),
+    },
+  ],
+]);
+
 // Added money breakdown fixtures. Separate from MOCK_TOURNAMENT_DETAIL so its fixed sponsor list
 // stays valid for the other tournament-detail tests.
 export const MOCK_TOURNAMENT_ADDED_MONEY_UPCOMING_ID = '01JX0000000000000000000060';
@@ -667,6 +699,7 @@ const EXTRA_TOURNAMENT_DETAILS = new Map<string, object>([
   [MOCK_TOURNAMENT_ADDED_MONEY_PAST_ID, MOCK_TOURNAMENT_ADDED_MONEY_PAST],
   [MOCK_TOURNAMENT_INVITATIONAL_UPCOMING_ID, MOCK_TOURNAMENT_INVITATIONAL_UPCOMING],
   [MOCK_TOURNAMENT_INVITATIONAL_PAST_ID, MOCK_TOURNAMENT_INVITATIONAL_PAST],
+  ...PER_PROJECT_STATUS_TOURNAMENTS,
 ]);
 
 type SeasonVariants = {
