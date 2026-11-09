@@ -13,7 +13,7 @@
         <div class="neba-document-slideover-panel">
             <div class="neba-document-slideover-header">
                 <h2 id="@_titleId" class="neba-document-slideover-title">@Title</h2>
-                <button type="button" class="neba-document-slideover-close" @onclick="HandleClose" aria-label="Close rules">
+                <button type="button" class="neba-document-slideover-close" @onclick="HandleClose" aria-label="@CloseLabel">
                     <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 16 16" aria-hidden="true">
                         <path d="M2.146 2.854a.5.5 0 1 1 .708-.708L8 7.293l5.146-5.147a.5.5 0 0 1 .708.708L8.707 8l5.147 5.146a.5.5 0 0 1-.708.708L8 8.707l-5.146 5.147a.5.5 0 0 1-.708-.708L7.293 8 2.146 2.854Z" />
                     </svg>
@@ -23,7 +23,7 @@
             <div class="neba-document-slideover-content">
                 @if (IsLoading)
                 {
-                    <div class="neba-document-slideover-status">Loading rules...</div>
+                    <div class="neba-document-slideover-status">@LoadingText</div>
                 }
                 else if (!string.IsNullOrWhiteSpace(ErrorMessage))
                 {
@@ -59,6 +59,8 @@
     [Parameter] public MarkupString? Content { get; set; }
     [Parameter] public bool IsLoading { get; set; }
     [Parameter] public string? ErrorMessage { get; set; }
+    [Parameter] public string LoadingText { get; set; } = "Loading...";
+    [Parameter] public string CloseLabel { get; set; } = "Close";
     [Parameter] public DateTimeOffset? LastUpdated { get; set; }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)

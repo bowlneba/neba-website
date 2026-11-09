@@ -6,7 +6,6 @@ using Microsoft.AspNetCore.Components.Web;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging.Abstractions;
 
-using Neba.Api.Contracts.Documents;
 using Neba.Api.Contracts.Security;
 using Neba.Api.Contracts.Sponsors;
 using Neba.Api.Contracts.Tournaments;
@@ -15,6 +14,7 @@ using Neba.Api.Features.Tournaments.Domain;
 using Neba.TestFactory.Attributes;
 using Neba.TestFactory.Tournaments;
 using Neba.Website.Server.Clock;
+using Neba.Website.Server.Documents;
 using Neba.Website.Server.Help;
 using Neba.Website.Server.Notifications;
 using Neba.Website.Server.Services;
@@ -33,7 +33,7 @@ public sealed class TournamentDetailTests : IDisposable
     private readonly BunitContext _ctx;
     private readonly Mock<ITournamentsApi> _mockApi;
     private readonly Mock<ISponsorsApi> _mockSponsorsApi;
-    private readonly Mock<IDocumentsApi> _mockDocumentsApi;
+    private readonly Mock<IRulesSectionService> _mockRulesSectionService;
     private readonly Mock<IClientTimeZoneService> _mockClientTimeZoneService;
     private readonly BunitAuthorizationContext _authContext;
     private readonly ToastService _toastService;
@@ -42,7 +42,7 @@ public sealed class TournamentDetailTests : IDisposable
     {
         _mockApi = new Mock<ITournamentsApi>(MockBehavior.Strict);
         _mockSponsorsApi = new Mock<ISponsorsApi>(MockBehavior.Strict);
-        _mockDocumentsApi = new Mock<IDocumentsApi>(MockBehavior.Strict);
+        _mockRulesSectionService = new Mock<IRulesSectionService>(MockBehavior.Strict);
         _mockClientTimeZoneService = new Mock<IClientTimeZoneService>(MockBehavior.Strict);
 
         var mockStopwatch = new Mock<IStopwatchProvider>(MockBehavior.Strict);
@@ -59,7 +59,7 @@ public sealed class TournamentDetailTests : IDisposable
 
         _ctx.Services.AddSingleton(_mockApi.Object);
         _ctx.Services.AddSingleton(_mockSponsorsApi.Object);
-        _ctx.Services.AddSingleton(_mockDocumentsApi.Object);
+        _ctx.Services.AddSingleton(_mockRulesSectionService.Object);
         _ctx.Services.AddSingleton(_mockClientTimeZoneService.Object);
         _ctx.Services.AddSingleton(sp => new ApiExecutor(mockStopwatch.Object, sp.GetRequiredService<NavigationManager>(), NullLogger<ApiExecutor>.Instance));
         _ctx.Services.AddSingleton(_toastService);

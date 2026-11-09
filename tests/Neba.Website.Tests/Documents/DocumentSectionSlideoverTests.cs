@@ -112,7 +112,7 @@ public sealed class DocumentSectionSlideoverTests : IDisposable
         var cut = RenderSlideover(isLoading: true);
 
         // Assert
-        cut.Find(".neba-document-slideover-content").TextContent.ShouldContain("Loading rules...");
+        cut.Find(".neba-document-slideover-content").TextContent.ShouldContain("Loading...");
         cut.Find(".neba-document-slideover-content").TextContent.ShouldNotContain("Eligibility");
     }
 

@@ -1,11 +1,7 @@
-@using Neba.Api.Contracts.Documents
+@using ErrorOr
 @using Neba.Website.Server.Documents
-@using Neba.Website.Server.Services
-@using Neba.Website.Server.Time
 
-@inject ApiExecutor ApiExecutor
-@inject IDocumentsApi DocumentsApi
-@inject IClientTimeZoneService ClientTimeZoneService
+@inject IRulesSectionService RulesSectionService
 
 @if (_anchor is not null)
 {
@@ -21,6 +17,8 @@
                               Content="@_content"
                               IsLoading="@_isLoading"
                               ErrorMessage="@_errorMessage"
+                              LoadingText="Loading rules..."
+                              CloseLabel="Close rules"
                               LastUpdated="@_lastUpdated" />
 }
 
@@ -53,31 +51,19 @@
         _isLoading = true;
         _errorMessage = null;
 
-        var result = await ApiExecutor.ExecuteAsync(
-            "Documents",
-            "GetTournamentRules",
-            ct => DocumentsApi.GetDocumentAsync(TournamentRulesAnchors.DocumentName, ct));
+        var result = await RulesSectionService.GetSectionAsync(_anchor);
 
         if (result.IsError)
         {
-            _errorMessage = "We couldn't load the rules. Open the full rules page instead.";
+            _errorMessage = result.FirstError.Type == ErrorType.NotFound
+                ? "We couldn't find this section. Open the full rules page instead."
+                : "We couldn't load the rules. Open the full rules page instead.";
         }
         else
         {
-            var section = RulesSectionExtractor.Extract(result.Value.Html, _anchor.Alias, TournamentRulesAnchors.RulesPath);
-
-            if (section is null)
-            {
-                _errorMessage = "We couldn't find this section. Open the full rules page instead.";
-            }
-            else
-            {
-                _content = new MarkupString(section);
-                _lastUpdated = result.Value.LastUpdated is { } utc
-                    ? await ClientTimeZoneService.ToLocalAsync(utc)
-                    : null;
-                _loaded = true;
-            }
+            _content = new MarkupString(result.Value.Html);
+            _lastUpdated = result.Value.LastUpdated;
+            _loaded = true;
         }
 
         _isLoading = false;
