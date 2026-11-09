@@ -464,11 +464,74 @@ export function initialize(dotNetRef, config) {
 }
 
 /**
+ * Finds the heading a short anchor points to.
+ * Tries the heading whose ID starts with the alias prefix (e.g. "rule-601-"). If that heading's
+ * text lacks the keyword (the rules were renumbered), takes the first rule heading that has it.
+ * Only headings whose ID looks like "rule-<digits>-" count, so lettered sub-rules never match.
+ * Returns null, and warns, when nothing matches.
+ * @param {Iterable<HTMLElement>} headings
+ * @param {{headingIdPrefix: string, titleKeyword: string}} alias
+ * @returns {HTMLElement|null}
+ */
+function resolveAliasHeading(headings, alias) {
+    const ruleHeadings = [...headings].filter(h => /^rule-\d+-/.test(h.id));
+    const keyword = alias.titleKeyword.toLowerCase();
+    const hasKeyword = h => h.textContent.toLowerCase().includes(keyword);
+
+    const byNumber = ruleHeadings.find(h => h.id.startsWith(alias.headingIdPrefix));
+    if (byNumber && hasKeyword(byNumber)) {
+        return byNumber;
+    }
+
+    const byKeyword = ruleHeadings.find(hasKeyword);
+    if (byKeyword) {
+        return byKeyword;
+    }
+
+    console.warn('[NebaDocument] No heading found for anchor alias', alias);
+    return null;
+}
+
+/**
+ * Returns the HTML of one rule section from a full document, for the detail-page slide-out.
+ * The section runs from the matched heading up to the next heading of the same or higher level.
+ * Same-document links (#...) are rewritten to point at the rules page. Returns null if no heading matches.
+ * @param {string} html
+ * @param {{headingIdPrefix: string, titleKeyword: string}} alias
+ * @param {string} rulesPath
+ * @returns {string|null}
+ */
+export function extractSectionHtml(html, alias, rulesPath) {
+    const doc = new DOMParser().parseFromString(html, 'text/html');
+    const start = resolveAliasHeading(doc.body.querySelectorAll('h1, h2, h3, h4, h5, h6'), alias);
+    if (!start) return null;
+
+    const level = Number(start.tagName[1]);
+    const section = doc.createElement('div');
+
+    // Google Docs list numbering lives in <style> blocks, so carry them over.
+    doc.querySelectorAll('style').forEach(style => section.appendChild(style.cloneNode(true)));
+
+    for (let node = start; node; node = node.nextElementSibling) {
+        const isHeading = /^H[1-6]$/.test(node.tagName);
+        if (node !== start && isHeading && Number(node.tagName[1]) <= level) break;
+        section.appendChild(node.cloneNode(true));
+    }
+
+    section.querySelectorAll('a[href^="#"]').forEach(a => {
+        a.setAttribute('href', rulesPath + a.getAttribute('href'));
+    });
+
+    return section.innerHTML;
+}
+
+/**
  * Scrolls to a URL hash target within the content and updates the active TOC link.
  * @param {string} contentId - ID of the content container
  * @param {string} tocListId - ID of the TOC list container
+ * @param {Object<string, {headingIdPrefix: string, titleKeyword: string}>|null} [anchorAliases] - short anchors to heading lookups
  */
-export function scrollToHash(contentId, tocListId) {
+export function scrollToHash(contentId, tocListId, anchorAliases = null) {
     const hash = globalThis.location.hash;
     if (!hash) return;
 
@@ -488,7 +551,11 @@ export function scrollToHash(contentId, tocListId) {
     const anchorLookup = buildAnchorLookup(headings);
 
     // Resolve the ID through lookup (handles Google Docs IDs → generated kebab-case IDs)
-    const resolvedId = anchorLookup.get(targetId) ?? targetId;
+    const aliasHeading = anchorAliases && Object.hasOwn(anchorAliases, targetId)
+        ? resolveAliasHeading(headings, anchorAliases[targetId])
+        : null;
+
+    const resolvedId = aliasHeading?.id ?? anchorLookup.get(targetId) ?? targetId;
     const targetElement = document.getElementById(resolvedId);
 
     if (!targetElement) return;
@@ -510,8 +577,8 @@ export function scrollToHash(contentId, tocListId) {
         globalThis.scrollTo({ top: targetPosition, behavior: 'smooth' });
     }
 
-    // Update URL with human-readable ID
-    const newHash = `#${resolvedId}`;
+    // Keep a short alias in the URL; only rewrite to the heading ID for non-alias hashes.
+    const newHash = aliasHeading ? hash : `#${resolvedId}`;
     if (globalThis.location.hash !== newHash) {
         history.replaceState(null, '', newHash);
     }

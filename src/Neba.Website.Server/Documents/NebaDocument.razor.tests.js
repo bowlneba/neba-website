@@ -1,5 +1,5 @@
 import { describe, test, expect, beforeEach, jest } from '@jest/globals';
-import { initialize, scrollToHash, openSlideover, closeSlideover, initializeSlideoverContent, dispose } from './NebaDocument.razor.js';
+import { initialize, scrollToHash, extractSectionHtml, openSlideover, closeSlideover, initializeSlideoverContent, dispose } from './NebaDocument.razor.js';
 
 /**
  * Makes an element appear "visible" to isFocusable by overriding getClientRects
@@ -587,6 +587,138 @@ describe('NebaDocument', () => {
       expect(tocList.querySelector('ul.toc-list')).not.toBeNull();
       expect(tocList.querySelector('ul.toc-list > li.toc-item-h1')).not.toBeNull();
       expect(tocList.querySelector('ul.toc-list > li.toc-item-h2')).not.toBeNull();
+    });
+  });
+
+  describe('scrollToHash anchor aliases', () => {
+    const aliases = {
+      invitational: { headingIdPrefix: 'rule-601-', titleKeyword: 'Invitational' }
+    };
+
+    function render(headingsHtml) {
+      document.body.innerHTML = `<div id="content">${headingsHtml}</div><ul id="toc-list"></ul>`;
+      document.querySelectorAll('h3').forEach(h => { h.scrollIntoView = jest.fn(); });
+      globalThis.scrollTo = jest.fn();
+      document.getElementById('content').scrollTo = jest.fn();
+    }
+
+    function scrolled() {
+      return document.getElementById('content').scrollTo.mock.calls.length > 0
+        || globalThis.scrollTo.mock.calls.length > 0;
+    }
+
+    test('scrolls to the rule heading and keeps the alias in the URL', () => {
+      // Arrange
+      render('<h3 id="rule-601-invitational-tournament-rules">Rule 601- Invitational</h3>');
+      globalThis.history.replaceState(null, '', 'http://localhost/#invitational');
+
+      // Act
+      scrollToHash('content', 'toc-list', aliases);
+
+      // Assert
+      expect(scrolled()).toBe(true);
+      expect(globalThis.location.hash).toBe('#invitational');
+    });
+
+    test('rewrites a non-alias hash to the heading id', () => {
+      // Arrange
+      render('<h3 id="rule-601-invitational-tournament-rules">Rule 601- Invitational</h3>');
+      globalThis.history.replaceState(null, '', 'http://localhost/#rule-601-invitational-tournament-rules');
+
+      // Act
+      scrollToHash('content', 'toc-list', aliases);
+
+      // Assert
+      expect(globalThis.location.hash).toBe('#rule-601-invitational-tournament-rules');
+    });
+
+    test('does not match rule-60- for rule-601-', () => {
+      // Arrange
+      render('<h3 id="rule-60-masters">Rule 60- Masters</h3>');
+      globalThis.history.replaceState(null, '', 'http://localhost/#invitational');
+
+      // Act
+      scrollToHash('content', 'toc-list', aliases);
+
+      // Assert
+      expect(scrolled()).toBe(false);
+      expect(console.warn).toHaveBeenCalled();
+    });
+
+    test('falls back to the keyword when the rule was renumbered', () => {
+      // Arrange
+      render('<h3 id="rule-701-invitational-tournament-rules">Rule 701- Invitational</h3>');
+      globalThis.history.replaceState(null, '', 'http://localhost/#invitational');
+
+      // Act
+      scrollToHash('content', 'toc-list', aliases);
+
+      // Assert
+      expect(scrolled()).toBe(true);
+      expect(globalThis.location.hash).toBe('#invitational');
+    });
+
+    test('never chooses a lettered sub-rule', () => {
+      // Arrange
+      render('<h3 id="rule-703e-invitational">Rule 703e. Invitational</h3>');
+      globalThis.history.replaceState(null, '', 'http://localhost/#invitational');
+
+      // Act
+      scrollToHash('content', 'toc-list', aliases);
+
+      // Assert
+      expect(scrolled()).toBe(false);
+    });
+
+    test('warns and does not throw when nothing matches', () => {
+      // Arrange
+      render('<h3 id="rule-100-general">Rule 100- General</h3>');
+      globalThis.history.replaceState(null, '', 'http://localhost/#invitational');
+
+      // Act & Assert
+      expect(() => scrollToHash('content', 'toc-list', aliases)).not.toThrow();
+      expect(scrolled()).toBe(false);
+      expect(console.warn).toHaveBeenCalled();
+    });
+  });
+
+  describe('extractSectionHtml', () => {
+    const alias = { headingIdPrefix: 'rule-601-', titleKeyword: 'Invitational' };
+    const doc = `
+      <style>ol.lst-kix{list-style:none}</style>
+      <h2 id="rule-600-toc">Rule 600- Tournament of Champions</h2>
+      <p>TOC text</p>
+      <h2 id="rule-601-invitational-tournament-rules">Rule 601- Invitational Tournament Rules</h2>
+      <p>Eligibility <a href="#rule-602-masters">see 602</a></p>
+      <h3 id="sub">Sub heading</h3>
+      <p>Sub text</p>
+      <h2 id="rule-602-masters">Rule 602- Masters</h2>
+      <p>Masters text</p>`;
+
+    test('returns the heading and content up to the next same-level heading', () => {
+      // Act
+      const html = extractSectionHtml(doc, alias, '/tournaments/rules');
+
+      // Assert
+      expect(html).toContain('Rule 601- Invitational');
+      expect(html).toContain('Eligibility');
+      expect(html).toContain('Sub heading');
+      expect(html).toContain('Sub text');
+      expect(html).not.toContain('Masters text');
+      expect(html).not.toContain('TOC text');
+    });
+
+    test('copies style blocks', () => {
+      expect(extractSectionHtml(doc, alias, '/tournaments/rules')).toContain('<style>');
+    });
+
+    test('rewrites same-document links to the rules page', () => {
+      expect(extractSectionHtml(doc, alias, '/tournaments/rules'))
+        .toContain('href="/tournaments/rules#rule-602-masters"');
+    });
+
+    test('returns null when nothing matches', () => {
+      expect(extractSectionHtml('<h2 id="rule-100-x">Rule 100</h2>', alias, '/tournaments/rules')).toBeNull();
     });
   });
 
