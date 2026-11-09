@@ -129,3 +129,16 @@ Confirmed and fixed for `Sponsor.PhoneNumbers`, `Sponsor.TournamentsSponsored`, 
 - **CI/CD:** the `SIXLABORS_LICENSE_KEY` repository secret holds the full text of the license file. `ci.yml`, `sonarcloud.yml`, `cd.yml`, and `hotfix.yml` export it as an environment variable, and `Directory.Build.props` maps it to `SixLaborsLicenseKey`. New workflows that build or publish `Neba.Api` need the same. Dependabot runs need the secret under Dependabot secrets too.
 - **Use:** `IImageResizer` (`ImageSharpResizer`) decodes, applies EXIF orientation, shrinks to a maximum side (never enlarges), strips EXIF/XMP/IPTC, and re-encodes in the decoded format. It judges the type by the decoded format, not the client's `Content-Type`. Stage its output with the `Stream` overload of `IUploadStagingService.StageUploadAsync`.
 
+### Bowler memberships
+
+- A bowler owns its memberships (`Bowler.AddMembership`). The eligibility rules read the loaded `Bowler.Memberships`, so every handler that adds one must load the bowler with `Include(b => b.Memberships)`. A bowler loaded without them passes every rule.
+- `Bowler.AddLegacyMembership` copies a legacy record as stored (no eligibility rules, cost and dates untouched). Skip legacy `System Import` (id 8) before calling; resolve the type with `MembershipType.TryFromLegacyId`.
+
+### Legacy season stats calculator performance
+
+Unmeasured, sized by reading the code (about 1k members, a few hundred bowlers per season, a few thousand qualifying rows): `LegacySeasonStatsCalculator.Compute` is fast enough today. We plan to move stats calculation off the Software, so if stats generation slows down or you port it, look here first:
+
+- `ComputeFieldAverage` filters all qualifying rows once per bowler (O(bowlers x rows)); sum per tournament once instead.
+- `eligibleTournamentIdsForBowler` is a `List<int>` used in `Contains` inside `Where`; use a `HashSet<int>`.
+- `GenerateSeasonStatsJob` loads every membership for the season's bowlers (all years), and rewrites the whole season on each tournament completion.
+- Before optimizing, time the Software queries, `Compute` and `SaveChangesAsync` separately; the job has no per-phase timing yet.

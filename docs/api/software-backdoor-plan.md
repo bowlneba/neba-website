@@ -115,6 +115,10 @@ internal static class LegacyEndpoints
 }
 ```
 
+### Route style is a legacy-only exception
+
+Every `/legacy` route is a POST with the action in the path (`/bowlers/new`, `/bowler-memberships/delete`), and the Software's `WebsiteSyncAdapter` sends POST only. That is acceptable only because the whole `Legacy/` folder, the adapter and the API key are deleted at Software sunset. A single resource route with `PUT`/`DELETE` verbs was considered for bowler memberships and set aside for consistency with the existing routes. **Do not copy this shape into the permanent API.** Routes outside `Legacy/` follow standard REST: a resource path with the id in the URL, and the HTTP verb names the action.
+
 ### Response model — enqueue, don't wait
 
 The Software should never block a user action on the website's round-trip. Each route does the minimum synchronously — deserialize and validate the request — then **enqueues a Hangfire job and returns immediately** (`202 Accepted`). All the actual sync work (Dapper read, domain write) happens in the background job, off the request thread.

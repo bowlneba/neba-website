@@ -22,6 +22,7 @@ using Neba.Api.Discord;
 using Neba.Api.Features.Bowlers.Domain;
 using Neba.Api.Features.HallOfFame.Domain;
 using Neba.Api.Legacy;
+using Neba.Api.Legacy.BowlerMemberships;
 using Neba.Api.Legacy.Bowlers;
 using Neba.Api.Legacy.HallOfFame;
 using Neba.Api.Legacy.Seasons.Complete;
@@ -115,6 +116,9 @@ public sealed class NewHallOfFameInductionEndpointTests : IAsyncLifetime
         // that point, not just when that sibling is called.
         builder.Services.AddScoped<IValidator<NewBowlerRequest>, NewBowlerRequestValidator>();
         builder.Services.AddScoped<IValidator<UpdateBowlerRequest>, UpdateBowlerRequestValidator>();
+        builder.Services.AddScoped<IValidator<NewBowlerMembershipRequest>, NewBowlerMembershipRequestValidator>();
+        builder.Services.AddScoped<IValidator<UpdateBowlerMembershipRequest>, UpdateBowlerMembershipRequestValidator>();
+        builder.Services.AddScoped<IValidator<DeleteBowlerMembershipRequest>, DeleteBowlerMembershipRequestValidator>();
         builder.Services.AddScoped<IValidator<NewTournamentRequest>, NewTournamentRequestValidator>();
         builder.Services.AddScoped<IValidator<SyncSquadScoresRequest>, SyncSquadScoresRequestValidator>();
         builder.Services.AddScoped<IValidator<CompleteTournamentRequest>, CompleteTournamentRequestValidator>();

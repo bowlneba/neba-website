@@ -160,27 +160,9 @@ internal sealed class BowlerWeeklySyncJob(
 
     private Outcome Apply(LegacyBowlerRow row, Bowler? existing)
     {
-        var gender = LegacyBowlerMapping.MapGender(row.Gender);
-        var dateOfBirth = LegacyBowlerMapping.MapDateOfBirth(row.DateOfBirth);
-        var suffix = LegacyBowlerMapping.MapSuffix(row.Suffix);
-        if (suffix is null && !string.IsNullOrWhiteSpace(row.Suffix))
-        {
-            logger.LogLegacySuffixUnmappedForWeeklySync(row.Id, row.Suffix);
-        }
-
-        var (firstName, nickname) = row.FirstName.ExtractQuotedNickname();
-
         if (existing is null)
         {
-            var bowler = Bowler.CreateFromLegacy(
-                firstName,
-                row.LastName,
-                middleName: row.MiddleInitial,
-                suffix: suffix,
-                nickname: nickname,
-                legacyId: row.Id,
-                gender: gender,
-                dateOfBirth: dateOfBirth);
+            var bowler = LegacyBowlerMapping.CreateBowler(row, logger);
 
             if (bowler.IsError)
             {
@@ -191,6 +173,16 @@ internal sealed class BowlerWeeklySyncJob(
             db.Set<Bowler>().Add(bowler.Value);
             return Outcome.Created;
         }
+
+        var gender = LegacyBowlerMapping.MapGender(row.Gender);
+        var dateOfBirth = LegacyBowlerMapping.MapDateOfBirth(row.DateOfBirth);
+        var suffix = LegacyBowlerMapping.MapSuffix(row.Suffix);
+        if (suffix is null && !string.IsNullOrWhiteSpace(row.Suffix))
+        {
+            logger.LogLegacySuffixUnmappedForWeeklySync(row.Id, row.Suffix);
+        }
+
+        var (firstName, nickname) = row.FirstName.ExtractQuotedNickname();
 
         // The Software has no nickname field, so a name without quotes says nothing about the nickname.
         // Keep the one on the website; only a quoted nickname in the legacy first name replaces it.
