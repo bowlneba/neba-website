@@ -1,3 +1,4 @@
+using Neba.Website.Server.Documents;
 using Neba.Website.Server.Tournaments.Schedule;
 
 namespace Neba.Website.Server.Tournaments.Detail;
@@ -71,6 +72,13 @@ public sealed record TournamentDetailViewModel
     /// True when no official NEBA event took place under this record.
     /// </summary>
     public bool IsCancelled => Status == "Cancelled";
+
+    /// <summary>
+    /// True for a scheduled tournament whose type has its own rule section. Completed, truncated and
+    /// cancelled tournaments get no link, because the rules may have changed since they ran.
+    /// </summary>
+    public bool ShowRulesLink =>
+        IsScheduled && TournamentRulesAnchors.TryGet(TournamentType, out _);
 
     /// <summary>
     /// Per-bowler entry fee in USD; null if not set.

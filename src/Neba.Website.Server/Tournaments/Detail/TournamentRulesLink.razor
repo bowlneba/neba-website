@@ -1,0 +1,122 @@
+@implements IAsyncDisposable
+@using Neba.Api.Contracts.Documents
+@using Neba.Website.Server.Documents
+@using Neba.Website.Server.Services
+@using Neba.Website.Server.Time
+
+@inject ApiExecutor ApiExecutor
+@inject IDocumentsApi DocumentsApi
+@inject IClientTimeZoneService ClientTimeZoneService
+@inject IJSRuntime JsRuntime
+@inject ILogger<TournamentRulesLink> Logger
+
+@if (_anchor is not null)
+{
+    <button type="button" class="td-rules-link" aria-haspopup="dialog" @onclick="OpenAsync">
+        <span class="material-symbols-outlined" aria-hidden="true">menu_book</span>
+        @(TournamentType + " rules")
+    </button>
+
+    <DocumentSectionSlideover IsOpen="@_isOpen"
+                              OnClose="@Close"
+                              Title="@(TournamentType + " rules")"
+                              FullDocumentHref="@_anchor.Href"
+                              Content="@_content"
+                              IsLoading="@_isLoading"
+                              ErrorMessage="@_errorMessage"
+                              LastUpdated="@_lastUpdated" />
+}
+
+@code {
+    private IJSObjectReference? _module;
+    private TournamentRulesAnchor? _anchor;
+    private bool _isOpen;
+    private bool _isLoading;
+    private bool _loaded;
+    private MarkupString? _content;
+    private string? _errorMessage;
+    private DateTimeOffset? _lastUpdated;
+
+    [Parameter, EditorRequired]
+    public string TournamentType { get; set; } = default!;
+
+    protected override void OnParametersSet()
+        => _anchor = TournamentRulesAnchors.TryGet(TournamentType, out var anchor) ? anchor : null;
+
+    private void Close() => _isOpen = false;
+
+    private async Task OpenAsync()
+    {
+        _isOpen = true;
+
+        if (_loaded || _isLoading || _anchor is null)
+        {
+            return;
+        }
+
+        _isLoading = true;
+        _errorMessage = null;
+
+        var result = await ApiExecutor.ExecuteAsync(
+            "Documents",
+            "GetTournamentRules",
+            ct => DocumentsApi.GetDocumentAsync(TournamentRulesAnchors.DocumentName, ct));
+
+        if (result.IsError)
+        {
+            _errorMessage = "We couldn't load the rules. Open the full rules page instead.";
+        }
+        else
+        {
+            var section = await ExtractSectionAsync(result.Value.Html, _anchor.Alias);
+
+            if (section is null)
+            {
+                _errorMessage = "We couldn't find this section. Open the full rules page instead.";
+            }
+            else
+            {
+                _content = new MarkupString(section);
+                _lastUpdated = result.Value.LastUpdated is { } utc
+                    ? await ClientTimeZoneService.ToLocalAsync(utc)
+                    : null;
+                _loaded = true;
+            }
+        }
+
+        _isLoading = false;
+    }
+
+    private async Task<string?> ExtractSectionAsync(string html, AnchorAlias alias)
+    {
+        try
+        {
+            _module ??= await JsRuntime.InvokeAsync<IJSObjectReference>("import", "./Documents/NebaDocument.razor.js");
+            return await _module.InvokeAsync<string?>("extractSectionHtml", html, alias, TournamentRulesAnchors.RulesPath);
+        }
+        catch (JSDisconnectedException ex)
+        {
+            Logger.LogInformation(ex, "[TournamentRulesLink] Section extraction skipped because the circuit disconnected.");
+            return null;
+        }
+        catch (JSException ex)
+        {
+            Logger.LogWarning(ex, "[TournamentRulesLink] Failed to extract the {TournamentType} rule section.", TournamentType);
+            return null;
+        }
+    }
+
+    async ValueTask IAsyncDisposable.DisposeAsync()
+    {
+        if (_module is null) return;
+
+        try
+        {
+            await _module.DisposeAsync();
+        }
+        catch (JSDisconnectedException ex)
+        {
+            Logger.LogInformation(ex, "[TournamentRulesLink] JS module disposal skipped because the circuit disconnected.");
+        }
+    }
+}

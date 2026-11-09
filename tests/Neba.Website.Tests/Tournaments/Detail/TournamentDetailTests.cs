@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Components.Web;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging.Abstractions;
 
+using Neba.Api.Contracts.Documents;
 using Neba.Api.Contracts.Security;
 using Neba.Api.Contracts.Sponsors;
 using Neba.Api.Contracts.Tournaments;
@@ -32,6 +33,7 @@ public sealed class TournamentDetailTests : IDisposable
     private readonly BunitContext _ctx;
     private readonly Mock<ITournamentsApi> _mockApi;
     private readonly Mock<ISponsorsApi> _mockSponsorsApi;
+    private readonly Mock<IDocumentsApi> _mockDocumentsApi;
     private readonly Mock<IClientTimeZoneService> _mockClientTimeZoneService;
     private readonly BunitAuthorizationContext _authContext;
     private readonly ToastService _toastService;
@@ -40,6 +42,7 @@ public sealed class TournamentDetailTests : IDisposable
     {
         _mockApi = new Mock<ITournamentsApi>(MockBehavior.Strict);
         _mockSponsorsApi = new Mock<ISponsorsApi>(MockBehavior.Strict);
+        _mockDocumentsApi = new Mock<IDocumentsApi>(MockBehavior.Strict);
         _mockClientTimeZoneService = new Mock<IClientTimeZoneService>(MockBehavior.Strict);
 
         var mockStopwatch = new Mock<IStopwatchProvider>(MockBehavior.Strict);
@@ -56,6 +59,7 @@ public sealed class TournamentDetailTests : IDisposable
 
         _ctx.Services.AddSingleton(_mockApi.Object);
         _ctx.Services.AddSingleton(_mockSponsorsApi.Object);
+        _ctx.Services.AddSingleton(_mockDocumentsApi.Object);
         _ctx.Services.AddSingleton(_mockClientTimeZoneService.Object);
         _ctx.Services.AddSingleton(sp => new ApiExecutor(mockStopwatch.Object, sp.GetRequiredService<NavigationManager>(), NullLogger<ApiExecutor>.Instance));
         _ctx.Services.AddSingleton(_toastService);
@@ -116,6 +120,36 @@ public sealed class TournamentDetailTests : IDisposable
         // Assert
         var nav = _ctx.Services.GetRequiredService<NavigationManager>();
         nav.Uri.ShouldEndWith("/not-found");
+    }
+
+    // ── Rules link ───────────────────────────────────────────────────────────
+
+    [Fact(DisplayName = "Should show the rules button for a scheduled tournament whose type has a rule section")]
+    public void Render_ShouldShowRulesLink_WhenScheduledInvitational()
+    {
+        // Arrange
+        SetupSuccessResponse(TournamentDetailResponseFactory.Create(
+            tournamentType: TournamentType.Invitational, status: TournamentStatus.Scheduled));
+
+        // Act
+        var cut = _ctx.Render<TournamentDetail>(p => p.Add(x => x.Id, TournamentDetailResponseFactory.ValidId));
+
+        // Assert
+        cut.Find("button.td-rules-link").TextContent.ShouldContain("Invitational rules");
+    }
+
+    [Fact(DisplayName = "Should not show the rules button for a completed tournament")]
+    public void Render_ShouldNotShowRulesLink_WhenCompleted()
+    {
+        // Arrange
+        SetupSuccessResponse(TournamentDetailResponseFactory.Create(
+            tournamentType: TournamentType.Invitational, status: TournamentStatus.Completed));
+
+        // Act
+        var cut = _ctx.Render<TournamentDetail>(p => p.Add(x => x.Id, TournamentDetailResponseFactory.ValidId));
+
+        // Assert
+        cut.FindAll("button.td-rules-link").ShouldBeEmpty();
     }
 
     // ── Page title ───────────────────────────────────────────────────────────

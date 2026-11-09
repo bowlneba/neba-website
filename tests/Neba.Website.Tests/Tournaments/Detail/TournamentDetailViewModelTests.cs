@@ -173,4 +173,28 @@ public sealed class TournamentDetailViewModelTests
         // Assert
         model.DisplayLogoSrc.ShouldBe("/images/neba-doubles.jpg");
     }
+
+    [Theory(DisplayName = "ShowRulesLink is true only for a scheduled tournament")]
+    [InlineData("Scheduled", true)]
+    [InlineData("Completed", false)]
+    [InlineData("Truncated", false)]
+    [InlineData("Cancelled", false)]
+    public void ShowRulesLink_ShouldDependOnStatus_ForInvitational(string status, bool expected)
+    {
+        // Arrange
+        var model = TournamentDetailViewModelFactory.Create(tournamentType: "Invitational", status: status);
+
+        // Assert
+        model.ShowRulesLink.ShouldBe(expected);
+    }
+
+    [Fact(DisplayName = "ShowRulesLink is false for a scheduled type without a rule section")]
+    public void ShowRulesLink_ShouldBeFalse_ForScheduledSenior()
+    {
+        // Arrange
+        var model = TournamentDetailViewModelFactory.Create(tournamentType: "Senior", status: "Scheduled");
+
+        // Assert
+        model.ShowRulesLink.ShouldBeFalse();
+    }
 }
