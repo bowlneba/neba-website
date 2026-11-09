@@ -21,7 +21,10 @@ internal sealed class RulesSectionService(
 
         if (result.IsError)
         {
-            return result.Errors;
+            // An API 404 for the document must not look like a missing section (also NotFound).
+            return Error.Failure(
+                "RulesSection.LoadFailed",
+                $"The rules document could not be loaded: {result.FirstError.Description}");
         }
 
         var html = RulesSectionExtractor.Extract(result.Value.Html, anchor.Alias, TournamentRulesAnchors.RulesPath);

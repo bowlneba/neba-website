@@ -39,13 +39,17 @@ public sealed class RulesSectionServiceTests
         _service = new RulesSectionService(executor, _mockDocumentsApi.Object, _mockClientTimeZoneService.Object);
     }
 
-    private void SetupDocument(bool success = true, string html = Html, DateTimeOffset? lastUpdated = null)
+    private void SetupDocument(
+        bool success = true,
+        string html = Html,
+        DateTimeOffset? lastUpdated = null,
+        System.Net.HttpStatusCode failureStatus = System.Net.HttpStatusCode.InternalServerError)
     {
         using var response = new StubApiResponse<GetDocumentResponse>
         {
             IsSuccessStatusCode = success,
             Content = success ? new GetDocumentResponse { Html = html, LastUpdated = lastUpdated } : null,
-            StatusCode = success ? System.Net.HttpStatusCode.OK : System.Net.HttpStatusCode.InternalServerError
+            StatusCode = success ? System.Net.HttpStatusCode.OK : failureStatus
         };
 
         _mockDocumentsApi
@@ -97,6 +101,21 @@ public sealed class RulesSectionServiceTests
         // Assert
         result.IsError.ShouldBeTrue();
         result.FirstError.Type.ShouldNotBe(ErrorType.NotFound);
+    }
+
+    [Fact(DisplayName = "A missing rules document is a load failure, not a missing section")]
+    public async Task GetSectionAsync_ShouldReturnLoadFailure_WhenApiReturnsNotFound()
+    {
+        // Arrange
+        SetupDocument(success: false, failureStatus: System.Net.HttpStatusCode.NotFound);
+
+        // Act
+        var result = await _service.GetSectionAsync(Invitational, TestContext.Current.CancellationToken);
+
+        // Assert
+        result.IsError.ShouldBeTrue();
+        result.FirstError.Type.ShouldBe(ErrorType.Failure);
+        result.FirstError.Code.ShouldBe("RulesSection.LoadFailed");
     }
 
     [Fact(DisplayName = "Returns NotFound when the document has no such section")]
