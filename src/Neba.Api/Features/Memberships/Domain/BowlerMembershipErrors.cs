@@ -6,27 +6,29 @@ namespace Neba.Api.Features.Memberships.Domain;
 
 internal static class BowlerMembershipErrors
 {
+    private const string MembershipTypeKey = "MembershipType";
+
     public static Error TypeInactive(MembershipType type) => Error.Validation(
         code: "BowlerMembership.TypeInactive",
         description: $"Membership type '{type.Name}' can no longer be bought.",
-        metadata: new Dictionary<string, object> { { "MembershipType", type.Value } });
+        metadata: new Dictionary<string, object> { { MembershipTypeKey, type.Value } });
 
     public static Error RequiresPriorMembership(MembershipType type) => Error.Conflict(
         code: "BowlerMembership.RequiresPriorMembership",
         description: $"Membership type '{type.Name}' needs a prior membership. Buy a new membership first.",
-        metadata: new Dictionary<string, object> { { "MembershipType", type.Value } });
+        metadata: new Dictionary<string, object> { { MembershipTypeKey, type.Value } });
 
     public static Error AlreadyHeld(MembershipType type) => Error.Conflict(
         code: "BowlerMembership.AlreadyHeld",
         description: $"Membership type '{type.Name}' can be held only once and the bowler already held it.",
-        metadata: new Dictionary<string, object> { { "MembershipType", type.Value } });
+        metadata: new Dictionary<string, object> { { MembershipTypeKey, type.Value } });
 
     public static Error TooSoonSinceLast(MembershipType type, int daysRequired, DateOnly lastStartDate) => Error.Conflict(
         code: "BowlerMembership.TooSoonSinceLast",
         description: $"Membership type '{type.Name}' needs at least {daysRequired} days since the last membership started on {lastStartDate:yyyy-MM-dd}.",
         metadata: new Dictionary<string, object>
         {
-            { "MembershipType", type.Value },
+            { MembershipTypeKey, type.Value },
             { "DaysRequired", daysRequired },
             { "LastStartDate", lastStartDate }
         });

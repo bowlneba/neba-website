@@ -88,11 +88,11 @@ public sealed partial class MembershipTypeTests
     public void FromLegacyId_ShouldFail_WhenUnknown(int legacyId)
     {
         // Arrange & Act
-        var act = () => MembershipType.FromLegacyId(legacyId);
+        MembershipType Act() => MembershipType.FromLegacyId(legacyId);
         var found = MembershipType.TryFromLegacyId(legacyId, out var type);
 
         // Assert
-        Should.Throw<SmartEnumNotFoundException>(act);
+        Should.Throw<SmartEnumNotFoundException>(Act);
         found.ShouldBeFalse();
         type.ShouldBeNull();
     }
@@ -114,11 +114,11 @@ public sealed partial class MembershipTypeTests
     public void FromValue_ShouldFail_WhenUnknown()
     {
         // Arrange & Act
-        var act = () => MembershipType.FromValue("SYSTEM_IMPORT");
+        static MembershipType Act() => MembershipType.FromValue("SYSTEM_IMPORT");
         var found = MembershipType.TryFromValue("SYSTEM_IMPORT", out var type);
 
         // Assert
-        Should.Throw<SmartEnumNotFoundException>(act);
+        Should.Throw<SmartEnumNotFoundException>(Act);
         found.ShouldBeFalse();
         type.ShouldBeNull();
     }

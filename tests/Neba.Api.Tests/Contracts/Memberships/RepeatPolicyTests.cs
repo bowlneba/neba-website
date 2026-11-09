@@ -46,10 +46,10 @@ public sealed class RepeatPolicyTests
     public void FromLegacyFrequency_ShouldThrow_WhenOtherNegative(int frequency)
     {
         // Arrange & Act
-        var act = () => RepeatPolicy.FromLegacyFrequency(frequency);
+        RepeatPolicy Act() => RepeatPolicy.FromLegacyFrequency(frequency);
 
         // Assert
-        Should.Throw<ArgumentOutOfRangeException>(act);
+        Should.Throw<ArgumentOutOfRangeException>(Act);
     }
 
     [Theory(DisplayName = "MinimumDaysSinceLast throws when days is not positive")]
@@ -58,10 +58,10 @@ public sealed class RepeatPolicyTests
     public void MinimumDaysSinceLast_ShouldThrow_WhenNotPositive(int days)
     {
         // Arrange & Act
-        var act = () => RepeatPolicy.MinimumDaysSinceLast(days);
+        RepeatPolicy Act() => RepeatPolicy.MinimumDaysSinceLast(days);
 
         // Assert
-        Should.Throw<ArgumentOutOfRangeException>(act);
+        Should.Throw<ArgumentOutOfRangeException>(Act);
     }
 
     [Fact(DisplayName = "Policies with the same kind and days are equal")]

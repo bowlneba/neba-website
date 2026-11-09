@@ -25,6 +25,8 @@ internal sealed class BowlerMembershipWeeklySyncJob(
     IManualInterventionNotifier manualInterventionNotifier,
     ILogger<BowlerMembershipWeeklySyncJob> logger)
 {
+    private const string LegacyIdsField = "LegacyBowlerMembershipIds";
+
     // After the bowler step, so bowlers exist first and the two jobs do not both create one.
     public static readonly TimeSpan StartDelay = TimeSpan.FromMinutes(15);
 
@@ -84,7 +86,7 @@ internal sealed class BowlerMembershipWeeklySyncJob(
                     new Dictionary<string, string>
                     {
                         ["FailedMembershipCount"] = counts.FailedLegacyIds.Count.ToString(CultureInfo.InvariantCulture),
-                        ["LegacyBowlerMembershipIds"] = DiscordFieldFormatter.JoinIds(counts.FailedLegacyIds)
+                        [LegacyIdsField] = DiscordFieldFormatter.JoinIds(counts.FailedLegacyIds)
                     }),
                 ct);
         }
@@ -154,19 +156,19 @@ internal sealed class BowlerMembershipWeeklySyncJob(
                     new Dictionary<string, string>
                     {
                         ["DeletedCount"] = deleted.Count.ToString(CultureInfo.InvariantCulture),
-                        ["LegacyBowlerMembershipIds"] = DiscordFieldFormatter.JoinIds(deleted),
+                        [LegacyIdsField] = DiscordFieldFormatter.JoinIds(deleted),
                         ["UpsertedMissingCount"] = missingCounts.Created.ToString(CultureInfo.InvariantCulture)
                     }),
                 ct);
         }
     }
 
-    private async Task GuardAsync(string reason, List<int> extra, int websiteCount, CancellationToken ct)
+    private Task GuardAsync(string reason, List<int> extra, int websiteCount, CancellationToken ct)
     {
         logger.LogBowlerMembershipDeleteGuardTripped(reason, extra.Count, websiteCount);
         SyncMetrics.DeleteGuardTripped.Add(1);
 
-        await manualInterventionNotifier.NotifyAsync(
+        return manualInterventionNotifier.NotifyAsync(
             new DiscordAlert(
                 DiscordAlertSeverity.Warning,
                 "Bowler membership delete skipped in weekly sync",
@@ -175,7 +177,7 @@ internal sealed class BowlerMembershipWeeklySyncJob(
                 {
                     ["CandidateCount"] = extra.Count.ToString(CultureInfo.InvariantCulture),
                     ["WebsiteCount"] = websiteCount.ToString(CultureInfo.InvariantCulture),
-                    ["LegacyBowlerMembershipIds"] = DiscordFieldFormatter.JoinIds(extra)
+                    [LegacyIdsField] = DiscordFieldFormatter.JoinIds(extra)
                 }),
             ct);
     }
@@ -245,7 +247,7 @@ internal sealed class BowlerMembershipWeeklySyncJob(
                     new Dictionary<string, string>
                     {
                         ["FailedMembershipCount"] = counts.FailedLegacyIds.Count.ToString(CultureInfo.InvariantCulture),
-                        ["LegacyBowlerMembershipIds"] = DiscordFieldFormatter.JoinIds(counts.FailedLegacyIds)
+                        [LegacyIdsField] = DiscordFieldFormatter.JoinIds(counts.FailedLegacyIds)
                     }),
                 ct);
         }

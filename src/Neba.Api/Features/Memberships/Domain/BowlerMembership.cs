@@ -77,19 +77,16 @@ public sealed class BowlerMembership
         var endDate = type.CalculateEndDate(startDate);
 
         var eligibility = MembershipRules.CheckEligibility(type, startDate, endDate, history);
-        if (eligibility.IsError)
-        {
-            return eligibility.Errors;
-        }
-
-        return new BowlerMembership
-        {
-            Id = id ?? BowlerMembershipId.New(),
-            Type = type,
-            Cost = type.Cost,
-            StartDate = startDate,
-            EndDate = endDate
-        };
+        return eligibility.IsError
+            ? eligibility.Errors
+            : new BowlerMembership
+            {
+                Id = id ?? BowlerMembershipId.New(),
+                Type = type,
+                Cost = type.Cost,
+                StartDate = startDate,
+                EndDate = endDate
+            };
     }
 
     /// <summary>
@@ -121,19 +118,16 @@ public sealed class BowlerMembership
             return BowlerMembershipErrors.NegativeCost;
         }
 
-        if (endDate < startDate)
-        {
-            return BowlerMembershipErrors.EndDateBeforeStartDate(startDate, endDate);
-        }
-
-        return new BowlerMembership
-        {
-            Id = BowlerMembershipId.New(),
-            LegacyId = legacyId,
-            Type = type,
-            Cost = cost,
-            StartDate = startDate,
-            EndDate = endDate
-        };
+        return endDate < startDate
+            ? BowlerMembershipErrors.EndDateBeforeStartDate(startDate, endDate)
+            : new BowlerMembership
+            {
+                Id = BowlerMembershipId.New(),
+                LegacyId = legacyId,
+                Type = type,
+                Cost = cost,
+                StartDate = startDate,
+                EndDate = endDate
+            };
     }
 }

@@ -193,8 +193,8 @@ public sealed class BowlerMembershipWeeklySyncJobTests(AppDbContextFixture fixtu
         _dbContext.ChangeTracker.Clear();
     }
 
-    private async Task<List<int>> WebsiteLegacyIdsAsync()
-        => await _dbContext.Set<BowlerMembership>()
+    private Task<List<int>> WebsiteLegacyIdsAsync()
+        => _dbContext.Set<BowlerMembership>()
             .AsNoTracking()
             .Where(m => m.LegacyId != null)
             .Select(m => m.LegacyId!.Value)

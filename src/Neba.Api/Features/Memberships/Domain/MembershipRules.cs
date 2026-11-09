@@ -64,12 +64,9 @@ internal static class MembershipRules
             return BowlerMembershipErrors.TemporaryMembershipActive(activeEndDate);
         }
 
-        if (current.Any(held => end <= held.EndDate))
-        {
-            return BowlerMembershipErrors.ExpiresBeforeCurrent(end, current.Max(held => held.EndDate));
-        }
-
-        return Result.Success;
+        return current.Any(held => end <= held.EndDate)
+            ? BowlerMembershipErrors.ExpiresBeforeCurrent(end, current.Max(held => held.EndDate))
+            : Result.Success;
     }
 
     private static Error? CheckRepeatPolicy(

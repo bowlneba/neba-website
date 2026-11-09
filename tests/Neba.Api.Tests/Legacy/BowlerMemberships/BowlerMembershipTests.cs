@@ -628,8 +628,8 @@ public sealed class BowlerMembershipSyncJobTests(AppDbContextFixture fixture, Le
             _serviceProvider.GetRequiredService<IFusionCache>(),
             logger ?? new FakeLogger<BowlerMembershipSyncJob>());
 
-    private async Task<List<BowlerMembership>> WebsiteMembershipsAsync()
-        => await _dbContext.Set<BowlerMembership>().AsNoTracking().ToListAsync(TestContext.Current.CancellationToken);
+    private Task<List<BowlerMembership>> WebsiteMembershipsAsync()
+        => _dbContext.Set<BowlerMembership>().AsNoTracking().ToListAsync(TestContext.Current.CancellationToken);
 
     private async Task CacheBowlersEntryAsync()
     {
