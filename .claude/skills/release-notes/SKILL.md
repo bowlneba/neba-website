@@ -41,13 +41,11 @@ For the remaining PRs, read the `body` in full — it's the primary source of wh
 
 ### 4. Draft `release-notes.md`
 
-Write **for a user of the site/app**, not a developer reading a diff — describe what changed in the product, not which classes or files changed. The file opens with the release title as an H1 (see step 5 for how the title phrase is derived) — no other intro/framing sentence.
+Write **for a user of the site/app**, not a developer reading a diff — describe what changed in the product, not which classes or files changed. The file has no title and no H1: the title goes only in the `gh release create --title` flag (step 5), so it does not repeat in the release body. The file opens directly with the first `###` section — no intro/framing sentence.
 
 Structure:
 
 ```markdown
-# <new-version>: <title phrase>
-
 ### <Feature Area> (#<pr>[, #<pr>...])
 
 <1-3 sentences or a short bullet list describing what changed, in plain language.>
@@ -76,10 +74,18 @@ Rules:
 
 ### 5. Derive the release title
 
-The release title is always in the form `<new-version>: <title phrase>` — the new version, a colon, and a short (3-6 word) title phrase summarizing the release's theme, derived from the feature areas covered — e.g. `v0.2.0: Staff & Admin Tools`. Do not ask the user for this phrase; propose it based on the drafted content. This full title is what goes in the H1 at the top of `release-notes.md` (step 4) — draft it before or alongside the rest of the file, not as an afterthought.
+The release title is always in the form `<new-version>: <title phrase>` — the new version, a colon, and a short (3-6 word) title phrase summarizing the release's theme, derived from the feature areas covered — e.g. `v0.2.0: Staff & Admin Tools`. Do not ask the user for this phrase; propose it based on the drafted content. This full title goes in the `--title` flag of the `gh` command (step 6), never in `release-notes.md`.
 
 ### 6. Confirm
 
 Tell the user:
-- `release-notes.md` has been written at the repo root, with the release title as its first line
-- The file is ready to copy into a GitHub release (tag `<new-version>`, title = the H1 line minus the `# `) — remind them to delete `release-notes.md` after publishing (it should not be committed)
+- `release-notes.md` has been written at the repo root (body only, no title line)
+- The file is ready for a GitHub release (tag `<new-version>`, title = the release title from step 5)
+- Print this command in a code block, filled in, for them to copy and run. Use `--target main` for a release cut after the PR merges; for a hotfix tagged by hand after deploy, the tag already exists, so omit `--target`:
+
+```
+gh release create <new-version> --title "<release title>" --notes-file release-notes.md --target main
+```
+
+- Tell them to run it only after the PR merges (and, for a hotfix, after the deploy), then delete `release-notes.md` (it should not be committed)
+- Never run `gh release create` yourself
