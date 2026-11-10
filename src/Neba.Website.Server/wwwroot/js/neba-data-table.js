@@ -4,6 +4,7 @@
 export const MOBILE_QUERY = '(max-width: 767px)';
 export const PRIMARY_COLUMNS = 3;
 export const COMPACT_CONTAINER_WIDTH = 800;
+export const COMPACT_RELEASE_WIDTH = 830;
 const CONTAINER_SELECTOR = '[data-table-container]';
 const EXPANDABLE_ROW = 'table.neba-data-table[data-compact="expandable"] tbody tr[data-expandable]';
 
@@ -21,7 +22,12 @@ export function compactMode(table) {
         return isMobile() ? 'expandable' : null;
     }
 
-    const narrow = container.clientWidth > 0 && container.clientWidth < COMPACT_CONTAINER_WIDTH;
+    // A table already static stays static until the container clears a wider threshold. Switching modes changes
+    // row height, which can add or remove a scrollbar and shift clientWidth by a few pixels; without the gap a
+    // container near the threshold would flip back and forth.
+    const width = container.clientWidth;
+    const limit = table.dataset.compact === 'static' ? COMPACT_RELEASE_WIDTH : COMPACT_CONTAINER_WIDTH;
+    const narrow = width > 0 && width < limit;
     return narrow || isMobile() ? 'static' : null;
 }
 

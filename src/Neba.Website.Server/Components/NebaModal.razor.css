@@ -52,6 +52,16 @@
     pointer-events: auto;
 }
 
+/* Opt-in via CssClass for a modal whose body holds its own scroller (a long grid). The theme gives
+   .neba-modal-content overflow-y: auto, so without this the box scrolls as well as the body. */
+.neba-modal-content.neba-modal--inner-scroll {
+    overflow: hidden;
+}
+
+.neba-modal--inner-scroll .neba-modal-body {
+    min-height: 0;
+}
+
 .neba-modal-header {
     display: flex;
     align-items: center;

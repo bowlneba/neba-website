@@ -272,6 +272,32 @@ describe('table container', () => {
         expect(table.dataset.compact).toBeUndefined();
     });
 
+    test('a static table stays static until the container clears the release width', () => {
+        const { container, table } = renderInContainer(700);
+        enhanceTable(table);
+
+        Object.defineProperty(container, 'clientWidth', { configurable: true, value: 815 });
+        enhanceTable(table);
+        expect(table.dataset.compact).toBe('static');
+
+        Object.defineProperty(container, 'clientWidth', { configurable: true, value: 830 });
+        enhanceTable(table);
+        expect(table.dataset.compact).toBeUndefined();
+    });
+
+    test('a full table switches to static only below the compact width', () => {
+        const { container, table } = renderInContainer(960);
+        enhanceTable(table);
+
+        Object.defineProperty(container, 'clientWidth', { configurable: true, value: 815 });
+        enhanceTable(table);
+        expect(table.dataset.compact).toBeUndefined();
+
+        Object.defineProperty(container, 'clientWidth', { configurable: true, value: 799 });
+        enhanceTable(table);
+        expect(table.dataset.compact).toBe('static');
+    });
+
     test('a container on a phone is static', () => {
         setMobile(true);
         const { table } = renderInContainer(960);

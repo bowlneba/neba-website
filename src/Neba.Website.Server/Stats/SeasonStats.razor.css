@@ -296,6 +296,14 @@
     overflow-y: auto;
 }
 
+/* In a modal that scrolls inside (neba-modal--inner-scroll), the grid fills what the header leaves
+   instead of using its own 70vh cap, which with the header and padding was taller than the box. */
+.neba-modal--inner-scroll .stats-modal-body {
+    flex: 1 1 auto;
+    min-height: 0;
+    max-height: none;
+}
+
 .stats-modal-body .stats-table thead th {
     position: sticky;
     top: 0;

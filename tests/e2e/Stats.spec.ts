@@ -171,6 +171,20 @@ test.describe('Stats - full standings modal', () => {
     }
   });
 
+  test('only the grid scrolls, not the modal box', async ({ page }) => {
+    for (const size of [{ width: 1100, height: 900 }, { width: 390, height: 844 }]) {
+      await page.setViewportSize(size);
+      await page.goto(`/stats?season=${CURRENT_SEASON_YEAR}`);
+      await showAll(page).click();
+      await expect(dataRows(page).first()).toBeVisible();
+
+      const box = page.locator('.neba-modal-content');
+      expect(await box.evaluate(el => el.scrollHeight <= el.clientHeight)).toBe(true);
+      expect(await page.locator('.stats-modal-body').evaluate(el => el.scrollHeight > el.clientHeight)).toBe(true);
+      await page.locator('.neba-modal-close').click();
+    }
+  });
+
   test('the modal fills the screen on a phone', async ({ page }) => {
     await page.setViewportSize({ width: 390, height: 844 });
     await page.goto(`/stats?season=${CURRENT_SEASON_YEAR}`);

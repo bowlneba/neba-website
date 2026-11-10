@@ -714,7 +714,8 @@
                                                                 </div>
 
                                                                 <!-- ── Standings modal ───────────────────────────────────── -->
-                                                                <NebaModal IsOpen="@_modalOpen" OnClose="CloseModal" Title="@_modalTitle" MaxWidth="@ModalMaxWidth">
+                                                                <NebaModal IsOpen="@_modalOpen" OnClose="CloseModal" Title="@_modalTitle" MaxWidth="@ModalMaxWidth"
+                                                                           CssClass="@(_modalWide ? null : "neba-modal--inner-scroll")">
                                                                     <div class="stats-modal-body stats-table-wrapper" data-table-container>
                                                                         @_modalContent
                                                                     </div>
@@ -984,7 +985,7 @@ BoyStandingsSections()
 
     // Virtualize measures real row heights after the first render, so this is only the opening estimate.
     private const float StandingsRowHeight = 41f;
-    private const int StandingsOverscan = 8;
+    private const int StandingsOverscan = 20;
 
     private string ModalMaxWidth => _modalWide ? "1120px" : "960px";
 
