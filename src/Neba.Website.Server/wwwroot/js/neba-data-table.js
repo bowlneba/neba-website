@@ -92,23 +92,28 @@ export function enhanceCollapsible(header) {
 }
 
 /**
- * Enhance the table and collapsible header that contain the node, and, when deep, any inside it.
+ * Record the table and collapsible header that contain the node, and, when deep, any inside it.
+ * Collecting them in sets lets a flush enhance each one once, however many nodes changed inside it:
+ * a table rendered row by row adds thousands of nodes, and a pass over the table per node is quadratic.
  * @param {Element} node
  * @param {boolean} deep
+ * @param {Set<Element>} tables
+ * @param {Set<Element>} headers
  */
-function enhanceAround(node, deep) {
+function collectAround(node, deep, tables, headers) {
     const table = node.closest('table.neba-data-table');
     if (table) {
-        enhanceTable(table);
+        tables.add(table);
     }
 
     const header = node.closest('.neba-collapsible > .neba-collapsible-header');
     if (header) {
-        enhanceCollapsible(header);
+        headers.add(header);
     }
 
-    if (deep && node.querySelector('table.neba-data-table, .neba-collapsible-header')) {
-        enhanceAll(node);
+    if (deep) {
+        node.querySelectorAll('table.neba-data-table').forEach(inner => tables.add(inner));
+        node.querySelectorAll('.neba-collapsible > .neba-collapsible-header').forEach(inner => headers.add(inner));
     }
 }
 
@@ -205,8 +210,12 @@ export function init() {
             const changedNodes = Array.from(changed);
             added.clear();
             changed.clear();
-            addedNodes.filter(node => node.isConnected).forEach(node => enhanceAround(node, true));
-            changedNodes.filter(node => node.isConnected).forEach(node => enhanceAround(node, false));
+            const tables = new Set();
+            const headers = new Set();
+            addedNodes.filter(node => node.isConnected).forEach(node => collectAround(node, true, tables, headers));
+            changedNodes.filter(node => node.isConnected).forEach(node => collectAround(node, false, tables, headers));
+            tables.forEach(enhanceTable);
+            headers.forEach(enhanceCollapsible);
         });
     };
 

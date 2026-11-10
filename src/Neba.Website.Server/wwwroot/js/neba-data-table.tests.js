@@ -153,6 +153,28 @@ describe('neba-data-table', () => {
             expect(row.querySelector('td[data-secondary]').dataset.label).toBe('Entries');
         });
 
+        test('a large table built in the live DOM is enhanced once, not once per added node', async () => {
+            // Blazor attaches each element before it builds the children, so every row and cell is an added node.
+            const table = renderTable();
+            const body = table.querySelector('tbody');
+            const headerReads = jest.spyOn(HTMLTableElement.prototype, 'querySelectorAll');
+            await Promise.resolve();
+            headerReads.mockClear();
+
+            for (let i = 0; i < 100; i++) {
+                const row = body.appendChild(document.createElement('tr'));
+                for (const text of ['1st', 'Ann', '10', '3', '$5']) {
+                    row.appendChild(document.createElement('td')).textContent = text;
+                }
+            }
+            await Promise.resolve();
+
+            const enhancements = headerReads.mock.calls.filter(([selector]) => selector === 'thead th').length;
+            headerReads.mockRestore();
+            expect(enhancements).toBe(1);
+            expect(body.querySelectorAll('tr[data-expandable]')).toHaveLength(101);
+        });
+
         test('rows do not toggle on wider screens', () => {
             enhanceTable(renderTable());
             setMobile(false);
