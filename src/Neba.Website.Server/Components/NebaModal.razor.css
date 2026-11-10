@@ -36,6 +36,10 @@
 
 .neba-modal-container--compact .neba-modal-content {
     height: auto;
+    /* Height follows the content, so keep it inside the backdrop (1rem padding each side) and
+       scroll the box. Without the cap a tall body pushes the footer buttons off screen. */
+    max-height: calc(100vh - 2rem);
+    overflow-y: auto;
 }
 
 .neba-modal-content {
