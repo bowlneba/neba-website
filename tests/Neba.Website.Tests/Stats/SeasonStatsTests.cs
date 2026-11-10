@@ -302,21 +302,39 @@ public sealed class SeasonStatsTests : IDisposable
         cut.FindAll(".neba-modal-backdrop").ShouldBeEmpty();
     }
 
-    [Fact(DisplayName = "Should render only a window of rows in the standings modal when the standings are long")]
-    public async Task Modal_ShouldRenderWindowOfRows_WhenStandingsAreLong()
+    [Theory(DisplayName = "Should render only a window of rows in the standings modal when the standings are long")]
+    [InlineData("qualifying", "High Average", TestDisplayName = "High Average")]
+    [InlineData("qualifying", "High Block", TestDisplayName = "High Block")]
+    [InlineData("match-play", "Match Play Record", TestDisplayName = "Match Play Record")]
+    [InlineData("match-play", "Match Play Appearances", TestDisplayName = "Match Play Appearances")]
+    [InlineData("match-play", "Match Play Average", TestDisplayName = "Match Play Average")]
+    [InlineData("efficiency", "Points Per Entry", TestDisplayName = "Points Per Entry")]
+    [InlineData("efficiency", "Points Per Tournament", TestDisplayName = "Points Per Tournament")]
+    [InlineData("efficiency", "Finals Per Entry", TestDisplayName = "Finals Per Entry")]
+    [InlineData("efficiency", "Average Finish", TestDisplayName = "Average Finish")]
+    public async Task Modal_ShouldRenderWindowOfRows_WhenStandingsAreLong(string tab, string title)
     {
         // Arrange
         const int rowCount = 300;
-        var model = CreateStatsModel(firstRowName: "Alpha Bowler") with
+        var baseModel = CreateStatsModel(firstRowName: "Alpha Bowler");
+        var model = title switch
         {
-            HighAverage = HighAverageRowViewModelFactory.Bogus(rowCount)
+            "High Average" => baseModel with { HighAverage = HighAverageRowViewModelFactory.Bogus(rowCount) },
+            "High Block" => baseModel with { HighBlock = HighBlockRowViewModelFactory.Bogus(rowCount) },
+            "Match Play Record" => baseModel with { MatchPlayRecord = MatchPlayRecordRowViewModelFactory.Bogus(rowCount) },
+            "Match Play Appearances" => baseModel with { MatchPlayAppearances = MatchPlayAppearancesRowViewModelFactory.Bogus(rowCount) },
+            "Match Play Average" => baseModel with { MatchPlayAverage = MatchPlayAverageRowViewModelFactory.Bogus(rowCount) },
+            "Points Per Entry" => baseModel with { PointsPerEntry = PointsPerEntryRowViewModelFactory.Bogus(rowCount) },
+            "Points Per Tournament" => baseModel with { PointsPerTournament = PointsPerTournamentRowViewModelFactory.Bogus(rowCount) },
+            "Finals Per Entry" => baseModel with { FinalsPerEntry = FinalsPerEntryRowViewModelFactory.Bogus(rowCount) },
+            _ => baseModel with { AverageFinishes = AverageFinishRowViewModelFactory.Bogus(rowCount) },
         };
         _statsApi.EnqueueResult(model);
         var cut = _ctx.Render<SeasonStatsPage>();
-        await cut.Find("#tab-qualifying").ClickAsync(new());
+        await cut.Find($"#tab-{tab}").ClickAsync(new());
 
         // Act
-        await cut.Find("[aria-label^='Show all'][aria-label*='High Average']").ClickAsync(new());
+        await cut.Find($"[aria-label^='Show all'][aria-label*='{title} standings']").ClickAsync(new());
 
         // Assert
         cut.Find("[data-table-container]").ShouldNotBeNull();
