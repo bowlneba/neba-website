@@ -223,7 +223,7 @@ public sealed class CachedQueryHandlerDecoratorTests
 
         var query = new ErrorOrQuery(CacheDescriptorFactory.Create(key: "key:error-or"), TimeSpan.FromMinutes(5));
         var innerValue = new TestResponse("from-l2");
-        var jsonElement = JsonDocument.Parse(JsonSerializer.Serialize(innerValue)).RootElement;
+        var jsonElement = JsonElement.Parse(JsonSerializer.Serialize(innerValue));
 
         cache
             .Setup(c => c.TryGetAsync<object>(

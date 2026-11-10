@@ -357,13 +357,13 @@ public sealed class TournamentsPageTests : IDisposable
         public List<SeasonViewModel>? Seasons { get; set; } = [];
 
         public Dictionary<string, List<SeasonTournamentViewModel>> SeasonData { get; } =
-            new(StringComparer.Ordinal);
+            [with(StringComparer.Ordinal)];
 
         public int? FailTournamentLoadsAfter { get; set; }
 
         private int _tournamentLoadCount;
 
-        public HashSet<string> UnavailableSeasonLabels { get; } = new(StringComparer.Ordinal);
+        public HashSet<string> UnavailableSeasonLabels { get; } = [with(StringComparer.Ordinal)];
 
         public List<string> RequestedSeasons { get; } = [];
 
