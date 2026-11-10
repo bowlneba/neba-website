@@ -36,6 +36,10 @@
 
 .neba-modal-container--compact .neba-modal-content {
     height: auto;
+    /* Height follows the content, so keep it inside the backdrop (1rem padding each side) and
+       scroll the box. Without the cap a tall body pushes the footer buttons off screen. */
+    max-height: calc(100vh - 2rem);
+    overflow-y: auto;
 }
 
 .neba-modal-content {
@@ -45,7 +49,21 @@
     display: flex;
     flex-direction: column;
     height: 100%;
+    /* neba_theme.css also caps .neba-modal-content at 90vw x 90vh. The container sets the size,
+       so lift the caps or the box shrinks and sits at the top left. */
+    max-width: none;
+    max-height: none;
     pointer-events: auto;
+}
+
+/* Opt-in via CssClass for a modal whose body holds its own scroller (a long grid). The theme gives
+   .neba-modal-content overflow-y: auto, so without this the box scrolls as well as the body. */
+.neba-modal-content.neba-modal--inner-scroll {
+    overflow: hidden;
+}
+
+.neba-modal-content.neba-modal--inner-scroll .neba-modal-body {
+    min-height: 0;
 }
 
 .neba-modal-header {

@@ -1,0 +1,114 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>BoY full standings modal - mockup</title>
+<style>
+  /* Throwaway review mockup. Colors and table styling follow SeasonStats.razor.css and neba-data-table.css. */
+  :root { --blue-700:#1d4ed8; --blue-500:#3b82f6; --ink:#374151; --mute:#6b7280; --line:#e5e7eb; --wash:#f9fafb; --open:#eff6ff; }
+  * { box-sizing: border-box; }
+  body { margin:0; font:14px/1.4 system-ui, sans-serif; color:var(--ink); background:#e8ebf0; padding:16px; }
+  .bar { display:flex; flex-wrap:wrap; gap:1.5rem; align-items:center; margin-bottom:12px; }
+  .bar fieldset { border:0; margin:0; padding:0; display:flex; gap:.5rem; align-items:center; }
+  .bar legend { float:left; margin-right:.5rem; font-weight:600; }
+  .bar button { border:1px solid var(--line); background:#fff; padding:.35rem .75rem; border-radius:.375rem; cursor:pointer; }
+  .bar button[aria-pressed="true"] { background:var(--blue-700); color:#fff; border-color:var(--blue-700); }
+  .readout { font-variant-numeric: tabular-nums; color:var(--mute); }
+  .frame { margin:0 auto; background:rgba(17,24,39,.55); padding:16px; height:640px; display:flex; justify-content:center; align-items:center; transition:width .15s; }
+  .modal { background:#fff; border-radius:.5rem; width:100%; display:flex; flex-direction:column; box-shadow:0 10px 30px rgba(0,0,0,.3); }
+  .modal-head { display:flex; justify-content:space-between; align-items:center; padding:.9rem 1rem; border-bottom:1px solid var(--line); }
+  .modal-head h2 { margin:0; font-size:1.125rem; color:var(--blue-700); }
+  .modal-head button { border:0; background:none; font-size:1.1rem; cursor:pointer; }
+  .body { overflow-y:auto; overflow-x:auto; height:440px; position:relative; }
+  table { width:100%; border-collapse:collapse; font-size:.875rem; }
+  th { position:sticky; top:0; z-index:1; background:var(--wash); padding:.5rem .75rem; font-size:.75rem; font-weight:600; text-transform:uppercase; letter-spacing:.04em; color:var(--mute); border-bottom:1px solid var(--line); white-space:nowrap; text-align:left; }
+  td { padding:.5rem .75rem; border-bottom:1px solid #f3f4f6; }
+  .r { text-align:right; font-variant-numeric:tabular-nums; }
+  td a { color:var(--blue-700); text-decoration:none; font-weight:500; }
+  .spacer td { padding:0; border:0; }
+  /* compact layout (modal): fixed-height rows, every column visible, no tap-to-expand.
+     Line 1: rank, name, key value. Then the other stats, three per line, label above value. */
+  table.compact, table.compact thead, table.compact tbody { display:block; }
+  table.compact thead tr, table.compact tbody tr.row { display:grid; grid-template-columns:3rem repeat(6,minmax(0,1fr)); }
+  table.compact tbody tr.row { align-content:start; height:112px; overflow:hidden; padding:.5rem 0; background:var(--wash); border-bottom:1px solid var(--line); }
+  table.compact :is(th,td):nth-child(1){ grid-column:1; }
+  table.compact :is(th,td):nth-child(2){ grid-column:2 / 6; }
+  table.compact :is(th,td):nth-child(3){ grid-column:6 / 8; text-align:right; }
+  table.compact th.sec { display:none; }
+  table.compact td { border:0; padding:.25rem .5rem; }
+  table.compact tbody tr.row > td.sec { display:flex; flex-direction:column; grid-column:span 2; gap:.125rem; padding-top:.5rem; text-align:left; }
+  table.compact tbody tr.row > td.sec:nth-child(4) { grid-column:2 / span 2; }
+  table.compact tbody tr.row > td.sec::before { content:attr(data-label); font-size:.6875rem; font-weight:600; text-transform:uppercase; letter-spacing:.05em; color:var(--mute); }
+  .note { max-width:60ch; margin:12px auto 0; color:var(--mute); }
+</style>
+</head>
+<body>
+<div class="bar">
+  <fieldset><legend>Screen</legend>
+    <button data-vp="1100" aria-pressed="true">Desktop 1100</button>
+    <button data-vp="900" aria-pressed="false">Tablet 900</button>
+    <button data-vp="390" aria-pressed="false">Phone 390</button>
+  </fieldset>
+  <fieldset><legend>Modal max width</legend>
+    <button data-mw="720" aria-pressed="false">720 (old)</button>
+    <button data-mw="960" aria-pressed="true">960 (chosen)</button>
+  </fieldset>
+  <span class="readout" id="readout"></span>
+</div>
+
+<div class="frame" id="frame">
+  <div class="modal" id="modal" role="dialog" aria-label="Bowler of the Year - Full Standings">
+    <div class="modal-head"><h2>Bowler of the Year — Full Standings</h2><button aria-label="Close modal">✕</button></div>
+    <div class="body" id="body"><table id="tbl"></table></div>
+  </div>
+</div>
+<p class="note">The table collapses when the modal body is under 800px wide, or the screen is 767px or less. In the collapsed layout every row has the same height and shows all its stats; there is no tap to expand. Only the rows near the visible window exist in the table; the counter shows how many.</p>
+
+<script>
+  // Throwaway review script: fake data, fake windowing, simulated collapse. Not the real implementation.
+  const first = ['Mike','Dave','Chris','Jen','Tom','Sara','Pat','Lou','Dan','Kim','Rob','Ann','Joe','Beth'];
+  const last = ['Hanley','Costa','Reilly','Okafor','Brennan','Vogel','Ruiz','Walsh','Moran','Pike','Doyle','Shaw','Lindqvist','Foster'];
+  const N = 560;
+  const rows = Array.from({length:N}, (_, i) => ({
+    rank:i+1, name:`${first[i % 14]} ${last[(i*7+3) % 14]}`, pts:3400 - i*6, t:9 - (i % 4), e:14 - (i % 6), f:Math.max(0, 8 - (i >> 4)),
+    af:i % 13 ? (3.2 + i*0.04).toFixed(1) : '—', won:Math.max(0, 28000 - i*52)
+  }));
+  const money = n => '$' + n.toLocaleString('en-US');
+  const ord = n => { const s=['th','st','nd','rd'], v=n%100; return n+(s[(v-20)%10]||s[v]||s[0]); };
+  const cols = ['Rank','Name','Points','Tournaments','Entries','Finals','Avg Finish','$ Won'];
+  let vp = 1100, mw = 960, compact = false;
+  const frame = document.getElementById('frame'), modal = document.getElementById('modal'),
+        body = document.getElementById('body'), tbl = document.getElementById('tbl'), readout = document.getElementById('readout');
+  const rowH = () => compact ? 112 : 38;
+
+  function layout() {
+    frame.style.width = Math.min(vp + 32, document.body.clientWidth - 32) + 'px';
+    modal.style.maxWidth = mw + 'px';
+    compact = vp <= 767 || modal.clientWidth < 800;
+    tbl.className = compact ? 'compact' : '';
+    draw();
+  }
+  function draw() {
+    const h = rowH(), top = body.scrollTop, view = body.clientHeight;
+    const start = Math.max(0, Math.floor(top / h) - 4), end = Math.min(N, Math.ceil((top + view) / h) + 4);
+    let html = '<thead><tr>' + cols.map((c,i) => `<th class="${i>1?'r':''} ${compact&&i>2?'sec':''}">${c}</th>`).join('') + '</tr></thead><tbody>';
+    html += `<tr class="spacer"><td colspan="8" style="height:${start*h}px"></td></tr>`;
+    for (let i = start; i < end; i++) {
+      const r = rows[i];
+      const cells = [ord(r.rank), `<a href="#">${r.name}</a>`, r.pts, r.t, r.e, r.f, r.af, money(r.won)];
+      html += `<tr class="row" data-i="${i}">` + cells.map((c,k) =>
+        `<td class="${k>1?'r':''} ${compact&&k>2?'sec':''}" ${compact&&k>2?`data-label="${cols[k]}"`:''}>${c}</td>`).join('') + '</tr>';
+    }
+    html += `<tr class="spacer"><td colspan="8" style="height:${(N-end)*h}px"></td></tr></tbody>`;
+    tbl.innerHTML = html;
+    readout.textContent = `Rendered ${end-start} of ${N} rows · modal body ${body.clientWidth}px · ${compact ? 'collapsed' : 'all columns'}`;
+  }
+  body.addEventListener('scroll', draw);
+  document.querySelectorAll('[data-vp]').forEach(b => b.onclick = () => { vp = +b.dataset.vp; mark('[data-vp]', b); layout(); });
+  document.querySelectorAll('[data-mw]').forEach(b => b.onclick = () => { mw = +b.dataset.mw; mark('[data-mw]', b); layout(); });
+  const mark = (sel, on) => document.querySelectorAll(sel).forEach(x => x.setAttribute('aria-pressed', x === on));
+  addEventListener('resize', layout); layout();
+</script>
+</body>
+</html>
