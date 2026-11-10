@@ -715,7 +715,7 @@
 
                                                                 <!-- ── Standings modal ───────────────────────────────────── -->
                                                                 <NebaModal IsOpen="@_modalOpen" OnClose="CloseModal" Title="@_modalTitle" MaxWidth="@ModalMaxWidth">
-                                                                    <div class="stats-modal-body stats-table-wrapper">
+                                                                    <div class="stats-modal-body stats-table-wrapper" data-table-container>
                                                                         @_modalContent
                                                                     </div>
                                                                 </NebaModal>
@@ -982,7 +982,15 @@ BoyStandingsSections()
         _modalWide = false;
     }
 
-    private string ModalMaxWidth => _modalWide ? "1120px" : "720px";
+    // Virtualize measures real row heights after the first render, so this is only the opening estimate.
+    private const float StandingsRowHeight = 41f;
+    private const int StandingsOverscan = 8;
+
+    private string ModalMaxWidth => _modalWide ? "1120px" : "960px";
+
+    // Items needs ICollection<T>. The view-model lists are collection expressions, which implement it, so the
+    // same instance comes back on every render and Virtualize does not refetch.
+    private static ICollection<T> AsCollection<T>(IReadOnlyCollection<T> rows) => rows as ICollection<T> ?? [.. rows];
 
     private RenderFragment RenderBoyStandingsTable(IReadOnlyCollection<BowlerOfTheYearStandingRowViewModel> rows) => @<table class="stats-table neba-data-table">
         <thead>
@@ -998,8 +1006,8 @@ BoyStandingsSections()
             </tr>
         </thead>
         <tbody>
-            @foreach (var row in rows)
-            {
+            <Virtualize Context="row" Items="@AsCollection(rows)" ItemSize="@StandingsRowHeight"
+                        OverscanCount="@StandingsOverscan" SpacerElement="tr">
                 <tr class="@(row.Rank == 1 ? "stats-row-first" : "stats-row")">
                     <td class="@(row.Rank == 1 ? "rank-cell rank-cell-accent-blue-500" : "rank-cell")">@row.Rank.ToOrdinal()</td>
                     <td><a href="@GetIndividualStatsUrl(row.BowlerId)" class="stats-name-link" @onclick="CloseModal">@row.BowlerName</a></td>
@@ -1010,7 +1018,7 @@ BoyStandingsSections()
                     <td class="text-right tabular-nums">@(row.AverageFinish?.ToString("F1") ?? "—")</td>
                     <td class="text-right tabular-nums" aria-label="@($"Winnings: {row.Winnings.ToString("C0", CurrencyCulture)}")">@row.Winnings.ToString("C0", CurrencyCulture)</td>
                 </tr>
-            }
+            </Virtualize>
         </tbody>
     </table>;
 
@@ -1026,8 +1034,8 @@ BoyStandingsSections()
             </tr>
         </thead>
         <tbody>
-            @foreach (var row in rows)
-            {
+            <Virtualize Context="row" Items="@AsCollection(rows)" ItemSize="@StandingsRowHeight"
+                        OverscanCount="@StandingsOverscan" SpacerElement="tr">
                 <tr class="@(row.Rank == 1 ? "stats-row-first" : "stats-row")">
                     <td class="@(row.Rank == 1 ? "rank-cell rank-cell-accent-primary" : "rank-cell")">@row.Rank.ToOrdinal()</td>
                     <td><a href="@GetIndividualStatsUrl(row.BowlerId)" class="stats-name-link" @onclick="CloseModal">@row.BowlerName</a></td>
@@ -1036,7 +1044,7 @@ BoyStandingsSections()
                     <td class="text-right tabular-nums">@row.Tournaments</td>
                     <td class="text-right tabular-nums @FieldAvgClass(row.FieldAverage)" aria-label="@FieldAvgAriaLabel(row.FieldAverage)">@FormatFieldAvg(row.FieldAverage)</td>
                 </tr>
-            }
+            </Virtualize>
         </tbody>
     </table>;
 
@@ -1050,15 +1058,15 @@ BoyStandingsSections()
             </tr>
         </thead>
         <tbody>
-            @foreach (var row in rows)
-            {
+            <Virtualize Context="row" Items="@AsCollection(rows)" ItemSize="@StandingsRowHeight"
+                        OverscanCount="@StandingsOverscan" SpacerElement="tr">
                 <tr class="@(row.Rank == 1 ? "stats-row-first" : "stats-row")">
                     <td class="@(row.Rank == 1 ? "rank-cell rank-cell-accent-primary" : "rank-cell")">@row.Rank.ToOrdinal()</td>
                     <td><a href="@GetIndividualStatsUrl(row.BowlerId)" class="stats-name-link" @onclick="CloseModal">@row.BowlerName</a></td>
                     <td class="text-right tabular-nums @(row.Rank == 1 ? "text-[var(--neba-color-primary)]" : "")">@row.HighBlock</td>
                     <td class="text-right tabular-nums">@row.HighGame</td>
                 </tr>
-            }
+            </Virtualize>
         </tbody>
     </table>;
 
@@ -1075,8 +1083,8 @@ BoyStandingsSections()
             </tr>
         </thead>
         <tbody>
-            @foreach (var row in rows)
-            {
+            <Virtualize Context="row" Items="@AsCollection(rows)" ItemSize="@StandingsRowHeight"
+                        OverscanCount="@StandingsOverscan" SpacerElement="tr">
                 <tr class="@(row.Rank == 1 ? "stats-row-first" : "stats-row")">
                     <td class="@(row.Rank == 1 ? "rank-cell rank-cell-accent-primary" : "rank-cell")">@row.Rank.ToOrdinal()</td>
                     <td><a href="@GetIndividualStatsUrl(row.BowlerId)" class="stats-name-link" @onclick="CloseModal">@row.BowlerName</a></td>
@@ -1086,7 +1094,7 @@ BoyStandingsSections()
                     <td class="text-right tabular-nums">@FormatWinPercentage(row.WinPercentage)</td>
                     <td class="text-right tabular-nums" aria-label="@($"Winnings: {row.Winnings.ToString("C0", CurrencyCulture)}")">@row.Winnings.ToString("C0", CurrencyCulture)</td>
                 </tr>
-            }
+            </Virtualize>
         </tbody>
     </table>;
 
@@ -1103,8 +1111,8 @@ BoyStandingsSections()
             </tr>
         </thead>
         <tbody>
-            @foreach (var row in rows)
-            {
+            <Virtualize Context="row" Items="@AsCollection(rows)" ItemSize="@StandingsRowHeight"
+                        OverscanCount="@StandingsOverscan" SpacerElement="tr">
                 <tr class="@(row.Rank == 1 ? "stats-row-first" : "stats-row")">
                     <td class="@(row.Rank == 1 ? "rank-cell rank-cell-accent-red" : "rank-cell")">@row.Rank.ToOrdinal()</td>
                     <td><a href="@GetIndividualStatsUrl(row.BowlerId)" class="stats-name-link" @onclick="CloseModal">@row.BowlerName</a></td>
@@ -1114,7 +1122,7 @@ BoyStandingsSections()
                     <td class="text-right tabular-nums">@row.MatchPlayAverage.ToString("F2")</td>
                     <td class="text-right tabular-nums" aria-label="@($"Winnings: {row.Winnings.ToString("C0", CurrencyCulture)}")">@row.Winnings.ToString("C0", CurrencyCulture)</td>
                 </tr>
-            }
+            </Virtualize>
         </tbody>
     </table>;
 
@@ -1129,8 +1137,8 @@ BoyStandingsSections()
             </tr>
         </thead>
         <tbody>
-            @foreach (var row in rows)
-            {
+            <Virtualize Context="row" Items="@AsCollection(rows)" ItemSize="@StandingsRowHeight"
+                        OverscanCount="@StandingsOverscan" SpacerElement="tr">
                 <tr class="@(row.Rank == 1 ? "stats-row-first" : "stats-row")">
                     <td class="@(row.Rank == 1 ? "rank-cell rank-cell-accent-red" : "rank-cell")">@row.Rank.ToOrdinal()</td>
                     <td><a href="@GetIndividualStatsUrl(row.BowlerId)" class="stats-name-link" @onclick="CloseModal">@row.BowlerName</a></td>
@@ -1138,7 +1146,7 @@ BoyStandingsSections()
                     <td class="text-right tabular-nums">@row.Tournaments</td>
                     <td class="text-right tabular-nums">@row.Entries</td>
                 </tr>
-            }
+            </Virtualize>
         </tbody>
     </table>;
 
@@ -1153,8 +1161,8 @@ BoyStandingsSections()
             </tr>
         </thead>
         <tbody>
-            @foreach (var row in rows)
-            {
+            <Virtualize Context="row" Items="@AsCollection(rows)" ItemSize="@StandingsRowHeight"
+                        OverscanCount="@StandingsOverscan" SpacerElement="tr">
                 <tr class="@(row.Rank == 1 ? "stats-row-first" : "stats-row")">
                     <td class="@(row.Rank == 1 ? "rank-cell rank-cell-accent-blue-300" : "rank-cell")">@row.Rank.ToOrdinal()</td>
                     <td><a href="@GetIndividualStatsUrl(row.BowlerId)" class="stats-name-link" @onclick="CloseModal">@row.BowlerName</a></td>
@@ -1162,7 +1170,7 @@ BoyStandingsSections()
                     <td class="text-right tabular-nums">@row.Points</td>
                     <td class="text-right tabular-nums">@row.Entries</td>
                 </tr>
-            }
+            </Virtualize>
         </tbody>
     </table>;
 
@@ -1177,8 +1185,8 @@ BoyStandingsSections()
             </tr>
         </thead>
         <tbody>
-            @foreach (var row in rows)
-            {
+            <Virtualize Context="row" Items="@AsCollection(rows)" ItemSize="@StandingsRowHeight"
+                        OverscanCount="@StandingsOverscan" SpacerElement="tr">
                 <tr class="@(row.Rank == 1 ? "stats-row-first" : "stats-row")">
                     <td class="@(row.Rank == 1 ? "rank-cell rank-cell-accent-blue-300" : "rank-cell")">@row.Rank.ToOrdinal()</td>
                     <td><a href="@GetIndividualStatsUrl(row.BowlerId)" class="stats-name-link" @onclick="CloseModal">@row.BowlerName</a></td>
@@ -1186,7 +1194,7 @@ BoyStandingsSections()
                     <td class="text-right tabular-nums">@row.Points</td>
                     <td class="text-right tabular-nums">@row.Tournaments</td>
                 </tr>
-            }
+            </Virtualize>
         </tbody>
     </table>;
 
@@ -1201,8 +1209,8 @@ BoyStandingsSections()
             </tr>
         </thead>
         <tbody>
-            @foreach (var row in rows)
-            {
+            <Virtualize Context="row" Items="@AsCollection(rows)" ItemSize="@StandingsRowHeight"
+                        OverscanCount="@StandingsOverscan" SpacerElement="tr">
                 <tr class="@(row.Rank == 1 ? "stats-row-first" : "stats-row")">
                     <td class="@(row.Rank == 1 ? "rank-cell rank-cell-accent-blue-300" : "rank-cell")">@row.Rank.ToOrdinal()</td>
                     <td><a href="@GetIndividualStatsUrl(row.BowlerId)" class="stats-name-link" @onclick="CloseModal">@row.BowlerName</a></td>
@@ -1210,7 +1218,7 @@ BoyStandingsSections()
                     <td class="text-right tabular-nums">@row.Finals</td>
                     <td class="text-right tabular-nums">@row.Entries</td>
                 </tr>
-            }
+            </Virtualize>
         </tbody>
     </table>;
 
@@ -1225,8 +1233,8 @@ BoyStandingsSections()
             </tr>
         </thead>
         <tbody>
-            @foreach (var row in rows)
-            {
+            <Virtualize Context="row" Items="@AsCollection(rows)" ItemSize="@StandingsRowHeight"
+                        OverscanCount="@StandingsOverscan" SpacerElement="tr">
                 <tr class="@(row.Rank == 1 ? "stats-row-first" : "stats-row")">
                     <td class="@(row.Rank == 1 ? "rank-cell rank-cell-accent-blue-300" : "rank-cell")">@row.Rank.ToOrdinal()</td>
                     <td><a href="@GetIndividualStatsUrl(row.BowlerId)" class="stats-name-link" @onclick="CloseModal">@row.BowlerName</a></td>
@@ -1234,7 +1242,7 @@ BoyStandingsSections()
                     <td class="text-right tabular-nums">@row.Finals</td>
                     <td class="text-right tabular-nums" aria-label="@($"Winnings: {row.Winnings.ToString("C0", CurrencyCulture)}")">@row.Winnings.ToString("C0", CurrencyCulture)</td>
                 </tr>
-            }
+            </Virtualize>
         </tbody>
     </table>;
 

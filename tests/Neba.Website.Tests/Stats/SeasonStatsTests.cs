@@ -302,6 +302,27 @@ public sealed class SeasonStatsTests : IDisposable
         cut.FindAll(".neba-modal-backdrop").ShouldBeEmpty();
     }
 
+    [Fact(DisplayName = "Should render only a window of rows in the standings modal when the standings are long")]
+    public async Task Modal_ShouldRenderWindowOfRows_WhenStandingsAreLong()
+    {
+        // Arrange
+        const int rowCount = 300;
+        var model = CreateStatsModel(firstRowName: "Alpha Bowler") with
+        {
+            HighAverage = HighAverageRowViewModelFactory.Bogus(rowCount)
+        };
+        _statsApi.EnqueueResult(model);
+        var cut = _ctx.Render<SeasonStatsPage>();
+        await cut.Find("#tab-qualifying").ClickAsync(new());
+
+        // Act
+        await cut.Find("[aria-label^='Show all'][aria-label*='High Average']").ClickAsync(new());
+
+        // Assert
+        cut.Find("[data-table-container]").ShouldNotBeNull();
+        cut.FindAll("[data-table-container] tbody tr").Count.ShouldBeLessThan(rowCount);
+    }
+
     [Fact(DisplayName = "Should open points progression modal when the widget is clicked")]
     public async Task Modal_ShouldOpenPointsRaceModal_WhenWidgetClicked()
     {
