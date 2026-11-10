@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { test, expect, type Page } from '@playwright/test';
 
 const LEGACY_SEASON_TEXT = '2020-2021 Season';
 const LEGACY_SEASON_YEAR = '2021';
@@ -131,5 +131,69 @@ test.describe('Stats desktop layout', () => {
 
     await expect(row).not.toHaveAttribute('data-open', '');
     await expect(row.locator('td[data-secondary]').first()).toBeVisible();
+  });
+});
+
+test.describe('Stats - full standings modal', () => {
+  const showAll = (page: Page) =>
+    page.getByRole('button', { name: /Show all 560 Bowler of the Year standings/ });
+
+  const dataRows = (page: Page) =>
+    page.locator('.stats-modal-body tbody tr.stats-row, .stats-modal-body tbody tr.stats-row-first');
+
+  test('renders a window of rows and reaches the last row', async ({ page }) => {
+    await page.setViewportSize({ width: 1100, height: 900 });
+    await page.goto(`/stats?season=${CURRENT_SEASON_YEAR}`);
+    await showAll(page).click();
+    await expect(dataRows(page).first()).toBeVisible();
+
+    expect(await dataRows(page).count()).toBeLessThan(100);
+    // Virtualize starts from an estimated row height, so the total height shifts as rows render: keep scrolling.
+    await expect(async () => {
+      await page.locator('.stats-modal-body').evaluate(el => el.scrollTo(0, el.scrollHeight));
+      await expect(page.locator('.stats-modal-body').getByText('Bowler 560')).toBeVisible({ timeout: 500 });
+    }).toPass();
+  });
+
+  test('shows every column without side scroll', async ({ page }) => {
+    for (const width of [1100, 900, 390]) {
+      await page.setViewportSize({ width, height: 900 });
+      await page.goto(`/stats?season=${CURRENT_SEASON_YEAR}`);
+      await showAll(page).click();
+
+      const body = page.locator('.stats-modal-body');
+      await expect(body).toBeVisible();
+      await expect(dataRows(page).first()).toBeVisible();
+      // The compact layout is applied by script after the modal opens, so wait for it instead of measuring once.
+      await expect.poll(() => body.evaluate(el => el.scrollWidth <= el.clientWidth)).toBe(true);
+      // Wide: the header shows. Compact: the header hides and each row labels its own $ Won cell.
+      await expect(body.locator('th:has-text("$ Won"), td[data-label="$ Won"]').and(page.locator(':visible')).first()).toBeVisible();
+      await page.locator('.neba-modal-close').click();
+    }
+  });
+
+  test('only the grid scrolls, not the modal box', async ({ page }) => {
+    for (const size of [{ width: 1100, height: 900 }, { width: 390, height: 844 }]) {
+      await page.setViewportSize(size);
+      await page.goto(`/stats?season=${CURRENT_SEASON_YEAR}`);
+      await showAll(page).click();
+      await expect(dataRows(page).first()).toBeVisible();
+
+      const box = page.locator('.neba-modal-content');
+      expect(await box.evaluate(el => el.scrollHeight <= el.clientHeight)).toBe(true);
+      expect(await page.locator('.stats-modal-body').evaluate(el => el.scrollHeight > el.clientHeight)).toBe(true);
+      await page.locator('.neba-modal-close').click();
+    }
+  });
+
+  test('the modal fills the screen on a phone', async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.goto(`/stats?season=${CURRENT_SEASON_YEAR}`);
+    await showAll(page).click();
+
+    // The modal scales in over 0.2s, so wait for the final box.
+    await expect.poll(async () => (await page.locator('.neba-modal-content').boundingBox())?.width).toBe(390);
+    const box = await page.locator('.neba-modal-content').boundingBox();
+    expect(box?.x).toBe(0);
   });
 });

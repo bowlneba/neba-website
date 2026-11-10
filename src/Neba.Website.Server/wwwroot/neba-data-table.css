@@ -9,122 +9,175 @@
    Wider screens render the table unchanged.
    ========================================================================== */
 
-@media (max-width: 767px) {
-    table.neba-data-table,
-    table.neba-data-table thead,
-    table.neba-data-table tbody {
-        display: block;
-    }
-
-    table.neba-data-table thead tr,
-    table.neba-data-table tbody tr[data-expandable] {
-        display: grid;
-        grid-template-columns: 3rem minmax(0, 1fr) minmax(0, 1fr) auto 1.75rem;
-        align-items: center;
-    }
-
-    table.neba-data-table tbody tr[data-expandable] {
-        position: relative;
-        cursor: pointer;
-        border-bottom: 1px solid #e5e7eb;
-    }
-
-    table.neba-data-table tbody tr[data-expandable]:focus-visible {
-        outline: 2px solid var(--neba-blue-500, #3b82f6);
-        outline-offset: -2px;
-    }
-
-    /* Primary columns */
-    table.neba-data-table.neba-data-table :is(thead th, tbody td):nth-child(1) { grid-column: 1; }
-    table.neba-data-table.neba-data-table :is(thead th, tbody td):nth-child(2) { grid-column: 2 / 4; }
-    table.neba-data-table.neba-data-table :is(thead th, tbody td):nth-child(3) { grid-column: 4; text-align: right; }
-
-    table.neba-data-table.neba-data-table thead th[data-secondary] {
-        display: none;
-    }
-
-    /* The row paints one background, so empty grid cells under the rank match the rest */
-    table.neba-data-table.neba-data-table tbody tr[data-expandable] {
-        background: #f9fafb;
-    }
-
-    table.neba-data-table.neba-data-table tbody tr[data-expandable][data-open] {
-        background: #eff6ff;
-    }
-
-    table.neba-data-table.neba-data-table tbody tr[data-expandable] > td {
-        background: transparent !important;
-        border-bottom: none;
-        padding: 0.75rem 0.5rem !important;
-    }
-
-    table.neba-data-table.neba-data-table tbody tr[data-expandable] > td:nth-child(1) {
-        padding-left: 1rem !important;
-    }
-
-    table.neba-data-table.neba-data-table thead th {
-        padding: 0.5rem 0.5rem !important;
-    }
-
-    table.neba-data-table.neba-data-table thead th:nth-child(1) {
-        padding-left: 1rem !important;
-    }
-
-    /* Chevron */
-    table.neba-data-table tbody tr[data-expandable]::after {
-        content: '';
-        grid-column: 5;
-        grid-row: 1;
-        justify-self: center;
-        width: 0.5rem;
-        height: 0.5rem;
-        border-right: 2px solid currentColor;
-        border-bottom: 2px solid currentColor;
-        color: #6b7280;
-        transform: translateY(-25%) rotate(45deg);
-        transition: transform 0.2s ease;
-    }
-
-    table.neba-data-table tbody tr[data-expandable][data-open]::after {
-        transform: translateY(25%) rotate(-135deg);
-    }
-
-    /* Secondary columns: hidden until the row opens, then two label/value pairs per line */
-    table.neba-data-table.neba-data-table tbody tr[data-expandable] > td[data-secondary] {
-        display: none;
-    }
-
-    table.neba-data-table.neba-data-table tbody tr[data-expandable][data-open] > td[data-secondary] {
-        display: flex;
-        flex-direction: column;
-        gap: 0.125rem;
-        padding: 0.375rem 0.5rem 0.625rem !important;
-        text-align: left;
-        font-variant-numeric: tabular-nums;
-    }
-
-
-    table.neba-data-table.neba-data-table tbody tr[data-expandable][data-open] > td[data-secondary]:nth-child(even) {
-        grid-column: 2;
-    }
-
-    table.neba-data-table.neba-data-table tbody tr[data-expandable][data-open] > td[data-secondary]:nth-child(odd) {
-        grid-column: 3 / 5;
-    }
-
-    table.neba-data-table tbody tr[data-expandable][data-open] > td[data-secondary]::before {
-        content: attr(data-label);
-        font-size: 0.6875rem;
-        font-weight: 600;
-        text-transform: uppercase;
-        letter-spacing: 0.05em;
-        color: #6b7280;
-    }
-
+table.neba-data-table[data-compact="expandable"],
+table.neba-data-table[data-compact="expandable"] thead,
+table.neba-data-table[data-compact="expandable"] tbody {
+    display: block;
 }
 
-@media (max-width: 767px) and (prefers-reduced-motion: reduce) {
-    table.neba-data-table tbody tr[data-expandable]::after {
+table.neba-data-table[data-compact="expandable"] thead tr,
+table.neba-data-table[data-compact="expandable"] tbody tr[data-expandable] {
+    display: grid;
+    grid-template-columns: 3rem minmax(0, 1fr) minmax(0, 1fr) auto 1.75rem;
+    align-items: center;
+}
+
+table.neba-data-table[data-compact="expandable"] tbody tr[data-expandable] {
+    position: relative;
+    cursor: pointer;
+    border-bottom: 1px solid #e5e7eb;
+}
+
+table.neba-data-table[data-compact="expandable"] tbody tr[data-expandable]:focus-visible {
+    outline: 2px solid var(--neba-blue-500, #3b82f6);
+    outline-offset: -2px;
+}
+
+/* Primary columns */
+table.neba-data-table[data-compact="expandable"] :is(thead th, tbody td):nth-child(1) { grid-column: 1; }
+table.neba-data-table[data-compact="expandable"] :is(thead th, tbody td):nth-child(2) { grid-column: 2 / 4; }
+table.neba-data-table[data-compact="expandable"] :is(thead th, tbody td):nth-child(3) { grid-column: 4; text-align: right; }
+
+table.neba-data-table[data-compact="expandable"] thead th[data-secondary] {
+    display: none;
+}
+
+/* The row paints one background, so empty grid cells under the rank match the rest */
+table.neba-data-table[data-compact="expandable"] tbody tr[data-expandable] {
+    background: #f9fafb;
+}
+
+table.neba-data-table[data-compact="expandable"] tbody tr[data-expandable][data-open] {
+    background: #eff6ff;
+}
+
+table.neba-data-table[data-compact="expandable"] tbody tr[data-expandable] > td {
+    background: transparent !important;
+    border-bottom: none;
+    padding: 0.75rem 0.5rem !important;
+}
+
+table.neba-data-table[data-compact="expandable"] tbody tr[data-expandable] > td:nth-child(1) {
+    padding-left: 1rem !important;
+}
+
+table.neba-data-table[data-compact="expandable"] thead th {
+    padding: 0.5rem 0.5rem !important;
+}
+
+table.neba-data-table[data-compact="expandable"] thead th:nth-child(1) {
+    padding-left: 1rem !important;
+}
+
+/* Chevron */
+table.neba-data-table[data-compact="expandable"] tbody tr[data-expandable]::after {
+    content: '';
+    grid-column: 5;
+    grid-row: 1;
+    justify-self: center;
+    width: 0.5rem;
+    height: 0.5rem;
+    border-right: 2px solid currentColor;
+    border-bottom: 2px solid currentColor;
+    color: #6b7280;
+    transform: translateY(-25%) rotate(45deg);
+    transition: transform 0.2s ease;
+}
+
+table.neba-data-table[data-compact="expandable"] tbody tr[data-expandable][data-open]::after {
+    transform: translateY(25%) rotate(-135deg);
+}
+
+/* Secondary columns: hidden until the row opens, then two label/value pairs per line */
+table.neba-data-table[data-compact="expandable"] tbody tr[data-expandable] > td[data-secondary] {
+    display: none;
+}
+
+table.neba-data-table[data-compact="expandable"] tbody tr[data-expandable][data-open] > td[data-secondary] {
+    display: flex;
+    flex-direction: column;
+    gap: 0.125rem;
+    padding: 0.375rem 0.5rem 0.625rem !important;
+    text-align: left;
+    font-variant-numeric: tabular-nums;
+}
+
+
+table.neba-data-table[data-compact="expandable"] tbody tr[data-expandable][data-open] > td[data-secondary]:nth-child(even) {
+    grid-column: 2;
+}
+
+table.neba-data-table[data-compact="expandable"] tbody tr[data-expandable][data-open] > td[data-secondary]:nth-child(odd) {
+    grid-column: 3 / 5;
+}
+
+table.neba-data-table[data-compact="expandable"] tbody tr[data-expandable][data-open] > td[data-secondary]::before {
+    content: attr(data-label);
+    font-size: 0.6875rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: #6b7280;
+}
+
+/* Static compact layout (tables in a narrow container, such as the standings modal).
+   Every row has one fixed shape, because Virtualize needs equal row heights:
+   line 1 is rank, name, key value; the other stats follow, three to a line, label above value. */
+table.neba-data-table[data-compact="static"],
+table.neba-data-table[data-compact="static"] thead,
+table.neba-data-table[data-compact="static"] tbody {
+    display: block;
+}
+
+table.neba-data-table[data-compact="static"] thead tr,
+table.neba-data-table[data-compact="static"] tbody tr[data-expandable] {
+    display: grid;
+    grid-template-columns: 3rem repeat(6, minmax(0, 1fr));
+}
+
+table.neba-data-table[data-compact="static"] tbody tr[data-expandable] {
+    align-content: start;
+    padding: 0.5rem 0;
+    background: #f9fafb;
+    border-bottom: 1px solid #e5e7eb;
+}
+
+table.neba-data-table[data-compact="static"] :is(thead th, tbody td):nth-child(1) { grid-column: 1; }
+table.neba-data-table[data-compact="static"] :is(thead th, tbody td):nth-child(2) { grid-column: 2 / 6; }
+table.neba-data-table[data-compact="static"] :is(thead th, tbody td):nth-child(3) { grid-column: 6 / 8; text-align: right; }
+
+table.neba-data-table[data-compact="static"] thead th[data-secondary] { display: none; }
+
+table.neba-data-table[data-compact="static"] tbody tr[data-expandable] > td {
+    border: 0;
+    padding: 0.25rem 0.5rem;
+}
+
+table.neba-data-table[data-compact="static"] tbody tr[data-expandable] > td[data-secondary] {
+    display: flex;
+    flex-direction: column;
+    grid-column: span 2;
+    gap: 0.125rem;
+    padding-top: 0.5rem;
+    text-align: left;
+    font-variant-numeric: tabular-nums;
+}
+
+/* The first extra stat starts under the name */
+table.neba-data-table[data-compact="static"] tbody tr[data-expandable] > td[data-secondary]:nth-child(4) {
+    grid-column: 2 / span 2;
+}
+
+table.neba-data-table[data-compact="static"] tbody tr[data-expandable] > td[data-secondary]::before {
+    content: attr(data-label);
+    font-size: 0.6875rem;
+    font-weight: 600;
+    letter-spacing: 0.05em;
+    color: #6b7280;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    table.neba-data-table[data-compact="expandable"] tbody tr[data-expandable]::after {
         transition: none;
     }
 }

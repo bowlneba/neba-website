@@ -176,8 +176,10 @@ describe('neba-data-table', () => {
         });
 
         test('rows do not toggle on wider screens', () => {
-            enhanceTable(renderTable());
+            const table = renderTable();
+            enhanceTable(table);
             setMobile(false);
+            enhanceTable(table);   // the media-query change listener does this in the page
             const row = document.getElementById('r1');
 
             row.querySelector('td:nth-child(3)').click();
@@ -241,4 +243,107 @@ describe('neba-data-table', () => {
             expect(document.querySelector('.neba-collapsible').hasAttribute('data-collapsed')).toBe(false);
         });
     });
+});
+
+function renderInContainer(width) {
+    document.body.innerHTML = `<div data-table-container>${renderTable().outerHTML}</div>`;
+    const container = document.querySelector('[data-table-container]');
+    Object.defineProperty(container, 'clientWidth', { configurable: true, value: width });
+    return { container, table: container.querySelector('table') };
+}
+
+describe('table container', () => {
+    beforeEach(() => setMobile(false));
+
+    test('a narrow container makes the table static even on a wide screen', () => {
+        const { table } = renderInContainer(700);
+
+        enhanceTable(table);
+
+        expect(table.dataset.compact).toBe('static');
+        expect(table.querySelector('tbody tr#r1').hasAttribute('tabindex')).toBe(false);
+    });
+
+    test('a wide container shows all columns', () => {
+        const { table } = renderInContainer(960);
+
+        enhanceTable(table);
+
+        expect(table.dataset.compact).toBeUndefined();
+    });
+
+    test('a static table stays static until the container clears the release width', () => {
+        const { container, table } = renderInContainer(700);
+        enhanceTable(table);
+
+        Object.defineProperty(container, 'clientWidth', { configurable: true, value: 815 });
+        enhanceTable(table);
+        expect(table.dataset.compact).toBe('static');
+
+        Object.defineProperty(container, 'clientWidth', { configurable: true, value: 830 });
+        enhanceTable(table);
+        expect(table.dataset.compact).toBeUndefined();
+    });
+
+    test('a full table switches to static only below the compact width', () => {
+        const { container, table } = renderInContainer(960);
+        enhanceTable(table);
+
+        Object.defineProperty(container, 'clientWidth', { configurable: true, value: 815 });
+        enhanceTable(table);
+        expect(table.dataset.compact).toBeUndefined();
+
+        Object.defineProperty(container, 'clientWidth', { configurable: true, value: 799 });
+        enhanceTable(table);
+        expect(table.dataset.compact).toBe('static');
+    });
+
+    test('a container on a phone is static', () => {
+        setMobile(true);
+        const { table } = renderInContainer(960);
+
+        enhanceTable(table);
+
+        expect(table.dataset.compact).toBe('static');
+    });
+
+    test('rows in a static table do not toggle on click', () => {
+        init();
+        const { table } = renderInContainer(700);
+        enhanceTable(table);
+        const row = table.querySelector('#r1');
+
+        row.querySelector('td:nth-child(3)').click();
+
+        expect(row.hasAttribute('data-open')).toBe(false);
+    });
+
+    test('resizing the container re-evaluates the table', () => {
+        let notify;
+        globalThis.ResizeObserver = jest.fn(cb => {
+            notify = cb;
+            return { observe: jest.fn(), unobserve: jest.fn() };
+        });
+        const { container, table } = renderInContainer(960);
+        enhanceTable(table);
+        expect(table.dataset.compact).toBeUndefined();
+
+        Object.defineProperty(container, 'clientWidth', { configurable: true, value: 700 });
+        notify([{ target: container }]);
+
+        expect(table.dataset.compact).toBe('static');
+        delete globalThis.ResizeObserver;
+    });
+});
+
+test('a page grid on a phone is expandable and still toggles', () => {
+    setMobile(true);
+    init();
+    const table = renderTable();
+    enhanceTable(table);
+
+    document.getElementById('r1').querySelector('td:nth-child(3)').click();
+
+    expect(table.dataset.compact).toBe('expandable');
+    expect(document.getElementById('r1').hasAttribute('data-open')).toBe(true);
 });
