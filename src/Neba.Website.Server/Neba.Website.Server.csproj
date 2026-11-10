@@ -8,7 +8,9 @@
          real path, so neither .editorconfig severity overrides nor #pragma suppression reach it -
          only a project-level NoWarn does. Only this project (and Neba.Website.Client, which has no
          @code blocks) contains .razor files, so this is effectively scoped to Razor already. -->
-    <NoWarn>$(NoWarn);S8970</NoWarn>
+    <!-- S3881 fires the same way on the Razor generator's declaration stubs (*_razor.decl.g.cs) for
+         every component with @implements IDisposable (seen with the .NET 11 compiler). -->
+    <NoWarn>$(NoWarn);S8970;S3881</NoWarn>
   </PropertyGroup>
 
   <ItemGroup>

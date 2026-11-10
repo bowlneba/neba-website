@@ -6,8 +6,8 @@ namespace Neba.Website.Server.Account.PermissionOverrides;
 /// </summary>
 public sealed class PermissionOverrideSet
 {
-    private readonly HashSet<string> _added = new(StringComparer.Ordinal);
-    private readonly HashSet<string> _removed = new(StringComparer.Ordinal);
+    private readonly HashSet<string> _added = [with(StringComparer.Ordinal)];
+    private readonly HashSet<string> _removed = [with(StringComparer.Ordinal)];
 
     /// <summary>Creates an empty set (every permission at Default).</summary>
     public PermissionOverrideSet()

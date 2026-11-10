@@ -21,7 +21,7 @@ internal static class AuditPayloadScrubber
     {
         ArgumentNullException.ThrowIfNull(source);
 
-        return (IReadOnlyDictionary<string, object?>)ScrubObject(source, new HashSet<object>(ReferenceEqualityComparer.Instance))!;
+        return (IReadOnlyDictionary<string, object?>)ScrubObject(source, [with(ReferenceEqualityComparer.Instance)])!;
     }
 
     private static Dictionary<string, object?> ScrubObject(object source, HashSet<object> visiting)

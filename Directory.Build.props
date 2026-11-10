@@ -48,7 +48,9 @@
 
 
   <Target Name="HuskyInstall" AfterTargets="Restore" Condition="'$(HUSKY)' != '0' AND '$(CI)' != 'true'">
+    <!-- Husky 0.9.1 targets .NET 10; roll forward so it runs where only a newer runtime is installed. -->
     <Exec Command="dotnet husky install" StandardOutputImportance="Low" StandardErrorImportance="Normal"
+          EnvironmentVariables="DOTNET_ROLL_FORWARD=Major"
           WorkingDirectory="$(MSBuildThisFileDirectory)" />
   </Target>
 
