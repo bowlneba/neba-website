@@ -765,6 +765,20 @@ const CURRENT_SEASON: SeasonVariants = {
   winterDate: '2025-01-18',
 };
 
+// A long standings list for the current season, so the full-standings modal has to virtualize its rows.
+function createExtraBowlerOfTheYearRows(count: number): object[] {
+  return Array.from({ length: count }, (_, i) => ({
+    bowlerId: `01JXBOTY${String(i + 2).padStart(18, '0')}`,
+    bowlerName: `Bowler ${i + 2}`,
+    points: Math.max(1, 5000 - (i + 1) * 8),
+    tournaments: 6,
+    entries: 7,
+    finals: 3,
+    averageFinish: 12.5,
+    winnings: 1000,
+  }));
+}
+
 function createStatsResponse(selectedYear: number): object {
   const s = selectedYear === 2021 ? LEGACY_SEASON : CURRENT_SEASON;
 
@@ -783,6 +797,7 @@ function createStatsResponse(selectedYear: number): object {
     minimumNumberOfEntries: 6,
     bowlerOfTheYear: [
       { bowlerId: PRIMARY_BOWLER_ID, bowlerName: s.leaderName, points: s.points, tournaments: 7, entries: 8, finals: 5, averageFinish: 6.4, winnings: s.winnings },
+      ...(selectedYear === 2021 ? [] : createExtraBowlerOfTheYearRows(559)),
     ],
     seniorOfTheYear: [],
     superSeniorOfTheYear: [],

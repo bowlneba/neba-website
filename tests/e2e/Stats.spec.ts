@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { test, expect, type Page } from '@playwright/test';
 
 const LEGACY_SEASON_TEXT = '2020-2021 Season';
 const LEGACY_SEASON_YEAR = '2021';
@@ -131,5 +131,21 @@ test.describe('Stats desktop layout', () => {
 
     await expect(row).not.toHaveAttribute('data-open', '');
     await expect(row.locator('td[data-secondary]').first()).toBeVisible();
+  });
+});
+
+test.describe('Stats - full standings modal', () => {
+  const showAll = (page: Page) =>
+    page.getByRole('button', { name: /Show all 560 Bowler of the Year standings/ });
+
+  test('the modal fills the screen on a phone', async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.goto(`/stats?season=${CURRENT_SEASON_YEAR}`);
+    await showAll(page).click();
+
+    // The modal scales in over 0.2s, so wait for the final box.
+    await expect.poll(async () => (await page.locator('.neba-modal-content').boundingBox())?.width).toBe(390);
+    const box = await page.locator('.neba-modal-content').boundingBox();
+    expect(box?.x).toBe(0);
   });
 });

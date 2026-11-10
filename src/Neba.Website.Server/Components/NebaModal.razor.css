@@ -45,6 +45,10 @@
     display: flex;
     flex-direction: column;
     height: 100%;
+    /* neba_theme.css also caps .neba-modal-content at 90vw x 90vh. The container sets the size,
+       so lift the caps or the box shrinks and sits at the top left. */
+    max-width: none;
+    max-height: none;
     pointer-events: auto;
 }
 
