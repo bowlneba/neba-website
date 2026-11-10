@@ -164,7 +164,8 @@ test.describe('Stats - full standings modal', () => {
       const body = page.locator('.stats-modal-body');
       await expect(body).toBeVisible();
       await expect(dataRows(page).first()).toBeVisible();
-      expect(await body.evaluate(el => el.scrollWidth <= el.clientWidth)).toBe(true);
+      // The compact layout is applied by script after the modal opens, so wait for it instead of measuring once.
+      await expect.poll(() => body.evaluate(el => el.scrollWidth <= el.clientWidth)).toBe(true);
       // Wide: the header shows. Compact: the header hides and each row labels its own $ Won cell.
       await expect(body.locator('th:has-text("$ Won"), td[data-label="$ Won"]').and(page.locator(':visible')).first()).toBeVisible();
       await page.locator('.neba-modal-close').click();
