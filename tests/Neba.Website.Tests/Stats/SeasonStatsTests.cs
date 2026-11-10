@@ -327,7 +327,8 @@ public sealed class SeasonStatsTests : IDisposable
             "Points Per Entry" => baseModel with { PointsPerEntry = PointsPerEntryRowViewModelFactory.Bogus(rowCount) },
             "Points Per Tournament" => baseModel with { PointsPerTournament = PointsPerTournamentRowViewModelFactory.Bogus(rowCount) },
             "Finals Per Entry" => baseModel with { FinalsPerEntry = FinalsPerEntryRowViewModelFactory.Bogus(rowCount) },
-            _ => baseModel with { AverageFinishes = AverageFinishRowViewModelFactory.Bogus(rowCount) },
+            "Average Finish" => baseModel with { AverageFinishes = AverageFinishRowViewModelFactory.Bogus(rowCount) },
+            _ => throw new ArgumentOutOfRangeException(nameof(title), title, "Unknown standings title."),
         };
         _statsApi.EnqueueResult(model);
         var cut = _ctx.Render<SeasonStatsPage>();

@@ -58,7 +58,7 @@
     overflow: hidden;
 }
 
-.neba-modal--inner-scroll .neba-modal-body {
+.neba-modal-content.neba-modal--inner-scroll .neba-modal-body {
     min-height: 0;
 }
 

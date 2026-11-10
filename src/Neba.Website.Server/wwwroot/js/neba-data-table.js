@@ -4,9 +4,13 @@
 export const MOBILE_QUERY = '(max-width: 767px)';
 export const PRIMARY_COLUMNS = 3;
 export const COMPACT_CONTAINER_WIDTH = 800;
-export const COMPACT_RELEASE_WIDTH = 830;
+// Room for a classic scrollbar (about 17px) plus slack; switching modes can add or remove one.
+export const SCROLLBAR_ALLOWANCE = 30;
+export const COMPACT_RELEASE_WIDTH = COMPACT_CONTAINER_WIDTH + SCROLLBAR_ALLOWANCE;
 const CONTAINER_SELECTOR = '[data-table-container]';
 const EXPANDABLE_ROW = 'table.neba-data-table[data-compact="expandable"] tbody tr[data-expandable]';
+
+const staticContainers = new WeakSet();
 
 const isMobile = () => globalThis.matchMedia?.(MOBILE_QUERY).matches ?? false;
 
@@ -26,9 +30,17 @@ export function compactMode(table) {
     // row height, which can add or remove a scrollbar and shift clientWidth by a few pixels; without the gap a
     // container near the threshold would flip back and forth.
     const width = container.clientWidth;
-    const limit = table.dataset.compact === 'static' ? COMPACT_RELEASE_WIDTH : COMPACT_CONTAINER_WIDTH;
+    // The state lives on the container, not the table: Blazor can replace the table element and its attributes.
+    const limit = staticContainers.has(container) ? COMPACT_RELEASE_WIDTH : COMPACT_CONTAINER_WIDTH;
     const narrow = width > 0 && width < limit;
-    return narrow || isMobile() ? 'static' : null;
+    const isStatic = narrow || isMobile();
+    if (isStatic) {
+        staticContainers.add(container);
+    } else {
+        staticContainers.delete(container);
+    }
+
+    return isStatic ? 'static' : null;
 }
 
 let resizeObserver;
