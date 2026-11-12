@@ -109,7 +109,7 @@ If a Phase 1 row is not ready, either hold that one package on its current versi
 3. **Aspire**: bump the AppHost SDK (`Neba.AppHost.csproj` line 1, `Aspire.AppHost.Sdk/13.6.4`) and the `Aspire.*` package versions to the release that supports .NET 11. The CI Aspire CLI version derives from that SDK line, so do not hardcode it.
 4. **Third-party packages**: bump each row marked Phase 1 that has a compatible release.
 5. **Fix build errors and new warnings.** New analyzer warnings from the SDK: fix or suppress with a reason in `.editorconfig`.
-6. **Run everything**: unit, integration, Playwright e2e (`npm run test:e2e`). Run `aspire run` and click through the site.
+6. **Run everything**: unit, integration, Playwright e2e (`npm run test:e2e`). Run `aspire run` and click through the site. Work through "Part 1" of [dotnet-11-blazor.md](dotnet-11-blazor.md) for the Blazor checks.
 7. **Compare the OpenAPI document** to the baseline (see OpenAPI below).
 8. **Deploy to a non-production environment** if one exists, before merge.
 
@@ -139,7 +139,7 @@ From the Anton Dev Tips newsletter (2026-11-10) and the C# skill. Confirm each a
 | **OpenAPI 3.2 is the default**; Microsoft.OpenApi 3.x has breaking API changes | `Microsoft.OpenApi` is hard-pinned to `[2.13.0,3.0.0)` because the XML comment generator breaks on 3.x (see the comment in `Directory.Packages.props`). `Scalar.AspNetCore` and `FastEndpoints.Swagger` read the document. | Test whether the pin still holds on net11. Check that Scalar and our own consumers handle 3.2. If a tool fails, set `options.OpenApiVersion = OpenApi3_1`. Re-check whether the pin can move to 3.x. |
 | `BackgroundService` failure now makes `IHost.RunAsync`/`StopAsync` throw | Hangfire hosting and any hosted services. | Grep `BackgroundService` and `IHostedService`. Confirm shutdown paths in tests. |
 | EF throws when no migrations found | `Neba.MigrationService` and test setups. | Phase 2 check. |
-| CSRF now uses Fetch Metadata headers, on by default | Blazor Server forms and login pages. | Smoke-test login, logout, and every form post. Check any antiforgery code. |
+| CSRF now uses Fetch Metadata headers, on by default | Blazor Server forms and login pages. | Smoke-test login, logout, and every form post. Check any antiforgery code. See [dotnet-11-blazor.md](dotnet-11-blazor.md). |
 | Async options validation throws if read synchronously | Only matters if we adopt async validators. | None now. |
 | Float/double to small integer casts saturate instead of wrapping | Stats and scoring math. | Grep numeric casts in stats code. Run the stats snapshot tests. |
 | ZIP/TAR readers validate checksums | Any archive handling (data migration, uploads). | Grep `ZipArchive`. |
@@ -169,7 +169,7 @@ Use the `csharp-15` skill (referenced in the issue comment of 2026-11-06) to rev
 - **`closed` hierarchies**: candidates are domain type families we own. Treat the subtype list as public API. Adding a subtype later breaks consumers' switches. We are vertical-slice, so check against the feature-boundary architecture test first.
 - **Extension indexers**: low value here. They do not work in expression trees or `IQueryable` lambdas, and not on arrays or strings.
 - **Async validation** (`AsyncValidationAttribute`): our rule is that validators handle structural checks only, with no DB lookups. This stays; do not adopt.
-- **Blazor features** (SSR client validation, QuickGrid in SSR, virtualization with variable heights, circuit pause/resume, `SupplyParameterFromTempData`): review against `docs/learnings/blazor-ui.md`. The stats page just virtualized its modals (#240); variable-height virtualization may simplify it.
+- **Blazor features**: moved to [dotnet-11-blazor.md](dotnet-11-blazor.md), which also holds the Blazor test checklist for the Phase 1 PR.
 - **Unsafe memory-safety model**: skip. Preview only.
 - **Vector and hybrid search, Cosmos, SQL Server items**: skip. Not relevant (PostgreSQL).
 
