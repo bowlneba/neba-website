@@ -13,19 +13,19 @@ public sealed partial class MembershipTypeTests
 {
     private sealed record Seed(
         string Code, int LegacyId, string Name, MembershipKind Kind, decimal Cost, int? LengthInDays,
-        RepeatPolicyKind RepeatKind, int? RepeatDays, bool RequiresPrior, bool QualifiesAsPrior, bool Active);
+        RepeatPolicyKind RepeatKind, int? RepeatDays, bool RequiresPrior, bool QualifiesAsPrior, bool CountsTowardHallOfFame, bool Active);
 
     private static readonly Seed[] Seeds =
     [
-        new("NEW", 1, "New Member", MembershipKind.Yearly, 25.00m, null, RepeatPolicyKind.OncePerLifetime, null, false, true, true),
-        new("RENEWAL", 2, "Renewal", MembershipKind.Yearly, 25.00m, null, RepeatPolicyKind.Unlimited, null, true, true, true),
-        new("MILITARY", 3, "Military Service", MembershipKind.Yearly, 0.00m, null, RepeatPolicyKind.Unlimited, null, false, true, true),
-        new("HONORARY", 4, "Honorary Member", MembershipKind.Yearly, 0.00m, null, RepeatPolicyKind.Unlimited, null, false, true, true),
-        new("NON_MEMBER", 5, "Non-Member", MembershipKind.Temporary, 15.00m, 2, RepeatPolicyKind.Unlimited, null, false, false, true),
-        new("GUEST", 6, "Guest", MembershipKind.Temporary, 0.00m, 2, RepeatPolicyKind.MinimumDaysSinceLast, 730, false, false, true),
-        new("RESERVATION", 7, "Reservation", MembershipKind.Temporary, 0.00m, 2, RepeatPolicyKind.Unlimited, null, false, false, false),
-        new("COURTESY", 9, "Courtesy", MembershipKind.Yearly, 0.00m, null, RepeatPolicyKind.Unlimited, null, true, true, false),
-        new("TIME_HONORED", 10, "Time Honored Member", MembershipKind.Yearly, 0.00m, null, RepeatPolicyKind.Unlimited, null, true, true, true),
+        new("NEW", 1, "New Member", MembershipKind.Yearly, 25.00m, null, RepeatPolicyKind.OncePerLifetime, null, false, true, true, true),
+        new("RENEWAL", 2, "Renewal", MembershipKind.Yearly, 25.00m, null, RepeatPolicyKind.Unlimited, null, true, true, true, true),
+        new("MILITARY", 3, "Military Service", MembershipKind.Yearly, 0.00m, null, RepeatPolicyKind.Unlimited, null, false, true, true, true),
+        new("HONORARY", 4, "Honorary Member", MembershipKind.Yearly, 0.00m, null, RepeatPolicyKind.Unlimited, null, false, true, true, true),
+        new("NON_MEMBER", 5, "Non-Member", MembershipKind.Temporary, 15.00m, 2, RepeatPolicyKind.Unlimited, null, false, false, false, true),
+        new("GUEST", 6, "Guest", MembershipKind.Temporary, 0.00m, 2, RepeatPolicyKind.MinimumDaysSinceLast, 730, false, false, false, true),
+        new("RESERVATION", 7, "Reservation", MembershipKind.Temporary, 0.00m, 2, RepeatPolicyKind.Unlimited, null, false, false, false, false),
+        new("COURTESY", 9, "Courtesy", MembershipKind.Yearly, 0.00m, null, RepeatPolicyKind.Unlimited, null, true, true, true, false),
+        new("TIME_HONORED", 10, "Time Honored Member", MembershipKind.Yearly, 0.00m, null, RepeatPolicyKind.Unlimited, null, true, true, true, true),
     ];
 
     public static TheoryData<string> Codes => [.. Seeds.Select(s => s.Code)];
@@ -64,6 +64,7 @@ public sealed partial class MembershipTypeTests
         type.RepeatPolicy.Days.ShouldBe(seed.RepeatDays);
         type.RequiresPriorMembership.ShouldBe(seed.RequiresPrior);
         type.QualifiesAsPriorMembership.ShouldBe(seed.QualifiesAsPrior);
+        type.CountsTowardHallOfFame.ShouldBe(seed.CountsTowardHallOfFame);
         type.Active.ShouldBe(seed.Active);
     }
 
