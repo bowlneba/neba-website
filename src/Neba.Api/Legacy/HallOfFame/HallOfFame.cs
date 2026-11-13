@@ -164,6 +164,7 @@ internal sealed class NewHallOfFameInductionSyncJob(
         // an already-cached champions response, not just the inductions list itself.
         await cache.RemoveByTagAsync(CacheDescriptors.HallOfFame.InductionsTag, token: ct);
         await cache.RemoveByTagAsync("neba:tournaments:champions", token: ct);
+        await cache.RemoveByTagAsync(CacheDescriptors.HallOfFame.PointsTag, token: ct);
     }
 
     private async Task SyncRowAsync(LegacyHallOfFameRow row, CancellationToken ct)

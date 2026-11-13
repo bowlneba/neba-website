@@ -392,7 +392,7 @@ public sealed class NewHallOfFameInductionSyncJobTests(AppDbContextFixture fixtu
         induction.Categories.ShouldBe([HallOfFameCategory.SuperiorPerformance]);
     }
 
-    [Fact(DisplayName = "SyncAsync should evict the inductions and champions cache tags after saving")]
+    [Fact(DisplayName = "SyncAsync should evict the inductions, champions and Hall of Fame points cache tags after saving")]
     public async Task SyncAsync_ShouldEvictInductionsAndChampionsCacheTags_AfterSaving()
     {
         // Arrange
@@ -405,6 +405,8 @@ public sealed class NewHallOfFameInductionSyncJobTests(AppDbContextFixture fixtu
         const string championsCacheKey = "champions-cache-test";
         await cache.GetOrSetAsync(inductionsCacheKey, _ => Task.FromResult("stale-cached-value"), tags: ["neba:hall-of-fame:inductions"], token: ct);
         await cache.GetOrSetAsync(championsCacheKey, _ => Task.FromResult("stale-cached-value"), tags: ["neba:tournaments:champions"], token: ct);
+        const string pointsCacheKey = "points-cache-test";
+        await cache.GetOrSetAsync(pointsCacheKey, _ => Task.FromResult("stale-cached-value"), tags: ["neba:hall-of-fame:points"], token: ct);
 
         var job = CreateJob();
 
@@ -416,6 +418,8 @@ public sealed class NewHallOfFameInductionSyncJobTests(AppDbContextFixture fixtu
         inductionsValueAfterSync.ShouldBe("fresh-value");
         var championsValueAfterSync = await cache.GetOrSetAsync(championsCacheKey, _ => Task.FromResult("fresh-value"), token: ct);
         championsValueAfterSync.ShouldBe("fresh-value");
+        var pointsValueAfterSync = await cache.GetOrSetAsync(pointsCacheKey, _ => Task.FromResult("fresh-value"), token: ct);
+        pointsValueAfterSync.ShouldBe("fresh-value");
     }
 
     [Theory(DisplayName = "SyncAsync should map the legacy Category column to the right website categories")]

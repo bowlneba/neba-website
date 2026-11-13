@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 
+using Neba.Api.Caching;
 using Neba.Api.Database;
 using Neba.Api.Features.Seasons.Domain;
 
@@ -57,5 +58,6 @@ internal sealed class AssignWomanOfTheYearAwardJob(
         await db.SaveChangesAsync(ct);
 
         await cache.RemoveByTagAsync("neba:awards:bowler-of-the-year", token: ct);
+        await cache.RemoveByTagAsync(CacheDescriptors.HallOfFame.PointsTag, token: ct);
     }
 }
