@@ -7,8 +7,11 @@
          has Nullable=enable. The diagnostic's syntax tree is a source-generator-produced file with no
          real path, so neither .editorconfig severity overrides nor #pragma suppression reach it -
          only a project-level NoWarn does. Only this project (and Neba.Website.Client, which has no
-         @code blocks) contains .razor files, so this is effectively scoped to Razor already. -->
-    <NoWarn>$(NoWarn);S8970</NoWarn>
+         @code blocks) contains .razor files, so this is effectively scoped to Razor already.
+         S3881 is the same kind of false positive on the SDK 11 Razor generator's *_razor.decl.g.cs
+         files: it wants the dispose pattern on the generated partial class of every component that
+         has @implements IDisposable. -->
+    <NoWarn>$(NoWarn);S8970;S3881</NoWarn>
   </PropertyGroup>
 
   <ItemGroup>
