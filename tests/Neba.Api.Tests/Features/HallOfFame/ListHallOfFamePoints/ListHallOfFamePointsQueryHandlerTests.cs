@@ -292,4 +292,17 @@ public sealed class ListHallOfFamePointsQueryHandlerTests(AppDbContextFixture fi
         byName["Nora None"].MembershipYears.ShouldBe(0);
         byName["Nora None"].MembershipHistoryComplete.ShouldBeTrue();
     }
+
+    [Fact(DisplayName = "HandleAsync records a list cache miss")]
+    public async Task HandleAsync_ShouldRecordCacheMiss_WhenHandled()
+    {
+        // Arrange
+        using var recorder = new CacheMissRecorder();
+
+        // Act
+        await CreateHandler().HandleAsync(new ListHallOfFamePointsQuery(), TestContext.Current.CancellationToken);
+
+        // Assert
+        recorder.Queries.ShouldContain("list");
+    }
 }

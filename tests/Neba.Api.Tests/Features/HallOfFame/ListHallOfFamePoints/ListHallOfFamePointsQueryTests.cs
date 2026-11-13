@@ -27,13 +27,13 @@ public sealed class ListHallOfFamePointsQueryTests
         query.Cache.Key.ShouldBe("neba:hall-of-fame:points:list");
     }
 
-    [Fact(DisplayName = "Cache tags should be neba, neba:hall-of-fame and the points tag")]
+    [Fact(DisplayName = "Cache tags should be neba, neba:hall-of-fame, the points tag and the bowlers tag")]
     public void Cache_Tags_ShouldBeExpected()
     {
         // Act
         var query = new ListHallOfFamePointsQuery();
 
         // Assert
-        query.Cache.Tags.ShouldBe(["neba", "neba:hall-of-fame", "neba:hall-of-fame:points"], ignoreOrder: true);
+        query.Cache.Tags.ShouldBe(["neba", "neba:hall-of-fame", "neba:hall-of-fame:points", "neba:bowlers"], ignoreOrder: true);
     }
 }

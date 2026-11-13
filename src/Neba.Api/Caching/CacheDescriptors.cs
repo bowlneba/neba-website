@@ -144,24 +144,27 @@ public static class CacheDescriptors
         /// </summary>
         public const string PointsTag = "neba:hall-of-fame:points";
 
+        // Points read memberships and bowler names; the membership and bowler jobs evict this tag.
+        private const string BowlersTag = "neba:bowlers";
+
         /// <summary>
-        /// Returns a cache descriptor for the Hall of Fame points list.
+        /// Returns a cache descriptor for the Hall of Fame points list. It carries the bowlers tag so a membership or name change evicts it.
         /// </summary>
         public static CacheDescriptor ListPoints
             => new()
             {
                 Key = "neba:hall-of-fame:points:list",
-                Tags = ["neba", "neba:hall-of-fame", PointsTag]
+                Tags = ["neba", "neba:hall-of-fame", PointsTag, BowlersTag]
             };
 
         /// <summary>
-        /// Returns a cache descriptor for one bowler's Hall of Fame points detail. The bowler tag lets a bowler edit evict it.
+        /// Returns a cache descriptor for one bowler's Hall of Fame points detail. It carries the bowlers tag so a membership or name change evicts it.
         /// </summary>
         public static CacheDescriptor PointsDetail(BowlerId bowlerId)
             => new()
             {
                 Key = $"neba:hall-of-fame:points:{bowlerId}",
-                Tags = ["neba", "neba:hall-of-fame", PointsTag, $"neba:bowlers:{bowlerId}"]
+                Tags = ["neba", "neba:hall-of-fame", PointsTag, BowlersTag, $"neba:bowlers:{bowlerId}"]
             };
     }
 

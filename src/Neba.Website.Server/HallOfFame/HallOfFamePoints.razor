@@ -98,11 +98,11 @@
 
             <section class="pts-below" data-pts-section aria-labelledby="pts-below-title">
                 <h2 id="pts-below-title">Not yet eligible</h2>
-                <p class="pts-note">Bowlers at @_model.Requirements.Points or more points without the seasons or membership years yet are here, with what is still open. One tick on the line is a 6-point title.</p>
+                <p class="pts-note">Bowlers at @_model.Requirements.Points or more points without the seasons or membership years yet are here, with what is still open. One tick on the line is @TickPoints points, the value of a top title.</p>
                 <div class="pts-axis" aria-hidden="true">
                     <span></span>
                     <div class="pts-scale">
-                        <span style="left: 0">0</span><span style="left: 33.333%">12</span><span style="left: 66.666%">24</span><span style="left: 100%">@_model.Requirements.Points</span>
+                        <span style="left: 0">0</span><span style="left: 33.333%">@ScaleLabel(2)</span><span style="left: 66.667%">@ScaleLabel(4)</span><span style="left: 100%">@_model.Requirements.Points</span>
                     </div>
                     <span>Seasons and membership</span>
                 </div>
@@ -118,9 +118,9 @@
                                 }
                             </div>
                             <div class="pts-line" role="img" aria-label="@(bowler.TotalPoints + " of " + _model.Requirements.Points + " points")">
-                                @foreach (var position in TickPositions)
+                                @for (var tick = 1; tick < TickCount; tick++)
                                 {
-                                    <span class="pts-tick @(position == "33.333" || position == "66.667" ? "pts-tick--mid" : null)" style="left: @(position)%"></span>
+                                    <span class="pts-tick @(tick % 2 == 0 ? "pts-tick--mid" : null)" style="left: @(TickPosition(tick))%"></span>
                                 }
                                 <span class="pts-reach" style="width: @(bowler.LinePercent)%"></span>
                                 <span class="pts-finish"></span>
@@ -179,8 +179,8 @@
 </div>
 
 @code {
-    // Ticks every 6 points on the 0 to 36 line: 6/36 of the width apart.
-    private static readonly string[] TickPositions = ["16.667", "33.333", "50", "66.667", "83.333"];
+    // The line runs from 0 to the required points, split into six equal steps (36 points: a tick every 6).
+    private const int TickCount = 6;
 
     private bool _isLoading = true;
     private HallOfFamePointsViewModel? _model;
@@ -233,6 +233,15 @@
             Logger.LogWarning(ex, "[HallOfFamePoints] The search script could not be attached.");
         }
     }
+
+    private int TickPoints
+        => _model!.Requirements.Points / TickCount;
+
+    private string ScaleLabel(int tick)
+        => (_model!.Requirements.Points * tick / TickCount).ToString(CultureInfo.InvariantCulture);
+
+    private static string TickPosition(int tick)
+        => (tick * 100d / TickCount).ToString("0.###", CultureInfo.InvariantCulture);
 
     private void Open(HallOfFamePointsStandingViewModel bowler)
         => _selected = bowler;

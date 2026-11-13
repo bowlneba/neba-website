@@ -12,6 +12,8 @@ internal sealed class GetHallOfFamePointsDetailQueryHandler(
 {
     public async Task<ErrorOr<HallOfFamePointsDetailDto>> HandleAsync(GetHallOfFamePointsDetailQuery query, CancellationToken cancellationToken)
     {
+        HallOfFamePointsMetrics.RecordCacheMiss(HallOfFamePointsMetrics.DetailQuery);
+
         BowlerId[] ids = [query.BowlerId];
 
         var names = await reader.LoadNamesAsync(ids, cancellationToken);

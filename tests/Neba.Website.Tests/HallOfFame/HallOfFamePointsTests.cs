@@ -95,6 +95,26 @@ public sealed class HallOfFamePointsTests : IDisposable
         cut.Find("#hof-points-rules").ShouldNotBeNull();
     }
 
+    [Theory(DisplayName = "Scales the axis labels and ticks to the required points")]
+    [InlineData(36, "0,12,24,36", "6", TestDisplayName = "36 points")]
+    [InlineData(48, "0,16,32,48", "8", TestDisplayName = "48 points")]
+    public void Render_ShouldScaleAxisToRequiredPoints(int requiredPoints, string expectedLabels, string expectedTickPoints)
+    {
+        // Arrange
+        SetupList(HallOfFamePointsResponseFactory.Create(requiredPoints: requiredPoints));
+
+        // Act
+        var cut = _ctx.Render<HallOfFamePointsPage>();
+
+        // Assert
+        string.Join(",", cut.FindAll(".pts-scale span").Select(label => label.TextContent)).ShouldBe(expectedLabels);
+        cut.Find(".pts-below .pts-note").TextContent.ShouldContain($"One tick on the line is {expectedTickPoints} points");
+        cut.FindAll(".pts-row .pts-tick").Count.ShouldBe(5);
+        cut.FindAll(".pts-row .pts-tick--mid").Count.ShouldBe(2);
+        cut.FindAll(".pts-row .pts-tick").Select(tick => tick.GetAttribute("style"))
+            .ShouldBe(["left: 16.667%", "left: 33.333%", "left: 50%", "left: 66.667%", "left: 83.333%"]);
+    }
+
     [Fact(DisplayName = "Omits the eligible section when nobody is eligible")]
     public void Render_ShouldOmitEligibleSection_WhenNobodyEligible()
     {

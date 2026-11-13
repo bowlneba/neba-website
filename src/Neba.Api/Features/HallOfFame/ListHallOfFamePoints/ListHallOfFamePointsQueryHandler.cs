@@ -10,6 +10,8 @@ internal sealed class ListHallOfFamePointsQueryHandler(
 {
     public async Task<HallOfFamePointsDto> HandleAsync(ListHallOfFamePointsQuery query, CancellationToken cancellationToken)
     {
+        HallOfFamePointsMetrics.RecordCacheMiss(HallOfFamePointsMetrics.ListQuery);
+
         var titles = await reader.LoadTitleWinsAsync(null, cancellationToken);
         var awards = await reader.LoadAwardWinsAsync(null, cancellationToken);
         var inducted = await reader.LoadInductedCategoriesAsync(cancellationToken);

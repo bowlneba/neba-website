@@ -67,6 +67,23 @@ public sealed class GetHallOfFamePointsDetailQueryHandlerTests(AppDbContextFixtu
         result.FirstError.Code.ShouldBe("Bowler.NotFound");
     }
 
+    [Theory(DisplayName = "HandleAsync returns NotFound, not an error or exception, for a 26-character ID that is not a ULID")]
+    [InlineData("!!JZ8K3M4N5P6Q7R8S9T0V1W2X", TestDisplayName = "invalid characters")]
+    [InlineData("UUUUUUUUUUUUUUUUUUUUUUUUUU", TestDisplayName = "characters outside the ULID alphabet")]
+    public async Task HandleAsync_ShouldReturnNotFound_WhenIdIsNotAUlid(string notAUlid)
+    {
+        // Arrange
+        // The validator checks length only, and Ulid parsing accepts any 26 characters, so such an ID reaches the handler.
+        var query = new GetHallOfFamePointsDetailQuery { BowlerId = new BowlerId(notAUlid) };
+
+        // Act
+        var result = await CreateHandler().HandleAsync(query, TestContext.Current.CancellationToken);
+
+        // Assert
+        result.IsError.ShouldBeTrue();
+        result.FirstError.Code.ShouldBe("Bowler.NotFound");
+    }
+
     [Fact(DisplayName = "HandleAsync returns the name, an empty breakdown and total 0 for a bowler with no points")]
     public async Task HandleAsync_ShouldReturnEmptyBreakdown_WhenBowlerHasNoPoints()
     {
@@ -190,5 +207,19 @@ public sealed class GetHallOfFamePointsDetailQueryHandlerTests(AppDbContextFixtu
         // Assert
         result.Value.TotalPoints.ShouldBe(6);
         result.Value.Breakdown.Count.ShouldBe(1);
+    }
+
+    [Fact(DisplayName = "HandleAsync records a detail cache miss")]
+    public async Task HandleAsync_ShouldRecordCacheMiss_WhenHandled()
+    {
+        // Arrange
+        using var recorder = new CacheMissRecorder();
+        var query = new GetHallOfFamePointsDetailQuery { BowlerId = BowlerId.New() };
+
+        // Act
+        await CreateHandler().HandleAsync(query, TestContext.Current.CancellationToken);
+
+        // Assert
+        recorder.Queries.ShouldContain("detail");
     }
 }
