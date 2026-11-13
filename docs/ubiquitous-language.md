@@ -1279,7 +1279,7 @@ A Season is **Complete** once `CompleteSeason()` has been called; it may not be 
 | --- | --- |
 | `SeasonCompleted` | Raised when a Season is marked Complete. Downstream consumers (e.g., Hall of Fame point calculations) react to this event. **Not yet raised in code** — `CompleteSeason()` currently only flips `Complete` and returns `ErrorOr<Success>`; no aggregate in the codebase raises domain events yet (`AggregateRoot.AddDomainEvent` exists but is unused everywhere). Add this event at the same time `CompleteSeason()` gains a real, website-driven caller (see the note under Definition above) |
 
-> **Out of Scope (Current)**: Hall of Fame point values associated with each award type and the formal definition of Tournament stat-eligibility are deferred to their respective modeling sessions. No concept of season templates or recurring schedule patterns is modeled at this time.
+> **Out of Scope (Current)**: The formal definition of Tournament stat-eligibility is deferred to its modeling session. Hall of Fame point values are modeled (see `### Hall of Fame Points`). No concept of season templates or recurring schedule patterns is modeled at this time.
 
 **In Code**:
 
@@ -1508,14 +1508,35 @@ The NEBA program that formally recognizes individuals for exceptional competitiv
 **Characteristics**:
 
 - Eligibility is calculated systematically from tracked tournament and award history
-- Point accumulation logic will be implemented when the tournament and membership management migration is in scope
-- Eligibility criteria and point values are published on the Hall of Fame page
+- Points are calculated by the API (see Hall of Fame Points and Superior Performance Criteria) and published on the Hall of Fame points page
 
 ---
 
 ### Hall of Fame Points
 
-**Definition**: The numeric values assigned to tournament titles and Bowler of the Year awards used to determine eligibility for the Superior Performance Induction Category. A minimum of 36 points is required. Specific point values per award type are published on the Hall of Fame page.
+**Definition**: The numeric values assigned to tournament titles and Bowler of the Year awards, summed to decide eligibility for the Superior Performance Induction Category. Superior Performance takes 36 points. The values live in one table in the API (`HallOfFamePointRules`), and the Hall of Fame points page renders that same table, so the text and the math cannot drift.
+
+**Characteristics**:
+
+- Calculated in memory from titles (historical champions and recorded tournament results) and Bowler of the Year awards; nothing is stored
+- Every bowler with at least one point who is not inducted for Superior Performance is listed. A bowler inducted only for Meritorious Service or Friend of NEBA still appears, with their Superior Performance points
+- A Tournament Type or award category with no entry in the table fails a test, so a new one cannot go unmapped
+- Singles titles before 1991 earn 12 points; later Singles titles earn 6
+
+**In Code**: `HallOfFamePointRules`, `HallOfFamePointRule`
+
+---
+
+### Superior Performance Criteria
+
+**Definition**: The three tests a bowler must pass for Superior Performance: at least 36 Hall of Fame Points, at least one point-earning title or award in each of at least 3 different Seasons, and at least 10 years as a member. A bowler who passes all three is **Eligible**.
+
+**Characteristics**:
+
+- Membership years count one per calendar year of each counting membership's end date, for the types where `MembershipType.CountsTowardHallOfFame` is true (New, Renewal, Military, Honorary, Courtesy, Time Honored). Guest, Non-Member and Reservation do not count
+- Membership records start in 1999. The count can only understate, so a bowler is Eligible only on records we hold; a bowler with counting memberships but no New record joined before 1999 and the page flags the count as possibly low
+
+**In Code**: `HallOfFamePointRules.RequiredPoints`, `RequiredSeasonsWithPoints`, `RequiredMembershipYears`, `MeetsAllCriteria`
 
 ---
 
