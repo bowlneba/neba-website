@@ -31,7 +31,6 @@ internal static class HallOfFamePointRules
     private static readonly HallOfFamePointRule SeniorBowlerOfTheYear = new(AwardGroup, "Senior Bowler of the Year", 2);
     private static readonly HallOfFamePointRule SuperSeniorBowlerOfTheYear = new(AwardGroup, "Super Senior Bowler of the Year", 2);
     private static readonly HallOfFamePointRule WomanBowlerOfTheYear = new(AwardGroup, "Woman Bowler of the Year", 2);
-    private static readonly HallOfFamePointRule RookieOfTheYear = new(AwardGroup, "Rookie of the Year", 2);
 
     private static readonly HallOfFamePointRule Singles = new(TitleGroup, "Singles Title", 6);
     private static readonly HallOfFamePointRule TournamentOfChampions = new(TitleGroup, "TOC Title", 6);
@@ -50,7 +49,7 @@ internal static class HallOfFamePointRules
     /// <summary>Every rule, in display order. Sent to the page so its table cannot drift from the math.</summary>
     public static IReadOnlyList<HallOfFamePointRule> All { get; } =
     [
-        BowlerOfTheYear, SeniorBowlerOfTheYear, SuperSeniorBowlerOfTheYear, WomanBowlerOfTheYear, RookieOfTheYear,
+        BowlerOfTheYear, SeniorBowlerOfTheYear, SuperSeniorBowlerOfTheYear, WomanBowlerOfTheYear,
         Singles, TournamentOfChampions, Doubles, Invitational, Masters, OverUnder, NonChampions, Senior, Trios,
         SinglesBeforeNinetyOne, HighRoller, OverForty
     ];
@@ -85,7 +84,7 @@ internal static class HallOfFamePointRules
         [BowlerOfTheYearCategory.Senior] = SeniorBowlerOfTheYear,
         [BowlerOfTheYearCategory.SuperSenior] = SuperSeniorBowlerOfTheYear,
         [BowlerOfTheYearCategory.Woman] = WomanBowlerOfTheYear,
-        [BowlerOfTheYearCategory.Rookie] = RookieOfTheYear,
+        [BowlerOfTheYearCategory.Rookie] = null,
         [BowlerOfTheYearCategory.Youth] = null
     };
 

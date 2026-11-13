@@ -134,7 +134,7 @@ public sealed class AssignRookieBowlerOfTheYearAwardJobTests(AppDbContextFixture
         fakeLogger.Collector.GetSnapshot().ShouldContain(r => r.Level == LogLevel.Information);
     }
 
-    [Fact(DisplayName = "AssignAsync should evict the bowler-of-the-year and Hall of Fame points cache tags only when a winner is written")]
+    [Fact(DisplayName = "AssignAsync should evict the bowler-of-the-year cache tag only when a winner is written")]
     public async Task AssignAsync_ShouldEvictCacheTag_OnlyWhenWinnerWritten()
     {
         // Arrange
@@ -145,7 +145,6 @@ public sealed class AssignRookieBowlerOfTheYearAwardJobTests(AppDbContextFixture
         var cache = _serviceProvider.GetRequiredService<IFusionCache>();
         const string cacheKey = "rookie-boty-cache-test";
         await cache.GetOrSetAsync(cacheKey, _ => Task.FromResult("stale-cached-value"), tags: ["neba:awards:bowler-of-the-year"], token: ct);
-        await cache.GetOrSetAsync(cacheKey + "-points", _ => Task.FromResult("stale-cached-value"), tags: ["neba:hall-of-fame:points"], token: ct);
 
         var job = CreateJob();
 
@@ -155,11 +154,9 @@ public sealed class AssignRookieBowlerOfTheYearAwardJobTests(AppDbContextFixture
         // Assert - a stale cached value would be returned by GetOrSetAsync instead of invoking the factory.
         var valueAfterAssign = await cache.GetOrSetAsync(cacheKey, _ => Task.FromResult("fresh-value"), token: ct);
         valueAfterAssign.ShouldBe("fresh-value");
-        var pointsValueAfterAssign = await cache.GetOrSetAsync(cacheKey + "-points", _ => Task.FromResult("fresh-value"), token: ct);
-        pointsValueAfterAssign.ShouldBe("fresh-value");
     }
 
-    [Fact(DisplayName = "AssignAsync should not evict the bowler-of-the-year or Hall of Fame points cache tags when there are no rookie candidates")]
+    [Fact(DisplayName = "AssignAsync should not evict the bowler-of-the-year cache tag when there are no rookie candidates")]
     public async Task AssignAsync_ShouldNotEvictCacheTag_WhenNoRookieCandidates()
     {
         // Arrange
@@ -170,7 +167,6 @@ public sealed class AssignRookieBowlerOfTheYearAwardJobTests(AppDbContextFixture
         var cache = _serviceProvider.GetRequiredService<IFusionCache>();
         const string cacheKey = "rookie-boty-no-op-cache-test";
         await cache.GetOrSetAsync(cacheKey, _ => Task.FromResult("stale-cached-value"), tags: ["neba:awards:bowler-of-the-year"], token: ct);
-        await cache.GetOrSetAsync(cacheKey + "-points", _ => Task.FromResult("stale-cached-value"), tags: ["neba:hall-of-fame:points"], token: ct);
 
         var job = CreateJob();
 
@@ -180,7 +176,5 @@ public sealed class AssignRookieBowlerOfTheYearAwardJobTests(AppDbContextFixture
         // Assert - nothing changed on the no-op branch, so the stale entry survives.
         var valueAfterAssign = await cache.GetOrSetAsync(cacheKey, _ => Task.FromResult("fresh-value"), token: ct);
         valueAfterAssign.ShouldBe("stale-cached-value");
-        var pointsValueAfterAssign = await cache.GetOrSetAsync(cacheKey + "-points", _ => Task.FromResult("fresh-value"), token: ct);
-        pointsValueAfterAssign.ShouldBe("stale-cached-value");
     }
 }

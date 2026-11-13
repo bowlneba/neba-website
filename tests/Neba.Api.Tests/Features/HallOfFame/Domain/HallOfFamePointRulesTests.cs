@@ -42,9 +42,14 @@ public sealed class HallOfFamePointRulesTests
         { BowlerOfTheYearCategory.Open, 12 },
         { BowlerOfTheYearCategory.Senior, 2 },
         { BowlerOfTheYearCategory.SuperSenior, 2 },
-        { BowlerOfTheYearCategory.Woman, 2 },
-        { BowlerOfTheYearCategory.Rookie, 2 }
+        { BowlerOfTheYearCategory.Woman, 2 }
     };
+
+    public static TheoryData<BowlerOfTheYearCategory> ZeroPointAwards =>
+    [
+        BowlerOfTheYearCategory.Youth,
+        BowlerOfTheYearCategory.Rookie
+    ];
 
     [Fact(DisplayName = "Every tournament type has an entry in the point table")]
     public void IsMapped_ShouldBeTrue_ForEveryTournamentType()
@@ -101,11 +106,12 @@ public sealed class HallOfFamePointRulesTests
         rule.Points.ShouldBe(points);
     }
 
-    [Fact(DisplayName = "A Youth Bowler of the Year award earns no points")]
-    public void ForAward_ShouldReturnNull_ForYouth()
+    [Theory(DisplayName = "A Youth or Rookie of the Year award earns no points")]
+    [MemberData(nameof(ZeroPointAwards))]
+    public void ForAward_ShouldReturnNull_ForZeroPointCategories(BowlerOfTheYearCategory category)
     {
         // Act
-        var rule = HallOfFamePointRules.ForAward(BowlerOfTheYearCategory.Youth);
+        var rule = HallOfFamePointRules.ForAward(category);
 
         // Assert
         rule.ShouldBeNull();
