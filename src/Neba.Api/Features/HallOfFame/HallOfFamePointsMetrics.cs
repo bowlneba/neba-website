@@ -4,7 +4,7 @@ using System.Diagnostics.Metrics;
 namespace Neba.Api.Features.HallOfFame;
 
 /// <summary>
-/// Counts Hall of Fame points cache misses. The query handlers run only on a miss, so each call is one miss.
+/// Counts Hall of Fame points loads. A handler records one after it loads data without error; the cache calls it on a miss, and may also call it on a background refresh.
 /// </summary>
 internal static class HallOfFamePointsMetrics
 {

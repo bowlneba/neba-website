@@ -15,12 +15,12 @@ namespace Neba.Api.Features.HallOfFame;
 /// </summary>
 internal sealed class HallOfFamePointsReader(AppDbContext appDbContext)
 {
+    private static readonly MembershipType[] CountingTypes = [.. MembershipType.List.Where(type => type.CountsTowardHallOfFame)];
+
     private readonly IQueryable<Bowler> _bowlers = appDbContext.Bowlers.AsNoTracking();
     private readonly IQueryable<HallOfFameInduction> _inductions = appDbContext.HallOfFameInductions.AsNoTracking();
     private readonly IQueryable<HistoricalTournamentChampion> _historicalChampions = appDbContext.HistoricalTournamentChampions.AsNoTracking();
     private readonly IQueryable<Tournament> _tournaments = appDbContext.Tournaments.AsNoTracking();
-    private static readonly MembershipType[] CountingTypes = [.. MembershipType.List.Where(type => type.CountsTowardHallOfFame)];
-
     private readonly IQueryable<Season> _seasons = appDbContext.Seasons.AsNoTracking();
 
     public async Task<IReadOnlyCollection<TitleWin>> LoadTitleWinsAsync(BowlerId? bowlerId, CancellationToken cancellationToken)
@@ -80,7 +80,8 @@ internal sealed class HallOfFamePointsReader(AppDbContext appDbContext)
 
     /// <summary>
     /// Memberships of the given bowlers, only of types that count toward the Hall of Fame. Guest and Non-Member
-    /// rows would be dropped by the calculator anyway, so the database skips them.
+    /// rows would be dropped by the calculator anyway, so the database skips them. The calculator keeps its own
+    /// <c>CountsTowardHallOfFame</c> filter, so a change to one rule must change both.
     /// </summary>
     public async Task<IReadOnlyCollection<MembershipRecord>> LoadMembershipsAsync(IReadOnlyCollection<BowlerId> bowlerIds, CancellationToken cancellationToken)
     {

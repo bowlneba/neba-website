@@ -115,6 +115,7 @@ internal sealed class HallOfFamePointsCalculator
                 group => group.Key,
                 group =>
                 {
+                    // The reader already skips non-counting types; this keeps the calculator right on its own.
                     var counting = group.Where(membership => membership.Type.CountsTowardHallOfFame).ToList();
 
                     var years = counting

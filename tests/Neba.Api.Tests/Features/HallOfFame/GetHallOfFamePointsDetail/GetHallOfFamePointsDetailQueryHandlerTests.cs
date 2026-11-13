@@ -209,8 +209,25 @@ public sealed class GetHallOfFamePointsDetailQueryHandlerTests(AppDbContextFixtu
         result.Value.Breakdown.Count.ShouldBe(1);
     }
 
-    [Fact(DisplayName = "HandleAsync records a detail cache miss")]
-    public async Task HandleAsync_ShouldRecordCacheMiss_WhenHandled()
+    [Fact(DisplayName = "HandleAsync records a detail cache miss after a successful load")]
+    public async Task HandleAsync_ShouldRecordCacheMiss_WhenLoaded()
+    {
+        // Arrange
+        var ct = TestContext.Current.CancellationToken;
+        var bowler = BowlerFactory.Create();
+        await _dbContext.Bowlers.AddAsync(bowler, ct);
+        await _dbContext.SaveChangesAsync(ct);
+        using var recorder = new CacheMissRecorder();
+
+        // Act
+        await CreateHandler().HandleAsync(new GetHallOfFamePointsDetailQuery { BowlerId = bowler.Id }, ct);
+
+        // Assert
+        recorder.Queries.ShouldContain("detail");
+    }
+
+    [Fact(DisplayName = "HandleAsync records no cache miss when the bowler does not exist")]
+    public async Task HandleAsync_ShouldNotRecordCacheMiss_WhenBowlerDoesNotExist()
     {
         // Arrange
         using var recorder = new CacheMissRecorder();
@@ -220,6 +237,6 @@ public sealed class GetHallOfFamePointsDetailQueryHandlerTests(AppDbContextFixtu
         await CreateHandler().HandleAsync(query, TestContext.Current.CancellationToken);
 
         // Assert
-        recorder.Queries.ShouldContain("detail");
+        recorder.Queries.ShouldBeEmpty();
     }
 }

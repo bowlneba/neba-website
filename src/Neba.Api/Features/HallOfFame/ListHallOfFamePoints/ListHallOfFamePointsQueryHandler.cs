@@ -10,8 +10,6 @@ internal sealed class ListHallOfFamePointsQueryHandler(
 {
     public async Task<HallOfFamePointsDto> HandleAsync(ListHallOfFamePointsQuery query, CancellationToken cancellationToken)
     {
-        HallOfFamePointsMetrics.RecordCacheMiss(HallOfFamePointsMetrics.ListQuery);
-
         var titles = await reader.LoadTitleWinsAsync(null, cancellationToken);
         var awards = await reader.LoadAwardWinsAsync(null, cancellationToken);
         var inducted = await reader.LoadInductedCategoriesAsync(null, cancellationToken);
@@ -51,7 +49,7 @@ internal sealed class ListHallOfFamePointsQueryHandler(
             })
             .ToList();
 
-        return new HallOfFamePointsDto
+        var dto = new HallOfFamePointsDto
         {
             Rules = [.. HallOfFamePointRules.All.Select(rule => new HallOfFamePointRuleDto
             {
@@ -65,5 +63,9 @@ internal sealed class ListHallOfFamePointsQueryHandler(
             MembershipDataStartYear = HallOfFamePointRules.MembershipDataStartYear,
             Standings = standings
         };
+
+        HallOfFamePointsMetrics.RecordCacheMiss(HallOfFamePointsMetrics.ListQuery);
+
+        return dto;
     }
 }

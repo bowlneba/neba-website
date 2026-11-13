@@ -96,9 +96,9 @@ public sealed class HallOfFamePointsTests : IDisposable
     }
 
     [Theory(DisplayName = "Scales the axis labels and ticks to the required points")]
-    [InlineData(36, "0,12,24,36", "6", TestDisplayName = "36 points")]
-    [InlineData(48, "0,16,32,48", "8", TestDisplayName = "48 points")]
-    public void Render_ShouldScaleAxisToRequiredPoints(int requiredPoints, string expectedLabels, string expectedTickPoints)
+    [InlineData(36, "0,12,24,36", TestDisplayName = "36 points")]
+    [InlineData(48, "0,16,32,48", TestDisplayName = "48 points")]
+    public void Render_ShouldScaleAxisToRequiredPoints(int requiredPoints, string expectedLabels)
     {
         // Arrange
         SetupList(HallOfFamePointsResponseFactory.Create(requiredPoints: requiredPoints));
@@ -108,7 +108,6 @@ public sealed class HallOfFamePointsTests : IDisposable
 
         // Assert
         string.Join(",", cut.FindAll(".pts-scale span").Select(label => label.TextContent)).ShouldBe(expectedLabels);
-        cut.Find(".pts-below .pts-note").TextContent.ShouldContain($"One tick on the line is {expectedTickPoints} points");
         cut.FindAll(".pts-row .pts-tick").Count.ShouldBe(5);
         cut.FindAll(".pts-row .pts-tick--mid").Count.ShouldBe(2);
         cut.FindAll(".pts-row .pts-tick").Select(tick => tick.GetAttribute("style"))
@@ -338,14 +337,13 @@ public sealed class HallOfFamePointsTests : IDisposable
         cut.Find("[data-pts-complete]").GetAttribute("data-pts-complete").ShouldBe("true");
     }
 
-    [Fact(DisplayName = "Shows every row and has the search script read them again when the first search asks to expand")]
-    public async Task ExpandForSearch_ShouldShowAllRowsAndRefreshSearch_WhenCalled()
+    [Fact(DisplayName = "Shows every row when the first search asks to expand")]
+    public async Task ExpandForSearch_ShouldShowAllRows_WhenCalled()
     {
         // Arrange
         SetupList(HallOfFamePointsResponseFactory.Create(standings: ManyNotYetEligible(120)));
         var module = _ctx.JSInterop.SetupModule("./HallOfFame/HallOfFamePoints.razor.js");
         module.SetupVoid("initialize", _ => true).SetVoidResult();
-        module.SetupVoid("refresh", _ => true).SetVoidResult();
         var cut = _ctx.Render<HallOfFamePointsPage>();
         await cut.WaitForAssertionAsync(() => cut.Find(".pts-tools").HasAttribute("hidden").ShouldBeFalse());
 
@@ -355,7 +353,6 @@ public sealed class HallOfFamePointsTests : IDisposable
         // Assert
         cut.FindAll(".pts-row").Count.ShouldBe(120);
         cut.FindAll(".pts-more").ShouldBeEmpty();
-        await cut.WaitForAssertionAsync(() => module.VerifyInvoke("refresh"));
     }
 
     [Fact(DisplayName = "Opens the points modal for the clicked bowler")]

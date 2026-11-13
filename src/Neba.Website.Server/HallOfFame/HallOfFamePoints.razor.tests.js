@@ -1,5 +1,5 @@
 import { describe, test, expect, jest } from '@jest/globals';
-import { buildIndex, applyFilter, initialize, refresh, dispose } from './HallOfFamePoints.razor.js';
+import { buildIndex, applyFilter, initialize, dispose } from './HallOfFamePoints.razor.js';
 
 const row = (name) => `<div data-pts-row data-name="${name}">${name}</div>`;
 
@@ -136,19 +136,27 @@ describe('first search with rows behind Show more', () => {
         expect(dotNet.invokeMethodAsync).toHaveBeenCalledTimes(2);
     });
 
-    test('refresh reads the new rows and applies the current search to them', () => {
+    test('filters rows the page adds, without a second call', async () => {
         const root = renderPartial(false);
         const dotNet = { invokeMethodAsync: jest.fn().mockResolvedValue(undefined) };
         initialize(root, dotNet);
         type(root, 'tom');
 
-        root.querySelector('#below').insertAdjacentHTML('beforeend', row('Tomas Reyes'));
-        refresh(root);
+        root.querySelector('#below').insertAdjacentHTML('beforeend', row('Tomas Reyes') + row('Ann Lee'));
+        await tick();
 
         expect(visible(root)).toEqual(['Tom Davis', 'Tomas Reyes']);
     });
 
-    test('refresh does nothing for a root that was never initialized', () => {
-        expect(() => refresh(render())).not.toThrow();
+    test('stops watching for rows after dispose', async () => {
+        const root = renderPartial(false);
+        initialize(root, null);
+        type(root, 'tom');
+        dispose(root);
+
+        root.querySelector('#below').insertAdjacentHTML('beforeend', row('Ann Lee'));
+        await tick();
+
+        expect(visible(root)).toContain('Ann Lee');
     });
 });

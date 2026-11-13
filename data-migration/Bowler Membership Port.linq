@@ -101,7 +101,7 @@ async Task Main()
 /// <summary>
 /// Set to true to write to BowlerMemberships. False is a dry run (validate + dump only).
 /// </summary>
-const bool Commit = false;
+const bool Commit = true;
 
 /// <summary>
 /// Legacy membership id for "System Import". Exists only to satisfy the legacy "every bowler must have a membership" rule; skipped, never migrated.

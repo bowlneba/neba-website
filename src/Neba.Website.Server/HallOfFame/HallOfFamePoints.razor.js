@@ -43,21 +43,10 @@ export function applyFilter(root, search, index = buildIndex(root)) {
     return shown;
 }
 
-/** Reads the rows again after the page added some, then applies the current search to them. */
-export function refresh(root) {
-    const instance = instances.get(root);
-    if (!instance) {
-        return;
-    }
-
-    instance.index = buildIndex(root);
-    instance.expanding = false;
-    applyFilter(root, instance.search, instance.index);
-}
-
 /**
  * dotNet is optional. The page passes itself so the first search can ask it to show the rows still behind
- * "Show more"; the page then calls refresh once they are in the document.
+ * "Show more". A MutationObserver reads and filters rows the page adds, in the same task they appear, so a
+ * row that does not match the search never shows.
  */
 export function initialize(root, dotNet = null) {
     if (!root || instances.has(root)) {
@@ -67,24 +56,44 @@ export function initialize(root, dotNet = null) {
     const input = root.querySelector('[data-pts-search]');
     const instance = { index: buildIndex(root), search: input?.value ?? '', expanding: false, cleanup: null };
 
+    const filter = () => applyFilter(root, instance.search, instance.index);
+
     const onInput = () => {
         instance.search = input.value;
 
         if (dotNet && !instance.expanding && instance.search.trim() !== '' && root.dataset.ptsComplete === 'false') {
             instance.expanding = true;
-            dotNet.invokeMethodAsync('ExpandForSearch').catch(() => {
+            // The observer filters the new rows. Filtering here covers the rows already on the page, and clears the
+            // flag whether the call worked or not, so a failure never leaves the search stuck.
+            const done = () => {
                 instance.expanding = false;
-            });
+                filter();
+            };
+            dotNet.invokeMethodAsync('ExpandForSearch').then(done, done);
             return;
         }
 
-        applyFilter(root, instance.search, instance.index);
+        filter();
     };
     input?.addEventListener('input', onInput);
-    instance.cleanup = () => input?.removeEventListener('input', onInput);
+
+    const observer = new MutationObserver((mutations) => {
+        const added = mutations.some((mutation) => [...mutation.addedNodes].some(
+            (node) => node.nodeType === Node.ELEMENT_NODE && (node.matches('[data-pts-row]') || node.querySelector('[data-pts-row]'))));
+        if (added) {
+            instance.index = buildIndex(root);
+            filter();
+        }
+    });
+    observer.observe(root, { childList: true, subtree: true });
+
+    instance.cleanup = () => {
+        input?.removeEventListener('input', onInput);
+        observer.disconnect();
+    };
 
     instances.set(root, instance);
-    applyFilter(root, instance.search, instance.index);
+    filter();
 }
 
 export function dispose(root) {

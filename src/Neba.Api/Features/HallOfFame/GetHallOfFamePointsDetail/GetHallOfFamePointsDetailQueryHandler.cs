@@ -12,8 +12,6 @@ internal sealed class GetHallOfFamePointsDetailQueryHandler(
 {
     public async Task<ErrorOr<HallOfFamePointsDetailDto>> HandleAsync(GetHallOfFamePointsDetailQuery query, CancellationToken cancellationToken)
     {
-        HallOfFamePointsMetrics.RecordCacheMiss(HallOfFamePointsMetrics.DetailQuery);
-
         BowlerId[] ids = [query.BowlerId];
 
         var names = await reader.LoadNamesAsync(ids, cancellationToken);
@@ -31,7 +29,7 @@ internal sealed class GetHallOfFamePointsDetailQueryHandler(
 
         var points = calculator.CalculatePoints(titles, awards).SingleOrDefault();
 
-        return new HallOfFamePointsDetailDto
+        var dto = new HallOfFamePointsDetailDto
         {
             BowlerId = query.BowlerId.ToString(),
             BowlerName = name,
@@ -52,5 +50,9 @@ internal sealed class GetHallOfFamePointsDetailQueryHandler(
                 .Select(year => new HallOfFameMembershipYearDto { Year = year.Year, MembershipType = year.Type.Name })],
             MembershipHistoryComplete = memberships.HistoryComplete
         };
+
+        HallOfFamePointsMetrics.RecordCacheMiss(HallOfFamePointsMetrics.DetailQuery);
+
+        return dto;
     }
 }
