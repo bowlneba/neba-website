@@ -139,7 +139,7 @@ From the Anton Dev Tips newsletter (2026-11-10) and the C# skill. Confirm each a
 | **OpenAPI 3.2 is the default**; Microsoft.OpenApi 3.x has breaking API changes | `Microsoft.OpenApi` is hard-pinned to `[2.13.0,3.0.0)` because the XML comment generator breaks on 3.x (see the comment in `Directory.Packages.props`). `Scalar.AspNetCore` and `FastEndpoints.Swagger` read the document. | Test whether the pin still holds on net11. Check that Scalar and our own consumers handle 3.2. If a tool fails, set `options.OpenApiVersion = OpenApi3_1`. Re-check whether the pin can move to 3.x. |
 | `BackgroundService` failure now makes `IHost.RunAsync`/`StopAsync` throw | Hangfire hosting and any hosted services. | Grep `BackgroundService` and `IHostedService`. Confirm shutdown paths in tests. |
 | EF throws when no migrations found | `Neba.MigrationService` and test setups. | Phase 2 check. |
-| CSRF now uses Fetch Metadata headers, on by default | Blazor Server forms and login pages. | Smoke-test login, logout, and every form post. Check any antiforgery code. See [dotnet-11-blazor.md](dotnet-11-blazor.md). |
+| CSRF now uses Fetch Metadata headers, on by default | Blazor Server forms and login pages. `Program.cs` calls `UseAntiforgery()`. | Smoke-test login, logout, and every form post. Test a cross-origin post gets 400. Check proxy header pass-through. See "ASP.NET Core 11" below and [dotnet-11-blazor.md](dotnet-11-blazor.md). |
 | Async options validation throws if read synchronously | Only matters if we adopt async validators. | None now. |
 | Float/double to small integer casts saturate instead of wrapping | Stats and scoring math. | Grep numeric casts in stats code. Run the stats snapshot tests. |
 | ZIP/TAR readers validate checksums | Any archive handling (data migration, uploads). | Grep `ZipArchive`. |
@@ -163,12 +163,35 @@ Use the `csharp-15` skill (referenced in the issue comment of 2026-11-06) to rev
 - **Zstandard response compression**: evaluate for the API.
 - **`dotnet ef --context "*"` and `.config/dotnet-ef.json`**: optional dev convenience.
 
+### ASP.NET Core 11 (non-Blazor)
+
+Source: Daniel Roth's ".NET 11 web development" session (2026-11-12). Confirm each item against Microsoft's What's new in ASP.NET Core 11.
+
+Free on upgrade, so test and measure but write no code:
+
+- **Kestrel rejects malformed requests faster.** The parser returns an error result instead of throwing; the talk reports about 30% more bad-request throughput on one core. Nothing to do. Watch App Insights for a change in 400 counts.
+- **CSRF protection from Fetch Metadata headers**, on by default. The talk reports about four times the requests per second and 65% less allocation than token validation. Our website calls `UseAntiforgery()` today, so:
+  - [ ] Phase 1: check whether `UseAntiforgery()` and the antiforgery tokens in `EditForm` still work, and whether 11 makes them redundant.
+  - [ ] Test from a second origin (different localhost port) that a forged post gets a 400, and that same-origin posts pass.
+  - [ ] Check proxies: Azure Container Apps ingress and any front door must pass `Sec-Fetch-Site` through. Test an older browser too (no Fetch Metadata).
+  - [ ] Remove token code only after the checks pass, in its own PR. Never remove it in the upgrade PR.
+- **Lower observability overhead and native tracing**: see the OpenTelemetry item in "Do".
+
+Do (separate PRs):
+
+- **`HttpContext` and SignalR re-authentication.** SignalR can refresh credentials on a live connection (`EnableAuthenticationRefresh`-style hub option; confirm the exact name in the docs). Blazor Server uses it. This helps us when a role or permission changes mid-session: the circuit picks up the new state without a reconnect. See [dotnet-11-blazor.md](dotnet-11-blazor.md). We have no custom SignalR hubs, so this is Blazor only.
+- **Razor tooling**: `~/` asset paths, `.editorconfig` C# formatting in `.razor`, sort and remove usings, Emmet in Visual Studio. Try `~/` on one page; check that it plays well with our fingerprinted assets before a bulk change.
+- **Entra ID scaffolding** (`dotnet scaffold`): skip. We have our own identity setup.
+- **.NET skills repo** (`github.com/dotnet/skills`: ASP.NET Core and Blazor plugins): try it in Claude Code, and compare to our own skills (`dotnet-aspnet-core`, `dotnet-blazor`).
+
+Skip: **Blazor gateway, client defaults, web workers, WebAssembly debugging with Aspire.** We run Blazor Server. **Free Ignite UI and Syncfusion Blazor components** (MIT): worth one look if we ever need a grid or chart, not now.
+
 ### Evaluate only (do not adopt without a decision)
 
-- **Union types** (`union`): `ErrorOr<T>` stays our command result type (see `CLAUDE.md`). A union does not replace it. Candidates, if any: a closed set of unrelated types where we use marker interfaces today. Beware: value-type cases box; `default(union)` holds null, so switches need a `null` arm; prefer `null =>` over `_ =>`. System.Text.Json and OpenAPI support unions, but SmartEnum rules and the API serialization conventions in memory would apply. Write an ADR before using one.
+- **Union types** (`union`): `ErrorOr<T>` stays our command result type (see `CLAUDE.md`). A union does not replace it. The session shows unions in minimal APIs with System.Text.Json writing the active case and OpenAPI 3.2 describing a `oneOf`. We use FastEndpoints, so test that path before counting on it. Candidates, if any: a closed set of unrelated types where we use marker interfaces today. Beware: value-type cases box; `default(union)` holds null, so switches need a `null` arm; prefer `null =>` over `_ =>`. System.Text.Json and OpenAPI support unions, but SmartEnum rules and the API serialization conventions in memory would apply. Write an ADR before using one.
 - **`closed` hierarchies**: candidates are domain type families we own. Treat the subtype list as public API. Adding a subtype later breaks consumers' switches. We are vertical-slice, so check against the feature-boundary architecture test first.
 - **Extension indexers**: low value here. They do not work in expression trees or `IQueryable` lambdas, and not on arrays or strings.
-- **Async validation** (`AsyncValidationAttribute`): our rule is that validators handle structural checks only, with no DB lookups. This stays; do not adopt.
+- **Async validation** (`AsyncValidationAttribute`, `IAsyncValidatableObject`): our rule is that validators handle structural checks only, with no DB lookups. This stays; do not adopt. The session's demo (stock check) is a state check, which belongs in the handler as `Error.Conflict`.
 - **Blazor features**: moved to [dotnet-11-blazor.md](dotnet-11-blazor.md), which also holds the Blazor test checklist for the Phase 1 PR.
 - **Unsafe memory-safety model**: skip. Preview only.
 - **Vector and hybrid search, Cosmos, SQL Server items**: skip. Not relevant (PostgreSQL).
@@ -195,4 +218,5 @@ Use the `csharp-15` skill (referenced in the issue comment of 2026-11-06) to rev
 - Newsletter: "NET 11 and C# 15 is out today!" Anton Dev Tips, 2026-11-10 (antondevtips.com/blog/new-features-in-dotnet-11-and-csharp-15)
 - C# 15 skill: `csharp-15` (attached to the planning session; covers `with(...)`, unions, `closed`, extension indexers, labeled jumps, memory-safety preview)
 - Microsoft: breaking changes in .NET 11, EF Core 11 breaking changes, What's new in .NET 11 / ASP.NET Core 11 / EF Core 11 / C# 15 / Aspire (learn.microsoft.com/dotnet)
+- Video notes (2026-11-12): Daniel Roth, ".NET 11 web development with ASP.NET Core and Blazor", and the Blazor Server session. Notes are in this plan and in [dotnet-11-blazor.md](dotnet-11-blazor.md).
 - Issue comment 2026-08-25: Daniel Roth's ASP.NET Core 11 / Blazor session notes (async validation, SSR parity, virtualization, Aspire WASM)
