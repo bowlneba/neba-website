@@ -381,6 +381,10 @@ public sealed class ChampionsPageTests : IDisposable
             ITournamentApiService.GetTournamentsForSeasonAsync(SeasonViewModel season, CancellationToken ct)
             => Task.FromResult<ErrorOr<List<SeasonTournamentViewModel>>>(new List<SeasonTournamentViewModel>());
 
+        Task<ErrorOr<List<SeasonTournamentViewModel>>>
+            ITournamentApiService.GetUpcomingTournamentsAsync(IReadOnlyCollection<SeasonViewModel> seasons, CancellationToken ct)
+            => Task.FromResult<ErrorOr<List<SeasonTournamentViewModel>>>(new List<SeasonTournamentViewModel>());
+
         Task<ErrorOr<List<SeasonViewModel>>>
             ITournamentApiService.GetSeasonsAsync(CancellationToken ct)
             => Task.FromResult<ErrorOr<List<SeasonViewModel>>>(new List<SeasonViewModel>());

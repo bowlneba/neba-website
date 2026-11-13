@@ -41,9 +41,14 @@
         }
         else
         {
-            @if (_allTournaments is not null)
+            @foreach (var strip in TimelineStrips)
             {
-                <SeasonTimeline Tournaments="@_allTournaments" Season="@(_activeSeason?.Label ?? string.Empty)" />
+                @if (TimelineStrips.Count > 1)
+                {
+                    <p class="tournaments-page__timeline-label">@strip.Season.Description</p>
+                }
+                <SeasonTimeline Tournaments="@strip.Tournaments.ToList()" Season="@strip.Season.Label"
+                                ShowCompletedLegend="@(!strip.UpcomingOnly)" />
             }
 
             <TournamentTabBar ActiveTab="@_activeTab" IsCurrentSeason="@_isCurrentSeason"
@@ -62,13 +67,24 @@
                 <div class="tournaments-page__list" id="tournament-list" role="list" aria-live="polite"
                      aria-label="@($"{FilteredTournaments.Count()} tournaments")">
 
-                    @foreach (var t in FilteredTournaments)
+                    @if (_activeTab == TournamentTab.Upcoming)
                     {
-                        @if (_activeTab == TournamentTab.Upcoming)
+                        @foreach (var section in UpcomingSections)
                         {
-                            <TournamentUpcomingCard Tournament="@t" OnEditLogo="OpenEditLogo" />
+                            @if (section.ShowDivider)
+                            {
+                                <SeasonDivider Season="@section.Season" />
+                            }
+
+                            @foreach (var t in section.Tournaments)
+                            {
+                                <TournamentUpcomingCard Tournament="@t" OnEditLogo="OpenEditLogo" />
+                            }
                         }
-                        else
+                    }
+                    else
+                    {
+                        @foreach (var t in FilteredTournaments)
                         {
                             <TournamentPastCard Tournament="@t" OnEditLogo="OpenEditLogo" />
                         }
@@ -123,7 +139,7 @@
     // ── Data ───────────────────────────────────────────────────────────────
     private List<SeasonTournamentViewModel>? _allTournaments;
     private List<SeasonViewModel>? _availableSeasons;
-    private SeasonTournamentViewModel? _nextSeasonHeroTournament;
+    private List<SeasonTournamentViewModel> _upcomingTournaments = [];
     private string? _pageNotice;
     private bool _isLoading = true;
 
@@ -133,14 +149,8 @@
     private bool _disposed;
 
     // ── Computed ───────────────────────────────────────────────────────────
-    private SeasonTournamentViewModel? NextUpcomingTournament =>
-        _allTournaments?
-            .Where(t => !t.IsPast)
-            .OrderBy(t => t.StartDate)
-            .FirstOrDefault();
-
     private SeasonTournamentViewModel? HeroTournament =>
-        NextUpcomingTournament ?? _nextSeasonHeroTournament;
+        _upcomingTournaments.FirstOrDefault();
 
     private bool ShowHero =>
         _isCurrentSeason &&
@@ -160,7 +170,7 @@
                 return [];
             }
 
-            var query = _allTournaments
+            var query = (_activeTab == TournamentTab.Upcoming ? _upcomingTournaments : _allTournaments)
                 .Where(t => _activeTab == TournamentTab.Upcoming ? !t.IsPast : t.IsPast);
 
             if (!string.IsNullOrWhiteSpace(_searchTerm))
@@ -177,6 +187,27 @@
             }
 
             return query.OrderBy(t => t.StartDate);
+        }
+    }
+
+    private List<UpcomingSeasonSection> UpcomingSections =>
+        UpcomingSchedule.GroupBySeason(
+            [.. FilteredTournaments],
+            _availableSeasons ?? [],
+            _upcomingTournaments.FirstOrDefault()?.Season);
+
+    private List<UpcomingTimelineStrip> TimelineStrips
+    {
+        get
+        {
+            if (_allTournaments is null || _activeSeason is null)
+            {
+                return [];
+            }
+
+            return _activeTab == TournamentTab.Upcoming && _isCurrentSeason
+                ? UpcomingSchedule.BuildTimelineStrips(_activeSeason, _allTournaments, _upcomingTournaments, _availableSeasons ?? [])
+                : [new UpcomingTimelineStrip(_activeSeason, _allTournaments, UpcomingOnly: false)];
         }
     }
 
@@ -271,7 +302,7 @@ SeasonViewModel? current)
 
         _searchTerm = string.Empty;
         _typeFilter = null;
-        _nextSeasonHeroTournament = null;
+        _upcomingTournaments = [];
         return true;
     }
 
@@ -311,26 +342,18 @@ SeasonViewModel? current)
     {
         _allTournaments = tournaments;
 
-        // When the current season has no upcoming tournaments, look ahead to the next season
-        if (_isCurrentSeason && _allTournaments.Count > 0 && _allTournaments.TrueForAll(t => t.IsPast))
+        if (!_isCurrentSeason)
         {
-            var nextSeason = availableSeasons
-                .Where(s => s.StartDate > _activeSeason!.EndDate)
-                .OrderBy(s => s.StartDate)
-                .FirstOrDefault();
-
-            if (nextSeason is not null)
-            {
-                var nextResult = await DataService.GetTournamentsForSeasonAsync(nextSeason, ct);
-                if (!nextResult.IsError)
-                {
-                    _nextSeasonHeroTournament = nextResult.Value
-                        .Where(t => !t.IsPast)
-                        .OrderBy(t => t.StartDate)
-                        .FirstOrDefault();
-                }
-            }
+            _upcomingTournaments = [];
+            return;
         }
+
+        // Upcoming tournaments run across seasons, so next season's schedule shows before it starts.
+        // If that call fails, fall back to what is left of the current season.
+        var upcomingResult = await DataService.GetUpcomingTournamentsAsync(availableSeasons, ct);
+        var upcoming = upcomingResult.IsError ? tournaments : upcomingResult.Value;
+
+        _upcomingTournaments = [.. upcoming.Where(t => !t.IsPast).OrderBy(t => t.StartDate)];
     }
 
     // ── Handlers ───────────────────────────────────────────────────────────

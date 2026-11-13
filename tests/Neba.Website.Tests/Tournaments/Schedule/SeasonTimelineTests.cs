@@ -31,6 +31,39 @@ public sealed class SeasonTimelineTests : IDisposable
         cut.FindAll(".season-timeline__dot").Count.ShouldBe(3);
     }
 
+    [Fact(DisplayName = "Should show the Completed legend entry by default")]
+    public void Render_ShouldShowCompletedLegend_ByDefault()
+    {
+        // Arrange
+        var tournaments = SeasonTournamentViewModelFactory.Bogus(1, seed: 2103).ToList();
+
+        // Act
+        var cut = _ctx.Render<SeasonTimeline>(parameters => parameters
+            .Add(p => p.Season, DateTime.Today.Year.ToString(System.Globalization.CultureInfo.InvariantCulture))
+            .Add(p => p.Tournaments, tournaments));
+
+        // Assert
+        cut.FindAll(".season-timeline__legend-item--completed").Count.ShouldBe(1);
+        cut.FindAll(".season-timeline__legend-item--upcoming").Count.ShouldBe(1);
+    }
+
+    [Fact(DisplayName = "Should hide the Completed legend entry when ShowCompletedLegend is false")]
+    public void Render_ShouldHideCompletedLegend_WhenShowCompletedLegendIsFalse()
+    {
+        // Arrange
+        var tournaments = SeasonTournamentViewModelFactory.Bogus(1, seed: 2104).ToList();
+
+        // Act
+        var cut = _ctx.Render<SeasonTimeline>(parameters => parameters
+            .Add(p => p.Season, DateTime.Today.Year.ToString(System.Globalization.CultureInfo.InvariantCulture))
+            .Add(p => p.Tournaments, tournaments)
+            .Add(p => p.ShowCompletedLegend, false));
+
+        // Assert
+        cut.FindAll(".season-timeline__legend-item--completed").ShouldBeEmpty();
+        cut.FindAll(".season-timeline__legend-item--upcoming").Count.ShouldBe(1);
+    }
+
     [Fact(DisplayName = "Should use role group instead of role img so per-dot semantics are not suppressed")]
     public void Render_ShouldUseRoleGroup_NotRoleImg()
     {

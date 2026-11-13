@@ -29,6 +29,22 @@ internal sealed class TournamentApiService(
             : result.Value.Items.Select(r => MapToViewModel(r, season.Label)).ToList();
     }
 
+    public async Task<ErrorOr<List<SeasonTournamentViewModel>>> GetUpcomingTournamentsAsync(
+        IReadOnlyCollection<SeasonViewModel> seasons, CancellationToken ct = default)
+    {
+        var result = await executor.ExecuteAsync(
+            "TournamentsApi",
+            nameof(GetUpcomingTournamentsAsync),
+            token => tournamentsApi.ListUpcomingTournamentsAsync(token),
+            ct);
+
+        return result.IsError
+            ? result.Errors
+            : result.Value.Items
+                .Select(r => MapToViewModel(r, UpcomingSchedule.ResolveSeasonLabel(r.StartDate, seasons)))
+                .ToList();
+    }
+
     public async Task<ErrorOr<List<SeasonViewModel>>> GetSeasonsAsync(CancellationToken ct = default)
     {
         var result = await executor.ExecuteAsync(

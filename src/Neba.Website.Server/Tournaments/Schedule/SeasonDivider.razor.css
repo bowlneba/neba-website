@@ -1,0 +1,21 @@
+.season-divider {
+    display: flex;
+    align-items: baseline;
+    flex-wrap: wrap;
+    gap: 0.25rem 0.75rem;
+    margin: 2rem 0 1rem;
+    padding-top: 1rem;
+    border-top: 2px solid var(--neba-blue-700);
+}
+
+.season-divider__label {
+    font-family: var(--neba-font-display);
+    font-size: 1.375rem;
+    font-weight: 700;
+    color: var(--neba-text);
+}
+
+.season-divider__range {
+    font-size: 0.8125rem;
+    color: var(--neba-gray-400);
+}

@@ -303,8 +303,151 @@ public sealed class TournamentsPageTests : IDisposable
 
         // Assert
         cut.Markup.ShouldContain("Future Kickoff");
-        _dataService.RequestedSeasons.ShouldContain(currentSeason.Label);
-        _dataService.RequestedSeasons.ShouldContain(nextSeason.Label);
+        cut.Find(".tournament-hero__title").TextContent.ShouldBe("Future Kickoff");
+        _dataService.RequestedSeasons.ShouldBe([currentSeason.Label]);
+    }
+
+    [Fact(DisplayName = "Should show a season divider and a second timeline when upcoming tournaments run into next season")]
+    public void Render_ShouldShowDividerAndSecondTimeline_WhenUpcomingRunsIntoNextSeason()
+    {
+        // Arrange
+        var currentYear = DateTime.Today.Year;
+        var currentSeason = MakeSeason(currentYear);
+        var nextSeason = MakeSeason(currentYear + 1);
+
+        _dataService.Seasons = [currentSeason, nextSeason];
+        _dataService.SeasonData[currentSeason.Label] =
+        [
+            SeasonTournamentViewModelFactory.Create(id: "past", name: "Finished Event", season: currentSeason.Label,
+                startDate: DateOnly.FromDateTime(DateTime.Today.AddDays(-20)), endDate: DateOnly.FromDateTime(DateTime.Today.AddDays(-19))),
+            SeasonTournamentViewModelFactory.Create(id: "this-season", name: "Holiday Singles", season: currentSeason.Label,
+                startDate: DateOnly.FromDateTime(DateTime.Today.AddDays(10)), endDate: DateOnly.FromDateTime(DateTime.Today.AddDays(10))),
+        ];
+        _dataService.SeasonData[nextSeason.Label] =
+        [
+            SeasonTournamentViewModelFactory.Create(id: "next-1", name: "Future Kickoff", season: nextSeason.Label,
+                startDate: DateOnly.FromDateTime(DateTime.Today.AddDays(40)), endDate: DateOnly.FromDateTime(DateTime.Today.AddDays(40))),
+        ];
+
+        // Act
+        var cut = _ctx.Render<TournamentsPage>();
+
+        // Assert
+        cut.FindAll(".tournament-upcoming-card").Count.ShouldBe(2);
+        cut.FindAll(".season-divider").Count.ShouldBe(1);
+        cut.Find(".season-divider__label").TextContent.ShouldBe(nextSeason.Description);
+        cut.FindAll(".season-timeline").Count.ShouldBe(2);
+        cut.FindAll(".tournaments-page__timeline-label").Select(e => e.TextContent)
+            .ShouldBe([currentSeason.Description, nextSeason.Description]);
+        cut.FindAll(".season-timeline__legend-item--completed").Count.ShouldBe(1);
+    }
+
+    [Fact(DisplayName = "Should read as the next season with no divider and one timeline when the current season is finished")]
+    public void Render_ShouldShowNoDividerAndOneTimeline_WhenCurrentSeasonIsFinished()
+    {
+        // Arrange
+        var currentYear = DateTime.Today.Year;
+        var currentSeason = MakeSeason(currentYear);
+        var nextSeason = MakeSeason(currentYear + 1);
+
+        _dataService.Seasons = [currentSeason, nextSeason];
+        _dataService.SeasonData[currentSeason.Label] =
+        [
+            SeasonTournamentViewModelFactory.Create(id: "past", name: "Finished Event", season: currentSeason.Label,
+                startDate: DateOnly.FromDateTime(DateTime.Today.AddDays(-20)), endDate: DateOnly.FromDateTime(DateTime.Today.AddDays(-19))),
+        ];
+        _dataService.SeasonData[nextSeason.Label] =
+        [
+            SeasonTournamentViewModelFactory.Create(id: "next-1", name: "Future Kickoff", season: nextSeason.Label,
+                startDate: DateOnly.FromDateTime(DateTime.Today.AddDays(40)), endDate: DateOnly.FromDateTime(DateTime.Today.AddDays(40))),
+            SeasonTournamentViewModelFactory.Create(id: "next-2", name: "Winter Doubles", season: nextSeason.Label,
+                startDate: DateOnly.FromDateTime(DateTime.Today.AddDays(70)), endDate: DateOnly.FromDateTime(DateTime.Today.AddDays(70))),
+        ];
+
+        // Act
+        var cut = _ctx.Render<TournamentsPage>();
+
+        // Assert
+        cut.FindAll(".tournament-upcoming-card").Count.ShouldBe(2);
+        cut.FindAll(".season-divider").ShouldBeEmpty();
+        cut.FindAll(".season-timeline").Count.ShouldBe(1);
+        cut.FindAll(".tournaments-page__timeline-label").ShouldBeEmpty();
+        cut.FindAll(".season-timeline__legend-item--completed").ShouldBeEmpty();
+        cut.Markup.ShouldNotContain("Finished Event");
+    }
+
+    [Fact(DisplayName = "Should show no divider and one timeline when no later season has tournaments")]
+    public void Render_ShouldShowNoDividerAndOneTimeline_WhenNoLaterSeasonHasTournaments()
+    {
+        // Arrange
+        var currentSeason = MakeSeason(DateTime.Today.Year);
+        _dataService.Seasons = [currentSeason, MakeSeason(DateTime.Today.Year + 1)];
+        _dataService.SeasonData[currentSeason.Label] =
+        [
+            SeasonTournamentViewModelFactory.Create(id: "this-season", season: currentSeason.Label,
+                startDate: DateOnly.FromDateTime(DateTime.Today.AddDays(10)), endDate: DateOnly.FromDateTime(DateTime.Today.AddDays(10))),
+        ];
+
+        // Act
+        var cut = _ctx.Render<TournamentsPage>();
+
+        // Assert
+        cut.FindAll(".season-divider").ShouldBeEmpty();
+        cut.FindAll(".season-timeline").Count.ShouldBe(1);
+        cut.FindAll(".season-timeline__legend-item--completed").Count.ShouldBe(1);
+    }
+
+    [Fact(DisplayName = "Should fall back to the current season's upcoming tournaments when the upcoming list fails to load")]
+    public void Render_ShouldFallBackToCurrentSeason_WhenUpcomingListFails()
+    {
+        // Arrange
+        var currentSeason = MakeSeason(DateTime.Today.Year);
+        _dataService.Seasons = [currentSeason];
+        _dataService.UpcomingLoadFails = true;
+        _dataService.SeasonData[currentSeason.Label] =
+        [
+            SeasonTournamentViewModelFactory.Create(id: "this-season", name: "Holiday Singles", season: currentSeason.Label,
+                startDate: DateOnly.FromDateTime(DateTime.Today.AddDays(10)), endDate: DateOnly.FromDateTime(DateTime.Today.AddDays(10))),
+        ];
+
+        // Act
+        var cut = _ctx.Render<TournamentsPage>();
+
+        // Assert
+        cut.Markup.ShouldContain("Holiday Singles");
+        cut.FindAll(".tournament-upcoming-card").Count.ShouldBe(1);
+        cut.FindAll(".season-divider").ShouldBeEmpty();
+        cut.Markup.ShouldNotContain("Tournament data is currently unavailable.");
+    }
+
+    [Fact(DisplayName = "Should keep the next season divider when a search hides every current season tournament")]
+    public async Task Search_ShouldKeepNextSeasonDivider_WhenSearchHidesCurrentSeasonTournaments()
+    {
+        // Arrange
+        var currentYear = DateTime.Today.Year;
+        var currentSeason = MakeSeason(currentYear);
+        var nextSeason = MakeSeason(currentYear + 1);
+
+        _dataService.Seasons = [currentSeason, nextSeason];
+        _dataService.SeasonData[currentSeason.Label] =
+        [
+            SeasonTournamentViewModelFactory.Create(id: "this-season", name: "Holiday Singles", season: currentSeason.Label,
+                startDate: DateOnly.FromDateTime(DateTime.Today.AddDays(10)), endDate: DateOnly.FromDateTime(DateTime.Today.AddDays(10))),
+        ];
+        _dataService.SeasonData[nextSeason.Label] =
+        [
+            SeasonTournamentViewModelFactory.Create(id: "next-1", name: "Future Kickoff", season: nextSeason.Label,
+                startDate: DateOnly.FromDateTime(DateTime.Today.AddDays(40)), endDate: DateOnly.FromDateTime(DateTime.Today.AddDays(40))),
+        ];
+
+        var cut = _ctx.Render<TournamentsPage>();
+
+        // Act
+        await cut.Find("input.tournament-filter-bar__search").InputAsync(new Microsoft.AspNetCore.Components.ChangeEventArgs { Value = "Kickoff" });
+
+        // Assert
+        cut.FindAll(".tournament-upcoming-card").Count.ShouldBe(1);
+        cut.FindAll(".season-divider").Count.ShouldBe(1);
     }
 
     [Fact(DisplayName = "Should show no-seasons message when season list is empty")]
@@ -366,6 +509,32 @@ public sealed class TournamentsPageTests : IDisposable
         public HashSet<string> UnavailableSeasonLabels { get; } = new(StringComparer.Ordinal);
 
         public List<string> RequestedSeasons { get; } = [];
+
+        public bool UpcomingLoadFails { get; set; }
+
+        Task<ErrorOr<List<SeasonTournamentViewModel>>> ITournamentApiService.GetUpcomingTournamentsAsync(
+            IReadOnlyCollection<SeasonViewModel> seasons, CancellationToken ct)
+        {
+            if (ct.IsCancellationRequested)
+            {
+                return Task.FromCanceled<ErrorOr<List<SeasonTournamentViewModel>>>(ct);
+            }
+
+            if (UpcomingLoadFails)
+            {
+                return Task.FromResult<ErrorOr<List<SeasonTournamentViewModel>>>(
+                    Error.Failure("Tournaments.Unavailable", "Upcoming tournaments unavailable."));
+            }
+
+            // Like the API: every tournament that has not ended, across seasons, in start-date order.
+            List<SeasonTournamentViewModel> upcoming =
+            [
+                .. SeasonData.Values.SelectMany(tournaments => tournaments)
+                    .Where(t => !t.IsPast)
+                    .OrderBy(t => t.StartDate)
+            ];
+            return Task.FromResult<ErrorOr<List<SeasonTournamentViewModel>>>(upcoming);
+        }
 
         Task<ErrorOr<List<SeasonViewModel>>> ITournamentApiService.GetSeasonsAsync(CancellationToken ct)
         {

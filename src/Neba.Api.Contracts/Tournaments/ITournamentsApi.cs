@@ -1,3 +1,4 @@
+using Neba.Api.Contracts.Seasons.ListTournamentsInSeason;
 using Neba.Api.Contracts.Tournaments.AddTournamentSponsor;
 using Neba.Api.Contracts.Tournaments.CreateTournament;
 using Neba.Api.Contracts.Tournaments.EditTournament;
@@ -39,6 +40,14 @@ public interface ITournamentsApi
     /// <returns>A collection of tournament champions.</returns>
     [Get("/tournaments/champions")]
     Task<IApiResponse<CollectionResponse<TournamentChampionResponse>>> ListTournamentChampionsAsync(CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Gets every tournament that has not ended yet, across the current and later seasons, ordered by start date.
+    /// </summary>
+    /// <param name="cancellationToken">A token to cancel the operation.</param>
+    /// <returns>A collection of upcoming tournaments.</returns>
+    [Get("/tournaments/upcoming")]
+    Task<IApiResponse<CollectionResponse<SeasonTournamentResponse>>> ListUpcomingTournamentsAsync(CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Gets a list of active tournament types, for use in tournament creation pickers.

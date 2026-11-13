@@ -1,0 +1,11 @@
+@namespace Neba.Website.Server.Tournaments.Schedule
+
+<div class="season-divider" role="separator" aria-label="@($"{Season.Description} begins")">
+    <span class="season-divider__label">@Season.Description</span>
+    <span class="season-divider__range">@Season.FormatDateRange()</span>
+</div>
+
+@code {
+    [Parameter, EditorRequired]
+    public SeasonViewModel Season { get; set; } = default!;
+}

@@ -51,3 +51,13 @@
 .tournaments-page__empty-icon {
     font-size: 3rem;
 }
+
+/* ── Season label above each timeline strip (shown when two strips stack) ── */
+.tournaments-page__timeline-label {
+    font-size: 0.8125rem;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--neba-blue-700);
+    margin: 1rem 0 0.25rem;
+}

@@ -322,6 +322,83 @@ public sealed class TournamentApiServiceTests
         result.Value.Single().Season.ShouldBe("2025");
     }
 
+    // ── GetUpcomingTournamentsAsync ───────────────────────────────────────
+
+    [Fact(DisplayName = "GetUpcomingTournamentsAsync should map each tournament and label it with the season its start date falls in")]
+    public async Task GetUpcomingTournamentsAsync_ShouldLabelEachTournamentWithItsSeason()
+    {
+        // Arrange
+        var seasons = new[]
+        {
+            new SeasonViewModel { Id = "01000000000000000000000001", Description = "2026 Season", StartDate = new DateOnly(2026, 1, 1), EndDate = new DateOnly(2026, 12, 31) },
+            new SeasonViewModel { Id = "01000000000000000000000002", Description = "2027 Season", StartDate = new DateOnly(2027, 1, 1), EndDate = new DateOnly(2027, 12, 31) },
+        };
+        SetupUpcomingSuccess(
+        [
+            new SeasonTournamentResponse { Id = "t1", Name = "December Singles", StartDate = new DateOnly(2026, 12, 12), EndDate = new DateOnly(2026, 12, 12), TournamentType = "Singles", Status = "Scheduled", TitleEligible = false },
+            new SeasonTournamentResponse { Id = "t2", Name = "January Doubles", StartDate = new DateOnly(2027, 1, 16), EndDate = new DateOnly(2027, 1, 17), TournamentType = "Doubles", Status = "Scheduled", TitleEligible = false },
+        ]);
+
+        // Act
+        var result = await _service.GetUpcomingTournamentsAsync(seasons, TestContext.Current.CancellationToken);
+
+        // Assert
+        result.IsError.ShouldBeFalse();
+        result.Value.Select(t => (t.Name, t.Season)).ShouldBe([("December Singles", "2026"), ("January Doubles", "2027")]);
+        result.Value.ShouldAllBe(t => t.TitleEligible);
+    }
+
+    [Fact(DisplayName = "GetUpcomingTournamentsAsync should label a tournament with its start year when no season contains it")]
+    public async Task GetUpcomingTournamentsAsync_ShouldFallBackToStartYear_WhenNoSeasonContainsTournament()
+    {
+        // Arrange
+        SetupUpcomingSuccess(
+        [
+            new SeasonTournamentResponse { Id = "t1", Name = "Orphan", StartDate = new DateOnly(2028, 3, 4), EndDate = new DateOnly(2028, 3, 4), TournamentType = "Singles", Status = "Scheduled", TitleEligible = false },
+        ]);
+
+        // Act
+        var result = await _service.GetUpcomingTournamentsAsync([], TestContext.Current.CancellationToken);
+
+        // Assert
+        result.Value.ShouldHaveSingleItem().Season.ShouldBe("2028");
+    }
+
+    [Fact(DisplayName = "GetUpcomingTournamentsAsync should return an empty list when nothing is upcoming")]
+    public async Task GetUpcomingTournamentsAsync_ShouldReturnEmptyList_WhenNothingIsUpcoming()
+    {
+        // Arrange
+        SetupUpcomingSuccess([]);
+
+        // Act
+        var result = await _service.GetUpcomingTournamentsAsync([], TestContext.Current.CancellationToken);
+
+        // Assert
+        result.IsError.ShouldBeFalse();
+        result.Value.ShouldBeEmpty();
+    }
+
+    [Fact(DisplayName = "GetUpcomingTournamentsAsync should return error when API fails")]
+    public async Task GetUpcomingTournamentsAsync_ShouldReturnError_WhenApiFails()
+    {
+        // Arrange
+        using var response = new StubApiResponse<CollectionResponse<SeasonTournamentResponse>>
+        {
+            IsSuccessStatusCode = false,
+            StatusCode = System.Net.HttpStatusCode.InternalServerError,
+            Content = (CollectionResponse<SeasonTournamentResponse>?)null
+        };
+        _mockTournamentsApi
+            .Setup(x => x.ListUpcomingTournamentsAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync(response);
+
+        // Act
+        var result = await _service.GetUpcomingTournamentsAsync([], TestContext.Current.CancellationToken);
+
+        // Assert
+        result.IsError.ShouldBeTrue();
+    }
+
     // ── Helpers ───────────────────────────────────────────────────────────
 
     private void SetupChampionsSuccess(IReadOnlyCollection<TournamentChampionResponse> items)
@@ -377,6 +454,20 @@ public sealed class TournamentApiServiceTests
 
         _mockSeasonsApi
             .Setup(x => x.ListSeasonsAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync(response);
+    }
+
+    private void SetupUpcomingSuccess(IReadOnlyCollection<SeasonTournamentResponse> items)
+    {
+        using var response = new StubApiResponse<CollectionResponse<SeasonTournamentResponse>>
+        {
+            IsSuccessStatusCode = true,
+            StatusCode = System.Net.HttpStatusCode.OK,
+            Content = new CollectionResponse<SeasonTournamentResponse> { Items = items }
+        };
+
+        _mockTournamentsApi
+            .Setup(x => x.ListUpcomingTournamentsAsync(It.IsAny<CancellationToken>()))
             .ReturnsAsync(response);
     }
 

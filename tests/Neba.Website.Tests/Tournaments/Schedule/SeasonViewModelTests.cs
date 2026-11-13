@@ -112,4 +112,34 @@ public sealed class SeasonViewModelTests
         vm.ContainsYear(2021).ShouldBeTrue();
         vm.ContainsYear(2022).ShouldBeFalse();
     }
+
+    [Fact(DisplayName = "Should format a single-year season range with the year once")]
+    public void FormatDateRange_ShouldShowYearOnce_WhenSeasonIsWithinOneYear()
+    {
+        // Arrange
+        var vm = SeasonViewModelFactory.Create(
+            startDate: new DateOnly(2027, 1, 1),
+            endDate: new DateOnly(2027, 12, 31));
+
+        // Act
+        var range = vm.FormatDateRange();
+
+        // Assert
+        range.ShouldBe("Jan 1 – Dec 31, 2027");
+    }
+
+    [Fact(DisplayName = "Should format a multi-year season range with both years")]
+    public void FormatDateRange_ShouldShowBothYears_WhenSeasonSpansYears()
+    {
+        // Arrange
+        var vm = SeasonViewModelFactory.Create(
+            startDate: new DateOnly(2020, 1, 1),
+            endDate: new DateOnly(2021, 12, 31));
+
+        // Act
+        var range = vm.FormatDateRange();
+
+        // Assert
+        range.ShouldBe("Jan 1, 2020 – Dec 31, 2021");
+    }
 }

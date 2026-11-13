@@ -1,7 +1,7 @@
 <Project>
   <PropertyGroup Condition=" '$(MSBuildProjectExtension)' == '.csproj'">
     <TargetFramework>net10.0</TargetFramework>
-    <LangVersion>latest</LangVersion>
+    <LangVersion>14</LangVersion>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
     <NuGetAuditMode>all</NuGetAuditMode>
     <NuGetAuditLevel>low</NuGetAuditLevel>
@@ -24,7 +24,7 @@
     <!-- Single source of the release version: AssemblyVersion, FileVersion and InformationalVersion
          (which the log enricher reports as BuildVersion). Bump it on every change that deploys;
          CI checks it is greater than the latest v* tag. -->
-    <Version>1.1.4</Version>
+    <Version>1.1.5</Version>
 
     <Authors>G &amp; C Software</Authors>
     <Product>New England Bowlers' Association Website</Product>

@@ -41,4 +41,16 @@ public sealed record SeasonViewModel
     /// True when <paramref name="year"/> falls within the season's start and end year, inclusive.
     /// </summary>
     public bool ContainsYear(int year) => year >= StartDate.Year && year <= EndDate.Year;
+
+    /// <summary>
+    /// Formats the season's date range for display, e.g. "Jan 1 – Dec 31, 2027" or "Sep 1, 2020 – Aug 31, 2021".
+    /// </summary>
+    public string FormatDateRange()
+    {
+        var culture = System.Globalization.CultureInfo.CurrentCulture;
+
+        return StartDate.Year == EndDate.Year
+            ? $"{StartDate.ToString("MMM d", culture)} – {EndDate.ToString("MMM d, yyyy", culture)}"
+            : $"{StartDate.ToString("MMM d, yyyy", culture)} – {EndDate.ToString("MMM d, yyyy", culture)}";
+    }
 }
