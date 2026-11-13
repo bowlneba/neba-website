@@ -285,6 +285,49 @@ const MOCK_HALL_OF_FAME: { items: MockInduction[]; totalItems: number } = {
 
 const INITIAL_HALL_OF_FAME_ITEMS: MockInduction[] = structuredClone(MOCK_HALL_OF_FAME.items);
 
+const MOCK_HALL_OF_FAME_POINTS = {
+  rules: [
+    { group: 'Bowler of the Year Awards', label: 'Bowler of the Year', points: 12 },
+    { group: 'Tournament Titles', label: 'Singles Title', points: 6 },
+    { group: 'Legacy Titles', label: 'NEBA High-Roller Title', points: 3 },
+  ],
+  requiredPoints: 36,
+  requiredSeasonsWithPoints: 3,
+  requiredMembershipYears: 10,
+  membershipDataStartYear: 1999,
+  standings: [
+    { bowlerId: '01JX0000000000000000000101', bowlerName: 'Ray Dunleavy', totalPoints: 42, seasonsWithPoints: 5, membershipYears: 28, membershipHistoryComplete: false, eligible: true, meetsPoints: true, meetsSeasons: true, inductedCategories: [] },
+    { bowlerId: '01JX0000000000000000000102', bowlerName: 'Ken Almeida', totalPoints: 42, seasonsWithPoints: 2, membershipYears: 15, membershipHistoryComplete: true, eligible: false, meetsPoints: true, meetsSeasons: false, inductedCategories: [] },
+    { bowlerId: '01JX0000000000000000000103', bowlerName: 'Walt Brennan', totalPoints: 34, seasonsWithPoints: 6, membershipYears: 28, membershipHistoryComplete: false, eligible: false, meetsPoints: false, meetsSeasons: true, inductedCategories: ['Meritorious Service'] },
+    { bowlerId: '01JX0000000000000000000104', bowlerName: 'José Marchetti', totalPoints: 12, seasonsWithPoints: 2, membershipYears: 8, membershipHistoryComplete: true, eligible: false, meetsPoints: false, meetsSeasons: false, inductedCategories: [] },
+  ],
+};
+
+const MOCK_HALL_OF_FAME_POINTS_DETAIL = (bowlerId: string) => {
+  const standing = MOCK_HALL_OF_FAME_POINTS.standings.find((s) => s.bowlerId === bowlerId);
+  if (!standing) return null;
+  return {
+    bowlerId: standing.bowlerId,
+    bowlerName: standing.bowlerName,
+    inductedCategories: standing.inductedCategories,
+    totalPoints: standing.totalPoints,
+    seasonsWithPoints: standing.seasonsWithPoints,
+    membershipHistoryComplete: standing.membershipHistoryComplete,
+    breakdown: [
+      { source: 'Bowler of the Year', date: '2017-12-31', points: 12, runningTotal: 12, reachedThreshold: false },
+      { source: 'Singles Title', date: '2019-03-10', points: 6, runningTotal: 18, reachedThreshold: false },
+      { source: 'Doubles Title', date: '2021-05-02', points: 6, runningTotal: 24, reachedThreshold: false },
+      { source: 'NEBA Masters Title', date: '2022-09-11', points: 6, runningTotal: 30, reachedThreshold: false },
+      { source: 'Singles Title', date: '2023-03-05', points: 6, runningTotal: 36, reachedThreshold: true },
+      { source: 'Trios Title', date: '2024-04-14', points: 2, runningTotal: 38, reachedThreshold: false },
+    ],
+    membershipYears: [
+      { year: 2024, membershipType: 'Renewal' },
+      { year: 2025, membershipType: 'Renewal' },
+    ],
+  };
+};
+
 // An 800x600 picture with a head-and-shoulders figure, so the focal point picker has a real image to measure.
 const MOCK_HALL_OF_FAME_PHOTO_SVG = `<svg xmlns="http://www.w3.org/2000/svg" width="800" height="600" viewBox="0 0 800 600">
   <rect width="800" height="600" fill="#3E4FD9"/>
@@ -1181,6 +1224,7 @@ const routes: Record<string, unknown> = {
   '/news/june-lane-pattern': MOCK_ARTICLE_JUNE_LANE_PATTERN,
   '/news/points-race-update': MOCK_ARTICLE_POINTS_RACE,
   '/hall-of-fame/inductions': MOCK_HALL_OF_FAME,
+  '/hall-of-fame/points': MOCK_HALL_OF_FAME_POINTS,
   '/awards/bowler-of-the-year': MOCK_BOWLER_OF_THE_YEAR_AWARDS,
   '/awards/high-average': MOCK_HIGH_AVERAGE_AWARDS,
   '/awards/high-block': MOCK_HIGH_BLOCK_AWARDS,
@@ -1206,6 +1250,9 @@ function resolveStaticGetRoute(pathname: string): object | null {
   if (pathname === '/tournaments/types') return MOCK_TOURNAMENT_TYPES;
   if (pathname === `/bowlers/${PRIMARY_BOWLER_ID}/titles`) return MOCK_BOWLER_TITLES_CURRENT_LEADER;
   if (pathname === `/bowlers/${SECONDARY_BOWLER_ID}/titles`) return MOCK_BOWLER_TITLES_CURRENT_RIVAL;
+  if (pathname.startsWith('/hall-of-fame/points/')) {
+    return MOCK_HALL_OF_FAME_POINTS_DETAIL(pathname.slice('/hall-of-fame/points/'.length));
+  }
   return null;
 }
 

@@ -1,7 +1,7 @@
 <Project>
   <PropertyGroup Condition=" '$(MSBuildProjectExtension)' == '.csproj'">
     <TargetFramework>net10.0</TargetFramework>
-    <LangVersion>latest</LangVersion>
+    <LangVersion>14</LangVersion>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
     <NuGetAuditMode>all</NuGetAuditMode>
     <NuGetAuditLevel>low</NuGetAuditLevel>

@@ -1,0 +1,106 @@
+/* Eligible stage and the 0 to 36 line follow docs/plans/mockups/hall-of-fame-points/track.html. Gold marks the 36-point finish only. */
+.pts-page { container-type: inline-size; max-width: 1040px; margin: 0 auto; }
+.pts-page [hidden] { display: none; }
+
+.pts-head { text-align: center; }
+.pts-head h1 { font-family: var(--neba-font-display); font-size: 1.875rem; font-weight: 800; color: var(--neba-blue-700); margin: 0; }
+.pts-head p { margin: .25rem 0 0; font-size: .875rem; color: var(--neba-gray-600); }
+
+.pts-notes { margin: 1.5rem 0 1rem; padding: .875rem 1.25rem; background: #fff; border-left: 4px solid var(--neba-gold);
+    border-radius: 0 var(--neba-radius) var(--neba-radius) 0; font-size: .9rem; color: #374151; }
+.pts-notes p { margin: .25rem 0; max-width: 70ch; }
+.pts-criteria { margin: 0 0 1.25rem; font-size: .9rem; color: var(--neba-gray-700); max-width: 70ch; }
+.pts-criteria strong { font-family: var(--neba-font-display); color: var(--neba-blue-brand); }
+.pts-criteria a { color: var(--neba-blue-700); }
+
+.pts-tools { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: .5rem 1rem; margin-bottom: 1rem; }
+.pts-search { position: relative; flex: 1 1 18rem; max-width: 26rem; }
+.pts-search input { width: 100%; padding: .625rem .75rem .625rem 2.25rem; border: 1px solid var(--neba-gray-300);
+    border-radius: var(--neba-radius-lg); font: inherit; background: #fff; }
+.pts-search__icon { position: absolute; left: .75rem; top: 50%; translate: 0 -50%; color: var(--neba-gray-500); }
+.pts-status { font-size: .8125rem; color: var(--neba-gray-600); min-height: 1.25rem; }
+.pts-status--empty { color: var(--neba-accent-red); }
+.pts-empty { padding: 2rem 1rem; text-align: center; color: var(--neba-gray-600); }
+
+.pts-name { background: none; border: 0; padding: 0; cursor: pointer; font-weight: 600; text-align: left; }
+.pts-name:hover { color: var(--neba-blue-700); text-decoration: underline; }
+.pts-member { background: none; border: 0; border-bottom: 1px dotted var(--neba-gray-500); padding: 0; cursor: pointer; font-weight: 600; }
+.pts-member:hover { color: var(--neba-blue-700); border-bottom-color: var(--neba-blue-700); }
+.pts-inducted { display: block; font-size: .75rem; color: var(--neba-gray-600); font-weight: 400; }
+.pts-who .pts-name { display: block; }
+
+/* Eligible: the navy Hall of Fame stage */
+.pts-stage { background: var(--neba-blue-brand); color: #F4F6FF; border-radius: var(--neba-radius-xl); padding: 1.5rem clamp(1rem, 4vw, 2rem) .5rem; margin-bottom: 2rem; }
+.pts-stage h2 { margin: 0; font-family: var(--neba-font-display); font-weight: 800; font-size: 1.5rem; color: var(--neba-gold); }
+.pts-stage .pts-note { margin: .125rem 0 1rem; font-size: .875rem; color: #AEB8E6; max-width: 70ch; }
+.pts-stage :focus-visible { outline-color: var(--neba-gold); }
+.pts-qrow { display: grid; grid-template-columns: 1fr 5.5rem 1.3fr; gap: .5rem 1.5rem; align-items: center; padding: 1rem 0; border-top: 1px solid rgba(255, 255, 255, .16); }
+.pts-stage .pts-name { color: #fff; }
+.pts-stage .pts-name:hover { color: var(--neba-gold); }
+.pts-stage .pts-inducted { color: #AEB8E6; }
+.pts-stage .pts-member { color: #fff; border-bottom-color: #8E9AD6; }
+.pts-stage .pts-member:hover { color: var(--neba-gold); border-bottom-color: var(--neba-gold); }
+.pts-big { text-align: center; }
+.pts-big b { display: block; font-family: var(--neba-font-display); font-weight: 800; font-size: 2rem; line-height: 1; color: var(--neba-gold); }
+.pts-big span { font-size: .75rem; color: #AEB8E6; }
+.pts-stage .pts-mark { color: #8E9AD6; }
+.pts-stage .pts-met .pts-mark { color: var(--neba-gold); font-weight: 700; }
+.pts-stage .pts-need { color: #AEB8E6; }
+
+/* Criteria lines, used in both parts */
+.pts-crit { list-style: none; margin: 0; padding: 0; display: grid; gap: .25rem; font-size: .8125rem; }
+.pts-crit li { display: flex; gap: .5rem; align-items: baseline; }
+.pts-mark { width: 1rem; text-align: center; }
+
+/* Not yet eligible: dots on the 0 to 36 line */
+.pts-below { background: #fff; border: 1px solid var(--neba-gray-200); border-radius: var(--neba-radius-lg); padding: 1.25rem 1rem 1rem; }
+.pts-below h2 { margin: 0; font-family: var(--neba-font-display); font-weight: 800; font-size: 1.5rem; color: var(--neba-blue-brand); }
+.pts-below .pts-note { margin: .125rem 0 0; font-size: .875rem; color: var(--neba-gray-600); max-width: 70ch; }
+.pts-below .pts-mark { color: var(--neba-gray-500); }
+.pts-below .pts-met .pts-mark { color: var(--neba-success); font-weight: 700; }
+.pts-below .pts-need { color: var(--neba-gray-600); }
+.pts-row, .pts-axis { display: grid; grid-template-columns: 13rem 1fr 14rem; gap: 1rem; align-items: center; }
+.pts-axis { padding: .75rem 0 .25rem; font-size: .75rem; color: var(--neba-gray-500); }
+.pts-scale { position: relative; height: 1rem; }
+.pts-scale span { position: absolute; translate: -50% 0; }
+.pts-scale span:first-child { translate: 0 0; }
+.pts-scale span:last-child { translate: -100% 0; color: var(--neba-gold-deep); font-weight: 600; }
+.pts-more { display: block; width: 100%; margin-top: .75rem; padding: .625rem 1rem; border: 1px solid var(--neba-gray-300); border-radius: .5rem; background: #fff; color: var(--neba-blue-700); font-weight: 600; cursor: pointer; }
+.pts-more:hover, .pts-more:focus-visible { background: var(--neba-gray-50, #f8f9fb); }
+.pts-more span { display: block; font-size: .75rem; font-weight: 400; color: var(--neba-gray-600); }
+/* Fixed height, so the rules below the list stay within reach. The scale above the list stays put. */
+.pts-scroll { max-height: 34rem; overflow-y: auto; overscroll-behavior: contain; }
+.pts-row { padding: .5rem 0; border-top: 1px solid var(--neba-gray-200); }
+.pts-line { position: relative; height: 1.75rem; }
+.pts-line::before { content: ""; position: absolute; left: 0; right: 0; top: 50%; height: 2px; translate: 0 -50%; background: var(--neba-gray-200); }
+.pts-tick { position: absolute; top: 50%; width: 1px; height: .75rem; translate: 0 -50%; background: var(--neba-gray-300); }
+.pts-tick--mid { height: 1.1rem; background: var(--neba-gray-400); }
+.pts-finish { position: absolute; right: 0; top: 0; bottom: 0; width: 3px; background: var(--neba-gold-deep); border-radius: 2px; }
+.pts-reach { position: absolute; left: 0; top: 50%; height: 2px; translate: 0 -50%; background: var(--neba-blue-300); }
+.pts-dot { position: absolute; top: 50%; width: 1.125rem; height: 1.125rem; translate: -50% -50%; border-radius: 50%;
+    background: var(--neba-blue-700); border: 2px solid #fff; box-shadow: 0 0 0 1px var(--neba-blue-700); }
+.pts-dot--met { background: var(--neba-gold); box-shadow: 0 0 0 1px var(--neba-gold-deep); }
+.pts-pts { position: absolute; top: -.1rem; translate: -50% -100%; font: 800 .8125rem/1 var(--neba-font-display); color: var(--neba-blue-brand); }
+.pts-pts--edge { translate: -100% -100%; }
+.pts-stats { font-size: .8125rem; color: var(--neba-gray-600); display: grid; gap: .125rem; }
+
+/* Rules, from the API's Rules */
+.pts-rules { margin-top: 3rem; padding-top: 2rem; border-top: 2px solid var(--neba-gray-200); }
+.pts-rules h2 { font-family: var(--neba-font-display); font-size: 1.5rem; margin: 0 0 1.25rem; color: var(--neba-gray-700); }
+.pts-rule-groups { display: grid; grid-template-columns: repeat(3, 1fr); gap: 2rem; }
+.pts-rule-group h3 { font-family: var(--neba-font-display); font-size: 1rem; margin: 0 0 .75rem; padding-bottom: .5rem; color: var(--neba-blue-700); border-bottom: 2px solid var(--neba-blue-700); }
+.pts-rule-group dl { margin: 0; }
+.pts-rule { display: grid; grid-template-columns: 2.25rem 1fr; gap: .5rem; align-items: baseline; padding: .3rem 0; font-size: .9rem; }
+.pts-rule dt { font-family: var(--neba-font-display); font-weight: 800; font-size: 1.0625rem; color: var(--neba-blue-700); text-align: right; }
+.pts-rule dd { margin: 0; color: var(--neba-gray-700); }
+
+/* Phone: stack name, line, then stats. Nothing needs a tap to expand. */
+@container (max-width: 760px) {
+    .pts-qrow { grid-template-columns: 1fr auto; }
+    .pts-qrow .pts-crit { grid-column: 1 / -1; }
+    .pts-axis { display: none; }
+    .pts-row { grid-template-columns: 1fr; gap: .25rem; padding: .75rem 0; }
+    .pts-line { margin: 1.25rem .75rem .25rem 0; }
+    .pts-stats { grid-auto-flow: column; justify-content: start; gap: 1rem; }
+    .pts-rule-groups { grid-template-columns: 1fr; gap: 1.5rem; }
+}

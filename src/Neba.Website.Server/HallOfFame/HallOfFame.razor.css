@@ -298,3 +298,8 @@
         width: 10rem;
     }
 }
+
+.hof-about__cta {
+    margin-top: 0.75rem;
+    display: inline-block;
+}

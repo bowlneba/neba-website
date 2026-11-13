@@ -1,0 +1,36 @@
+﻿{
+  BowlerId: 01JZ8K3M4N5P6Q7R8S9T0V1W3Z,
+  BowlerName: Ray Dunleavy,
+  InductedCategories: [
+    Meritorious Service
+  ],
+  TotalPoints: 18,
+  SeasonsWithPoints: 2,
+  Breakdown: [
+    {
+      Source: Bowler of the Year,
+      Date: Date_1,
+      Points: 12,
+      RunningTotal: 12,
+      ReachedThreshold: false
+    },
+    {
+      Source: Singles Title,
+      Date: Date_2,
+      Points: 6,
+      RunningTotal: 18,
+      ReachedThreshold: false
+    }
+  ],
+  MembershipYears: [
+    {
+      Year: 2024,
+      MembershipType: Renewal
+    },
+    {
+      Year: 2025,
+      MembershipType: Renewal
+    }
+  ],
+  MembershipHistoryComplete: false
+}

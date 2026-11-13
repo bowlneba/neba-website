@@ -92,9 +92,16 @@ async Task Main()
 	unknownBowlers.Dump("Legacy bowlers with no match in new Bowlers");
 	costMismatches.Dump("Legacy cost differs from the current MembershipType.Cost (should be empty)");
 	mapped.Take(25).Dump("Sample mapped rows", 1);
+
+	await WriteBowlerMembershipsAsync(mapped, unknownTypes.Count);
 }
 
 #region Migration
+
+/// <summary>
+/// Set to true to write to BowlerMemberships. False is a dry run (validate + dump only).
+/// </summary>
+const bool Commit = true;
 
 /// <summary>
 /// Legacy membership id for "System Import". Exists only to satisfy the legacy "every bowler must have a membership" rule; skipped, never migrated.
@@ -104,6 +111,48 @@ const int SystemImportLegacyId = 8;
 record LegacyBowlerMembership(int Id, int BowlerId, int MembershipId, DateTime BeginDate, DateTime EndDate, decimal Cost);
 
 record MappedBowlerMembership(int LegacyId, int BowlerId, string MembershipType, decimal Cost, DateOnly StartDate, DateOnly EndDate);
+
+/// <summary>
+/// Inserts mapped rows into BowlerMemberships. Idempotent: rows whose LegacyId already exists are skipped.
+/// Single SaveChanges, so it is all-or-nothing.
+/// </summary>
+async Task WriteBowlerMembershipsAsync(List<MappedBowlerMembership> mapped, int unknownTypeCount)
+{
+	if (!Commit)
+	{
+		"Dry run - set Commit = true to write to BowlerMemberships.".Dump("Write");
+		return;
+	}
+
+	if (unknownTypeCount > 0)
+	{
+		throw new InvalidOperationException($"{unknownTypeCount} rows have unknown legacy membership types; fix before migrating.");
+	}
+
+	var alreadyMigrated = BowlerMemberships
+		.Where(m => m.LegacyId != null)
+		.Select(m => m.LegacyId!.Value)
+		.ToHashSet();
+
+	var toInsert = mapped
+		.Where(m => !alreadyMigrated.Contains(m.LegacyId))
+		.Select(m => new BowlerMemberships
+		{
+			DomainId = Guid.AsDomainId(),
+			LegacyId = m.LegacyId,
+			BowlerId = m.BowlerId,
+			MembershipType = m.MembershipType,
+			Cost = m.Cost,
+			StartDate = m.StartDate,
+			EndDate = m.EndDate
+		})
+		.ToList();
+
+	BowlerMemberships.AddRange(toInsert);
+	await SaveChangesAsync();
+
+	new { Inserted = toInsert.Count, AlreadyMigrated = mapped.Count - toInsert.Count }.Dump("Write");
+}
 
 /// <summary>
 /// Legacy bowler id -> new Bowlers.Id. Throws on duplicate legacy ids.

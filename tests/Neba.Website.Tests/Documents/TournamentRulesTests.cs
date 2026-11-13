@@ -163,7 +163,7 @@ public sealed class TournamentRulesTests : IDisposable
 
         // Act
         var cut = _ctx.Render<TournamentRules>();
-        cut.WaitForState(() => _ctx.JSInterop.Invocations["scrollToHash"].Any());
+        cut.WaitForState(() => _ctx.JSInterop.Invocations["scrollToHash"].Count > 0);
 
         // Assert
         var invocation = _ctx.JSInterop.Invocations["scrollToHash"].Single();
