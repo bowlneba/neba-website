@@ -42,6 +42,14 @@ The user wants to know, for one or more dependencies with a new major version av
    - "Worth bringing in" — 0-3 features max, each tied to a concrete file/pattern in this repo it would replace or improve. Say "nothing worth adopting" if that's the honest answer.
    - Do not recommend the version bump itself as an action item — the user already knows they're deciding whether to upgrade; just give them the risk/reward picture.
 
+## Framework upgrades
+
+If the review covers a .NET framework or SDK bump (for example net10.0 to net11.0, not just a NuGet package), and the `dotnet-upgrade` and `dotnet11` plugins are installed, also apply:
+- `migrate-dotnet10-to-dotnet11` for breaking changes and the migration checklist (use the matching `migrate-dotnetN-to-dotnetM` skill for other jumps).
+- `process-api-net11` and `system-text-json-net11` for new .NET 11 APIs that replace code in this repo.
+
+Cross-reference their findings against actual usage as in step 4, and keep the report format above. The repo's upgrade plan lives in `docs/`; check it before adding findings it already covers. If the plugins are not installed, skip this section.
+
 ## Notes
 
 - This is a review, not an upgrade. Do not edit `Directory.Packages.props`, `package.json`, or any source file unless the user explicitly asks you to apply the upgrade after reading the report.

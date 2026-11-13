@@ -21,6 +21,22 @@ git diff <base-branch>...HEAD --name-only
 
 If the diff is very large, group the review by slice (Features/{Feature} → Contracts → Blazor/Website → Tests).
 
+### 1b. Refresh the dotnet skills
+
+Update the dotnet/skills marketplace and its installed plugins so the later review steps use current guidance:
+
+```
+claude plugin marketplace update dotnet-agent-skills
+claude plugin update dotnet-upgrade@dotnet-agent-skills
+claude plugin update dotnet11@dotnet-agent-skills
+claude plugin update dotnet-blazor@dotnet-agent-skills
+claude plugin update dotnet-data@dotnet-agent-skills
+claude plugin update dotnet-aspnetcore@dotnet-agent-skills
+claude plugin update dotnet-test@dotnet-agent-skills
+```
+
+If a command fails (offline, plugin not installed), note it under **💡 Suggestions** and continue. A plugin update takes effect after a Claude Code restart, so say so in the review when any plugin changed version.
+
 ### 2. Run npm audit
 
 Run `npm audit` at the repo root. This check always runs, regardless of whether `package.json`/`package-lock.json` changed on this branch — a failing JS test can be caused by an advisory that landed upstream since the lockfile was last touched, not just by a diff on this branch.
@@ -98,6 +114,9 @@ These stay in the skill because they are not layer work: `npm audit` (step 2), t
 - **Code review** — recommend `/code-review` (pick an effort level: `medium` for a routine single-feature PR, `high`/`xhigh` for a large diff spanning multiple layers or a critical/high-stakes feature per `feature-plan`'s criticality determination) whenever the diff includes non-trivial logic — new/changed handlers, domain code, or components. Skip the recommendation only for diffs that are entirely docs/README/config, pure test additions with no production code change, or trivial copy/label fixes — the fixed checklist above already covers those well enough that an open-ended pass adds little.
 - **Security review** — recommend `/security-review` when the diff includes any of: new or changed authentication/authorization logic (policies, roles, claims); a new or changed endpoint accepting user input; secrets/connection-string/config handling; a new external integration or third-party API call; file upload/download handling; new or changed PII/sensitive-data handling; a new or upgraded dependency. Don't recommend it for pure UI styling, test-only changes, docs-only changes, or an internal refactor that touches none of the above surfaces.
 - **Performance review** — recommend `/performance-review` when the diff includes any of: a new or changed EF Core query, especially over a collection, join, or list endpoint; a new or changed cached query (`ICachedQuery`/`IFusionCache` usage added, removed, or its key/invalidation logic touched); a new background job (Hangfire) or a loop making repeated external calls; a new Blazor component rendering a collection, or new per-keystroke/high-frequency interactive behavior; any change to a known hot path (an endpoint or page called on every page load, or by every user). Don't recommend it for pure copy/label changes, test-only changes, docs/config-only changes, or a bounded single-entity create/edit form with no list rendering.
+
+**Test quality (when the diff changes tests)**
+- If the `dotnet-test` plugin is installed, apply its `test-anti-patterns` and `assertion-quality` skills to the changed test files. Report findings under **⚠️ Should Fix** or **💡 Suggestions**. Ignore any MSTest-specific advice (this repo uses xUnit v3 and Shouldly) and any advice that conflicts with the Testing Requirements in CLAUDE.md. If the plugin is not installed, skip this check.
 
 **README**
 - [ ] `README.md`'s Project Structure reflects any new/removed top-level `Features/{Feature}` folders, projects, or render-mode changes

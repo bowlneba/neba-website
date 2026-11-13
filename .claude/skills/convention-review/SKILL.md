@@ -51,6 +51,8 @@ Greps cannot catch these; read the diff for them:
 - Interface extracted for a single implementation with no test or cross-module need.
 - Names that say nothing about the job (`Process`, `Handle` helpers, `Data`, `Info`).
 
+If the `dotnet-test` plugin is installed and the diff changes tests, also run its `test-anti-patterns` skill on those files and add each finding as a judgement row. Skip MSTest-specific advice.
+
 ## Step 4. Report
 
 Write one table with a row for every numbered rule above and every judgement item, whether or not it found anything:
