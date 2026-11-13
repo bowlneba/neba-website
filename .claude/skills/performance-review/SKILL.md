@@ -24,6 +24,7 @@ If a PR number or branch was given instead, diff against that. If the diff is la
 Only evaluate categories relevant to what actually changed (don't force a Blazor finding out of a pure API diff). For each, check against the patterns below — these are drawn from CLAUDE.md's own "Learnings" (FusionCache, EF Core navigation fixup, Blazor Server round-trips) plus the `dotnet-entity-framework-core`/`dotnet-blazor` skills, not generic advice.
 
 **EF Core / Database**
+- If the `dotnet-data` plugin is installed and the diff touches EF queries, also apply its `optimizing-ef-core-queries` skill and merge its findings into this section. CLAUDE.md conventions win where they conflict. If the plugin is not installed, use the list below alone.
 - A loop that issues a query per iteration (N+1) instead of a single batched query.
 - A read-only query missing `.AsNoTracking()`.
 - A list endpoint with no pagination or page-size cap on a table that can grow unbounded.

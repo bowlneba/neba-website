@@ -43,6 +43,7 @@ The user wants to review and fix surviving mutations for a specific .NET source 
    ```
 
 ## Notes
+- To choose which file to target next, the `dotnet-test` plugin's `coverage-analysis` and `crap-score` skills (if installed) rank code by coverage and complexity. Use them only for picking files; the Stryker report stays the source for what to fix.
 - The report is read from the latest run in `tests/Neba.<Layer>.Tests/StrykerOutput/`. No need to re-run Stryker unless the user asks.
 - If the report is missing, tell the user to run `cd tests/Neba.<Layer>.Tests && dotnet stryker` first.
 - Keep fixes minimal — kill the mutation, don't refactor surrounding code.

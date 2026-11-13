@@ -1,4 +1,8 @@
 {
+    "chat.plugins.enabled": true,
+    "chat.plugins.marketplaces": [
+      "dotnet/skills",
+    ],
     "cSpell.words": [
       "Antiforgery",
       "apphost",

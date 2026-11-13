@@ -162,7 +162,7 @@ Same shape as Step 7, but for the Blazor side. The screens/actions/data needs we
 - Playwright/bUnit test needs, using the decision table from `new-endpoint`/`pull-request-prep` (bUnit for internal component logic, Playwright for real browser + HTTP flows).
 - If the feature has no UI surface at all, state that explicitly here rather than fabricating one.
 
-If `dotnet-blazor` skill guidance is relevant to a decision in this draft, apply it rather than guessing.
+If `dotnet-blazor` skill guidance is relevant to a decision in this draft, apply it rather than guessing. For a page with several sections, also apply the `plan-ui-change` skill from the `dotnet-blazor` plugin (if installed) to split it into focused components, and `author-component` for component design. CLAUDE.md and `docs/learnings/blazor-ui.md` win where they conflict.
 
 Replace the `*(Not yet drafted.)*` placeholder under `## Phase 2: UI` (written in Step 6) with this draft (same layer/checklist style, adapted to Blazor: Pages / Components / API Client / Tests).
 
