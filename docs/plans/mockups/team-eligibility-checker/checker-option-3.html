@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Check Team Eligibility - BowlNEBA (Checker, option 3: mark a bowler from the search)</title>
+  <link rel="stylesheet" href="shared/site.css">
+  <link rel="stylesheet" href="shared/checker.css">
+</head>
+<body data-option="3">
+  <div class="mock-bar">
+    <strong>Mockup controls</strong>
+    <label>Format
+      <select id="mock-format">
+        <option value="doubles">Doubles</option>
+        <option value="overunder">Over/Under 50 Doubles</option>
+        <option value="trios">Trios</option>
+        <option value="baker">Baker</option>
+      </select>
+    </label>
+    <label>Result shown on "Check team"
+      <select id="mock-result">
+        <option value="eligible">Eligible</option>
+        <option value="defending">Defending champions</option>
+        <option value="undefended">Defending champions (previous tournament truncated)</option>
+        <option value="champions">Not eligible: too many champions</option>
+        <option value="age">Not eligible: ages could not be verified</option>
+        <option value="twoover">Not eligible: two bowlers in the same age group</option>
+        <option value="unknown">Not eligible: Hall of Fame limit (with bowlers not in system)</option>
+        <option value="date">Depends on the squad date</option>
+      </select>
+    </label>
+    <span>Checker, option 3: mark a bowler from the search</span>
+  </div>
+
+  <header class="site-top"><div class="shell"><span class="brand">BowlNEBA</span><nav><span>Home</span><span class="on">Tournaments</span><span>Stats</span><span>History</span></nav></div></header>
+
+  <main class="shell checker">
+    <a class="back-link" href="#"><span class="material-symbols-outlined" aria-hidden="true">arrow_back</span>Back to tournament</a>
+
+    <div class="checker-head" id="head"></div>
+
+    <section class="rules" id="rules" aria-label="Team rules"></section>
+
+    <form onsubmit="return false">
+      <fieldset class="team" id="team"></fieldset>
+      <div class="actions">
+        <button type="button" id="check" class="btn btn-primary" disabled>Check team</button>
+        <button type="button" id="clear-all" class="btn btn-quiet">Start over</button>
+      </div>
+    </form>
+
+    <div id="result"></div>
+  </main>
+
+  <script src="shared/checker.js"></script>
+</body>
+</html>

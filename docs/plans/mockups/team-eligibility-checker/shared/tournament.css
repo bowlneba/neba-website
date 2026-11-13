@@ -1,0 +1,44 @@
+/* Tournament card and detail hero, simplified from the real components so the defending champions can be judged in place. */
+.preview-block { margin-bottom: 3rem; }
+.preview-block > h2 { font-size: 1.0625rem; margin-bottom: 0.25rem; }
+.preview-block > .why { font-size: 0.875rem; color: var(--neba-gray-500); margin-bottom: 1rem; max-width: 70ch; }
+
+.tab-row { display: flex; gap: 0.25rem; flex-wrap: wrap; }
+.tab-row button { font: inherit; font-size: 0.875rem; font-weight: 600; padding: 0.375rem 0.875rem; border: 1px solid var(--neba-gray-300); background: #fff; border-radius: 999px; cursor: pointer; color: var(--neba-gray-700); }
+.tab-row button[aria-pressed="true"] { background: var(--neba-blue-brand); border-color: var(--neba-blue-brand); color: #fff; }
+
+/* Upcoming card */
+.card { border: 1px solid var(--neba-border); border-radius: var(--neba-radius-lg); background: #fff; overflow: hidden; }
+.card-grid { display: grid; grid-template-columns: 180px 1fr 230px; gap: 1.5rem; padding: 1rem; align-items: stretch; }
+.logo-tile { border-radius: var(--neba-radius-lg); background: var(--neba-hero-gradient); color: #fff; display: grid; place-items: center; text-align: center; padding: 1rem; font-family: var(--neba-font-display); font-weight: 800; font-size: 1.125rem; min-height: 150px; }
+.card-content { display: flex; flex-direction: column; gap: 0.5rem; padding: 0.25rem 0; min-width: 0; }
+.card-content h3 { font-size: 1.375rem; line-height: 1.2; }
+.card-meta { display: flex; flex-wrap: wrap; gap: 0.25rem 1rem; font-size: 0.875rem; color: var(--neba-gray-600); }
+.card-meta .material-symbols-outlined { font-size: 1rem; margin-right: 0.2rem; color: var(--neba-gray-400); }
+.card-side { display: flex; flex-direction: column; justify-content: space-between; gap: 0.75rem; border-left: 1px solid var(--neba-gray-200); padding-left: 1.25rem; }
+.card-side .fee { font-family: var(--neba-font-display); font-weight: 700; font-size: 1.125rem; color: var(--neba-blue-brand); }
+.card-side .fee small { display: block; font-family: var(--neba-font-base); font-weight: 400; font-size: 0.8125rem; color: var(--neba-gray-500); }
+.card-side .btn { width: 100%; }
+.eligibility-link { display: inline-flex; align-items: center; gap: 0.35rem; font-size: 0.875rem; color: var(--neba-blue-600); text-decoration: underline; text-underline-offset: 3px; }
+
+/* Winner pill (the site's existing filled gold) */
+.winner-pill { display: inline-flex; align-items: center; gap: 0.5rem; background: linear-gradient(135deg, #fde68a 0%, #f59e0b 100%); color: #78350f; border-radius: 999px; padding: 0.375rem 1rem 0.375rem 0.75rem; font-family: var(--neba-font-display); font-weight: 600; font-size: 0.9375rem; align-self: flex-start; }
+
+/* Detail hero */
+.hero { border-radius: var(--neba-radius-xl); padding: 2.5rem 3rem; color: #fff; background: var(--neba-hero-gradient); }
+.hero-grid { display: grid; grid-template-columns: 1.15fr minmax(220px, 1fr); gap: 2rem; align-items: stretch; }
+.hero-content { display: flex; flex-direction: column; gap: 1rem; min-width: 0; }
+.hero h1, .hero h2 { color: #fff; font-size: 2.25rem; line-height: 1.1; }
+.hero-meta { display: flex; flex-wrap: wrap; gap: 0.25rem 1.25rem; font-size: 0.9375rem; opacity: 0.92; }
+.hero-chips { display: flex; flex-wrap: wrap; gap: 0.5rem 1rem; align-items: center; }
+.hero-chips .chip { background: rgba(255, 255, 255, 0.16); color: #fff; }
+.hero-link { color: #fff; font-size: 0.9375rem; font-weight: 500; text-decoration: underline; text-underline-offset: 3px; text-decoration-color: rgba(255, 255, 255, 0.5); display: inline-flex; align-items: center; gap: 0.35rem; }
+.hero-tile { border-radius: var(--neba-radius-lg); box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.18); display: grid; place-items: center; text-align: center; padding: 1.5rem; min-height: 200px; font-family: var(--neba-font-display); font-weight: 800; font-size: 1.5rem; background: rgba(255, 255, 255, 0.07); }
+
+@media (max-width: 860px) {
+  .card-grid { grid-template-columns: 1fr; }
+  .card-side { border-left: 0; padding-left: 0; border-top: 1px solid var(--neba-gray-200); padding-top: 0.75rem; }
+  .hero { padding: 1.5rem; }
+  .hero-grid { grid-template-columns: 1fr; }
+  .hero h1, .hero h2 { font-size: 1.75rem; }
+}
