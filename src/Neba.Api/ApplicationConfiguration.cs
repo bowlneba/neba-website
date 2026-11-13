@@ -1,3 +1,4 @@
+using Neba.Api.Features.HallOfFame;
 using Neba.Api.Features.Stats.GetSeasonStats;
 using Neba.Api.Messaging;
 using Neba.Api.Security.Password;
@@ -29,6 +30,7 @@ public static class ApplicationConfiguration
         {
             services.AddSingleton<ISeasonStatsCalculator, SeasonStatsCalculator>();
             services.AddSingleton<IBowlerOfTheYearRaceCalculator, BowlerOfTheYearRaceCalculator>();
+            services.AddSingleton<IHallOfFamePointsCalculator, HallOfFamePointsCalculator>();
             services.AddScoped<PasswordChangedNotifier>();
         }
     }
