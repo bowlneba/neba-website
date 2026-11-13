@@ -138,6 +138,21 @@ public static class CacheDescriptors
                 Key = "neba:hall-of-fame:inductions:list",
                 Tags = ["neba", "neba:hall-of-fame", InductionsTag]
             };
+
+        /// <summary>
+        /// The tag shared by every cached Hall of Fame points entry; remove by it to evict them all.
+        /// </summary>
+        public const string PointsTag = "neba:hall-of-fame:points";
+
+        /// <summary>
+        /// Returns a cache descriptor for the Hall of Fame points list.
+        /// </summary>
+        public static CacheDescriptor ListPoints
+            => new()
+            {
+                Key = "neba:hall-of-fame:points:list",
+                Tags = ["neba", "neba:hall-of-fame", PointsTag]
+            };
     }
 
     /// <summary>

@@ -1,5 +1,6 @@
 using Neba.Api.Contracts.HallOfFame.EditHallOfFamePhoto;
 using Neba.Api.Contracts.HallOfFame.ListHallOfFameInductions;
+using Neba.Api.Contracts.HallOfFame.ListHallOfFamePoints;
 using Neba.Api.Contracts.Uploads;
 
 using Refit;
@@ -22,6 +23,18 @@ public interface IHallOfFameApi
     /// </returns>
     [Get("/hall-of-fame/inductions")]
     Task<IApiResponse<CollectionResponse<HallOfFameInductionResponse>>> ListHallOfFameInductionsAsync(CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Lists Hall of Fame points for bowlers not inducted for Superior Performance, with the point table and thresholds.
+    /// </summary>
+    /// <param name="cancellationToken">
+    /// A token to cancel the operation.
+    /// </param>
+    /// <returns>
+    /// The point table, thresholds, and each bowler's standing.
+    /// </returns>
+    [Get("/hall-of-fame/points")]
+    Task<IApiResponse<HallOfFamePointsResponse>> ListHallOfFamePointsAsync(CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Uploads a Hall of Fame photo to staging. Requires the HallOfFame.EditHallOfFamePhoto permission.
