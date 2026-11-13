@@ -31,6 +31,7 @@ public static class ApplicationConfiguration
             services.AddSingleton<ISeasonStatsCalculator, SeasonStatsCalculator>();
             services.AddSingleton<IBowlerOfTheYearRaceCalculator, BowlerOfTheYearRaceCalculator>();
             services.AddSingleton<IHallOfFamePointsCalculator, HallOfFamePointsCalculator>();
+            services.AddScoped<HallOfFamePointsReader>();
             services.AddScoped<PasswordChangedNotifier>();
         }
     }
