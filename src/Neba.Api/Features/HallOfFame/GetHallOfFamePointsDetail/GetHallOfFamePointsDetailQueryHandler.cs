@@ -24,7 +24,7 @@ internal sealed class GetHallOfFamePointsDetailQueryHandler(
 
         var titles = await reader.LoadTitleWinsAsync(query.BowlerId, cancellationToken);
         var awards = await reader.LoadAwardWinsAsync(query.BowlerId, cancellationToken);
-        var inducted = await reader.LoadInductedCategoriesAsync(cancellationToken);
+        var inducted = await reader.LoadInductedCategoriesAsync(query.BowlerId, cancellationToken);
         var memberships = calculator
             .SummarizeMemberships(await reader.LoadMembershipsAsync(ids, cancellationToken))
             .GetValueOrDefault(query.BowlerId, MembershipSummary.None);

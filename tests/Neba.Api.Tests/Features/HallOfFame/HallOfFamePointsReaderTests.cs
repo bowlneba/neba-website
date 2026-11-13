@@ -153,7 +153,7 @@ public sealed class HallOfFamePointsReaderTests(AppDbContextFixture fixture)
         open.BowlerId.ShouldBe(bowler.Id);
     }
 
-    [Fact(DisplayName = "LoadMembershipsAsync and LoadNamesAsync translate the strongly typed id Contains and return only the asked bowlers")]
+    [Fact(DisplayName = "LoadMembershipsAsync and LoadNamesAsync translate the strongly typed id Contains and return only the asked bowlers, with only counting membership types")]
     public async Task LoadMembershipsAndNames_ShouldReturnOnlyAskedBowlers()
     {
         // Arrange
@@ -171,9 +171,9 @@ public sealed class HallOfFamePointsReaderTests(AppDbContextFixture fixture)
         var names = await CreateReader().LoadNamesAsync([bowler.Id], ct);
 
         // Assert
-        memberships.Count.ShouldBe(2);
-        memberships.ShouldAllBe(membership => membership.BowlerId == bowler.Id);
-        memberships.Select(membership => membership.Type).ShouldBe([MembershipType.New, MembershipType.Guest], ignoreOrder: true);
+        var membership = memberships.ShouldHaveSingleItem();
+        membership.BowlerId.ShouldBe(bowler.Id);
+        membership.Type.ShouldBe(MembershipType.New);
         names.Count.ShouldBe(1);
         names[bowler.Id].ShouldBe("Jane Doe");
     }
@@ -195,11 +195,34 @@ public sealed class HallOfFamePointsReaderTests(AppDbContextFixture fixture)
         await _dbContext.SaveChangesAsync(ct);
 
         // Act
-        var inducted = await CreateReader().LoadInductedCategoriesAsync(ct);
+        var inducted = await CreateReader().LoadInductedCategoriesAsync(null, ct);
 
         // Assert
         inducted.Count.ShouldBe(2);
         inducted[bowler.Id].ShouldBe([HallOfFameCategory.MeritoriousService, HallOfFameCategory.FriendOfNeba], ignoreOrder: true);
         inducted[other.Id].ShouldBe([HallOfFameCategory.SuperiorPerformance]);
+    }
+
+    [Fact(DisplayName = "LoadInductedCategoriesAsync returns only the asked bowler when one is given")]
+    public async Task LoadInductedCategoriesAsync_ShouldReturnOnlyAskedBowler_WhenBowlerGiven()
+    {
+        // Arrange
+        var ct = TestContext.Current.CancellationToken;
+        var bowler = BowlerFactory.Create();
+        var other = BowlerFactory.Create();
+        await _dbContext.Bowlers.AddRangeAsync([bowler, other], ct);
+        await _dbContext.HallOfFameInductions.AddRangeAsync(
+        [
+            HallOfFameInductionFactory.Create(year: 2018, bowlerId: bowler.Id, categories: [HallOfFameCategory.MeritoriousService]),
+            HallOfFameInductionFactory.Create(year: 2020, bowlerId: other.Id, categories: [HallOfFameCategory.SuperiorPerformance])
+        ], ct);
+        await _dbContext.SaveChangesAsync(ct);
+
+        // Act
+        var inducted = await CreateReader().LoadInductedCategoriesAsync(bowler.Id, ct);
+
+        // Assert
+        inducted.Count.ShouldBe(1);
+        inducted[bowler.Id].ShouldBe([HallOfFameCategory.MeritoriousService]);
     }
 }

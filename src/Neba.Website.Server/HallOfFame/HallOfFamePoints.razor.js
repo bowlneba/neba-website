@@ -43,16 +43,41 @@ export function applyFilter(root, search, index = buildIndex(root)) {
     return shown;
 }
 
-export function initialize(root) {
+/** Reads the rows again after the page added some, then applies the current search to them. */
+export function refresh(root) {
+    const instance = instances.get(root);
+    if (!instance) {
+        return;
+    }
+
+    instance.index = buildIndex(root);
+    instance.expanding = false;
+    applyFilter(root, instance.search, instance.index);
+}
+
+/**
+ * dotNet is optional. The page passes itself so the first search can ask it to show the rows still behind
+ * "Show more"; the page then calls refresh once they are in the document.
+ */
+export function initialize(root, dotNet = null) {
     if (!root || instances.has(root)) {
         return;
     }
 
     const input = root.querySelector('[data-pts-search]');
-    const instance = { index: buildIndex(root), search: input?.value ?? '', cleanup: null };
+    const instance = { index: buildIndex(root), search: input?.value ?? '', expanding: false, cleanup: null };
 
     const onInput = () => {
         instance.search = input.value;
+
+        if (dotNet && !instance.expanding && instance.search.trim() !== '' && root.dataset.ptsComplete === 'false') {
+            instance.expanding = true;
+            dotNet.invokeMethodAsync('ExpandForSearch').catch(() => {
+                instance.expanding = false;
+            });
+            return;
+        }
+
         applyFilter(root, instance.search, instance.index);
     };
     input?.addEventListener('input', onInput);

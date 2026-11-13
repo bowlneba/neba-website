@@ -1,5 +1,5 @@
-import { describe, test, expect } from '@jest/globals';
-import { buildIndex, applyFilter, initialize, dispose } from './HallOfFamePoints.razor.js';
+import { describe, test, expect, jest } from '@jest/globals';
+import { buildIndex, applyFilter, initialize, refresh, dispose } from './HallOfFamePoints.razor.js';
 
 const row = (name) => `<div data-pts-row data-name="${name}">${name}</div>`;
 
@@ -70,5 +70,85 @@ describe('initialize and dispose', () => {
 
     test('indexes each row once', () => {
         expect(buildIndex(render())).toHaveLength(3);
+    });
+});
+
+describe('first search with rows behind Show more', () => {
+    const tick = () => new Promise((resolve) => setTimeout(resolve, 0));
+
+    function renderPartial(complete) {
+        const root = render();
+        root.dataset.ptsComplete = complete ? 'true' : 'false';
+        return root;
+    }
+
+    function type(root, value) {
+        const input = root.querySelector('[data-pts-search]');
+        input.value = value;
+        input.dispatchEvent(new Event('input'));
+    }
+
+    test('asks the page to show every row once, instead of filtering a partial list', () => {
+        const root = renderPartial(false);
+        const dotNet = { invokeMethodAsync: jest.fn().mockResolvedValue(undefined) };
+        initialize(root, dotNet);
+
+        type(root, 'tom');
+
+        expect(dotNet.invokeMethodAsync).toHaveBeenCalledWith('ExpandForSearch');
+        expect(visible(root)).toHaveLength(3);
+
+        type(root, 'tomm');
+
+        expect(dotNet.invokeMethodAsync).toHaveBeenCalledTimes(1);
+    });
+
+    test('filters directly when every row is already shown', () => {
+        const root = renderPartial(true);
+        const dotNet = { invokeMethodAsync: jest.fn() };
+        initialize(root, dotNet);
+
+        type(root, 'tom');
+
+        expect(dotNet.invokeMethodAsync).not.toHaveBeenCalled();
+        expect(visible(root)).toEqual(['Tom Davis']);
+    });
+
+    test('does not ask to expand for an empty search', () => {
+        const root = renderPartial(false);
+        const dotNet = { invokeMethodAsync: jest.fn() };
+        initialize(root, dotNet);
+
+        type(root, '   ');
+
+        expect(dotNet.invokeMethodAsync).not.toHaveBeenCalled();
+    });
+
+    test('asks again after a failed expand', async () => {
+        const root = renderPartial(false);
+        const dotNet = { invokeMethodAsync: jest.fn().mockRejectedValue(new Error('disconnected')) };
+        initialize(root, dotNet);
+
+        type(root, 'tom');
+        await tick();
+        type(root, 'tom');
+
+        expect(dotNet.invokeMethodAsync).toHaveBeenCalledTimes(2);
+    });
+
+    test('refresh reads the new rows and applies the current search to them', () => {
+        const root = renderPartial(false);
+        const dotNet = { invokeMethodAsync: jest.fn().mockResolvedValue(undefined) };
+        initialize(root, dotNet);
+        type(root, 'tom');
+
+        root.querySelector('#below').insertAdjacentHTML('beforeend', row('Tomas Reyes'));
+        refresh(root);
+
+        expect(visible(root)).toEqual(['Tom Davis', 'Tomas Reyes']);
+    });
+
+    test('refresh does nothing for a root that was never initialized', () => {
+        expect(() => refresh(render())).not.toThrow();
     });
 });

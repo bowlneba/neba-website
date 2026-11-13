@@ -46,7 +46,7 @@
     }
     else if (_model is not null)
     {
-        <div @ref="_root">
+        <div @ref="_root" data-pts-complete="@(AllRowsShown ? "true" : "false")">
             <div class="pts-notes" role="note">
                 <p>Points count toward Superior Performance only. Bowlers in the Hall of Fame for Meritorious Service or Friend of NEBA appear here with their Superior Performance points.</p>
                 <p>Membership years count from @_model.Requirements.MembershipDataStartYear. A * means the bowler's first membership is not on file, so the count may be low.</p>
@@ -107,7 +107,7 @@
                     <span>Seasons and membership</span>
                 </div>
                 <div class="pts-scroll" role="region" aria-label="Bowlers not yet eligible" tabindex="0">
-                    @foreach (var bowler in _model.NotYetEligible)
+                    @foreach (var bowler in _model.NotYetEligible.Take(_visibleCount))
                     {
                         <div class="pts-row" data-pts-row data-name="@bowler.BowlerName" @key="bowler.BowlerId">
                             <div class="pts-who">
@@ -144,6 +144,13 @@
                         </div>
                     }
                 </div>
+                @if (!AllRowsShown)
+                {
+                    <button type="button" class="pts-more" @onclick="ShowMore">
+                        Show @Math.Min(PageSize, _model.NotYetEligible.Count - _visibleCount) more
+                        <span>(@(_model.NotYetEligible.Count - _visibleCount) not shown; search covers everyone)</span>
+                    </button>
+                }
             </section>
 
             @if (_model.Eligible.Count == 0 && _model.NotYetEligible.Count == 0)
@@ -182,6 +189,10 @@
     // The line runs from 0 to the required points, split into six equal steps (36 points: a tick every 6).
     private const int TickCount = 6;
 
+    // The not yet eligible list can run to hundreds of rows, so it shows a page at a time. Search needs every row
+    // in the page, so the first search shows them all.
+    private const int PageSize = 50;
+
     private bool _isLoading = true;
     private HallOfFamePointsViewModel? _model;
     private string? _errorMessage;
@@ -190,6 +201,12 @@
     private IJSObjectReference? _jsModule;
     private bool _attachAttempted;
     private bool _searchReady;
+    private int _visibleCount = PageSize;
+    private bool _refreshAfterRender;
+    private DotNetObjectReference<HallOfFamePoints>? _selfReference;
+
+    private bool AllRowsShown
+        => _model is null || _visibleCount >= _model.NotYetEligible.Count;
 
     protected override async Task OnInitializedAsync()
     {
@@ -211,27 +228,63 @@
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-        // The list only exists once the data has loaded, so attach the search on the first render that has it.
-        // One attempt only: a second render during the import, or a failed import, must not try again.
-        if (_attachAttempted || _model is null)
+        if (_model is null)
         {
             return;
         }
 
-        _attachAttempted = true;
+        // The list only exists once the data has loaded, so attach the search on the first render that has it.
+        // One attempt only: a second render during the import, or a failed import, must not try again.
+        if (!_attachAttempted)
+        {
+            _attachAttempted = true;
 
-        try
-        {
-            _jsModule = await JsRuntime.InvokeAsync<IJSObjectReference>(
-                "import", "./HallOfFame/HallOfFamePoints.razor.js");
-            await _jsModule.InvokeVoidAsync("initialize", _root);
-            _searchReady = true;
-            StateHasChanged();
+            try
+            {
+                _selfReference = DotNetObjectReference.Create(this);
+                _jsModule = await JsRuntime.InvokeAsync<IJSObjectReference>(
+                    "import", "./HallOfFame/HallOfFamePoints.razor.js");
+                await _jsModule.InvokeVoidAsync("initialize", _root, _selfReference);
+                _searchReady = true;
+                StateHasChanged();
+            }
+            catch (Exception ex) when (ex is JSException or JSDisconnectedException)
+            {
+                Logger.LogWarning(ex, "[HallOfFamePoints] The search script could not be attached.");
+            }
+
+            return;
         }
-        catch (Exception ex) when (ex is JSException or JSDisconnectedException)
+
+        // Rows were added since the search read the list, so it must read them again.
+        if (_refreshAfterRender && _jsModule is not null)
         {
-            Logger.LogWarning(ex, "[HallOfFamePoints] The search script could not be attached.");
+            _refreshAfterRender = false;
+
+            try
+            {
+                await _jsModule.InvokeVoidAsync("refresh", _root);
+            }
+            catch (Exception ex) when (ex is JSException or JSDisconnectedException)
+            {
+                Logger.LogWarning(ex, "[HallOfFamePoints] The search script could not read the new rows.");
+            }
         }
+    }
+
+    /// <summary>Called by the search script on the first search, when rows are still hidden behind "Show more".</summary>
+    [JSInvokable]
+    public Task ExpandForSearch()
+    {
+        _visibleCount = int.MaxValue;
+        _refreshAfterRender = true;
+        return InvokeAsync(StateHasChanged);
+    }
+
+    private void ShowMore()
+    {
+        _visibleCount = _visibleCount > int.MaxValue - PageSize ? int.MaxValue : _visibleCount + PageSize;
+        _refreshAfterRender = true;
     }
 
     private int TickPoints
@@ -285,6 +338,8 @@
 
     public async ValueTask DisposeAsync()
     {
+        _selfReference?.Dispose();
+
         if (_jsModule is null)
         {
             return;

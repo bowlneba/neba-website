@@ -299,6 +299,65 @@ public sealed class HallOfFamePointsTests : IDisposable
         module.VerifyInvoke("initialize");
     }
 
+    [Fact(DisplayName = "Shows the not yet eligible list a page at a time and adds a page on Show more")]
+    public void Click_ShouldShowNextPage_WhenShowMoreClicked()
+    {
+        // Arrange
+        SetupList(HallOfFamePointsResponseFactory.Create(standings: ManyNotYetEligible(120)));
+        var cut = _ctx.Render<HallOfFamePointsPage>();
+        cut.FindAll(".pts-row").Count.ShouldBe(50);
+        cut.Find(".pts-more").TextContent.ShouldContain("Show 50 more");
+        cut.Find(".pts-more").TextContent.ShouldContain("70 not shown");
+
+        // Act
+        cut.Find(".pts-more").Click();
+
+        // Assert
+        cut.FindAll(".pts-row").Count.ShouldBe(100);
+        cut.Find(".pts-more").TextContent.ShouldContain("Show 20 more");
+        cut.Find("[data-pts-complete]").GetAttribute("data-pts-complete").ShouldBe("false");
+
+        cut.Find(".pts-more").Click();
+        cut.FindAll(".pts-row").Count.ShouldBe(120);
+        cut.FindAll(".pts-more").ShouldBeEmpty();
+        cut.Find("[data-pts-complete]").GetAttribute("data-pts-complete").ShouldBe("true");
+    }
+
+    [Fact(DisplayName = "Shows no Show more button when the list fits on one page")]
+    public void Render_ShouldOmitShowMore_WhenListFitsOnePage()
+    {
+        // Arrange
+        SetupList(HallOfFamePointsResponseFactory.Create(standings: ManyNotYetEligible(50)));
+
+        // Act
+        var cut = _ctx.Render<HallOfFamePointsPage>();
+
+        // Assert
+        cut.FindAll(".pts-row").Count.ShouldBe(50);
+        cut.FindAll(".pts-more").ShouldBeEmpty();
+        cut.Find("[data-pts-complete]").GetAttribute("data-pts-complete").ShouldBe("true");
+    }
+
+    [Fact(DisplayName = "Shows every row and has the search script read them again when the first search asks to expand")]
+    public async Task ExpandForSearch_ShouldShowAllRowsAndRefreshSearch_WhenCalled()
+    {
+        // Arrange
+        SetupList(HallOfFamePointsResponseFactory.Create(standings: ManyNotYetEligible(120)));
+        var module = _ctx.JSInterop.SetupModule("./HallOfFame/HallOfFamePoints.razor.js");
+        module.SetupVoid("initialize", _ => true).SetVoidResult();
+        module.SetupVoid("refresh", _ => true).SetVoidResult();
+        var cut = _ctx.Render<HallOfFamePointsPage>();
+        await cut.WaitForAssertionAsync(() => cut.Find(".pts-tools").HasAttribute("hidden").ShouldBeFalse());
+
+        // Act
+        await cut.InvokeAsync(() => cut.Instance.ExpandForSearch());
+
+        // Assert
+        cut.FindAll(".pts-row").Count.ShouldBe(120);
+        cut.FindAll(".pts-more").ShouldBeEmpty();
+        await cut.WaitForAssertionAsync(() => module.VerifyInvoke("refresh"));
+    }
+
     [Fact(DisplayName = "Opens the points modal for the clicked bowler")]
     public void Click_ShouldOpenModal_ForTheClickedBowler()
     {
@@ -319,6 +378,12 @@ public sealed class HallOfFamePointsTests : IDisposable
             Times.Once);
         cut.Find("[role='dialog']").TextContent.ShouldContain("Tom Davis");
     }
+
+    private static IReadOnlyCollection<HallOfFamePointsStandingResponse> ManyNotYetEligible(int count)
+        => [.. Enumerable.Range(0, count).Select(index => HallOfFamePointsStandingResponseFactory.Create(
+            bowlerId: Ulid.NewUlid().ToString(),
+            bowlerName: $"Bowler {index:000}",
+            totalPoints: 12))];
 
     private void SetupList(HallOfFamePointsResponse list)
     {

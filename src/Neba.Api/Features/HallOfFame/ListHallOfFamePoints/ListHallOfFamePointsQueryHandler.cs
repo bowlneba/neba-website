@@ -14,7 +14,7 @@ internal sealed class ListHallOfFamePointsQueryHandler(
 
         var titles = await reader.LoadTitleWinsAsync(null, cancellationToken);
         var awards = await reader.LoadAwardWinsAsync(null, cancellationToken);
-        var inducted = await reader.LoadInductedCategoriesAsync(cancellationToken);
+        var inducted = await reader.LoadInductedCategoriesAsync(null, cancellationToken);
 
         var points = calculator.CalculatePoints(titles, awards)
             .Where(bowler => !(inducted.TryGetValue(bowler.BowlerId, out var categories)
