@@ -67,10 +67,12 @@
                                     </NavLink>
                                 </div>
                             </li>
-                            <li class="neba-nav-item">
-                                <NavLink class="neba-nav-link" href="hall-of-fame">
-                                    Hall of Fame
-                                </NavLink>
+                            <li class="neba-nav-item" data-action="toggle-dropdown">
+                                <a role="button" tabindex="0" class="neba-nav-link" aria-haspopup="true" aria-expanded="false">Hall of Fame</a>
+                                <div class="neba-dropdown" role="menu">
+                                    <NavLink class="neba-dropdown-link" href="hall-of-fame" Match="NavLinkMatch.All" role="menuitem">Inductees</NavLink>
+                                    <NavLink class="neba-dropdown-link" href="hall-of-fame/points" role="menuitem">Points Standings</NavLink>
+                                </div>
                             </li>
                             <li class="neba-nav-item">
                                 <NavLink class="neba-nav-link" href="sponsors">

@@ -51,6 +51,15 @@
                    OnDismiss="@(() => _errorMessage = null)" />
     }
 
+    <!-- Points standings call to action -->
+    <a href="/hall-of-fame/points" class="hof-points-cta">
+        <span class="hof-points-cta__text">
+            <strong>Who is closest to the Hall of Fame?</strong>
+            <span>See every bowler's points, who is eligible now, and how points are earned.</span>
+        </span>
+        <span class="hof-points-cta__action">View points standings &rarr;</span>
+    </a>
+
     <!-- About — static content, always visible -->
     <section class="hof-about" aria-labelledby="hof-about-title">
         <img class="hof-about__logo" src="/images/neba-hof-480.jpg" alt="NEBA Hall of Fame logo" width="480" height="436" />
@@ -75,7 +84,8 @@
         <div class="hof-about__categories">
             <div class="hof-about__category">
                 <h3><span class="hof-dot hof-dot--superior"></span>Superior Performance</h3>
-                <p>Bowlers with an outstanding competitive record in NEBA. Eligibility comes from earning 36 Hall of Fame points through tournament titles and Bowler of the Year awards. <a href="/hall-of-fame/points">See who is eligible and who is closest</a>.</p>
+                <p>Bowlers with an outstanding competitive record in NEBA. Eligibility comes from earning 36 Hall of Fame points through tournament titles and Bowler of the Year awards.</p>
+                <a href="/hall-of-fame/points" class="neba-btn neba-btn-sm neba-btn-primary hof-about__cta">See who is eligible and who is closest</a>
             </div>
             <div class="hof-about__category">
                 <h3><span class="hof-dot hof-dot--meritorious"></span>Meritorious Service</h3>

@@ -298,3 +298,42 @@
         width: 10rem;
     }
 }
+
+.hof-points-cta {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem 1.5rem;
+    padding: 1rem 1.5rem;
+    border-radius: 0.75rem;
+    background: var(--neba-blue-brand);
+    color: #fff;
+    text-decoration: none;
+    border-left: 6px solid var(--neba-gold);
+}
+
+.hof-points-cta:hover {
+    filter: brightness(1.12);
+}
+
+.hof-points-cta__text {
+    display: grid;
+    gap: 0.15rem;
+    font-size: 0.9rem;
+}
+
+.hof-points-cta__text strong {
+    font-size: 1.125rem;
+    color: var(--neba-gold);
+}
+
+.hof-points-cta__action {
+    font-weight: 700;
+    white-space: nowrap;
+}
+
+.hof-about__cta {
+    margin-top: 0.75rem;
+    display: inline-block;
+}

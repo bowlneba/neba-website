@@ -597,7 +597,7 @@ public sealed class HallOfFameTests : IDisposable
         cut.FindAll(".ehp-subtitle").ShouldBeEmpty();
     }
 
-    [Fact(DisplayName = "Links to the Hall of Fame points page from the criteria and the Superior Performance blurb")]
+    [Fact(DisplayName = "Links to the Hall of Fame points page from the banner, the Superior Performance blurb and the criteria")]
     public void Render_ShouldLinkToPointsPage()
     {
         // Arrange
@@ -607,7 +607,8 @@ public sealed class HallOfFameTests : IDisposable
         var cut = _ctx.Render<HallOfFamePage>();
 
         // Assert
-        cut.FindAll("a[href='/hall-of-fame/points']").Count.ShouldBe(2);
+        cut.FindAll("a[href='/hall-of-fame/points']").Count.ShouldBe(3);
+        cut.Find("a.hof-points-cta").TextContent.ShouldContain("Who is closest to the Hall of Fame?");
     }
 
     [Fact(DisplayName = "No longer lists the point values on this page")]
