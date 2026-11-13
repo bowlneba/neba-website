@@ -73,20 +73,20 @@ describe('initialize and dispose', () => {
     });
 });
 
+function renderPartial(complete) {
+    const root = render();
+    root.dataset.ptsComplete = complete ? 'true' : 'false';
+    return root;
+}
+
+function type(root, value) {
+    const input = root.querySelector('[data-pts-search]');
+    input.value = value;
+    input.dispatchEvent(new Event('input'));
+}
+
 describe('first search with rows behind Show more', () => {
     const tick = () => new Promise((resolve) => setTimeout(resolve, 0));
-
-    function renderPartial(complete) {
-        const root = render();
-        root.dataset.ptsComplete = complete ? 'true' : 'false';
-        return root;
-    }
-
-    function type(root, value) {
-        const input = root.querySelector('[data-pts-search]');
-        input.value = value;
-        input.dispatchEvent(new Event('input'));
-    }
 
     test('asks the page to show every row once, instead of filtering a partial list', () => {
         const root = renderPartial(false);

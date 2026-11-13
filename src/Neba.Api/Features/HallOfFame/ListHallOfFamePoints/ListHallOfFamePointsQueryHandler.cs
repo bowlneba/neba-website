@@ -19,7 +19,7 @@ internal sealed class ListHallOfFamePointsQueryHandler(
                 && categories.Contains(HallOfFameCategory.SuperiorPerformance)))
             .ToList();
 
-        var bowlerIds = points.Select(bowler => bowler.BowlerId).ToList();
+        var bowlerIds = points.ConvertAll(bowler => bowler.BowlerId);
         var names = await reader.LoadNamesAsync(bowlerIds, cancellationToken);
         var memberships = calculator.SummarizeMemberships(await reader.LoadMembershipsAsync(bowlerIds, cancellationToken));
 

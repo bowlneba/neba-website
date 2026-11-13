@@ -92,12 +92,9 @@ internal static class HallOfFamePointRules
     {
         ArgumentNullException.ThrowIfNull(type);
 
-        if (type == TournamentType.Singles && startDate.Year < PreNinetyOneSinglesCutoffYear)
-        {
-            return SinglesBeforeNinetyOne;
-        }
-
-        return TitleRules.GetValueOrDefault(type);
+        return type == TournamentType.Singles && startDate.Year < PreNinetyOneSinglesCutoffYear
+            ? SinglesBeforeNinetyOne
+            : TitleRules.GetValueOrDefault(type);
     }
 
     /// <summary>The rule for a Bowler of the Year award, or null when it earns no points.</summary>

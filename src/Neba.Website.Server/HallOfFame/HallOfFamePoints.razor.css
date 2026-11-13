@@ -1,6 +1,6 @@
 /* Eligible stage and the 0 to 36 line follow docs/plans/mockups/hall-of-fame-points/track.html. Gold marks the 36-point finish only. */
 .pts-page { container-type: inline-size; max-width: 1040px; margin: 0 auto; }
-.pts-page [hidden] { display: none !important; }
+.pts-page [hidden] { display: none; }
 
 .pts-head { text-align: center; }
 .pts-head h1 { font-family: var(--neba-font-display); font-size: 1.875rem; font-weight: 800; color: var(--neba-blue-700); margin: 0; }

@@ -11,44 +11,44 @@ public sealed class HallOfFamePointRulesTests
 {
     private static readonly DateOnly Modern = new(2019, 3, 10);
 
-    public static TheoryData<TournamentType, int> TitlePoints => new()
+    public static TheoryData<string, int> TitlePoints => new()
     {
-        { TournamentType.Singles, 6 },
-        { TournamentType.TournamentOfChampions, 6 },
-        { TournamentType.Doubles, 6 },
-        { TournamentType.Invitational, 6 },
-        { TournamentType.Masters, 6 },
-        { TournamentType.OverUnderFiftyDoubles, 3 },
-        { TournamentType.OverUnderFortyDoubles, 3 },
-        { TournamentType.NonChampions, 2 },
-        { TournamentType.Senior, 2 },
-        { TournamentType.SeniorAndWomen, 2 },
-        { TournamentType.Trios, 2 },
-        { TournamentType.HighRoller, 3 },
-        { TournamentType.OverForty, 2 },
-        { TournamentType.FortyToFortyNine, 2 }
+        { TournamentType.Singles.Name, 6 },
+        { TournamentType.TournamentOfChampions.Name, 6 },
+        { TournamentType.Doubles.Name, 6 },
+        { TournamentType.Invitational.Name, 6 },
+        { TournamentType.Masters.Name, 6 },
+        { TournamentType.OverUnderFiftyDoubles.Name, 3 },
+        { TournamentType.OverUnderFortyDoubles.Name, 3 },
+        { TournamentType.NonChampions.Name, 2 },
+        { TournamentType.Senior.Name, 2 },
+        { TournamentType.SeniorAndWomen.Name, 2 },
+        { TournamentType.Trios.Name, 2 },
+        { TournamentType.HighRoller.Name, 3 },
+        { TournamentType.OverForty.Name, 2 },
+        { TournamentType.FortyToFortyNine.Name, 2 }
     };
 
-    public static TheoryData<TournamentType> ZeroPointTitles =>
+    public static TheoryData<string> ZeroPointTitles =>
     [
-        TournamentType.Women,
-        TournamentType.Youth,
-        TournamentType.Eliminator,
-        TournamentType.Baker
+        TournamentType.Women.Name,
+        TournamentType.Youth.Name,
+        TournamentType.Eliminator.Name,
+        TournamentType.Baker.Name
     ];
 
-    public static TheoryData<BowlerOfTheYearCategory, int> AwardPoints => new()
+    public static TheoryData<string, int> AwardPoints => new()
     {
-        { BowlerOfTheYearCategory.Open, 12 },
-        { BowlerOfTheYearCategory.Senior, 2 },
-        { BowlerOfTheYearCategory.SuperSenior, 2 }
+        { BowlerOfTheYearCategory.Open.Name, 12 },
+        { BowlerOfTheYearCategory.Senior.Name, 2 },
+        { BowlerOfTheYearCategory.SuperSenior.Name, 2 }
     };
 
-    public static TheoryData<BowlerOfTheYearCategory> ZeroPointAwards =>
+    public static TheoryData<string> ZeroPointAwards =>
     [
-        BowlerOfTheYearCategory.Youth,
-        BowlerOfTheYearCategory.Rookie,
-        BowlerOfTheYearCategory.Woman
+        BowlerOfTheYearCategory.Youth.Name,
+        BowlerOfTheYearCategory.Rookie.Name,
+        BowlerOfTheYearCategory.Woman.Name
     ];
 
     [Fact(DisplayName = "Every tournament type has an entry in the point table")]
@@ -73,10 +73,10 @@ public sealed class HallOfFamePointRulesTests
 
     [Theory(DisplayName = "A title earns the points from the page's table")]
     [MemberData(nameof(TitlePoints))]
-    public void ForTitle_ShouldReturnPoints_ForEachTitleType(TournamentType type, int points)
+    public void ForTitle_ShouldReturnPoints_ForEachTitleType(string typeName, int points)
     {
         // Act
-        var rule = HallOfFamePointRules.ForTitle(type, Modern);
+        var rule = HallOfFamePointRules.ForTitle(TournamentType.FromName(typeName), Modern);
 
         // Assert
         rule.ShouldNotBeNull();
@@ -85,10 +85,10 @@ public sealed class HallOfFamePointRulesTests
 
     [Theory(DisplayName = "A zero-point title returns no rule")]
     [MemberData(nameof(ZeroPointTitles))]
-    public void ForTitle_ShouldReturnNull_ForZeroPointTypes(TournamentType type)
+    public void ForTitle_ShouldReturnNull_ForZeroPointTypes(string typeName)
     {
         // Act
-        var rule = HallOfFamePointRules.ForTitle(type, Modern);
+        var rule = HallOfFamePointRules.ForTitle(TournamentType.FromName(typeName), Modern);
 
         // Assert
         rule.ShouldBeNull();
@@ -96,10 +96,10 @@ public sealed class HallOfFamePointRulesTests
 
     [Theory(DisplayName = "A Bowler of the Year award earns the points from the page's table")]
     [MemberData(nameof(AwardPoints))]
-    public void ForAward_ShouldReturnPoints_ForEachCategory(BowlerOfTheYearCategory category, int points)
+    public void ForAward_ShouldReturnPoints_ForEachCategory(string categoryName, int points)
     {
         // Act
-        var rule = HallOfFamePointRules.ForAward(category);
+        var rule = HallOfFamePointRules.ForAward(BowlerOfTheYearCategory.FromName(categoryName));
 
         // Assert
         rule.ShouldNotBeNull();
@@ -108,10 +108,10 @@ public sealed class HallOfFamePointRulesTests
 
     [Theory(DisplayName = "A Youth, Rookie or Woman Bowler of the Year award earns no points")]
     [MemberData(nameof(ZeroPointAwards))]
-    public void ForAward_ShouldReturnNull_ForZeroPointCategories(BowlerOfTheYearCategory category)
+    public void ForAward_ShouldReturnNull_ForZeroPointCategories(string categoryName)
     {
         // Act
-        var rule = HallOfFamePointRules.ForAward(category);
+        var rule = HallOfFamePointRules.ForAward(BowlerOfTheYearCategory.FromName(categoryName));
 
         // Assert
         rule.ShouldBeNull();

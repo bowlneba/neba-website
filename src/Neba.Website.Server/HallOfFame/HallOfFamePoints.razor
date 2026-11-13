@@ -285,13 +285,29 @@
         => _selected = null;
 
     private static string MembershipYearsLabel(HallOfFamePointsStandingViewModel bowler)
-        => bowler.MembershipYears
-            + (bowler.MembershipHistoryComplete ? string.Empty : "*")
-            + " "
-            + "year".ToQuantity(bowler.MembershipYears, ShowQuantityAs.None);
+        => MembershipYearsCount(bowler) + " " + "year".ToQuantity(bowler.MembershipYears, ShowQuantityAs.None);
 
-    private RenderFragment<HallOfFamePointsStandingViewModel> SeasonsCriterion => bowler => @<li class="@(bowler.MeetsSeasons ? "pts-met" : null)">
-        <span class="pts-mark" aria-hidden="true">@(bowler.MeetsSeasons ? "✓" : "○")</span>
+    private static string? MetClass(bool met)
+        => met ? "pts-met" : null;
+
+    private static string Mark(bool met)
+        => met ? "✓" : "○";
+
+    private static string MembershipYearsCount(HallOfFamePointsStandingViewModel bowler)
+        => bowler.MembershipYears + (bowler.MembershipHistoryComplete ? string.Empty : "*");
+
+    private static string MembershipMetLabel(HallOfFamePointsStandingViewModel bowler)
+        => MembershipYearsCount(bowler) + " membership " + "year".ToQuantity(bowler.MembershipYears, ShowQuantityAs.None);
+
+    private string MembershipOpenLabel(HallOfFamePointsStandingViewModel bowler)
+        => MembershipYearsCount(bowler) + " of " + _model!.Requirements.MembershipYears + " years";
+
+    // A count we know is low cannot say "needs": the bowler may have joined before the records begin.
+    private static string MembershipNeedLabel(HallOfFamePointsStandingViewModel bowler)
+        => bowler.MembershipHistoryComplete ? "needs " + bowler.MembershipYearsNeeded + " more" : "count may be low";
+
+    private RenderFragment<HallOfFamePointsStandingViewModel> SeasonsCriterion => bowler => @<li class="@MetClass(bowler.MeetsSeasons)">
+        <span class="pts-mark" aria-hidden="true">@Mark(bowler.MeetsSeasons)</span>
         @if (bowler.MeetsSeasons)
         {
             <span>@("season".ToQuantity(bowler.SeasonsWithPoints)) with points</span>
@@ -302,18 +318,17 @@
         }
     </li>;
 
-    private RenderFragment<HallOfFamePointsStandingViewModel> MembershipCriterion => bowler => @<li class="@(bowler.MeetsMembershipYears ? "pts-met" : null)">
-        <span class="pts-mark" aria-hidden="true">@(bowler.MeetsMembershipYears ? "✓" : "○")</span>
+    private RenderFragment<HallOfFamePointsStandingViewModel> MembershipCriterion => bowler => @<li class="@MetClass(bowler.MeetsMembershipYears)">
+        <span class="pts-mark" aria-hidden="true">@Mark(bowler.MeetsMembershipYears)</span>
         <span>
             @if (bowler.MeetsMembershipYears)
             {
-                <button type="button" class="pts-member" @onclick="@(() => Open(bowler))">@(bowler.MembershipYears + (bowler.MembershipHistoryComplete ? string.Empty : "*") + " membership " + "year".ToQuantity(bowler.MembershipYears, ShowQuantityAs.None))</button>
+                <button type="button" class="pts-member" @onclick="@(() => Open(bowler))">@MembershipMetLabel(bowler)</button>
             }
             else
             {
-                <button type="button" class="pts-member" @onclick="@(() => Open(bowler))">@(bowler.MembershipYears + (bowler.MembershipHistoryComplete ? string.Empty : "*") + " of " + _model!.Requirements.MembershipYears + " years")</button>
-                @* A count we know is low cannot say "needs": the bowler may have joined before the records begin. *@
-                <span class="pts-need">@(bowler.MembershipHistoryComplete ? "needs " + bowler.MembershipYearsNeeded + " more" : "count may be low")</span>
+                <button type="button" class="pts-member" @onclick="@(() => Open(bowler))">@MembershipOpenLabel(bowler)</button>
+                <span class="pts-need">@MembershipNeedLabel(bowler)</span>
             }
         </span>
     </li>;

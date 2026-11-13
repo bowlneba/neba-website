@@ -169,8 +169,8 @@ public sealed class ListHallOfFamePointsQueryHandlerTests(AppDbContextFixture fi
         var seasonIds = new[] { sharedSeason.Id, sharedSeason.Id, sharedSeason.Id, sharedSeason.Id, otherSeason.Id, otherSeason.Id };
         foreach (var seasonId in seasonIds)
         {
-            var tournament = TournamentFactory.Create(tournamentType: TournamentType.Singles, seasonId: seasonId,
-                startDate: new DateOnly(2008, 5, 1), endDate: new DateOnly(2008, 5, 2));
+            var tournament = TournamentFactory.Create(tournamentType: TournamentType.Singles,
+                startDate: new DateOnly(2008, 5, 1), endDate: new DateOnly(2008, 5, 2), seasonId: seasonId);
             await _dbContext.Tournaments.AddAsync(tournament, ct);
             await _dbContext.HistoricalTournamentChampions.AddAsync(HistoricalTournamentChampionFactory.Create(twoSeasons, tournament), ct);
         }
@@ -238,8 +238,8 @@ public sealed class ListHallOfFamePointsQueryHandlerTests(AppDbContextFixture fi
         await AddTitleAsync(bowler, TournamentType.Singles, 2010);
 
         var season = SeasonFactory.Create(description: "recorded", startDate: new DateOnly(2024, 1, 1), endDate: new DateOnly(2024, 12, 31), complete: true);
-        var tournament = TournamentFactory.Create(tournamentType: TournamentType.Doubles, seasonId: season.Id,
-            startDate: new DateOnly(2024, 4, 1), endDate: new DateOnly(2024, 4, 2));
+        var tournament = TournamentFactory.Create(tournamentType: TournamentType.Doubles,
+            startDate: new DateOnly(2024, 4, 1), endDate: new DateOnly(2024, 4, 2), seasonId: season.Id);
         tournament.CompleteTournament(entryCount: 100);
         tournament.AddResult(bowler.Id, place: 1, prizeMoney: 500m, points: 50);
         season.AddBowlerOfTheYearWinner(bowler.Id);
