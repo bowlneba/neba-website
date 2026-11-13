@@ -37,64 +37,64 @@ public sealed partial class MembershipType
     /// A bowler's first yearly membership; once per lifetime.
     /// </summary>
     public static readonly MembershipType New = new(
-        "NEW", "New Member", legacyId: 1, MembershipKind.Yearly, cost: 25.00m, lengthInDays: null,
-        RepeatPolicy.OncePerLifetime, requiresPriorMembership: false, qualifiesAsPriorMembership: true, active: true);
+        "NEW", "New Member", legacyId: 1, new Term(MembershipKind.Yearly, null), cost: 25.00m,
+        new Eligibility(RepeatPolicy.OncePerLifetime, RequiresPriorMembership: false, QualifiesAsPriorMembership: true, CountsTowardHallOfFame: true), active: true);
 
     /// <summary>
     /// A yearly renewal; needs a prior qualifying membership.
     /// </summary>
     public static readonly MembershipType Renewal = new(
-        "RENEWAL", "Renewal", legacyId: 2, MembershipKind.Yearly, cost: 25.00m, lengthInDays: null,
-        RepeatPolicy.Unlimited, requiresPriorMembership: true, qualifiesAsPriorMembership: true, active: true);
+        "RENEWAL", "Renewal", legacyId: 2, new Term(MembershipKind.Yearly, null), cost: 25.00m,
+        new Eligibility(RepeatPolicy.Unlimited, RequiresPriorMembership: true, QualifiesAsPriorMembership: true, CountsTowardHallOfFame: true), active: true);
 
     /// <summary>
     /// A no-cost yearly membership for military service.
     /// </summary>
     public static readonly MembershipType Military = new(
-        "MILITARY", "Military Service", legacyId: 3, MembershipKind.Yearly, cost: 0.00m, lengthInDays: null,
-        RepeatPolicy.Unlimited, requiresPriorMembership: false, qualifiesAsPriorMembership: true, active: true);
+        "MILITARY", "Military Service", legacyId: 3, new Term(MembershipKind.Yearly, null), cost: 0.00m,
+        new Eligibility(RepeatPolicy.Unlimited, RequiresPriorMembership: false, QualifiesAsPriorMembership: true, CountsTowardHallOfFame: true), active: true);
 
     /// <summary>
     /// A no-cost yearly honorary membership.
     /// </summary>
     public static readonly MembershipType Honorary = new(
-        "HONORARY", "Honorary Member", legacyId: 4, MembershipKind.Yearly, cost: 0.00m, lengthInDays: null,
-        RepeatPolicy.Unlimited, requiresPriorMembership: false, qualifiesAsPriorMembership: true, active: true);
+        "HONORARY", "Honorary Member", legacyId: 4, new Term(MembershipKind.Yearly, null), cost: 0.00m,
+        new Eligibility(RepeatPolicy.Unlimited, RequiresPriorMembership: false, QualifiesAsPriorMembership: true, CountsTowardHallOfFame: true), active: true);
 
     /// <summary>
     /// A short paid membership for a bowler who is not a member.
     /// </summary>
     public static readonly MembershipType NonMember = new(
-        "NON_MEMBER", "Non-Member", legacyId: 5, MembershipKind.Temporary, cost: 15.00m, lengthInDays: 2,
-        RepeatPolicy.Unlimited, requiresPriorMembership: false, qualifiesAsPriorMembership: false, active: true);
+        "NON_MEMBER", "Non-Member", legacyId: 5, new Term(MembershipKind.Temporary, 2), cost: 15.00m,
+        new Eligibility(RepeatPolicy.Unlimited, RequiresPriorMembership: false, QualifiesAsPriorMembership: false, CountsTowardHallOfFame: false), active: true);
 
     /// <summary>
     /// A short free membership for a guest, limited by a minimum gap between uses.
     /// </summary>
     public static readonly MembershipType Guest = new(
-        "GUEST", "Guest", legacyId: 6, MembershipKind.Temporary, cost: 0.00m, lengthInDays: 2,
-        RepeatPolicy.MinimumDaysSinceLast(GuestMinimumDaysBetweenUses), requiresPriorMembership: false, qualifiesAsPriorMembership: false, active: true);
+        "GUEST", "Guest", legacyId: 6, new Term(MembershipKind.Temporary, 2), cost: 0.00m,
+        new Eligibility(RepeatPolicy.MinimumDaysSinceLast(GuestMinimumDaysBetweenUses), RequiresPriorMembership: false, QualifiesAsPriorMembership: false, CountsTowardHallOfFame: false), active: true);
 
     /// <summary>
     /// Inactive; no reservation membership has been issued since 2022. Kept so history resolves.
     /// </summary>
     public static readonly MembershipType Reservation = new(
-        "RESERVATION", "Reservation", legacyId: 7, MembershipKind.Temporary, cost: 0.00m, lengthInDays: 2,
-        RepeatPolicy.Unlimited, requiresPriorMembership: false, qualifiesAsPriorMembership: false, active: false);
+        "RESERVATION", "Reservation", legacyId: 7, new Term(MembershipKind.Temporary, 2), cost: 0.00m,
+        new Eligibility(RepeatPolicy.Unlimited, RequiresPriorMembership: false, QualifiesAsPriorMembership: false, CountsTowardHallOfFame: false), active: false);
 
     /// <summary>
     /// Inactive; retired in the legacy system. Kept so history resolves.
     /// </summary>
     public static readonly MembershipType Courtesy = new(
-        "COURTESY", "Courtesy", legacyId: 9, MembershipKind.Yearly, cost: 0.00m, lengthInDays: null,
-        RepeatPolicy.Unlimited, requiresPriorMembership: true, qualifiesAsPriorMembership: true, active: false);
+        "COURTESY", "Courtesy", legacyId: 9, new Term(MembershipKind.Yearly, null), cost: 0.00m,
+        new Eligibility(RepeatPolicy.Unlimited, RequiresPriorMembership: true, QualifiesAsPriorMembership: true, CountsTowardHallOfFame: true), active: false);
 
     /// <summary>
     /// A no-cost yearly membership for a time honored member; needs a prior qualifying membership.
     /// </summary>
     public static readonly MembershipType TimeHonored = new(
-        "TIME_HONORED", "Time Honored Member", legacyId: 10, MembershipKind.Yearly, cost: 0.00m, lengthInDays: null,
-        RepeatPolicy.Unlimited, requiresPriorMembership: true, qualifiesAsPriorMembership: true, active: true);
+        "TIME_HONORED", "Time Honored Member", legacyId: 10, new Term(MembershipKind.Yearly, null), cost: 0.00m,
+        new Eligibility(RepeatPolicy.Unlimited, RequiresPriorMembership: true, QualifiesAsPriorMembership: true, CountsTowardHallOfFame: true), active: true);
 
     /// <summary>
     /// The types that can be bought today: every <see cref="Active"/> type. Use this for pickers.
@@ -141,21 +141,31 @@ public sealed partial class MembershipType
     /// </summary>
     public bool QualifiesAsPriorMembership { get; }
 
+    /// <summary>
+    /// Whether a year held under this type counts toward the Hall of Fame membership-years criterion.
+    /// </summary>
+    public bool CountsTowardHallOfFame { get; }
+
+    private readonly record struct Term(MembershipKind Kind, int? LengthInDays);
+
+    private readonly record struct Eligibility(
+        RepeatPolicy RepeatPolicy,
+        bool RequiresPriorMembership,
+        bool QualifiesAsPriorMembership,
+        bool CountsTowardHallOfFame);
+
     private MembershipType(
         string value,
         string name,
         int legacyId,
-        MembershipKind kind,
+        Term term,
         decimal cost,
-        int? lengthInDays,
-        RepeatPolicy repeatPolicy,
-        bool requiresPriorMembership,
-        bool qualifiesAsPriorMembership,
+        Eligibility eligibility,
         bool active)
         : base(name, value)
     {
         ArgumentOutOfRangeException.ThrowIfNegative(cost);
-        ArgumentNullException.ThrowIfNull(repeatPolicy);
+        ArgumentNullException.ThrowIfNull(eligibility.RepeatPolicy);
 
         if (value.Length > MaxCodeLength)
         {
@@ -167,26 +177,29 @@ public sealed partial class MembershipType
             throw new ArgumentException($"Code '{value}' must be UPPER_SNAKE_CASE.", nameof(value));
         }
 
+        var (kind, lengthInDays) = term;
+
         switch (kind)
         {
             case MembershipKind.Temporary when lengthInDays is null or < 1:
-                throw new ArgumentException("A temporary membership needs a length of at least 1 day.", nameof(lengthInDays));
+                throw new ArgumentException("A temporary membership needs a length of at least 1 day.", nameof(term));
             case MembershipKind.Yearly when lengthInDays is not null:
-                throw new ArgumentException("A yearly membership cannot have a length in days.", nameof(lengthInDays));
+                throw new ArgumentException("A yearly membership cannot have a length in days.", nameof(term));
             case MembershipKind.Temporary:
             case MembershipKind.Yearly:
                 break;
             default:
-                throw new ArgumentOutOfRangeException(nameof(kind), kind, "Unknown membership kind.");
+                throw new ArgumentOutOfRangeException(nameof(term), kind, "Unknown membership kind.");
         }
 
         LegacyId = legacyId;
         Kind = kind;
         Cost = cost;
         LengthInDays = lengthInDays;
-        RepeatPolicy = repeatPolicy;
-        RequiresPriorMembership = requiresPriorMembership;
-        QualifiesAsPriorMembership = qualifiesAsPriorMembership;
+        RepeatPolicy = eligibility.RepeatPolicy;
+        RequiresPriorMembership = eligibility.RequiresPriorMembership;
+        QualifiesAsPriorMembership = eligibility.QualifiesAsPriorMembership;
+        CountsTowardHallOfFame = eligibility.CountsTowardHallOfFame;
         Active = active;
     }
 

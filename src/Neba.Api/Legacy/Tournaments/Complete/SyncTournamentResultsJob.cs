@@ -68,6 +68,7 @@ internal sealed class SyncTournamentResultsJob(
         // addition to the tournament's own detail view.
         await cache.RemoveByTagAsync($"neba:tournaments:{tournament.Id}", token: ct);
         await cache.RemoveByTagAsync("neba:tournaments:champions", token: ct);
+        await cache.RemoveByTagAsync(CacheDescriptors.HallOfFame.PointsTag, token: ct);
 
         // Season stats read both the stats-eligible tournament count and these results, so they are
         // stale only once the results are written; evicting at completion would let a request

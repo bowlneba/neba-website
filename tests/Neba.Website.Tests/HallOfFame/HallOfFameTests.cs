@@ -597,6 +597,32 @@ public sealed class HallOfFameTests : IDisposable
         cut.FindAll(".ehp-subtitle").ShouldBeEmpty();
     }
 
+    [Fact(DisplayName = "Links to the Hall of Fame points page from the Superior Performance blurb and the criteria")]
+    public void Render_ShouldLinkToPointsPage()
+    {
+        // Arrange
+        SetupSuccessResponse([HallOfFameInductionResponseFactory.Create()]);
+
+        // Act
+        var cut = _ctx.Render<HallOfFamePage>();
+
+        // Assert
+        cut.FindAll("a[href='/hall-of-fame/points']").Count.ShouldBe(2);
+    }
+
+    [Fact(DisplayName = "No longer lists the point values on this page")]
+    public void Render_ShouldNotShowPointCards()
+    {
+        // Arrange
+        SetupSuccessResponse([]);
+
+        // Act
+        var cut = _ctx.Render<HallOfFamePage>();
+
+        // Assert
+        cut.Markup.ShouldNotContain("Points Leader/Invitational Title");
+    }
+
     private void SetupSuccessResponse(IReadOnlyCollection<HallOfFameInductionResponse> inductions)
     {
         using var response = new StubApiResponse<CollectionResponse<HallOfFameInductionResponse>>

@@ -142,3 +142,8 @@ Unmeasured, sized by reading the code (about 1k members, a few hundred bowlers p
 - `eligibleTournamentIdsForBowler` is a `List<int>` used in `Contains` inside `Where`; use a `HashSet<int>`.
 - `GenerateSeasonStatsJob` loads every membership for the season's bowlers (all years), and rewrites the whole season on each tournament completion.
 - Before optimizing, time the Software queries, `Compute` and `SaveChangesAsync` separately; the job has no per-phase timing yet.
+
+## ULID validation
+
+- `Ulid.TryParse` (Ulid 1.4.1) returns true for any 26 characters, even `!!` or spaces, so a `.Must(id => Ulid.TryParse(id, out _))` validator rule rejects nothing but wrong length. A malformed ID parses to a garbage ULID and the handler returns `NotFound`. Use a strict pattern if a 400 is needed.
+- A cached query that reads bowler data (names, memberships) must carry the `neba:bowlers` tag; the bowler and membership jobs evict that tag only.

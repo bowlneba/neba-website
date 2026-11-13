@@ -1,0 +1,23 @@
+.pm-title { font-family: var(--neba-font-display); font-size: 1.375rem; font-weight: 800; margin: 0; }
+.pm-flag { display: inline-flex; margin-top: .5rem; padding: .2rem .6rem; border-radius: 999px; background: var(--neba-blue-brand); color: var(--neba-gold); font-size: .75rem; font-weight: 600; }
+.pm-body h3 { font-family: var(--neba-font-display); font-size: 1rem; margin: 1.25rem 0 .5rem; color: var(--neba-gray-700); }
+.pm-stats { display: flex; gap: 2rem; margin-bottom: 1.25rem; }
+.pm-stat b { display: block; font-family: var(--neba-font-display); font-size: 1.75rem; line-height: 1.1; color: var(--neba-blue-700); }
+.pm-stat span { font-size: .8125rem; color: var(--neba-gray-600); }
+.pm-table { width: 100%; border-collapse: collapse; font-size: .9rem; }
+.pm-table th { text-align: left; font-weight: 600; font-size: .8125rem; color: var(--neba-gray-600); padding: .4rem .5rem; border-bottom: 1px solid var(--neba-gray-300); }
+.pm-table td { padding: .4rem .5rem; border-bottom: 1px solid var(--neba-gray-200); }
+.pm-table tfoot td { font-weight: 700; border-bottom: 0; }
+.pm-table tr.pm-reached td { background: #FFF8E6; font-weight: 600; }
+.pm-table tr.pm-reached td:first-child { box-shadow: inset 4px 0 0 var(--neba-gold); }
+.pm-reached-tag { display: inline-block; margin-left: .5rem; padding: .1rem .5rem; border-radius: 999px; background: var(--neba-blue-brand); color: var(--neba-gold); font-size: .6875rem; font-weight: 700; white-space: nowrap; }
+.pm-r { text-align: right; font-variant-numeric: tabular-nums; }
+.pm-years { columns: 2; column-gap: 1.5rem; margin: 0; padding: 0; list-style: none; font-size: .9rem; }
+.pm-years li { display: flex; justify-content: space-between; gap: .75rem; padding: .25rem 0; border-bottom: 1px solid var(--neba-gray-200); break-inside: avoid; }
+.pm-years span:last-child { color: var(--neba-gray-600); }
+.pm-muted { color: var(--neba-gray-600); font-size: .9rem; margin: 0; }
+.pm-note { margin: .75rem 0 0; padding: .625rem .875rem; background: #FFF8E6; border-left: 4px solid var(--neba-gold); font-size: .85rem; border-radius: 0 var(--neba-radius) var(--neba-radius) 0; }
+.pm-state { padding: 2.5rem 1rem; text-align: center; color: var(--neba-gray-600); }
+.pm-state h3 { color: #1f2937; margin: .5rem 0 .25rem; }
+.pm-retry { margin-top: .75rem; padding: .5rem 1rem; border: 1px solid var(--neba-blue-700); background: #fff; color: var(--neba-blue-700); border-radius: var(--neba-radius); cursor: pointer; font-weight: 600; }
+@media (max-width: 520px) { .pm-years { columns: 1; } .pm-stats { gap: 1.25rem; } }

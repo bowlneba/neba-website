@@ -1,0 +1,173 @@
+@using System.Globalization
+@using Humanizer
+@using Neba.Api.Contracts.HallOfFame
+@using Neba.Website.Server.Services
+
+@inject ApiExecutor ApiExecutor
+@inject IHallOfFameApi HallOfFameApi
+
+<NebaModal IsOpen="@IsOpen" OnClose="@OnClose" MaxWidth="640px" AriaLabel="@("Hall of Fame points for " + BowlerName)">
+    <HeaderContent>
+        <div class="pm-title-wrap">
+            <h2 class="pm-title">@BowlerName</h2>
+            @if (_data?.InductedLine is not null)
+            {
+                <span class="pm-flag">@_data.InductedLine</span>
+            }
+        </div>
+    </HeaderContent>
+    <ChildContent>
+        <div class="pm-body">
+            @if (_state == ModalState.Loading)
+            {
+                <div class="pm-state">
+                    <NebaLoadingIndicator />
+                    <div>Loading points…</div>
+                </div>
+            }
+            else if (_state == ModalState.Error)
+            {
+                <div class="pm-state">
+                    <h3>Could not load points</h3>
+                    <p>Something went wrong fetching this bowler's record.</p>
+                    <button type="button" class="pm-retry" @onclick="RetryAsync">Retry</button>
+                </div>
+            }
+            else if (_data is not null)
+            {
+                <div class="pm-stats">
+                    <div class="pm-stat">
+                        <b>@_data.TotalPoints</b>
+                        <span>@(Requirements is null ? "points" : "of " + Requirements.Points + " points")</span>
+                    </div>
+                    <div class="pm-stat">
+                        <b>@_data.SeasonsWithPoints</b>
+                        <span>@("season".ToQuantity(_data.SeasonsWithPoints, ShowQuantityAs.None)) with points@(Requirements is null ? null : " (" + Requirements.Seasons + " needed)")</span>
+                    </div>
+                    <div class="pm-stat">
+                        <b>@(_data.MembershipYears.Count + (_data.MembershipHistoryComplete ? string.Empty : "*"))</b>
+                        <span>membership @("year".ToQuantity(_data.MembershipYears.Count, ShowQuantityAs.None))@(Requirements is null ? null : " (" + Requirements.MembershipYears + " needed)")</span>
+                    </div>
+                </div>
+
+                <h3>Points earned</h3>
+                @if (_data.Breakdown.Count == 0)
+                {
+                    <p class="pm-muted">No points yet.</p>
+                }
+                else
+                {
+                    <table class="pm-table">
+                        <thead>
+                            <tr><th scope="col">Year</th><th scope="col">Title or award</th><th scope="col" class="pm-r">Points</th><th scope="col" class="pm-r">Total</th></tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var entry in _data.Breakdown)
+                            {
+                                <tr class="@(entry.ReachedThreshold ? "pm-reached" : null)">
+                                    <td>@entry.Year</td>
+                                    <td>
+                                        @entry.Source
+                                        @if (entry.ReachedThreshold)
+                                        {
+                                            <span class="pm-reached-tag">@(Requirements is null ? "Reached the points threshold" : "Reached " + Requirements.Points + " points")</span>
+                                        }
+                                    </td>
+                                    <td class="pm-r">@entry.Points</td>
+                                    <td class="pm-r">@entry.RunningTotal</td>
+                                </tr>
+                            }
+                        </tbody>
+                        <tfoot>
+                            <tr><td></td><td>Total</td><td class="pm-r">@_data.TotalPoints</td><td></td></tr>
+                        </tfoot>
+                    </table>
+                }
+
+                <h3>Membership years</h3>
+                @if (_data.MembershipYears.Count == 0)
+                {
+                    <p class="pm-muted">No counted membership years. Guest and non-member entries do not count.</p>
+                }
+                else
+                {
+                    <ul class="pm-years">
+                        @foreach (var year in _data.MembershipYears)
+                        {
+                            <li><span>@year.Year</span><span>@year.MembershipType</span></li>
+                        }
+                    </ul>
+                }
+
+                @if (!_data.MembershipHistoryComplete)
+                {
+                    <p class="pm-note">
+                        This bowler's first membership is not on file. Records start in @(Requirements?.MembershipDataStartYear.ToString(CultureInfo.InvariantCulture) ?? "1999"), so the real count may be higher.
+                    </p>
+                }
+            }
+        </div>
+    </ChildContent>
+</NebaModal>
+
+@code {
+    [Parameter, EditorRequired]
+    public bool IsOpen { get; set; }
+
+    [Parameter, EditorRequired]
+    public EventCallback OnClose { get; set; }
+
+    [Parameter, EditorRequired]
+    public string BowlerId { get; set; } = string.Empty;
+
+    [Parameter, EditorRequired]
+    public string BowlerName { get; set; } = string.Empty;
+
+    /// <summary>The thresholds, when the caller has them. Null drops the "of 36" and "needed" text.</summary>
+    [Parameter]
+    public HallOfFamePointRequirements? Requirements { get; set; }
+
+    private enum ModalState { Loading, Error, Data }
+
+    private ModalState _state = ModalState.Loading;
+    private HallOfFamePointsDetailViewModel? _data;
+    private string? _lastLoadedBowlerId;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (!IsOpen || string.IsNullOrEmpty(BowlerId) || BowlerId == _lastLoadedBowlerId)
+        {
+            return;
+        }
+
+        await LoadAsync();
+    }
+
+    private async Task LoadAsync()
+    {
+        _lastLoadedBowlerId = BowlerId;
+        _state = ModalState.Loading;
+        _data = null;
+        StateHasChanged();
+
+        var result = await ApiExecutor.ExecuteAsync(
+            "HallOfFame",
+            "GetHallOfFamePointsDetail",
+            ct => HallOfFameApi.GetHallOfFamePointsDetailAsync(BowlerId, ct));
+
+        if (result.IsError)
+        {
+            _state = ModalState.Error;
+            return;
+        }
+
+        _data = result.Value.ToViewModel();
+        _state = ModalState.Data;
+    }
+
+    private Task RetryAsync()
+    {
+        _lastLoadedBowlerId = null;
+        return LoadAsync();
+    }
+}
