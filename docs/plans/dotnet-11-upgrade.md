@@ -127,6 +127,7 @@ Exit criteria: all tests green on net11.0, CI green, OpenAPI diff reviewed, 11.0
 - [ ] Re-test the EF collection navigation rule from `CLAUDE.md` (`List<T>` backing fields) and the `ICollection<T>.Add` regression tests.
 - [ ] Re-test SmartEnum value conversions and strongly typed ID converters.
 - [ ] Check `.config/dotnet-ef.json` (new in EF 11) as a convenience: it would remove the `--project` and `--startup-project` flags. Optional.
+- [ ] Work through "Part 1" of [dotnet-11-efcore.md](dotnet-11-efcore.md) for the EF checks (owned-entity snapshot workaround, migration retry, SQL diffs, analyzers).
 
 Exit criteria: migrations unchanged or reviewed, integration tests green, a staging migration run clean.
 
@@ -194,6 +195,7 @@ Skip: **Blazor gateway, client defaults, web workers, WebAssembly debugging with
 - **Async validation** (`AsyncValidationAttribute`, `IAsyncValidatableObject`): our rule is that validators handle structural checks only, with no DB lookups. This stays; do not adopt. The session's demo (stock check) is a state check, which belongs in the handler as `Error.Conflict`.
 - **Blazor features**: moved to [dotnet-11-blazor.md](dotnet-11-blazor.md), which also holds the Blazor test checklist for the Phase 1 PR.
 - **Unsafe memory-safety model**: skip. Preview only.
+- **EF Core features**: moved to [dotnet-11-efcore.md](dotnet-11-efcore.md), which also holds the EF checks for Phase 2.
 - **Vector and hybrid search, Cosmos, SQL Server items**: skip. Not relevant (PostgreSQL).
 
 ## Rollout and rollback
@@ -219,4 +221,5 @@ Skip: **Blazor gateway, client defaults, web workers, WebAssembly debugging with
 - C# 15 skill: `csharp-15` (attached to the planning session; covers `with(...)`, unions, `closed`, extension indexers, labeled jumps, memory-safety preview)
 - Microsoft: breaking changes in .NET 11, EF Core 11 breaking changes, What's new in .NET 11 / ASP.NET Core 11 / EF Core 11 / C# 15 / Aspire (learn.microsoft.com/dotnet)
 - Video notes (2026-11-12): Daniel Roth, ".NET 11 web development with ASP.NET Core and Blazor", and the Blazor Server session. Notes are in this plan and in [dotnet-11-blazor.md](dotnet-11-blazor.md).
+- EF Core 11 session (.NET Conf, 2026-11-13): notes are in [dotnet-11-efcore.md](dotnet-11-efcore.md).
 - Issue comment 2026-08-25: Daniel Roth's ASP.NET Core 11 / Blazor session notes (async validation, SSR parity, virtualization, Aspire WASM)
