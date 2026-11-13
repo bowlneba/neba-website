@@ -19,4 +19,14 @@ public sealed record HallOfFamePointsEntryViewModel
     /// The points earned.
     /// </summary>
     public required int Points { get; init; }
+
+    /// <summary>
+    /// The bowler's points after this entry.
+    /// </summary>
+    public required int RunningTotal { get; init; }
+
+    /// <summary>
+    /// True for the entry that first took the bowler to the required points.
+    /// </summary>
+    public required bool ReachedThreshold { get; init; }
 }

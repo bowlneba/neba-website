@@ -59,16 +59,27 @@
                 {
                     <table class="pm-table">
                         <thead>
-                            <tr><th scope="col">Year</th><th scope="col">Title or award</th><th scope="col" class="pm-r">Points</th></tr>
+                            <tr><th scope="col">Year</th><th scope="col">Title or award</th><th scope="col" class="pm-r">Points</th><th scope="col" class="pm-r">Total</th></tr>
                         </thead>
                         <tbody>
                             @foreach (var entry in _data.Breakdown)
                             {
-                                <tr><td>@entry.Year</td><td>@entry.Source</td><td class="pm-r">@entry.Points</td></tr>
+                                <tr class="@(entry.ReachedThreshold ? "pm-reached" : null)">
+                                    <td>@entry.Year</td>
+                                    <td>
+                                        @entry.Source
+                                        @if (entry.ReachedThreshold)
+                                        {
+                                            <span class="pm-reached-tag">@(Requirements is null ? "Reached the points threshold" : "Reached " + Requirements.Points + " points")</span>
+                                        }
+                                    </td>
+                                    <td class="pm-r">@entry.Points</td>
+                                    <td class="pm-r">@entry.RunningTotal</td>
+                                </tr>
                             }
                         </tbody>
                         <tfoot>
-                            <tr><td></td><td>Total</td><td class="pm-r">@_data.TotalPoints</td></tr>
+                            <tr><td></td><td>Total</td><td class="pm-r">@_data.TotalPoints</td><td></td></tr>
                         </tfoot>
                     </table>
                 }

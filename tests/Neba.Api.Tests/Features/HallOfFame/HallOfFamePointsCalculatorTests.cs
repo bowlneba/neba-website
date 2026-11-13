@@ -108,6 +108,82 @@ public sealed class HallOfFamePointsCalculatorTests
         result.Single().Breakdown.Select(entry => entry.Date.Year).ShouldBe([2018, 2020, 2022]);
     }
 
+    [Fact(DisplayName = "Running total adds up oldest first")]
+    public void CalculatePoints_ShouldGiveRunningTotals_OldestFirst()
+    {
+        // Arrange
+        var titles = new[]
+        {
+            Title(Bowler, 2, TournamentType.Doubles, year: 2020),
+            Title(Bowler, 1, TournamentType.Senior, year: 2018),
+            Title(Bowler, 3, TournamentType.Masters, year: 2022)
+        };
+
+        // Act
+        var result = _calculator.CalculatePoints(titles, []);
+
+        // Assert
+        result.Single().Breakdown.Select(entry => entry.RunningTotal).ShouldBe([2, 8, 14]);
+    }
+
+    [Fact(DisplayName = "Marks only the first entry that reaches the required points")]
+    public void CalculatePoints_ShouldMarkOnlyTheEntryThatReachesThreshold()
+    {
+        // Arrange - 12 + 12 + 6 + 6 = 36 on the fourth entry, then 6 more
+        var titles = new[]
+        {
+            Title(Bowler, 1, TournamentType.Singles, year: 1988),
+            Title(Bowler, 2, TournamentType.Singles, year: 1989),
+            Title(Bowler, 3, TournamentType.Doubles, year: 2005),
+            Title(Bowler, 4, TournamentType.Masters, year: 2006),
+            Title(Bowler, 5, TournamentType.Invitational, year: 2007)
+        };
+
+        // Act
+        var breakdown = _calculator.CalculatePoints(titles, []).Single().Breakdown;
+
+        // Assert
+        breakdown.Select(entry => entry.ReachedThreshold).ShouldBe([false, false, false, true, false]);
+        breakdown[3].RunningTotal.ShouldBe(36);
+        breakdown[4].RunningTotal.ShouldBe(42);
+    }
+
+    [Fact(DisplayName = "Marks the entry that jumps past the required points")]
+    public void CalculatePoints_ShouldMarkEntryThatJumpsPastThreshold()
+    {
+        // Arrange - 30 points, then a 12-point award takes it to 42
+        var titles = new[]
+        {
+            Title(Bowler, 1, TournamentType.Doubles, year: 2005),
+            Title(Bowler, 2, TournamentType.Masters, year: 2006),
+            Title(Bowler, 3, TournamentType.Invitational, year: 2007),
+            Title(Bowler, 4, TournamentType.Singles, year: 2008),
+            Title(Bowler, 5, TournamentType.TournamentOfChampions, year: 2009)
+        };
+        var awards = new[] { AwardWinFactory.Create(bowlerId: Bowler, seasonId: Season(6), seasonEndDate: new DateOnly(2010, 12, 31), category: BowlerOfTheYearCategory.Open) };
+
+        // Act
+        var breakdown = _calculator.CalculatePoints(titles, awards).Single().Breakdown;
+
+        // Assert
+        var reached = breakdown.Single(entry => entry.ReachedThreshold);
+        reached.Source.ShouldBe("Bowler of the Year");
+        reached.RunningTotal.ShouldBe(42);
+    }
+
+    [Fact(DisplayName = "Marks nothing for a bowler under the required points")]
+    public void CalculatePoints_ShouldMarkNothing_WhenUnderThreshold()
+    {
+        // Arrange
+        var titles = new[] { Title(Bowler, 1, TournamentType.Singles), Title(Bowler, 2, TournamentType.Doubles) };
+
+        // Act
+        var breakdown = _calculator.CalculatePoints(titles, []).Single().Breakdown;
+
+        // Assert
+        breakdown.ShouldAllBe(entry => !entry.ReachedThreshold);
+    }
+
     [Fact(DisplayName = "Pre-1991 Singles uses the legacy label and 12 points")]
     public void CalculatePoints_ShouldUseLegacyRule_ForSinglesBefore1991()
     {

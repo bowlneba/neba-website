@@ -8,12 +8,16 @@
       {
         Source: Bowler of the Year,
         Year: 2025,
-        Points: 2
+        Points: 2,
+        RunningTotal: 2,
+        ReachedThreshold: false
       },
       {
         Source: Bowler of the Year,
         Year: 2025,
-        Points: 2
+        Points: 2,
+        RunningTotal: 4,
+        ReachedThreshold: false
       }
     ],
     MembershipYears: [
@@ -36,17 +40,23 @@
       {
         Source: Doubles Title,
         Year: 2025,
-        Points: 12
+        Points: 12,
+        RunningTotal: 12,
+        ReachedThreshold: false
       },
       {
         Source: Doubles Title,
         Year: 2025,
-        Points: 2
+        Points: 2,
+        RunningTotal: 14,
+        ReachedThreshold: false
       },
       {
         Source: Doubles Title,
         Year: 2025,
-        Points: 6
+        Points: 6,
+        RunningTotal: 20,
+        ReachedThreshold: false
       }
     ],
     MembershipYears: [

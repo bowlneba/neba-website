@@ -8,6 +8,9 @@
 .pm-table th { text-align: left; font-weight: 600; font-size: .8125rem; color: var(--neba-gray-600); padding: .4rem .5rem; border-bottom: 1px solid var(--neba-gray-300); }
 .pm-table td { padding: .4rem .5rem; border-bottom: 1px solid var(--neba-gray-200); }
 .pm-table tfoot td { font-weight: 700; border-bottom: 0; }
+.pm-table tr.pm-reached td { background: #FFF8E6; font-weight: 600; }
+.pm-table tr.pm-reached td:first-child { box-shadow: inset 4px 0 0 var(--neba-gold); }
+.pm-reached-tag { display: inline-block; margin-left: .5rem; padding: .1rem .5rem; border-radius: 999px; background: var(--neba-blue-brand); color: var(--neba-gold); font-size: .6875rem; font-weight: 700; white-space: nowrap; }
 .pm-r { text-align: right; font-variant-numeric: tabular-nums; }
 .pm-years { columns: 2; column-gap: 1.5rem; margin: 0; padding: 0; list-style: none; font-size: .9rem; }
 .pm-years li { display: flex; justify-content: space-between; gap: .75rem; padding: .25rem 0; border-bottom: 1px solid var(--neba-gray-200); break-inside: avoid; }

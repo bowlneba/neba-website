@@ -314,8 +314,12 @@ const MOCK_HALL_OF_FAME_POINTS_DETAIL = (bowlerId: string) => {
     seasonsWithPoints: standing.seasonsWithPoints,
     membershipHistoryComplete: standing.membershipHistoryComplete,
     breakdown: [
-      { source: 'Bowler of the Year', date: '2017-12-31', points: 12 },
-      { source: 'Singles Title', date: '2019-03-10', points: 6 },
+      { source: 'Bowler of the Year', date: '2017-12-31', points: 12, runningTotal: 12, reachedThreshold: false },
+      { source: 'Singles Title', date: '2019-03-10', points: 6, runningTotal: 18, reachedThreshold: false },
+      { source: 'Doubles Title', date: '2021-05-02', points: 6, runningTotal: 24, reachedThreshold: false },
+      { source: 'NEBA Masters Title', date: '2022-09-11', points: 6, runningTotal: 30, reachedThreshold: false },
+      { source: 'Singles Title', date: '2023-03-05', points: 6, runningTotal: 36, reachedThreshold: true },
+      { source: 'Trios Title', date: '2024-04-14', points: 2, runningTotal: 38, reachedThreshold: false },
     ],
     membershipYears: [
       { year: 2024, membershipType: 'Renewal' },

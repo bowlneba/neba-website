@@ -93,7 +93,9 @@ internal static class HallOfFameMappingExtensions
                 {
                     Source = entry.Source,
                     Year = entry.Date.Year,
-                    Points = entry.Points
+                    Points = entry.Points,
+                    RunningTotal = entry.RunningTotal,
+                    ReachedThreshold = entry.ReachedThreshold
                 })],
                 MembershipYears = [.. response.MembershipYears.Select(year => new HallOfFameMembershipYearViewModel
                 {

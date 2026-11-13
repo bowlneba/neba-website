@@ -19,4 +19,14 @@ public sealed record HallOfFamePointsEntryResponse
     /// The points earned.
     /// </summary>
     public required int Points { get; init; }
+
+    /// <summary>
+    /// The bowler's points after this entry, counting oldest first.
+    /// </summary>
+    public required int RunningTotal { get; init; }
+
+    /// <summary>
+    /// True only for the entry that first takes the running total to the required points.
+    /// </summary>
+    public required bool ReachedThreshold { get; init; }
 }

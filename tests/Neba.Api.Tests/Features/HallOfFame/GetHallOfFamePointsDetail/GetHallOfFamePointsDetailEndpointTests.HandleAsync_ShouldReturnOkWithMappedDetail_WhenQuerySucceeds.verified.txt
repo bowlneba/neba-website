@@ -10,12 +10,16 @@
     {
       Source: Bowler of the Year,
       Date: Date_1,
-      Points: 12
+      Points: 12,
+      RunningTotal: 12,
+      ReachedThreshold: false
     },
     {
       Source: Singles Title,
       Date: Date_2,
-      Points: 6
+      Points: 6,
+      RunningTotal: 18,
+      ReachedThreshold: false
     }
   ],
   MembershipYears: [

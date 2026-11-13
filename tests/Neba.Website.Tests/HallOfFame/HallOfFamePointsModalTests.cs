@@ -97,8 +97,8 @@ public sealed class HallOfFamePointsModalTests : IDisposable
             totalPoints: 18,
             breakdown:
             [
-                new HallOfFamePointsEntryResponse { Source = "Bowler of the Year", Date = new DateOnly(2017, 12, 31), Points = 12 },
-                new HallOfFamePointsEntryResponse { Source = "Singles Title", Date = new DateOnly(2019, 3, 10), Points = 6 }
+                new HallOfFamePointsEntryResponse { Source = "Bowler of the Year", Date = new DateOnly(2017, 12, 31), Points = 12, RunningTotal = 12, ReachedThreshold = false },
+                new HallOfFamePointsEntryResponse { Source = "Singles Title", Date = new DateOnly(2019, 3, 10), Points = 6, RunningTotal = 18, ReachedThreshold = false }
             ],
             membershipYears:
             [
@@ -121,6 +121,60 @@ public sealed class HallOfFamePointsModalTests : IDisposable
         years.Count.ShouldBe(2);
         years[1].TextContent.ShouldContain("2025");
         years[1].TextContent.ShouldContain("Time Honored Member");
+    }
+
+    private static HallOfFamePointsDetailResponse DetailWithThresholdEntry()
+        => HallOfFamePointsDetailResponseFactory.Create(
+            totalPoints: 42,
+            breakdown:
+            [
+                new HallOfFamePointsEntryResponse { Source = "Singles Title", Date = new DateOnly(2018, 3, 1), Points = 30, RunningTotal = 30, ReachedThreshold = false },
+                new HallOfFamePointsEntryResponse { Source = "Bowler of the Year", Date = new DateOnly(2019, 12, 31), Points = 12, RunningTotal = 42, ReachedThreshold = true },
+                new HallOfFamePointsEntryResponse { Source = "Doubles Title", Date = new DateOnly(2024, 5, 2), Points = 6, RunningTotal = 48, ReachedThreshold = false }
+            ]);
+
+    [Fact(DisplayName = "Highlights the entry that took the bowler past the threshold and shows each running total")]
+    public void Render_ShouldHighlightThresholdEntry()
+    {
+        // Arrange
+        SetupDetail(DetailWithThresholdEntry());
+
+        // Act
+        var cut = RenderModal(requirements: Requirements);
+
+        // Assert
+        var highlighted = cut.FindAll(".pm-table tbody tr.pm-reached");
+        var row = highlighted.ShouldHaveSingleItem();
+        row.TextContent.ShouldContain("Bowler of the Year");
+        row.QuerySelector(".pm-reached-tag")!.TextContent.ShouldBe("Reached 36 points");
+        cut.FindAll(".pm-table tbody tr").Select(tr => tr.QuerySelectorAll("td")[3].TextContent)
+            .ShouldBe(["30", "42", "48"]);
+    }
+
+    [Fact(DisplayName = "Uses a general label for the threshold entry when the caller passes no requirements")]
+    public void Render_ShouldUseGeneralThresholdLabel_WhenRequirementsMissing()
+    {
+        // Arrange
+        SetupDetail(DetailWithThresholdEntry());
+
+        // Act
+        var cut = RenderModal(requirements: null);
+
+        // Assert
+        cut.Find(".pm-reached-tag").TextContent.ShouldBe("Reached the points threshold");
+    }
+
+    [Fact(DisplayName = "Highlights nothing when no entry reached the threshold")]
+    public void Render_ShouldHighlightNothing_WhenThresholdNotReached()
+    {
+        // Arrange
+        SetupDetail(HallOfFamePointsDetailResponseFactory.Create());
+
+        // Act
+        var cut = RenderModal();
+
+        // Assert
+        cut.FindAll(".pm-reached").ShouldBeEmpty();
     }
 
     [Fact(DisplayName = "Shows the thresholds when the caller passes requirements")]

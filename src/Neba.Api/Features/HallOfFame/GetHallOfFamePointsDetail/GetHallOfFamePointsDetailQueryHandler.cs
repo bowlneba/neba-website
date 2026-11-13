@@ -42,7 +42,9 @@ internal sealed class GetHallOfFamePointsDetailQueryHandler(
             {
                 Source = entry.Source,
                 Date = entry.Date,
-                Points = entry.Points
+                Points = entry.Points,
+                RunningTotal = entry.RunningTotal,
+                ReachedThreshold = entry.ReachedThreshold
             })],
             MembershipYears = [.. memberships.Years
                 .Select(year => new HallOfFameMembershipYearDto { Year = year.Year, MembershipType = year.Type.Name })],

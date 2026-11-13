@@ -12,7 +12,7 @@ internal sealed class GetHallOfFamePointsDetailSummary
     public GetHallOfFamePointsDetailSummary()
     {
         Summary = "Gets one bowler's Hall of Fame points.";
-        Description = "Retrieves one bowler's Hall of Fame point breakdown (each point-earning title or award with its date and points) "
+        Description = "Retrieves one bowler's Hall of Fame point breakdown (each point-earning title or award with its date, points and running total, and a flag on the one that first reached the required points) "
             + "and the membership years that count toward the Hall of Fame. Points count toward Superior Performance only. "
             + "Works for inducted bowlers too. Membership years count from the membership data start year (1999), so the count can understate "
             + "when the response says the membership history is incomplete.";
@@ -30,8 +30,8 @@ internal sealed class GetHallOfFamePointsDetailSummary
                 SeasonsWithPoints = 2,
                 Breakdown =
                 [
-                    new HallOfFamePointsEntryResponse { Source = "Bowler of the Year", Date = new DateOnly(2017, 12, 31), Points = 12 },
-                    new HallOfFamePointsEntryResponse { Source = "Singles Title", Date = new DateOnly(2019, 3, 10), Points = 6 }
+                    new HallOfFamePointsEntryResponse { Source = "Bowler of the Year", Date = new DateOnly(2017, 12, 31), Points = 12, RunningTotal = 12, ReachedThreshold = false },
+                    new HallOfFamePointsEntryResponse { Source = "Singles Title", Date = new DateOnly(2019, 3, 10), Points = 6, RunningTotal = 18, ReachedThreshold = false }
                 ],
                 MembershipYears =
                 [

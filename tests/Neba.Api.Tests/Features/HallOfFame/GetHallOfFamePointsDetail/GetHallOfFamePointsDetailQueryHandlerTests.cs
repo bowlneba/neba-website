@@ -137,9 +137,39 @@ public sealed class GetHallOfFamePointsDetailQueryHandlerTests(AppDbContextFixtu
         detail.SeasonsWithPoints.ShouldBe(2);
         detail.Breakdown.Select(entry => (entry.Source, entry.Date.Year, entry.Points))
             .ShouldBe([("Senior Title", 2018, 2), ("Doubles Title", 2020, 6)]);
+        detail.Breakdown.Select(entry => entry.RunningTotal).ShouldBe([2, 8]);
+        detail.Breakdown.ShouldAllBe(entry => !entry.ReachedThreshold);
         detail.MembershipYears.Select(year => (year.Year, year.MembershipType))
             .ShouldBe([(2021, "Renewal"), (2022, "Time Honored Member")]);
         detail.MembershipHistoryComplete.ShouldBeFalse();
+    }
+
+    [Fact(DisplayName = "HandleAsync flags the title that took an inducted bowler past the threshold and keeps the later ones unflagged")]
+    public async Task HandleAsync_ShouldFlagThresholdEntry_ForInducteeWithPointsAfterwards()
+    {
+        // Arrange
+        var ct = TestContext.Current.CancellationToken;
+        var bowler = BowlerFactory.Create();
+        await _dbContext.Bowlers.AddAsync(bowler, ct);
+        for (var year = 2005; year < 2011; year++)
+        {
+            await AddTitleAsync(bowler, TournamentType.Singles, year); // six 6-point titles: the sixth reaches 36
+        }
+
+        await AddTitleAsync(bowler, TournamentType.Doubles, 2015);     // earned after the threshold
+        await _dbContext.HallOfFameInductions.AddAsync(
+            HallOfFameInductionFactory.Create(bowlerId: bowler.Id, categories: [HallOfFameCategory.SuperiorPerformance]), ct);
+        await _dbContext.SaveChangesAsync(ct);
+
+        // Act
+        var result = await CreateHandler().HandleAsync(new GetHallOfFamePointsDetailQuery { BowlerId = bowler.Id }, ct);
+
+        // Assert
+        var breakdown = result.Value.Breakdown.ToList();
+        breakdown.Count.ShouldBe(7);
+        breakdown.Select(entry => entry.ReachedThreshold).ShouldBe([false, false, false, false, false, true, false]);
+        breakdown[5].RunningTotal.ShouldBe(36);
+        breakdown[6].RunningTotal.ShouldBe(42);
     }
 
     [Fact(DisplayName = "HandleAsync counts only the asked bowler's points")]

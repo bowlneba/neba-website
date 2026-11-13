@@ -24,8 +24,8 @@ public static class HallOfFamePointsDetailResponseFactory
             SeasonsWithPoints = seasonsWithPoints ?? 2,
             Breakdown = breakdown ??
             [
-                new HallOfFamePointsEntryResponse { Source = "Bowler of the Year", Date = new DateOnly(2017, 12, 31), Points = 12 },
-                new HallOfFamePointsEntryResponse { Source = "Singles Title", Date = new DateOnly(2019, 3, 10), Points = 6 }
+                new HallOfFamePointsEntryResponse { Source = "Bowler of the Year", Date = new DateOnly(2017, 12, 31), Points = 12, RunningTotal = 12, ReachedThreshold = false },
+                new HallOfFamePointsEntryResponse { Source = "Singles Title", Date = new DateOnly(2019, 3, 10), Points = 6, RunningTotal = 18, ReachedThreshold = false }
             ],
             MembershipYears = membershipYears ??
             [
@@ -42,12 +42,19 @@ public static class HallOfFamePointsDetailResponseFactory
 
         return [.. Enumerable.Range(0, count).Select(_ =>
         {
+            var running = 0;
             var entries = Enumerable.Range(0, faker.Random.Int(1, 4)).Select(_ => new HallOfFamePointsEntryResponse
             {
                 Source = faker.PickRandom("Singles Title", "Doubles Title", "Bowler of the Year", "Senior Title"),
                 Date = faker.Date.PastDateOnly(refDate: new DateOnly(2026, 1, 1)),
-                Points = faker.PickRandom(2, 6, 12)
-            }).OrderBy(entry => entry.Date).ToList();
+                Points = faker.PickRandom(2, 6, 12),
+                RunningTotal = 0,
+                ReachedThreshold = false
+            }).OrderBy(entry => entry.Date).Select(entry =>
+            {
+                running += entry.Points;
+                return entry with { RunningTotal = running };
+            }).ToList();
 
             return Create(
                 bowlerId: Ulid.BogusString(faker),

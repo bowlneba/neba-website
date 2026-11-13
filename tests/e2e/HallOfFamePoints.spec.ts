@@ -45,6 +45,14 @@ test.describe('Hall of Fame points page', () => {
       await expect(dialog.getByRole('heading', { name: 'Membership years' })).toBeVisible();
     });
 
+    test('highlights the title that took the bowler past the threshold', async ({ page }) => {
+      await page.locator('.pts-name', { hasText: 'Ken Almeida' }).click();
+      const reached = page.getByRole('dialog').locator('tr.pm-reached');
+      await expect(reached).toHaveCount(1);
+      await expect(reached).toContainText('Singles Title');
+      await expect(reached).toContainText('Reached 36 points');
+    });
+
     test('shows the membership note in the modal for an incomplete history', async ({ page }) => {
       await page.locator('.pts-name', { hasText: 'Walt Brennan' }).click();
       await expect(page.getByRole('dialog')).toContainText("first membership is not on file");

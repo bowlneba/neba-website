@@ -73,7 +73,9 @@ internal sealed class GetHallOfFamePointsDetailEndpoint(
             {
                 Source = entry.Source,
                 Date = entry.Date,
-                Points = entry.Points
+                Points = entry.Points,
+                RunningTotal = entry.RunningTotal,
+                ReachedThreshold = entry.ReachedThreshold
             })],
             MembershipYears = [.. dto.MembershipYears.Select(year => new HallOfFameMembershipYearResponse
             {

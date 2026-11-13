@@ -12,7 +12,16 @@ internal sealed record AwardWin(BowlerId BowlerId, SeasonId SeasonId, DateOnly S
 
 internal sealed record MembershipRecord(BowlerId BowlerId, MembershipType Type, DateOnly EndDate);
 
-internal sealed record EarnedPoint(SeasonId SeasonId, DateOnly Date, string Source, int Points);
+/// <summary>
+/// One point-earning title or award in a bowler's breakdown.
+/// </summary>
+/// <param name="SeasonId">The season it was earned in.</param>
+/// <param name="Date">When it was earned.</param>
+/// <param name="Source">The title or award name.</param>
+/// <param name="Points">The points it earned.</param>
+/// <param name="RunningTotal">The bowler's points after this entry, counting oldest first.</param>
+/// <param name="ReachedThreshold">True only for the first entry that takes the running total to the required points.</param>
+internal sealed record EarnedPoint(SeasonId SeasonId, DateOnly Date, string Source, int Points, int RunningTotal = 0, bool ReachedThreshold = false);
 
 internal sealed record MembershipYear(int Year, MembershipType Type);
 
@@ -70,7 +79,7 @@ internal sealed class HallOfFamePointsCalculator
             .GroupBy(entry => entry.BowlerId)
             .Select(group =>
             {
-                var breakdown = group.Select(entry => entry.Point).OrderBy(point => point.Date).ToList();
+                var breakdown = WithRunningTotals([.. group.Select(entry => entry.Point).OrderBy(point => point.Date)]);
 
                 return new BowlerPoints(
                     group.Key,
@@ -78,6 +87,22 @@ internal sealed class HallOfFamePointsCalculator
                     breakdown.Select(point => point.SeasonId).Distinct().Count(),
                     breakdown);
             })];
+    }
+
+    /// <summary>Adds the running total and marks the entry that first reaches the required points.</summary>
+    private static List<EarnedPoint> WithRunningTotals(List<EarnedPoint> ordered)
+    {
+        var total = 0;
+        var reached = false;
+
+        return [.. ordered.Select(point =>
+        {
+            total += point.Points;
+            var crossed = !reached && total >= HallOfFamePointRules.RequiredPoints;
+            reached |= crossed;
+
+            return point with { RunningTotal = total, ReachedThreshold = crossed };
+        })];
     }
 
     public IReadOnlyDictionary<BowlerId, MembershipSummary> SummarizeMemberships(IReadOnlyCollection<MembershipRecord> memberships)
