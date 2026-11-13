@@ -81,6 +81,20 @@ public sealed class HallOfFamePointsTests : IDisposable
         cut.Find(".pts-below .pts-scroll").QuerySelectorAll(".pts-row").Length.ShouldBe(2);
     }
 
+    [Fact(DisplayName = "Links to the rules with a full path, so the page base address does not send it to the home page")]
+    public void Render_ShouldLinkToRules_WithFullPath()
+    {
+        // Arrange
+        SetupList(HallOfFamePointsResponseFactory.Create());
+
+        // Act
+        var cut = _ctx.Render<HallOfFamePointsPage>();
+
+        // Assert
+        cut.Find(".pts-criteria a").GetAttribute("href").ShouldBe("/hall-of-fame/points#hof-points-rules");
+        cut.Find("#hof-points-rules").ShouldNotBeNull();
+    }
+
     [Fact(DisplayName = "Omits the eligible section when nobody is eligible")]
     public void Render_ShouldOmitEligibleSection_WhenNobodyEligible()
     {
