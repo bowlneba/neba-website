@@ -101,14 +101,15 @@ If a Phase 1 row is not ready, either hold that one package on its current versi
 **Hotfix note:** a hotfix branch cuts from the latest release tag, which is still net10. `hotfix.yml` and `cd.yml` hold copies of the deploy steps; change both when you edit the SDK version, and keep a hotfix deployable until the net11 release ships.
 
 1. **SDK and TFM**
-   - [ ] `Directory.Build.props`: `net10.0` → `net11.0`. Leave `LangVersion` as `latest`? The skill warns against `latest` (it varies by machine). Replace with unset (net11.0 defaults to C# 15) or `15`. Decide in the PR.
+   - [ ] `Directory.Build.props`: `net10.0` → `net11.0`.
+   - [ ] **Put `LangVersion` back.** On net10 we pinned `<LangVersion>14</LangVersion>` (it was `latest`). With `latest`, the SDK 11 compiler used C# 15 on a net10 project, and `IDE0028` told us to write `[with(...)]`, which SDK 10 cannot build. This upgrade must change the `14` to `15`, or remove the element (net11.0 defaults to C# 15). Do not go back to `latest`: it varies by machine. Then fix the new `IDE0028` hits, see Phase 3, "Collection expression arguments".
    - [ ] `global.json`: add an `sdk` block pinning 11.0.1 or later with `rollForward`. Today it has only the test runner setting.
    - [ ] CI: `dotnet-version: 10.0.x` → `11.0.x` in all 7 places: `ci.yml` (3), `pull_request.yml` (2), `sonarcloud.yml` (1), `hotfix.yml` (1).
    - [ ] `docs/architecture/backend.md:150` shows `net10.0` in an example. Update it.
 2. **Runtime-aligned packages**: bump `Microsoft.AspNetCore.*` and `Microsoft.Extensions.*` to 11.x. **Do not bump `Microsoft.EntityFrameworkCore.*` or the Aspire Npgsql EF wrapper.**
 3. **Aspire**: bump the AppHost SDK (`Neba.AppHost.csproj` line 1, `Aspire.AppHost.Sdk/13.6.4`) and the `Aspire.*` package versions to the release that supports .NET 11. The CI Aspire CLI version derives from that SDK line, so do not hardcode it.
 4. **Third-party packages**: bump each row marked Phase 1 that has a compatible release.
-5. **Fix build errors and new warnings.** New analyzer warnings from the SDK: fix or suppress with a reason in `.editorconfig`.
+5. **Fix build errors and new warnings.** New analyzer warnings from the SDK: fix or suppress with a reason in `.editorconfig`. Known on SDK 11: `Neba.Website.Server` fails with `S3881` ("IDisposable dispose pattern") in generated Razor files (`ToastHost`, `NebaLoadingIndicator`, `DebugCacheTools`, `TournamentRulesLink`). Check whether a newer `SonarAnalyzer.CSharp` fixes it before suppressing.
 6. **Run everything**: unit, integration, Playwright e2e (`npm run test:e2e`). Run `aspire run` and click through the site. Work through "Part 1" of [dotnet-11-blazor.md](dotnet-11-blazor.md) for the Blazor checks.
 7. **Compare the OpenAPI document** to the baseline (see OpenAPI below).
 8. **Deploy to a non-production environment** if one exists, before merge.
@@ -156,6 +157,7 @@ Use the `csharp-15` skill (referenced in the issue comment of 2026-11-06) to rev
 ### Do
 
 - **Collection expression arguments** `[with(...), ...]`: replace `new List<T>(n)` plus `AddRange`, and `new HashSet<T>(comparer) { ... }`. Never on arrays or spans. `with(...)` must be the first element.
+  - Raising `LangVersion` to 15 turns on `IDE0028` for `new(comparer)` and `new HashSet<T>(comparer)`. Known sites: `AuditPayloadScrubber.cs` (`new HashSet<object>(ReferenceEqualityComparer.Instance)`), `PermissionOverrideSet.cs` (`_added`, `_removed`), and `TournamentsPageTests.cs` (`SeasonData`, `UnavailableSeasonLabels`). Run `dotnet format analyzers --diagnostics IDE0028 --severity warn --no-restore` to fix them. If the upgrade PR must stay small, set `IDE0028` to `suggestion` there and fix the sites in a follow-up.
   - Caution: `CLAUDE.md` requires `List<T>` backing fields for EF collection navigations and suppresses IDE0305/IDE0028 there. `[with(...)]` may let us remove some suppressions. Verify the `ICollection<T>.Add` regression tests still pass.
 - **Labeled `break`/`continue`**: replace Boolean "found" flags and `goto` in nested loops. The IDE0410 analyzer finds them; its severity can be raised once the codebase is clean. Give every labeled loop in a method a distinct name.
 - **Runtime async** (`runtime-async=on`): trial in a branch, compare test times and an API load test, then decide. Per the newsletter the runtime libraries already use it, so part of the gain is free. Opt-out is per project.
