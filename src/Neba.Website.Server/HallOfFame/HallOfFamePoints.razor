@@ -106,42 +106,44 @@
                     </div>
                     <span>Seasons and membership</span>
                 </div>
-                @foreach (var bowler in _model.NotYetEligible)
-                {
-                    <div class="pts-row" data-pts-row data-name="@bowler.BowlerName" @key="bowler.BowlerId">
-                        <div class="pts-who">
-                            <button type="button" class="pts-name" @onclick="@(() => Open(bowler))">@bowler.BowlerName</button>
-                            @if (bowler.InductedLine is not null)
-                            {
-                                <span class="pts-inducted">@bowler.InductedLine</span>
-                            }
-                        </div>
-                        <div class="pts-line" role="img" aria-label="@(bowler.TotalPoints + " of " + _model.Requirements.Points + " points")">
-                            @foreach (var position in TickPositions)
-                            {
-                                <span class="pts-tick @(position == "33.333" || position == "66.667" ? "pts-tick--mid" : null)" style="left: @(position)%"></span>
-                            }
-                            <span class="pts-reach" style="width: @(bowler.LinePercent)%"></span>
-                            <span class="pts-finish"></span>
-                            <span class="pts-dot @(bowler.MeetsPoints ? "pts-dot--met" : null)" style="left: @(bowler.LinePercent)%"></span>
-                            <span class="pts-pts @(bowler.LinePercent >= 100 ? "pts-pts--edge" : null)" style="left: @(bowler.LinePercent)%">@bowler.TotalPoints</span>
-                        </div>
-                        @if (bowler.MeetsPoints)
-                        {
-                            <ul class="pts-crit">
-                                @SeasonsCriterion(bowler)
-                                @MembershipCriterion(bowler)
-                            </ul>
-                        }
-                        else
-                        {
-                            <div class="pts-stats">
-                                <span>@("season".ToQuantity(bowler.SeasonsWithPoints))@(bowler.MeetsSeasons ? " ✓" : null)</span>
-                                <span><button type="button" class="pts-member" @onclick="@(() => Open(bowler))">@MembershipYearsLabel(bowler)</button> a member</span>
+                <div class="pts-scroll" role="region" aria-label="Bowlers not yet eligible" tabindex="0">
+                    @foreach (var bowler in _model.NotYetEligible)
+                    {
+                        <div class="pts-row" data-pts-row data-name="@bowler.BowlerName" @key="bowler.BowlerId">
+                            <div class="pts-who">
+                                <button type="button" class="pts-name" @onclick="@(() => Open(bowler))">@bowler.BowlerName</button>
+                                @if (bowler.InductedLine is not null)
+                                {
+                                    <span class="pts-inducted">@bowler.InductedLine</span>
+                                }
                             </div>
-                        }
-                    </div>
-                }
+                            <div class="pts-line" role="img" aria-label="@(bowler.TotalPoints + " of " + _model.Requirements.Points + " points")">
+                                @foreach (var position in TickPositions)
+                                {
+                                    <span class="pts-tick @(position == "33.333" || position == "66.667" ? "pts-tick--mid" : null)" style="left: @(position)%"></span>
+                                }
+                                <span class="pts-reach" style="width: @(bowler.LinePercent)%"></span>
+                                <span class="pts-finish"></span>
+                                <span class="pts-dot @(bowler.MeetsPoints ? "pts-dot--met" : null)" style="left: @(bowler.LinePercent)%"></span>
+                                <span class="pts-pts @(bowler.LinePercent >= 100 ? "pts-pts--edge" : null)" style="left: @(bowler.LinePercent)%">@bowler.TotalPoints</span>
+                            </div>
+                            @if (bowler.MeetsPoints)
+                            {
+                                <ul class="pts-crit">
+                                    @SeasonsCriterion(bowler)
+                                    @MembershipCriterion(bowler)
+                                </ul>
+                            }
+                            else
+                            {
+                                <div class="pts-stats">
+                                    <span>@("season".ToQuantity(bowler.SeasonsWithPoints))@(bowler.MeetsSeasons ? " ✓" : null)</span>
+                                    <span><button type="button" class="pts-member" @onclick="@(() => Open(bowler))">@MembershipYearsLabel(bowler)</button> a member</span>
+                                </div>
+                            }
+                        </div>
+                    }
+                </div>
             </section>
 
             @if (_model.Eligible.Count == 0 && _model.NotYetEligible.Count == 0)

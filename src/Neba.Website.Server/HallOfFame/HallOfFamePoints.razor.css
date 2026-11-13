@@ -65,6 +65,8 @@
 .pts-scale span { position: absolute; translate: -50% 0; }
 .pts-scale span:first-child { translate: 0 0; }
 .pts-scale span:last-child { translate: -100% 0; color: var(--neba-gold-deep); font-weight: 600; }
+/* Fixed height, so the rules below the list stay within reach. The scale above the list stays put. */
+.pts-scroll { max-height: 34rem; overflow-y: auto; overscroll-behavior: contain; }
 .pts-row { padding: .5rem 0; border-top: 1px solid var(--neba-gray-200); }
 .pts-line { position: relative; height: 1.75rem; }
 .pts-line::before { content: ""; position: absolute; left: 0; right: 0; top: 50%; height: 2px; translate: 0 -50%; background: var(--neba-gray-200); }

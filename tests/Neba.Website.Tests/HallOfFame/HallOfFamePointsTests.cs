@@ -64,6 +64,23 @@ public sealed class HallOfFamePointsTests : IDisposable
         cut.Find(".pts-below").TextContent.ShouldContain("Tom Davis");
     }
 
+    [Fact(DisplayName = "Puts the not yet eligible rows in a scroll region so the rules stay within reach")]
+    public void Render_ShouldPutNotYetEligibleRowsInScrollRegion()
+    {
+        // Arrange
+        SetupList(HallOfFamePointsResponseFactory.Create(standings:
+        [
+            HallOfFamePointsStandingResponseFactory.Create(bowlerName: "Tom Davis"),
+            HallOfFamePointsStandingResponseFactory.Create(bowlerId: "01JZ8K3M4N5P6Q7R8S9T0V1W3Y", bowlerName: "Ann Lee")
+        ]));
+
+        // Act
+        var cut = _ctx.Render<HallOfFamePointsPage>();
+
+        // Assert
+        cut.Find(".pts-below .pts-scroll").QuerySelectorAll(".pts-row").Length.ShouldBe(2);
+    }
+
     [Fact(DisplayName = "Omits the eligible section when nobody is eligible")]
     public void Render_ShouldOmitEligibleSection_WhenNobodyEligible()
     {
