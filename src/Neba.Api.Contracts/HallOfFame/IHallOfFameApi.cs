@@ -1,4 +1,5 @@
 using Neba.Api.Contracts.HallOfFame.EditHallOfFamePhoto;
+using Neba.Api.Contracts.HallOfFame.GetHallOfFamePointsDetail;
 using Neba.Api.Contracts.HallOfFame.ListHallOfFameInductions;
 using Neba.Api.Contracts.HallOfFame.ListHallOfFamePoints;
 using Neba.Api.Contracts.Uploads;
@@ -35,6 +36,21 @@ public interface IHallOfFameApi
     /// </returns>
     [Get("/hall-of-fame/points")]
     Task<IApiResponse<HallOfFamePointsResponse>> ListHallOfFamePointsAsync(CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Gets one bowler's Hall of Fame points: the breakdown and the counted membership years. Works for inducted bowlers.
+    /// </summary>
+    /// <param name="bowlerId">
+    /// The bowler's ULID string.
+    /// </param>
+    /// <param name="cancellationToken">
+    /// A token to cancel the operation.
+    /// </param>
+    /// <returns>
+    /// The bowler's points breakdown and counted membership years.
+    /// </returns>
+    [Get("/hall-of-fame/points/{bowlerId}")]
+    Task<IApiResponse<HallOfFamePointsDetailResponse>> GetHallOfFamePointsDetailAsync(string bowlerId, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Uploads a Hall of Fame photo to staging. Requires the HallOfFame.EditHallOfFamePhoto permission.

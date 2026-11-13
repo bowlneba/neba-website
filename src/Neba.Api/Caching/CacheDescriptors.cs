@@ -153,6 +153,16 @@ public static class CacheDescriptors
                 Key = "neba:hall-of-fame:points:list",
                 Tags = ["neba", "neba:hall-of-fame", PointsTag]
             };
+
+        /// <summary>
+        /// Returns a cache descriptor for one bowler's Hall of Fame points detail. The bowler tag lets a bowler edit evict it.
+        /// </summary>
+        public static CacheDescriptor PointsDetail(BowlerId bowlerId)
+            => new()
+            {
+                Key = $"neba:hall-of-fame:points:{bowlerId}",
+                Tags = ["neba", "neba:hall-of-fame", PointsTag, $"neba:bowlers:{bowlerId}"]
+            };
     }
 
     /// <summary>
