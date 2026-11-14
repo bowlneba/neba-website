@@ -1,5 +1,6 @@
 using System.Diagnostics.CodeAnalysis;
 
+using MailKit;
 using MailKit.Net.Smtp;
 
 using MimeKit;
