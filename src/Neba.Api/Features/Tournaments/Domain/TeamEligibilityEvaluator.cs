@@ -44,6 +44,130 @@ internal static class TeamEligibilityEvaluator
         return new TeamEligibilityResult(TeamEligibilityOutcome.DependsOnDate, [], [atStart, atEnd]);
     }
 
+    /// <summary>
+    /// Lists what the rules look at for each member, and the tally of each rule, at the start date. It never
+    /// carries a date of birth. Both title windows show for doubles, so a bowler's window does not tell the
+    /// reader who has turned 60.
+    /// </summary>
+    public static TeamEligibilityExplanation Explain(TeamEligibilityContext context, IReadOnlyCollection<TeamMemberFacts> members)
+    {
+        ArgumentNullException.ThrowIfNull(members);
+
+        var asOf = context.StartDate;
+        var isDoubles = context.TournamentType == TournamentType.Doubles;
+        var overUnderLimit = OverUnderAgeLimit(context.TournamentType);
+
+        var explained = members
+            .Select(member =>
+            {
+                var rulesCount = CountTitlesInWindow(context, asOf, member);
+
+                return new TeamMemberExplanation(
+                    member,
+                    CountTitles(context, asOf, member, 5),
+                    isDoubles ? CountTitles(context, asOf, member, 10) : null,
+                    rulesCount switch
+                    {
+                        0 => ChampionStanding.NonChampion,
+                        1 => ChampionStanding.OneTimeChampion,
+                        _ => ChampionStanding.MultiTimeChampion
+                    },
+                    member.Titles.Count == 0 ? null : member.Titles.Max(title => title.EndDate.Year),
+                    overUnderLimit is null ? null : member.DateOfBirth is not null,
+                    context.TournamentType == TournamentType.Baker ? member.HallOfFameSuperiorPerformance : null);
+            })
+            .ToList();
+
+        var champions = explained.Count(member => member.CountsAs != ChampionStanding.NonChampion);
+        var verifiedCount = members.Count(member => member.DateOfBirth is not null);
+        var hallOfFameCount = members.Count(member => member.HallOfFameSuperiorPerformance);
+        var multiTime = explained.Count(member => member.CountsAs == ChampionStanding.MultiTimeChampion);
+        var nonChampions = explained.Count(member => member.CountsAs == ChampionStanding.NonChampion);
+        var checks = new List<TeamEligibilityCheckLine>();
+
+        if (isDoubles || overUnderLimit is not null)
+        {
+            checks.Add(new(TeamEligibilityReasons.ChampionsCheck(champions, 1), champions <= 1));
+        }
+        else if (context.TournamentType == TournamentType.Trios)
+        {
+            checks.Add(new(TeamEligibilityReasons.NonChampionsCheck(nonChampions), nonChampions >= 1));
+            checks.Add(new(TeamEligibilityReasons.MultiTimeCheck(multiTime, 1), multiTime <= 1));
+        }
+        else if (context.TournamentType == TournamentType.Baker)
+        {
+            var hallOfFame = members.Count(member => member.HallOfFameSuperiorPerformance);
+            checks.Add(new(TeamEligibilityReasons.NonChampionsCheck(nonChampions), nonChampions >= 1));
+            checks.Add(new(TeamEligibilityReasons.MultiTimeCheck(multiTime, 2), multiTime <= 2));
+            checks.Add(new(TeamEligibilityReasons.HallOfFameCheck(hallOfFame), hallOfFame <= 1));
+        }
+
+        if (overUnderLimit is not null)
+        {
+            checks.Add(new(TeamEligibilityReasons.AgeCheck(verifiedCount, members.Count), verifiedCount == members.Count));
+        }
+
+        // Mark the members whose facts count against a rule the team failed, so the page can show which ones.
+        var titlesFailed = FailedTitleRule(context.TournamentType, champions, multiTime, nonChampions);
+        var marked = explained
+            .Select(member => member with
+            {
+                TitlesBreakRule = titlesFailed switch
+                {
+                    TitleRuleFailure.Champions => member.CountsAs != ChampionStanding.NonChampion,
+                    TitleRuleFailure.MultiTime => member.CountsAs == ChampionStanding.MultiTimeChampion,
+                    TitleRuleFailure.NoNonChampion => true,
+                    _ => false
+                },
+                AgeBreaksRule = overUnderLimit is not null && verifiedCount != members.Count && member.AgeVerified == false,
+                HallOfFameBreaksRule = context.TournamentType == TournamentType.Baker && hallOfFameCount > 1 && member.HallOfFameSuperiorPerformance == true
+            })
+            .ToList();
+
+        var dates = context.StartDate == context.EndDate
+            ? $"The date checked is {FormatDate(context.StartDate)}."
+            : $"The dates checked are {FormatDate(context.StartDate)} and {FormatDate(context.EndDate)}.";
+
+        return new TeamEligibilityExplanation(
+            TeamEligibilityReasons.WindowSummary(context.TournamentType.Name, isDoubles ? 10 : 5, isDoubles, dates),
+            marked,
+            checks);
+    }
+
+    private enum TitleRuleFailure
+    {
+        None,
+        Champions,
+        MultiTime,
+        NoNonChampion
+    }
+
+    // The first champion rule the team failed, for marking the members whose titles count against it.
+    private static TitleRuleFailure FailedTitleRule(TournamentType type, int champions, int multiTime, int nonChampions)
+    {
+        if (type == TournamentType.Doubles || OverUnderAgeLimit(type) is not null)
+        {
+            return champions > 1 ? TitleRuleFailure.Champions : TitleRuleFailure.None;
+        }
+
+        var maxMultiTime = type == TournamentType.Baker ? 2 : 1;
+
+        if (type != TournamentType.Trios && type != TournamentType.Baker)
+        {
+            return TitleRuleFailure.None;
+        }
+
+        if (multiTime > maxMultiTime)
+        {
+            return TitleRuleFailure.MultiTime;
+        }
+
+        return nonChampions < 1 ? TitleRuleFailure.NoNonChampion : TitleRuleFailure.None;
+    }
+
+    private static string FormatDate(DateOnly date)
+        => date.ToString("MMM d, yyyy", System.Globalization.CultureInfo.InvariantCulture);
+
     /// <summary>Runs the rules in a fixed order for one date, stopping at the first group that fails: composition, then age.</summary>
     internal static TeamEligibilityCheck EvaluateAt(
         TeamEligibilityContext context, DateOnly asOf, IReadOnlyCollection<TeamMemberFacts> members)
@@ -117,8 +241,11 @@ internal static class TeamEligibilityEvaluator
     // Titles won in tournaments that overlap this tournament's dates do not count (Rule 401a, same weekend);
     // neither does this tournament's own title. Titles after the as-of date never count.
     private static int CountTitlesInWindow(TeamEligibilityContext context, DateOnly asOf, TeamMemberFacts member)
+        => CountTitles(context, asOf, member, WindowYears(context.TournamentType, asOf, member.DateOfBirth));
+
+    private static int CountTitles(TeamEligibilityContext context, DateOnly asOf, TeamMemberFacts member, int years)
     {
-        var windowStart = asOf.AddYears(-WindowYears(context.TournamentType, asOf, member.DateOfBirth));
+        var windowStart = asOf.AddYears(-years);
 
         return member.Titles.Count(title =>
             title.EndDate >= windowStart

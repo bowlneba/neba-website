@@ -65,7 +65,7 @@ internal sealed class CheckTeamEligibilityQueryHandler(
         var bowlers = await appDbContext.Bowlers
             .AsNoTracking()
             .Where(bowler => bowlerIds.Contains(bowler.Id))
-            .Select(bowler => new { bowler.Id, bowler.DateOfBirth })
+            .Select(bowler => new { bowler.Id, bowler.DateOfBirth, bowler.Name, bowler.UsbcId })
             .ToListAsync(cancellationToken);
 
         var knownIds = bowlers.Select(bowler => bowler.Id).ToHashSet();
@@ -87,7 +87,12 @@ internal sealed class CheckTeamEligibilityQueryHandler(
 
         var titles = await titlesReader.LoadAsync(query.BowlerIds, cancellationToken);
 
-        var members = bowlers
+        // In the order the bowlers were given, then members not in the system.
+        var orderedBowlers = query.BowlerIds
+            .Select(id => bowlers.Single(bowler => bowler.Id == id))
+            .ToList();
+
+        var members = orderedBowlers
             .Select(bowler => new TeamMemberFacts
             {
                 BowlerId = bowler.Id,
@@ -99,10 +104,17 @@ internal sealed class CheckTeamEligibilityQueryHandler(
             .ToList();
 
         // 3. Composition, then age, at both dates (the evaluator owns the rules and how the dates combine).
-        var result = TeamEligibilityEvaluator.Evaluate(
-            new TeamEligibilityContext(tournament.TournamentType, tournament.StartDate, tournament.EndDate),
-            members);
+        var context = new TeamEligibilityContext(tournament.TournamentType, tournament.StartDate, tournament.EndDate);
+        var result = TeamEligibilityEvaluator.Evaluate(context, members);
 
-        return new TeamEligibilityDto(result.Outcome, result.Reasons, result.DateChecks);
+        // The facts behind the answer go with every answer, so a bowler can see what decided it.
+        var explanation = TeamEligibilityEvaluator.Explain(context, members);
+        var identities = orderedBowlers
+            .Select(bowler => new TeamEligibilityMemberIdentity(bowler.Name, bowler.UsbcId))
+            .Concat(Enumerable.Range(0, query.UnknownBowlerCount).Select(_ => new TeamEligibilityMemberIdentity(null, null)))
+            .ToList();
+
+        return new TeamEligibilityDto(
+            result.Outcome, result.Reasons, result.DateChecks, Explanation: explanation, MemberIdentities: identities);
     }
 }

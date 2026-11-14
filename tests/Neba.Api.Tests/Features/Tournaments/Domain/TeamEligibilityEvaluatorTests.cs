@@ -525,4 +525,177 @@ public sealed class TeamEligibilityEvaluatorTests
 
     private static TeamMemberFacts TeamEligibilityFactsWithTitle(DateOnly titleDate)
         => TeamMemberFactsFactory.Create(titles: [Title(titleDate)]);
+
+    // ---- Explain (the facts shown with every answer)
+
+    [Fact(DisplayName = "Explain shows both title windows for every doubles bowler, whatever the bowler's age")]
+    public void Explain_ShouldShowBothWindows_ForDoubles()
+    {
+        // Arrange: one title 7 years before the start date. A 62-year-old uses the 5-year window, a 40-year-old the 10-year one.
+        var sevenYearsAgo = Title(new DateOnly(2019, 3, 1));
+        var senior = TeamMemberFactsFactory.Create(dateOfBirth: new DateOnly(1962, 1, 1), titles: [sevenYearsAgo]);
+        var younger = TeamMemberFactsFactory.Create(dateOfBirth: new DateOnly(1986, 1, 1), titles: [sevenYearsAgo]);
+
+        // Act
+        var explanation = TeamEligibilityEvaluator.Explain(Context(TournamentType.Doubles), [senior, younger]);
+
+        // Assert
+        explanation.Members.Select(member => member.TitlesLast5Years).ShouldBe([0, 0]);
+        explanation.Members.Select(member => member.TitlesLast10Years).ShouldBe([1, 1]);
+        explanation.Members.Select(member => member.CountsAs).ShouldBe([ChampionStanding.NonChampion, ChampionStanding.OneTimeChampion]);
+        explanation.Members.ShouldAllBe(member => member.LastTitleYear == 2019);
+    }
+
+    [Fact(DisplayName = "Explain leaves out the 10-year count, the age fact and the Hall of Fame fact when the format does not use them")]
+    public void Explain_ShouldLeaveOutFactsThatDoNotApply()
+    {
+        // Arrange
+        var members = new[] { Champion(), NonChampion(), NonChampion() };
+
+        // Act
+        var explanation = TeamEligibilityEvaluator.Explain(Context(TournamentType.Trios), members);
+
+        // Assert
+        explanation.Members.ShouldAllBe(member => member.TitlesLast10Years == null && member.AgeVerified == null && member.HallOfFameSuperiorPerformance == null);
+    }
+
+    [Fact(DisplayName = "Explain tallies the trios rules and marks the failing one")]
+    public void Explain_ShouldTallyTriosRules()
+    {
+        // Arrange
+        var members = new[] { Champion(titles: 2), Champion(titles: 2), NonChampion() };
+
+        // Act
+        var explanation = TeamEligibilityEvaluator.Explain(Context(TournamentType.Trios), members);
+
+        // Assert
+        explanation.Checks.Select(check => (check.Label, check.Passed)).ShouldBe(
+        [
+            ("Non-champions: 1 (needs at least 1)", true),
+            ("Multi-time champions: 2 (at most 1)", false)
+        ]);
+    }
+
+    [Fact(DisplayName = "Explain tallies the baker rules, with the Hall of Fame count, and marks Hall of Fame members")]
+    public void Explain_ShouldTallyBakerRules()
+    {
+        // Arrange
+        var members = new[]
+        {
+            TeamMemberFactsFactory.Create(hallOfFameSuperiorPerformance: true),
+            TeamMemberFactsFactory.Create(hallOfFameSuperiorPerformance: true),
+            NonChampion(), NonChampion(), TeamMemberFactsFactory.Unknown()
+        };
+
+        // Act
+        var explanation = TeamEligibilityEvaluator.Explain(Context(TournamentType.Baker), members);
+
+        // Assert
+        explanation.Checks[^1].ShouldBe(new TeamEligibilityCheckLine("Hall of Fame members for Superior Performance: 2 (at most 1)", false));
+        explanation.Members.Select(member => member.HallOfFameSuperiorPerformance).ShouldBe([true, true, false, false, false]);
+    }
+
+    [Fact(DisplayName = "Explain tallies how many over/under bowlers have an age we can check, without saying who is over or under")]
+    public void Explain_ShouldTallyAgeCheck_ForOverUnder()
+    {
+        // Arrange
+        var members = new[] { NonChampion(OverDateOfBirth), TeamMemberFactsFactory.Unknown() };
+
+        // Act
+        var explanation = TeamEligibilityEvaluator.Explain(Context(TournamentType.OverUnderFiftyDoubles), members);
+
+        // Assert
+        explanation.Checks[^1].ShouldBe(new TeamEligibilityCheckLine("Bowlers with an age we can check: 1 of 2 (needs all)", false));
+        explanation.Members.Select(member => member.AgeVerified).ShouldBe([true, false]);
+    }
+
+    [Fact(DisplayName = "Explain describes the champion window and the dates checked")]
+    public void Explain_ShouldDescribeWindowAndDates()
+    {
+        // Arrange & Act
+        var doubles = TeamEligibilityEvaluator.Explain(Context(TournamentType.Doubles), [NonChampion(), NonChampion()]);
+        var oneDay = TeamEligibilityEvaluator.Explain(Context(TournamentType.Trios, Start, Start), [NonChampion(), NonChampion(), NonChampion()]);
+
+        // Assert
+        doubles.Summary.ShouldContain("10 years");
+        doubles.Summary.ShouldContain("5 years once a bowler has turned 60");
+        doubles.Summary.ShouldContain("The dates checked are Mar 7, 2026 and Mar 8, 2026.");
+        oneDay.Summary.ShouldContain("5 years");
+        oneDay.Summary.ShouldContain("The date checked is Mar 7, 2026.");
+    }
+
+    [Fact(DisplayName = "Explain gives the facts for a bowler with no titles and no date of birth without a last title year")]
+    public void Explain_ShouldHandleUnknownBowler()
+    {
+        // Arrange & Act
+        var explanation = TeamEligibilityEvaluator.Explain(Context(TournamentType.Trios), [TeamMemberFactsFactory.Unknown(), NonChampion(), NonChampion()]);
+
+        // Assert
+        var unknown = explanation.Members[0];
+        unknown.LastTitleYear.ShouldBeNull();
+        unknown.TitlesLast5Years.ShouldBe(0);
+        unknown.CountsAs.ShouldBe(ChampionStanding.NonChampion);
+    }
+
+    [Fact(DisplayName = "Explain marks only the multi-time champions when a trios team has too many of them")]
+    public void Explain_ShouldMarkMultiTimeChampions_WhenTriosRuleFails()
+    {
+        // Arrange
+        var members = new[] { Champion(titles: 2), Champion(titles: 2), NonChampion() };
+
+        // Act
+        var explanation = TeamEligibilityEvaluator.Explain(Context(TournamentType.Trios), members);
+
+        // Assert
+        explanation.Members.Select(member => member.TitlesBreakRule).ShouldBe([true, true, false]);
+    }
+
+    [Fact(DisplayName = "Explain marks every champion when a doubles team has two")]
+    public void Explain_ShouldMarkChampions_WhenDoublesRuleFails()
+    {
+        // Arrange & Act
+        var explanation = TeamEligibilityEvaluator.Explain(Context(TournamentType.Doubles), [Champion(), Champion()]);
+
+        // Assert
+        explanation.Members.ShouldAllBe(member => member.TitlesBreakRule);
+    }
+
+    [Fact(DisplayName = "Explain marks every bowler when a trios team has no non-champion")]
+    public void Explain_ShouldMarkAll_WhenNoNonChampion()
+    {
+        // Arrange & Act
+        var explanation = TeamEligibilityEvaluator.Explain(Context(TournamentType.Trios), [Champion(), Champion(), Champion()]);
+
+        // Assert
+        explanation.Members.ShouldAllBe(member => member.TitlesBreakRule);
+    }
+
+    [Fact(DisplayName = "Explain marks nothing when the team passes")]
+    public void Explain_ShouldMarkNothing_WhenTeamPasses()
+    {
+        // Arrange & Act
+        var explanation = TeamEligibilityEvaluator.Explain(Context(TournamentType.Doubles), [Champion(), NonChampion()]);
+
+        // Assert
+        explanation.Members.ShouldAllBe(member => !member.TitlesBreakRule && !member.AgeBreaksRule && !member.HallOfFameBreaksRule);
+    }
+
+    [Fact(DisplayName = "Explain marks the bowlers without an age, and the Hall of Fame members when the limit is broken")]
+    public void Explain_ShouldMarkAgeAndHallOfFame()
+    {
+        // Arrange
+        var overUnder = TeamEligibilityEvaluator.Explain(
+            Context(TournamentType.OverUnderFiftyDoubles), [NonChampion(OverDateOfBirth), TeamMemberFactsFactory.Unknown()]);
+        var baker = TeamEligibilityEvaluator.Explain(
+            Context(TournamentType.Baker),
+            [
+                TeamMemberFactsFactory.Create(hallOfFameSuperiorPerformance: true),
+                TeamMemberFactsFactory.Create(hallOfFameSuperiorPerformance: true),
+                NonChampion(), NonChampion(), NonChampion()
+            ]);
+
+        // Assert
+        overUnder.Members.Select(member => member.AgeBreaksRule).ShouldBe([false, true]);
+        baker.Members.Select(member => member.HallOfFameBreaksRule).ShouldBe([true, true, false, false, false]);
+    }
 }

@@ -244,6 +244,49 @@ public sealed class CheckTeamEligibilityQueryHandlerTests(AppDbContextFixture fi
         result.Value.Reasons.Select(reason => reason.Code).ShouldBe(["Champions.TooMany"]);
     }
 
+    [Fact(DisplayName = "HandleAsync returns the facts behind the answer for each member, in the order given, with members not in the system last")]
+    public async Task HandleAsync_ShouldReturnExplanationAndIdentities_InOrder()
+    {
+        // Arrange
+        var ct = TestContext.Current.CancellationToken;
+        var bowlers = await SeedBowlersAsync(2, ct);
+        bowlers[0].UsbcId = "4821-09317";
+        var current = await SeedTournamentAsync(TournamentType.Trios, 2026, ct);
+        var reversed = new CheckTeamEligibilityQuery
+        {
+            TournamentId = current.Id,
+            BowlerIds = [bowlers[1].Id, bowlers[0].Id],
+            UnknownBowlerCount = 1
+        };
+
+        // Act
+        var result = await CreateHandler().HandleAsync(reversed, ct);
+
+        // Assert
+        result.IsError.ShouldBeFalse();
+        var explanation = result.Value.Explanation.ShouldNotBeNull();
+        explanation.Members.Select(member => member.Member.BowlerId).ShouldBe([bowlers[1].Id, bowlers[0].Id, null]);
+        var identities = result.Value.MemberIdentities.ShouldNotBeNull();
+        identities.Select(identity => identity.Name).ShouldBe([bowlers[1].Name, bowlers[0].Name, null]);
+        explanation.Checks.ShouldNotBeEmpty();
+    }
+
+    [Fact(DisplayName = "HandleAsync returns no explanation for defending champions")]
+    public async Task HandleAsync_ShouldReturnNoExplanation_ForDefendingChampions()
+    {
+        // Arrange
+        var ct = TestContext.Current.CancellationToken;
+        var winners = await SeedBowlersAsync(2, ct);
+        var previous = await SeedTournamentAsync(TournamentType.Doubles, 2025, ct, status: TournamentStatus.Completed, winners: winners);
+        var current = await SeedTournamentAsync(TournamentType.Doubles, 2026, ct, previous: previous);
+
+        // Act
+        var result = await CreateHandler().HandleAsync(Query(current.Id, winners), ct);
+
+        // Assert
+        result.Value.Explanation.ShouldBeNull();
+    }
+
     [Fact(DisplayName = "HandleAsync counts only Superior Performance Hall of Fame categories")]
     public async Task HandleAsync_ShouldCountOnlySuperiorPerformance_ForHallOfFameLimit()
     {

@@ -38,6 +38,29 @@ internal static class TeamEligibilityReasons
     public static TeamEligibilityReason TooManyMultiTimeChampions(int max)
         => new("Champions.TooManyMultiTime", $"A team may have at most {max} multi-time champion{Plural(max)}.");
 
+    // Wording for the facts shown with every answer (also placeholder until reviewed).
+
+    /// <summary>Describes the champion window and the dates checked.</summary>
+    public static string WindowSummary(string tournamentName, int years, bool seniorWindow, string dates)
+        => $"For {tournamentName}, a champion is a bowler with a NEBA title in the {years} years before the tournament"
+            + (seniorWindow ? " (5 years once a bowler has turned 60)" : string.Empty)
+            + $". {dates}";
+
+    /// <summary>"Champions: 2 (at most 1)".</summary>
+    public static string ChampionsCheck(int count, int max) => $"Champions: {count} (at most {max})";
+
+    /// <summary>"Non-champions: 1 (needs at least 1)".</summary>
+    public static string NonChampionsCheck(int count) => $"Non-champions: {count} (needs at least 1)";
+
+    /// <summary>"Multi-time champions: 2 (at most 1)".</summary>
+    public static string MultiTimeCheck(int count, int max) => $"Multi-time champions: {count} (at most {max})";
+
+    /// <summary>"Hall of Fame members for Superior Performance: 2 (at most 1)".</summary>
+    public static string HallOfFameCheck(int count) => $"Hall of Fame members for Superior Performance: {count} (at most 1)";
+
+    /// <summary>"Bowlers with an age we can check: 1 of 2 (needs all)".</summary>
+    public static string AgeCheck(int verified, int total) => $"Bowlers with an age we can check: {verified} of {total} (needs all)";
+
     private static string Plural(int count)
         => count == 1 ? string.Empty : "s";
 }

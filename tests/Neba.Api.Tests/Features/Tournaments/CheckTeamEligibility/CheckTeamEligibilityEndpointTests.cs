@@ -104,6 +104,46 @@ public sealed class CheckTeamEligibilityEndpointTests
         second.Reasons.ShouldHaveSingleItem().Code.ShouldBe("Age.SameAgeGroup");
     }
 
+    [Fact(DisplayName = "HandleAsync should map the summary, each member's facts and the tallies")]
+    public async Task HandleAsync_ShouldMapExplanation()
+    {
+        // Arrange
+        var ct = TestContext.Current.CancellationToken;
+        var known = new TeamMemberExplanation(
+            new TeamMemberFacts { BowlerId = BowlerId.New() }, 3, 4, ChampionStanding.MultiTimeChampion, 2025, true, null);
+        var unknown = new TeamMemberExplanation(new TeamMemberFacts(), 0, 0, ChampionStanding.NonChampion, null, false, null);
+        var dto = new TeamEligibilityDto(
+            TeamEligibilityOutcome.Ineligible,
+            [],
+            [],
+            Explanation: new TeamEligibilityExplanation(
+                "Summary text.", [known, unknown], [new TeamEligibilityCheckLine("Champions: 1 (at most 1)", true)]),
+            MemberIdentities:
+            [
+                new TeamEligibilityMemberIdentity(Neba.TestFactory.Bowlers.NameFactory.Create(firstName: "Chris", lastName: "Forry"), "4822-11840"),
+                new TeamEligibilityMemberIdentity(null, null)
+            ]);
+        var endpoint = Factory.Create<CheckTeamEligibilityEndpoint>(HandlerReturning(dto, ct).Object);
+
+        // Act
+        await endpoint.HandleAsync(new CheckTeamEligibilityRequest { Id = TournamentId.New().Value.ToString() }, ct);
+
+        // Assert
+        endpoint.Response.Summary.ShouldBe("Summary text.");
+        var members = endpoint.Response.Members.ToList();
+        members[0].Name.ShouldBe("Chris Forry");
+        members[0].UsbcId.ShouldBe("4822-11840");
+        members[0].TitlesLast5Years.ShouldBe(3);
+        members[0].TitlesLast10Years.ShouldBe(4);
+        members[0].CountsAs.ShouldBe("MultiTimeChampion");
+        members[0].LastTitleYear.ShouldBe(2025);
+        members[0].AgeVerified.ShouldBe(true);
+        members[0].NotInSystem.ShouldBeFalse();
+        members[1].Name.ShouldBeNull();
+        members[1].NotInSystem.ShouldBeTrue();
+        endpoint.Response.Checks.ShouldHaveSingleItem().Label.ShouldBe("Champions: 1 (at most 1)");
+    }
+
     [Fact(DisplayName = "HandleAsync should map the source tournament of a DefendingChampions result")]
     public async Task HandleAsync_ShouldMapDefendingSource()
     {

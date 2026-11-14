@@ -89,11 +89,36 @@ internal sealed class CheckTeamEligibilityEndpoint(
                     }
                     : null,
 
+                Summary = dto.Explanation?.Summary ?? string.Empty,
+                Members = [.. (dto.Explanation?.Members ?? []).Select((member, index) => ToResponse(member, dto.MemberIdentities?[index]))],
+                Checks = [.. (dto.Explanation?.Checks ?? []).Select(check => new TeamEligibilityCheckResponse
+                {
+                    Label = check.Label,
+                    Passed = check.Passed
+                })],
+
                 // Pro titles are never checked; the page shows a note when the team is otherwise eligible.
                 ProfessionalTitlesVerified = false
             },
             ct);
     }
+
+    private static TeamEligibilityMemberResponse ToResponse(TeamMemberExplanation member, TeamEligibilityMemberIdentity? identity)
+        => new()
+        {
+            Name = identity?.Name?.ToDisplayName(),
+            UsbcId = identity?.UsbcId,
+            NotInSystem = member.Member.BowlerId is null,
+            LastTitleYear = member.LastTitleYear,
+            TitlesLast5Years = member.TitlesLast5Years,
+            TitlesLast10Years = member.TitlesLast10Years,
+            CountsAs = member.CountsAs.ToString(),
+            AgeVerified = member.AgeVerified,
+            HallOfFameSuperiorPerformance = member.HallOfFameSuperiorPerformance,
+            TitlesBreakRule = member.TitlesBreakRule,
+            AgeBreaksRule = member.AgeBreaksRule,
+            HallOfFameBreaksRule = member.HallOfFameBreaksRule
+        };
 
     private static TeamEligibilityReasonResponse ToResponse(TeamEligibilityReason reason)
         => new() { Code = reason.Code, Message = reason.Message };
