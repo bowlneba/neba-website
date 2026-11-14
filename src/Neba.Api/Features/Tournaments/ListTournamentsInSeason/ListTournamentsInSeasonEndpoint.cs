@@ -50,49 +50,7 @@ internal sealed class ListTournamentsInSeasonEndpoint(
 
         var response = new CollectionResponse<SeasonTournamentResponse>
         {
-            Items = [.. result.Select(t => new SeasonTournamentResponse
-            {
-                Id = t.Id.Value.ToString(),
-                Name = t.Name,
-                StartDate = t.StartDate,
-                EndDate = t.EndDate,
-                TournamentType = t.TournamentType,
-                Status = t.Status,
-                TitleEligible = t.TitleEligible,
-                EntryFee = t.EntryFee,
-                RegistrationUrl = t.RegistrationUrl,
-                AddedMoney = t.AddedMoney,
-                SponsorMoney = t.SponsorMoney,
-                NebaAddedMoney = t.NebaAddedMoney,
-                Reservations = t.Reservations,
-                PatternLengthCategory = t.PatternLengthCategory,
-                PatternRatioCategory = t.PatternRatioCategory,
-                OilPatternRevealDateTime = t.OilPatternRevealDateTime,
-                LogoUrl = t.LogoUrl,
-                Winners = [.. t.Winners.Select(w => w.ToDisplayName())],
-                BowlingCenter = t.BowlingCenter is null ? null : new TournamentBowlingCenterResponse
-                {
-                    Name = t.BowlingCenter.Name,
-                    City = t.BowlingCenter.City,
-                    State = t.BowlingCenter.State,
-                },
-                Sponsors = [.. t.Sponsors.Select(s => new TournamentSponsorResponse
-                {
-                    Name = s.Name,
-                    Slug = s.Slug,
-                    LogoUrl = s.LogoUrl,
-                })],
-                OilPatterns = [.. t.OilPatterns.Select(op => new TournamentOilPatternResponse
-                {
-                    Name = op.Name,
-                    Length = op.Length,
-                    Volume = op.Volume,
-                    LeftRatio = op.LeftRatio,
-                    RightRatio = op.RightRatio,
-                    KegelId = op.KegelId,
-                    Rounds = op.TournamentRounds,
-                })],
-            })],
+            Items = [.. result.Select(t => t.ToResponse())],
         };
 
         // Stryker disable once Statement

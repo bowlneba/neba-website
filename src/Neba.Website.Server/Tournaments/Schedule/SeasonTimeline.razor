@@ -6,7 +6,10 @@
     <div class="season-timeline__header">
         <div class="season-timeline__legend" aria-hidden="true">
             <span class="season-timeline__legend-item season-timeline__legend-item--upcoming">● Upcoming</span>
-            <span class="season-timeline__legend-item season-timeline__legend-item--completed">● Completed</span>
+            @if (ShowCompletedLegend)
+            {
+                <span class="season-timeline__legend-item season-timeline__legend-item--completed">● Completed</span>
+            }
         </div>
     </div>
 
@@ -58,6 +61,12 @@
 
     [Parameter][EditorRequired]
     public string Season { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Show the "Completed" legend entry. Turn off for a strip that plots only upcoming tournaments.
+    /// </summary>
+    [Parameter]
+    public bool ShowCompletedLegend { get; set; } = true;
 
     private bool _isMergedSeason;
     private int _startYear;

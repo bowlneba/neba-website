@@ -835,6 +835,10 @@ const MOCK_BOWLER_TITLES_CURRENT_RIVAL = {
   ],
 };
 
+// Every mock tournament is in the past, so nothing is upcoming. Must stay ahead of the
+// /tournaments/{id} detail route, which would read "upcoming" as a tournament ID.
+export const MOCK_UPCOMING_TOURNAMENTS = { items: [], totalItems: 0 };
+
 export const MOCK_SEASONS = {
   items: [
     {
@@ -1091,6 +1095,7 @@ function resolveSeasonTournamentsRoute(pathname: string): object | null {
 function resolveStaticGetRoute(pathname: string): object | null {
   if (pathname === '/tournaments/champions') return MOCK_TOURNAMENT_CHAMPIONS;
   if (pathname === '/tournaments/types') return MOCK_TOURNAMENT_TYPES;
+  if (pathname === '/tournaments/upcoming') return MOCK_UPCOMING_TOURNAMENTS;
   if (pathname === `/bowlers/${PRIMARY_BOWLER_ID}/titles`) return MOCK_BOWLER_TITLES_CURRENT_LEADER;
   if (pathname === `/bowlers/${SECONDARY_BOWLER_ID}/titles`) return MOCK_BOWLER_TITLES_CURRENT_RIVAL;
   return null;
