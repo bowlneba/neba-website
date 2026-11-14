@@ -154,6 +154,10 @@ internal sealed class EditTournamentCommandHandler(
         await cache.RemoveByTagAsync($"neba:tournaments:{tournamentId}", token: cancellationToken);
         await cache.RemoveByTagAsync($"neba:tournaments:{previousSeasonId}", token: cancellationToken);
 
+        // The next tournament shows this one's name, season and winners as its defending champions, and a
+        // truncated tournament passes its own previous winners on, so any edit can change what they show.
+        await TournamentSuccessorCacheEviction.EvictAsync(appDbContext, cache, tournamentId, cancellationToken);
+
         if (currentSeasonId != previousSeasonId)
         {
             await cache.RemoveByTagAsync($"neba:tournaments:{currentSeasonId}", token: cancellationToken);

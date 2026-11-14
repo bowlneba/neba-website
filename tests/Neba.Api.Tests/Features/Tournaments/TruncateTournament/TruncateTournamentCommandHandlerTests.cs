@@ -145,6 +145,30 @@ public sealed class TruncateTournamentCommandHandlerTests(AppDbContextFixture fi
         seasonCacheAfterTruncate.ShouldBe("fresh-season-tournaments");
     }
 
+    [Fact(DisplayName = "HandleAsync evicts the next tournament's cached reads, which show this tournament's winners as defenders")]
+    public async Task HandleAsync_ShouldEvictSuccessorCache_WhenTournamentIsTruncated()
+    {
+        // Arrange
+        var ct = TestContext.Current.CancellationToken;
+        var previous = await SeedTournamentAsync(ct);
+        var successor = TournamentFactory.Create(
+            startDate: previous.EndDate.AddYears(1),
+            endDate: previous.EndDate.AddYears(1),
+            seasonId: previous.SeasonId,
+            previousTournament: PreviousTournamentFactsFactory.Create(previous.Id, previous.TournamentType, previous.EndDate));
+        await _dbContext.Tournaments.AddAsync(successor, ct);
+        await _dbContext.SaveChangesAsync(ct);
+
+        var cache = _serviceProvider.GetRequiredService<IFusionCache>();
+        await cache.GetOrSetAsync("successor-detail", _ => Task.FromResult("stale"), tags: [$"neba:tournaments:{successor.Id}"], token: ct);
+
+        // Act
+        await CreateHandler().HandleAsync(new TruncateTournamentCommand { TournamentId = previous.Id }, ct);
+
+        // Assert
+        (await cache.GetOrSetAsync("successor-detail", _ => Task.FromResult("fresh"), token: ct)).ShouldBe("fresh");
+    }
+
     [Fact(DisplayName = "HandleAsync invalidates the season stats cache tag when the tournament is truncated")]
     public async Task HandleAsync_ShouldInvalidateSeasonStatsCacheTag_WhenTournamentIsTruncated()
     {

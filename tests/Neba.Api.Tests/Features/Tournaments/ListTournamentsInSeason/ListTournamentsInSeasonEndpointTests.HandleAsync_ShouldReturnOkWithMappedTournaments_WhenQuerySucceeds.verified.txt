@@ -19,6 +19,7 @@
       Winners: [
         Kathy Cassin
       ],
+      TeamSize: 1,
       BowlingCenter: {
         Name: Feest, Gerhold and Lakin Lanes,
         City: West Devante,
@@ -68,6 +69,7 @@
       PatternLengthCategory: Medium,
       PatternRatioCategory: Challenge,
       LogoUrl: https://alvah.info,
+      TeamSize: 1,
       BowlingCenter: {
         Name: Hoppe, Cormier and Balistreri Lanes,
         City: Lake Lisandroland,
@@ -126,6 +128,7 @@
       Winners: [
         Kathy Cassin
       ],
+      TeamSize: 1,
       BowlingCenter: {
         Name: Hoppe, Cormier and Balistreri Lanes,
         City: Lake Lisandroland,

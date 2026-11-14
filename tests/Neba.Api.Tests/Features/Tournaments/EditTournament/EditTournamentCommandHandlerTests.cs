@@ -326,6 +326,35 @@ public sealed class EditTournamentCommandHandlerTests(AppDbContextFixture fixtur
         result.FirstError.Code.ShouldBe("Tournament.Name.Required");
     }
 
+    [Fact(DisplayName = "HandleAsync evicts the next tournament's cached reads, which show this tournament's name and winners")]
+    public async Task HandleAsync_ShouldEvictSuccessorCache_WhenTournamentIsEdited()
+    {
+        // Arrange
+        var ct = TestContext.Current.CancellationToken;
+        var season = await SeedSeasonAsync(new DateOnly(2025, 1, 1), new DateOnly(2027, 12, 31), ct);
+        var tournament = await SeedTournamentAsync(season, ct);
+        var successor = TournamentFactory.Create(
+            startDate: season.StartDate.AddYears(1),
+            endDate: season.StartDate.AddYears(1),
+            seasonId: season.Id,
+            previousTournament: PreviousTournamentFactsFactory.Create(tournament.Id, tournament.TournamentType, tournament.EndDate));
+        await _dbContext.Tournaments.AddAsync(successor, ct);
+        await _dbContext.SaveChangesAsync(ct);
+
+        var cache = _serviceProvider.GetRequiredService<IFusionCache>();
+        await cache.GetOrSetAsync("successor-detail", _ => Task.FromResult("stale"), tags: [$"neba:tournaments:{successor.Id}"], token: ct);
+
+        var command = ValidCommand(
+            tournament.Id, name: "Renamed Tournament", startDate: season.StartDate, endDate: season.StartDate);
+
+        // Act
+        var result = await CreateHandler().HandleAsync(command, ct);
+
+        // Assert
+        result.IsError.ShouldBeFalse();
+        (await cache.GetOrSetAsync("successor-detail", _ => Task.FromResult("fresh"), token: ct)).ShouldBe("fresh");
+    }
+
     [Fact(DisplayName = "HandleAsync persists updated fields when command is valid")]
     public async Task HandleAsync_ShouldPersistUpdatedFields_WhenCommandIsValid()
     {
@@ -847,7 +876,7 @@ public sealed class EditTournamentCommandHandlerTests(AppDbContextFixture fixtur
         persisted.PatternRatioCategory.ShouldBe(oilPattern.RatioCategory);
 
         var fileStorageMock = new Mock<IFileStorageService>(MockBehavior.Strict);
-        var getTournamentHandler = new GetTournamentQueryHandler(_dbContext, fileStorageMock.Object, TimeProvider.System);
+        var getTournamentHandler = new GetTournamentQueryHandler(_dbContext, fileStorageMock.Object, TimeProvider.System, new DefendingTeamsReader(_dbContext));
         var getResult = await getTournamentHandler.HandleAsync(
             new GetTournamentQuery { Id = tournament.Id, CallerIsAuthenticated = true, CallerHasTournamentManagementPermission = true },
             ct);
@@ -891,7 +920,7 @@ public sealed class EditTournamentCommandHandlerTests(AppDbContextFixture fixtur
         // Assert
         secondResult.IsError.ShouldBeFalse();
         var fileStorageMock = new Mock<IFileStorageService>(MockBehavior.Strict);
-        var getTournamentHandler = new GetTournamentQueryHandler(_dbContext, fileStorageMock.Object, TimeProvider.System);
+        var getTournamentHandler = new GetTournamentQueryHandler(_dbContext, fileStorageMock.Object, TimeProvider.System, new DefendingTeamsReader(_dbContext));
         var getResult = await getTournamentHandler.HandleAsync(
             new GetTournamentQuery { Id = tournament.Id, CallerIsAuthenticated = true, CallerHasTournamentManagementPermission = true },
             ct);

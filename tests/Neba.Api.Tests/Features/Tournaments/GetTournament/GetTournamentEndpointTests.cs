@@ -38,6 +38,35 @@ public sealed class GetTournamentEndpointTests
         await Verify(endpoint.Response);
     }
 
+    [Fact(DisplayName = "HandleAsync should map team size, previous tournament and defending champions")]
+    public async Task HandleAsync_ShouldMapTeamSizePreviousTournamentAndDefendingChampions()
+    {
+        // Arrange
+        var cancellationToken = TestContext.Current.CancellationToken;
+        var previousId = TournamentId.New();
+        var dto = TournamentDetailDtoFactory.Create(
+            teamSize: 3,
+            previousTournamentId: previousId,
+            defendingChampions: [DefendingTeamDtoFactory.Create(sourceTruncated: true)]);
+
+        var queryHandlerMock = new Mock<IQueryHandler<GetTournamentQuery, ErrorOr<TournamentDetailDto>>>(MockBehavior.Strict);
+        queryHandlerMock
+            .Setup(h => h.HandleAsync(It.IsAny<GetTournamentQuery>(), cancellationToken))
+            .ReturnsAsync(dto);
+        var endpoint = Factory.Create<GetTournamentEndpoint>(queryHandlerMock.Object);
+
+        // Act
+        await endpoint.HandleAsync(new GetTournamentRequest { TournamentId = dto.Id.Value.ToString() }, cancellationToken);
+
+        // Assert
+        endpoint.Response.TeamSize.ShouldBe(3);
+        endpoint.Response.PreviousTournamentId.ShouldBe(previousId.Value.ToString());
+        var team = endpoint.Response.DefendingChampions.ShouldHaveSingleItem();
+        team.TournamentName.ShouldBe("Joe's Pizza Open");
+        team.SourceTruncated.ShouldBeTrue();
+        team.Champions.ShouldBe(["Dave Smith", "Dana Jones"]);
+    }
+
     [Fact(DisplayName = "HandleAsync should return 404 Not Found when tournament does not exist")]
     public async Task HandleAsync_ShouldReturn404_WhenTournamentDoesNotExist()
     {
