@@ -653,6 +653,8 @@ A Bowler record may represent a fully registered active participant or a histori
 | `WebsiteId` | `int?` | Legacy ID from the old NEBA website database. Retained for data migration traceability only. Not exposed in search or UI |
 | `LegacyId` | `int?` | Legacy ID from the organization management software. Retained for data migration traceability only. Not exposed in search or UI |
 
+| `UsbcId` | `string?` | The bowler's USBC membership ID. Null until known. Shown beside the name in the public bowler search so bowlers with the same name can be told apart. Not the same as a bowling center's [Certification Number](#certification-number) |
+
 **Primary lookup pattern**: Search by name → select from result list → navigate by `Id`.
 
 **In Code**:

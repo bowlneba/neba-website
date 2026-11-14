@@ -294,7 +294,8 @@ public sealed class NewBowlerSyncJobTests(AppDbContextFixture fixture, LegacySql
                 LastName nvarchar(100) NOT NULL,
                 Suffix nvarchar(10) NULL,
                 Gender int NOT NULL,
-                DateOfBirth datetime NULL
+                DateOfBirth datetime NULL,
+                UsbcId nvarchar(20) NULL
             )
             """;
         await create.ExecuteNonQueryAsync();
@@ -313,12 +314,13 @@ public sealed class NewBowlerSyncJobTests(AppDbContextFixture fixture, LegacySql
         string lastName = "Smith",
         string? suffix = null,
         int gender = 0,
-        DateTime? dateOfBirth = null)
+        DateTime? dateOfBirth = null,
+        string? usbcId = null)
     {
         await using var insert = _legacyConnection.CreateCommand();
         insert.CommandText = """
-            INSERT INTO Bowlers (Id, FirstName, MiddleInitial, LastName, Suffix, Gender, DateOfBirth)
-            VALUES (@Id, @FirstName, @MiddleInitial, @LastName, @Suffix, @Gender, @DateOfBirth)
+            INSERT INTO Bowlers (Id, FirstName, MiddleInitial, LastName, Suffix, Gender, DateOfBirth, UsbcId)
+            VALUES (@Id, @FirstName, @MiddleInitial, @LastName, @Suffix, @Gender, @DateOfBirth, @UsbcId)
             """;
         insert.Parameters.AddWithValue("@Id", id);
         insert.Parameters.AddWithValue("@FirstName", firstName);
@@ -327,6 +329,7 @@ public sealed class NewBowlerSyncJobTests(AppDbContextFixture fixture, LegacySql
         insert.Parameters.AddWithValue("@Suffix", (object?)suffix ?? DBNull.Value);
         insert.Parameters.AddWithValue("@Gender", gender);
         insert.Parameters.AddWithValue("@DateOfBirth", dateOfBirth is null ? DBNull.Value : dateOfBirth.Value);
+        insert.Parameters.AddWithValue("@UsbcId", (object?)usbcId ?? DBNull.Value);
         await insert.ExecuteNonQueryAsync();
     }
 
@@ -377,6 +380,26 @@ public sealed class NewBowlerSyncJobTests(AppDbContextFixture fixture, LegacySql
         bowler.Name.Suffix.ShouldBe(NameSuffix.Jr);
         bowler.Gender.ShouldBe(Gender.Male);
         bowler.DateOfBirth.ShouldBe(new DateOnly(1990, 1, 1));
+    }
+
+    [Theory(DisplayName = "SyncAsync should store the trimmed legacy UsbcId, or null when it is blank")]
+    [InlineData("4821-09317", "4821-09317", TestDisplayName = "Present")]
+    [InlineData("  4821-09317  ", "4821-09317", TestDisplayName = "Padded")]
+    [InlineData("   ", null, TestDisplayName = "Whitespace")]
+    [InlineData(null, null, TestDisplayName = "Null")]
+    public async Task SyncAsync_ShouldMapUsbcId_FromLegacyUsbcIdColumn(string? legacyUsbcId, string? expectedUsbcId)
+    {
+        // Arrange
+        var ct = TestContext.Current.CancellationToken;
+        await InsertLegacyBowlerAsync(1, usbcId: legacyUsbcId);
+        var job = CreateJob();
+
+        // Act
+        await job.SyncAsync(1, ct);
+
+        // Assert
+        var bowler = await _dbContext.Set<Bowler>().SingleAsync(b => b.LegacyId == 1, ct);
+        bowler.UsbcId.ShouldBe(expectedUsbcId);
     }
 
     [Theory(DisplayName = "SyncAsync should map the legacy Gender column to the right Gender")]

@@ -40,7 +40,8 @@ internal sealed class BowlerWeeklySyncJob(
                 LastName,
                 Suffix,
                 Gender,
-                DateOfBirth
+                DateOfBirth,
+                UsbcId
             FROM
                 Bowlers
             WHERE
@@ -176,6 +177,7 @@ internal sealed class BowlerWeeklySyncJob(
 
         var gender = LegacyBowlerMapping.MapGender(row.Gender);
         var dateOfBirth = LegacyBowlerMapping.MapDateOfBirth(row.DateOfBirth);
+        var usbcId = LegacyBowlerMapping.MapUsbcId(row.UsbcId);
         var suffix = LegacyBowlerMapping.MapSuffix(row.Suffix);
         if (suffix is null && !string.IsNullOrWhiteSpace(row.Suffix))
         {
@@ -197,7 +199,8 @@ internal sealed class BowlerWeeklySyncJob(
 
         // Most of the window already matches (the per-action call usually landed). Skipping those
         // avoids a no-op write and audit event per row.
-        if (existing.Name == name.Value && existing.Gender == gender && existing.DateOfBirth == dateOfBirth)
+        if (existing.Name == name.Value && existing.Gender == gender && existing.DateOfBirth == dateOfBirth
+            && existing.UsbcId == usbcId)
         {
             return Outcome.Unchanged;
         }
@@ -209,7 +212,8 @@ internal sealed class BowlerWeeklySyncJob(
             suffix: suffix,
             nickname: nickname,
             gender: gender,
-            dateOfBirth: dateOfBirth);
+            dateOfBirth: dateOfBirth,
+            usbcId: usbcId);
 
         if (result.IsError)
         {

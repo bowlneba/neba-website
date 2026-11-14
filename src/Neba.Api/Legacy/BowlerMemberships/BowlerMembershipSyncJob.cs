@@ -250,7 +250,8 @@ internal sealed class BowlerMembershipSyncJob(
                 LastName,
                 Suffix,
                 Gender,
-                DateOfBirth
+                DateOfBirth,
+                UsbcId
             FROM
                 Bowlers
             WHERE

@@ -173,6 +173,7 @@ public sealed class BowlerWeeklySyncJobTests(AppDbContextFixture fixture, Legacy
                 Suffix nvarchar(10) NULL,
                 Gender int NOT NULL,
                 DateOfBirth datetime NULL,
+                UsbcId nvarchar(20) NULL,
                 Audit_UpdatedTimestamp datetime NOT NULL
             )
             """;
@@ -194,12 +195,13 @@ public sealed class BowlerWeeklySyncJobTests(AppDbContextFixture fixture, Legacy
         string lastName = "Smith",
         string? suffix = null,
         int gender = 0,
-        DateTime? dateOfBirth = null)
+        DateTime? dateOfBirth = null,
+        string? usbcId = null)
     {
         await using var insert = _legacyConnection.CreateCommand();
         insert.CommandText = """
-            INSERT INTO Bowlers (Id, FirstName, MiddleInitial, LastName, Suffix, Gender, DateOfBirth, Audit_UpdatedTimestamp)
-            VALUES (@Id, @FirstName, @MiddleInitial, @LastName, @Suffix, @Gender, @DateOfBirth, @Updated)
+            INSERT INTO Bowlers (Id, FirstName, MiddleInitial, LastName, Suffix, Gender, DateOfBirth, UsbcId, Audit_UpdatedTimestamp)
+            VALUES (@Id, @FirstName, @MiddleInitial, @LastName, @Suffix, @Gender, @DateOfBirth, @UsbcId, @Updated)
             """;
         insert.Parameters.AddWithValue("@Id", id);
         insert.Parameters.AddWithValue("@FirstName", firstName);
@@ -208,13 +210,14 @@ public sealed class BowlerWeeklySyncJobTests(AppDbContextFixture fixture, Legacy
         insert.Parameters.AddWithValue("@Suffix", (object?)suffix ?? DBNull.Value);
         insert.Parameters.AddWithValue("@Gender", gender);
         insert.Parameters.AddWithValue("@DateOfBirth", dateOfBirth is null ? DBNull.Value : dateOfBirth.Value);
+        insert.Parameters.AddWithValue("@UsbcId", (object?)usbcId ?? DBNull.Value);
         insert.Parameters.AddWithValue("@Updated", updated);
         await insert.ExecuteNonQueryAsync();
     }
 
-    private async Task SeedExistingBowlerAsync(int legacyId, Name? name = null, Gender? gender = null, DateOnly? dateOfBirth = null)
+    private async Task SeedExistingBowlerAsync(int legacyId, Name? name = null, Gender? gender = null, DateOnly? dateOfBirth = null, string? usbcId = null)
     {
-        var bowler = BowlerFactory.Create(name: name, legacyId: legacyId, gender: gender, dateOfBirth: dateOfBirth);
+        var bowler = BowlerFactory.Create(name: name, legacyId: legacyId, gender: gender, dateOfBirth: dateOfBirth, usbcId: usbcId);
         await _dbContext.Set<Bowler>().AddAsync(bowler, TestContext.Current.CancellationToken);
         await _dbContext.SaveChangesAsync(TestContext.Current.CancellationToken);
         _dbContext.ChangeTracker.Clear();
@@ -301,6 +304,60 @@ public sealed class BowlerWeeklySyncJobTests(AppDbContextFixture fixture, Legacy
         bowler.Name.LastName.ShouldBe("Smith");
         bowler.Gender.ShouldBe(Gender.Female);
         bowler.DateOfBirth.ShouldBeNull();
+    }
+
+    [Fact(DisplayName = "SyncAsync should create a bowler with the legacy UsbcId")]
+    public async Task SyncAsync_ShouldStoreUsbcId_WhenCreatingBowler()
+    {
+        // Arrange
+        var ct = TestContext.Current.CancellationToken;
+        await InsertLegacyBowlerAsync(1, Since.AddDays(1), usbcId: "4821-09317");
+        var job = CreateJob();
+
+        // Act
+        await job.SyncAsync(Since, ct);
+
+        // Assert
+        var bowler = await _dbContext.Set<Bowler>().SingleAsync(ct);
+        bowler.UsbcId.ShouldBe("4821-09317");
+    }
+
+    [Fact(DisplayName = "SyncAsync should update an existing bowler whose only difference is the UsbcId")]
+    public async Task SyncAsync_ShouldUpdateBowler_WhenOnlyUsbcIdDiffers()
+    {
+        // Arrange
+        var ct = TestContext.Current.CancellationToken;
+        var name = NameFactory.Create(firstName: "David", lastName: "Smith");
+        await SeedExistingBowlerAsync(1, name: name, gender: Gender.Male, dateOfBirth: new DateOnly(1980, 1, 1), usbcId: "1111-11111");
+        await InsertLegacyBowlerAsync(1, Since.AddDays(1), firstName: "David", lastName: "Smith", gender: 0, dateOfBirth: new DateTime(1980, 1, 1, 0, 0, 0, DateTimeKind.Unspecified), usbcId: "4821-09317");
+        var logger = new FakeLogger<BowlerWeeklySyncJob>();
+        var job = CreateJob(logger);
+
+        // Act
+        await job.SyncAsync(Since, ct);
+
+        // Assert
+        var bowler = await _dbContext.Set<Bowler>().SingleAsync(ct);
+        bowler.UsbcId.ShouldBe("4821-09317");
+        logger.Collector.GetSnapshot().Single().Message.ShouldContain("1 updated");
+    }
+
+    [Fact(DisplayName = "SyncAsync should treat an existing bowler with the same UsbcId as already current")]
+    public async Task SyncAsync_ShouldTreatBowlerAsUnchanged_WhenUsbcIdMatches()
+    {
+        // Arrange
+        var ct = TestContext.Current.CancellationToken;
+        var name = NameFactory.Create(firstName: "David", lastName: "Smith");
+        await SeedExistingBowlerAsync(1, name: name, gender: Gender.Male, dateOfBirth: new DateOnly(1980, 1, 1), usbcId: "4821-09317");
+        await InsertLegacyBowlerAsync(1, Since.AddDays(1), firstName: "David", lastName: "Smith", gender: 0, dateOfBirth: new DateTime(1980, 1, 1, 0, 0, 0, DateTimeKind.Unspecified), usbcId: "4821-09317");
+        var logger = new FakeLogger<BowlerWeeklySyncJob>();
+        var job = CreateJob(logger);
+
+        // Act
+        await job.SyncAsync(Since, ct);
+
+        // Assert
+        logger.Collector.GetSnapshot().Single().Message.ShouldContain("1 already current");
     }
 
     [Fact(DisplayName = "SyncAsync should be idempotent: a second run changes nothing and evicts nothing")]

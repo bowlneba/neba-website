@@ -126,6 +126,11 @@ namespace Neba.Api.Database.Migrations
                         .HasColumnType("integer")
                         .HasColumnName("legacy_id");
 
+                    b.Property<string>("UsbcId")
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)")
+                        .HasColumnName("usbc_id");
+
                     b.Property<int?>("WebsiteId")
                         .HasColumnType("integer")
                         .HasColumnName("website_id");
@@ -141,6 +146,9 @@ namespace Neba.Api.Database.Migrations
                         .HasDatabaseName("ix_bowlers_legacy_id");
 
                     NpgsqlIndexBuilderExtensions.AreNullsDistinct(b.HasIndex("LegacyId"), true);
+
+                    b.HasIndex("UsbcId")
+                        .HasDatabaseName("ix_bowlers_usbc_id");
 
                     b.HasIndex("WebsiteId")
                         .IsUnique()
