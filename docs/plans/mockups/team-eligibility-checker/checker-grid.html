@@ -15,34 +15,30 @@
     .grid-block { margin-top: 1.25rem; }
     .grid-block h3 { font-size: 1rem; margin-bottom: 0.25rem; }
     .grid-block .window { font-size: 0.875rem; color: var(--neba-gray-600); margin-bottom: 0.625rem; max-width: 66ch; }
-    .grid-wrap { overflow-x: auto; border: 1px solid var(--neba-gray-200); border-radius: var(--neba-radius-lg); background: #fff; }
-    table.facts { width: 100%; border-collapse: collapse; font-size: 0.9375rem; }
-    table.facts th, table.facts td { padding: 0.625rem 0.75rem; text-align: left; border-bottom: 1px solid var(--neba-gray-200); vertical-align: top; }
-    table.facts thead th { font-size: 0.8125rem; font-weight: 600; color: var(--neba-gray-600); background: var(--neba-gray-050); white-space: nowrap; }
-    table.facts tbody tr:last-child td, table.facts tbody tr:last-child th { border-bottom: 0; }
-    table.facts tbody th { font-weight: 600; min-width: 11rem; }
-    .pill { white-space: nowrap; }
-    table.facts tbody th small { display: block; font-weight: 400; color: var(--neba-gray-500); font-size: 0.8125rem; }
-    td.num { font-variant-numeric: tabular-nums; }
+    .rows { list-style: none; margin: 0; padding: 0; border: 1px solid var(--neba-gray-200); border-radius: var(--neba-radius-lg); background: #fff; }
+    .b-row { display: grid; grid-template-columns: minmax(9rem, 13rem) 1fr; gap: 0.5rem 1rem; padding: 0.75rem 0.875rem; border-bottom: 1px solid var(--neba-gray-200); }
+    .b-row:last-child { border-bottom: 0; }
+    .b-name { font-weight: 600; overflow-wrap: anywhere; }
+    .b-name small { display: block; font-weight: 400; color: var(--neba-gray-500); font-size: 0.8125rem; }
+    .b-facts { display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: stretch; min-width: 0; }
+    .fact { border: 1px solid var(--neba-gray-200); border-radius: var(--neba-radius); padding: 0.25rem 0.625rem; font-size: 0.875rem; background: var(--neba-gray-050); min-width: 7.5rem; }
+    .fact .k { display: block; font-size: 0.75rem; color: var(--neba-gray-500); }
+    .fact .v { font-weight: 600; font-variant-numeric: tabular-nums; }
+    .fact.hit { background: #fef2f2; border-color: #f5b5b6; }
+    .fact.hit .v { color: var(--neba-accent-red); }
+    .fact.good .v { color: #166534; }
     .ok { color: #166534; display: inline-flex; align-items: center; gap: 0.25rem; }
     .bad { color: var(--neba-accent-red); font-weight: 600; display: inline-flex; align-items: center; gap: 0.25rem; }
     .muted { color: var(--neba-gray-500); }
-    td.hit { background: #fef2f2; box-shadow: inset 3px 0 0 var(--neba-accent-red); }
-    .pill { display: inline-block; border-radius: 999px; padding: 0.0625rem 0.625rem; font-size: 0.8125rem; font-weight: 600; }
+    .pill { display: inline-block; border-radius: 999px; padding: 0.0625rem 0.625rem; font-size: 0.8125rem; font-weight: 600; white-space: nowrap; }
     .pill--non { background: #f0fdf4; color: #166534; }
     .pill--one { background: #fffbeb; color: #92400e; }
     .pill--multi { background: #fef2f2; color: var(--neba-accent-red); }
+    @media (max-width: 600px) { .b-row { grid-template-columns: 1fr; } .fact { flex: 1 1 8rem; } }
     .tally { margin-top: 0.75rem; font-size: 0.9375rem; display: grid; gap: 0.25rem; }
     .tally li { list-style: none; display: flex; gap: 0.5rem; align-items: baseline; }
     .tally ul { margin: 0; padding: 0; }
 
-    @media (max-width: 700px) {
-      table.facts thead { display: none; }
-      table.facts, table.facts tbody, table.facts tr, table.facts th, table.facts td { display: block; }
-      table.facts tr { border-bottom: 1px solid var(--neba-gray-200); padding: 0.5rem 0; }
-      table.facts td { border: 0; padding: 0.25rem 0.75rem; display: flex; justify-content: space-between; gap: 1rem; }
-      table.facts td::before { content: attr(data-label); color: var(--neba-gray-500); font-size: 0.8125rem; }
-    }
   </style>
 </head>
 <body>
@@ -53,7 +49,7 @@
   <header class="site-top"><div class="shell"><span class="brand">BowlNEBA</span><nav><span>Home</span><span class="on">Tournaments</span><span>Stats</span><span>History</span></nav></div></header>
 
   <main class="shell checker">
-    <p class="mock-note">The grid comes back with every answer, so a bowler can see which numbers decided it. It shows counts and yes/no checks only: no date of birth, and for over/under no age group, so it still says nothing about who is over or under. Cells that broke a rule are marked red.</p>
+    <p class="mock-note">The grid comes back with every answer, so a bowler can see which numbers decided it. It shows counts and yes/no checks only: no date of birth, and for over/under no age group, so it still says nothing about who is over or under. Facts that broke a rule are marked red. Each bowler is one row; the facts wrap, so nothing scrolls sideways at any width.</p>
     <div class="scenario-row" id="scenarios" role="group" aria-label="Scenario"></div>
     <div id="out"></div>
   </main>
@@ -158,29 +154,29 @@ const HEAD = {
   counts: 'Counts as', age: 'Age we can check', hof: 'Hall of Fame, Superior Performance',
 };
 
-function cell(key, s, b) {
+// One fact per rule that applies to the format. Only the window that applies is shown, so the
+// number of facts per bowler is at most three or four, and they wrap instead of scrolling.
+function facts(s, b) {
   if (b.unknown) {
-    return key === 'counts' ? '<td data-label="Counts as"><span class="muted">Counted as a non-champion</span></td>'
-      : `<td class="muted" data-label="${HEAD[key]}">${key === 'age' ? 'No' : 'Not on file'}</td>`;
+    return '<span class="fact"><span class="k">Counts as</span><span class="v muted">Non-champion (not in system)</span></span>';
   }
-  const win = s.window === 10 ? b.t10 : b.t5;
-  switch (key) {
-    case 'titles5': return `<td class="num ${s.window === 5 && b.t5 > 0 && s.hit(b) ? 'hit' : ''}" data-label="${HEAD[key]}">${b.t5}</td>`;
-    case 'titles10': return `<td class="num ${s.window === 10 && b.t10 > 0 && s.hit(b) ? 'hit' : ''}" data-label="${HEAD[key]}">${b.t10}</td>`;
-    case 'last': return `<td class="muted" data-label="${HEAD[key]}">${b.last}</td>`;
-    case 'counts': return `<td data-label="${HEAD[key]}">${pill(win)}</td>`;
-    case 'age': return `<td class="${s.ageHit && s.ageHit(b) ? 'hit' : ''}" data-label="${HEAD[key]}">${b.age ? OK : NO}</td>`;
-    case 'hof': return `<td class="${s.hofHit && s.hofHit(b) ? 'hit' : ''}" data-label="${HEAD[key]}">${b.hof ? '<span class="bad">Member</span>' : '<span class="muted">No</span>'}</td>`;
-  }
+  const n = s.window === 10 ? b.t10 : b.t5;
+  const out = [
+    `<span class="fact ${s.hit(b) ? 'hit' : ''}"><span class="k">NEBA titles, last ${s.window} years</span><span class="v">${n}</span></span>`,
+    `<span class="fact"><span class="k">Counts as</span><span class="v">${pill(n)}</span></span>`,
+  ];
+  if (s.columns.includes('age')) out.push(`<span class="fact ${s.ageHit(b) ? 'hit' : 'good'}"><span class="k">Age we can check</span><span class="v">${b.age ? 'Yes' : 'No'}</span></span>`);
+  if (s.columns.includes('hof')) out.push(`<span class="fact ${s.hofHit(b) ? 'hit' : ''}"><span class="k">Hall of Fame, Superior Perf.</span><span class="v">${b.hof ? 'Member' : 'No'}</span></span>`);
+  return out.join('');
 }
 
 function render(key) {
   const s = S[key];
   const rows = s.bowlers.map((b) => `
-    <tr>
-      <th scope="row">${b.n}${b.u ? `<small>USBC ${b.u}</small>` : ''}</th>
-      ${s.columns.map((c) => cell(c, s, b)).join('')}
-    </tr>`).join('');
+    <li class="b-row">
+      <div class="b-name">${b.n}<small>${b.u ? 'USBC ' + b.u : ''}${b.u && b.last ? ' · ' : ''}${b.last ? 'Last NEBA title: ' + b.last : ''}</small></div>
+      <div class="b-facts">${facts(s, b)}</div>
+    </li>`).join('');
   const failing = s.reason !== null;
   document.getElementById('out').innerHTML = `
     <section class="result ${failing ? 'result--no' : 'result--ok'}">
@@ -190,12 +186,7 @@ function render(key) {
       <div class="grid-block">
         <h3>What we checked</h3>
         <p class="window">${s.windowText}</p>
-        <div class="grid-wrap">
-          <table class="facts">
-            <thead><tr><th scope="col">Bowler</th>${s.columns.map((c) => `<th scope="col">${HEAD[c]}</th>`).join('')}</tr></thead>
-            <tbody>${rows}</tbody>
-          </table>
-        </div>
+        <ul class="rows">${rows}</ul>
         <ul class="tally">${s.tally.map(([, text, ok]) => `<li>${ok ? OK.replace('Yes', '') : NO.replace('No', '')}<span>${text}</span></li>`).join('')}</ul>
       </div>
 
