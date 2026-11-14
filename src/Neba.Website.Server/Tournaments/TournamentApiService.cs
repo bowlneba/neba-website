@@ -108,6 +108,8 @@ internal sealed class TournamentApiService(
             BowlingCenterCity = response.BowlingCenter?.City,
             Sponsor = response.Sponsors.FirstOrDefault()?.Name,
             Winners = response.Winners,
+            TeamSize = response.TeamSize,
+            DefendingChampions = [.. response.DefendingChampions.Select(team => team.ToViewModel())],
             PatternName = firstOilPattern?.Name,
             PatternLength = firstOilPattern?.Length,
             PatternLengthCategory = response.PatternLengthCategory,

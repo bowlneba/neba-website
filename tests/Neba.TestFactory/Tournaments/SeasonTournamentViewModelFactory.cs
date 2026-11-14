@@ -1,3 +1,4 @@
+using Neba.Website.Server.Tournaments;
 using Neba.Website.Server.Tournaments.Schedule;
 
 namespace Neba.TestFactory.Tournaments;
@@ -23,7 +24,9 @@ public static class SeasonTournamentViewModelFactory
         string? status = null,
         bool? titleEligible = null,
         decimal? sponsorMoney = null,
-        decimal? nebaAddedMoney = null)
+        decimal? nebaAddedMoney = null,
+        int? teamSize = null,
+        IReadOnlyList<DefendingTeamViewModel>? defendingChampions = null)
         => new()
         {
             Id = id ?? ValidId,
@@ -49,6 +52,8 @@ public static class SeasonTournamentViewModelFactory
             PatternLength = 43,
             PatternLengthCategory = "Medium",
             Winners = ["Alex Example"],
+            TeamSize = teamSize ?? 1,
+            DefendingChampions = defendingChampions ?? [],
         };
 
     public static IReadOnlyCollection<SeasonTournamentViewModel> Bogus(int count, int? seed = null)

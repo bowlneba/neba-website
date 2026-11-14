@@ -198,7 +198,19 @@ else
                             {
                                 <TournamentRulesLink TournamentType="@_model.TournamentType" />
                             }
+                            @if (_model.ShowTeamEligibilityLink)
+                            {
+                                <a class="td-team-link" href="/tournaments/@_model.Id/team-eligibility">
+                                    <span class="material-symbols-outlined" aria-hidden="true">groups</span>
+                                    Check team eligibility
+                                </a>
+                            }
                         </div>
+
+                        @if (_model.ShowDefendingChampions)
+                        {
+                            <DefendingChampions Teams="@_model.DefendingChampions" Layout="DefendingChampionsLayout.Panel" />
+                        }
 
                         @if (_model.IsTruncated)
                         {

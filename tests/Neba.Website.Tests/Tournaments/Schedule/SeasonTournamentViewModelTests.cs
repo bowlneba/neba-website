@@ -288,4 +288,36 @@ public sealed class SeasonTournamentViewModelTests
         missingLength.PatternDisplay.ShouldBe("Medium");
         missingName.PatternDisplay.ShouldBe("Long");
     }
+
+    [Theory(DisplayName = "ShowDefendingChampions is true only for a scheduled tournament that has defending teams")]
+    [InlineData("Scheduled", true, true, TestDisplayName = "Scheduled with teams")]
+    [InlineData("Scheduled", false, false, TestDisplayName = "Scheduled without teams")]
+    [InlineData("Completed", true, false, TestDisplayName = "Completed")]
+    [InlineData("Truncated", true, false, TestDisplayName = "Truncated")]
+    [InlineData("Cancelled", true, false, TestDisplayName = "Cancelled")]
+    public void ShowDefendingChampions_ShouldRequireScheduledAndTeams(string status, bool hasTeams, bool expected)
+    {
+        // Arrange
+        var model = Neba.TestFactory.Tournaments.SeasonTournamentViewModelFactory.Create(
+            status: status,
+            defendingChampions: hasTeams ? [Neba.TestFactory.Tournaments.DefendingTeamViewModelFactory.Create()] : []);
+
+        // Act & Assert
+        model.ShowDefendingChampions.ShouldBe(expected);
+    }
+
+    [Theory(DisplayName = "ShowTeamEligibilityLink is true only for a scheduled team event")]
+    [InlineData("Scheduled", 2, true, TestDisplayName = "Scheduled doubles")]
+    [InlineData("Scheduled", 5, true, TestDisplayName = "Scheduled baker")]
+    [InlineData("Scheduled", 1, false, TestDisplayName = "Scheduled singles")]
+    [InlineData("Completed", 2, false, TestDisplayName = "Completed doubles")]
+    [InlineData("Cancelled", 2, false, TestDisplayName = "Cancelled doubles")]
+    public void ShowTeamEligibilityLink_ShouldRequireScheduledTeamEvent(string status, int teamSize, bool expected)
+    {
+        // Arrange
+        var model = Neba.TestFactory.Tournaments.SeasonTournamentViewModelFactory.Create(status: status, teamSize: teamSize);
+
+        // Act & Assert
+        model.ShowTeamEligibilityLink.ShouldBe(expected);
+    }
 }

@@ -1,3 +1,4 @@
+using Neba.Api.Contracts.Tournaments;
 using Neba.Api.Contracts.Tournaments.GetTournament;
 using Neba.Api.Features.Tournaments.Domain;
 using Neba.TestFactory.Bowlers;
@@ -40,7 +41,10 @@ public static class TournamentDetailResponseFactory
         IReadOnlyCollection<TournamentDetailOilPatternResponse>? oilPatterns = null,
         IReadOnlyCollection<string>? winners = null,
         IReadOnlyCollection<TournamentResultResponse>? results = null,
-        IReadOnlyCollection<TournamentDetailArticleResponse>? articles = null)
+        IReadOnlyCollection<TournamentDetailArticleResponse>? articles = null,
+        int? teamSize = null,
+        string? previousTournamentId = null,
+        IReadOnlyCollection<DefendingTeamResponse>? defendingChampions = null)
         => new()
         {
             Id = id ?? ValidId,
@@ -73,6 +77,9 @@ public static class TournamentDetailResponseFactory
             Winners = winners ?? [],
             Results = results ?? [],
             Articles = articles ?? [],
+            TeamSize = teamSize ?? 1,
+            PreviousTournamentId = previousTournamentId,
+            DefendingChampions = defendingChampions ?? [],
         };
 
     public static IReadOnlyCollection<TournamentDetailResponse> Bogus(int count, int? seed = null)

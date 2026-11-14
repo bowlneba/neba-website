@@ -81,6 +81,31 @@ public sealed record TournamentDetailViewModel
         IsScheduled && TournamentRulesAnchors.TryGet(TournamentType, out _);
 
     /// <summary>
+    /// Bowlers per entry: 1 for singles-style formats, 2 for doubles, 3 for trios, 5 for baker.
+    /// </summary>
+    public int TeamSize { get; init; } = 1;
+
+    /// <summary>
+    /// Id of last year's tournament of this format; null when there is none.
+    /// </summary>
+    public string? PreviousTournamentId { get; init; }
+
+    /// <summary>
+    /// Teams that defend their title here; empty when there is no previous tournament.
+    /// </summary>
+    public IReadOnlyList<DefendingTeamViewModel> DefendingChampions { get; init; } = [];
+
+    /// <summary>
+    /// Scheduled tournaments only; once the tournament finishes the winners show instead.
+    /// </summary>
+    public bool ShowDefendingChampions => IsScheduled && DefendingChampions.Count > 0;
+
+    /// <summary>
+    /// Same scheduled-only rule as <see cref="ShowRulesLink"/>: a link to check whether a team may enter.
+    /// </summary>
+    public bool ShowTeamEligibilityLink => IsScheduled && TeamSize > 1;
+
+    /// <summary>
     /// Per-bowler entry fee in USD; null if not set.
     /// </summary>
     public decimal? EntryFee { get; init; }

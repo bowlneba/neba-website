@@ -32,6 +32,9 @@ internal static class TournamentDetailMappingExtensions
             Sponsors = [.. response.Sponsors.Select(s => s.ToViewModel())],
             OilPatterns = [.. response.OilPatterns.Select(p => p.ToViewModel())],
             Winners = response.Winners,
+            TeamSize = response.TeamSize,
+            PreviousTournamentId = response.PreviousTournamentId,
+            DefendingChampions = [.. response.DefendingChampions.Select(team => team.ToViewModel())],
             Results = [.. response.Results.Select(r => r.ToViewModel())],
             Articles = [.. response.Articles.Select(a => a.ToViewModel())],
         };

@@ -152,6 +152,63 @@ public sealed class TournamentDetailTests : IDisposable
         cut.FindAll("button.td-rules-link").ShouldBeEmpty();
     }
 
+    // ── Team eligibility link and defending champions ───────────────────────
+
+    [Fact(DisplayName = "Should show the team eligibility link and defending champions for a scheduled doubles tournament")]
+    public void Render_ShouldShowEligibilityLinkAndDefendingChampions_WhenScheduledDoubles()
+    {
+        // Arrange
+        SetupSuccessResponse(TournamentDetailResponseFactory.Create(
+            status: TournamentStatus.Scheduled,
+            tournamentType: TournamentType.Doubles,
+            teamSize: 2,
+            defendingChampions: [DefendingTeamResponseFactory.Create(champions: ["Dave Smith", "Dana Jones"])]));
+
+        // Act
+        var cut = _ctx.Render<TournamentDetail>(p => p.Add(x => x.Id, TournamentDetailResponseFactory.ValidId));
+
+        // Assert
+        var link = cut.Find("a.td-team-link");
+        link.GetAttribute("href").ShouldBe("/tournaments/" + TournamentDetailResponseFactory.ValidId + "/team-eligibility");
+        link.TextContent.ShouldContain("Check team eligibility");
+        cut.Find(".defending--panel .defending__names").TextContent.ShouldBe("Dave Smith / Dana Jones");
+    }
+
+    [Theory(DisplayName = "Should not show the team eligibility link or defending champions once the tournament is no longer scheduled")]
+    [InlineData("Completed", TestDisplayName = "Completed")]
+    [InlineData("Truncated", TestDisplayName = "Truncated")]
+    [InlineData("Cancelled", TestDisplayName = "Cancelled")]
+    public void Render_ShouldHideEligibilityLinkAndDefendingChampions_WhenNotScheduled(string statusName)
+    {
+        // Arrange
+        SetupSuccessResponse(TournamentDetailResponseFactory.Create(
+            status: TournamentStatus.FromName(statusName),
+            tournamentType: TournamentType.Doubles,
+            teamSize: 2,
+            defendingChampions: [DefendingTeamResponseFactory.Create()]));
+
+        // Act
+        var cut = _ctx.Render<TournamentDetail>(p => p.Add(x => x.Id, TournamentDetailResponseFactory.ValidId));
+
+        // Assert
+        cut.FindAll("a.td-team-link").ShouldBeEmpty();
+        cut.FindAll(".defending").ShouldBeEmpty();
+    }
+
+    [Fact(DisplayName = "Should not show the team eligibility link for a singles tournament")]
+    public void Render_ShouldNotShowEligibilityLink_WhenSingles()
+    {
+        // Arrange
+        SetupSuccessResponse(TournamentDetailResponseFactory.Create(
+            status: TournamentStatus.Scheduled, tournamentType: TournamentType.Singles, teamSize: 1));
+
+        // Act
+        var cut = _ctx.Render<TournamentDetail>(p => p.Add(x => x.Id, TournamentDetailResponseFactory.ValidId));
+
+        // Assert
+        cut.FindAll("a.td-team-link").ShouldBeEmpty();
+    }
+
     // ── Page title ───────────────────────────────────────────────────────────
 
     [Fact(DisplayName = "Should render page title with tournament name")]

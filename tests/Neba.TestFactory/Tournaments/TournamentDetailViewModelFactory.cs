@@ -1,5 +1,6 @@
 using System.Globalization;
 
+using Neba.Website.Server.Tournaments;
 using Neba.Website.Server.Tournaments.Detail;
 
 namespace Neba.TestFactory.Tournaments;
@@ -40,7 +41,10 @@ public static class TournamentDetailViewModelFactory
         IReadOnlyCollection<TournamentDetailOilPatternViewModel>? oilPatterns = null,
         IReadOnlyCollection<string>? winners = null,
         IReadOnlyCollection<TournamentResultViewModel>? results = null,
-        IReadOnlyCollection<TournamentDetailArticleViewModel>? articles = null)
+        IReadOnlyCollection<TournamentDetailArticleViewModel>? articles = null,
+        int? teamSize = null,
+        string? previousTournamentId = null,
+        IReadOnlyList<DefendingTeamViewModel>? defendingChampions = null)
         => new()
         {
             Id = id ?? ValidId,
@@ -69,6 +73,9 @@ public static class TournamentDetailViewModelFactory
             Winners = winners ?? [],
             Results = results ?? [],
             Articles = articles ?? [],
+            TeamSize = teamSize ?? 1,
+            PreviousTournamentId = previousTournamentId,
+            DefendingChampions = defendingChampions ?? [],
         };
 
     public static IReadOnlyCollection<TournamentDetailViewModel> Bogus(int count, int? seed = null)
