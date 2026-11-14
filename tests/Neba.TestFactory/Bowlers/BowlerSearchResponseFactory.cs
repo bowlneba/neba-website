@@ -1,8 +1,7 @@
 using Bogus;
 
-using Neba.Api.Features.Bowlers.Domain;
-
 using Neba.Api.Contracts.Bowlers.SearchBowlers;
+using Neba.Api.Features.Bowlers.Domain;
 
 namespace Neba.TestFactory.Bowlers;
 
