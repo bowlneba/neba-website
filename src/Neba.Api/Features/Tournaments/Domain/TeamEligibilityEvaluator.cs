@@ -76,13 +76,13 @@ internal static class TeamEligibilityEvaluator
         var ageFailed = hasAgeRule && verifiedCount != members.Count;
         var hallOfFameFailed = context.TournamentType == TournamentType.Baker && hallOfFameCount > 1;
         var marked = explained
-            .Select(member => member with
+            .ConvertAll(member => member with
             {
                 TitlesBreakRule = TitlesBreakRule(titlesFailed, member),
                 AgeBreaksRule = ageFailed && member.AgeVerified == false,
                 HallOfFameBreaksRule = hallOfFameFailed && member.HallOfFameSuperiorPerformance == true
             })
-            .ToList();
+;
 
         var dates = context.StartDate == context.EndDate
             ? $"The date checked is {FormatDate(context.StartDate)}."
