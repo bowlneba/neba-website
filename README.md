@@ -181,6 +181,7 @@ ConnectionStrings__bowlneba='Host=localhost;Port=52502;Database=bowlneba;Usernam
 - [x] Tournaments
 - [ ] Tournament Documents
 - [x] Tournament Detail
+- [x] Team Eligibility Checker
 - [x] Sponsors
 - [x] News
 - [x] About
