@@ -1,0 +1,30 @@
+.bowler-picker {
+    margin-bottom: 1.125rem;
+}
+
+.bowler-picker__label {
+    display: block;
+    margin-bottom: 0.375rem;
+    font-size: 0.9375rem;
+    font-weight: 600;
+    color: var(--neba-text);
+}
+
+.bowler-picker__unknown {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    padding: 0.625rem 0.75rem;
+    border: 1px dashed var(--neba-gray-400);
+    border-radius: var(--neba-radius);
+    background: var(--neba-bg-panel);
+    font-size: 0.9375rem;
+    color: var(--neba-text);
+}
+
+.bowler-picker__tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+}

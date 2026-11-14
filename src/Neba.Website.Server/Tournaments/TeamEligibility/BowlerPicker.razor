@@ -1,0 +1,164 @@
+@inject ITeamEligibilityService TeamEligibilityService
+@implements IDisposable
+
+<div class="bowler-picker">
+    <label for="@Id" class="bowler-picker__label">@Label</label>
+
+    @if (IsUnknown)
+    {
+        <div class="bowler-picker__unknown">
+            <span class="bowler-picker__tag">
+                <span class="material-symbols-outlined" aria-hidden="true">person_off</span>
+                Not in our system
+            </span>
+            <BowlerNotFoundControl IsMarked="true" OnToggle="@(() => SetUnknownAsync(false))" />
+        </div>
+    }
+    else
+    {
+        <NebaAutocomplete Id="@Id"
+                          TValue="string"
+                          TItem="BowlerSearchResultViewModel"
+                          Value="@Selected?.BowlerId"
+                          ValueChanged="HandleSelectedAsync"
+                          Items="@_results"
+                          ItemsAreFiltered="true"
+                          DisplayText="@(bowler => bowler.DisplayText)"
+                          ItemValue="@(bowler => bowler.BowlerId)"
+                          Placeholder="Search by name..."
+                          EmptyLabel="Search by name..."
+                          NoResultsText="@NoResultsText"
+                          FilterTextChanged="SearchAsync"
+                          Disabled="@Disabled">
+            <NoResultsContent>
+                @if (_searchText.Length >= MinimumSearchLength && !_searchFailed)
+                {
+                    <BowlerNotFoundControl IsMarked="false" OnToggle="@(() => SetUnknownAsync(true))" />
+                }
+            </NoResultsContent>
+        </NebaAutocomplete>
+
+        <BowlerNotFoundControl IsMarked="false" OnToggle="@(() => SetUnknownAsync(true))" />
+    }
+</div>
+
+@code {
+    private const int MinimumSearchLength = 3;
+    private const int DebounceMilliseconds = 300;
+
+    private List<BowlerSearchResultViewModel> _results = [];
+    private string _searchText = string.Empty;
+    private bool _searchFailed;
+    private CancellationTokenSource? _debounce;
+
+    [Parameter, EditorRequired]
+    public string Id { get; set; } = default!;
+
+    [Parameter, EditorRequired]
+    public string Label { get; set; } = default!;
+
+    [Parameter]
+    public BowlerSearchResultViewModel? Selected { get; set; }
+
+    [Parameter]
+    public EventCallback<BowlerSearchResultViewModel?> SelectedChanged { get; set; }
+
+    /// <summary>True when the slot is marked as a bowler who is not in the system.</summary>
+    [Parameter]
+    public bool IsUnknown { get; set; }
+
+    [Parameter]
+    public EventCallback<bool> IsUnknownChanged { get; set; }
+
+    /// <summary>Bowlers already chosen in the other slots, so one bowler cannot fill two.</summary>
+    [Parameter]
+    public IReadOnlySet<string> ExcludedIds { get; set; } = new HashSet<string>();
+
+    [Parameter]
+    public bool Disabled { get; set; }
+
+    private string NoResultsText
+    {
+        get
+        {
+            if (_searchFailed)
+            {
+                return "Search is unavailable right now. Try again in a moment.";
+            }
+
+            return _searchText.Length < MinimumSearchLength
+                ? "Type at least 3 letters to search."
+                : "No bowler found.";
+        }
+    }
+
+    protected override void OnParametersSet()
+    {
+        // NebaAutocomplete shows the chosen bowler by finding it in Items, so keep it there.
+        if (Selected is not null && _results.All(bowler => bowler.BowlerId != Selected.BowlerId))
+        {
+            _results = [Selected];
+        }
+    }
+
+    private async Task SearchAsync(string text)
+    {
+        _searchText = text.Trim();
+
+        if (_debounce is not null)
+        {
+            await _debounce.CancelAsync();
+            _debounce.Dispose();
+        }
+
+        if (_searchText.Length < MinimumSearchLength)
+        {
+            _searchFailed = false;
+            _results = Selected is null ? [] : [Selected];
+            return;
+        }
+
+        var cts = _debounce = new CancellationTokenSource();
+
+        try
+        {
+            await Task.Delay(DebounceMilliseconds, cts.Token);
+            var result = await TeamEligibilityService.SearchBowlersAsync(_searchText, cts.Token);
+
+            if (cts.IsCancellationRequested)
+            {
+                return;
+            }
+
+            _searchFailed = result.IsError;
+            _results = result.IsError
+                ? []
+                : [.. result.Value.Where(bowler => !ExcludedIds.Contains(bowler.BowlerId))];
+        }
+        catch (OperationCanceledException)
+        {
+            // A newer keystroke replaced this search.
+        }
+    }
+
+    private async Task HandleSelectedAsync(string? bowlerId)
+    {
+        var bowler = bowlerId is null ? null : _results.FirstOrDefault(result => result.BowlerId == bowlerId);
+        _results = bowler is null ? [] : [bowler];
+        await SelectedChanged.InvokeAsync(bowler);
+    }
+
+    private async Task SetUnknownAsync(bool unknown)
+    {
+        _results = [];
+        _searchText = string.Empty;
+        await SelectedChanged.InvokeAsync(null);
+        await IsUnknownChanged.InvokeAsync(unknown);
+    }
+
+    public void Dispose()
+    {
+        _debounce?.Cancel();
+        _debounce?.Dispose();
+    }
+}

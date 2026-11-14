@@ -1,0 +1,174 @@
+@page "/tournaments/{Id}/team-eligibility"
+@rendermode InteractiveServer
+@using ErrorOr
+@using Neba.Api.Contracts.Tournaments
+@using Neba.Website.Server.Services
+@using Neba.Website.Server.Tournaments.Detail
+
+@inject ApiExecutor ApiExecutor
+@inject ITournamentsApi TournamentsApi
+@inject ITeamEligibilityService TeamEligibilityService
+@inject NavigationManager Navigation
+
+<PageTitle>Check Team Eligibility - BowlNEBA</PageTitle>
+
+<div class="team-eligibility">
+    @if (_isLoading)
+    {
+        <p>Loading...</p>
+    }
+    else if (_loadFailed || _model is null)
+    {
+        <NebaAlert Severity="NotifySeverity.Error" Title="Unable to load this tournament" Message="Try again in a moment." />
+    }
+    else if (_model.TeamSize < 2)
+    {
+        <h1>This is not a team event</h1>
+        <p><a class="neba-link" href="/tournaments/@_model.Id">Back to @_model.Name</a></p>
+    }
+    else
+    {
+        <a class="neba-link" href="/tournaments/@_model.Id">← @_model.Name</a>
+        <h1 class="team-eligibility__title">Check team eligibility</h1>
+        <p class="team-eligibility__lead">@_model.Name · @_model.TournamentType · @_model.FormatDateRange()</p>
+
+        <TeamRules TournamentType="@_model.TournamentType" />
+
+        <section class="team-eligibility__slots" aria-labelledby="team-heading">
+            <h2 id="team-heading">Your team</h2>
+            <p class="team-eligibility__hint">
+                All @_model.TeamSize bowlers are required. Search by name, then pick the right bowler by USBC ID.
+            </p>
+
+            @for (var i = 0; i < _slots.Count; i++)
+            {
+                var index = i;
+                <BowlerPicker Id="@("bowler-" + (index + 1))"
+                              Label="@("Bowler " + (index + 1))"
+                              Selected="@_slots[index].Bowler"
+                              SelectedChanged="@(bowler => SelectBowler(index, bowler))"
+                              IsUnknown="@_slots[index].IsUnknown"
+                              IsUnknownChanged="@(unknown => SetUnknown(index, unknown))"
+                              ExcludedIds="@ChosenIds"
+                              Disabled="@_isChecking" />
+            }
+
+            <button type="button" class="neba-btn neba-btn-primary" disabled="@(!CanCheck)" @onclick="CheckAsync">
+                Check team
+            </button>
+        </section>
+
+        <div aria-live="polite" class="team-eligibility__result">
+            @if (_isChecking)
+            {
+                <p>Checking...</p>
+            }
+            else if (_errorMessage is not null)
+            {
+                <NebaAlert Severity="NotifySeverity.Error" Title="Unable to check this team" Message="@_errorMessage" />
+            }
+            else if (_result is not null)
+            {
+                <TeamEligibilityResultPanel Result="@_result" OnCheckAnother="ClearResult" />
+            }
+        </div>
+    }
+</div>
+
+@code {
+    private sealed class Slot
+    {
+        public BowlerSearchResultViewModel? Bowler { get; set; }
+
+        public bool IsUnknown { get; set; }
+    }
+
+    private readonly List<Slot> _slots = [];
+    private TournamentDetailViewModel? _model;
+    private bool _isLoading = true;
+    private bool _loadFailed;
+    private bool _isChecking;
+    private string? _errorMessage;
+    private TeamEligibilityResultViewModel? _result;
+
+    [Parameter]
+    public string Id { get; set; } = string.Empty;
+
+    private IReadOnlySet<string> ChosenIds =>
+        _slots.Where(slot => slot.Bowler is not null).Select(slot => slot.Bowler!.BowlerId).ToHashSet(StringComparer.Ordinal);
+
+    private bool CanCheck => !_isChecking && _slots.All(slot => slot.Bowler is not null || slot.IsUnknown);
+
+    protected override async Task OnInitializedAsync()
+    {
+        var result = await ApiExecutor.ExecuteAsync(
+            "TournamentsApi",
+            "GetTournamentDetail",
+            ct => TournamentsApi.GetTournamentAsync(Id, ct));
+
+        if (result.IsError)
+        {
+            if (result.FirstError.Type == ErrorType.NotFound)
+            {
+                Navigation.NavigateTo("/not-found", replace: true);
+                return;
+            }
+
+            _loadFailed = true;
+            _isLoading = false;
+            return;
+        }
+
+        _model = result.Value.ToViewModel();
+        _slots.AddRange(Enumerable.Range(0, _model.TeamSize).Select(_ => new Slot()));
+        _isLoading = false;
+    }
+
+    private void SelectBowler(int index, BowlerSearchResultViewModel? bowler)
+    {
+        _slots[index].Bowler = bowler;
+        ClearResult();
+    }
+
+    private void SetUnknown(int index, bool unknown)
+    {
+        _slots[index].IsUnknown = unknown;
+        _slots[index].Bowler = null;
+        ClearResult();
+    }
+
+    // "Check another team" and any edit to a slot clear the old answer but keep the slots.
+    private void ClearResult()
+    {
+        _result = null;
+        _errorMessage = null;
+    }
+
+    private async Task CheckAsync()
+    {
+        ClearResult();
+        _isChecking = true;
+
+        try
+        {
+            var bowlerIds = _slots.Where(slot => slot.Bowler is not null).Select(slot => slot.Bowler!.BowlerId).ToList();
+            var unknownCount = _slots.Count(slot => slot.IsUnknown);
+
+            var result = await TeamEligibilityService.CheckAsync(Id, bowlerIds, unknownCount);
+
+            if (result.IsError)
+            {
+                _errorMessage = result.FirstError.Type == ErrorType.Validation
+                    ? result.FirstError.Description
+                    : "We couldn't check this team. Try again, or email info@bowlneba.com.";
+                return;
+            }
+
+            _result = result.Value;
+        }
+        finally
+        {
+            _isChecking = false;
+        }
+    }
+}
