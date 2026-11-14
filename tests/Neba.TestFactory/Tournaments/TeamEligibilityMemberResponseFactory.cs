@@ -1,3 +1,5 @@
+using Bogus;
+
 using Neba.Api.Contracts.Tournaments.CheckTeamEligibility;
 
 namespace Neba.TestFactory.Tournaments;
@@ -36,4 +38,26 @@ public static class TeamEligibilityMemberResponseFactory
             AgeBreaksRule = ageBreaksRule ?? false,
             HallOfFameBreaksRule = hallOfFameBreaksRule ?? false
         };
+
+    internal static IReadOnlyCollection<TeamEligibilityMemberResponse> Bogus(int count, Faker faker)
+    {
+        ArgumentNullException.ThrowIfNull(faker);
+
+        string[] standings = ["NonChampion", "OneTimeChampion", "MultiTimeChampion"];
+
+        return [.. Enumerable.Range(0, count).Select(_ => Create(
+            name: faker.Name.FullName(),
+            usbcId: faker.Random.Replace("####-#####"),
+            lastTitleYear: faker.Random.Int(2015, 2026),
+            titlesLast5Years: faker.Random.Int(0, 3),
+            titlesLast10Years: faker.Random.Int(0, 5),
+            countsAs: faker.PickRandom(standings)))];
+    }
+
+    public static IReadOnlyCollection<TeamEligibilityMemberResponse> Bogus(int count, int? seed = null)
+    {
+        var faker = new Faker();
+        if (seed.HasValue) faker.Random = new Randomizer(seed.Value);
+        return Bogus(count, faker);
+    }
 }

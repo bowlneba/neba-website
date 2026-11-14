@@ -1,6 +1,7 @@
 @using System.Globalization
 @using Neba.Website.Server.Tournaments.Schedule
 @inject ITournamentApiService TournamentApiService
+@implements IDisposable
 
 @if (_visible)
 {
@@ -46,6 +47,7 @@
     private string? _lastType;
     private DateOnly? _lastStart;
     private bool _initialized;
+    private readonly CancellationTokenSource _disposed = new();
 
     [Parameter, EditorRequired]
     public string Id { get; set; } = default!;
@@ -90,7 +92,7 @@
         await LoadCandidatesAsync();
 
         // Only a change the user just made clears the saved value; opening the form never does.
-        if (changed && Value is not null && _candidates.All(candidate => candidate.Id != Value))
+        if (changed && !_loadFailed && Value is not null && _candidates.All(candidate => candidate.Id != Value))
         {
             _notice = typeChanged
                 ? "The previous tournament was cleared. It has to be the same format as this tournament."
@@ -112,7 +114,7 @@
 
         if (_seasons is null)
         {
-            var seasons = await TournamentApiService.GetSeasonsAsync();
+            var seasons = await TournamentApiService.GetSeasonsAsync(_disposed.Token);
 
             if (seasons.IsError)
             {
@@ -132,19 +134,26 @@
 
         var missing = prior.Where(season => !_bySeason.ContainsKey(season.Id)).ToList();
 
-        // The season lists are independent, so fetch them together.
-        var fetched = await Task.WhenAll(missing.Select(season => TournamentApiService.GetTournamentsForSeasonAsync(season)));
+        // The season lists are independent, so fetch them together. Keep each success, so a retry
+        // fetches only the seasons that failed.
+        var fetches = missing.Select(async season => (Season: season, Result: await TournamentApiService.GetTournamentsForSeasonAsync(season, _disposed.Token)));
 
-        if (fetched.Any(result => result.IsError))
+        foreach (var (season, result) in await Task.WhenAll(fetches))
         {
-            _loadFailed = true;
-            _candidates = [];
-            return;
+            if (result.IsError)
+            {
+                _loadFailed = true;
+            }
+            else
+            {
+                _bySeason[season.Id] = result.Value;
+            }
         }
 
-        for (var i = 0; i < missing.Count; i++)
+        if (_loadFailed)
         {
-            _bySeason[missing[i].Id] = fetched[i].Value;
+            _candidates = [];
+            return;
         }
 
         // A cancelled tournament has no winners, so it never defends anything.
@@ -170,4 +179,10 @@
     // "Joe's Pizza Open (02/2026)": the month and year of the start date tell two years of one event apart.
     private static string LabelFor(SeasonTournamentViewModel tournament)
         => tournament.Name + " (" + tournament.StartDate.ToString("MM/yyyy", CultureInfo.InvariantCulture) + ")";
+
+    public void Dispose()
+    {
+        _disposed.Cancel();
+        _disposed.Dispose();
+    }
 }

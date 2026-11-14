@@ -250,4 +250,63 @@ public sealed class PreviousTournamentPickerTests : IDisposable
         // Assert
         cut.Find("[role=alert]").ShouldNotBeNull();
     }
+
+    [Fact(DisplayName = "Should keep a saved previous tournament when a season load fails and the start date changes")]
+    public void Render_ShouldKeepValue_WhenLoadFailsAndStartDateChanges()
+    {
+        // Arrange
+        var changes = new List<string?>();
+        SetupSeasons(Season2025);
+        _service
+            .Setup(x => x.GetTournamentsForSeasonAsync(Season2025, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(Error.Failure("x", "failed"));
+        var cut = Render(value: "a", onChanged: changes.Add);
+
+        // Act
+        cut.Render(p => p.Add(x => x.StartDate, new DateOnly(2026, 4, 4)));
+
+        // Assert
+        changes.ShouldBeEmpty();
+        cut.Find("[role=alert]").ShouldNotBeNull();
+    }
+
+    [Fact(DisplayName = "Should fetch only the failed season again, not the ones it already has")]
+    public void Render_ShouldRefetchOnlyFailedSeason_WhenOneSeasonFailsFirst()
+    {
+        // Arrange
+        var failFirst = true;
+        SetupSeasons(Season2025, Season2024);
+        SetupSeasonTournaments(Season2025, Tournament("a", "Joe's Pizza Open", "Doubles", new DateOnly(2025, 2, 1)));
+        _service
+            .Setup(x => x.GetTournamentsForSeasonAsync(Season2024, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(() => failFirst
+                ? Error.Failure("x", "failed")
+                : new List<SeasonTournamentViewModel> { Tournament("b", "Old Open", "Doubles", new DateOnly(2024, 2, 1)) });
+        var cut = Render();
+        cut.Find("[role=alert]").ShouldNotBeNull();
+        failFirst = false;
+
+        // Act
+        cut.Render(p => p.Add(x => x.StartDate, new DateOnly(2026, 4, 4)));
+
+        // Assert
+        cut.FindAll("[role=alert]").ShouldBeEmpty();
+        _service.Verify(x => x.GetTournamentsForSeasonAsync(Season2025, It.IsAny<CancellationToken>()), Times.Once);
+        _service.Verify(x => x.GetTournamentsForSeasonAsync(Season2024, It.IsAny<CancellationToken>()), Times.Exactly(2));
+    }
+
+    [Fact(DisplayName = "Should fetch each season once when the parameters change but the seasons stay the same")]
+    public void Render_ShouldFetchEachSeasonOnce_WhenParametersChange()
+    {
+        // Arrange
+        SetupSeasons(Season2025);
+        SetupSeasonTournaments(Season2025, Tournament("a", "Joe's Pizza Open", "Doubles", new DateOnly(2025, 2, 1)));
+        var cut = Render();
+
+        // Act
+        cut.Render(p => p.Add(x => x.StartDate, new DateOnly(2026, 4, 4)));
+
+        // Assert
+        _service.Verify(x => x.GetTournamentsForSeasonAsync(Season2025, It.IsAny<CancellationToken>()), Times.Once);
+    }
 }

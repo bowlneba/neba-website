@@ -1,3 +1,5 @@
+using ErrorOr;
+
 using Neba.Api.Database;
 using Neba.Api.Features.Seasons.Domain;
 using Neba.Api.Features.Tournaments;
@@ -64,7 +66,7 @@ public sealed class PreviousTournamentResolverTests(AppDbContextFixture fixture)
     }
 
     [Fact(DisplayName = "ResolveAsync returns a conflict error when the tournament does not exist")]
-    public async Task ResolveAsync_ShouldReturnNotFoundError_WhenTournamentMissing()
+    public async Task ResolveAsync_ShouldReturnConflictError_WhenTournamentMissing()
     {
         // Arrange
         var missingId = TournamentId.New();
@@ -75,6 +77,7 @@ public sealed class PreviousTournamentResolverTests(AppDbContextFixture fixture)
 
         // Assert
         result.IsError.ShouldBeTrue();
+        result.FirstError.Type.ShouldBe(ErrorType.Conflict);
         result.FirstError.Code.ShouldBe("Tournament.PreviousTournament.NotFound");
     }
 }
