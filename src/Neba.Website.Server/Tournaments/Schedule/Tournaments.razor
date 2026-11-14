@@ -3,6 +3,7 @@
 @implements IAsyncDisposable
 @inject ITournamentApiService DataService
 @inject NavigationManager Nav
+@using ErrorOr
 @using Neba.Api.Contracts.Security
 
 @rendermode @(new InteractiveServerRenderMode(prerender: false))
@@ -41,9 +42,10 @@
         }
         else
         {
-            @foreach (var strip in TimelineStrips)
+            var strips = TimelineStrips;
+            @foreach (var strip in strips)
             {
-                @if (TimelineStrips.Count > 1)
+                @if (strips.Count > 1)
                 {
                     <p class="tournaments-page__timeline-label">@strip.Season.Description</p>
                 }
@@ -64,12 +66,13 @@
             }
             else
             {
+                var filtered = FilteredTournaments.ToList();
                 <div class="tournaments-page__list" id="tournament-list" role="list" aria-live="polite"
-                     aria-label="@($"{FilteredTournaments.Count()} tournaments")">
+                     aria-label="@($"{filtered.Count} tournaments")">
 
                     @if (_activeTab == TournamentTab.Upcoming)
                     {
-                        @foreach (var section in UpcomingSections)
+                        @foreach (var section in GroupUpcoming(filtered))
                         {
                             @if (section.ShowDivider)
                             {
@@ -84,13 +87,13 @@
                     }
                     else
                     {
-                        @foreach (var t in FilteredTournaments)
+                        @foreach (var t in filtered)
                         {
                             <TournamentPastCard Tournament="@t" OnEditLogo="OpenEditLogo" />
                         }
                     }
 
-                    @if (!FilteredTournaments.Any())
+                    @if (filtered.Count == 0)
                     {
                         <TournamentEmptyState Tab="@_activeTab" HasActiveFilters="@HasActiveFilters"
                                               OnClearFilters="ClearFilters" />
@@ -190,9 +193,9 @@
         }
     }
 
-    private List<UpcomingSeasonSection> UpcomingSections =>
+    private List<UpcomingSeasonSection> GroupUpcoming(IReadOnlyList<SeasonTournamentViewModel> filtered) =>
         UpcomingSchedule.GroupBySeason(
-            [.. FilteredTournaments],
+            filtered,
             _availableSeasons ?? [],
             _upcomingTournaments.FirstOrDefault()?.Season);
 
@@ -309,7 +312,7 @@ SeasonViewModel? current)
     // Helper: Load tournaments for active season and hero
     private async Task LoadTournamentsAndHeroAsync(List<SeasonViewModel> availableSeasons, CancellationToken ct)
     {
-        var tournamentsResult = await DataService.GetTournamentsForSeasonAsync(_activeSeason!, ct);
+        var (tournamentsResult, upcomingResult) = await FetchTournamentsAsync(availableSeasons, ct);
         if (tournamentsResult.IsError)
         {
             _allTournaments = [];
@@ -317,7 +320,7 @@ SeasonViewModel? current)
             return;
         }
 
-        await ApplyTournamentsAsync(tournamentsResult.Value, availableSeasons, ct);
+        ApplyTournaments(tournamentsResult.Value, upcomingResult);
     }
 
     // Reload after a save. A failed reload keeps the list the user already sees; the save itself worked.
@@ -328,21 +331,39 @@ SeasonViewModel? current)
             return;
         }
 
-        var tournamentsResult = await DataService.GetTournamentsForSeasonAsync(_activeSeason, ct);
+        var (tournamentsResult, upcomingResult) = await FetchTournamentsAsync(availableSeasons, ct);
         if (tournamentsResult.IsError)
         {
             return;
         }
 
-        await ApplyTournamentsAsync(tournamentsResult.Value, availableSeasons, ct);
+        ApplyTournaments(tournamentsResult.Value, upcomingResult);
     }
 
-    private async Task ApplyTournamentsAsync(
-        List<SeasonTournamentViewModel> tournaments, List<SeasonViewModel> availableSeasons, CancellationToken ct)
+    // The season list and the cross-season upcoming list need only the season list, so fetch them together.
+    private async Task<(ErrorOr<List<SeasonTournamentViewModel>> Season, ErrorOr<List<SeasonTournamentViewModel>>? Upcoming)>
+        FetchTournamentsAsync(List<SeasonViewModel> availableSeasons, CancellationToken ct)
+    {
+        var seasonTask = DataService.GetTournamentsForSeasonAsync(_activeSeason!, ct);
+        var upcomingTask = _isCurrentSeason
+            ? DataService.GetUpcomingTournamentsAsync(availableSeasons, ct)
+            : null;
+
+        var season = await seasonTask;
+        if (upcomingTask is null)
+        {
+            return (season, null);
+        }
+
+        return (season, await upcomingTask);
+    }
+
+    private void ApplyTournaments(
+        List<SeasonTournamentViewModel> tournaments, ErrorOr<List<SeasonTournamentViewModel>>? upcomingResult)
     {
         _allTournaments = tournaments;
 
-        if (!_isCurrentSeason)
+        if (upcomingResult is null)
         {
             _upcomingTournaments = [];
             return;
@@ -350,8 +371,7 @@ SeasonViewModel? current)
 
         // Upcoming tournaments run across seasons, so next season's schedule shows before it starts.
         // If that call fails, fall back to what is left of the current season.
-        var upcomingResult = await DataService.GetUpcomingTournamentsAsync(availableSeasons, ct);
-        var upcoming = upcomingResult.IsError ? tournaments : upcomingResult.Value;
+        var upcoming = upcomingResult.Value.IsError ? tournaments : upcomingResult.Value.Value;
 
         _upcomingTournaments = [.. upcoming.Where(t => !t.IsPast).OrderBy(t => t.StartDate)];
     }
