@@ -1,0 +1,217 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Team check grid (BowlNEBA mockup)</title>
+  <link rel="stylesheet" href="shared/site.css">
+  <link rel="stylesheet" href="shared/checker.css">
+  <style>
+    .mock-note { font-size: 0.875rem; color: var(--neba-gray-500); max-width: 70ch; margin: 0.25rem 0 1rem; }
+    .scenario-row { display: flex; flex-wrap: wrap; gap: 0.25rem; margin-bottom: 1.25rem; }
+    .scenario-row button { font: inherit; font-size: 0.875rem; font-weight: 600; padding: 0.375rem 0.875rem; border: 1px solid var(--neba-gray-300); background: #fff; border-radius: 999px; cursor: pointer; color: var(--neba-gray-700); }
+    .scenario-row button[aria-pressed="true"] { background: var(--neba-blue-brand); border-color: var(--neba-blue-brand); color: #fff; }
+
+    .grid-block { margin-top: 1.25rem; }
+    .grid-block h3 { font-size: 1rem; margin-bottom: 0.25rem; }
+    .grid-block .window { font-size: 0.875rem; color: var(--neba-gray-600); margin-bottom: 0.625rem; max-width: 66ch; }
+    .grid-wrap { overflow-x: auto; border: 1px solid var(--neba-gray-200); border-radius: var(--neba-radius-lg); background: #fff; }
+    table.facts { width: 100%; border-collapse: collapse; font-size: 0.9375rem; }
+    table.facts th, table.facts td { padding: 0.625rem 0.75rem; text-align: left; border-bottom: 1px solid var(--neba-gray-200); vertical-align: top; }
+    table.facts thead th { font-size: 0.8125rem; font-weight: 600; color: var(--neba-gray-600); background: var(--neba-gray-050); white-space: nowrap; }
+    table.facts tbody tr:last-child td, table.facts tbody tr:last-child th { border-bottom: 0; }
+    table.facts tbody th { font-weight: 600; min-width: 11rem; }
+    .pill { white-space: nowrap; }
+    table.facts tbody th small { display: block; font-weight: 400; color: var(--neba-gray-500); font-size: 0.8125rem; }
+    td.num { font-variant-numeric: tabular-nums; }
+    .ok { color: #166534; display: inline-flex; align-items: center; gap: 0.25rem; }
+    .bad { color: var(--neba-accent-red); font-weight: 600; display: inline-flex; align-items: center; gap: 0.25rem; }
+    .muted { color: var(--neba-gray-500); }
+    td.hit { background: #fef2f2; box-shadow: inset 3px 0 0 var(--neba-accent-red); }
+    .pill { display: inline-block; border-radius: 999px; padding: 0.0625rem 0.625rem; font-size: 0.8125rem; font-weight: 600; }
+    .pill--non { background: #f0fdf4; color: #166534; }
+    .pill--one { background: #fffbeb; color: #92400e; }
+    .pill--multi { background: #fef2f2; color: var(--neba-accent-red); }
+    .tally { margin-top: 0.75rem; font-size: 0.9375rem; display: grid; gap: 0.25rem; }
+    .tally li { list-style: none; display: flex; gap: 0.5rem; align-items: baseline; }
+    .tally ul { margin: 0; padding: 0; }
+
+    @media (max-width: 700px) {
+      table.facts thead { display: none; }
+      table.facts, table.facts tbody, table.facts tr, table.facts th, table.facts td { display: block; }
+      table.facts tr { border-bottom: 1px solid var(--neba-gray-200); padding: 0.5rem 0; }
+      table.facts td { border: 0; padding: 0.25rem 0.75rem; display: flex; justify-content: space-between; gap: 1rem; }
+      table.facts td::before { content: attr(data-label); color: var(--neba-gray-500); font-size: 0.8125rem; }
+    }
+  </style>
+</head>
+<body>
+  <div class="mock-bar">
+    <strong>Mockup controls</strong>
+    <span>Result with a facts grid for each bowler</span>
+  </div>
+  <header class="site-top"><div class="shell"><span class="brand">BowlNEBA</span><nav><span>Home</span><span class="on">Tournaments</span><span>Stats</span><span>History</span></nav></div></header>
+
+  <main class="shell checker">
+    <p class="mock-note">The grid comes back with every answer, so a bowler can see which numbers decided it. It shows counts and yes/no checks only: no date of birth, and for over/under no age group, so it still says nothing about who is over or under. Cells that broke a rule are marked red.</p>
+    <div class="scenario-row" id="scenarios" role="group" aria-label="Scenario"></div>
+    <div id="out"></div>
+  </main>
+
+<script>
+const OK = '<span class="ok"><span class="material-symbols-outlined" aria-hidden="true">check_circle</span>Yes</span>';
+const NO = '<span class="bad"><span class="material-symbols-outlined" aria-hidden="true">cancel</span>No</span>';
+const pill = (n) => n === 0 ? '<span class="pill pill--non">Non-champion</span>' : n === 1 ? '<span class="pill pill--one">One-time champion</span>' : '<span class="pill pill--multi">Multi-time champion</span>';
+
+const S = {
+  trios: {
+    label: 'Trios: two multi-time champions',
+    format: 'Trios', dateLine: 'Feb 24 to 25, 2027', window: 5,
+    windowText: 'For trios, a champion is a bowler with a NEBA title in the 5 years before the tournament. The dates checked are Feb 24 and Feb 25, 2027.',
+    columns: ['titles5', 'titles10', 'last', 'counts'],
+    bowlers: [
+      { n: 'Dave Kipperman', u: '4821-09317', t5: 0, t10: 0, last: '2010' },
+      { n: 'Chris Forry', u: '4822-11840', t5: 3, t10: 4, last: '2025' },
+      { n: 'Jay Johnson', u: '4819-02277', t5: 2, t10: 3, last: '2024' },
+    ],
+    tally: [
+      ['non', 'Non-champions: 1 (needs at least 1)', true],
+      ['multi', 'Multi-time champions: 2 (at most 1)', false],
+    ],
+    headline: "This team can't bowl together.",
+    reason: 'A team may have at most 1 multi-time champion.',
+    hit: (b) => b.t5 > 1,
+  },
+  doubles: {
+    label: 'Doubles: two champions',
+    format: 'Doubles', dateLine: 'Mar 6 to 7, 2027', window: 10,
+    windowText: 'For doubles, a champion is a bowler with a NEBA title in the 10 years before the tournament (5 years once a bowler has turned 60). The dates checked are Mar 6 and Mar 7, 2027.',
+    columns: ['titles5', 'titles10', 'last', 'counts'],
+    bowlers: [
+      { n: 'Chris Champion', u: '1111-00001', t5: 1, t10: 2, last: '2024' },
+      { n: 'Cora Champion', u: '1111-00002', t5: 0, t10: 1, last: '2019' },
+    ],
+    tally: [['champ', 'Champions: 2 (at most 1)', false]],
+    headline: "This team can't bowl together.",
+    reason: 'A team may have at most 1 previous champion.',
+    hit: (b) => b.t10 > 0,
+  },
+  overunder: {
+    label: 'Over/Under: a bowler we cannot age',
+    format: 'Over/Under 50 Doubles', dateLine: 'Jan 16 to 17, 2027', window: 5,
+    windowText: 'For over/under doubles, a champion is a bowler with a NEBA title in the 5 years before the tournament, and every bowler needs an age we can check. The dates checked are Jan 16 and Jan 17, 2027.',
+    columns: ['titles5', 'titles10', 'last', 'counts', 'age'],
+    bowlers: [
+      { n: 'Dana Defender', u: '4821-09318', t5: 0, t10: 1, last: '2019', age: true },
+      { n: 'Nina Newcomer', u: null, t5: 0, t10: 0, last: 'None', age: false },
+    ],
+    tally: [['age', 'Bowlers with an age we can check: 1 of 2 (needs all)', false]],
+    headline: "This team can't bowl together.",
+    reason: 'We could not verify the age of every bowler. An over/under team needs every bowler found in our system with an age we can check.',
+    hit: () => false,
+    ageHit: (b) => !b.age,
+  },
+  baker: {
+    label: 'Baker: Hall of Fame limit, one bowler not in system',
+    format: 'Baker', dateLine: 'Mar 13, 2027', window: 5,
+    windowText: 'For baker, a champion is a bowler with a NEBA title in the 5 years before the tournament. The date checked is Mar 13, 2027.',
+    columns: ['titles5', 'titles10', 'last', 'counts', 'hof'],
+    bowlers: [
+      { n: 'Ray Dunleavy', u: '4820-00412', t5: 0, t10: 2, last: '2018', hof: true },
+      { n: 'Walt Brennan', u: '4820-00977', t5: 1, t10: 3, last: '2023', hof: true },
+      { n: 'Ken Almeida', u: '4820-01530', t5: 0, t10: 0, last: 'None', hof: false },
+      { n: 'Not in our system', u: null, t5: null, t10: null, last: null, hof: null, unknown: true },
+      { n: 'Not in our system', u: null, t5: null, t10: null, last: null, hof: null, unknown: true },
+    ],
+    tally: [
+      ['non', 'Non-champions: 4 (needs at least 1)', true],
+      ['multi', 'Multi-time champions: 0 (at most 2)', true],
+      ['hof', 'Hall of Fame members for Superior Performance: 2 (at most 1)', false],
+    ],
+    headline: "This team can't bowl together.",
+    reason: 'A team may have at most one Hall of Fame member for Superior Performance.',
+    hit: () => false,
+    hofHit: (b) => b.hof === true,
+  },
+  pass: {
+    label: 'Everything passes',
+    format: 'Trios', dateLine: 'Feb 24 to 25, 2027', window: 5,
+    windowText: 'For trios, a champion is a bowler with a NEBA title in the 5 years before the tournament. The dates checked are Feb 24 and Feb 25, 2027.',
+    columns: ['titles5', 'titles10', 'last', 'counts'],
+    bowlers: [
+      { n: 'Dave Kipperman', u: '4821-09317', t5: 0, t10: 0, last: '2010' },
+      { n: 'Chris Forry', u: '4822-11840', t5: 1, t10: 2, last: '2025' },
+      { n: 'Jay Johnson', u: '4819-02277', t5: 1, t10: 1, last: '2024' },
+    ],
+    tally: [
+      ['non', 'Non-champions: 1 (needs at least 1)', true],
+      ['multi', 'Multi-time champions: 0 (at most 1)', true],
+    ],
+    headline: 'This team can bowl together.',
+    reason: null,
+    hit: () => false,
+  },
+};
+
+const HEAD = {
+  titles5: 'NEBA titles, last 5 years', titles10: 'NEBA titles, last 10 years', last: 'Last NEBA title',
+  counts: 'Counts as', age: 'Age we can check', hof: 'Hall of Fame, Superior Performance',
+};
+
+function cell(key, s, b) {
+  if (b.unknown) {
+    return key === 'counts' ? '<td data-label="Counts as"><span class="muted">Counted as a non-champion</span></td>'
+      : `<td class="muted" data-label="${HEAD[key]}">${key === 'age' ? 'No' : 'Not on file'}</td>`;
+  }
+  const win = s.window === 10 ? b.t10 : b.t5;
+  switch (key) {
+    case 'titles5': return `<td class="num ${s.window === 5 && b.t5 > 0 && s.hit(b) ? 'hit' : ''}" data-label="${HEAD[key]}">${b.t5}</td>`;
+    case 'titles10': return `<td class="num ${s.window === 10 && b.t10 > 0 && s.hit(b) ? 'hit' : ''}" data-label="${HEAD[key]}">${b.t10}</td>`;
+    case 'last': return `<td class="muted" data-label="${HEAD[key]}">${b.last}</td>`;
+    case 'counts': return `<td data-label="${HEAD[key]}">${pill(win)}</td>`;
+    case 'age': return `<td class="${s.ageHit && s.ageHit(b) ? 'hit' : ''}" data-label="${HEAD[key]}">${b.age ? OK : NO}</td>`;
+    case 'hof': return `<td class="${s.hofHit && s.hofHit(b) ? 'hit' : ''}" data-label="${HEAD[key]}">${b.hof ? '<span class="bad">Member</span>' : '<span class="muted">No</span>'}</td>`;
+  }
+}
+
+function render(key) {
+  const s = S[key];
+  const rows = s.bowlers.map((b) => `
+    <tr>
+      <th scope="row">${b.n}${b.u ? `<small>USBC ${b.u}</small>` : ''}</th>
+      ${s.columns.map((c) => cell(c, s, b)).join('')}
+    </tr>`).join('');
+  const failing = s.reason !== null;
+  document.getElementById('out').innerHTML = `
+    <section class="result ${failing ? 'result--no' : 'result--ok'}">
+      <div class="headline"><span class="material-symbols-outlined" aria-hidden="true">${failing ? 'block' : 'check_circle'}</span>${s.headline}</div>
+      ${failing ? `<ul><li>${s.reason}</li></ul>` : '<p>We checked NEBA titles, age, and Hall of Fame membership. Everyone qualifies.</p>'}
+
+      <div class="grid-block">
+        <h3>What we checked</h3>
+        <p class="window">${s.windowText}</p>
+        <div class="grid-wrap">
+          <table class="facts">
+            <thead><tr><th scope="col">Bowler</th>${s.columns.map((c) => `<th scope="col">${HEAD[c]}</th>`).join('')}</tr></thead>
+            <tbody>${rows}</tbody>
+          </table>
+        </div>
+        <ul class="tally">${s.tally.map(([, text, ok]) => `<li>${ok ? OK.replace('Yes', '') : NO.replace('No', '')}<span>${text}</span></li>`).join('')}</ul>
+      </div>
+
+      ${failing ? '<p class="contact">If you think this is a mistake, email <a href="#">info@bowlneba.com</a>.</p>' : '<p class="note">We can\'t check PBA or PWBA titles. Make sure no one on the team has a professional title inside the champion window.</p>'}
+      <div style="margin-top:1rem"><button type="button" class="btn btn-secondary">Check another team</button></div>
+    </section>`;
+}
+
+const bar = document.getElementById('scenarios');
+Object.entries(S).forEach(([k, v], i) => {
+  const b = document.createElement('button');
+  b.type = 'button'; b.textContent = v.label; b.setAttribute('aria-pressed', i === 0);
+  b.addEventListener('click', () => { [...bar.children].forEach((c) => c.setAttribute('aria-pressed', c === b)); render(k); });
+  bar.appendChild(b);
+});
+render('trios');
+</script>
+</body>
+</html>
