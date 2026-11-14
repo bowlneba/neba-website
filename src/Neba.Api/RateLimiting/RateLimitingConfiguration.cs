@@ -13,6 +13,7 @@ internal static class RateLimitingConfiguration
 {
     internal const string PublicPolicy = "public";
     internal const string PasswordRecoveryPolicy = "password-recovery";
+    internal const string BowlerSearchPolicy = "bowler-search";
 
     extension(IServiceCollection services)
     {
@@ -33,6 +34,10 @@ internal static class RateLimitingConfiguration
             // The forgot-password form sends email, so it gets a much tighter limit than the public default.
             var passwordRecoveryPermitLimit = config.GetValue("RateLimiting:PasswordRecoveryPermitLimit", 5);
             var passwordRecoveryWindowSeconds = config.GetValue("RateLimiting:PasswordRecoveryWindowSeconds", 900);
+
+            // The public bowler search runs on every pause in typing, so it gets a tighter limit than the public default.
+            var bowlerSearchPermitLimit = config.GetValue("RateLimiting:BowlerSearchPermitLimit", 60);
+            var bowlerSearchWindowSeconds = config.GetValue("RateLimiting:BowlerSearchWindowSeconds", 60);
 
             if (permitLimit <= 0)
             {
@@ -68,6 +73,18 @@ internal static class RateLimitingConfiguration
             {
                 throw new InvalidOperationException(
                     $"RateLimiting:PasswordRecoveryWindowSeconds must be greater than zero (configured value: {passwordRecoveryWindowSeconds}).");
+            }
+
+            if (bowlerSearchPermitLimit <= 0)
+            {
+                throw new InvalidOperationException(
+                    $"RateLimiting:BowlerSearchPermitLimit must be greater than zero (configured value: {bowlerSearchPermitLimit}).");
+            }
+
+            if (bowlerSearchWindowSeconds <= 0)
+            {
+                throw new InvalidOperationException(
+                    $"RateLimiting:BowlerSearchWindowSeconds must be greater than zero (configured value: {bowlerSearchWindowSeconds}).");
             }
 
             // Trust X-Forwarded-For only from RFC 1918 private networks (Azure load balancers
@@ -123,6 +140,19 @@ internal static class RateLimitingConfiguration
                         {
                             PermitLimit = passwordRecoveryPermitLimit,
                             Window = TimeSpan.FromSeconds(passwordRecoveryWindowSeconds),
+                            QueueLimit = 0,
+                        });
+                });
+
+                options.AddPolicy(BowlerSearchPolicy, context =>
+                {
+                    var ip = context.Connection.RemoteIpAddress?.ToString() ?? "unknown";
+
+                    return RateLimitPartition.GetFixedWindowLimiter($"bowler-search:{ip}",
+                        _ => new FixedWindowRateLimiterOptions
+                        {
+                            PermitLimit = bowlerSearchPermitLimit,
+                            Window = TimeSpan.FromSeconds(bowlerSearchWindowSeconds),
                             QueueLimit = 0,
                         });
                 });
