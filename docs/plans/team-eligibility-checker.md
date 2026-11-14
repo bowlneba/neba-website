@@ -2549,3 +2549,17 @@ Notes:
 - Commits 9 to 12 need the contracts from commits 5 to 7; commit 13 needs all of them.
 - At the 1.2.0 release: run your LINQPad backfill of `Bowler.UsbcId` after commit 2 ships, and check the release version bump in `Directory.Build.props`.
 - Before commit 4's reason wording is final, review the age messages with the team (open item from scoping).
+
+## Implementation notes
+
+What changed from the plan while building it (all 14 commits are in; see `git log`):
+
+- **Commit 2:** five legacy readers of `dbo.Bowlers` needed `UsbcId`, not three: the two membership jobs (`BowlerMembershipSyncJob`, `BowlerMembershipWeeklySyncJob`) also create a missing bowler from a Software row.
+- **Commit 3:** `PreviousTournamentFacts` is `public` (the aggregate's `Create`/`Update` are public). A missing previous tournament is `Error.Conflict`, like `BowlingCenterNotFound`. `PropertyBuilder.IsUlid` does not take a nullable ID, so the column is configured by hand.
+- **Commit 4:** the title record is `NebaTitle` (a `TitleWin` already exists in HallOfFame). `OverUnderFortyDoubles` gets an age limit of 40. A team that fails the champion rules on either date is `Ineligible`, never `DependsOnDate`, as the test list says; the draft code would have returned `DependsOnDate` for it.
+- **Commit 5:** `DefendingTeamsReader` and `BowlerTitlesReader` both live under `Features/Tournaments`, registered in `ApplicationConfiguration.AddServices` with `HallOfFamePointsReader` (a reader in `Features/Bowlers` fails `FeatureBoundaryTests`). The validator also rejects more than five bowler IDs. A real-pipeline test runs the endpoint with the handler mocked.
+- **Commit 6:** the search also matches "nickname last name", and passes an explicit LIKE escape character (the draft's escaping did not work against Npgsql).
+- **Commit 7:** no cache descriptor changed (the existing tags cover it). Eviction finds successors before a delete and evicts after it. `CompleteTournamentSyncJob` is not a call site: completing a tournament changes nothing a successor shows. Edit evicts successors on every edit, since they show the tournament's name and season.
+- **Commit 9/10:** `DefendingTeamViewModel` landed in commit 9 (the result view model needs it).
+- **Commit 12:** the page component is `CheckTeamEligibility`, not `TeamEligibility`, so it does not share its namespace's name.
+- **Commit 13:** no upcoming tournament in the e2e mock (it replaces the Tournaments page hero and breaks two existing specs), so the list card is covered by bUnit only.
