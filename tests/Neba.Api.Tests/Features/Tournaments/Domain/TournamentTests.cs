@@ -282,7 +282,8 @@ public sealed class TournamentTests
             logo: null,
             patternLengthCategory: PatternLengthCategory.LongPattern,
             patternRatioCategory: PatternRatioCategory.Sport,
-            oilPatternRevealDateTime: null);
+            oilPatternRevealDateTime: null,
+            previousTournament: null);
 
         // Assert
         result.IsError.ShouldBeFalse();
@@ -325,7 +326,8 @@ public sealed class TournamentTests
             logo: null,
             patternLengthCategory: null,
             patternRatioCategory: null,
-            oilPatternRevealDateTime: null);
+            oilPatternRevealDateTime: null,
+            previousTournament: null);
 
         // Assert
         result.IsError.ShouldBeTrue();
@@ -356,7 +358,8 @@ public sealed class TournamentTests
             logo: null,
             patternLengthCategory: null,
             patternRatioCategory: null,
-            oilPatternRevealDateTime: null);
+            oilPatternRevealDateTime: null,
+            previousTournament: null);
 
         // Assert
         result.IsError.ShouldBeTrue();
@@ -384,7 +387,8 @@ public sealed class TournamentTests
             logo: null,
             patternLengthCategory: null,
             patternRatioCategory: null,
-            oilPatternRevealDateTime: null);
+            oilPatternRevealDateTime: null,
+            previousTournament: null);
 
         // Assert
         result.IsError.ShouldBeTrue();
@@ -412,7 +416,8 @@ public sealed class TournamentTests
             logo: null,
             patternLengthCategory: null,
             patternRatioCategory: null,
-            oilPatternRevealDateTime: null);
+            oilPatternRevealDateTime: null,
+            previousTournament: null);
 
         // Assert
         result.IsError.ShouldBeTrue();
@@ -442,7 +447,8 @@ public sealed class TournamentTests
             logo: null,
             patternLengthCategory: null,
             patternRatioCategory: null,
-            oilPatternRevealDateTime: null);
+            oilPatternRevealDateTime: null,
+            previousTournament: null);
 
         // Assert
         tournament.Sponsors.ShouldContain(s => s.SponsorId == sponsorId);

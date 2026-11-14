@@ -88,7 +88,8 @@ public sealed class CreateTournamentCommandHandlerTests(AppDbContextFixture fixt
         OilPatternId? oilPatternId = null,
         PatternLengthCategory? patternLengthCategory = null,
         PatternRatioCategory? patternRatioCategory = null,
-        DateTimeOffset? oilPatternRevealDateTime = null)
+        DateTimeOffset? oilPatternRevealDateTime = null,
+        TournamentId? previousTournamentId = null)
         => new()
         {
             Name = name ?? TournamentFactory.ValidName,
@@ -104,7 +105,8 @@ public sealed class CreateTournamentCommandHandlerTests(AppDbContextFixture fixt
             OilPatternId = oilPatternId,
             PatternLengthCategory = patternLengthCategory,
             PatternRatioCategory = patternRatioCategory,
-            OilPatternRevealDateTime = oilPatternRevealDateTime
+            OilPatternRevealDateTime = oilPatternRevealDateTime,
+            PreviousTournamentId = previousTournamentId
         };
 
     [Fact(DisplayName = "HandleAsync returns validation error when no season contains the tournament dates")]
@@ -176,6 +178,74 @@ public sealed class CreateTournamentCommandHandlerTests(AppDbContextFixture fixt
 
         // Assert
         result.IsError.ShouldBeFalse();
+    }
+
+    [Fact(DisplayName = "HandleAsync returns a conflict error when the previous tournament is not found")]
+    public async Task HandleAsync_ShouldReturnConflictError_WhenPreviousTournamentNotFound()
+    {
+        // Arrange
+        var ct = TestContext.Current.CancellationToken;
+        await SeedSeasonAsync(ct);
+        var handler = CreateHandler();
+        var command = ValidCommand(previousTournamentId: TournamentId.New());
+
+        // Act
+        var result = await handler.HandleAsync(command, ct);
+
+        // Assert
+        result.IsError.ShouldBeTrue();
+        result.FirstError.Type.ShouldBe(ErrorType.Conflict);
+        result.FirstError.Code.ShouldBe("Tournament.PreviousTournament.NotFound");
+        (await _dbContext.Tournaments.CountAsync(ct)).ShouldBe(0);
+    }
+
+    [Fact(DisplayName = "HandleAsync stores the previous tournament when it exists, has the same type and ended earlier")]
+    public async Task HandleAsync_ShouldStorePreviousTournament_WhenValid()
+    {
+        // Arrange
+        var ct = TestContext.Current.CancellationToken;
+        var season = await SeedSeasonAsync(ct);
+        var previous = TournamentFactory.Create(
+            tournamentType: TournamentType.Doubles,
+            startDate: TournamentFactory.ValidStartDate.AddYears(-1),
+            endDate: TournamentFactory.ValidEndDate.AddYears(-1),
+            seasonId: season.Id);
+        await _dbContext.Tournaments.AddAsync(previous, ct);
+        await _dbContext.SaveChangesAsync(ct);
+        var handler = CreateHandler();
+        var command = ValidCommand(tournamentType: TournamentType.Doubles, previousTournamentId: previous.Id);
+
+        // Act
+        var result = await handler.HandleAsync(command, ct);
+
+        // Assert
+        result.IsError.ShouldBeFalse();
+        var created = await _dbContext.Tournaments.AsNoTracking().SingleAsync(t => t.Id == result.Value, ct);
+        created.PreviousTournamentId.ShouldBe(previous.Id);
+    }
+
+    [Fact(DisplayName = "HandleAsync returns a type mismatch error when the previous tournament is a different type")]
+    public async Task HandleAsync_ShouldReturnTypeMismatch_WhenPreviousIsDifferentType()
+    {
+        // Arrange
+        var ct = TestContext.Current.CancellationToken;
+        var season = await SeedSeasonAsync(ct);
+        var previous = TournamentFactory.Create(
+            tournamentType: TournamentType.Trios,
+            startDate: TournamentFactory.ValidStartDate.AddYears(-1),
+            endDate: TournamentFactory.ValidEndDate.AddYears(-1),
+            seasonId: season.Id);
+        await _dbContext.Tournaments.AddAsync(previous, ct);
+        await _dbContext.SaveChangesAsync(ct);
+        var handler = CreateHandler();
+        var command = ValidCommand(tournamentType: TournamentType.Doubles, previousTournamentId: previous.Id);
+
+        // Act
+        var result = await handler.HandleAsync(command, ct);
+
+        // Assert
+        result.IsError.ShouldBeTrue();
+        result.FirstError.Code.ShouldBe("Tournament.PreviousTournament.TypeMismatch");
     }
 
     [Fact(DisplayName = "HandleAsync returns a conflict error when the oil pattern is not found")]

@@ -35,6 +35,8 @@ internal sealed record EditTournamentCommand
     /// <summary>The caller's user ID; the handler checks it for a stored logo denial when the logo changes.</summary>
     public required Ulid CallerUserId { get; init; }
 
+    public TournamentId? PreviousTournamentId { get; init; }
+
     public OilPatternId? OilPatternId { get; init; }
 
     public PatternLengthCategory? PatternLengthCategory { get; init; }

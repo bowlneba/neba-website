@@ -25,7 +25,8 @@ public static class TournamentInputFactory
         string? oilPatternId = null,
         string? patternLengthCategory = null,
         string? patternRatioCategory = null,
-        DateTimeOffset? oilPatternRevealDateTime = null)
+        DateTimeOffset? oilPatternRevealDateTime = null,
+        string? previousTournamentId = null)
         => new()
         {
             Name = name ?? ValidName,
@@ -41,6 +42,7 @@ public static class TournamentInputFactory
             OilPatternId = oilPatternId,
             PatternLengthCategory = patternLengthCategory,
             PatternRatioCategory = patternRatioCategory,
-            OilPatternRevealDateTime = oilPatternRevealDateTime
+            OilPatternRevealDateTime = oilPatternRevealDateTime,
+            PreviousTournamentId = previousTournamentId
         };
 }

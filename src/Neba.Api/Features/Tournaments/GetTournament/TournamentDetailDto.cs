@@ -120,6 +120,11 @@ public sealed record TournamentDetailDto
     public Uri? LogoUrl { get; init; }
 
     /// <summary>
+    /// The previous (last year's) tournament; null when there is none. Used by the edit form.
+    /// </summary>
+    public TournamentId? PreviousTournamentId { get; init; }
+
+    /// <summary>
     /// Raw storage fields for the tournament logo, for use in editing; only populated when the
     /// caller holds a tournament management permission.
     /// </summary>

@@ -57,6 +57,11 @@ public sealed record TournamentInput
     public TournamentLogoInput? Logo { get; init; }
 
     /// <summary>
+    /// The previous (last year's) tournament's ID; null if none. Not allowed for Non-Champions tournaments.
+    /// </summary>
+    public string? PreviousTournamentId { get; init; }
+
+    /// <summary>
     /// An existing oil pattern's ID. When set, <see cref="PatternLengthCategory"/>
     /// and <see cref="PatternRatioCategory"/> must be null — they're derived from the pattern instead.
     /// </summary>

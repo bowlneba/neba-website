@@ -121,7 +121,8 @@ public sealed class EditTournamentCommandHandlerTests(AppDbContextFixture fixtur
         OilPatternId? oilPatternId = null,
         PatternLengthCategory? patternLengthCategory = null,
         PatternRatioCategory? patternRatioCategory = null,
-        DateTimeOffset? oilPatternRevealDateTime = null)
+        DateTimeOffset? oilPatternRevealDateTime = null,
+        TournamentId? previousTournamentId = null)
         => new()
         {
             TournamentId = tournamentId,
@@ -139,8 +140,95 @@ public sealed class EditTournamentCommandHandlerTests(AppDbContextFixture fixtur
             OilPatternId = oilPatternId,
             PatternLengthCategory = patternLengthCategory,
             PatternRatioCategory = patternRatioCategory,
-            OilPatternRevealDateTime = oilPatternRevealDateTime
+            OilPatternRevealDateTime = oilPatternRevealDateTime,
+            PreviousTournamentId = previousTournamentId
         };
+
+    [Fact(DisplayName = "HandleAsync returns a conflict error when the previous tournament is not found")]
+    public async Task HandleAsync_ShouldReturnConflictError_WhenPreviousTournamentNotFound()
+    {
+        // Arrange
+        var ct = TestContext.Current.CancellationToken;
+        var season = await SeedSeasonAsync(new DateOnly(2025, 9, 1), new DateOnly(2026, 8, 31), ct);
+        var tournament = await SeedTournamentAsync(season, ct);
+        var handler = CreateHandler();
+        var command = ValidCommand(
+            tournament.Id,
+            startDate: season.StartDate,
+            endDate: season.StartDate,
+            previousTournamentId: TournamentId.New());
+
+        // Act
+        var result = await handler.HandleAsync(command, ct);
+
+        // Assert
+        result.IsError.ShouldBeTrue();
+        result.FirstError.Type.ShouldBe(ErrorType.Conflict);
+        result.FirstError.Code.ShouldBe("Tournament.PreviousTournament.NotFound");
+    }
+
+    [Fact(DisplayName = "HandleAsync sets the previous tournament and clears it when the command omits it")]
+    public async Task HandleAsync_ShouldSetThenClearPreviousTournament()
+    {
+        // Arrange
+        var ct = TestContext.Current.CancellationToken;
+        var season = await SeedSeasonAsync(new DateOnly(2025, 9, 1), new DateOnly(2026, 8, 31), ct);
+        var previous = TournamentFactory.Create(
+            tournamentType: TournamentType.Singles,
+            startDate: season.StartDate.AddYears(-1),
+            endDate: season.StartDate.AddYears(-1),
+            seasonId: season.Id);
+        await _dbContext.Tournaments.AddAsync(previous, ct);
+        var tournament = await SeedTournamentAsync(season, ct);
+        var handler = CreateHandler();
+
+        // Act
+        var set = await handler.HandleAsync(
+            ValidCommand(tournament.Id, startDate: season.StartDate, endDate: season.StartDate, previousTournamentId: previous.Id), ct);
+        _dbContext.ChangeTracker.Clear();
+        var afterSet = (await _dbContext.Tournaments.AsNoTracking().SingleAsync(t => t.Id == tournament.Id, ct)).PreviousTournamentId;
+        var cleared = await handler.HandleAsync(
+            ValidCommand(tournament.Id, startDate: season.StartDate, endDate: season.StartDate), ct);
+        _dbContext.ChangeTracker.Clear();
+        var afterClear = (await _dbContext.Tournaments.AsNoTracking().SingleAsync(t => t.Id == tournament.Id, ct)).PreviousTournamentId;
+
+        // Assert
+        set.IsError.ShouldBeFalse();
+        afterSet.ShouldBe(previous.Id);
+        cleared.IsError.ShouldBeFalse();
+        afterClear.ShouldBeNull();
+    }
+
+    [Fact(DisplayName = "Deleting a previous tournament sets its successor's link to null")]
+    public async Task DeletingPreviousTournament_ShouldClearSuccessorLink()
+    {
+        // Arrange
+        var ct = TestContext.Current.CancellationToken;
+        var season = await SeedSeasonAsync(new DateOnly(2025, 9, 1), new DateOnly(2026, 8, 31), ct);
+        var previous = TournamentFactory.Create(
+            tournamentType: TournamentType.Singles,
+            startDate: season.StartDate.AddYears(-1),
+            endDate: season.StartDate.AddYears(-1),
+            seasonId: season.Id);
+        var successor = TournamentFactory.Create(
+            tournamentType: TournamentType.Singles,
+            startDate: season.StartDate,
+            endDate: season.StartDate,
+            seasonId: season.Id,
+            previousTournament: PreviousTournamentFactsFactory.Create(
+                id: previous.Id, tournamentType: TournamentType.Singles, endDate: previous.EndDate));
+        await _dbContext.Tournaments.AddRangeAsync([previous, successor], ct);
+        await _dbContext.SaveChangesAsync(ct);
+
+        // Act
+        _dbContext.Tournaments.Remove(previous);
+        await _dbContext.SaveChangesAsync(ct);
+        _dbContext.ChangeTracker.Clear();
+
+        // Assert
+        var reloaded = await _dbContext.Tournaments.AsNoTracking().SingleAsync(t => t.Id == successor.Id, ct);
+        reloaded.PreviousTournamentId.ShouldBeNull();
+    }
 
     [Fact(DisplayName = "HandleAsync returns Tournament.NotFound when the tournament does not exist")]
     public async Task HandleAsync_ShouldReturnNotFound_WhenTournamentDoesNotExist()

@@ -80,6 +80,7 @@ internal sealed class GetTournamentQueryHandler(
                     ? null
                     : tournament.PatternRatioCategory.Name,
                 tournament.OilPatternRevealDateTime,
+                tournament.PreviousTournamentId,
                 tournament.EntryFee,
                 RegistrationUrl = tournament.ExternalRegistrationUrl,
                 TournamentLogoContainer = tournament.Logo != null
@@ -237,6 +238,7 @@ internal sealed class GetTournamentQueryHandler(
             PatternLengthCategory = row.PatternLengthCategory,
             PatternRatioCategory = row.PatternRatioCategory,
             OilPatternRevealDateTime = query.CallerIsAuthenticated ? row.OilPatternRevealDateTime : null,
+            PreviousTournamentId = row.PreviousTournamentId,
             OilPatterns = revealed
                 ? row.OilPatterns.ConvertAll(pattern => new TournamentDetailOilPatternDto
                 {

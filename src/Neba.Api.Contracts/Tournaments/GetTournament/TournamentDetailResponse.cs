@@ -146,6 +146,11 @@ public sealed record TournamentDetailResponse
     public DateTimeOffset? OilPatternRevealDateTime { get; init; }
 
     /// <summary>
+    /// The previous (last year's) tournament's ID; null when there is none.
+    /// </summary>
+    public string? PreviousTournamentId { get; init; }
+
+    /// <summary>
     /// Display names of the winning bowler(s); empty for pending or upcoming events.
     /// </summary>
     public IReadOnlyCollection<string> Winners { get; init; } = [];

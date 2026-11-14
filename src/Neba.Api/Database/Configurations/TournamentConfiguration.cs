@@ -83,6 +83,19 @@ internal sealed class TournamentConfiguration
             .HasForeignKey(ForeignKeyName)
             .OnDelete(DeleteBehavior.Cascade);
 
+        builder.Property(tournament => tournament.PreviousTournamentId)
+            .HasColumnName("previous_tournament_id")
+            .HasMaxLength(26)
+            .IsFixedLength();
+
+        builder.HasOne<Tournament>()
+            .WithMany()
+            .HasForeignKey(tournament => tournament.PreviousTournamentId)
+            .HasPrincipalKey(tournament => tournament.Id)
+            .OnDelete(DeleteBehavior.SetNull);
+
+        builder.HasIndex(tournament => tournament.PreviousTournamentId);
+
         builder.Property(tournament => tournament.EntryFee)
             .HasPrecision(5, 2)
             .IsRequired();

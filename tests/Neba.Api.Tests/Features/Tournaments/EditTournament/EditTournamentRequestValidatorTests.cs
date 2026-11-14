@@ -172,6 +172,36 @@ public sealed class EditTournamentRequestValidatorTests
         result.Errors.ShouldContain(e => e.ErrorCode == "EditTournamentRequest.ExternalRegistrationUrlInvalid");
     }
 
+    [Fact(DisplayName = "Validate should fail with PreviousTournamentIdInvalidLength when the ID is not 26 characters")]
+    public void Validate_ShouldFailWithPreviousTournamentIdInvalidLength_WhenIdIsWrongLength()
+    {
+        // Arrange
+        var request = ValidRequest(TournamentInputFactory.Create(previousTournamentId: "short"));
+
+        // Act
+        var result = _validator.Validate(request);
+
+        // Assert
+        result.IsValid.ShouldBeFalse();
+        result.Errors.ShouldContain(e => e.ErrorCode == "EditTournamentRequest.PreviousTournamentIdInvalidLength");
+    }
+
+    [Fact(DisplayName = "Validate should succeed when PreviousTournamentId is a 26-character ULID or empty")]
+    public void Validate_ShouldSucceed_WhenPreviousTournamentIdIsValidOrEmpty()
+    {
+        // Arrange
+        var withId = ValidRequest(TournamentInputFactory.Create(previousTournamentId: "01JABCDEFGHJKMNPQRSTVWXYZ0"));
+        var empty = ValidRequest(TournamentInputFactory.Create(previousTournamentId: " "));
+
+        // Act
+        var withIdResult = _validator.Validate(withId);
+        var emptyResult = _validator.Validate(empty);
+
+        // Assert
+        withIdResult.IsValid.ShouldBeTrue();
+        emptyResult.IsValid.ShouldBeTrue();
+    }
+
     [Fact(DisplayName = "Validate should succeed when ExternalRegistrationUrl is not supplied")]
     public void Validate_ShouldSucceed_WhenExternalRegistrationUrlIsNotSupplied()
     {

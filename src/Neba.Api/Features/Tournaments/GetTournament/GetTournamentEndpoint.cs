@@ -92,6 +92,7 @@ internal sealed class GetTournamentEndpoint(
             PatternLengthCategory = dto.PatternLengthCategory,
             PatternRatioCategory = dto.PatternRatioCategory,
             OilPatternRevealDateTime = dto.OilPatternRevealDateTime,
+            PreviousTournamentId = dto.PreviousTournamentId?.ToString(),
             LogoUrl = dto.LogoUrl,
             LogoContainer = dto.LogoContainer,
             LogoPath = dto.LogoPath,

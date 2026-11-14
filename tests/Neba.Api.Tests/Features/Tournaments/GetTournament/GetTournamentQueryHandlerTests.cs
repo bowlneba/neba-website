@@ -88,6 +88,37 @@ public sealed class GetTournamentQueryHandlerTests(AppDbContextFixture fixture)
         result.Value.EntryCount.ShouldBeNull();
     }
 
+    [Fact(DisplayName = "HandleAsync returns the previous tournament's ID when the tournament has one")]
+    public async Task HandleAsync_ShouldReturnPreviousTournamentId_WhenTournamentHasOne()
+    {
+        // Arrange
+        var ct = TestContext.Current.CancellationToken;
+        var season = SeasonFactory.Create();
+        await _dbContext.Seasons.AddAsync(season, ct);
+        var previous = TournamentFactory.Create(
+            tournamentType: TournamentType.Doubles,
+            startDate: new DateOnly(2024, 10, 4),
+            endDate: new DateOnly(2024, 10, 5),
+            seasonId: season.Id);
+        var tournament = TournamentFactory.Create(
+            tournamentType: TournamentType.Doubles,
+            seasonId: season.Id,
+            previousTournament: PreviousTournamentFactsFactory.Create(
+                id: previous.Id, tournamentType: TournamentType.Doubles, endDate: previous.EndDate));
+        await _dbContext.Tournaments.AddRangeAsync([previous, tournament], ct);
+        await _dbContext.SaveChangesAsync(ct);
+        var fileStorageMock = new Mock<IFileStorageService>(MockBehavior.Strict);
+        var handler = new GetTournamentQueryHandler(_dbContext, fileStorageMock.Object, TimeProvider.System);
+
+        // Act
+        var result = await handler.HandleAsync(
+            new GetTournamentQuery { Id = tournament.Id, CallerIsAuthenticated = false, CallerHasTournamentManagementPermission = false }, ct);
+
+        // Assert
+        result.IsError.ShouldBeFalse();
+        result.Value.PreviousTournamentId.ShouldBe(previous.Id);
+    }
+
     [Fact(DisplayName = "HandleAsync sets LogoUrl when tournament has a logo")]
     public async Task HandleAsync_ShouldSetLogoUrl_WhenTournamentHasLogo()
     {

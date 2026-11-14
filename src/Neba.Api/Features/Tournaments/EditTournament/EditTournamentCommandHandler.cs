@@ -69,6 +69,14 @@ internal sealed class EditTournamentCommandHandler(
             return resolveResult.Errors;
         }
 
+        var previousTournament = await PreviousTournamentResolver.ResolveAsync(
+            appDbContext, command.PreviousTournamentId, cancellationToken);
+
+        if (previousTournament.IsError)
+        {
+            return previousTournament.Errors;
+        }
+
         (Season season, PatternLengthCategory? patternLengthCategory, PatternRatioCategory? patternRatioCategory) = resolveResult.Value;
 
         var previousSeasonId = tournament.SeasonId;
@@ -94,7 +102,8 @@ internal sealed class EditTournamentCommandHandler(
             logo: TournamentLogoClaim.Resolve(command.Logo, previousLogo),
             patternLengthCategory: patternLengthCategory,
             patternRatioCategory: patternRatioCategory,
-            oilPatternRevealDateTime: command.OilPatternRevealDateTime);
+            oilPatternRevealDateTime: command.OilPatternRevealDateTime,
+            previousTournament: previousTournament.Value);
 
         if (updateResult.IsError)
         {
