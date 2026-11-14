@@ -45,8 +45,8 @@
     <PackageVersion Include="EFCore.NamingConventions" Version="10.0.1" />
     <PackageVersion Include="EntityFrameworkCore.Exceptions.PostgreSQL" Version="10.0.1" />
     <PackageVersion Include="ErrorOr" Version="2.1.1" />
-    <PackageVersion Include="FastEndpoints" Version="8.3.0" />
-    <PackageVersion Include="FastEndpoints.AspVersioning" Version="8.3.0" />
+    <PackageVersion Include="FastEndpoints" Version="9.0.0" />
+    <PackageVersion Include="FastEndpoints.AspVersioning" Version="9.0.0" />
     <PackageVersion Include="FastEndpoints.Swagger" Version="8.3.0" />
     <PackageVersion Include="Google.Apis.Auth" Version="1.77.0" />
     <PackageVersion Include="Google.Apis.Drive.v3" Version="1.77.0.4301" />
