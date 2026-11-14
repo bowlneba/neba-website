@@ -37,7 +37,7 @@
     <PackageVersion Include="Azure.ResourceManager" Version="1.14.0" />
     <PackageVersion Include="Blazor-ApexCharts" Version="7.0.0" />
     <PackageVersion Include="Bogus" Version="35.6.5" />
-    <PackageVersion Include="bunit" Version="2.12.5" />
+    <PackageVersion Include="bunit" Version="2.15.2" />
     <PackageVersion Include="Community.Microsoft.Extensions.Caching.PostgreSql" Version="6.0.2" />
     <PackageVersion Include="CommunityToolkit.Aspire.Hosting.MailPit" Version="13.6.0" />
     <PackageVersion Include="coverlet.collector" Version="10.1.0" />
