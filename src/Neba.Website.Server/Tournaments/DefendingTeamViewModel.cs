@@ -11,18 +11,12 @@ public sealed record DefendingTeamViewModel(
     IReadOnlyList<string> Champions)
 {
     /// <summary>Short note under the season, or null for a normal defending team.</summary>
-    public string? Note
+    public string? Note => (SourceTruncated, Undefended) switch
     {
-        get
-        {
-            if (SourceTruncated)
-            {
-                return "tournament truncated";
-            }
-
-            return Undefended ? "could not defend" : null;
-        }
-    }
+        (true, _) => "tournament truncated",
+        (_, true) => "could not defend",
+        _ => null
+    };
 }
 
 internal static class DefendingTeamMappingExtensions

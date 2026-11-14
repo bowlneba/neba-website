@@ -427,8 +427,8 @@ public sealed class CreateTournamentTests : IDisposable
             .ReturnsAsync(new List<SeasonTournamentViewModel>
             {
                 SeasonTournamentViewModelFactory.Create(
-                    id: "01JPREVIOUS000000000000001", name: "Fall Classic", tournamentType: "Singles",
-                    startDate: new DateOnly(2024, 10, 4), endDate: new DateOnly(2024, 10, 5), status: "Completed")
+                    id: "01JPREVIOUS000000000000001", name: "Fall Classic",
+                    startDate: new DateOnly(2024, 10, 4), endDate: new DateOnly(2024, 10, 5), tournamentType: "Singles", status: "Completed")
             });
 
         TournamentInput? capturedInput = null;

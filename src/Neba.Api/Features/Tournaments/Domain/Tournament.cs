@@ -428,12 +428,9 @@ public sealed class Tournament
             return TournamentErrors.PreviousTournamentTypeMismatch(facts.TournamentType, tournamentType);
         }
 
-        if (facts.EndDate >= startDate)
-        {
-            return TournamentErrors.PreviousTournamentNotBefore(facts.EndDate, startDate);
-        }
-
-        return null;
+        return facts.EndDate >= startDate
+            ? TournamentErrors.PreviousTournamentNotBefore(facts.EndDate, startDate)
+            : null;
     }
 
     /// <summary>

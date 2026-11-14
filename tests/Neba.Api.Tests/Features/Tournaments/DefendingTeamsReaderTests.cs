@@ -209,12 +209,12 @@ public sealed class DefendingTeamsReaderTests(AppDbContextFixture fixture)
     {
         // Arrange
         var ct = TestContext.Current.CancellationToken;
-        var winners = await SeedPairAsync(ct);
+        var (first, second) = await SeedPairAsync(ct);
         var previous = await SeedTournamentAsync(2018, null, TournamentStatus.Completed, null, ct);
         await _dbContext.HistoricalTournamentChampions.AddRangeAsync(
             [
-                HistoricalTournamentChampionFactory.Create(winners.First, previous),
-                HistoricalTournamentChampionFactory.Create(winners.Second, previous)
+                HistoricalTournamentChampionFactory.Create(first, previous),
+                HistoricalTournamentChampionFactory.Create(second, previous)
             ],
             ct);
         await _dbContext.SaveChangesAsync(ct);
@@ -225,7 +225,7 @@ public sealed class DefendingTeamsReaderTests(AppDbContextFixture fixture)
 
         // Assert
         result[current.Id].ShouldHaveSingleItem().Champions
-            .Select(champion => champion.BowlerId).ShouldBe([winners.First.Id, winners.Second.Id], ignoreOrder: true);
+            .Select(champion => champion.BowlerId).ShouldBe([first.Id, second.Id], ignoreOrder: true);
     }
 
     [Fact(DisplayName = "LoadAsync loads several tournaments in one call")]

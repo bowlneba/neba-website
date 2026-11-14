@@ -53,74 +53,34 @@ internal static class TeamEligibilityEvaluator
     {
         ArgumentNullException.ThrowIfNull(members);
 
-        var asOf = context.StartDate;
         var isDoubles = context.TournamentType == TournamentType.Doubles;
-        var overUnderLimit = OverUnderAgeLimit(context.TournamentType);
+        var hasAgeRule = OverUnderAgeLimit(context.TournamentType) is not null;
 
-        var explained = members
-            .Select(member =>
-            {
-                var rulesCount = CountTitlesInWindow(context, asOf, member);
-
-                return new TeamMemberExplanation(
-                    member,
-                    CountTitles(context, asOf, member, 5),
-                    isDoubles ? CountTitles(context, asOf, member, 10) : null,
-                    rulesCount switch
-                    {
-                        0 => ChampionStanding.NonChampion,
-                        1 => ChampionStanding.OneTimeChampion,
-                        _ => ChampionStanding.MultiTimeChampion
-                    },
-                    member.Titles.Count == 0 ? null : member.Titles.Max(title => title.EndDate.Year),
-                    overUnderLimit is null ? null : member.DateOfBirth is not null,
-                    context.TournamentType == TournamentType.Baker ? member.HallOfFameSuperiorPerformance : null);
-            })
-            .ToList();
+        var explained = ExplainMembers(context, members, isDoubles, hasAgeRule);
 
         var champions = explained.Count(member => member.CountsAs != ChampionStanding.NonChampion);
-        var verifiedCount = members.Count(member => member.DateOfBirth is not null);
-        var hallOfFameCount = members.Count(member => member.HallOfFameSuperiorPerformance);
         var multiTime = explained.Count(member => member.CountsAs == ChampionStanding.MultiTimeChampion);
         var nonChampions = explained.Count(member => member.CountsAs == ChampionStanding.NonChampion);
-        var checks = new List<TeamEligibilityCheckLine>();
+        var verifiedCount = members.Count(member => member.DateOfBirth is not null);
+        var hallOfFameCount = members.Count(member => member.HallOfFameSuperiorPerformance);
 
-        if (isDoubles || overUnderLimit is not null)
-        {
-            checks.Add(new(TeamEligibilityReasons.ChampionsCheck(champions, 1), champions <= 1));
-        }
-        else if (context.TournamentType == TournamentType.Trios)
-        {
-            checks.Add(new(TeamEligibilityReasons.NonChampionsCheck(nonChampions), nonChampions >= 1));
-            checks.Add(new(TeamEligibilityReasons.MultiTimeCheck(multiTime, 1), multiTime <= 1));
-        }
-        else if (context.TournamentType == TournamentType.Baker)
-        {
-            var hallOfFame = members.Count(member => member.HallOfFameSuperiorPerformance);
-            checks.Add(new(TeamEligibilityReasons.NonChampionsCheck(nonChampions), nonChampions >= 1));
-            checks.Add(new(TeamEligibilityReasons.MultiTimeCheck(multiTime, 2), multiTime <= 2));
-            checks.Add(new(TeamEligibilityReasons.HallOfFameCheck(hallOfFame), hallOfFame <= 1));
-        }
+        var checks = BuildChecks(context.TournamentType, champions, multiTime, nonChampions, hallOfFameCount);
 
-        if (overUnderLimit is not null)
+        if (hasAgeRule)
         {
             checks.Add(new(TeamEligibilityReasons.AgeCheck(verifiedCount, members.Count), verifiedCount == members.Count));
         }
 
         // Mark the members whose facts count against a rule the team failed, so the page can show which ones.
         var titlesFailed = FailedTitleRule(context.TournamentType, champions, multiTime, nonChampions);
+        var ageFailed = hasAgeRule && verifiedCount != members.Count;
+        var hallOfFameFailed = context.TournamentType == TournamentType.Baker && hallOfFameCount > 1;
         var marked = explained
             .Select(member => member with
             {
-                TitlesBreakRule = titlesFailed switch
-                {
-                    TitleRuleFailure.Champions => member.CountsAs != ChampionStanding.NonChampion,
-                    TitleRuleFailure.MultiTime => member.CountsAs == ChampionStanding.MultiTimeChampion,
-                    TitleRuleFailure.NoNonChampion => true,
-                    _ => false
-                },
-                AgeBreaksRule = overUnderLimit is not null && verifiedCount != members.Count && member.AgeVerified == false,
-                HallOfFameBreaksRule = context.TournamentType == TournamentType.Baker && hallOfFameCount > 1 && member.HallOfFameSuperiorPerformance == true
+                TitlesBreakRule = TitlesBreakRule(titlesFailed, member),
+                AgeBreaksRule = ageFailed && member.AgeVerified == false,
+                HallOfFameBreaksRule = hallOfFameFailed && member.HallOfFameSuperiorPerformance == true
             })
             .ToList();
 
@@ -133,6 +93,68 @@ internal static class TeamEligibilityEvaluator
             marked,
             checks);
     }
+
+    private static List<TeamMemberExplanation> ExplainMembers(
+        TeamEligibilityContext context, IReadOnlyCollection<TeamMemberFacts> members, bool isDoubles, bool hasAgeRule)
+    {
+        var asOf = context.StartDate;
+
+        return [.. members.Select(member => new TeamMemberExplanation(
+            member,
+            CountTitles(context, asOf, member, 5),
+            isDoubles ? CountTitles(context, asOf, member, 10) : null,
+            StandingFor(CountTitlesInWindow(context, asOf, member)),
+            member.Titles.Count == 0 ? null : member.Titles.Max(title => title.EndDate.Year),
+            hasAgeRule ? member.DateOfBirth is not null : null,
+            context.TournamentType == TournamentType.Baker ? member.HallOfFameSuperiorPerformance : null))];
+    }
+
+    private static ChampionStanding StandingFor(int titlesInWindow)
+        => titlesInWindow switch
+        {
+            0 => ChampionStanding.NonChampion,
+            1 => ChampionStanding.OneTimeChampion,
+            _ => ChampionStanding.MultiTimeChampion
+        };
+
+    private static List<TeamEligibilityCheckLine> BuildChecks(
+        TournamentType type, int champions, int multiTime, int nonChampions, int hallOfFame)
+    {
+        if (type == TournamentType.Doubles || OverUnderAgeLimit(type) is not null)
+        {
+            return [new(TeamEligibilityReasons.ChampionsCheck(champions, 1), champions <= 1)];
+        }
+
+        if (type == TournamentType.Trios)
+        {
+            return
+            [
+                new(TeamEligibilityReasons.NonChampionsCheck(nonChampions), nonChampions >= 1),
+                new(TeamEligibilityReasons.MultiTimeCheck(multiTime, 1), multiTime <= 1)
+            ];
+        }
+
+        if (type == TournamentType.Baker)
+        {
+            return
+            [
+                new(TeamEligibilityReasons.NonChampionsCheck(nonChampions), nonChampions >= 1),
+                new(TeamEligibilityReasons.MultiTimeCheck(multiTime, 2), multiTime <= 2),
+                new(TeamEligibilityReasons.HallOfFameCheck(hallOfFame), hallOfFame <= 1)
+            ];
+        }
+
+        return [];
+    }
+
+    private static bool TitlesBreakRule(TitleRuleFailure failure, TeamMemberExplanation member)
+        => failure switch
+        {
+            TitleRuleFailure.Champions => member.CountsAs != ChampionStanding.NonChampion,
+            TitleRuleFailure.MultiTime => member.CountsAs == ChampionStanding.MultiTimeChampion,
+            TitleRuleFailure.NoNonChampion => true,
+            _ => false
+        };
 
     private enum TitleRuleFailure
     {
@@ -150,19 +172,19 @@ internal static class TeamEligibilityEvaluator
             return champions > 1 ? TitleRuleFailure.Champions : TitleRuleFailure.None;
         }
 
-        var maxMultiTime = type == TournamentType.Baker ? 2 : 1;
-
         if (type != TournamentType.Trios && type != TournamentType.Baker)
         {
             return TitleRuleFailure.None;
         }
 
-        if (multiTime > maxMultiTime)
-        {
-            return TitleRuleFailure.MultiTime;
-        }
+        var maxMultiTime = type == TournamentType.Baker ? 2 : 1;
 
-        return nonChampions < 1 ? TitleRuleFailure.NoNonChampion : TitleRuleFailure.None;
+        return (multiTime > maxMultiTime, nonChampions < 1) switch
+        {
+            (true, _) => TitleRuleFailure.MultiTime,
+            (_, true) => TitleRuleFailure.NoNonChampion,
+            _ => TitleRuleFailure.None
+        };
     }
 
     private static string FormatDate(DateOnly date)
@@ -196,43 +218,45 @@ internal static class TeamEligibilityEvaluator
         var champions = titleCounts.Count(count => count >= 1);
         var multiTime = titleCounts.Count(count => count > 1);
         var nonChampions = titleCounts.Count(count => count == 0);
-        var reasons = new List<TeamEligibilityReason>();
+        var type = context.TournamentType;
 
-        if (context.TournamentType == TournamentType.Doubles || OverUnderAgeLimit(context.TournamentType) is not null)
+        if (type == TournamentType.Doubles || OverUnderAgeLimit(type) is not null)
         {
-            if (champions > 1)
-            {
-                reasons.Add(TeamEligibilityReasons.TooManyChampions(1));
-            }
+            return champions > 1 ? [TeamEligibilityReasons.TooManyChampions(1)] : [];
         }
-        else if (context.TournamentType == TournamentType.Trios)
-        {
-            if (nonChampions < 1)
-            {
-                reasons.Add(TeamEligibilityReasons.NoNonChampion);
-            }
 
-            if (multiTime > 1)
-            {
-                reasons.Add(TeamEligibilityReasons.TooManyMultiTimeChampions(1));
-            }
+        if (type == TournamentType.Trios)
+        {
+            return CheckNonChampionsAndMultiTime(nonChampions, multiTime, 1);
         }
-        else if (context.TournamentType == TournamentType.Baker)
-        {
-            if (nonChampions < 1)
-            {
-                reasons.Add(TeamEligibilityReasons.NoNonChampion);
-            }
 
-            if (multiTime > 2)
-            {
-                reasons.Add(TeamEligibilityReasons.TooManyMultiTimeChampions(2));
-            }
+        if (type == TournamentType.Baker)
+        {
+            var reasons = CheckNonChampionsAndMultiTime(nonChampions, multiTime, 2);
 
             if (members.Count(member => member.HallOfFameSuperiorPerformance) > 1)
             {
                 reasons.Add(TeamEligibilityReasons.TooManyHallOfFame);
             }
+
+            return reasons;
+        }
+
+        return [];
+    }
+
+    private static List<TeamEligibilityReason> CheckNonChampionsAndMultiTime(int nonChampions, int multiTime, int maxMultiTime)
+    {
+        var reasons = new List<TeamEligibilityReason>();
+
+        if (nonChampions < 1)
+        {
+            reasons.Add(TeamEligibilityReasons.NoNonChampion);
+        }
+
+        if (multiTime > maxMultiTime)
+        {
+            reasons.Add(TeamEligibilityReasons.TooManyMultiTimeChampions(maxMultiTime));
         }
 
         return reasons;
@@ -279,12 +303,11 @@ internal static class TeamEligibilityEvaluator
 
     // The age that splits an over/under team, or null when the tournament is not an over/under format.
     private static int? OverUnderAgeLimit(TournamentType type)
-    {
-        if (type == TournamentType.OverUnderFiftyDoubles)
-        {
-            return 50;
-        }
+        => OverUnderAgeLimits.TryGetValue(type, out var limit) ? limit : null;
 
-        return type == TournamentType.OverUnderFortyDoubles ? 40 : null;
-    }
+    private static readonly Dictionary<TournamentType, int> OverUnderAgeLimits = new()
+    {
+        [TournamentType.OverUnderFiftyDoubles] = 50,
+        [TournamentType.OverUnderFortyDoubles] = 40
+    };
 }

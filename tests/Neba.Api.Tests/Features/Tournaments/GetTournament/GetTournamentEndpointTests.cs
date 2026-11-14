@@ -46,8 +46,8 @@ public sealed class GetTournamentEndpointTests
         var previousId = TournamentId.New();
         var dto = TournamentDetailDtoFactory.Create(
             teamSize: 3,
-            previousTournamentId: previousId,
-            defendingChampions: [DefendingTeamDtoFactory.Create(sourceTruncated: true)]);
+            defendingChampions: [DefendingTeamDtoFactory.Create(sourceTruncated: true)],
+            previousTournamentId: previousId);
 
         var queryHandlerMock = new Mock<IQueryHandler<GetTournamentQuery, ErrorOr<TournamentDetailDto>>>(MockBehavior.Strict);
         queryHandlerMock

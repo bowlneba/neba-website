@@ -37,7 +37,7 @@ public sealed class PreviousTournamentPickerTests : IDisposable
     private static SeasonTournamentViewModel Tournament(
         string id, string name, string type, DateOnly start, string status = "Completed")
         => SeasonTournamentViewModelFactory.Create(
-            id: id, name: name, tournamentType: type, startDate: start, endDate: start.AddDays(1), status: status);
+            id: id, name: name, startDate: start, endDate: start.AddDays(1), tournamentType: type, status: status);
 
     private void SetupSeasons(params SeasonViewModel[] seasons)
         => _service.Setup(x => x.GetSeasonsAsync(It.IsAny<CancellationToken>())).ReturnsAsync(seasons.ToList());

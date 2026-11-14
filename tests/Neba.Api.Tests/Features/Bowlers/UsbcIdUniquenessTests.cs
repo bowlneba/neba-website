@@ -34,7 +34,7 @@ public sealed class UsbcIdUniquenessTests(AppDbContextFixture fixture)
             ct);
 
         // Act
-        var save = () => _dbContext.SaveChangesAsync(ct);
+        Task<int> save() => _dbContext.SaveChangesAsync(ct);
 
         // Assert
         await Should.ThrowAsync<DbUpdateException>(save);

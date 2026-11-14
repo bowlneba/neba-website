@@ -205,21 +205,7 @@ internal sealed class BowlerWeeklySyncJob(
             return Outcome.Unchanged;
         }
 
-        var result = existing.ApplyLegacyUpdate(
-            firstName,
-            row.LastName,
-            middleName: row.MiddleInitial,
-            suffix: suffix,
-            nickname: nickname,
-            gender: gender,
-            dateOfBirth: dateOfBirth,
-            usbcId: usbcId);
-
-        if (result.IsError)
-        {
-            logger.LogLegacyBowlerWeeklySyncFailed(row.Id, string.Join("; ", result.Errors.Select(error => error.Description)));
-            return Outcome.Failed;
-        }
+        existing.ApplyLegacyUpdate(name.Value, gender, dateOfBirth, usbcId);
 
         // Same owned-Name audit workaround as UpdateBowlerSyncJob: force Bowler's own entry to
         // Modified so the audit event carries the bowler's ids, not just the owned Name entry.

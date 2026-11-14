@@ -19,8 +19,8 @@ internal static class RateLimitingConfiguration
     {
         internal void AddRateLimiting(IConfiguration config)
         {
-            var permitLimit = config.GetValue("RateLimiting:PermitLimit", 100);
-            var windowSeconds = config.GetValue("RateLimiting:WindowSeconds", 60);
+            var permitLimit = config.GetPositiveInt("PermitLimit", 100);
+            var windowSeconds = config.GetPositiveInt("WindowSeconds", 60);
 
             // Authenticated callers aren't meaningfully limited by this policy - they get a high
             // ceiling that only exists to blunt a compromised/malicious authenticated client, not
@@ -28,64 +28,16 @@ internal static class RateLimitingConfiguration
             // since every request from Neba.Website.Server arrives here as one server-to-server
             // connection - partitioning authenticated traffic by IP would still lump every signed-in
             // user behind that one connection into a single shared bucket.
-            var authenticatedPermitLimit = config.GetValue("RateLimiting:AuthenticatedPermitLimit", 1000);
-            var authenticatedWindowSeconds = config.GetValue("RateLimiting:AuthenticatedWindowSeconds", 60);
+            var authenticatedPermitLimit = config.GetPositiveInt("AuthenticatedPermitLimit", 1000);
+            var authenticatedWindowSeconds = config.GetPositiveInt("AuthenticatedWindowSeconds", 60);
 
             // The forgot-password form sends email, so it gets a much tighter limit than the public default.
-            var passwordRecoveryPermitLimit = config.GetValue("RateLimiting:PasswordRecoveryPermitLimit", 5);
-            var passwordRecoveryWindowSeconds = config.GetValue("RateLimiting:PasswordRecoveryWindowSeconds", 900);
+            var passwordRecoveryPermitLimit = config.GetPositiveInt("PasswordRecoveryPermitLimit", 5);
+            var passwordRecoveryWindowSeconds = config.GetPositiveInt("PasswordRecoveryWindowSeconds", 900);
 
             // The public bowler search runs on every pause in typing, so it gets a tighter limit than the public default.
-            var bowlerSearchPermitLimit = config.GetValue("RateLimiting:BowlerSearchPermitLimit", 60);
-            var bowlerSearchWindowSeconds = config.GetValue("RateLimiting:BowlerSearchWindowSeconds", 60);
-
-            if (permitLimit <= 0)
-            {
-                throw new InvalidOperationException(
-                    $"RateLimiting:PermitLimit must be greater than zero (configured value: {permitLimit}).");
-            }
-
-            if (windowSeconds <= 0)
-            {
-                throw new InvalidOperationException(
-                    $"RateLimiting:WindowSeconds must be greater than zero (configured value: {windowSeconds}).");
-            }
-
-            if (authenticatedPermitLimit <= 0)
-            {
-                throw new InvalidOperationException(
-                    $"RateLimiting:AuthenticatedPermitLimit must be greater than zero (configured value: {authenticatedPermitLimit}).");
-            }
-
-            if (authenticatedWindowSeconds <= 0)
-            {
-                throw new InvalidOperationException(
-                    $"RateLimiting:AuthenticatedWindowSeconds must be greater than zero (configured value: {authenticatedWindowSeconds}).");
-            }
-
-            if (passwordRecoveryPermitLimit <= 0)
-            {
-                throw new InvalidOperationException(
-                    $"RateLimiting:PasswordRecoveryPermitLimit must be greater than zero (configured value: {passwordRecoveryPermitLimit}).");
-            }
-
-            if (passwordRecoveryWindowSeconds <= 0)
-            {
-                throw new InvalidOperationException(
-                    $"RateLimiting:PasswordRecoveryWindowSeconds must be greater than zero (configured value: {passwordRecoveryWindowSeconds}).");
-            }
-
-            if (bowlerSearchPermitLimit <= 0)
-            {
-                throw new InvalidOperationException(
-                    $"RateLimiting:BowlerSearchPermitLimit must be greater than zero (configured value: {bowlerSearchPermitLimit}).");
-            }
-
-            if (bowlerSearchWindowSeconds <= 0)
-            {
-                throw new InvalidOperationException(
-                    $"RateLimiting:BowlerSearchWindowSeconds must be greater than zero (configured value: {bowlerSearchWindowSeconds}).");
-            }
+            var bowlerSearchPermitLimit = config.GetPositiveInt("BowlerSearchPermitLimit", 60);
+            var bowlerSearchWindowSeconds = config.GetPositiveInt("BowlerSearchWindowSeconds", 60);
 
             // Trust X-Forwarded-For only from RFC 1918 private networks (Azure load balancers
             // and Container Apps infrastructure). RemoteIpAddress is rewritten by
@@ -191,5 +143,15 @@ internal static class RateLimitingConfiguration
                 });
             });
         }
+    }
+
+    private static int GetPositiveInt(this IConfiguration config, string name, int defaultValue)
+    {
+        var value = config.GetValue($"RateLimiting:{name}", defaultValue);
+
+        return value > 0
+            ? value
+            : throw new InvalidOperationException(
+                $"RateLimiting:{name} must be greater than zero (configured value: {value}).");
     }
 }

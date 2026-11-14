@@ -15,9 +15,9 @@ public sealed class TeamEligibilityMappingExtensionsTests
     {
         // Arrange
         var response = TeamEligibilityResponseFactory.Create(
-            summary: "Two champions, one allowed.",
-            professionalTitlesVerified: true,
             reasons: [new TeamEligibilityReasonResponse { Code = "A", Message = "First reason" }],
+            professionalTitlesVerified: true,
+            summary: "Two champions, one allowed.",
             checks: [new TeamEligibilityCheckResponse { Label = "Titles", Passed = false }]);
 
         // Act

@@ -59,8 +59,8 @@ public sealed class CheckTeamEligibilityTests : IDisposable
             IsSuccessStatusCode = true,
             StatusCode = System.Net.HttpStatusCode.OK,
             Content = TournamentDetailResponseFactory.Create(
-                id: TournamentId, name: "Joe's Pizza Open", tournamentType: type, teamSize: teamSize,
-                startDate: new DateOnly(2027, 3, 7), endDate: new DateOnly(2027, 3, 8))
+                id: TournamentId, name: "Joe's Pizza Open",
+                startDate: new DateOnly(2027, 3, 7), endDate: new DateOnly(2027, 3, 8), tournamentType: type, teamSize: teamSize)
         };
 
         _tournamentsApi
@@ -85,16 +85,16 @@ public sealed class CheckTeamEligibilityTests : IDisposable
     private IRenderedComponent<CheckTeamEligibility> Render()
         => _ctx.Render<CheckTeamEligibility>(p => p.Add(x => x.Id, TournamentId));
 
-    private static async Task PickAsync(IRenderedComponent<CheckTeamEligibility> cut, int index, BowlerSearchResultViewModel bowler)
+    private static Task PickAsync(IRenderedComponent<CheckTeamEligibility> cut, int index, BowlerSearchResultViewModel bowler)
     {
         var picker = cut.FindComponents<BowlerPicker>()[index];
-        await cut.InvokeAsync(() => picker.Instance.SelectedChanged.InvokeAsync(bowler));
+        return cut.InvokeAsync(() => picker.Instance.SelectedChanged.InvokeAsync(bowler));
     }
 
-    private static async Task MarkUnknownAsync(IRenderedComponent<CheckTeamEligibility> cut, int index)
+    private static Task MarkUnknownAsync(IRenderedComponent<CheckTeamEligibility> cut, int index)
     {
         var picker = cut.FindComponents<BowlerPicker>()[index];
-        await cut.InvokeAsync(() => picker.Instance.IsUnknownChanged.InvokeAsync(true));
+        return cut.InvokeAsync(() => picker.Instance.IsUnknownChanged.InvokeAsync(true));
     }
 
     private static BowlerSearchResultViewModel Bowler(int number)
@@ -200,7 +200,7 @@ public sealed class CheckTeamEligibilityTests : IDisposable
         // Arrange
         SetupTournament(TournamentType.Doubles, 2);
         var cut = Render();
-        var button = () => cut.FindAll("button").First(b => b.TextContent.Trim() == "Check team");
+        AngleSharp.Dom.IElement button() => cut.FindAll("button").First(b => b.TextContent.Trim() == "Check team");
         button().HasAttribute("disabled").ShouldBeTrue();
 
         // Act

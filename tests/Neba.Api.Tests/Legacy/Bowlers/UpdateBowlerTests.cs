@@ -53,17 +53,12 @@ public sealed class BowlerApplyLegacyUpdateTests
             dateOfBirth: new DateOnly(1980, 1, 1));
 
         // Act
-        var result = bowler.ApplyLegacyUpdate(
-            "David",
-            "Smith",
-            middleName: "M",
-            suffix: NameSuffix.Jr,
-            nickname: "Dave",
+        bowler.ApplyLegacyUpdate(
+            NameFactory.Create(firstName: "David", lastName: "Smith", middleName: "M", suffix: NameSuffix.Jr, nickname: "Dave"),
             gender: Gender.Female,
             dateOfBirth: new DateOnly(1990, 6, 15));
 
         // Assert
-        result.IsError.ShouldBeFalse();
         bowler.Name.FirstName.ShouldBe("David");
         bowler.Name.LastName.ShouldBe("Smith");
         bowler.Name.MiddleName.ShouldBe("M");
@@ -80,14 +75,13 @@ public sealed class BowlerApplyLegacyUpdateTests
         var bowler = BowlerFactory.Create(usbcId: "1111-11111");
 
         // Act
-        var withId = bowler.ApplyLegacyUpdate("David", "Smith", usbcId: "4821-09317");
+        var name = NameFactory.Create(firstName: "David", lastName: "Smith");
+        bowler.ApplyLegacyUpdate(name, usbcId: "4821-09317");
         var usbcIdAfterSet = bowler.UsbcId;
-        var cleared = bowler.ApplyLegacyUpdate("David", "Smith");
+        bowler.ApplyLegacyUpdate(name);
 
         // Assert
-        withId.IsError.ShouldBeFalse();
         usbcIdAfterSet.ShouldBe("4821-09317");
-        cleared.IsError.ShouldBeFalse();
         bowler.UsbcId.ShouldBeNull();
     }
 
@@ -98,29 +92,11 @@ public sealed class BowlerApplyLegacyUpdateTests
         var bowler = BowlerFactory.Create(gender: Gender.Male, dateOfBirth: new DateOnly(1980, 1, 1));
 
         // Act
-        var result = bowler.ApplyLegacyUpdate("David", "Smith");
+        bowler.ApplyLegacyUpdate(NameFactory.Create(firstName: "David", lastName: "Smith"));
 
         // Assert
-        result.IsError.ShouldBeFalse();
         bowler.Gender.ShouldBeNull();
         bowler.DateOfBirth.ShouldBeNull();
-    }
-
-    [Fact(DisplayName = "ApplyLegacyUpdate should return an error and leave the bowler unchanged when the first name is blank")]
-    public void ApplyLegacyUpdate_ShouldReturnErrorAndLeaveBowlerUnchanged_WhenFirstNameIsBlank()
-    {
-        // Arrange
-        var originalName = NameFactory.Create(firstName: "Original", lastName: "Bowler");
-        var bowler = BowlerFactory.Create(name: originalName, gender: Gender.Male, dateOfBirth: new DateOnly(1980, 1, 1));
-
-        // Act
-        var result = bowler.ApplyLegacyUpdate(string.Empty, "Smith");
-
-        // Assert
-        result.IsError.ShouldBeTrue();
-        bowler.Name.ShouldBe(originalName);
-        bowler.Gender.ShouldBe(Gender.Male);
-        bowler.DateOfBirth.ShouldBe(new DateOnly(1980, 1, 1));
     }
 }
 

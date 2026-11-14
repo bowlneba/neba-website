@@ -690,11 +690,19 @@ const MOCK_BOWLER_TITLES: Record<string, [number, number, number | null]> = {
   [MOCK_BOWLER_CHAMPION_TWO_ID]: [0, 1, 2019],
 };
 
+function mockStanding(titles: number): string {
+  if (titles === 0) {
+    return 'NonChampion';
+  }
+
+  return titles === 1 ? 'OneTimeChampion' : 'MultiTimeChampion';
+}
+
 function mockMemberFacts(bowlerIds: string[], unknownBowlerCount: number, championsFail: boolean): object[] {
   const known = bowlerIds.map((id) => {
     const found = MOCK_BOWLER_SEARCH_RESULTS.find((bowler) => bowler.bowlerId === id);
     const [titles5, titles10, lastTitleYear] = MOCK_BOWLER_TITLES[id] ?? [0, 0, null];
-    const standing = titles10 === 0 ? 'NonChampion' : titles10 === 1 ? 'OneTimeChampion' : 'MultiTimeChampion';
+    const standing = mockStanding(titles10);
 
     return {
       name: found?.name ?? 'Unknown Bowler',
