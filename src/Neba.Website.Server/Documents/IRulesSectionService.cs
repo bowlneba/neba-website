@@ -14,4 +14,10 @@ internal interface IRulesSectionService
     /// Returns <see cref="ErrorType.NotFound"/> when the document has no such section.
     /// </summary>
     Task<ErrorOr<RulesSection>> GetSectionAsync(TournamentRulesAnchor anchor, CancellationToken ct = default);
+
+    /// <summary>
+    /// Loads the rules document and joins the sub-rules <paramref name="anchor"/> lists, in order.
+    /// Returns <see cref="ErrorType.NotFound"/> when any of them is missing.
+    /// </summary>
+    Task<ErrorOr<RulesSection>> GetTeamRulesAsync(TeamRulesAnchor anchor, CancellationToken ct = default);
 }

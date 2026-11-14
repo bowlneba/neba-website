@@ -132,4 +132,78 @@ public sealed class RulesSectionServiceTests
         result.FirstError.Type.ShouldBe(ErrorType.NotFound);
         result.FirstError.Code.ShouldBe("RulesSection.NotFound");
     }
+
+    private const string TeamHtml =
+        "<style>ol.lst-kix{list-style:none}</style>" +
+        "<h4 id=\"a\">401a. Team Composition</h4><p>Composition text</p>" +
+        "<h4 id=\"b\">401b. Champion Definition</h4><p>Champion text</p>" +
+        "<h4 id=\"c\">401c. Re-Entries</h4><p>Re-entry text</p>";
+
+    private static readonly TeamRulesAnchor DoublesRules = new(
+        [new SubRuleRef(401, 'a', "Team Composition"), new SubRuleRef(401, 'b', "Champion Definition")],
+        "/tournaments/rules#doubles");
+
+    [Fact(DisplayName = "GetTeamRulesAsync joins the sub-rules in order and carries the list styles once")]
+    public async Task GetTeamRulesAsync_ShouldJoinSubRulesInOrder_WhenDocumentHasThem()
+    {
+        // Arrange
+        SetupDocument(html: TeamHtml);
+
+        // Act
+        var result = await _service.GetTeamRulesAsync(DoublesRules, TestContext.Current.CancellationToken);
+
+        // Assert
+        result.IsError.ShouldBeFalse();
+        var html = result.Value.Html;
+        html.IndexOf("Composition text", StringComparison.Ordinal).ShouldBeLessThan(html.IndexOf("Champion text", StringComparison.Ordinal));
+        html.ShouldNotContain("Re-entry text");
+        html.Split("<style>").Length.ShouldBe(2);
+    }
+
+    [Fact(DisplayName = "GetTeamRulesAsync returns NotFound when a sub-rule is missing")]
+    public async Task GetTeamRulesAsync_ShouldReturnNotFound_WhenASubRuleIsMissing()
+    {
+        // Arrange
+        SetupDocument(html: "<h4 id=\"a\">401a. Team Composition</h4><p>Composition text</p>");
+
+        // Act
+        var result = await _service.GetTeamRulesAsync(DoublesRules, TestContext.Current.CancellationToken);
+
+        // Assert
+        result.IsError.ShouldBeTrue();
+        result.FirstError.Type.ShouldBe(ErrorType.NotFound);
+        result.FirstError.Code.ShouldBe("RulesSection.NotFound");
+        result.FirstError.Description.ShouldContain("401b");
+    }
+
+    [Fact(DisplayName = "GetTeamRulesAsync returns a load failure when the document request fails")]
+    public async Task GetTeamRulesAsync_ShouldReturnLoadFailure_WhenApiFails()
+    {
+        // Arrange
+        SetupDocument(success: false, failureStatus: System.Net.HttpStatusCode.NotFound);
+
+        // Act
+        var result = await _service.GetTeamRulesAsync(DoublesRules, TestContext.Current.CancellationToken);
+
+        // Assert
+        result.IsError.ShouldBeTrue();
+        result.FirstError.Type.ShouldBe(ErrorType.Failure);
+        result.FirstError.Code.ShouldBe("RulesSection.LoadFailed");
+    }
+
+    [Fact(DisplayName = "GetTeamRulesAsync converts the last-updated time to the viewer's time zone")]
+    public async Task GetTeamRulesAsync_ShouldConvertLastUpdated()
+    {
+        // Arrange
+        var utc = new DateTimeOffset(2026, 3, 1, 15, 0, 0, TimeSpan.Zero);
+        var local = new DateTimeOffset(2026, 3, 1, 10, 0, 0, TimeSpan.FromHours(-5));
+        SetupDocument(html: TeamHtml, lastUpdated: utc);
+        _mockClientTimeZoneService.Setup(x => x.ToLocalAsync(utc)).ReturnsAsync(local);
+
+        // Act
+        var result = await _service.GetTeamRulesAsync(DoublesRules, TestContext.Current.CancellationToken);
+
+        // Assert
+        result.Value.LastUpdated.ShouldBe(local);
+    }
 }

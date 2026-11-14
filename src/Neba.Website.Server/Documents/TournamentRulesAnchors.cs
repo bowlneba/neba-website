@@ -23,6 +23,21 @@ public sealed record TournamentRulesAnchor(string Slug, int RuleNumber, string T
         TitleKeyword);
 }
 
+/// <summary>One lettered sub-rule, such as 401a.</summary>
+/// <param name="RuleNumber">Rule number, such as 401.</param>
+/// <param name="Letter">Sub-rule letter, such as <c>a</c>.</param>
+/// <param name="TitleKeyword">Text the heading must contain.</param>
+public sealed record SubRuleRef(int RuleNumber, char Letter, string TitleKeyword)
+{
+    /// <summary>How the heading starts, such as "401a".</summary>
+    public string HeadingPrefix => RuleNumber.ToString(CultureInfo.InvariantCulture) + Letter;
+}
+
+/// <summary>The sub-rules that describe who may form a team, for one tournament type.</summary>
+/// <param name="SubRules">Shown in this order.</param>
+/// <param name="FullRulesHref">Link to the full rules, for the "read the full rules" fallback.</param>
+public sealed record TeamRulesAnchor(IReadOnlyList<SubRuleRef> SubRules, string FullRulesHref);
+
 /// <summary>Short anchors for the tournament rules page, keyed by tournament type.</summary>
 public static class TournamentRulesAnchors
 {
@@ -44,9 +59,34 @@ public static class TournamentRulesAnchors
             ["Non-Champions"] = new("non-champions", 603, "Non-Champion"),
         };
 
+    private static readonly TeamRulesAnchor DoublesTeamRules = new(
+        [new(401, 'a', "Team Composition"), new(401, 'b', "Champion Definition")],
+        RulesPath + "#doubles");
+
+    // Keyed by the tournament type display name the API returns.
+    private static readonly Dictionary<string, TeamRulesAnchor> TeamRulesByType =
+        new(StringComparer.OrdinalIgnoreCase)
+        {
+            ["Doubles"] = DoublesTeamRules,
+            ["Over/Under 50 Doubles"] = DoublesTeamRules,
+            ["Over/Under 40 Doubles"] = DoublesTeamRules,
+            ["Trios"] = new(
+                [new(402, 'a', "Team Composition"), new(402, 'b', "Champion Definition")],
+                RulesPath + "#trios"),
+
+            // Baker's own sub-rule (403a) points at the Trios champion definition (402b), so it is shown too.
+            ["Baker"] = new(
+                [new(403, 'a', "Team Composition"), new(402, 'b', "Champion Definition")],
+                RulesPath + "#baker"),
+        };
+
     /// <summary>Slug to alias, handed to <c>NebaDocument</c> so <c>#invitational</c> scrolls to the right heading.</summary>
     public static IReadOnlyDictionary<string, AnchorAlias> AnchorAliases { get; } =
         ByType.Values.ToDictionary(a => a.Slug, a => a.Alias, StringComparer.Ordinal);
+
+    /// <summary>Finds the team composition and champion definition sub-rules for a tournament type.</summary>
+    public static bool TryGetTeamRules(string tournamentType, [NotNullWhen(true)] out TeamRulesAnchor? anchor)
+        => TeamRulesByType.TryGetValue(tournamentType, out anchor);
 
     /// <summary>Finds the rule section for a tournament type.</summary>
     public static bool TryGet(string tournamentType, [NotNullWhen(true)] out TournamentRulesAnchor? anchor)
