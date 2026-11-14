@@ -143,6 +143,13 @@ Unmeasured, sized by reading the code (about 1k members, a few hundred bowlers p
 - `GenerateSeasonStatsJob` loads every membership for the season's bowlers (all years), and rewrites the whole season on each tournament completion.
 - Before optimizing, time the Software queries, `Compute` and `SaveChangesAsync` separately; the job has no per-phase timing yet.
 
+## Team eligibility feature
+
+- `EF.Functions.ILike(match, pattern)` with no escape argument did not honor a backslash-escaped `%`, `_` or `\` against Npgsql (a name with a literal `%` never matched). Pass the escape character: `ILike(match, pattern, "\\")`. The bowler search handler does, and its tests cover each wildcard.
+- A class a use case needs from another feature belongs in the using feature's namespace. `FeatureBoundaryTests` reads a feature's root namespace (`Neba.Api.Features.Bowlers`), not only its use-case folders, as use-case code. So `BowlerTitlesReader`, which the tournament eligibility check needs, lives under `Features/Tournaments` instead of `Features/Bowlers`.
+- `Tournament` is public, so a type in its `Create`/`Update` signature (`PreviousTournamentFacts`) must be public too; `PropertyBuilder.IsUlid` needs a non-nullable struct, so a nullable typed ID column (`PreviousTournamentId`) is configured with `HasColumnName`/`HasMaxLength`/`IsFixedLength` directly.
+- A bowler search or any per-keystroke query needs its own rate-limit policy (`bowler-search`, 60 a minute, `RateLimiting:BowlerSearch*`); the group's public policy is 100 a minute.
+
 ## ULID validation
 
 - `Ulid.TryParse` (Ulid 1.4.1) returns true for any 26 characters, even `!!` or spaces, so a `.Must(id => Ulid.TryParse(id, out _))` validator rule rejects nothing but wrong length. A malformed ID parses to a garbage ULID and the handler returns `NotFound`. Use a strict pattern if a 400 is needed.

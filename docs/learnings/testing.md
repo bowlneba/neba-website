@@ -82,6 +82,12 @@ This applies to any `ISchemaProcessor`, startup-cached registries, or other stat
 
 All classes that use `[LoggerMessage]` source-generated log methods have dedicated log-assertion tests using `FakeLogger<T>`. When adding a new class that logs, add `Microsoft.Extensions.Diagnostics.Testing` to its test project (if not already present) and add log-assertion tests covering every log level/path.
 
+### E2E mock API: upcoming tournaments and failure overrides
+
+- `MOCK_UPCOMING_TOURNAMENTS` stays empty on purpose. One upcoming tournament replaces the Tournaments page hero (the h1 becomes that tournament's name) and removes the season eyebrow, which `Tournaments.spec.ts` expects. The upcoming card's team link and defending strip are covered by bUnit; if you want them in e2e, give those tests their own mock path first.
+- An e2e test that makes the site's API call fail should use a 4xx (400, 422). A 5xx makes the site's resilience policy retry with a back-off longer than the 5 second `expect` timeout, so the error alert never shows in time.
+- Per-test state a spec reads back from the mock (`/__mock/last-request`) must be keyed by something the project owns (the mock records `POST /tournaments:<name>`), because the three Playwright projects run the same spec in parallel against one mock server.
+
 ### Running Jest on a Mac: `node_modules` is the Linux install
 
 The repo's `node_modules` comes from a `node:24-slim` container (see the lockfile rule), so it holds the Linux native bindings. `npx jest` on macOS fails with "Module <rootDir>/jest.setup.js ... was not found" because the native resolver binding for macOS is missing. Run the JS tests, and `tsx`-based scripts such as the e2e mock API, in the same image instead:
