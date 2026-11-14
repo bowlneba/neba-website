@@ -72,6 +72,9 @@ internal sealed class BowlerConfiguration
             .HasMaxLength(20)
             .IsRequired(false);
 
-        builder.HasIndex(bowler => bowler.UsbcId);
+        // Unique when present; null and blank IDs may repeat.
+        builder.HasIndex(bowler => bowler.UsbcId)
+            .IsUnique()
+            .HasFilter("usbc_id IS NOT NULL AND usbc_id <> ''");
     }
 }

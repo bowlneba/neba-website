@@ -148,7 +148,9 @@ namespace Neba.Api.Database.Migrations
                     NpgsqlIndexBuilderExtensions.AreNullsDistinct(b.HasIndex("LegacyId"), true);
 
                     b.HasIndex("UsbcId")
-                        .HasDatabaseName("ix_bowlers_usbc_id");
+                        .IsUnique()
+                        .HasDatabaseName("ix_bowlers_usbc_id")
+                        .HasFilter("usbc_id IS NOT NULL AND usbc_id <> ''");
 
                     b.HasIndex("WebsiteId")
                         .IsUnique()

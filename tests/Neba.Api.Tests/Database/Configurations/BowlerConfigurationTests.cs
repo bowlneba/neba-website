@@ -182,4 +182,17 @@ public sealed class BowlerConfigurationTests
         index.IsUnique.ShouldBeTrue();
         index.FindAnnotation("Npgsql:NullsDistinct")?.Value.ShouldBe(true);
     }
+
+    [Fact(DisplayName = "usbc_id has a unique index that ignores null and blank values")]
+    public void Configure_ShouldConfigureUsbcIdUniqueFilteredIndex()
+    {
+        // Act
+        var index = _bowlerType.GetIndexes()
+            .FirstOrDefault(i => i.Properties.Any(p => p.Name == nameof(Bowler.UsbcId)));
+
+        // Assert
+        index.ShouldNotBeNull();
+        index.IsUnique.ShouldBeTrue();
+        index.GetFilter().ShouldBe("usbc_id IS NOT NULL AND usbc_id <> ''");
+    }
 }

@@ -22,7 +22,9 @@ namespace Neba.Api.Database.Migrations
                 name: "ix_bowlers_usbc_id",
                 schema: "app",
                 table: "bowlers",
-                column: "usbc_id");
+                column: "usbc_id",
+                unique: true,
+                filter: "usbc_id IS NOT NULL AND usbc_id <> ''");
         }
 
         /// <inheritdoc />
