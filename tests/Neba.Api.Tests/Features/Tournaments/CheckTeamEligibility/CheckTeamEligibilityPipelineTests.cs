@@ -18,6 +18,7 @@ using Neba.Api.Features.Tournaments.CheckTeamEligibility;
 using Neba.Api.Features.Tournaments.Domain;
 using Neba.Api.Versioning;
 using Neba.TestFactory.Attributes;
+using Neba.TestFactory.Tournaments;
 
 using NebaMessaging = Neba.Api.Messaging;
 
@@ -88,7 +89,7 @@ public sealed class CheckTeamEligibilityPipelineTests : IAsyncLifetime
         _handler
             .Setup(handler => handler.HandleAsync(It.IsAny<CheckTeamEligibilityQuery>(), It.IsAny<CancellationToken>()))
             .Callback<CheckTeamEligibilityQuery, CancellationToken>((query, _) => captured = query)
-            .ReturnsAsync(new TeamEligibilityDto(TeamEligibilityOutcome.Eligible, [], []));
+            .ReturnsAsync(TeamEligibilityDtoFactory.Create());
 
         // Act
         using var response = await _client.GetAsync(new Uri($"/tournaments/{TournamentId}/team-eligibility?bowlerIds={FirstBowlerId}&bowlerIds={SecondBowlerId}&unknownBowlerCount=1", UriKind.Relative), ct);

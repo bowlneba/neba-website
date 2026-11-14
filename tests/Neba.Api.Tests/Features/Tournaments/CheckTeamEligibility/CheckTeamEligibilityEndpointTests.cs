@@ -8,6 +8,7 @@ using Neba.Api.Features.Tournaments.CheckTeamEligibility;
 using Neba.Api.Features.Tournaments.Domain;
 using Neba.Api.Messaging;
 using Neba.TestFactory.Attributes;
+using Neba.TestFactory.Tournaments;
 
 namespace Neba.Api.Tests.Features.Tournaments.CheckTeamEligibility;
 
@@ -34,7 +35,7 @@ public sealed class CheckTeamEligibilityEndpointTests
         var bowlerId = BowlerId.New();
         CheckTeamEligibilityQuery? captured = null;
         var handler = HandlerReturning(
-            new TeamEligibilityDto(TeamEligibilityOutcome.Eligible, [], []), ct, query => captured = query);
+            TeamEligibilityDtoFactory.Create(), ct, query => captured = query);
         var endpoint = Factory.Create<CheckTeamEligibilityEndpoint>(handler.Object);
 
         // Act

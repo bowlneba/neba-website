@@ -130,18 +130,21 @@
             .Take(SeasonsToSearch)
             .ToList();
 
-        foreach (var season in prior.Where(season => !_bySeason.ContainsKey(season.Id)))
+        var missing = prior.Where(season => !_bySeason.ContainsKey(season.Id)).ToList();
+
+        // The season lists are independent, so fetch them together.
+        var fetched = await Task.WhenAll(missing.Select(season => TournamentApiService.GetTournamentsForSeasonAsync(season)));
+
+        if (fetched.Any(result => result.IsError))
         {
-            var tournaments = await TournamentApiService.GetTournamentsForSeasonAsync(season);
+            _loadFailed = true;
+            _candidates = [];
+            return;
+        }
 
-            if (tournaments.IsError)
-            {
-                _loadFailed = true;
-                _candidates = [];
-                return;
-            }
-
-            _bySeason[season.Id] = tournaments.Value;
+        for (var i = 0; i < missing.Count; i++)
+        {
+            _bySeason[missing[i].Id] = fetched[i].Value;
         }
 
         // A cancelled tournament has no winners, so it never defends anything.
