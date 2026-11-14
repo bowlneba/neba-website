@@ -16,8 +16,11 @@
     .grid-block h3 { font-size: 1rem; margin-bottom: 0.25rem; }
     .grid-block .window { font-size: 0.875rem; color: var(--neba-gray-600); margin-bottom: 0.625rem; max-width: 66ch; }
     .rows { list-style: none; margin: 0; padding: 0; border: 1px solid var(--neba-gray-200); border-radius: var(--neba-radius-lg); background: #fff; }
-    .b-row { display: grid; grid-template-columns: minmax(9rem, 13rem) 1fr; gap: 0.5rem 1rem; padding: 0.75rem 0.875rem; border-bottom: 1px solid var(--neba-gray-200); }
+    .b-row { display: grid; gap: 0.5rem; padding: 0.75rem 0.875rem; border-bottom: 1px solid var(--neba-gray-200); }
     .b-row:last-child { border-bottom: 0; }
+    .b-top { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: flex-start; gap: 0.25rem 1rem; }
+    .pill--unknown { background: var(--neba-gray-100); color: var(--neba-gray-600); }
+    .pill { font-size: 0.9375rem; padding: 0.125rem 0.75rem; }
     .b-name { font-weight: 600; overflow-wrap: anywhere; }
     .b-name small { display: block; font-weight: 400; color: var(--neba-gray-500); font-size: 0.8125rem; }
     .b-facts { display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: stretch; min-width: 0; }
@@ -34,7 +37,7 @@
     .pill--non { background: #f0fdf4; color: #166534; }
     .pill--one { background: #fffbeb; color: #92400e; }
     .pill--multi { background: #fef2f2; color: var(--neba-accent-red); }
-    @media (max-width: 600px) { .b-row { grid-template-columns: 1fr; } .fact { flex: 1 1 8rem; } }
+    @media (max-width: 600px) { .fact { flex: 1 1 8rem; } }
     .tally { margin-top: 0.75rem; font-size: 0.9375rem; display: grid; gap: 0.25rem; }
     .tally li { list-style: none; display: flex; gap: 0.5rem; align-items: baseline; }
     .tally ul { margin: 0; padding: 0; }
@@ -156,15 +159,19 @@ const HEAD = {
 
 // One fact per rule that applies to the format. Only the window that applies is shown, so the
 // number of facts per bowler is at most three or four, and they wrap instead of scrolling.
+// "Counts as" is the top line of each bowler; the facts that decide it are small cards under it.
+// Doubles shows both title windows for everyone (5 and 10 years). Showing only the window that applies
+// to a bowler would tell the reader who has turned 60.
+function counted(s, b) {
+  if (b.unknown) return '<span class="pill pill--unknown">Counted as a non-champion</span>';
+  return pill(s.window === 10 ? b.t10 : b.t5);
+}
+
 function facts(s, b) {
-  if (b.unknown) {
-    return '<span class="fact"><span class="k">Counts as</span><span class="v muted">Non-champion (not in system)</span></span>';
-  }
-  const n = s.window === 10 ? b.t10 : b.t5;
-  const out = [
-    `<span class="fact ${s.hit(b) ? 'hit' : ''}"><span class="k">NEBA titles, last ${s.window} years</span><span class="v">${n}</span></span>`,
-    `<span class="fact"><span class="k">Counts as</span><span class="v">${pill(n)}</span></span>`,
-  ];
+  if (b.unknown) return '<span class="fact"><span class="k">Not in our system</span><span class="v muted">No titles, no age, no Hall of Fame record</span></span>';
+  const cardsFor = (n, years) => `<span class="fact ${s.hit(b) && s.window === years && n > 0 ? 'hit' : ''}"><span class="k">NEBA titles, last ${years} years</span><span class="v">${n}</span></span>`;
+  const out = [cardsFor(b.t5, 5)];
+  if (s.window === 10) out.push(cardsFor(b.t10, 10));
   if (s.columns.includes('age')) out.push(`<span class="fact ${s.ageHit(b) ? 'hit' : 'good'}"><span class="k">Age we can check</span><span class="v">${b.age ? 'Yes' : 'No'}</span></span>`);
   if (s.columns.includes('hof')) out.push(`<span class="fact ${s.hofHit(b) ? 'hit' : ''}"><span class="k">Hall of Fame, Superior Perf.</span><span class="v">${b.hof ? 'Member' : 'No'}</span></span>`);
   return out.join('');
@@ -174,7 +181,10 @@ function render(key) {
   const s = S[key];
   const rows = s.bowlers.map((b) => `
     <li class="b-row">
-      <div class="b-name">${b.n}<small>${b.u ? 'USBC ' + b.u : ''}${b.u && b.last ? ' · ' : ''}${b.last ? 'Last NEBA title: ' + b.last : ''}</small></div>
+      <div class="b-top">
+        <div class="b-name">${b.n}<small>${b.u ? 'USBC ' + b.u : ''}${b.u && b.last ? ' · ' : ''}${b.last ? 'Last NEBA title: ' + b.last : ''}</small></div>
+        ${counted(s, b)}
+      </div>
       <div class="b-facts">${facts(s, b)}</div>
     </li>`).join('');
   const failing = s.reason !== null;
