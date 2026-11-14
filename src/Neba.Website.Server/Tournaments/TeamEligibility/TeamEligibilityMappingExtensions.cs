@@ -20,8 +20,34 @@ internal static class TeamEligibilityMappingExtensions
             DefendingSource = response.DefendingSource is { } source
                 ? new DefendingTeamViewModel(
                     source.TournamentName, source.SeasonDescription, source.SourceTruncated, source.Undefended, [])
-                : null
+                : null,
+            Summary = response.Summary,
+            Members = [.. response.Members.Select(member => member.ToViewModel())],
+            Checks = [.. response.Checks.Select(check => new TeamEligibilityCheckViewModel(check.Label, check.Passed))]
         };
+    }
+
+    extension(TeamEligibilityMemberResponse member)
+    {
+        /// <summary>The standing the API named, or null when this site does not know it.</summary>
+        public ChampionStandingKind? ParseStanding()
+            => Enum.TryParse<ChampionStandingKind>(member.CountsAs, out var standing) && Enum.IsDefined(standing)
+                ? standing
+                : null;
+
+        public TeamEligibilityMemberViewModel ToViewModel() => new(
+            member.Name,
+            member.UsbcId,
+            member.NotInSystem,
+            member.LastTitleYear,
+            member.TitlesLast5Years,
+            member.TitlesLast10Years,
+            member.ParseStanding() ?? ChampionStandingKind.NonChampion,
+            member.AgeVerified,
+            member.HallOfFameSuperiorPerformance,
+            member.TitlesBreakRule,
+            member.AgeBreaksRule,
+            member.HallOfFameBreaksRule);
     }
 
     extension(BowlerSearchResponse response)

@@ -8,9 +8,9 @@ None. The page is public: you do not need to sign in. It works for scheduled tea
 
 ## Steps
 
-1. Go to the tournament's page (`/tournaments/{id}`) or its card on the Tournaments list, and click **Check team eligibility**. The link shows only for scheduled team tournaments.
+1. Go to the tournament's page (`/tournaments/{id}`) or its card on the Tournaments list, and click **Check team eligibility**. On the tournament page it is one of two cards under the blue banner, next to the format's rules. The link shows only for scheduled team tournaments.
 
-   ![Tournament detail page with the Check team eligibility link and the defending champions panel](images/check-team-eligibility/detail-hero.png)
+   ![Tournament detail page with the defending champions in the banner and the rules and Check team eligibility cards under it](images/check-team-eligibility/detail-hero.png)
 
 2. Read the **Team rules** at the top of the page: the team composition rule and the champion definition for this format, taken from the NEBA rules document.
 
@@ -39,6 +39,14 @@ None. The page is public: you do not need to sign in. It works for scheduled tea
 
 ![A team that is over the champion limit, with the reason and the contact line](images/check-team-eligibility/result-not-eligible.png)
 ![A team that can bowl together, with the note that pro titles are not checked](images/check-team-eligibility/result-eligible.png)
+
+Under every answer except "defending champions", **What we checked** shows how each bowler counts: a line with the bowler's name, USBC ID and last NEBA title, and on the right whether they count as a non-champion, a one-time champion or a multi-time champion. Small cards under it show the facts that decided it:
+
+- **NEBA titles, last 5 years**, and for doubles also **last 10 years**. Doubles shows both for every bowler, so the page never says who has turned 60 (they use the 5-year window).
+- **Age we can check** (over/under only): Yes or No. It never shows a date of birth or who is over or under the age limit.
+- **Hall of Fame, Superior Performance** (baker only).
+
+A card turns red when that fact counts against a rule the team broke, and a short list under the bowlers gives each rule's tally, such as "Multi-time champions: 2 (at most 1)". A bowler marked as not in our system counts as a non-champion with no age. The counts are as of the tournament's first day.
 
 PBA and PWBA titles are not checked. When a team passes, the answer reminds you to make sure no one on it has a professional title inside the champion window.
 

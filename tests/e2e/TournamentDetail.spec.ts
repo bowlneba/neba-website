@@ -463,7 +463,7 @@ test.describe('Tournament Detail page — team eligibility and defending champio
     await page.goto(`/tournaments/${MOCK_TOURNAMENT_TEAM_ID}`);
     await page.waitForSelector('.td-hero');
 
-    const link = page.locator('.td-hero a.td-team-link');
+    const link = page.locator('.td-help-cards a.td-team-link');
     await expect(link).toContainText('Check team eligibility');
     await link.click();
 

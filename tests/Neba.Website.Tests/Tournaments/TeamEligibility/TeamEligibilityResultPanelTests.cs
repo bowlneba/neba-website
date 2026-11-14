@@ -110,6 +110,29 @@ public sealed class TeamEligibilityResultPanelTests : IDisposable
         cut.Find(".result p").TextContent.ShouldBe("The champion limits do not apply.");
     }
 
+    [Fact(DisplayName = "Should show the facts grid under an ineligible answer, and none for defending champions")]
+    public void Render_ShouldShowFactsGrid_ExceptForDefendingChampions()
+    {
+        // Arrange
+        var member = new TeamEligibilityMemberViewModel(
+            "Chris Forry", null, false, 2025, 3, null, ChampionStandingKind.MultiTimeChampion, null, null, true, false, false);
+
+        // Act
+        var ineligible = Render(new TeamEligibilityResultViewModel
+        {
+            Outcome = TeamEligibilityOutcomeKind.Ineligible,
+            Reasons = ["Too many."],
+            Members = [member],
+            Checks = [new TeamEligibilityCheckViewModel("Multi-time champions: 1 (at most 0)", false)]
+        });
+        var defending = Render(new TeamEligibilityResultViewModel { Outcome = TeamEligibilityOutcomeKind.DefendingChampions });
+
+        // Assert
+        ineligible.Find(".facts__name").TextContent.ShouldContain("Chris Forry");
+        ineligible.FindAll(".facts__check").Count.ShouldBe(1);
+        defending.FindAll(".facts").ShouldBeEmpty();
+    }
+
     [Fact(DisplayName = "Should raise OnCheckAnother when 'Check another team' is clicked")]
     public async Task Click_ShouldRaiseOnCheckAnother()
     {

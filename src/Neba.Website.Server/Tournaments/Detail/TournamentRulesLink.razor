@@ -7,9 +7,12 @@
 
 @if (_anchor is not null)
 {
-    <button type="button" class="td-rules-link" aria-haspopup="dialog" @ref="_trigger" @onclick="OpenAsync">
+    <button type="button" class="neba-help-card td-rules-link" aria-haspopup="dialog" @ref="_trigger" @onclick="OpenAsync">
         <span class="material-symbols-outlined" aria-hidden="true">menu_book</span>
-        @(TournamentType + " rules")
+        <span class="neba-help-card__text">
+            <strong>@(TournamentType + " rules")</strong>
+            <span>How the format works, who can enter, and how champions are defined.</span>
+        </span>
     </button>
 
     <DocumentSectionSlideover IsOpen="@_isOpen"

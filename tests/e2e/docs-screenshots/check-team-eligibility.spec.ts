@@ -34,7 +34,10 @@ test.describe('check-team-eligibility help screenshots', () => {
     await page.waitForSelector('.td-hero');
     await expect(page.locator('a.td-team-link')).toBeVisible();
 
-    await page.screenshot({ path: path.join(outDir, 'detail-hero.png') });
+    // The hero and the rules and eligibility cards under it.
+    await page.locator('main.tournament-detail').screenshot({ path: path.join(outDir, 'detail-hero.png'), clip: { x: 0, y: 0, width: 1200, height: 900 } }).catch(async () => {
+      await page.screenshot({ path: path.join(outDir, 'detail-hero.png'), fullPage: true });
+    });
   });
 
   test('checker page, picked team and each answer', async ({ page }) => {

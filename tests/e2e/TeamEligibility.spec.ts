@@ -70,6 +70,46 @@ test.describe('Team eligibility page', () => {
     await expect(page.locator('.result__contact a')).toHaveAttribute('href', 'mailto:info@bowlneba.com');
   });
 
+  test('shows the facts behind the answer, each bowler with how they count and the cards that decided it', async ({ page }) => {
+    await pickBowler(page, 1, 'chris', 'Chris Champion');
+    await pickBowler(page, 2, 'cora', 'Cora Champion');
+
+    await checkTeamButton(page).click();
+
+    const rows = page.locator('.facts__row');
+    await expect(rows).toHaveCount(2);
+    await expect(rows.nth(0).locator('.facts__pill')).toHaveText('Multi-time champion');
+    await expect(rows.nth(0).locator('.facts__name small')).toContainText('Last NEBA title: 2024');
+    // Doubles shows both windows for everyone, so the window does not show who is 60 or older.
+    await expect(rows.nth(0).locator('.facts__card')).toHaveCount(2);
+    await expect(rows.nth(0).locator('.facts__card--hit')).toHaveCount(2);
+    await expect(rows.nth(1).locator('.facts__pill')).toHaveText('One-time champion');
+    await expect(page.locator('.facts__check--fail')).toContainText('Champions: 2 (at most 1)');
+  });
+
+  test('shows a bowler who is not in the system as counted as a non-champion', async ({ page }) => {
+    await pickBowler(page, 1, 'chris', 'Chris Champion');
+    await page.locator('.bowler-picker').nth(1).getByRole('button', { name: 'Mark as not in our system' }).click();
+
+    await checkTeamButton(page).click();
+
+    const rows = page.locator('.facts__row');
+    await expect(rows).toHaveCount(2);
+    await expect(rows.nth(1).locator('.facts__pill')).toHaveText('Counted as a non-champion');
+  });
+
+  test('does not scroll sideways on a phone, whatever the facts', async ({ page }) => {
+    await page.setViewportSize({ width: 360, height: 800 });
+    await pickBowler(page, 1, 'chris', 'Chris Champion');
+    await pickBowler(page, 2, 'cora', 'Cora Champion');
+
+    await checkTeamButton(page).click();
+    await expect(page.locator('.facts__row').first()).toBeVisible();
+
+    const overflows = await page.evaluate(() => document.documentElement.scrollWidth > window.innerWidth);
+    expect(overflows).toBe(false);
+  });
+
   test('says a team that is eligible can bowl together, with a note that pro titles are not checked', async ({ page }) => {
     await pickBowler(page, 1, 'chris', 'Chris Champion');
     await pickBowler(page, 2, 'nina', 'Nina Newcomer');

@@ -684,6 +684,46 @@ const MOCK_BOWLER_SEARCH_RESULTS = [
   { bowlerId: MOCK_BOWLER_NEWCOMER_ID, name: 'Nina Newcomer' },
 ];
 
+// Title facts for the mock bowlers: [titles in the last 5 years, in the last 10 years, last title year].
+const MOCK_BOWLER_TITLES: Record<string, [number, number, number | null]> = {
+  [MOCK_BOWLER_CHAMPION_ONE_ID]: [1, 2, 2024],
+  [MOCK_BOWLER_CHAMPION_TWO_ID]: [0, 1, 2019],
+};
+
+function mockMemberFacts(bowlerIds: string[], unknownBowlerCount: number, championsFail: boolean): object[] {
+  const known = bowlerIds.map((id) => {
+    const found = MOCK_BOWLER_SEARCH_RESULTS.find((bowler) => bowler.bowlerId === id);
+    const [titles5, titles10, lastTitleYear] = MOCK_BOWLER_TITLES[id] ?? [0, 0, null];
+    const standing = titles10 === 0 ? 'NonChampion' : titles10 === 1 ? 'OneTimeChampion' : 'MultiTimeChampion';
+
+    return {
+      name: found?.name ?? 'Unknown Bowler',
+      usbcId: found && 'usbcId' in found ? found.usbcId : null,
+      notInSystem: false,
+      lastTitleYear,
+      titlesLast5Years: titles5,
+      titlesLast10Years: titles10,
+      countsAs: standing,
+      ageVerified: null,
+      hallOfFameSuperiorPerformance: null,
+      titlesBreakRule: championsFail && titles10 > 0,
+      ageBreaksRule: false,
+      hallOfFameBreaksRule: false,
+    };
+  });
+
+  const unknown = Array.from({ length: unknownBowlerCount }, () => ({
+    name: null, usbcId: null, notInSystem: true, lastTitleYear: null, titlesLast5Years: 0, titlesLast10Years: 0,
+    countsAs: 'NonChampion', ageVerified: null, hallOfFameSuperiorPerformance: null,
+    titlesBreakRule: false, ageBreaksRule: false, hallOfFameBreaksRule: false,
+  }));
+
+  return [...known, ...unknown];
+}
+
+const MOCK_FACTS_SUMMARY =
+  'For Doubles, a champion is a bowler with a NEBA title in the 10 years before the tournament (5 years once a bowler has turned 60). The dates checked are Mar 6, 2099 and Mar 7, 2099.';
+
 // A simple stand-in for the real rules, so each outcome has a team that reaches it: the two
 // defenders together are defending champions, the two champions together are over the champion
 // limit, and anyone else is eligible.
@@ -692,6 +732,7 @@ function resolveTeamEligibilityRoute(pathname: string, searchParams: URLSearchPa
   if (!match) return null;
 
   const bowlerIds = searchParams.getAll('bowlerIds');
+  const unknownBowlerCount = Number.parseInt(searchParams.get('unknownBowlerCount') ?? '0', 10) || 0;
   const has = (id: string) => bowlerIds.includes(id);
 
   if (has(MOCK_BOWLER_DEFENDER_ONE_ID) && has(MOCK_BOWLER_DEFENDER_TWO_ID)) {
@@ -717,10 +758,22 @@ function resolveTeamEligibilityRoute(pathname: string, searchParams: URLSearchPa
       dateChecks: [],
       professionalTitlesVerified: false,
       defendingSource: null,
+      summary: MOCK_FACTS_SUMMARY,
+      members: mockMemberFacts(bowlerIds, unknownBowlerCount, true),
+      checks: [{ label: 'Champions: 2 (at most 1)', passed: false }],
     };
   }
 
-  return { outcome: 'Eligible', reasons: [], dateChecks: [], professionalTitlesVerified: false, defendingSource: null };
+  return {
+    outcome: 'Eligible',
+    reasons: [],
+    dateChecks: [],
+    professionalTitlesVerified: false,
+    defendingSource: null,
+    summary: MOCK_FACTS_SUMMARY,
+    members: mockMemberFacts(bowlerIds, unknownBowlerCount, false),
+    checks: [{ label: 'Champions: 0 (at most 1)', passed: true }],
+  };
 }
 
 function resolveBowlerSearchRoute(pathname: string, searchParams: URLSearchParams): object | null {

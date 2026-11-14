@@ -194,17 +194,6 @@ else
                             {
                                 <span class="td-hero__chip">@_model.PatternLengthCategory</span>
                             }
-                            @if (_model.ShowRulesLink)
-                            {
-                                <TournamentRulesLink TournamentType="@_model.TournamentType" />
-                            }
-                            @if (_model.ShowTeamEligibilityLink)
-                            {
-                                <a class="td-team-link" href="/tournaments/@_model.Id/team-eligibility">
-                                    <span class="material-symbols-outlined" aria-hidden="true">groups</span>
-                                    Check team eligibility
-                                </a>
-                            }
                         </div>
 
                         @if (_model.ShowDefendingChampions)
@@ -280,6 +269,26 @@ else
 
                 </div>
             </header>
+
+            @if (_model.ShowRulesLink || _model.ShowTeamEligibilityLink)
+            {
+                <div class="td-help-cards">
+                    @if (_model.ShowRulesLink)
+                    {
+                        <TournamentRulesLink TournamentType="@_model.TournamentType" />
+                    }
+                    @if (_model.ShowTeamEligibilityLink)
+                    {
+                        <a class="neba-help-card td-team-link" href="/tournaments/@_model.Id/team-eligibility">
+                            <span class="material-symbols-outlined" aria-hidden="true">groups</span>
+                            <span class="neba-help-card__text">
+                                <strong>Check team eligibility</strong>
+                                <span>Pick your @_model.TeamSize.ToWords() bowlers and see whether your team may enter, and why.</span>
+                            </span>
+                        </a>
+                    }
+                </div>
+            }
 
             @if (_model.IsUpcoming && _model.ShowChampionBadge)
             {

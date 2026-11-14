@@ -174,6 +174,23 @@ public sealed class TournamentDetailTests : IDisposable
         cut.Find(".defending--panel .defending__names").TextContent.ShouldBe("Dave Smith / Dana Jones");
     }
 
+    [Fact(DisplayName = "Should put the rules card and the team eligibility card in a row under the hero, not inside it")]
+    public void Render_ShouldPutHelpCardsUnderTheHero()
+    {
+        // Arrange
+        SetupSuccessResponse(TournamentDetailResponseFactory.Create(
+            status: TournamentStatus.Scheduled, tournamentType: TournamentType.Doubles, teamSize: 2));
+
+        // Act
+        var cut = _ctx.Render<TournamentDetail>(p => p.Add(x => x.Id, TournamentDetailResponseFactory.ValidId));
+
+        // Assert
+        cut.FindAll(".td-hero .td-team-link, .td-hero .td-rules-link").ShouldBeEmpty();
+        var cards = cut.Find(".td-help-cards");
+        cards.QuerySelector(".td-rules-link")!.TextContent.ShouldContain("Doubles rules");
+        cards.QuerySelector(".td-team-link")!.TextContent.ShouldContain("Pick your two bowlers");
+    }
+
     [Theory(DisplayName = "Should not show the team eligibility link or defending champions once the tournament is no longer scheduled")]
     [InlineData("Completed", TestDisplayName = "Completed")]
     [InlineData("Truncated", TestDisplayName = "Truncated")]

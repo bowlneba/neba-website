@@ -85,6 +85,60 @@ public sealed class TeamEligibilityServiceTests
         result.Value.ShowProfessionalTitlesNote.ShouldBeFalse();
     }
 
+    [Fact(DisplayName = "CheckAsync should map the summary, member facts and tallies")]
+    public async Task CheckAsync_ShouldMapFacts()
+    {
+        // Arrange
+        SetupCheck(new TeamEligibilityResponse
+        {
+            Outcome = "Ineligible",
+            Summary = "Window summary.",
+            Members =
+            [
+                new TeamEligibilityMemberResponse
+                {
+                    Name = "Chris Forry", UsbcId = "4822-11840", LastTitleYear = 2025, TitlesLast5Years = 3, TitlesLast10Years = 4,
+                    CountsAs = "MultiTimeChampion", AgeVerified = true, HallOfFameSuperiorPerformance = false, TitlesBreakRule = true
+                },
+                new TeamEligibilityMemberResponse { NotInSystem = true, CountsAs = "NonChampion" }
+            ],
+            Checks = [new TeamEligibilityCheckResponse { Label = "Champions: 1 (at most 1)", Passed = true }]
+        });
+
+        // Act
+        var result = await _service.CheckAsync(TournamentId, ["a", "b"], 1, TestContext.Current.CancellationToken);
+
+        // Assert
+        result.Value.Summary.ShouldBe("Window summary.");
+        var first = result.Value.Members[0];
+        first.Name.ShouldBe("Chris Forry");
+        first.TitlesLast5Years.ShouldBe(3);
+        first.TitlesLast10Years.ShouldBe(4);
+        first.CountsAs.ShouldBe(ChampionStandingKind.MultiTimeChampion);
+        first.TitlesBreakRule.ShouldBeTrue();
+        first.AgeVerified.ShouldBe(true);
+        result.Value.Members[1].NotInSystem.ShouldBeTrue();
+        result.Value.Checks.ShouldHaveSingleItem().Label.ShouldBe("Champions: 1 (at most 1)");
+    }
+
+    [Fact(DisplayName = "CheckAsync should return an error when a member's standing is one the site does not know")]
+    public async Task CheckAsync_ShouldReturnError_WhenStandingIsUnknown()
+    {
+        // Arrange
+        SetupCheck(new TeamEligibilityResponse
+        {
+            Outcome = "Eligible",
+            Members = [new TeamEligibilityMemberResponse { CountsAs = "SuperChampion" }]
+        });
+
+        // Act
+        var result = await _service.CheckAsync(TournamentId, ["a", "b"], 0, TestContext.Current.CancellationToken);
+
+        // Assert
+        result.IsError.ShouldBeTrue();
+        result.FirstError.Code.ShouldBe("TeamEligibility.UnknownOutcome");
+    }
+
     [Fact(DisplayName = "CheckAsync should map the date checks of a DependsOnDate answer")]
     public async Task CheckAsync_ShouldMapDateChecks_WhenOutcomeDependsOnDate()
     {

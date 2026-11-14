@@ -29,8 +29,10 @@ internal sealed class TeamEligibilityService(
         }
 
         // An outcome name this site does not know must not read as "eligible" or "ineligible" by accident.
+        // The same goes for a bowler's standing, which the grid shows.
         return Enum.TryParse<TeamEligibilityOutcomeKind>(result.Value.Outcome, out var outcome)
             && Enum.IsDefined(outcome)
+            && result.Value.Members.All(member => member.ParseStanding() is not null)
             ? result.Value.ToViewModel(outcome)
             : Error.Failure("TeamEligibility.UnknownOutcome", "The API returned an outcome this site does not know.");
     }
