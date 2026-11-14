@@ -337,6 +337,13 @@ SeasonViewModel? current)
             return;
         }
 
+        // A failed upcoming reload keeps the upcoming list the user already sees.
+        if (upcomingResult is { IsError: true })
+        {
+            _allTournaments = tournamentsResult.Value;
+            return;
+        }
+
         ApplyTournaments(tournamentsResult.Value, upcomingResult);
     }
 

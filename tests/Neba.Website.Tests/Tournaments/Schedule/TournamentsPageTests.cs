@@ -169,6 +169,50 @@ public sealed class TournamentsPageTests : IDisposable
         _toastService.Current.Title.ShouldBe("Logo Saved");
     }
 
+    [Fact(DisplayName = "Should keep next season's upcoming list when the upcoming reload after a logo save fails")]
+    public async Task EditLogo_ShouldKeepUpcomingList_WhenUpcomingReloadAfterSaveFails()
+    {
+        // Arrange
+        _authContext.SetAuthorized("test-user");
+        _authContext.SetPolicies(Neba.Api.Contracts.Security.Permissions.EditTournamentLogo.PolicyName);
+        _ctx.JSInterop.SetupModule("./Components/FileUpload.razor.js")
+            .Setup<string?[]>("getPreviewUrls", _ => true).SetResult([]);
+
+        var year = DateTime.Today.Year;
+        var currentSeason = MakeSeason(year);
+        var nextSeason = MakeSeason(year + 1);
+        var nextSeasonTournament = SeasonTournamentViewModelFactory.Create(
+            id: "next-season",
+            name: "Next Season Opener",
+            season: nextSeason.Label,
+            startDate: new DateOnly(year + 1, 6, 1),
+            endDate: new DateOnly(year + 1, 6, 1));
+
+        _dataService.Seasons = [currentSeason, nextSeason];
+        _dataService.SeasonData[currentSeason.Label] = [];
+        _dataService.SeasonData[nextSeason.Label] = [nextSeasonTournament];
+
+        using var saveResponse = new StubApiResponse<object>
+        {
+            IsSuccessStatusCode = true,
+            StatusCode = System.Net.HttpStatusCode.NoContent
+        };
+        _tournamentsApi
+            .Setup(x => x.EditTournamentLogoAsync("next-season", It.IsAny<EditTournamentLogoRequest>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(saveResponse);
+
+        var cut = _ctx.Render<TournamentsPage>();
+        await cut.Find(".tournament-upcoming-card button.tournament-logo-edit").ClickAsync();
+        await cut.Find(".elm-link-danger").ClickAsync();
+        _dataService.UpcomingLoadFails = true;
+
+        // Act
+        await cut.Find("button.neba-btn-primary").ClickAsync();
+
+        // Assert
+        cut.Markup.ShouldContain("Next Season Opener");
+    }
+
     [Fact(DisplayName = "Should display the season description in the header eyebrow")]
     public void Render_ShouldShowSeasonDescription_WhenCurrentSeasonLoaded()
     {

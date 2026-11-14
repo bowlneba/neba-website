@@ -47,7 +47,7 @@ public sealed record SeasonViewModel
     /// </summary>
     public string FormatDateRange()
     {
-        var culture = System.Globalization.CultureInfo.CurrentCulture;
+        var culture = DisplayCulture.English;
 
         return StartDate.Year == EndDate.Year
             ? $"{StartDate.ToString("MMM d", culture)} – {EndDate.ToString("MMM d, yyyy", culture)}"
