@@ -111,6 +111,64 @@ test.describe('Tournaments page — create tournament (authenticated)', () => {
     await expect(page).toHaveURL(/\/tournaments\/new$/);
   });
 
+  test('picks a previous tournament and sends it when creating the tournament', async ({ page }, testInfo) => {
+    const name = 'Previous Tournament Pick ' + testInfo.project.name;
+
+    await page.goto('/tournaments/new');
+    await page.waitForSelector('#name');
+
+    await page.locator('#name').fill(name);
+    await fillDateInput(page, 'start-date', '2027-03-06');
+    await fillDateInput(page, 'end-date', '2027-03-07');
+
+    // Same format (Singles) and ended before the start date, from the seasons before it.
+    const picker = page.locator('#previous-tournament');
+    await expect(picker.locator('option', { hasText: 'NEBA Spring Classic (03/2026)' })).toHaveCount(1);
+    await picker.selectOption({ label: 'NEBA Spring Classic (03/2026)' });
+
+    await page.locator('button[type="submit"].neba-btn-primary').click();
+    await expect(page.locator('.neba-toast')).toContainText('Tournament Created');
+
+    const response = await page.request.get(
+      'http://localhost:5151/__mock/last-request?method=POST&path=' + encodeURIComponent('/tournaments:' + name));
+    const sent = await response.json();
+    expect(sent.tournament.previousTournamentId).toBe('01JX0000000000000000000010');
+  });
+
+  test('sends no previous tournament when none is picked', async ({ page }, testInfo) => {
+    const name = 'No Previous Tournament ' + testInfo.project.name;
+
+    await page.goto('/tournaments/new');
+    await page.waitForSelector('#name');
+
+    await page.locator('#name').fill(name);
+    await fillDateInput(page, 'start-date', '2027-04-03');
+    await fillDateInput(page, 'end-date', '2027-04-04');
+
+    await page.locator('button[type="submit"].neba-btn-primary').click();
+    await expect(page.locator('.neba-toast')).toContainText('Tournament Created');
+
+    const response = await page.request.get(
+      'http://localhost:5151/__mock/last-request?method=POST&path=' + encodeURIComponent('/tournaments:' + name));
+    const sent = await response.json();
+    expect(sent.tournament.previousTournamentId ?? null).toBeNull();
+  });
+
+  test('clears the previous tournament with a notice when the format changes', async ({ page }) => {
+    await page.goto('/tournaments/new');
+    await page.waitForSelector('#name');
+
+    await fillDateInput(page, 'start-date', '2027-03-06');
+    await fillDateInput(page, 'end-date', '2027-03-07');
+    const picker = page.locator('#previous-tournament');
+    await picker.selectOption({ label: 'NEBA Spring Classic (03/2026)' });
+
+    await page.locator('#tournament-type').selectOption('Doubles');
+
+    await expect(page.locator('[role="status"]')).toContainText('same format');
+    await expect(picker).toHaveValue('');
+  });
+
   test('picks an existing oil pattern and shows its summary card', async ({ page }) => {
     await page.goto('/tournaments/new');
     await page.waitForSelector('#name');

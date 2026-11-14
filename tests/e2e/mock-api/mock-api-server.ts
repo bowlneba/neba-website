@@ -21,6 +21,13 @@ For membership requirements, see the <a href="/bylaws">NEBA Bylaws</a>.</p>
 <p>Invitational eligibility is by invitation only.</p>
 <h2 id="rule-602-masters-tournament-rules">Rule 602- Masters Tournament Rules</h2>
 <p>Masters qualifiers advance by average.</p>
+<h2 id="rule-401-doubles-tournament-format">Rule 401 - Doubles Tournament Format</h2>
+<h4 id="h.401a">401a. Team Composition</h4>
+<p>A doubles team may have at most one champion.</p>
+<h4 id="h.401b">401b. Champion Definition</h4>
+<p>A champion is a bowler who won a NEBA title in the last ten years.</p>
+<h4 id="h.401c">401c. Re-Entries</h4>
+<p>Re-entries are permitted.</p>
 `;
 
 const MOCK_BYLAWS_HTML = `
@@ -623,6 +630,107 @@ const PER_PROJECT_STATUS_TOURNAMENTS: [string, object][] = E2E_PROJECT_NAMES.fla
   ],
 ]);
 
+// Team eligibility fixtures (TeamEligibility.spec.ts, TournamentDetail.spec.ts, Tournaments.spec.ts): an
+// upcoming doubles tournament with defending champions. The errors copy exists so the spec that makes
+// its eligibility check fail does not affect the other specs, and it gets one copy per project like
+// the status-action tournaments above.
+export const MOCK_TOURNAMENT_TEAM_ID = '01JX0000000000000000000090';
+export const MOCK_TOURNAMENT_TEAM_ERRORS_ID = '01JX0000000000000000000091';
+
+export const MOCK_BOWLER_DEFENDER_ONE_ID = '01JX0000000000000000000081';
+export const MOCK_BOWLER_DEFENDER_TWO_ID = '01JX0000000000000000000082';
+export const MOCK_BOWLER_CHAMPION_ONE_ID = '01JX0000000000000000000083';
+export const MOCK_BOWLER_CHAMPION_TWO_ID = '01JX0000000000000000000084';
+export const MOCK_BOWLER_NEWCOMER_ID = '01JX0000000000000000000085';
+
+const MOCK_DEFENDING_CHAMPIONS = [
+  {
+    tournamentName: 'NEBA Team Doubles',
+    seasonDescription: '2098 Season',
+    sourceTruncated: false,
+    undefended: false,
+    champions: ['Dana Defender', 'Dave Defender'],
+  },
+];
+
+const MOCK_TOURNAMENT_TEAM = {
+  ...MOCK_TOURNAMENT_STATUS_ACTIONS,
+  id: MOCK_TOURNAMENT_TEAM_ID,
+  name: 'NEBA Team Doubles',
+  season: '2099 Season',
+  startDate: '2099-03-06',
+  endDate: '2099-03-07',
+  status: 'Scheduled',
+  tournamentType: 'Doubles',
+  teamSize: 2,
+  previousTournamentId: '01JX0000000000000000000089',
+  defendingChampions: MOCK_DEFENDING_CHAMPIONS,
+};
+
+const PER_PROJECT_TEAM_ERRORS_TOURNAMENTS: [string, object][] = E2E_PROJECT_NAMES.map((projectName) => [
+  perProjectTournamentId(MOCK_TOURNAMENT_TEAM_ERRORS_ID, projectName),
+  {
+    ...MOCK_TOURNAMENT_TEAM,
+    id: perProjectTournamentId(MOCK_TOURNAMENT_TEAM_ERRORS_ID, projectName),
+    name: 'NEBA Team Doubles Errors',
+  },
+]);
+
+const MOCK_BOWLER_SEARCH_RESULTS = [
+  { bowlerId: MOCK_BOWLER_DEFENDER_ONE_ID, name: 'Dana Defender', usbcId: '4821-09317' },
+  { bowlerId: MOCK_BOWLER_DEFENDER_TWO_ID, name: 'Dave Defender', usbcId: '4821-09318' },
+  { bowlerId: MOCK_BOWLER_CHAMPION_ONE_ID, name: 'Chris Champion', usbcId: '1111-00001' },
+  { bowlerId: MOCK_BOWLER_CHAMPION_TWO_ID, name: 'Cora Champion', usbcId: '1111-00002' },
+  { bowlerId: MOCK_BOWLER_NEWCOMER_ID, name: 'Nina Newcomer' },
+];
+
+// A simple stand-in for the real rules, so each outcome has a team that reaches it: the two
+// defenders together are defending champions, the two champions together are over the champion
+// limit, and anyone else is eligible.
+function resolveTeamEligibilityRoute(pathname: string, searchParams: URLSearchParams): object | null {
+  const match = /^\/tournaments\/([^/]+)\/team-eligibility$/.exec(pathname);
+  if (!match) return null;
+
+  const bowlerIds = searchParams.getAll('bowlerIds');
+  const has = (id: string) => bowlerIds.includes(id);
+
+  if (has(MOCK_BOWLER_DEFENDER_ONE_ID) && has(MOCK_BOWLER_DEFENDER_TWO_ID)) {
+    const source = MOCK_DEFENDING_CHAMPIONS[0];
+    return {
+      outcome: 'DefendingChampions',
+      reasons: [],
+      dateChecks: [],
+      professionalTitlesVerified: false,
+      defendingSource: {
+        tournamentName: source.tournamentName,
+        seasonDescription: source.seasonDescription,
+        sourceTruncated: source.sourceTruncated,
+        undefended: source.undefended,
+      },
+    };
+  }
+
+  if (has(MOCK_BOWLER_CHAMPION_ONE_ID) && has(MOCK_BOWLER_CHAMPION_TWO_ID)) {
+    return {
+      outcome: 'Ineligible',
+      reasons: [{ code: 'Champions.TooMany', message: 'A team may have at most 1 previous champion.' }],
+      dateChecks: [],
+      professionalTitlesVerified: false,
+      defendingSource: null,
+    };
+  }
+
+  return { outcome: 'Eligible', reasons: [], dateChecks: [], professionalTitlesVerified: false, defendingSource: null };
+}
+
+function resolveBowlerSearchRoute(pathname: string, searchParams: URLSearchParams): object | null {
+  if (pathname !== '/bowlers') return null;
+
+  const name = (searchParams.get('name') ?? '').toLowerCase();
+  const items = MOCK_BOWLER_SEARCH_RESULTS.filter((bowler) => bowler.name.toLowerCase().includes(name));
+  return { items, totalItems: items.length };
+}
+
 // Added money breakdown fixtures. Separate from MOCK_TOURNAMENT_DETAIL so its fixed sponsor list
 // stays valid for the other tournament-detail tests.
 export const MOCK_TOURNAMENT_ADDED_MONEY_UPCOMING_ID = '01JX0000000000000000000060';
@@ -742,7 +850,9 @@ const EXTRA_TOURNAMENT_DETAILS = new Map<string, object>([
   [MOCK_TOURNAMENT_ADDED_MONEY_PAST_ID, MOCK_TOURNAMENT_ADDED_MONEY_PAST],
   [MOCK_TOURNAMENT_INVITATIONAL_UPCOMING_ID, MOCK_TOURNAMENT_INVITATIONAL_UPCOMING],
   [MOCK_TOURNAMENT_INVITATIONAL_PAST_ID, MOCK_TOURNAMENT_INVITATIONAL_PAST],
+  [MOCK_TOURNAMENT_TEAM_ID, MOCK_TOURNAMENT_TEAM],
   ...PER_PROJECT_STATUS_TOURNAMENTS,
+  ...PER_PROJECT_TEAM_ERRORS_TOURNAMENTS,
 ]);
 
 type SeasonVariants = {
@@ -991,7 +1101,9 @@ const MOCK_BOWLER_TITLES_CURRENT_RIVAL = {
 };
 
 // Every mock tournament is in the past, so nothing is upcoming. Must stay ahead of the
-// /tournaments/{id} detail route, which would read "upcoming" as a tournament ID.
+// /tournaments/{id} detail route, which would read "upcoming" as a tournament ID. (An upcoming
+// tournament here would also replace the Tournaments page hero, which Tournaments.spec expects to
+// be the plain page title.)
 export const MOCK_UPCOMING_TOURNAMENTS = { items: [], totalItems: 0 };
 
 export const MOCK_SEASONS = {
@@ -1290,6 +1402,8 @@ function resolveGetRoute(pathname: string, searchParams: URLSearchParams): objec
   return (
     resolveStatsRoute(pathname, searchParams) ??
     resolveSeasonTournamentsRoute(pathname) ??
+    resolveTeamEligibilityRoute(pathname, searchParams) ??
+    resolveBowlerSearchRoute(pathname, searchParams) ??
     resolveStaticGetRoute(pathname) ??
     resolveTournamentDetailRoute(pathname) ??
     resolveSponsorDetailRoute(pathname) ??
@@ -1536,10 +1650,15 @@ async function handleRequest(req: IncomingMessage, res: ServerResponse): Promise
         oilPatternId?: string;
         patternLengthCategory?: string;
         patternRatioCategory?: string;
+        previousTournamentId?: string | null;
       };
     };
     const tournament = parsed.tournament ?? {};
     const tournamentId = `01JX000000000000000000${nextCreatedTournamentSuffix++}`;
+
+    // Recorded per tournament name, so specs running in parallel on different projects (each with
+    // its own tournament name) can read back the request they sent.
+    lastRequestBodies.set('POST /tournaments:' + (tournament.name ?? ''), body);
 
     createdTournaments.set(tournamentId, {
       id: tournamentId,
@@ -1558,6 +1677,7 @@ async function handleRequest(req: IncomingMessage, res: ServerResponse): Promise
       entryCount: null,
       patternLengthCategory: tournament.patternLengthCategory ?? null,
       patternRatioCategory: tournament.patternRatioCategory ?? null,
+      previousTournamentId: tournament.previousTournamentId ?? null,
       logoUrl: tournament.logo ? `http://localhost:5151/mock-storage/${tournament.logo.path}` : null,
       bowlingCenter: null,
       sponsors: [],
