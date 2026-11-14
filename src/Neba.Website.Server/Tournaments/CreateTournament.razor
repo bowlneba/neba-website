@@ -89,6 +89,14 @@
                             </div>
                             <p class="text-sm text-[var(--neba-gray-500)]">The season is determined automatically from these dates.</p>
 
+                            <div>
+                                <PreviousTournamentPicker Id="previous-tournament"
+                                                          Value="@_model.PreviousTournamentId"
+                                                          ValueChanged="HandlePreviousTournamentChanged"
+                                                          TournamentType="@_model.TournamentType"
+                                                          StartDate="@_model.StartDate" />
+                            </div>
+
                             <div class="flex items-center gap-2">
                                 <InputCheckbox id="stats-eligible" @bind-Value="_model.StatsEligible" />
                                 <label for="stats-eligible" class="text-sm font-medium text-[var(--neba-gray-700)]">Counts toward season stats and awards</label>
@@ -251,6 +259,12 @@
         MarkDirty();
     }
 
+    private void HandlePreviousTournamentChanged(string? previousTournamentId)
+    {
+        _model.PreviousTournamentId = previousTournamentId;
+        MarkDirty(); // not bound through an InputBase, so the page marks the form dirty itself
+    }
+
     private void HandleBowlingCenterChanged(string? certificationNumber)
     {
         _model.BowlingCenterCertificationNumber = certificationNumber;
@@ -318,6 +332,7 @@
             ? null
             : _model.BowlingCenterCertificationNumber,
         ExternalRegistrationUrl = ParseUri(_model.ExternalRegistrationUrl),
+        PreviousTournamentId = string.IsNullOrWhiteSpace(_model.PreviousTournamentId) ? null : _model.PreviousTournamentId,
         Logo = BuildLogoInput(),
         OilPatternId = _oilPatternSelection.OilPatternId,
         PatternLengthCategory = _oilPatternSelection.PatternLengthCategory,
@@ -375,6 +390,8 @@
         public decimal NebaAddedMoney { get; set; }
 
         public string? BowlingCenterCertificationNumber { get; set; }
+
+        public string? PreviousTournamentId { get; set; }
 
         [System.ComponentModel.DataAnnotations.Url(ErrorMessage = "External registration URL must be a valid, absolute URL.")]
         public string? ExternalRegistrationUrl { get; set; }
