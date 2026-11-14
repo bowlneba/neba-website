@@ -22,6 +22,10 @@ internal static class LegacyBowlerMapping
             ? DateOnly.FromDateTime(legacyDateOfBirth.Value)
             : null;
 
+    // Blank and whitespace-only values become null, so an empty legacy column never overwrites a real ID.
+    public static string? MapUsbcId(string? legacyUsbcId)
+        => string.IsNullOrWhiteSpace(legacyUsbcId) ? null : legacyUsbcId.Trim();
+
     // Legacy Suffix is free text (e.g. "Jr.", "Sr.", "II"); NameSuffix is a closed SmartEnum set
     // whose own Value strings inconsistently carry a trailing period ("Jr.", "Sr." vs. "II", "III").
     // Strip any trailing period from both sides before comparing so "Jr"/"Jr."/"JR." all match
@@ -62,6 +66,7 @@ internal static class LegacyBowlerMapping
             nickname: nickname,
             legacyId: row.Id,
             gender: MapGender(row.Gender),
-            dateOfBirth: MapDateOfBirth(row.DateOfBirth));
+            dateOfBirth: MapDateOfBirth(row.DateOfBirth),
+            usbcId: MapUsbcId(row.UsbcId));
     }
 }

@@ -1,0 +1,111 @@
+@using System.Globalization
+
+<section class="result @CssClass">
+    @switch (Result.Outcome)
+    {
+        case TeamEligibilityOutcomeKind.DefendingChampions:
+            <div class="result__headline">
+                <span class="material-symbols-outlined" aria-hidden="true">shield</span>
+                These are the defending champions.
+            </div>
+            <p>@DefendingExplanation</p>
+            break;
+
+        case TeamEligibilityOutcomeKind.Eligible:
+            <div class="result__headline">
+                <span class="material-symbols-outlined" aria-hidden="true">check_circle</span>
+                This team can bowl together.
+            </div>
+            <p>We checked NEBA titles, age, and Hall of Fame membership. Everyone qualifies.</p>
+            break;
+
+        case TeamEligibilityOutcomeKind.DependsOnDate:
+            <div class="result__headline">
+                <span class="material-symbols-outlined" aria-hidden="true">event</span>
+                The answer depends on the squad date.
+            </div>
+            <p>This team can bowl together on some days of the tournament but not others.</p>
+            <div class="result__dates">
+                @foreach (var check in Result.DateChecks)
+                {
+                    <div class="result__date @(check.Eligible ? "result__date--good" : "result__date--bad")">
+                        <span class="result__when">@check.AsOf.ToString("ddd, MMM d, yyyy", CultureInfo.CurrentCulture)</span>
+                        <span>@(check.Eligible ? "Can bowl together" : "Can't bowl together. " + string.Join(" ", check.Reasons))</span>
+                    </div>
+                }
+            </div>
+            break;
+
+        default:
+            <div class="result__headline">
+                <span class="material-symbols-outlined" aria-hidden="true">block</span>
+                This team can't bowl together.
+            </div>
+            <ul>
+                @foreach (var reason in Result.Reasons)
+                {
+                    <li>@reason</li>
+                }
+            </ul>
+            break;
+    }
+
+    <TeamEligibilityFacts Members="@Result.Members" Checks="@Result.Checks" Summary="@Result.Summary" />
+
+    @if (Result.ShowProfessionalTitlesNote)
+    {
+        <p class="result__note">
+            We can't check PBA or PWBA titles. Make sure no one on the team has a professional title inside the champion window.
+        </p>
+    }
+
+    @if (Result.Outcome is TeamEligibilityOutcomeKind.Ineligible or TeamEligibilityOutcomeKind.DependsOnDate)
+    {
+        <p class="result__contact">
+            If you think this is a mistake, email <a href="mailto:info@bowlneba.com">info@bowlneba.com</a>.
+        </p>
+    }
+
+    <button type="button" class="neba-btn neba-btn-secondary neba-btn-sm" @onclick="OnCheckAnother">Check another team</button>
+</section>
+
+@code {
+    [Parameter, EditorRequired]
+    public TeamEligibilityResultViewModel Result { get; set; } = default!;
+
+    [Parameter]
+    public EventCallback OnCheckAnother { get; set; }
+
+    private string CssClass => Result.Outcome switch
+    {
+        TeamEligibilityOutcomeKind.DefendingChampions => "result--defend",
+        TeamEligibilityOutcomeKind.Eligible => "result--ok",
+        TeamEligibilityOutcomeKind.DependsOnDate => "result--date",
+        _ => "result--no"
+    };
+
+    // Names the tournament they won and says why a truncated chain still counts.
+    private string DefendingExplanation
+    {
+        get
+        {
+            var source = Result.DefendingSource;
+
+            if (source is null)
+            {
+                return "The champion limits do not apply.";
+            }
+
+            var won = "This team won " + source.TournamentName + " (" + source.SeasonDescription + ").";
+
+            if (source.Undefended)
+            {
+                return won + " A later tournament was truncated, so they never got to defend. The champion limits do not apply.";
+            }
+
+            return source.SourceTruncated
+                ? won + " That tournament was truncated, and they still count as defending champions. The champion limits do not apply."
+                : won + " The champion limits do not apply.";
+        }
+    }
+}

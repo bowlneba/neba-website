@@ -140,7 +140,8 @@ public sealed class TournamentOilPatternAnnouncementTests
             logo: null,
             patternLengthCategory: null,
             patternRatioCategory: null,
-            oilPatternRevealDateTime: revealAt.AddTicks(7));
+            oilPatternRevealDateTime: revealAt.AddTicks(7),
+            previousTournament: null);
 
         // Assert
         result.IsError.ShouldBeFalse();

@@ -56,4 +56,56 @@ public sealed class TournamentRulesAnchorsTests
         aliases.Values.ShouldAllBe(a => a.HeadingIdPrefix.EndsWith('-'));
         aliases["invitational"].TitleKeyword.ShouldBe("Invitational");
     }
+
+    [Theory(DisplayName = "TryGetTeamRules maps each team format to its team composition and champion definition sub-rules")]
+    [InlineData("Doubles", "401a,401b", "/tournaments/rules#doubles")]
+    [InlineData("Over/Under 50 Doubles", "401a,401b", "/tournaments/rules#doubles")]
+    [InlineData("Over/Under 40 Doubles", "401a,401b", "/tournaments/rules#doubles")]
+    [InlineData("Trios", "402a,402b", "/tournaments/rules#trios")]
+    [InlineData("Baker", "403a,402b", "/tournaments/rules#baker")]
+    public void TryGetTeamRules_ShouldReturnSubRules_WhenTypeIsATeamFormat(string type, string expectedPrefixes, string expectedHref)
+    {
+        // Arrange & Act
+        var found = TournamentRulesAnchors.TryGetTeamRules(type, out var anchor);
+
+        // Assert
+        found.ShouldBeTrue();
+        string.Join(",", anchor!.SubRules.Select(subRule => subRule.HeadingPrefix)).ShouldBe(expectedPrefixes);
+        anchor.FullRulesHref.ShouldBe(expectedHref);
+    }
+
+    [Theory(DisplayName = "TryGetTeamRules returns false for single-bowler formats")]
+    [InlineData("Singles")]
+    [InlineData("Invitational")]
+    [InlineData("Non-Champions")]
+    [InlineData("Unknown Format")]
+    public void TryGetTeamRules_ShouldReturnFalse_WhenTypeIsNotATeamFormat(string type)
+    {
+        // Arrange & Act
+        var found = TournamentRulesAnchors.TryGetTeamRules(type, out var anchor);
+
+        // Assert
+        found.ShouldBeFalse();
+        anchor.ShouldBeNull();
+    }
+
+    [Fact(DisplayName = "TryGetTeamRules ignores the case of the tournament type")]
+    public void TryGetTeamRules_ShouldIgnoreCase()
+    {
+        // Arrange & Act
+        var found = TournamentRulesAnchors.TryGetTeamRules("trios", out _);
+
+        // Assert
+        found.ShouldBeTrue();
+    }
+
+    [Fact(DisplayName = "SubRuleRef builds its heading prefix from the rule number and letter")]
+    public void SubRuleRef_ShouldBuildHeadingPrefix()
+    {
+        // Arrange & Act
+        var subRule = new SubRuleRef(402, 'b', "Champion Definition");
+
+        // Assert
+        subRule.HeadingPrefix.ShouldBe("402b");
+    }
 }

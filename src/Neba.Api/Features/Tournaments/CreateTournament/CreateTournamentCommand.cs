@@ -28,6 +28,8 @@ internal sealed record CreateTournamentCommand
 
     public StoredFile? Logo { get; init; }
 
+    public TournamentId? PreviousTournamentId { get; init; }
+
     public OilPatternId? OilPatternId { get; init; }
 
     public PatternLengthCategory? PatternLengthCategory { get; init; }

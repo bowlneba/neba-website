@@ -41,6 +41,21 @@ public sealed class LegacyBowlerMappingTests
         result.ShouldBeNull();
     }
 
+    [Theory(DisplayName = "MapUsbcId should trim a value and map blank values to null")]
+    [InlineData("4821-09317", "4821-09317", TestDisplayName = "Plain")]
+    [InlineData("  4821-09317 ", "4821-09317", TestDisplayName = "Padded")]
+    [InlineData("", null, TestDisplayName = "Empty")]
+    [InlineData("   ", null, TestDisplayName = "Whitespace")]
+    [InlineData(null, null, TestDisplayName = "Null")]
+    public void MapUsbcId_ShouldTrimOrReturnNull(string? legacyUsbcId, string? expected)
+    {
+        // Arrange / Act
+        var result = LegacyBowlerMapping.MapUsbcId(legacyUsbcId);
+
+        // Assert
+        result.ShouldBe(expected);
+    }
+
     [Fact(DisplayName = "MapDateOfBirth should convert a date and drop the time")]
     public void MapDateOfBirth_ShouldReturnDateOnly_WhenValuePresent()
     {

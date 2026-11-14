@@ -56,6 +56,7 @@ internal sealed class CreateTournamentEndpoint(Messaging.ICommandHandler<CreateT
             OilPatternId = TournamentInputMapper.ToOilPatternId(input.OilPatternId),
             PatternLengthCategory = TournamentInputMapper.ToPatternLengthCategory(input.PatternLengthCategory),
             PatternRatioCategory = TournamentInputMapper.ToPatternRatioCategory(input.PatternRatioCategory),
+            PreviousTournamentId = TournamentInputMapper.ToPreviousTournamentId(input.PreviousTournamentId),
             OilPatternRevealDateTime = input.OilPatternRevealDateTime
         };
 

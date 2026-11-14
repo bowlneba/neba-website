@@ -26,13 +26,57 @@ internal static partial class RulesSectionExtractor
             return null;
         }
 
+        return Cut(doc, start, rulesPath, includeStyles: true);
+    }
+
+    /// <summary>
+    /// Returns one lettered sub-rule (such as 401a): its heading and content up to the next heading of the same or
+    /// higher level. Matches on heading text, because the document's heading IDs are not stable.
+    /// Pass <paramref name="includeStyles"/> for the first piece only, so list styles are not repeated.
+    /// Returns <c>null</c> when no heading matches.
+    /// </summary>
+    internal static string? ExtractSubRule(string html, SubRuleRef subRule, string rulesPath, bool includeStyles)
+    {
+        ArgumentNullException.ThrowIfNull(subRule);
+
+        var doc = new HtmlDocument();
+        doc.LoadHtml(html);
+
+        var start = doc.DocumentNode
+            .Descendants()
+            .FirstOrDefault(node => HeadingLevel(node) is not null && IsSubRuleHeading(node, subRule));
+
+        return start is null ? null : Cut(doc, start, rulesPath, includeStyles);
+    }
+
+    // "401a. Team Composition" and "Rule 401a. Team Composition" both match.
+    private static bool IsSubRuleHeading(HtmlNode node, SubRuleRef subRule)
+    {
+        var text = HtmlEntity.DeEntitize(node.InnerText).Trim();
+
+        if (text.StartsWith("Rule ", StringComparison.OrdinalIgnoreCase))
+        {
+            text = text[5..].TrimStart();
+        }
+
+        return text.StartsWith(subRule.HeadingPrefix, StringComparison.OrdinalIgnoreCase)
+            && text.Contains(subRule.TitleKeyword, StringComparison.OrdinalIgnoreCase);
+    }
+
+    // The heading and what follows it up to the next heading of the same or higher level, with same-document
+    // links pointed at the rules page.
+    private static string Cut(HtmlDocument doc, HtmlNode start, string rulesPath, bool includeStyles)
+    {
         var level = HeadingLevel(start)!.Value;
         var section = HtmlNode.CreateNode("<div></div>");
 
-        // Google Docs list numbering lives in <style> blocks, so carry them over.
-        foreach (var style in doc.DocumentNode.Descendants("style"))
+        if (includeStyles)
         {
-            section.AppendChild(style.CloneNode(true));
+            // Google Docs list numbering lives in <style> blocks, so carry them over.
+            foreach (var style in doc.DocumentNode.Descendants("style"))
+            {
+                section.AppendChild(style.CloneNode(true));
+            }
         }
 
         for (var node = start; node is not null; node = NextElement(node))

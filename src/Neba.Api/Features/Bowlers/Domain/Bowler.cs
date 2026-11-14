@@ -49,6 +49,11 @@ public sealed class Bowler
     /// </summary>
     public DateOnly? DateOfBirth { get; internal set; }
 
+    /// <summary>
+    /// Gets the bowler's USBC membership ID; null until known.
+    /// </summary>
+    public string? UsbcId { get; internal set; }
+
     private readonly List<BowlerSeasonStats> _seasonStats = [];
     internal IReadOnlyCollection<BowlerSeasonStats> SeasonStats
         => _seasonStats.AsReadOnly();

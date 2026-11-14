@@ -134,7 +134,34 @@ public sealed record SeasonTournamentViewModel
     /// </summary>
     public IReadOnlyCollection<string> Winners { get; init; } = [];
 
+    // ── Teams ─────────────────────────────────────────────────────────────────
+
+    /// <summary>
+    /// Bowlers per entry: 1 for singles-style formats, 2 for doubles, 3 for trios, 5 for baker.
+    /// </summary>
+    public int TeamSize { get; init; } = 1;
+
+    /// <summary>
+    /// Teams that defend their title here; empty when there is no previous tournament.
+    /// </summary>
+    public IReadOnlyList<DefendingTeamViewModel> DefendingChampions { get; init; } = [];
+
     // ── Computed convenience ──────────────────────────────────────────────────
+
+    /// <summary>
+    /// True while the tournament has not run; the only state where defending champions show.
+    /// </summary>
+    public bool IsScheduled => Status == "Scheduled";
+
+    /// <summary>
+    /// True when the defending champions strip should render.
+    /// </summary>
+    public bool ShowDefendingChampions => IsScheduled && DefendingChampions.Count > 0;
+
+    /// <summary>
+    /// True when the "check team eligibility" link should render.
+    /// </summary>
+    public bool ShowTeamEligibilityLink => IsScheduled && TeamSize > 1;
 
     /// <summary>
     /// True when the tournament was held but didn't finish as planned.

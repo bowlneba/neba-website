@@ -1,4 +1,5 @@
 using Neba.Api.Contracts.Bowlers.GetBowlerTitles;
+using Neba.Api.Contracts.Bowlers.SearchBowlers;
 
 using Refit;
 
@@ -17,4 +18,15 @@ public interface IBowlersApi
     /// <returns>A response containing the bowler's titles.</returns>
     [Get("/bowlers/{bowlerId}/titles")]
     Task<IApiResponse<BowlerTitlesResponse>> GetBowlerTitlesAsync(string bowlerId, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Searches bowlers by name. Needs at least 3 characters and returns at most 20 bowlers.
+    /// </summary>
+    /// <param name="name">Part of the bowler's name.</param>
+    /// <param name="cancellationToken">A token to cancel the operation.</param>
+    /// <returns>The matching bowlers, ordered by last then first name.</returns>
+    [Get("/bowlers")]
+    Task<IApiResponse<CollectionResponse<BowlerSearchResponse>>> SearchBowlersAsync(
+        string name,
+        CancellationToken cancellationToken = default);
 }

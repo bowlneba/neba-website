@@ -76,7 +76,8 @@ internal sealed class NewBowlerSyncJob(
                 LastName,
                 Suffix,
                 Gender,
-                DateOfBirth
+                DateOfBirth,
+                UsbcId
             FROM
                 Bowlers
             WHERE
@@ -124,7 +125,8 @@ internal sealed class NewBowlerSyncJob(
             suffix: suffix,
             legacyId: row.Id,
             gender: gender,
-            dateOfBirth: dateOfBirth);
+            dateOfBirth: dateOfBirth,
+            usbcId: LegacyBowlerMapping.MapUsbcId(row.UsbcId));
 
         if (bowler.IsError)
         {
@@ -137,7 +139,7 @@ internal sealed class NewBowlerSyncJob(
     }
 }
 
-internal sealed record LegacyBowlerRow(int Id, string FirstName, string? MiddleInitial, string LastName, string? Suffix, int Gender, DateTime? DateOfBirth);
+internal sealed record LegacyBowlerRow(int Id, string FirstName, string? MiddleInitial, string LastName, string? Suffix, int Gender, DateTime? DateOfBirth, string? UsbcId);
 
 internal static class LegacyBowlerExtensions
 {
@@ -151,7 +153,8 @@ internal static class LegacyBowlerExtensions
             string? nickname = null,
             int? legacyId = null,
             Gender? gender = null,
-            DateOnly? dateOfBirth = null)
+            DateOnly? dateOfBirth = null,
+            string? usbcId = null)
         {
             var name = Name.Create(firstName, lastName, middleName, suffix, nickname);
 
@@ -163,7 +166,8 @@ internal static class LegacyBowlerExtensions
                     Name = name.Value,
                     LegacyId = legacyId,
                     Gender = gender,
-                    DateOfBirth = dateOfBirth
+                    DateOfBirth = dateOfBirth,
+                    UsbcId = usbcId
                 };
         }
     }

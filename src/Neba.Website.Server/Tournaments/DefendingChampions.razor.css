@@ -1,0 +1,119 @@
+/* Strip on a tournament list card: a warm band across the bottom, one group per defending team. */
+.defending--strip {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem 2rem;
+    align-items: flex-start;
+    margin-top: 1rem;
+    padding: 0.75rem 1rem;
+    background: color-mix(in srgb, var(--neba-gold) 14%, var(--neba-bg-panel));
+    border-top: 1px solid color-mix(in srgb, var(--neba-gold) 40%, var(--neba-bg-panel));
+}
+
+.defending__label {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding-top: 0.2rem;
+    font-family: var(--neba-font-display);
+    font-weight: 700;
+    font-size: 0.9375rem;
+    color: var(--neba-blue-brand);
+    white-space: nowrap;
+}
+
+.defending__label .material-symbols-outlined {
+    color: var(--neba-gold-deep);
+}
+
+.defending__group {
+    display: grid;
+    gap: 0.25rem;
+    min-width: 0;
+}
+
+.defending__pills {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.25rem 0.375rem;
+}
+
+.defending__pill {
+    background: var(--neba-bg-panel);
+    border: 1px solid color-mix(in srgb, var(--neba-gold) 60%, var(--neba-bg-panel));
+    border-radius: 999px;
+    padding: 0.125rem 0.625rem;
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: var(--neba-text);
+}
+
+.defending__tag {
+    font-size: 0.8125rem;
+    color: var(--neba-text-muted);
+}
+
+/* Panel in the tournament detail hero (white text on the hero's blue). */
+.defending--panel {
+    max-width: 36rem;
+    padding: 0.875rem 1rem;
+    /* Opaque blue under the tint so the white text has a real background to measure against. */
+    background: linear-gradient(rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0.1)), var(--neba-blue-brand);
+    border: 1px solid rgba(255, 255, 255, 0.22);
+    border-radius: var(--neba-radius-lg);
+    color: white;
+}
+
+.defending__title {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    margin: 0 0 0.5rem;
+    font-size: 1rem;
+    color: white;
+}
+
+.defending__title .material-symbols-outlined {
+    color: var(--neba-gold);
+}
+
+.defending__row {
+    display: grid;
+    grid-template-columns: 5.5rem 1fr;
+    gap: 0.75rem;
+    padding: 0.375rem 0;
+    border-top: 1px solid rgba(255, 255, 255, 0.14);
+}
+
+.defending__row:first-of-type {
+    border-top: 0;
+}
+
+.defending__season {
+    padding-top: 0.15rem;
+    font-size: 0.8125rem;
+    opacity: 0.85;
+}
+
+.defending__season small {
+    display: block;
+    font-size: 0.75rem;
+}
+
+.defending__names {
+    font-family: var(--neba-font-display);
+    font-weight: 700;
+    line-height: 1.4;
+}
+
+@media (max-width: 767px) {
+    .defending--strip {
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+
+    .defending__row {
+        grid-template-columns: 1fr;
+        gap: 0.125rem;
+    }
+}

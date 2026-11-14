@@ -681,3 +681,11 @@
         transform: none;
     }
 }
+
+/* Rules and team eligibility cards under the hero. */
+.td-help-cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr));
+    gap: 1rem;
+    margin-top: 1rem;
+}

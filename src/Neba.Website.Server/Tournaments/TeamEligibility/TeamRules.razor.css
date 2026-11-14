@@ -1,0 +1,33 @@
+/* Team rules: plain text on the page, set off by a left rule. */
+.team-rules {
+    max-width: 68ch;
+    margin-bottom: 2rem;
+    padding: 0.25rem 0 0.25rem 1.25rem;
+    border-left: 3px solid var(--neba-blue-300);
+}
+
+.team-rules__title {
+    margin-bottom: 0.625rem;
+    font-size: 1.0625rem;
+}
+
+.team-rules__status {
+    font-size: 0.9375rem;
+    color: var(--neba-text-muted);
+}
+
+/* The rules HTML comes from the rules document, so its elements carry no scope attribute. */
+.team-rules__body ::deep h4 {
+    margin: 1rem 0 0.25rem;
+    font-size: 0.9375rem;
+    color: var(--neba-text);
+}
+
+.team-rules__body ::deep p,
+.team-rules__body ::deep li {
+    font-size: 0.9375rem;
+}
+
+.team-rules__body ::deep li + li {
+    margin-top: 0.25rem;
+}

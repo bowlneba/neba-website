@@ -41,6 +41,14 @@ internal sealed class CreateTournamentCommandHandler(
 
         var (season, patternLengthCategory, patternRatioCategory) = resolveResult.Value;
 
+        var previousTournament = await PreviousTournamentResolver.ResolveAsync(
+            appDbContext, command.PreviousTournamentId, cancellationToken);
+
+        if (previousTournament.IsError)
+        {
+            return previousTournament.Errors;
+        }
+
         var logoClaim = await TournamentLogoClaim.EnsureClaimableAsync(
             appDbContext, command.Logo, null, cancellationToken);
 
@@ -63,7 +71,8 @@ internal sealed class CreateTournamentCommandHandler(
             patternLengthCategory: patternLengthCategory,
             patternRatioCategory: patternRatioCategory,
             oilPatternRevealDateTime: command.OilPatternRevealDateTime,
-            nebaAddedMoney: command.NebaAddedMoney);
+            nebaAddedMoney: command.NebaAddedMoney,
+            previousTournament: previousTournament.Value);
 
         if (tournamentResult.IsError)
         {

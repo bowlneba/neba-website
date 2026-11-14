@@ -348,6 +348,33 @@ public sealed class DeleteTournamentCommandHandlerTests(AppDbContextFixture fixt
         seasonCacheAfterDelete.ShouldBe("fresh-season-tournaments");
     }
 
+    [Fact(DisplayName = "HandleAsync evicts the next tournament's cached reads and clears its link to the deleted tournament")]
+    public async Task HandleAsync_ShouldEvictSuccessorCacheAndClearLink_WhenTournamentIsDeleted()
+    {
+        // Arrange
+        var ct = TestContext.Current.CancellationToken;
+        var previous = await SeedTournamentAsync(ct);
+        var successor = TournamentFactory.Create(
+            startDate: previous.EndDate.AddYears(1),
+            endDate: previous.EndDate.AddYears(1),
+            seasonId: previous.SeasonId,
+            previousTournament: PreviousTournamentFactsFactory.Create(previous.Id, previous.TournamentType, previous.EndDate));
+        await _dbContext.Tournaments.AddAsync(successor, ct);
+        await _dbContext.SaveChangesAsync(ct);
+
+        var cache = _serviceProvider.GetRequiredService<IFusionCache>();
+        await cache.GetOrSetAsync("successor-detail", _ => Task.FromResult("stale"), tags: [$"neba:tournaments:{successor.Id}"], token: ct);
+
+        // Act
+        var result = await CreateHandler().HandleAsync(new DeleteTournamentCommand { TournamentId = previous.Id }, ct);
+
+        // Assert
+        result.IsError.ShouldBeFalse();
+        (await cache.GetOrSetAsync("successor-detail", _ => Task.FromResult("fresh"), token: ct)).ShouldBe("fresh");
+        _dbContext.ChangeTracker.Clear();
+        (await _dbContext.Tournaments.AsNoTracking().SingleAsync(t => t.Id == successor.Id, ct)).PreviousTournamentId.ShouldBeNull();
+    }
+
     [Fact(DisplayName = "HandleAsync does not invalidate the cache when tournament does not exist")]
     public async Task HandleAsync_ShouldNotInvalidateCache_WhenTournamentDoesNotExist()
     {

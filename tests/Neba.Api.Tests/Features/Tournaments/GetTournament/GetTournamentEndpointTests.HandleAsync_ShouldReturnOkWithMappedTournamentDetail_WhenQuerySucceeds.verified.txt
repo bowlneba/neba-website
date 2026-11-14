@@ -53,5 +53,6 @@
   ],
   Winners: [
     Kathy Cassin
-  ]
+  ],
+  TeamSize: 1
 }

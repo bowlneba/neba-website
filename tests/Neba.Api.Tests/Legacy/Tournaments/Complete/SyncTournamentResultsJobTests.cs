@@ -301,6 +301,37 @@ public sealed class SyncTournamentResultsJobTests(AppDbContextFixture fixture, L
         pointsValueAfterSync.ShouldBe("fresh-value");
     }
 
+    [Fact(DisplayName = "SyncAsync should evict the cached reads of the next tournament, which show these winners as defenders")]
+    public async Task SyncAsync_ShouldEvictSuccessorCache_AfterSaving()
+    {
+        // Arrange
+        var ct = TestContext.Current.CancellationToken;
+        var tournament = await CreateTournamentAsync(42, TournamentType.Singles, complete: true, ct);
+        await CreateBowlerAsync(100, ct);
+
+        var successor = TournamentFactory.Create(
+            tournamentType: TournamentType.Singles,
+            startDate: tournament.EndDate.AddYears(1),
+            endDate: tournament.EndDate.AddYears(1),
+            seasonId: tournament.SeasonId,
+            previousTournament: PreviousTournamentFactsFactory.Create(tournament.Id, TournamentType.Singles, tournament.EndDate));
+        await _dbContext.Tournaments.AddAsync(successor, ct);
+        await _dbContext.SaveChangesAsync(ct);
+        _dbContext.ChangeTracker.Clear();
+
+        var placedStatsId = await InsertStatsAsync(100, 42);
+        await InsertResultsStatsAsync(placedStatsId, place: 1, payout: 500m, points: 100);
+
+        var cache = _serviceProvider.GetRequiredService<IFusionCache>();
+        await cache.GetOrSetAsync("successor-detail", _ => Task.FromResult("stale-cached-value"), tags: [$"neba:tournaments:{successor.Id}"], token: ct);
+
+        // Act
+        await CreateJob().SyncAsync(42, ct);
+
+        // Assert
+        (await cache.GetOrSetAsync("successor-detail", _ => Task.FromResult("fresh-value"), token: ct)).ShouldBe("fresh-value");
+    }
+
     [Theory(DisplayName = "SyncAsync should evict the season stats cache tag only when the tournament is stats eligible")]
     [InlineData(true, "fresh-value")]
     [InlineData(false, "stale-cached-value")]

@@ -114,6 +114,33 @@ internal static class TournamentErrors
             description: "The specified bowling center was not found.",
             metadata: new Dictionary<string, object> { { "CertificationNumber", id.Value } });
 
+    public static Error PreviousTournamentNotAllowed(TournamentType type)
+        => Error.Validation(
+            code: "Tournament.PreviousTournament.NotAllowed",
+            description: $"A {type.Name} tournament cannot have a previous tournament.");
+
+    public static Error PreviousTournamentIsSelf
+        => Error.Validation(
+            code: "Tournament.PreviousTournament.IsSelf",
+            description: "A tournament cannot be its own previous tournament.");
+
+    public static Error PreviousTournamentTypeMismatch(TournamentType previous, TournamentType current)
+        => Error.Validation(
+            code: "Tournament.PreviousTournament.TypeMismatch",
+            description: $"The previous tournament is a {previous.Name} tournament; it must be a {current.Name} tournament.");
+
+    public static Error PreviousTournamentNotBefore(DateOnly previousEnd, DateOnly start)
+        => Error.Validation(
+            code: "Tournament.PreviousTournament.NotBefore",
+            description: $"The previous tournament ends on {previousEnd.ToString(DateFormat, CultureInfo.InvariantCulture)}; it must end before this tournament starts on {start.ToString(DateFormat, CultureInfo.InvariantCulture)}.");
+
+    // Conflict, like BowlingCenterNotFound and OilPatternNotFound: a missing referenced id is state, not a bad shape.
+    public static Error PreviousTournamentNotFound(TournamentId id)
+        => Error.Conflict(
+            code: "Tournament.PreviousTournament.NotFound",
+            description: "The previous tournament was not found.",
+            metadata: new Dictionary<string, object> { { "PreviousTournamentId", id.ToString() } });
+
     public static Error SponsorNotFound(SponsorId sponsorId)
         => Error.Conflict(
             code: "Tournament.SponsorNotFound",

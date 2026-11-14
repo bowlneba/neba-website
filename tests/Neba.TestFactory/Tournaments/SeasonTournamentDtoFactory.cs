@@ -1,5 +1,6 @@
 using Neba.Api.Features.Bowlers.Domain;
 using Neba.Api.Features.Seasons.Domain;
+using Neba.Api.Features.Tournaments;
 using Neba.Api.Features.Tournaments.Domain;
 using Neba.Api.Features.Tournaments.ListTournamentsInSeason;
 using Neba.TestFactory.Bowlers;
@@ -31,7 +32,9 @@ public static class SeasonTournamentDtoFactory
         PatternRatioCategory? patternRatioCategory = null,
         IReadOnlyCollection<SeasonTournamentOilPatternDto>? oilPatterns = null,
         Uri? logoUrl = null,
-        IReadOnlyCollection<Name>? winners = null)
+        IReadOnlyCollection<Name>? winners = null,
+        int? teamSize = null,
+        IReadOnlyCollection<DefendingTeamDto>? defendingChampions = null)
             => new()
             {
                 Id = id ?? TournamentId.New(),
@@ -55,7 +58,9 @@ public static class SeasonTournamentDtoFactory
                 PatternRatioCategory = patternRatioCategory?.Name,
                 OilPatterns = oilPatterns ?? [],
                 LogoUrl = logoUrl,
-                Winners = winners ?? []
+                Winners = winners ?? [],
+                TeamSize = teamSize ?? 1,
+                DefendingChampions = defendingChampions ?? []
             };
 
     public static IReadOnlyCollection<SeasonTournamentDto> Bogus(int count, int? seed = null)

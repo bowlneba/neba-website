@@ -37,7 +37,8 @@ public static class TournamentFactory
         DateTimeOffset? oilPatternAnnouncedAtUtc = null,
         decimal? nebaAddedMoney = null,
         TournamentStatus? status = null,
-        int? entryCountForTitleEligibility = null)
+        int? entryCountForTitleEligibility = null,
+        PreviousTournamentFacts? previousTournament = null)
     {
         var result = Tournament.Create(
             name: name ?? ValidName,
@@ -54,6 +55,7 @@ public static class TournamentFactory
             patternRatioCategory: patternRatioCategory,
             oilPatternRevealDateTime: oilPatternRevealDateTime,
             nebaAddedMoney: nebaAddedMoney ?? 0m,
+            previousTournament: previousTournament,
             id: id,
             legacyId: legacyId);
 

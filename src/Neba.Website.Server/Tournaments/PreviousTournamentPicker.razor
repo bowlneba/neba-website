@@ -1,0 +1,188 @@
+@using System.Globalization
+@using Neba.Website.Server.Tournaments.Schedule
+@inject ITournamentApiService TournamentApiService
+@implements IDisposable
+
+@if (_visible)
+{
+    <div>
+        <label for="@Id" class="block text-sm font-medium text-[var(--neba-gray-700)] mb-1">Previous tournament</label>
+        <select id="@Id" class="neba-select" aria-describedby="@(Id + "-help")" @onchange="HandleChangedAsync">
+            <option value="" selected="@(Value is null)">None</option>
+            @if (Value is not null && _candidates.All(candidate => candidate.Id != Value))
+            {
+                @* A saved choice outside the three-season window stays selected until the user changes it. *@
+                <option value="@Value" selected>Saved selection</option>
+            }
+            @foreach (var candidate in _candidates)
+            {
+                <option value="@candidate.Id" selected="@(candidate.Id == Value)">@LabelFor(candidate)</option>
+            }
+        </select>
+        <p id="@(Id + "-help")" class="text-sm text-[var(--neba-gray-500)] mt-1">
+            Last year's tournament in this format. Its winners show as the defending champions and can bowl
+            together as a team. Leave empty if there is none.
+        </p>
+        @if (_loadFailed)
+        {
+            <p class="text-sm text-red-600 mt-1" role="alert">We couldn't load earlier tournaments. Reload the page to try again.</p>
+        }
+        @if (_notice is not null)
+        {
+            <p class="text-sm mt-1" role="status">@_notice</p>
+        }
+    </div>
+}
+
+@code {
+    private const string NonChampionsType = "Non-Champions";
+    private const int SeasonsToSearch = 3;
+
+    private IReadOnlyList<SeasonViewModel>? _seasons;
+    private readonly Dictionary<string, List<SeasonTournamentViewModel>> _bySeason = [];
+    private List<SeasonTournamentViewModel> _candidates = [];
+    private bool _visible;
+    private bool _loadFailed;
+    private string? _notice;
+    private string? _lastType;
+    private DateOnly? _lastStart;
+    private bool _initialized;
+    private readonly CancellationTokenSource _disposed = new();
+
+    [Parameter, EditorRequired]
+    public string Id { get; set; } = default!;
+
+    [Parameter]
+    public string? Value { get; set; }
+
+    [Parameter]
+    public EventCallback<string?> ValueChanged { get; set; }
+
+    [Parameter, EditorRequired]
+    public string TournamentType { get; set; } = default!;
+
+    [Parameter]
+    public DateOnly? StartDate { get; set; }
+
+    /// <summary>Id of the tournament being edited, so it is never offered as its own previous tournament.</summary>
+    [Parameter]
+    public string? SelfId { get; set; }
+
+    protected override async Task OnParametersSetAsync()
+    {
+        _visible = TournamentType != NonChampionsType;
+        var changed = _initialized && (_lastType != TournamentType || _lastStart != StartDate);
+        var typeChanged = _lastType != TournamentType;
+        _lastType = TournamentType;
+        _lastStart = StartDate;
+        _initialized = true;
+
+        if (!_visible)
+        {
+            _notice = null;
+
+            if (Value is not null)
+            {
+                await ValueChanged.InvokeAsync(null);
+            }
+
+            return;
+        }
+
+        await LoadCandidatesAsync();
+
+        // Only a change the user just made clears the saved value; opening the form never does.
+        if (changed && !_loadFailed && Value is not null && _candidates.All(candidate => candidate.Id != Value))
+        {
+            _notice = typeChanged
+                ? "The previous tournament was cleared. It has to be the same format as this tournament."
+                : "The previous tournament was cleared. It has to end before this tournament starts.";
+            await ValueChanged.InvokeAsync(null);
+        }
+    }
+
+    // Candidates: same type, ended before this one starts, from the three seasons before the start date.
+    private async Task LoadCandidatesAsync()
+    {
+        _loadFailed = false;
+
+        if (StartDate is not { } start)
+        {
+            _candidates = [];
+            return;
+        }
+
+        if (_seasons is null)
+        {
+            var seasons = await TournamentApiService.GetSeasonsAsync(_disposed.Token);
+
+            if (seasons.IsError)
+            {
+                _loadFailed = true;
+                _candidates = [];
+                return;
+            }
+
+            _seasons = seasons.Value;
+        }
+
+        var prior = _seasons
+            .Where(season => season.EndDate < start)
+            .OrderByDescending(season => season.EndDate)
+            .Take(SeasonsToSearch)
+            .ToList();
+
+        var missing = prior.Where(season => !_bySeason.ContainsKey(season.Id)).ToList();
+
+        // The season lists are independent, so fetch them together. Keep each success, so a retry
+        // fetches only the seasons that failed.
+        var fetches = missing.Select(async season => (Season: season, Result: await TournamentApiService.GetTournamentsForSeasonAsync(season, _disposed.Token)));
+
+        foreach (var (season, result) in await Task.WhenAll(fetches))
+        {
+            if (result.IsError)
+            {
+                _loadFailed = true;
+            }
+            else
+            {
+                _bySeason[season.Id] = result.Value;
+            }
+        }
+
+        if (_loadFailed)
+        {
+            _candidates = [];
+            return;
+        }
+
+        // A cancelled tournament has no winners, so it never defends anything.
+        _candidates =
+        [
+            .. prior.SelectMany(season => _bySeason[season.Id])
+                .Where(tournament => tournament.TournamentType == TournamentType
+                    && tournament.EndDate < start
+                    && tournament.Id != SelfId
+                    && !tournament.IsCancelled)
+                .OrderByDescending(tournament => tournament.StartDate)
+        ];
+    }
+
+    private Task HandleChangedAsync(ChangeEventArgs e)
+    {
+        _notice = null;
+        var id = e.Value?.ToString();
+
+        return ValueChanged.InvokeAsync(string.IsNullOrEmpty(id) ? null : id);
+    }
+
+    // "Joe's Pizza Open (02/2026)": the month and year of the start date tell two years of one event apart.
+    private static string LabelFor(SeasonTournamentViewModel tournament)
+        => tournament.Name + " (" + tournament.StartDate.ToString("MM/yyyy", CultureInfo.InvariantCulture) + ")";
+
+    public void Dispose()
+    {
+        _disposed.Cancel();
+        _disposed.Dispose();
+    }
+}

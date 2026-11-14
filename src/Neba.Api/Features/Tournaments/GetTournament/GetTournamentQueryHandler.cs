@@ -15,7 +15,8 @@ namespace Neba.Api.Features.Tournaments.GetTournament;
 internal sealed class GetTournamentQueryHandler(
     AppDbContext appDbContext,
     IFileStorageService fileStorageService,
-    TimeProvider timeProvider)
+    TimeProvider timeProvider,
+    DefendingTeamsReader defendingTeamsReader)
     : IQueryHandler<GetTournamentQuery, ErrorOr<TournamentDetailDto>>
 {
     private readonly IQueryable<Tournament> _tournaments
@@ -80,6 +81,7 @@ internal sealed class GetTournamentQueryHandler(
                     ? null
                     : tournament.PatternRatioCategory.Name,
                 tournament.OilPatternRevealDateTime,
+                tournament.PreviousTournamentId,
                 tournament.EntryFee,
                 RegistrationUrl = tournament.ExternalRegistrationUrl,
                 TournamentLogoContainer = tournament.Logo != null
@@ -182,6 +184,8 @@ internal sealed class GetTournamentQueryHandler(
             .Distinct()
             .CountAsync(cancellationToken);
 
+        var defendingByTournament = await defendingTeamsReader.LoadAsync([query.Id], cancellationToken);
+
         var teamSize = TournamentType.FromValue(row.TournamentTypeValue).TeamSize;
         var recordedEntryCount = recordedEntryPairCount > 0
             ? recordedEntryPairCount / teamSize
@@ -237,6 +241,7 @@ internal sealed class GetTournamentQueryHandler(
             PatternLengthCategory = row.PatternLengthCategory,
             PatternRatioCategory = row.PatternRatioCategory,
             OilPatternRevealDateTime = query.CallerIsAuthenticated ? row.OilPatternRevealDateTime : null,
+            PreviousTournamentId = row.PreviousTournamentId,
             OilPatterns = revealed
                 ? row.OilPatterns.ConvertAll(pattern => new TournamentDetailOilPatternDto
                 {
@@ -258,6 +263,8 @@ internal sealed class GetTournamentQueryHandler(
             LogoContentType = query.CallerHasTournamentManagementPermission ? row.TournamentLogoContentType : null,
             LogoSizeInBytes = query.CallerHasTournamentManagementPermission ? row.TournamentLogoSizeInBytes : null,
             Winners = winners,
+            TeamSize = teamSize,
+            DefendingChampions = [.. defendingByTournament.GetValueOrDefault(query.Id, []).Select(team => team.ToDto())],
             Results = results,
             EntryCount = entryCount,
             Articles = row.Articles,

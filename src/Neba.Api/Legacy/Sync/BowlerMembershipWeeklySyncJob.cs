@@ -363,7 +363,8 @@ internal sealed class BowlerMembershipWeeklySyncJob(
                     LastName,
                     Suffix,
                     Gender,
-                    DateOfBirth
+                    DateOfBirth,
+                    UsbcId
                 FROM
                     Bowlers
                 WHERE

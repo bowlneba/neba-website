@@ -92,6 +92,7 @@ internal sealed class GetTournamentEndpoint(
             PatternLengthCategory = dto.PatternLengthCategory,
             PatternRatioCategory = dto.PatternRatioCategory,
             OilPatternRevealDateTime = dto.OilPatternRevealDateTime,
+            PreviousTournamentId = dto.PreviousTournamentId?.ToString(),
             LogoUrl = dto.LogoUrl,
             LogoContainer = dto.LogoContainer,
             LogoPath = dto.LogoPath,
@@ -127,6 +128,8 @@ internal sealed class GetTournamentEndpoint(
                 KegelId = op.KegelId,
             })],
             Winners = [.. dto.Winners.Select(w => w.ToDisplayName())],
+            TeamSize = dto.TeamSize,
+            DefendingChampions = [.. dto.DefendingChampions.Select(team => team.ToResponse())],
             Results = [.. dto.Results.Select(r => new TournamentResultResponse
             {
                 BowlerName = r.BowlerName.ToDisplayName(),

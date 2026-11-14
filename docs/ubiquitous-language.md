@@ -653,6 +653,8 @@ A Bowler record may represent a fully registered active participant or a histori
 | `WebsiteId` | `int?` | Legacy ID from the old NEBA website database. Retained for data migration traceability only. Not exposed in search or UI |
 | `LegacyId` | `int?` | Legacy ID from the organization management software. Retained for data migration traceability only. Not exposed in search or UI |
 
+| `UsbcId` | `string?` | The bowler's USBC membership ID. Null until known. Shown beside the name in the public bowler search so bowlers with the same name can be told apart. Not the same as a bowling center's [Certification Number](#certification-number) |
+
 **Primary lookup pattern**: Search by name → select from result list → navigate by `Id`.
 
 **In Code**:
@@ -924,6 +926,56 @@ Titles are the authoritative source for:
 
 - Property: `Bowler.Titles` (`IReadOnlyCollection<Tournament>` — EF Core navigation for projection; domain identity is `TournamentId`)
 - Read-only on `Bowler` — no domain operations
+
+---
+
+### Previous Tournament
+
+**Definition**: The tournament one tournament follows in the prior year, set by staff on the tournament form. The winners of the previous tournament are the new tournament's **Defending Champions**.
+
+**Rules**:
+
+- A previous tournament must be a different tournament of the same Tournament Type that ends before this one starts
+- A Non-Champions tournament cannot have one
+- The link is optional; with none, the tournament has no defending champions
+- If the previous tournament is deleted, the link is cleared
+
+**In Code**:
+
+- Property: `Tournament.PreviousTournamentId` (`TournamentId?`; no navigation property)
+- Validation: `Tournament.Create`/`Tournament.Update` take `PreviousTournamentFacts` (id, type, end date), loaded by the handler
+
+---
+
+### Defending Champions
+
+**Definition**: The bowlers who won a tournament's Previous Tournament. Bowled together again as the same team, they are exempt from the champion limits in Rules 401 to 403 (Rule 401f lets an over/under team defend if one bowler became an over).
+
+Each defending **team** is listed with the tournament it won. When the previous tournament was **Truncated**, the winners of that tournament and the winners of the tournament before it may each bowl together as a defending team. The earlier winners are marked **Undefended**: they never got to defend because a later tournament was truncated. The chain continues while each tournament reached is also truncated. A winner is a first-place result whether or not the tournament was Title Eligible.
+
+Shown on the tournament list and detail pages for scheduled tournaments only; once a tournament finishes, its winners show instead.
+
+**In Code**:
+
+- `DefendingTeamsReader` / `DefendingTeam` (`Neba.Api.Features.Tournaments`), returned as `DefendingChampions` on the season list and tournament detail
+
+---
+
+### Team Eligibility
+
+**Definition**: Whether a team of bowlers may enter a team tournament (Doubles, Over/Under Doubles, Trios, Baker) under Rules 401 to 403. The rules run at the tournament's start date and end date, in a fixed order, stopping at the first group that fails:
+
+1. **Defending champions** — a team equal to a defending team is eligible and no other rule runs
+2. **Champion and Hall of Fame limits** — doubles: at most one champion; trios: at least one non-champion and at most one multi-time champion; baker: at least one non-champion, at most two multi-time champions and at most one Hall of Fame member for Superior Performance
+3. **Age** (Over/Under only) — one bowler over the age limit (50) and one under, using date of birth
+
+A **champion** is a bowler with a NEBA title inside the window before the date checked: 10 years for regular doubles (5 for a bowler who has reached their 60th birthday; a bowler with no date of birth gets 10), 5 years for everything else. Titles won in tournaments that overlap the tournament's dates do not count.
+
+The two dates combine to **Eligible**, **Ineligible**, or **Depends on date** (eligible at one date and not the other, only from the age rule). PBA and PWBA titles are not checked, and the answer says so. A team member not in the system counts as a non-champion with no date of birth, so an over/under team with one is ineligible. Date of birth never leaves the API.
+
+**In Code**:
+
+- `TeamEligibilityEvaluator` (`Neba.Api.Features.Tournaments.Domain`), `GET /tournaments/{id}/team-eligibility`
 
 ---
 

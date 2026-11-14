@@ -1,5 +1,6 @@
 using Neba.Api.Contracts.Seasons.ListTournamentsInSeason;
 using Neba.Api.Contracts.Tournaments.AddTournamentSponsor;
+using Neba.Api.Contracts.Tournaments.CheckTeamEligibility;
 using Neba.Api.Contracts.Tournaments.CreateTournament;
 using Neba.Api.Contracts.Tournaments.EditTournament;
 using Neba.Api.Contracts.Tournaments.EditTournamentLogo;
@@ -23,6 +24,20 @@ public interface ITournamentsApi
     [Get("/tournaments/{tournamentId}")]
     Task<IApiResponse<TournamentDetailResponse>> GetTournamentAsync(
         string tournamentId,
+        CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Checks whether a team of bowlers may enter a tournament under Rules 401 to 403.
+    /// </summary>
+    /// <param name="tournamentId">The tournament the team wants to enter.</param>
+    /// <param name="bowlerIds">The IDs of the bowlers found in the system.</param>
+    /// <param name="unknownBowlerCount">How many team members were not found in the system.</param>
+    /// <param name="cancellationToken">A token to cancel the operation.</param>
+    [Get("/tournaments/{tournamentId}/team-eligibility")]
+    Task<IApiResponse<TeamEligibilityResponse>> CheckTeamEligibilityAsync(
+        string tournamentId,
+        [Query(CollectionFormat.Multi)] IEnumerable<string> bowlerIds,
+        int unknownBowlerCount,
         CancellationToken cancellationToken = default);
 
     /// <summary>

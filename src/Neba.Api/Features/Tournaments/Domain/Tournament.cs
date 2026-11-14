@@ -123,6 +123,11 @@ public sealed class Tournament
     /// </summary>
     public StoredFile? Logo { get; private set; }
 
+    /// <summary>
+    /// Gets the tournament this one follows in the prior year, if any; its winners are this one's defending champions.
+    /// </summary>
+    public TournamentId? PreviousTournamentId { get; private set; }
+
     private readonly List<TournamentSponsor> _sponsors = [];
 
     /// <summary>
@@ -276,6 +281,7 @@ public sealed class Tournament
         PatternRatioCategory? patternRatioCategory = null,
         DateTimeOffset? oilPatternRevealDateTime = null,
         decimal nebaAddedMoney = 0,
+        PreviousTournamentFacts? previousTournament = null,
         TournamentId? id = null,
         int? legacyId = null)
     {
@@ -299,6 +305,12 @@ public sealed class Tournament
             return TournamentErrors.InvalidNebaAddedMoney(nebaAddedMoney);
         }
 
+        var previousError = ValidatePreviousTournament(null, tournamentType, startDate, previousTournament);
+        if (previousError is { } error)
+        {
+            return error;
+        }
+
         var tournament = new Tournament
         {
             Id = id ?? TournamentId.New(),
@@ -316,6 +328,7 @@ public sealed class Tournament
             PatternLengthCategory = patternLengthCategory,
             PatternRatioCategory = patternRatioCategory,
             OilPatternRevealDateTime = TruncateToMicroseconds(oilPatternRevealDateTime),
+            PreviousTournamentId = previousTournament?.Id,
             LegacyId = legacyId
         };
 
@@ -339,7 +352,8 @@ public sealed class Tournament
         StoredFile? logo,
         PatternLengthCategory? patternLengthCategory,
         PatternRatioCategory? patternRatioCategory,
-        DateTimeOffset? oilPatternRevealDateTime)
+        DateTimeOffset? oilPatternRevealDateTime,
+        PreviousTournamentFacts? previousTournament)
     {
         if (string.IsNullOrWhiteSpace(name))
         {
@@ -361,6 +375,12 @@ public sealed class Tournament
             return TournamentErrors.InvalidNebaAddedMoney(nebaAddedMoney);
         }
 
+        var previousError = ValidatePreviousTournament(Id, tournamentType, startDate, previousTournament);
+        if (previousError is { } error)
+        {
+            return error;
+        }
+
         Name = name;
         TournamentType = tournamentType;
         StartDate = startDate;
@@ -375,8 +395,42 @@ public sealed class Tournament
         PatternLengthCategory = patternLengthCategory;
         PatternRatioCategory = patternRatioCategory;
         OilPatternRevealDateTime = TruncateToMicroseconds(oilPatternRevealDateTime);
+        PreviousTournamentId = previousTournament?.Id;
 
         return Result.Updated;
+    }
+
+    // A Non-Champions tournament has no defending champions. Otherwise the previous tournament must be a different
+    // tournament of the same type that ends before this one starts.
+    private static Error? ValidatePreviousTournament(
+        TournamentId? selfId,
+        TournamentType tournamentType,
+        DateOnly startDate,
+        PreviousTournamentFacts? previous)
+    {
+        if (previous is not { } facts)
+        {
+            return null;
+        }
+
+        if (tournamentType == TournamentType.NonChampions)
+        {
+            return TournamentErrors.PreviousTournamentNotAllowed(tournamentType);
+        }
+
+        if (selfId is { } id && facts.Id == id)
+        {
+            return TournamentErrors.PreviousTournamentIsSelf;
+        }
+
+        if (facts.TournamentType != tournamentType)
+        {
+            return TournamentErrors.PreviousTournamentTypeMismatch(facts.TournamentType, tournamentType);
+        }
+
+        return facts.EndDate >= startDate
+            ? TournamentErrors.PreviousTournamentNotBefore(facts.EndDate, startDate)
+            : null;
     }
 
     /// <summary>

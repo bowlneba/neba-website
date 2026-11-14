@@ -93,6 +93,7 @@ public sealed class TournamentOilPatternConfigurationTests
                 tournament.Ignore(x => x.BowlingCenterId);
                 tournament.Ignore(x => x.Season);
                 tournament.Ignore(x => x.SeasonId);
+                tournament.Ignore(x => x.PreviousTournamentId);
                 tournament.Ignore(x => x.Sponsors);
                 tournament.Ignore(x => x.Squads);
                 tournament.Ignore(x => x.Articles);

@@ -40,7 +40,8 @@ internal sealed class BowlerWeeklySyncJob(
                 LastName,
                 Suffix,
                 Gender,
-                DateOfBirth
+                DateOfBirth,
+                UsbcId
             FROM
                 Bowlers
             WHERE
@@ -176,6 +177,7 @@ internal sealed class BowlerWeeklySyncJob(
 
         var gender = LegacyBowlerMapping.MapGender(row.Gender);
         var dateOfBirth = LegacyBowlerMapping.MapDateOfBirth(row.DateOfBirth);
+        var usbcId = LegacyBowlerMapping.MapUsbcId(row.UsbcId);
         var suffix = LegacyBowlerMapping.MapSuffix(row.Suffix);
         if (suffix is null && !string.IsNullOrWhiteSpace(row.Suffix))
         {
@@ -197,25 +199,13 @@ internal sealed class BowlerWeeklySyncJob(
 
         // Most of the window already matches (the per-action call usually landed). Skipping those
         // avoids a no-op write and audit event per row.
-        if (existing.Name == name.Value && existing.Gender == gender && existing.DateOfBirth == dateOfBirth)
+        if (existing.Name == name.Value && existing.Gender == gender && existing.DateOfBirth == dateOfBirth
+            && existing.UsbcId == usbcId)
         {
             return Outcome.Unchanged;
         }
 
-        var result = existing.ApplyLegacyUpdate(
-            firstName,
-            row.LastName,
-            middleName: row.MiddleInitial,
-            suffix: suffix,
-            nickname: nickname,
-            gender: gender,
-            dateOfBirth: dateOfBirth);
-
-        if (result.IsError)
-        {
-            logger.LogLegacyBowlerWeeklySyncFailed(row.Id, string.Join("; ", result.Errors.Select(error => error.Description)));
-            return Outcome.Failed;
-        }
+        existing.ApplyLegacyUpdate(name.Value, gender, dateOfBirth, usbcId);
 
         // Same owned-Name audit workaround as UpdateBowlerSyncJob: force Bowler's own entry to
         // Modified so the audit event carries the bowler's ids, not just the owned Name entry.

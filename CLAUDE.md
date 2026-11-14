@@ -138,6 +138,7 @@ Detailed write-ups live in `docs/learnings/`. Read the matching file before work
 - Never mutate process-wide static state in an integration test (`UseFastEndpoints()` needs `UsePropertyNamingPolicy = false`; reset Hangfire statics in `DisposeAsync`; stop, never dispose, a `WebApplication`).
 - Polling helpers must pick the latest event and tolerate a torn read on a live collection.
 - Assert log content with `FakeLogger<T>`; assert redaction through a DI container with `EnableRedaction()`.
+- E2E failure tests use a 4xx (a 5xx retries past the expect timeout), and `MOCK_UPCOMING_TOURNAMENTS` stays empty (`docs/learnings/testing.md`).
 - FastEndpoints mutation testing has unkillable mutants; see the file for `ignore-methods` and Stryker disable comments.
 
 ### Backend — `docs/learnings/backend.md`
@@ -148,6 +149,7 @@ Detailed write-ups live in `docs/learnings/`. Read the matching file before work
 - Never initialize an EF collection navigation with `= []` on an `IReadOnlyCollection<T>` auto-property (it becomes a fixed-size array); use a `List<T>` backing field. Suppress IDE0305 and IDE0028 where you must use `new List<T>()`, and add an `ICollection<T>.Add` regression test.
 - `[LogProperties]` tags are `<param>.<Property>` and skip the formatted message; log enrichers also need `Logging.EnableEnrichment()`; resource monitoring is Linux/Windows only (`docs/learnings/backend.md`).
 - Emails: inline styles, `<table>` layout, hosted logo URL, `WebUtility.HtmlEncode` on user values.
+- A class a use case needs from another feature (a reader, a mapper) goes in the using feature's namespace: `FeatureBoundaryTests` treats a feature's root namespace as use-case code. Pass an explicit escape character to `EF.Functions.ILike` (`docs/learnings/backend.md`).
 - ImageSharp needs a license in Release builds: local `sixlabors.lic` in the repo root (git-ignored, never commit), CI `SIXLABORS_LICENSE_KEY` secret. Resize uploads through `IImageResizer`.
 
 ### Hangfire PostgreSql — `docs/learnings/hangfire-postgres.md`

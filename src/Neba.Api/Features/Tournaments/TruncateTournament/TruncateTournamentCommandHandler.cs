@@ -35,6 +35,9 @@ internal sealed class TruncateTournamentCommandHandler(AppDbContext appDbContext
         await cache.RemoveByTagAsync($"neba:tournaments:{tournament.Id}", token: cancellationToken);
         await cache.RemoveByTagAsync($"neba:tournaments:{tournament.SeasonId}", token: cancellationToken);
 
+        // A truncated tournament passes its own previous winners on to the next tournament's defending teams.
+        await TournamentSuccessorCacheEviction.EvictAsync(appDbContext, cache, tournament.Id, cancellationToken);
+
         // A truncated tournament counts toward the season's stat minimums, so cached season stats are stale.
         await cache.RemoveByTagAsync(CacheDescriptors.Stats.SeasonTag(tournament.SeasonId), token: cancellationToken);
 

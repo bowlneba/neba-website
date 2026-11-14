@@ -33,7 +33,7 @@
         <ul id="@_listboxId" class="neba-autocomplete-panel" role="listbox">
             @if (_filteredItems.Count == 0)
             {
-                <li class="neba-autocomplete-empty">@NoResultsText</li>
+                <li class="neba-autocomplete-empty">@NoResultsText@NoResultsContent</li>
             }
             else
             {
@@ -102,6 +102,17 @@
     [Parameter]
     public EventCallback<string> FilterTextChanged { get; set; }
 
+    /// <summary>
+    /// True when <see cref="Items"/> is already filtered by the caller (a server search). The component then
+    /// shows the items as given instead of filtering them by the typed text.
+    /// </summary>
+    [Parameter]
+    public bool ItemsAreFiltered { get; set; }
+
+    /// <summary>Extra content after <see cref="NoResultsText"/> when nothing matches, such as an action link.</summary>
+    [Parameter]
+    public RenderFragment? NoResultsContent { get; set; }
+
     private bool HasValue => !EqualityComparer<TValue>.Default.Equals(Value, default);
 
     private string SelectedDisplayText
@@ -121,6 +132,16 @@
     protected override void OnInitialized()
     {
         _listboxId = _containerId + "-listbox";
+    }
+
+    protected override void OnParametersSet()
+    {
+        // A server search replaces Items while the list is open; show the new items right away.
+        if (ItemsAreFiltered && _isOpen)
+        {
+            _filteredItems = Items.ToList();
+            _highlightedIndex = Math.Min(_highlightedIndex, Math.Max(_filteredItems.Count - 1, 0));
+        }
     }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
@@ -163,7 +184,7 @@
 
     private void UpdateFilteredItems()
     {
-        _filteredItems = string.IsNullOrWhiteSpace(_filterText)
+        _filteredItems = ItemsAreFiltered || string.IsNullOrWhiteSpace(_filterText)
             ? Items.ToList()
             : Items.Where(item => GetDisplayText(item).Contains(_filterText, StringComparison.OrdinalIgnoreCase)).ToList();
 

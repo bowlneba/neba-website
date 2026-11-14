@@ -68,5 +68,13 @@ internal sealed class BowlerConfiguration
         builder.Property(bowler => bowler.DateOfBirth)
             .IsRequired(false);
 
+        builder.Property(bowler => bowler.UsbcId)
+            .HasMaxLength(20)
+            .IsRequired(false);
+
+        // Unique when present; null and blank IDs may repeat.
+        builder.HasIndex(bowler => bowler.UsbcId)
+            .IsUnique()
+            .HasFilter("usbc_id IS NOT NULL AND usbc_id <> ''");
     }
 }

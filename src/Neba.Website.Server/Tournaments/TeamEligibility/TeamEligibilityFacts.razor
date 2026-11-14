@@ -1,0 +1,134 @@
+@if (Members.Count > 0)
+{
+    <div class="facts">
+        <h3 class="facts__title">What we checked</h3>
+        @if (Summary.Length > 0)
+        {
+            <p class="facts__summary">@Summary</p>
+        }
+
+        <ul class="facts__rows">
+            @foreach (var member in Members)
+            {
+                <li class="facts__row">
+                    <div class="facts__top">
+                        <div class="facts__name">
+                            @(member.NotInSystem ? "Not in our system" : member.Name)
+                            @if (!member.NotInSystem)
+                            {
+                                <small>@Subtitle(member)</small>
+                            }
+                        </div>
+                        <span class="facts__pill facts__pill--@PillClass(member)">@CountsAs(member)</span>
+                    </div>
+
+                    <div class="facts__cards">
+                        @if (member.NotInSystem)
+                        {
+                            <span class="facts__card">
+                                <span class="facts__k">Not in our system</span>
+                                <span class="facts__v facts__v--muted">No titles, no age, no Hall of Fame record</span>
+                            </span>
+                        }
+                        else
+                        {
+                            <span class="facts__card @(member.TitlesBreakRule ? "facts__card--hit" : "")">
+                                <span class="facts__k">NEBA titles, last 5 years</span>
+                                <span class="facts__v">@member.TitlesLast5Years</span>
+                            </span>
+                            @if (member.TitlesLast10Years is { } tenYears)
+                            {
+                                <span class="facts__card @(member.TitlesBreakRule ? "facts__card--hit" : "")">
+                                    <span class="facts__k">NEBA titles, last 10 years</span>
+                                    <span class="facts__v">@tenYears</span>
+                                </span>
+                            }
+                            @if (member.AgeVerified is { } ageVerified)
+                            {
+                                <span class="facts__card @(member.AgeBreaksRule ? "facts__card--hit" : "")">
+                                    <span class="facts__k">Age we can check</span>
+                                    <span class="facts__v">@(ageVerified ? "Yes" : "No")</span>
+                                </span>
+                            }
+                            @if (member.HallOfFameSuperiorPerformance is { } hallOfFame)
+                            {
+                                <span class="facts__card @(member.HallOfFameBreaksRule ? "facts__card--hit" : "")">
+                                    <span class="facts__k">Hall of Fame, Superior Performance</span>
+                                    <span class="facts__v">@(hallOfFame ? "Member" : "No")</span>
+                                </span>
+                            }
+                        }
+                    </div>
+                </li>
+            }
+        </ul>
+
+        <ul class="facts__checks">
+            @foreach (var check in Checks)
+            {
+                <li class="facts__check @(check.Passed ? "facts__check--pass" : "facts__check--fail")">
+                    <span class="material-symbols-outlined" aria-hidden="true">@(check.Passed ? "check_circle" : "cancel")</span>
+                    <span class="sr-only">@(check.Passed ? "Passed: " : "Failed: ")</span>
+                    <span>@check.Label</span>
+                </li>
+            }
+        </ul>
+    </div>
+}
+
+@code {
+    [Parameter, EditorRequired]
+    public IReadOnlyList<TeamEligibilityMemberViewModel> Members { get; set; } = default!;
+
+    [Parameter]
+    public IReadOnlyList<TeamEligibilityCheckViewModel> Checks { get; set; } = [];
+
+    [Parameter]
+    public string Summary { get; set; } = string.Empty;
+
+    private static string Subtitle(TeamEligibilityMemberViewModel member)
+    {
+        var parts = new List<string>(2);
+
+        if (!string.IsNullOrWhiteSpace(member.UsbcId))
+        {
+            parts.Add("USBC " + member.UsbcId);
+        }
+
+        parts.Add(member.LastTitleYear is { } year
+            ? "Last NEBA title: " + year.ToString(System.Globalization.CultureInfo.InvariantCulture)
+            : "No NEBA titles");
+
+        return string.Join(" · ", parts);
+    }
+
+    private static string CountsAs(TeamEligibilityMemberViewModel member)
+    {
+        if (member.NotInSystem)
+        {
+            return "Counted as a non-champion";
+        }
+
+        return member.CountsAs switch
+        {
+            ChampionStandingKind.OneTimeChampion => "One-time champion",
+            ChampionStandingKind.MultiTimeChampion => "Multi-time champion",
+            _ => "Non-champion"
+        };
+    }
+
+    private static string PillClass(TeamEligibilityMemberViewModel member)
+    {
+        if (member.NotInSystem)
+        {
+            return "unknown";
+        }
+
+        return member.CountsAs switch
+        {
+            ChampionStandingKind.OneTimeChampion => "one",
+            ChampionStandingKind.MultiTimeChampion => "multi",
+            _ => "non"
+        };
+    }
+}

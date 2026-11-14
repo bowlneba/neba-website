@@ -1,4 +1,5 @@
 using Neba.Api.Features.Bowlers.Domain;
+using Neba.Api.Features.Tournaments;
 using Neba.Api.Features.Tournaments.Domain;
 using Neba.Api.Features.Tournaments.GetTournament;
 using Neba.TestFactory.Bowlers;
@@ -34,7 +35,10 @@ public static class TournamentDetailDtoFactory
         IReadOnlyCollection<Name>? winners = null,
         IReadOnlyCollection<TournamentResultDto>? results = null,
         int? entryCount = null,
-        IReadOnlyCollection<TournamentDetailArticleDto>? articles = null)
+        IReadOnlyCollection<TournamentDetailArticleDto>? articles = null,
+        int? teamSize = null,
+        IReadOnlyCollection<DefendingTeamDto>? defendingChampions = null,
+        TournamentId? previousTournamentId = null)
             => new()
             {
                 Id = id ?? TournamentId.New(),
@@ -62,6 +66,9 @@ public static class TournamentDetailDtoFactory
                 Results = results ?? [],
                 EntryCount = entryCount,
                 Articles = articles ?? [],
+                TeamSize = teamSize ?? 1,
+                DefendingChampions = defendingChampions ?? [],
+                PreviousTournamentId = previousTournamentId,
             };
 
     public static IReadOnlyCollection<TournamentDetailDto> Bogus(int count, int? seed = null)

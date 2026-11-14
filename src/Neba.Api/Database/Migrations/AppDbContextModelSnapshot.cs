@@ -126,6 +126,11 @@ namespace Neba.Api.Database.Migrations
                         .HasColumnType("integer")
                         .HasColumnName("legacy_id");
 
+                    b.Property<string>("UsbcId")
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)")
+                        .HasColumnName("usbc_id");
+
                     b.Property<int?>("WebsiteId")
                         .HasColumnType("integer")
                         .HasColumnName("website_id");
@@ -141,6 +146,11 @@ namespace Neba.Api.Database.Migrations
                         .HasDatabaseName("ix_bowlers_legacy_id");
 
                     NpgsqlIndexBuilderExtensions.AreNullsDistinct(b.HasIndex("LegacyId"), true);
+
+                    b.HasIndex("UsbcId")
+                        .IsUnique()
+                        .HasDatabaseName("ix_bowlers_usbc_id")
+                        .HasFilter("usbc_id IS NOT NULL AND usbc_id <> ''");
 
                     b.HasIndex("WebsiteId")
                         .IsUnique()
@@ -1395,6 +1405,12 @@ namespace Neba.Api.Database.Migrations
                         .HasColumnType("integer")
                         .HasColumnName("pattern_ratio_category");
 
+                    b.Property<string>("PreviousTournamentId")
+                        .HasMaxLength(26)
+                        .HasColumnType("character(26)")
+                        .HasColumnName("previous_tournament_id")
+                        .IsFixedLength();
+
                     b.Property<string>("SeasonId")
                         .IsRequired()
                         .HasMaxLength(26)
@@ -1461,6 +1477,9 @@ namespace Neba.Api.Database.Migrations
                         .HasDatabaseName("ix_tournaments_legacy_id");
 
                     NpgsqlIndexBuilderExtensions.AreNullsDistinct(b.HasIndex("LegacyId"), true);
+
+                    b.HasIndex("PreviousTournamentId")
+                        .HasDatabaseName("ix_tournaments_previous_tournament_id");
 
                     b.HasIndex("SeasonId")
                         .HasDatabaseName("ix_tournaments_season_id");
@@ -2211,6 +2230,13 @@ namespace Neba.Api.Database.Migrations
                         .HasPrincipalKey("CertificationNumber")
                         .OnDelete(DeleteBehavior.NoAction)
                         .HasConstraintName("fk_tournaments_bowling_centers_bowling_center_id");
+
+                    b.HasOne("Neba.Api.Features.Tournaments.Domain.Tournament", null)
+                        .WithMany()
+                        .HasForeignKey("PreviousTournamentId")
+                        .HasPrincipalKey("Id")
+                        .OnDelete(DeleteBehavior.SetNull)
+                        .HasConstraintName("fk_tournaments_tournaments_previous_tournament_id");
 
                     b.HasOne("Neba.Api.Features.Seasons.Domain.Season", "Season")
                         .WithMany("Tournaments")

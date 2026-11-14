@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { perProjectTournamentId } from './mock-api/mock-api-server';
+import { MOCK_TOURNAMENT_TEAM_ID, perProjectTournamentId } from './mock-api/mock-api-server';
 
 const MOCK_TOURNAMENT_ID = '01JX0000000000000000000010';
 const MOCK_TOURNAMENT_OIL_REVEAL_PENDING_ID = '01JX0000000000000000000030';
@@ -453,5 +453,38 @@ test.describe('Tournament Detail page - rules link', () => {
     await page.waitForSelector('.td-hero');
 
     await expect(page.getByRole('button', { name: 'Invitational rules' })).toHaveCount(0);
+  });
+});
+
+test.describe('Tournament Detail page — team eligibility and defending champions', () => {
+  test.use({ viewport: { width: 1200, height: 800 } });
+
+  test('a scheduled team tournament links to the team eligibility checker', async ({ page }) => {
+    await page.goto(`/tournaments/${MOCK_TOURNAMENT_TEAM_ID}`);
+    await page.waitForSelector('.td-hero');
+
+    const link = page.locator('.td-help-cards a.td-team-link');
+    await expect(link).toContainText('Check team eligibility');
+    await link.click();
+
+    await expect(page).toHaveURL(new RegExp(`/tournaments/${MOCK_TOURNAMENT_TEAM_ID}/team-eligibility$`));
+  });
+
+  test('a scheduled tournament with a previous tournament shows its defending champions in the hero', async ({ page }) => {
+    await page.goto(`/tournaments/${MOCK_TOURNAMENT_TEAM_ID}`);
+    await page.waitForSelector('.td-hero');
+
+    const panel = page.locator('.td-hero .defending--panel');
+    await expect(panel).toContainText('Defending champions');
+    await expect(panel).toContainText('2098 Season');
+    await expect(panel).toContainText('Dana Defender / Dave Defender');
+  });
+
+  test('a completed tournament shows neither the eligibility link nor defending champions', async ({ page }) => {
+    await page.goto(`/tournaments/${MOCK_TOURNAMENT_ID}`);
+    await page.waitForSelector('.td-hero');
+
+    await expect(page.locator('a.td-team-link')).toHaveCount(0);
+    await expect(page.locator('.defending')).toHaveCount(0);
   });
 });

@@ -1,0 +1,21 @@
+.bowler-not-found {
+    margin-left: 0.25rem;
+    padding: 0;
+    background: none;
+    border: 0;
+    font: inherit;
+    font-size: 0.875rem;
+    color: var(--neba-blue-600);
+    text-decoration: underline;
+    text-underline-offset: 2px;
+    cursor: pointer;
+}
+
+.bowler-not-found:hover {
+    color: var(--neba-blue-brand);
+}
+
+.bowler-not-found:focus-visible {
+    outline: 2px solid var(--neba-blue-600);
+    outline-offset: 2px;
+}
