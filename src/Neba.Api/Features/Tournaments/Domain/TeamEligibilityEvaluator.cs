@@ -33,15 +33,12 @@ internal static class TeamEligibilityEvaluator
         // on either date is ineligible, whatever its age answer is.
         var compositionFailed = atStart.CompositionFailed || atEnd.CompositionFailed;
 
-        if ((!atStart.Eligible && !atEnd.Eligible) || compositionFailed)
-        {
-            return new TeamEligibilityResult(
+        return (!atStart.Eligible && !atEnd.Eligible) || compositionFailed
+            ? new TeamEligibilityResult(
                 TeamEligibilityOutcome.Ineligible,
                 [.. atStart.Reasons.Concat(atEnd.Reasons).DistinctBy(reason => reason.Code)],
-                []);
-        }
-
-        return new TeamEligibilityResult(TeamEligibilityOutcome.DependsOnDate, [], [atStart, atEnd]);
+                [])
+            : new TeamEligibilityResult(TeamEligibilityOutcome.DependsOnDate, [], [atStart, atEnd]);
     }
 
     /// <summary>
@@ -134,17 +131,13 @@ internal static class TeamEligibilityEvaluator
             ];
         }
 
-        if (type == TournamentType.Baker)
-        {
-            return
-            [
+        return type == TournamentType.Baker
+            ? [
                 new(TeamEligibilityReasons.NonChampionsCheck(nonChampions), nonChampions >= 1),
                 new(TeamEligibilityReasons.MultiTimeCheck(multiTime, 2), multiTime <= 2),
                 new(TeamEligibilityReasons.HallOfFameCheck(hallOfFame), hallOfFame <= 1)
-            ];
-        }
-
-        return [];
+            ]
+            : [];
     }
 
     private static bool TitlesBreakRule(TitleRuleFailure failure, TeamMemberExplanation member)
