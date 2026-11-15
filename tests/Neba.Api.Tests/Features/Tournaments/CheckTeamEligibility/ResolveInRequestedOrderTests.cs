@@ -38,10 +38,10 @@ public sealed class ResolveInRequestedOrderTests
         var loaded = new Dictionary<BowlerId, string> { [loadedId] = "loaded" };
 
         // Act
-        var act = () => CheckTeamEligibilityQueryHandler.ResolveInRequestedOrder([loadedId, missingId], loaded);
+        void Act() => CheckTeamEligibilityQueryHandler.ResolveInRequestedOrder([loadedId, missingId], loaded);
 
         // Assert
-        var exception = Should.Throw<InvalidOperationException>(act);
+        var exception = Should.Throw<InvalidOperationException>(Act);
         exception.Message.ShouldContain(missingId.ToString());
         exception.Message.ShouldContain("not-found check must return before the members are built");
     }

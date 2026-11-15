@@ -21,12 +21,7 @@ internal static partial class RulesSectionExtractor
         doc.LoadHtml(html);
 
         var start = ResolveHeading(doc, alias);
-        if (start is null)
-        {
-            return null;
-        }
-
-        return Cut(doc, start, rulesPath, includeStyles: true);
+        return start is null ? null : Cut(doc, start, rulesPath, includeStyles: true);
     }
 
     /// <summary>

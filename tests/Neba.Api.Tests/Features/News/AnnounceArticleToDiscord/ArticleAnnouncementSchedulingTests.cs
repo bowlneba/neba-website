@@ -133,10 +133,10 @@ public sealed class ArticleAnnouncementSchedulingTests
         Article article = null;
 
         // Act
-        var act = () => _schedulerMock.Object.ScheduleAnnouncement(article, Now, Delay);
+        void Act() => _schedulerMock.Object.ScheduleAnnouncement(article, Now, Delay);
 
         // Assert
-        Should.Throw<ArgumentNullException>(act);
+        Should.Throw<ArgumentNullException>(Act);
 #nullable enable
     }
 }
