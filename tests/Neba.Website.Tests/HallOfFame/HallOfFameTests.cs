@@ -604,7 +604,7 @@ public sealed class HallOfFameTests : IDisposable
     public void Click_ShouldOpenProfile_WhenNameClicked()
     {
         // Arrange
-        var induction = HallOfFameInductionResponseFactory.Create(bowlerId: ProfileBowlerId, bowlerName: "Jane Smith", year: 2019);
+        var induction = HallOfFameInductionResponseFactory.Create(bowlerId: ProfileBowlerId, year: 2019, bowlerName: "Jane Smith");
         SetupSuccessResponse([induction]);
         SetupDetailResponse(ProfileBowlerId);
         var cut = _ctx.Render<HallOfFamePage>();
@@ -621,7 +621,7 @@ public sealed class HallOfFameTests : IDisposable
     public void Click_ShouldOpenProfile_WhenPhotoClicked()
     {
         // Arrange
-        var induction = HallOfFameInductionResponseFactory.Create(bowlerId: ProfileBowlerId, bowlerName: "Jane Smith", year: 2019);
+        var induction = HallOfFameInductionResponseFactory.Create(bowlerId: ProfileBowlerId, year: 2019, bowlerName: "Jane Smith");
         SetupSuccessResponse([induction]);
         SetupDetailResponse(ProfileBowlerId);
         var cut = _ctx.Render<HallOfFamePage>();
