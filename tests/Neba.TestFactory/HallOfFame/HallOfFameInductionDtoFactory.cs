@@ -9,12 +9,14 @@ public static class HallOfFameInductionDtoFactory
 {
     public const int ValidYear = 2025;
     public const string ValidId = "01JZ8K3M4N5P6Q7R8S9T0V1W2X";
+    public const string ValidBowlerId = "01JZ8K3M4N5P6Q7R8S9T0V1W3Z";
 
     // Fixed so seeded Bogus() output stays stable regardless of the day the test runs.
     private static readonly DateOnly RefDate = new(2026, 1, 1);
 
     public static HallOfFameInductionDto Create(
         string? id = null,
+        string? bowlerId = null,
         int? year = null,
         Name? bowlerName = null,
         IReadOnlyCollection<HallOfFameCategory>? categories = null,
@@ -25,6 +27,7 @@ public static class HallOfFameInductionDtoFactory
         => new()
         {
             Id = id ?? ValidId,
+            BowlerId = bowlerId ?? ValidBowlerId,
             Year = year ?? ValidYear,
             BowlerName = bowlerName ?? NameFactory.Create(),
             Categories = categories ?? [HallOfFameCategory.SuperiorPerformance],
@@ -40,12 +43,16 @@ public static class HallOfFameInductionDtoFactory
         var poolSeed = faker.Random.Int();
         var bowlerNames = UniquePool.Create(NameFactory.Bogus(count, faker), poolSeed);
 
+        // A separate randomizer keeps bowler ids from shifting the seeded values the other fields rely on.
+        var bowlerIdFaker = new Faker { Random = new Randomizer(poolSeed + 1) };
+
         return [.. Enumerable.Range(0, count).Select(_ =>
         {
             var hasPhoto = faker.Random.Bool();
             return new HallOfFameInductionDto
             {
                 Id = Ulid.BogusString(faker),
+                BowlerId = Ulid.BogusString(bowlerIdFaker),
                 Year = faker.Date.PastDateOnly(refDate: RefDate).Year,
                 BowlerName = bowlerNames.GetNext(),
                 Categories = [.. faker.PickRandom(HallOfFameCategory.List, faker.Random.Int(1, HallOfFameCategory.List.Count))],

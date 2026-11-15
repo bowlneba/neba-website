@@ -2,6 +2,7 @@
   Items: [
     {
       Id: 01FXX3YEEMXD3VPBF6W0EYT6WR,
+      BowlerId: 01J656BME5PXP8N14Z6Z7ETSHH,
       Year: 2025,
       BowlerName: Elbert D'Amore,
       Categories: [
@@ -11,6 +12,7 @@
     },
     {
       Id: 01KBRMMX96WVARFC6F983DERYD,
+      BowlerId: 01HW4SW7XKKWP6HKCRC5XREK6C,
       Year: 2025,
       BowlerName: Elbert D'Amore,
       Categories: [
@@ -25,6 +27,7 @@
     },
     {
       Id: 01J0GXAQMAZ2CHVPBKD58PR1WE,
+      BowlerId: 01H6EX41SR0PG0H2Z1V9X0NN0Y,
       Year: 2025,
       BowlerName: Elbert D'Amore,
       Categories: [

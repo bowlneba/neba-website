@@ -65,6 +65,27 @@ public sealed class ListHallOfFameInductionsEndpointTests
         item.PhotoZoom.ShouldBe(175);
     }
 
+    [Fact(DisplayName = "HandleAsync should map the bowler id into the response")]
+    public async Task HandleAsync_ShouldMapBowlerId_WhenInductionExists()
+    {
+        // Arrange
+        var cancellationToken = TestContext.Current.CancellationToken;
+        var dto = HallOfFameInductionDtoFactory.Create(bowlerId: "01JZ8K3M4N5P6Q7R8S9T0V1W4A");
+
+        var queryHandlerMock = new Mock<IQueryHandler<ListHallOfFameInductionsQuery, IReadOnlyCollection<HallOfFameInductionDto>>>(MockBehavior.Strict);
+        queryHandlerMock
+            .Setup(handler => handler.HandleAsync(It.IsAny<ListHallOfFameInductionsQuery>(), cancellationToken))
+            .ReturnsAsync([dto]);
+
+        var endpoint = Factory.Create<ListHallOfFameInductionsEndpoint>(queryHandlerMock.Object);
+
+        // Act
+        await endpoint.HandleAsync(cancellationToken);
+
+        // Assert
+        endpoint.Response.Items.Single().BowlerId.ShouldBe("01JZ8K3M4N5P6Q7R8S9T0V1W4A");
+    }
+
     [Fact(DisplayName = "Configure should register anonymous GET route at /hall-of-fame/inductions")]
     public void Configure_ShouldRegisterAnonymousGetRoute_AtExpectedPath()
     {

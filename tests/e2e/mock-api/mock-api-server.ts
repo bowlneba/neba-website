@@ -269,6 +269,7 @@ export const MOCK_SEASON_TOURNAMENTS = {
 
 interface MockInduction {
   id: string;
+  bowlerId: string;
   year: number;
   bowlerName: string;
   categories: string[];
@@ -282,10 +283,10 @@ interface MockInduction {
 // Bob and Alice start with photos, Jane and Tom do not, so each e2e test has an inductee of its own.
 const MOCK_HALL_OF_FAME: { items: MockInduction[]; totalItems: number } = {
   items: [
-    { id: '01JX0000000000000000000001', year: 2024, bowlerName: 'Jane Smith', categories: ['Superior Performance'], photoUri: null, photoFocalX: null, photoFocalY: null, photoZoom: null },
-    { id: '01JX0000000000000000000002', year: 2024, bowlerName: 'Bob Johnson', categories: ['Meritorious Service'], photoUri: 'http://localhost:5151/mock-storage/hall-of-fame/photo/bob.png', photoFocalX: 20, photoFocalY: 50, photoZoom: 100 },
-    { id: '01JX0000000000000000000003', year: 2023, bowlerName: 'Alice Williams', categories: ['Friend of NEBA'], photoUri: 'http://localhost:5151/mock-storage/hall-of-fame/photo/alice.png', photoFocalX: 50, photoFocalY: 50, photoZoom: 100 },
-    { id: '01JX0000000000000000000004', year: 2023, bowlerName: 'Tom Davis', categories: ['Superior Performance', 'Meritorious Service'], photoUri: null, photoFocalX: null, photoFocalY: null, photoZoom: null },
+    { id: '01JX0000000000000000000001', bowlerId: '01JX0000000000000000000201', year: 2024, bowlerName: 'Jane Smith', categories: ['Superior Performance'], photoUri: null, photoFocalX: null, photoFocalY: null, photoZoom: null },
+    { id: '01JX0000000000000000000002', bowlerId: '01JX0000000000000000000202', year: 2024, bowlerName: 'Bob Johnson', categories: ['Meritorious Service'], photoUri: 'http://localhost:5151/mock-storage/hall-of-fame/photo/bob.png', photoFocalX: 20, photoFocalY: 50, photoZoom: 100 },
+    { id: '01JX0000000000000000000003', bowlerId: '01JX0000000000000000000203', year: 2023, bowlerName: 'Alice Williams', categories: ['Friend of NEBA'], photoUri: 'http://localhost:5151/mock-storage/hall-of-fame/photo/alice.png', photoFocalX: 50, photoFocalY: 50, photoZoom: 100 },
+    { id: '01JX0000000000000000000004', bowlerId: '01JX0000000000000000000204', year: 2023, bowlerName: 'Tom Davis', categories: ['Superior Performance', 'Meritorious Service'], photoUri: null, photoFocalX: null, photoFocalY: null, photoZoom: null },
   ],
   totalItems: 4,
 };
