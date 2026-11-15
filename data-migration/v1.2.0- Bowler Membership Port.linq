@@ -101,7 +101,7 @@ async Task Main()
 /// <summary>
 /// Set to true to write to BowlerMemberships. False is a dry run (validate + dump only).
 /// </summary>
-const bool Commit = false;
+const bool Commit = true;
 
 /// <summary>
 /// Legacy membership id for "System Import". Exists only to satisfy the legacy "every bowler must have a membership" rule; skipped, never migrated.
@@ -114,28 +114,57 @@ record MappedBowlerMembership(int LegacyId, int BowlerId, string MembershipType,
 
 /// <summary>
 /// Inserts mapped rows into BowlerMemberships. Idempotent: rows whose LegacyId already exists are skipped.
-/// Single SaveChanges, so it is all-or-nothing.
+/// Single SaveChanges, so it is all-or-nothing. The plan is dumped either way; only Commit = true writes.
 /// </summary>
 async Task WriteBowlerMembershipsAsync(List<MappedBowlerMembership> mapped, int unknownTypeCount)
 {
-	if (!Commit)
+	var alreadyMigrated = BowlerMemberships
+		.Where(m => m.LegacyId != null)
+		.Select(m => m.LegacyId!.Value)
+		.ToHashSet();
+
+	var pending = mapped.Where(m => !alreadyMigrated.Contains(m.LegacyId)).ToList();
+
+	new
 	{
-		"Dry run - set Commit = true to write to BowlerMemberships.".Dump("Write");
-		return;
-	}
+		Mode = Commit ? "COMMIT" : "Dry run (set Commit = true to write)",
+		WouldInsert = pending.Count,
+		AlreadyMigrated = mapped.Count - pending.Count,
+		BlockedByUnknownTypes = unknownTypeCount > 0
+	}.Dump("Write plan");
+
+	pending
+		.GroupBy(m => m.MembershipType)
+		.Select(g => new
+		{
+			MembershipType = g.Key,
+			Rows = g.Count(),
+			TotalCost = g.Sum(m => m.Cost),
+			EarliestStart = g.Min(m => m.StartDate),
+			LatestStart = g.Max(m => m.StartDate)
+		})
+		.OrderByDescending(x => x.Rows)
+		.Dump("Rows to insert by membership type");
+
+	pending
+		.GroupBy(m => m.StartDate.Year)
+		.Select(g => new { Year = g.Key, Rows = g.Count() })
+		.OrderBy(x => x.Year)
+		.Dump("Rows to insert by start year");
+
+	pending.TakeLast(25).Dump("Most recent rows to insert", 1);
 
 	if (unknownTypeCount > 0)
 	{
 		throw new InvalidOperationException($"{unknownTypeCount} rows have unknown legacy membership types; fix before migrating.");
 	}
 
-	var alreadyMigrated = BowlerMemberships
-		.Where(m => m.LegacyId != null)
-		.Select(m => m.LegacyId!.Value)
-		.ToHashSet();
+	if (!Commit)
+	{
+		return;
+	}
 
-	var toInsert = mapped
-		.Where(m => !alreadyMigrated.Contains(m.LegacyId))
+	var toInsert = pending
 		.Select(m => new BowlerMemberships
 		{
 			DomainId = Guid.AsDomainId(),
@@ -151,7 +180,7 @@ async Task WriteBowlerMembershipsAsync(List<MappedBowlerMembership> mapped, int 
 	BowlerMemberships.AddRange(toInsert);
 	await SaveChangesAsync();
 
-	new { Inserted = toInsert.Count, AlreadyMigrated = mapped.Count - toInsert.Count }.Dump("Write");
+	new { Inserted = toInsert.Count, AlreadyMigrated = mapped.Count - toInsert.Count }.Dump("Write result");
 }
 
 /// <summary>

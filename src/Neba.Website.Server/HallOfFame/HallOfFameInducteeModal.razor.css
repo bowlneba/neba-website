@@ -1,9 +1,11 @@
-/* NebaModal's header wrapper: the band runs edge to edge and the close button floats over it. */
-::deep .neba-modal-header { display: block; padding: 0; border-bottom: 0; position: relative; }
-::deep .neba-modal-close { position: absolute; top: .75rem; right: .75rem; z-index: 2; width: 2rem; height: 2rem; border: 1px solid rgba(224, 180, 84, .55); border-radius: 50%; background: rgba(3, 26, 71, .55); color: var(--neba-gold); font-size: 1rem; }
-::deep .neba-modal-close:hover { background: rgba(3, 26, 71, .8); color: var(--neba-gold); }
-::deep .neba-modal-close:focus-visible { outline: 3px solid var(--neba-gold); outline-offset: 2px; }
-::deep .neba-modal-body { padding: 1.25rem 1.5rem 1.75rem; }
+/* .ip-root is the scoped ancestor ::deep needs: NebaModal is this component's root, so its elements carry no scope of ours.
+   NebaModal's header wrapper: the band runs edge to edge and the close button floats over it. */
+.ip-root ::deep .neba-modal-content { padding: 0; }
+.ip-root ::deep .neba-modal-header { display: block; padding: 0; border-bottom: 0; position: relative; }
+.ip-root ::deep .neba-modal-close { position: absolute; top: .75rem; right: .75rem; z-index: 2; width: 2rem; height: 2rem; border: 1px solid rgba(224, 180, 84, .55); border-radius: 50%; background: rgba(3, 26, 71, .55); color: var(--neba-gold); font-size: 1rem; }
+.ip-root ::deep .neba-modal-close:hover { background: rgba(3, 26, 71, .8); color: var(--neba-gold); }
+.ip-root ::deep .neba-modal-close:focus-visible { outline: 3px solid var(--neba-gold); outline-offset: 2px; }
+.ip-root ::deep .neba-modal-body { padding: 1.25rem 1.5rem 1.75rem; }
 
 .ip-band { position: relative; height: 96px; border-radius: .75rem .75rem 0 0; border-bottom: 4px solid var(--neba-gold); background: linear-gradient(160deg, var(--neba-blue-brand) 0%, #031A47 100%); }
 .ip-logo { position: absolute; left: 1.25rem; top: .9rem; width: 64px; height: auto; padding: .3rem; border-radius: .5rem; background: #fff; }
@@ -23,7 +25,7 @@
 .ip-empty { max-width: 34ch; margin: 0 auto; padding: 2rem 1rem; text-align: center; font-size: .95rem; color: var(--neba-gray-600); }
 
 @media (max-width: 520px) {
-    ::deep .neba-modal-body { padding: 1rem 1rem 1.5rem; }
+    .ip-root ::deep .neba-modal-body { padding: 1rem 1rem 1.5rem; }
     .ip-id ::deep .inductee-photo { width: 104px; height: 104px; font-size: 2.3rem; }
     .ip-name { font-size: 1.45rem; }
 }
