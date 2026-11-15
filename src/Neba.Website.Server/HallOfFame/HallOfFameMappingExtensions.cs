@@ -13,6 +13,7 @@ internal static class HallOfFameMappingExtensions
             return new HallOfFameInductionViewModel
             {
                 Id = dto.Id,
+                BowlerId = dto.BowlerId,
                 BowlerName = dto.BowlerName,
                 InductionYear = dto.Year,
                 Categories = [.. dto.Categories.OrderBy(HallOfFameCategories.OrderOf)],
