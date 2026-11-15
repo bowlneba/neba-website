@@ -8,6 +8,7 @@ public static class HallOfFameInductionResponseFactory
 {
     public const int ValidYear = 2024;
     public const string ValidId = "01JZ8K3M4N5P6Q7R8S9T0V1W2X";
+    public const string ValidBowlerId = "01JZ8K3M4N5P6Q7R8S9T0V1W3Z";
     public const string ValidBowlerName = "John Doe";
 
     // Fixed so seeded Bogus() output stays stable regardless of the day the test runs.
@@ -15,6 +16,7 @@ public static class HallOfFameInductionResponseFactory
 
     public static HallOfFameInductionResponse Create(
         string? id = null,
+        string? bowlerId = null,
         int? year = null,
         string? bowlerName = null,
         IReadOnlyCollection<string>? categories = null,
@@ -25,6 +27,7 @@ public static class HallOfFameInductionResponseFactory
         => new()
         {
             Id = id ?? ValidId,
+            BowlerId = bowlerId ?? ValidBowlerId,
             Year = year ?? ValidYear,
             BowlerName = bowlerName ?? ValidBowlerName,
             Categories = categories ?? [HallOfFameCategory.SuperiorPerformance.Name, HallOfFameCategory.MeritoriousService.Name],
@@ -42,6 +45,7 @@ public static class HallOfFameInductionResponseFactory
 
         // A separate randomizer keeps ids from shifting the seeded values the other fields (and their snapshots) rely on.
         var idFaker = new Faker { Random = new Randomizer(poolSeed) };
+        var bowlerIdFaker = new Faker { Random = new Randomizer(poolSeed + 1) };
 
         return [.. Enumerable.Range(0, count).Select(_ =>
         {
@@ -53,6 +57,7 @@ public static class HallOfFameInductionResponseFactory
             return new HallOfFameInductionResponse
             {
                 Id = Ulid.BogusString(idFaker),
+                BowlerId = Ulid.BogusString(bowlerIdFaker),
                 Year = year,
                 BowlerName = bowlerName,
                 Categories = categories,

@@ -13,7 +13,7 @@ internal sealed class ListHallOfFameInductionsSummary
     public ListHallOfFameInductionsSummary()
     {
         Summary = "Lists all Hall of Fame inductions.";
-        Description = "Retrieves all Hall of Fame inductions, including the inducted bowler, year, categories, photo, and the photo's focal point and zoom.";
+        Description = "Retrieves all Hall of Fame inductions, including the induction and bowler ids, the inducted bowler, year, categories, photo, and the photo's focal point and zoom.";
 
 #pragma warning disable S1075 // URIs should not be hardcoded
         Response(200, "The list of Hall of Fame inductions.",
@@ -25,6 +25,7 @@ internal sealed class ListHallOfFameInductionsSummary
                     new HallOfFameInductionResponse
                     {
                         Id = "01JZ8K3M4N5P6Q7R8S9T0V1W2X",
+                        BowlerId = "01JZ8K3M4N5P6Q7R8S9T0V1W3Z",
                         Year = 2024,
                         BowlerName = "John Doe",
                         Categories = ["Superior Performance", "Meritorious Service"],
@@ -33,6 +34,7 @@ internal sealed class ListHallOfFameInductionsSummary
                     new HallOfFameInductionResponse
                     {
                         Id = "01JZ8K3M4N5P6Q7R8S9T0V1W3Y",
+                        BowlerId = "01JZ8K3M4N5P6Q7R8S9T0V1W4C",
                         Year = 2019,
                         BowlerName = "Jane Smith",
                         Categories = ["Meritorious Service"],

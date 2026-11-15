@@ -11,6 +11,11 @@ public sealed record HallOfFameInductionViewModel
     public required string Id { get; init; }
 
     /// <summary>
+    /// The ULID string identifying the inducted bowler. Used to load the bowler's Hall of Fame points.
+    /// </summary>
+    public required string BowlerId { get; init; }
+
+    /// <summary>
     /// The full display name of the bowler inducted into the Hall of Fame.
     /// </summary>
     public required string BowlerName { get; init; }

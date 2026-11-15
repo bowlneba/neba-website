@@ -13,6 +13,11 @@ public sealed record HallOfFameInductionResponse
     public required string Id { get; init; }
 
     /// <summary>
+    /// The ULID string identifying the inducted bowler. Use it to fetch the bowler's Hall of Fame points.
+    /// </summary>
+    public required string BowlerId { get; init; }
+
+    /// <summary>
     /// The year the induction occurred.
     /// </summary>
     public required int Year { get; init; }

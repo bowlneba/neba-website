@@ -68,6 +68,7 @@ public sealed class ListHallOfFameInductionsQueryHandlerTests(AppDbContextFixtur
         result.ShouldHaveSingleItem();
         var dto = result.Single();
         dto.Year.ShouldBe(2020);
+        dto.BowlerId.ShouldBe(bowler.Id.ToString());
         dto.BowlerName.ShouldBe(bowler.Name);
         dto.Categories.ShouldContain(HallOfFameCategory.SuperiorPerformance);
         dto.PhotoUri.ShouldBeNull();

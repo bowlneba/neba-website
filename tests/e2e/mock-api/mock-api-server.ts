@@ -269,6 +269,7 @@ export const MOCK_SEASON_TOURNAMENTS = {
 
 interface MockInduction {
   id: string;
+  bowlerId: string;
   year: number;
   bowlerName: string;
   categories: string[];
@@ -282,10 +283,10 @@ interface MockInduction {
 // Bob and Alice start with photos, Jane and Tom do not, so each e2e test has an inductee of its own.
 const MOCK_HALL_OF_FAME: { items: MockInduction[]; totalItems: number } = {
   items: [
-    { id: '01JX0000000000000000000001', year: 2024, bowlerName: 'Jane Smith', categories: ['Superior Performance'], photoUri: null, photoFocalX: null, photoFocalY: null, photoZoom: null },
-    { id: '01JX0000000000000000000002', year: 2024, bowlerName: 'Bob Johnson', categories: ['Meritorious Service'], photoUri: 'http://localhost:5151/mock-storage/hall-of-fame/photo/bob.png', photoFocalX: 20, photoFocalY: 50, photoZoom: 100 },
-    { id: '01JX0000000000000000000003', year: 2023, bowlerName: 'Alice Williams', categories: ['Friend of NEBA'], photoUri: 'http://localhost:5151/mock-storage/hall-of-fame/photo/alice.png', photoFocalX: 50, photoFocalY: 50, photoZoom: 100 },
-    { id: '01JX0000000000000000000004', year: 2023, bowlerName: 'Tom Davis', categories: ['Superior Performance', 'Meritorious Service'], photoUri: null, photoFocalX: null, photoFocalY: null, photoZoom: null },
+    { id: '01JX0000000000000000000001', bowlerId: '01JX0000000000000000000201', year: 2024, bowlerName: 'Jane Smith', categories: ['Superior Performance'], photoUri: null, photoFocalX: null, photoFocalY: null, photoZoom: null },
+    { id: '01JX0000000000000000000002', bowlerId: '01JX0000000000000000000202', year: 2024, bowlerName: 'Bob Johnson', categories: ['Meritorious Service'], photoUri: 'http://localhost:5151/mock-storage/hall-of-fame/photo/bob.png', photoFocalX: 20, photoFocalY: 50, photoZoom: 100 },
+    { id: '01JX0000000000000000000003', bowlerId: '01JX0000000000000000000203', year: 2023, bowlerName: 'Alice Williams', categories: ['Friend of NEBA'], photoUri: 'http://localhost:5151/mock-storage/hall-of-fame/photo/alice.png', photoFocalX: 50, photoFocalY: 50, photoZoom: 100 },
+    { id: '01JX0000000000000000000004', bowlerId: '01JX0000000000000000000204', year: 2023, bowlerName: 'Tom Davis', categories: ['Superior Performance', 'Meritorious Service'], photoUri: null, photoFocalX: null, photoFocalY: null, photoZoom: null },
   ],
   totalItems: 4,
 };
@@ -309,6 +310,37 @@ const MOCK_HALL_OF_FAME_POINTS = {
     { bowlerId: '01JX0000000000000000000104', bowlerName: 'José Marchetti', totalPoints: 12, seasonsWithPoints: 2, membershipYears: 8, membershipHistoryComplete: true, eligible: false, meetsPoints: false, meetsSeasons: false, inductedCategories: [] },
   ],
 };
+
+// Detail for inducted bowlers. 203 (Alice Williams) is missing on purpose: the detail route returns 404 for her.
+const MOCK_INDUCTEE_DETAILS = new Map<string, object>([
+  ['01JX0000000000000000000201', {
+    bowlerId: '01JX0000000000000000000201',
+    bowlerName: 'Jane Smith',
+    inductedCategories: ['Superior Performance'],
+    totalPoints: 43,
+    seasonsWithPoints: 3,
+    membershipHistoryComplete: true,
+    breakdown: [
+      { source: 'Bowler of the Year', date: '2003-12-31', points: 12, runningTotal: 12, reachedThreshold: false },
+      { source: 'Singles Title', date: '2009-03-10', points: 6, runningTotal: 18, reachedThreshold: false },
+      { source: 'NEBA Masters Title', date: '2014-09-11', points: 6, runningTotal: 24, reachedThreshold: false },
+    ],
+    membershipYears: [
+      { year: 1999, membershipType: 'New' },
+      { year: 2000, membershipType: 'Renewal' },
+    ],
+  }],
+  ['01JX0000000000000000000202', {
+    bowlerId: '01JX0000000000000000000202',
+    bowlerName: 'Bob Johnson',
+    inductedCategories: ['Meritorious Service'],
+    totalPoints: 0,
+    seasonsWithPoints: 0,
+    membershipHistoryComplete: true,
+    breakdown: [],
+    membershipYears: [],
+  }],
+]);
 
 const MOCK_HALL_OF_FAME_POINTS_DETAIL = (bowlerId: string) => {
   const standing = MOCK_HALL_OF_FAME_POINTS.standings.find((s) => s.bowlerId === bowlerId);
@@ -1429,7 +1461,8 @@ function resolveStaticGetRoute(pathname: string): object | null {
   if (pathname === `/bowlers/${PRIMARY_BOWLER_ID}/titles`) return MOCK_BOWLER_TITLES_CURRENT_LEADER;
   if (pathname === `/bowlers/${SECONDARY_BOWLER_ID}/titles`) return MOCK_BOWLER_TITLES_CURRENT_RIVAL;
   if (pathname.startsWith('/hall-of-fame/points/')) {
-    return MOCK_HALL_OF_FAME_POINTS_DETAIL(pathname.slice('/hall-of-fame/points/'.length));
+    const bowlerId = pathname.slice('/hall-of-fame/points/'.length);
+    return MOCK_HALL_OF_FAME_POINTS_DETAIL(bowlerId) ?? MOCK_INDUCTEE_DETAILS.get(bowlerId) ?? null;
   }
   return null;
 }

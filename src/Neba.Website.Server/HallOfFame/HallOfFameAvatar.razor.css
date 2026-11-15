@@ -30,3 +30,7 @@
 .inductee-photo--ringed {
     box-shadow: 0 0 0 3px var(--avatar-ring-gap, var(--neba-blue-brand)), 0 0 0 5px var(--neba-gold), 0 6px 14px rgba(0, 0, 0, 0.35);
 }
+
+/* The portrait as a button: drop the browser's button look, keep the circle. */
+.inductee-photo--button { padding: 0; border: 0; appearance: none; font-family: inherit; cursor: pointer; }
+.inductee-photo--button:focus-visible { outline: 3px solid var(--neba-gold); outline-offset: 6px; }

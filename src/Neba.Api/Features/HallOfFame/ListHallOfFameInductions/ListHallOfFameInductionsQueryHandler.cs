@@ -21,6 +21,7 @@ internal sealed class ListHallOfFameInductionsQueryHandler(
             .Select(induction => new
             {
                 induction.Id,
+                induction.BowlerId,
                 induction.Year,
                 BowlerName = induction.Bowler.Name,
                 induction.Categories,
@@ -37,6 +38,7 @@ internal sealed class ListHallOfFameInductionsQueryHandler(
         return [.. rows.Select(row => new HallOfFameInductionDto
         {
             Id = row.Id.ToString(),
+            BowlerId = row.BowlerId.ToString(),
             Year = row.Year,
             BowlerName = row.BowlerName,
             Categories = row.Categories,

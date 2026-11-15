@@ -7,6 +7,7 @@ using Microsoft.Extensions.Logging.Abstractions;
 
 using Neba.Api.Contracts;
 using Neba.Api.Contracts.HallOfFame;
+using Neba.Api.Contracts.HallOfFame.GetHallOfFamePointsDetail;
 using Neba.Api.Contracts.HallOfFame.ListHallOfFameInductions;
 using Neba.Api.Contracts.Security;
 using Neba.Api.Features.HallOfFame.Domain;
@@ -29,6 +30,8 @@ namespace Neba.Website.Tests.HallOfFame;
 [Component("Website.HallOfFame.HallOfFame")]
 public sealed class HallOfFameTests : IDisposable
 {
+    private const string ProfileBowlerId = "01JZ8K3M4N5P6Q7R8S9T0V1W4B";
+
     private readonly BunitContext _ctx;
     private readonly Mock<IHallOfFameApi> _mockApi;
     private readonly BunitAuthorizationContext _authContext;
@@ -597,6 +600,73 @@ public sealed class HallOfFameTests : IDisposable
         cut.FindAll(".ehp-subtitle").ShouldBeEmpty();
     }
 
+    [Fact(DisplayName = "Should open the inductee profile when the name is clicked")]
+    public void Click_ShouldOpenProfile_WhenNameClicked()
+    {
+        // Arrange
+        var induction = HallOfFameInductionResponseFactory.Create(bowlerId: ProfileBowlerId, year: 2019, bowlerName: "Jane Smith");
+        SetupSuccessResponse([induction]);
+        SetupDetailResponse(ProfileBowlerId);
+        var cut = _ctx.Render<HallOfFamePage>();
+
+        // Act
+        cut.Find("button.inductee-name").Click();
+
+        // Assert
+        cut.Find(".ip-class").TextContent.ShouldBe("Class of 2019");
+        _mockApi.Verify(x => x.GetHallOfFamePointsDetailAsync(ProfileBowlerId, It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    [Fact(DisplayName = "Should open the inductee profile when the photo is clicked")]
+    public void Click_ShouldOpenProfile_WhenPhotoClicked()
+    {
+        // Arrange
+        var induction = HallOfFameInductionResponseFactory.Create(bowlerId: ProfileBowlerId, year: 2019, bowlerName: "Jane Smith");
+        SetupSuccessResponse([induction]);
+        SetupDetailResponse(ProfileBowlerId);
+        var cut = _ctx.Render<HallOfFamePage>();
+
+        // Act
+        cut.Find("button.inductee-photo").Click();
+
+        // Assert
+        cut.Find(".ip-name").TextContent.ShouldBe("Jane Smith");
+    }
+
+    [Fact(DisplayName = "Should close the inductee profile when the modal close button is clicked")]
+    public void Click_ShouldCloseProfile_WhenCloseClicked()
+    {
+        // Arrange
+        SetupSuccessResponse([HallOfFameInductionResponseFactory.Create(bowlerId: ProfileBowlerId)]);
+        SetupDetailResponse(ProfileBowlerId);
+        var cut = _ctx.Render<HallOfFamePage>();
+        cut.Find("button.inductee-name").Click();
+        cut.FindAll(".ip-name").ShouldHaveSingleItem();
+
+        // Act
+        cut.Find(".neba-modal-close").Click();
+
+        // Assert
+        cut.FindAll(".ip-name").ShouldBeEmpty();
+    }
+
+    [Fact(DisplayName = "Should open the photo editor and not the profile when the edit button is clicked")]
+    public void Click_ShouldOpenEditorOnly_WhenEditClicked()
+    {
+        // Arrange
+        _authContext.SetAuthorized("editor");
+        _authContext.SetPolicies(Permissions.EditHallOfFamePhoto.PolicyName);
+        SetupSuccessResponse([HallOfFameInductionResponseFactory.Create(bowlerName: "Jane Smith")]);
+        var cut = _ctx.Render<HallOfFamePage>();
+
+        // Act
+        cut.Find("button.hof-photo-edit").Click();
+
+        // Assert
+        cut.Find(".ehp-subtitle").TextContent.ShouldBe("Jane Smith");
+        cut.FindAll(".ip-name").ShouldBeEmpty();
+    }
+
     [Fact(DisplayName = "Links to the Hall of Fame points page from the Superior Performance blurb and the criteria")]
     public void Render_ShouldLinkToPointsPage()
     {
@@ -621,6 +691,20 @@ public sealed class HallOfFameTests : IDisposable
 
         // Assert
         cut.Markup.ShouldNotContain("Points Leader/Invitational Title");
+    }
+
+    private void SetupDetailResponse(string bowlerId)
+    {
+        using var response = new StubApiResponse<HallOfFamePointsDetailResponse>
+        {
+            IsSuccessStatusCode = true,
+            StatusCode = System.Net.HttpStatusCode.OK,
+            Content = HallOfFamePointsDetailResponseFactory.Create(bowlerId: bowlerId)
+        };
+
+        _mockApi
+            .Setup(x => x.GetHallOfFamePointsDetailAsync(bowlerId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(response);
     }
 
     private void SetupSuccessResponse(IReadOnlyCollection<HallOfFameInductionResponse> inductions)
