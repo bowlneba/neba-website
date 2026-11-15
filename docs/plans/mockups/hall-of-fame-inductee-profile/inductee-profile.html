@@ -1,0 +1,149 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Hall of Fame inductee profile, Chosen: Portrait</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{--navy:#052767;--navy-deep:#031a47;--gold:#E0B454;--gold-deep:#B98C2D;--ink:#F4F6FF;--ink-muted:#AEB8E6;
+--g200:#E5E5E5;--g300:#CCCCCC;--g600:#525252;--g700:#333333;--blue:#3E4FD9;--font:'Manrope',ui-sans-serif,system-ui,sans-serif}
+*{box-sizing:border-box}
+body{margin:0;font-family:var(--font);background:#e9ebf2;color:var(--g700)}
+.controls{position:sticky;top:0;z-index:5;display:flex;flex-wrap:wrap;gap:.5rem;align-items:center;padding:.6rem 1rem;background:#fff;border-bottom:1px solid var(--g300);font-size:.8125rem}
+.controls b{margin-right:.25rem}
+.controls button{font:inherit;padding:.3rem .7rem;border:1px solid var(--g300);background:#fff;border-radius:999px;cursor:pointer}
+.controls button[aria-pressed=true]{background:var(--navy);color:#fff;border-color:var(--navy)}
+.controls a{margin-left:auto;color:var(--blue)}
+.backdrop{min-height:calc(100vh - 3.2rem);padding:2rem 1rem;display:flex;justify-content:center;align-items:flex-start;background:rgba(0,0,0,.45)}
+.frame{container-type:inline-size;width:100%;max-width:640px;transition:max-width .15s}
+.frame.narrow{max-width:390px}
+.modal{background:#fff;border-radius:.75rem;overflow:hidden;box-shadow:0 20px 25px -5px rgba(0,0,0,.25),0 10px 10px -5px rgba(0,0,0,.1)}
+.close{position:absolute;top:.75rem;right:.75rem;z-index:2;width:2rem;height:2rem;border-radius:50%;border:1px solid rgba(224,180,84,.55);background:rgba(3,26,71,.55);color:var(--gold);font:inherit;cursor:pointer}
+.close:focus-visible,button:focus-visible{outline:3px solid var(--gold);outline-offset:2px}
+.modal{position:relative}
+.avatar{position:relative;border-radius:50%;overflow:hidden;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;
+background:linear-gradient(135deg,var(--blue),var(--navy));box-shadow:0 0 0 3px var(--navy),0 0 0 5px var(--gold),0 6px 14px rgba(0,0,0,.35)}
+.avatar img{width:100%;height:100%;object-fit:cover;display:block}
+.dot{display:inline-block;width:.55em;height:.55em;border-radius:50%;margin-right:.4em}
+.dot.superior{background:var(--gold)}.dot.meritorious{background:#7FB7FF}.dot.friend{background:#9be3b0}
+.logo{display:block;background:#fff;border-radius:.5rem;padding:.3rem}
+.logo img{display:block;width:100%;height:auto}
+.chips{display:flex;flex-wrap:wrap;gap:.35rem .5rem;margin:0;padding:0;list-style:none;font-size:.78rem;color:var(--ink)}
+.chips li{display:inline-flex;align-items:center;padding:.15rem .6rem;border:1px solid rgba(255,255,255,.28);border-radius:999px}
+/* body */
+.body{padding:1.25rem 1.5rem 1.75rem}
+.body h3{font-size:1rem;margin:1.5rem 0 .5rem;color:var(--g700)}
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:.75rem}.stat:nth-child(1){justify-self:start}.stat:nth-child(2){justify-self:center}.stat:nth-child(3){justify-self:end}
+.stat{padding-top:.5rem;border-top:3px solid var(--gold);min-width:6rem;text-align:center}
+.stat b{display:block;font-size:1.9rem;line-height:1.1;color:var(--navy);font-weight:800}
+.stat span{font-size:.8125rem;color:var(--g600)}
+table{width:100%;border-collapse:collapse;font-size:.9rem}
+th{text-align:left;font-weight:600;font-size:.8125rem;color:var(--g600);padding:.4rem .5rem;border-bottom:1px solid var(--g300)}
+td{padding:.4rem .5rem;border-bottom:1px solid var(--g200)}
+tfoot td{font-weight:700;border-bottom:0}
+.r{text-align:right;font-variant-numeric:tabular-nums}
+.years{columns:2;column-gap:1.5rem;margin:0;padding:0;list-style:none;font-size:.9rem}
+.years li{display:flex;justify-content:space-between;gap:.75rem;padding:.25rem 0;border-bottom:1px solid var(--g200);break-inside:avoid}
+.years span:last-child{color:var(--g600)}
+.note{margin:.75rem 0 0;padding:.625rem .875rem;background:#FFF8E6;border-left:4px solid var(--gold);font-size:.85rem;border-radius:0 .375rem .375rem 0}
+.state{padding:2.5rem 1rem;text-align:center;color:var(--g600)}
+.state h3{color:#1f2937;margin:.5rem 0 .25rem}
+.spin{width:28px;height:28px;margin:0 auto .5rem;border:3px solid var(--g200);border-top-color:var(--navy);border-radius:50%;animation:s 1s linear infinite}
+@keyframes s{to{transform:rotate(360deg)}}
+.retry{margin-top:.75rem;padding:.5rem 1rem;border:1px solid var(--blue);background:#fff;color:var(--blue);border-radius:.375rem;font:inherit;font-weight:600;cursor:pointer}
+.empty{padding:2rem 1rem;text-align:center;color:var(--g600);font-size:.95rem;max-width:34ch;margin:0 auto}
+[data-view]{display:none}
+.modal[data-state=data] [data-view=data],.modal[data-state=empty] [data-view=empty],.modal[data-state=loading] [data-view=loading],.modal[data-state=error] [data-view=error]{display:block}
+@container (max-width:480px){.years{columns:1}.stat{min-width:0}.stat b{font-size:1.6rem}.stat span{display:block;font-size:.75rem;line-height:1.25}.body{padding:1rem 1rem 1.5rem}}
+@media (prefers-reduced-motion:reduce){.spin{animation:none}}
+
+.hdr{background:linear-gradient(160deg,var(--navy) 0%,var(--navy-deep) 100%);height:96px;border-bottom:4px solid var(--gold);position:relative}
+.hdr .logo{position:absolute;left:1.25rem;top:.9rem;width:64px}
+.id{display:flex;flex-direction:column;align-items:center;text-align:center;padding:0 1.5rem 1.25rem;margin-top:-64px;position:relative}
+.id .avatar{width:128px;height:128px;font-size:2.9rem;box-shadow:0 0 0 4px #fff,0 0 0 7px var(--gold),0 8px 16px rgba(5,39,103,.3)}
+.id h2{margin:1rem 0 .15rem;font-size:1.75rem;font-weight:800;color:var(--navy)}
+.id .cls{margin:0 0 .75rem;font-weight:700;color:var(--gold-deep);font-size:1.05rem}
+.id .chips{justify-content:center;color:var(--navy)}
+.id .chips li{border-color:rgba(5,39,103,.25)}
+.id .chips .dot.superior{background:var(--gold-deep)}
+.id .chips .dot.meritorious{background:var(--blue)}.id .chips .dot.friend{background:#2f9e5b}
+.body{border-top:1px solid var(--g200)}
+@container (max-width:480px){.id .avatar{width:104px;height:104px;font-size:2.3rem}.id h2{font-size:1.45rem}}
+</style>
+</head>
+<body>
+
+<div class="controls">
+  <b>Chosen: Portrait</b>
+  <button type="button" data-state-btn="data" aria-pressed="true">Superior Performance</button>
+  <button type="button" data-state-btn="empty" aria-pressed="false">Meritorious (no data)</button>
+  <button type="button" data-state-btn="loading" aria-pressed="false">Loading</button>
+  <button type="button" data-state-btn="error" aria-pressed="false">Error</button>
+  <span>|</span>
+  <button type="button" data-photo-btn="initials" aria-pressed="true">Initials</button>
+  <button type="button" data-photo-btn="photo" aria-pressed="false">Photo</button>
+  <span>|</span>
+  <button type="button" data-width-btn="desktop" aria-pressed="true">Desktop</button>
+  <button type="button" data-width-btn="phone" aria-pressed="false">Phone</button>
+</div>
+
+<div class="backdrop">
+  <div class="frame">
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="t" data-state="data">
+      <button type="button" class="close" aria-label="Close modal">✕</button>
+      
+<header class="hdr"><div class="logo"><img src="../../../../src/Neba.Website.Server/wwwroot/images/neba-hof-480.jpg" alt="NEBA Hall of Fame"></div></header>
+<section class="id">
+  <div class="avatar" aria-hidden="true">JS</div>
+  <h2 id="t">Jane Smith</h2>
+  <p class="cls">Class of 2024</p>
+  <ul class="chips"><li data-cat><span class="dot superior"></span>Superior Performance</li></ul>
+</section>
+
+      
+<div class="body">
+  <div data-view="loading"><div class="state"><div class="spin"></div><div>Loading points…</div></div></div>
+  <div data-view="error"><div class="state"><h3>Could not load points</h3><p>Something went wrong fetching this bowler's record.</p><button type="button" class="retry">Retry</button></div></div>
+  <div data-view="empty"><p class="empty">Points and membership details for Meritorious Service and Friend of NEBA inductees are not shown yet.</p></div>
+  <div data-view="data">
+    <div class="stats">
+      <div class="stat"><b>26</b><span>membership years</span></div>
+      <div class="stat"><b>43</b><span>points</span></div>
+      <div class="stat"><b>8</b><span>seasons with points</span></div>
+    </div>
+    <h3>Points earned</h3>
+    <ul class="years"><li><span>1998</span><span>Doubles Title</span></li><li><span>2001</span><span>Singles Title</span></li><li><span>2003</span><span>Bowler of the Year</span></li><li><span>2006</span><span>TOC Title</span></li><li><span>2009</span><span>Senior Bowler of the Year</span></li><li><span>2014</span><span>Masters Title</span></li><li><span>2019</span><span>Over/Under Title</span></li><li><span>2022</span><span>Non-Champions Title</span></li></ul>
+    <h3>Membership years</h3>
+    <ul class="years"><li><span>1999</span><span>New</span></li><li><span>2000</span><span>Renewal</span></li><li><span>2001</span><span>Renewal</span></li><li><span>2002</span><span>Renewal</span></li><li><span>2003</span><span>Renewal</span></li><li><span>2004</span><span>Renewal</span></li><li><span>2005</span><span>Renewal</span></li><li><span>2006</span><span>Renewal</span></li><li><span>2007</span><span>Renewal</span></li><li><span>2008</span><span>Renewal</span></li><li><span>2009</span><span>Renewal</span></li><li><span>2010</span><span>Renewal</span></li><li><span>2011</span><span>Renewal</span></li><li><span>2012</span><span>Renewal</span></li><li><span>2013</span><span>Renewal</span></li><li><span>2014</span><span>Renewal</span></li><li><span>2015</span><span>Renewal</span></li><li><span>2016</span><span>Renewal</span></li><li><span>2017</span><span>Renewal</span></li><li><span>2018</span><span>Renewal</span></li><li><span>2019</span><span>Renewal</span></li><li><span>2020</span><span>Renewal</span></li><li><span>2021</span><span>Renewal</span></li><li><span>2022</span><span>Renewal</span></li><li><span>2023</span><span>Renewal</span></li><li><span>2024</span><span>Renewal</span></li></ul>
+  </div>
+</div>
+
+    </div>
+  </div>
+</div>
+
+<script>
+const modal=document.querySelector('.modal'),frame=document.querySelector('.frame');
+const photo="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' fill='%23c9d3ee'/><circle cx='50' cy='38' r='17' fill='%238795c2'/><path d='M14 100c2-26 18-38 36-38s34 12 36 38z' fill='%238795c2'/></svg>";
+function setState(s){modal.dataset.state=s;press('[data-state-btn]',s,'stateBtn')}
+function press(sel,val,key){document.querySelectorAll(sel).forEach(b=>b.setAttribute('aria-pressed',b.dataset[key]===val))}
+document.querySelectorAll('[data-state-btn]').forEach(b=>b.onclick=()=>{
+  const s=b.dataset.stateBtn; setState(s);
+  const merit=s==='empty';
+  document.querySelectorAll('[data-cat]').forEach(e=>e.innerHTML=merit?'<span class="dot meritorious"></span>Meritorious Service':'<span class="dot superior"></span>Superior Performance');
+});
+document.querySelectorAll('[data-photo-btn]').forEach(b=>b.onclick=()=>{
+  const on=b.dataset.photoBtn==='photo';press('[data-photo-btn]',b.dataset.photoBtn,'photoBtn');
+  document.querySelectorAll('.avatar').forEach(a=>a.innerHTML=on?`<img src="${photo}" alt="">`:'JS');
+});
+document.querySelectorAll('[data-width-btn]').forEach(b=>b.onclick=()=>{
+  frame.classList.toggle('narrow',b.dataset.widthBtn==='phone');press('[data-width-btn]',b.dataset.widthBtn,'widthBtn');
+});
+document.addEventListener('keydown',e=>{if(e.key==='Escape')document.querySelector('.close').focus()});
+setState('data');
+</script>
+
+</body>
+</html>
