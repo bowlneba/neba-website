@@ -2,25 +2,29 @@
 @using Humanizer
 
 <div class="pm-body">
-    <div class="pm-stats">
-        <div class="pm-stat">
-            <b>@Detail.TotalPoints</b>
-            <span>@(Requirements is null ? "points" : "of " + Requirements.Points + " points")</span>
-        </div>
-        <div class="pm-stat">
-            <b>@Detail.SeasonsWithPoints</b>
-            <span>@("season".ToQuantity(Detail.SeasonsWithPoints, ShowQuantityAs.None)) with points@(Requirements is null ? null : " (" + Requirements.Seasons + " needed)")</span>
-        </div>
-        <div class="pm-stat">
-            <b>@(Detail.MembershipYears.Count + (Detail.MembershipHistoryComplete ? string.Empty : "*"))</b>
-            <span>membership @("year".ToQuantity(Detail.MembershipYears.Count, ShowQuantityAs.None))@(Requirements is null ? null : " (" + Requirements.MembershipYears + " needed)")</span>
-        </div>
+    <div class="@(Layout == HallOfFamePointsDetailLayout.Profile ? "pm-stats pm-stats--profile" : "pm-stats")">
+        @foreach (var stat in Stats())
+        {
+            <div class="pm-stat">
+                <b>@stat.Value</b>
+                <span>@stat.Label</span>
+            </div>
+        }
     </div>
 
     <h3>Points earned</h3>
     @if (Detail.Breakdown.Count == 0)
     {
         <p class="pm-muted">No points yet.</p>
+    }
+    else if (Layout == HallOfFamePointsDetailLayout.Profile)
+    {
+        <ul class="pm-years">
+            @foreach (var entry in Detail.Breakdown)
+            {
+                <li><span>@entry.Year</span><span>@entry.Source</span></li>
+            }
+        </ul>
     }
     else
     {
@@ -81,4 +85,28 @@
     /// <summary>The thresholds, when the caller has them. Null drops the "of 36" and "needed" text.</summary>
     [Parameter]
     public HallOfFamePointRequirements? Requirements { get; set; }
+
+    [Parameter]
+    public HallOfFamePointsDetailLayout Layout { get; set; }
+
+    // Standing order: points, seasons, membership. Profile order: membership, points, seasons.
+    private IEnumerable<(string Value, string Label)> Stats()
+    {
+        var years = Detail.MembershipYears.Count;
+        var points = (
+            Value: Detail.TotalPoints.ToString(CultureInfo.InvariantCulture),
+            Label: Requirements is null ? "points" : "of " + Requirements.Points + " points");
+        var seasons = (
+            Value: Detail.SeasonsWithPoints.ToString(CultureInfo.InvariantCulture),
+            Label: "season".ToQuantity(Detail.SeasonsWithPoints, ShowQuantityAs.None) + " with points"
+                + (Requirements is null ? null : " (" + Requirements.Seasons + " needed)"));
+        var membership = (
+            Value: years.ToString(CultureInfo.InvariantCulture) + (Detail.MembershipHistoryComplete ? string.Empty : "*"),
+            Label: "membership " + "year".ToQuantity(years, ShowQuantityAs.None)
+                + (Requirements is null ? null : " (" + Requirements.MembershipYears + " needed)"));
+
+        return Layout == HallOfFamePointsDetailLayout.Profile
+            ? [membership, points, seasons]
+            : [points, seasons, membership];
+    }
 }

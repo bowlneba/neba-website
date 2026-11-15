@@ -21,7 +21,14 @@ else if (_state == LoaderState.Error)
 }
 else if (_data is not null)
 {
-    <HallOfFamePointsDetailView Detail="@_data" Requirements="@Requirements" />
+    if (EmptyContent is not null && _data.Breakdown.Count == 0 && _data.MembershipYears.Count == 0)
+    {
+        @EmptyContent
+    }
+    else
+    {
+        <HallOfFamePointsDetailView Detail="@_data" Requirements="@Requirements" Layout="@Layout" />
+    }
 }
 
 @code {
@@ -31,6 +38,13 @@ else if (_data is not null)
     /// <summary>The thresholds, when the caller has them. Null drops the "of 36" and "needed" text.</summary>
     [Parameter]
     public HallOfFamePointRequirements? Requirements { get; set; }
+
+    [Parameter]
+    public HallOfFamePointsDetailLayout Layout { get; set; }
+
+    /// <summary>Shown instead of the data view when the bowler has no points and no membership years.</summary>
+    [Parameter]
+    public RenderFragment? EmptyContent { get; set; }
 
     /// <summary>Raised after each successful load, so a caller can read the detail (for example the inducted line).</summary>
     [Parameter]

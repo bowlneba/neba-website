@@ -128,6 +128,53 @@ public sealed class HallOfFamePointsDetailLoaderTests : IDisposable
         loaded.InductedLine.ShouldBe("In the Hall of Fame for Meritorious Service");
     }
 
+    [Fact(DisplayName = "Renders EmptyContent when it is set and the bowler has no points and no membership years")]
+    public void Render_ShouldRenderEmptyContent_WhenDetailIsEmpty()
+    {
+        // Arrange
+        SetupDetail(BowlerId, HallOfFamePointsDetailResponseFactory.Create(
+            totalPoints: 0, seasonsWithPoints: 0, breakdown: [], membershipYears: []));
+
+        // Act
+        var cut = _ctx.Render<HallOfFamePointsDetailLoader>(p => p
+            .Add(x => x.BowlerId, BowlerId)
+            .Add(x => x.EmptyContent, builder => builder.AddMarkupContent(0, "<p class=\"empty\">Nothing here</p>")));
+
+        // Assert
+        cut.Find(".empty").TextContent.ShouldBe("Nothing here");
+        cut.FindAll(".pm-stat").ShouldBeEmpty();
+    }
+
+    [Fact(DisplayName = "Renders the data view when EmptyContent is not set and the detail is empty")]
+    public void Render_ShouldRenderDataView_WhenNoEmptyContent()
+    {
+        // Arrange
+        SetupDetail(BowlerId, HallOfFamePointsDetailResponseFactory.Create(
+            totalPoints: 0, seasonsWithPoints: 0, breakdown: [], membershipYears: []));
+
+        // Act
+        var cut = _ctx.Render<HallOfFamePointsDetailLoader>(p => p.Add(x => x.BowlerId, BowlerId));
+
+        // Assert
+        cut.Markup.ShouldContain("No points yet.");
+    }
+
+    [Fact(DisplayName = "Renders the data view when EmptyContent is set but the bowler has data")]
+    public void Render_ShouldRenderDataView_WhenEmptyContentSetAndDataPresent()
+    {
+        // Arrange
+        SetupDetail(BowlerId, HallOfFamePointsDetailResponseFactory.Create());
+
+        // Act
+        var cut = _ctx.Render<HallOfFamePointsDetailLoader>(p => p
+            .Add(x => x.BowlerId, BowlerId)
+            .Add(x => x.EmptyContent, builder => builder.AddMarkupContent(0, "<p class=\"empty\">Nothing here</p>")));
+
+        // Assert
+        cut.FindAll(".empty").ShouldBeEmpty();
+        cut.FindAll(".pm-stat").Count.ShouldBe(3);
+    }
+
     private void SetupDetail(string bowlerId, HallOfFamePointsDetailResponse detail)
     {
         using var response = new StubApiResponse<HallOfFamePointsDetailResponse>

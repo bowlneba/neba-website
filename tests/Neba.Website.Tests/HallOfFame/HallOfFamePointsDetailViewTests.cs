@@ -26,10 +26,12 @@ public sealed class HallOfFamePointsDetailViewTests : IDisposable
         => _ctx.Dispose();
 
     private IRenderedComponent<HallOfFamePointsDetailView> Render(
+        HallOfFamePointsDetailLayout layout = HallOfFamePointsDetailLayout.Standing,
         HallOfFamePointRequirements? requirements = null,
         HallOfFamePointsDetailResponse? response = null)
         => _ctx.Render<HallOfFamePointsDetailView>(p => p
             .Add(x => x.Detail, (response ?? HallOfFamePointsDetailResponseFactory.Create()).ToViewModel())
+            .Add(x => x.Layout, layout)
             .Add(x => x.Requirements, requirements));
 
     [Fact(DisplayName = "Shows the points table with running totals and the threshold row")]
@@ -52,8 +54,8 @@ public sealed class HallOfFamePointsDetailViewTests : IDisposable
         cut.FindAll(".pm-table tr.pm-reached").ShouldHaveSingleItem();
     }
 
-    [Fact(DisplayName = "Orders the stats points, seasons, membership years")]
-    public void Render_ShouldOrderStats()
+    [Fact(DisplayName = "Standing layout orders the stats points, seasons, membership years")]
+    public void Render_ShouldOrderStats_WhenStandingLayout()
     {
         // Arrange
         var response = HallOfFamePointsDetailResponseFactory.Create(totalPoints: 43, seasonsWithPoints: 8);
@@ -71,7 +73,7 @@ public sealed class HallOfFamePointsDetailViewTests : IDisposable
     {
         // Arrange
         // Act
-        var with = Render(Requirements);
+        var with = Render(requirements: Requirements);
         var without = Render();
 
         // Assert
@@ -89,7 +91,7 @@ public sealed class HallOfFamePointsDetailViewTests : IDisposable
         var incompleteResponse = HallOfFamePointsDetailResponseFactory.Create(membershipHistoryComplete: false);
 
         // Act
-        var incomplete = Render(Requirements, incompleteResponse);
+        var incomplete = Render(requirements: Requirements, response: incompleteResponse);
         var complete = Render();
 
         // Assert
@@ -112,5 +114,33 @@ public sealed class HallOfFamePointsDetailViewTests : IDisposable
         // Assert
         cut.Markup.ShouldContain("No points yet.");
         cut.Markup.ShouldContain("Guest and non-member entries do not count.");
+    }
+
+    [Fact(DisplayName = "Profile layout lists year and title with no point values, total, or threshold row")]
+    public void Render_ShouldShowPlainList_WhenProfileLayout()
+    {
+        // Arrange
+        // Act
+        var cut = Render(HallOfFamePointsDetailLayout.Profile);
+
+        // Assert
+        cut.FindAll(".pm-table").ShouldBeEmpty();
+        cut.FindAll(".pm-reached").ShouldBeEmpty();
+        var items = cut.FindAll(".pm-years")[0].QuerySelectorAll("li");
+        items.Select(li => li.TextContent).ShouldBe(["2017Bowler of the Year", "2019Singles Title"]);
+    }
+
+    [Fact(DisplayName = "Profile layout orders the stats membership years, points, seasons")]
+    public void Render_ShouldOrderStats_WhenProfileLayout()
+    {
+        // Arrange
+        var response = HallOfFamePointsDetailResponseFactory.Create(totalPoints: 43, seasonsWithPoints: 8);
+
+        // Act
+        var cut = Render(HallOfFamePointsDetailLayout.Profile, response: response);
+
+        // Assert
+        cut.FindAll(".pm-stat span").Select(span => span.TextContent)
+            .ShouldBe(["membership years", "points", "seasons with points"]);
     }
 }
