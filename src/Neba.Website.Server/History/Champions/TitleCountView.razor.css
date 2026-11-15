@@ -185,3 +185,12 @@
     .tier-head__title { font-size: 1.1rem; }
     .tier-head__range { display: block; margin-left: 0; font-size: 0.82rem; }
 }
+
+@media (prefers-reduced-motion: reduce) {
+    .tier-head__chevron,
+    .bowler-card,
+    .bowler-card:hover {
+        animation: none;
+        transition: none;
+    }
+}

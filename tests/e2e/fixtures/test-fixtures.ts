@@ -96,9 +96,9 @@ export class ApiMockBuilder {
    * Apply all mocks to a page
    */
   async applyTo(page: Page): Promise<void> {
-    for (const [pattern, handler] of this.mocks) {
-      await page.route(pattern, handler);
-    }
+    await Promise.all(
+      [...this.mocks].map(([pattern, handler]) => page.route(pattern, handler)),
+    );
   }
 }
 

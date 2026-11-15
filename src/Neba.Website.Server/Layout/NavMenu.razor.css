@@ -83,8 +83,8 @@
 
 /* Menu open state - prevent jumping by disabling sticky positioning */
 .neba-navbar.menu-open {
-    position: relative !important;
-    top: auto !important;
+    position: relative;
+    top: auto;
 }
 
 /* Mobile/tablet: body scroll is locked while the menu is open, so let the

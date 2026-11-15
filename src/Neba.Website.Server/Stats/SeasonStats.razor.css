@@ -413,3 +413,12 @@
     color: #6b7280;
     font-size: 0.8125rem;
 }
+
+@media (prefers-reduced-motion: reduce) {
+    .stats-points-race-card,
+    .stats-points-race-card:hover,
+    .stats-points-race-card:focus-visible {
+        animation: none;
+        transition: none;
+    }
+}

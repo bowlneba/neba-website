@@ -133,3 +133,12 @@
     color: var(--neba-accent-red);
     white-space: nowrap;
 }
+
+@media (prefers-reduced-motion: reduce) {
+    .season-timeline__dot,
+    .season-timeline__dot:hover,
+    .season-timeline__dot:focus-visible {
+        animation: none;
+        transition: none;
+    }
+}

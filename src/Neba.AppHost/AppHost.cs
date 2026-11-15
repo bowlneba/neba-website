@@ -218,7 +218,7 @@ if (builder.ExecutionContext.IsPublishMode)
     var concurrentRequests = Environment.GetEnvironmentVariable("AZURE_CONTAINERAPP_CONCURRENT_REQUESTS")
         ?? throw new InvalidOperationException("AZURE_CONTAINERAPP_CONCURRENT_REQUESTS environment variable is not set.");
 
-    void ConfigureScale(AzureResourceInfrastructure infra, ContainerApp app)
+    Action<AzureResourceInfrastructure, ContainerApp> configureScale = (_, app) =>
     {
         app.Template.Scale.MinReplicas = minReplicas;
         app.Template.Scale.MaxReplicas = maxReplicas;
@@ -230,7 +230,7 @@ if (builder.ExecutionContext.IsPublishMode)
                 Metadata = { ["concurrentRequests"] = concurrentRequests }
             }
         });
-    }
+    };
 
     // Custom domain + managed certificate binding, codified so it survives every future
     // `azd provision` (previously these were only bound by hand in the Portal, and a fresh
@@ -275,8 +275,6 @@ if (builder.ExecutionContext.IsPublishMode)
             Environment.GetEnvironmentVariable("AZURE_WEB_WWW_CERTIFICATE_NAME") ?? string.Empty,
             publishValueAsDefault: true);
     }
-
-    Action<AzureResourceInfrastructure, ContainerApp> configureScale = ConfigureScale;
 
 #pragma warning disable ASPIREACADOMAINS001
     api.PublishAsAzureContainerApp(configureScale + ((_, app) => app.ConfigureCustomDomain(apiCustomDomain, apiCertificateName)));
