@@ -72,6 +72,22 @@ public sealed class HallOfFamePointsModalTests : IDisposable
         cut.Markup.Trim().ShouldBeEmpty();
     }
 
+    [Fact(DisplayName = "Does not fetch again when the modal is closed and reopened for the same bowler")]
+    public void Render_ShouldNotRefetch_WhenReopened()
+    {
+        // Arrange
+        SetupDetail(HallOfFamePointsDetailResponseFactory.Create(totalPoints: 18));
+        var cut = RenderModal();
+
+        // Act
+        cut.Render(p => p.Add(x => x.IsOpen, false));
+        cut.Render(p => p.Add(x => x.IsOpen, true));
+
+        // Assert
+        cut.Find(".pm-table tfoot").TextContent.ShouldContain("18");
+        _mockApi.Verify(x => x.GetHallOfFamePointsDetailAsync(BowlerId, It.IsAny<CancellationToken>()), Times.Once);
+    }
+
     [Fact(DisplayName = "Shows the loading state until the API answers")]
     public void Render_ShouldShowLoading_BeforeApiAnswers()
     {

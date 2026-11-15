@@ -16,7 +16,8 @@
     {
         <button type="button"
                 class="@(PhotoClass + " inductee-photo--button")"
-                aria-label="@("View " + BowlerName + "'s Hall of Fame profile")"
+                tabindex="-1"
+                aria-hidden="true"
                 @onclick="OnOpen">
             @portrait
         </button>
@@ -63,7 +64,7 @@
     public EventCallback OnEdit { get; set; }
 
     /// <summary>
-    /// When set, the portrait is a button that raises this callback (opens the inductee's profile).
+    /// When set, the portrait is a mouse-only button that raises this callback (opens the inductee's profile). It is skipped by keyboard and screen readers; the name beside it is the accessible control.
     /// </summary>
     [Parameter]
     public EventCallback OnOpen { get; set; }

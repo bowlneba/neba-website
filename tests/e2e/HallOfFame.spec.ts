@@ -77,7 +77,7 @@ test.describe('Hall of Fame page', () => {
     });
 
     test('opens from the photo circle', async ({ page }) => {
-      await page.getByRole('button', { name: "View Jane Smith's Hall of Fame profile" }).click();
+      await page.locator('.inductee-item', { hasText: 'Jane Smith' }).locator('.inductee-photo--button').click();
       await expect(page.getByRole('dialog', { name: 'Jane Smith' })).toBeVisible();
     });
 

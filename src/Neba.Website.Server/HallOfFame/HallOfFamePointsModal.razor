@@ -13,6 +13,7 @@
     <ChildContent>
         <HallOfFamePointsDetailLoader BowlerId="@BowlerId"
                                       Requirements="@Requirements"
+                                      Cache="@_cache"
                                       OnLoaded="HandleLoaded" />
     </ChildContent>
 </NebaModal>
@@ -34,6 +35,7 @@
     [Parameter]
     public HallOfFamePointRequirements? Requirements { get; set; }
 
+    private readonly Dictionary<string, HallOfFamePointsDetailViewModel> _cache = [];
     private string? _inductedLine;
 
     protected override void OnParametersSet()

@@ -50,11 +50,16 @@ else if (_data is not null)
     [Parameter]
     public EventCallback<HallOfFamePointsDetailViewModel> OnLoaded { get; set; }
 
+    /// <summary>Optional store of loaded details by bowler id. A caller that outlives the loader (a closing modal) passes one so a reopen skips the fetch.</summary>
+    [Parameter]
+    public IDictionary<string, HallOfFamePointsDetailViewModel>? Cache { get; set; }
+
     private enum LoaderState { Loading, Error, Data }
 
     private LoaderState _state = LoaderState.Loading;
     private HallOfFamePointsDetailViewModel? _data;
     private string? _lastLoadedBowlerId;
+    private int _loadVersion;
 
     protected override async Task OnParametersSetAsync()
     {
@@ -68,7 +73,19 @@ else if (_data is not null)
 
     private async Task LoadAsync()
     {
-        _lastLoadedBowlerId = BowlerId;
+        // Each call takes a version; a response that arrives after a newer call started is dropped.
+        var version = ++_loadVersion;
+        var bowlerId = BowlerId;
+        _lastLoadedBowlerId = bowlerId;
+
+        if (Cache is not null && Cache.TryGetValue(bowlerId, out var cached))
+        {
+            _data = cached;
+            _state = LoaderState.Data;
+            await OnLoaded.InvokeAsync(cached);
+            return;
+        }
+
         _state = LoaderState.Loading;
         _data = null;
         StateHasChanged();
@@ -76,7 +93,12 @@ else if (_data is not null)
         var result = await ApiExecutor.ExecuteAsync(
             "HallOfFame",
             "GetHallOfFamePointsDetail",
-            ct => HallOfFameApi.GetHallOfFamePointsDetailAsync(BowlerId, ct));
+            ct => HallOfFameApi.GetHallOfFamePointsDetailAsync(bowlerId, ct));
+
+        if (version != _loadVersion)
+        {
+            return;
+        }
 
         if (result.IsError)
         {
@@ -84,9 +106,11 @@ else if (_data is not null)
             return;
         }
 
-        _data = result.Value.ToViewModel();
+        var data = result.Value.ToViewModel();
+        _data = data;
         _state = LoaderState.Data;
-        await OnLoaded.InvokeAsync(_data);
+        Cache?[bowlerId] = data;
+        await OnLoaded.InvokeAsync(data);
     }
 
     private Task RetryAsync()

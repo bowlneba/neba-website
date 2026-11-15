@@ -126,6 +126,8 @@ public sealed class HallOfFamePointsDetailViewTests : IDisposable
         // Assert
         cut.FindAll(".pm-table").ShouldBeEmpty();
         cut.FindAll(".pm-reached").ShouldBeEmpty();
+        cut.Markup.ShouldContain("Titles and awards");
+        cut.Markup.ShouldNotContain("Points earned");
         var items = cut.FindAll(".pm-years")[0].QuerySelectorAll("li");
         items.Select(li => li.TextContent).ShouldBe(["2017Bowler of the Year", "2019Singles Title"]);
     }

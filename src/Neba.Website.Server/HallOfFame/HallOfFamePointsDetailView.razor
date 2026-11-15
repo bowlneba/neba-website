@@ -12,10 +12,10 @@
         }
     </div>
 
-    <h3>Points earned</h3>
+    <h3>@(Layout == HallOfFamePointsDetailLayout.Profile ? "Titles and awards" : "Points earned")</h3>
     @if (Detail.Breakdown.Count == 0)
     {
-        <p class="pm-muted">No points yet.</p>
+        <p class="pm-muted">@(Layout == HallOfFamePointsDetailLayout.Profile ? "No titles or awards on file." : "No points yet.")</p>
     }
     else if (Layout == HallOfFamePointsDetailLayout.Profile)
     {

@@ -140,6 +140,22 @@ public sealed class HallOfFameInducteeModalTests : IDisposable
         cut.FindAll(".pm-stat").ShouldBeEmpty();
     }
 
+    [Fact(DisplayName = "Shows a neutral empty message for a Superior Performance inductee with no data")]
+    public void Render_ShouldShowNeutralEmptyMessage_WhenSuperiorInducteeHasNoData()
+    {
+        // Arrange
+        SetupDetail(HallOfFamePointsDetailResponseFactory.Create(
+            totalPoints: 0, seasonsWithPoints: 0, breakdown: [], membershipYears: []));
+
+        // Act
+        var cut = RenderModal(HallOfFameInductionViewModelFactory.Create(categories: [HallOfFameCategory.SuperiorPerformance]));
+
+        // Assert
+        var message = cut.Find(".ip-empty").TextContent;
+        message.ShouldContain("No points or membership details are on file");
+        message.ShouldNotContain("Meritorious Service");
+    }
+
     [Fact(DisplayName = "Shows the data for a Meritorious Service inductee who has points")]
     public void Render_ShouldShowData_WhenMeritoriousInducteeHasPoints()
     {

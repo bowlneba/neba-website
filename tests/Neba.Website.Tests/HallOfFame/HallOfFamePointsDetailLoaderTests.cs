@@ -111,6 +111,61 @@ public sealed class HallOfFamePointsDetailLoaderTests : IDisposable
         _mockApi.Verify(x => x.GetHallOfFamePointsDetailAsync(OtherBowlerId, It.IsAny<CancellationToken>()), Times.Once);
     }
 
+    [Fact(DisplayName = "Ignores a slow response for a bowler id that has since changed")]
+    public void SetParameters_ShouldIgnoreStaleResponse_WhenBowlerIdChangedMidLoad()
+    {
+        // Arrange
+        var first = new TaskCompletionSource<IApiResponse<HallOfFamePointsDetailResponse>>();
+        var second = new TaskCompletionSource<IApiResponse<HallOfFamePointsDetailResponse>>();
+        _mockApi.Setup(x => x.GetHallOfFamePointsDetailAsync(BowlerId, It.IsAny<CancellationToken>())).Returns(first.Task);
+        _mockApi.Setup(x => x.GetHallOfFamePointsDetailAsync(OtherBowlerId, It.IsAny<CancellationToken>())).Returns(second.Task);
+        var cut = _ctx.Render<HallOfFamePointsDetailLoader>(p => p.Add(x => x.BowlerId, BowlerId));
+        cut.Render(p => p.Add(x => x.BowlerId, OtherBowlerId));
+
+        using var newer = new StubApiResponse<HallOfFamePointsDetailResponse>
+        {
+            IsSuccessStatusCode = true,
+            StatusCode = System.Net.HttpStatusCode.OK,
+            Content = HallOfFamePointsDetailResponseFactory.Create(bowlerId: OtherBowlerId, totalPoints: 77)
+        };
+        using var older = new StubApiResponse<HallOfFamePointsDetailResponse>
+        {
+            IsSuccessStatusCode = true,
+            StatusCode = System.Net.HttpStatusCode.OK,
+            Content = HallOfFamePointsDetailResponseFactory.Create(totalPoints: 18)
+        };
+
+        // Act
+        second.SetResult(newer);
+        cut.WaitForAssertion(() => cut.Find(".pm-table tfoot").TextContent.ShouldContain("77"));
+        first.SetResult(older);
+
+        // Assert
+        cut.Find(".pm-table tfoot").TextContent.ShouldContain("77");
+    }
+
+    [Fact(DisplayName = "Uses a cached detail without calling the API and stores a fetched one")]
+    public void Render_ShouldUseCache_WhenDetailIsCached()
+    {
+        // Arrange
+        SetupDetail(BowlerId, HallOfFamePointsDetailResponseFactory.Create(totalPoints: 18));
+        var cache = new Dictionary<string, HallOfFamePointsDetailViewModel>();
+        var firstRender = _ctx.Render<HallOfFamePointsDetailLoader>(p => p
+            .Add(x => x.BowlerId, BowlerId)
+            .Add(x => x.Cache, cache));
+        cache.ShouldContainKey(BowlerId);
+
+        // Act
+        var secondRender = _ctx.Render<HallOfFamePointsDetailLoader>(p => p
+            .Add(x => x.BowlerId, BowlerId)
+            .Add(x => x.Cache, cache));
+
+        // Assert
+        firstRender.Find(".pm-table tfoot").TextContent.ShouldContain("18");
+        secondRender.Find(".pm-table tfoot").TextContent.ShouldContain("18");
+        _mockApi.Verify(x => x.GetHallOfFamePointsDetailAsync(BowlerId, It.IsAny<CancellationToken>()), Times.Once);
+    }
+
     [Fact(DisplayName = "Raises OnLoaded with the detail after a successful load")]
     public void Render_ShouldRaiseOnLoaded_WhenLoaded()
     {

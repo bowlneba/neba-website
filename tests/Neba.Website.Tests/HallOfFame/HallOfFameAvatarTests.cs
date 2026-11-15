@@ -143,7 +143,7 @@ public sealed class HallOfFameAvatarTests : IDisposable
         initials.ShouldBe(expected);
     }
 
-    [Fact(DisplayName = "Should render the portrait as a labelled button and raise OnOpen when clicked")]
+    [Fact(DisplayName = "Should render the portrait as a mouse-only button and raise OnOpen when clicked")]
     public void Render_ShouldRenderButton_WhenOnOpenIsSet()
     {
         // Arrange
@@ -155,7 +155,9 @@ public sealed class HallOfFameAvatarTests : IDisposable
         button.Click();
 
         // Assert
-        button.GetAttribute("aria-label").ShouldBe("View Jane Smith's Hall of Fame profile");
+        button.GetAttribute("tabindex").ShouldBe("-1");
+        button.GetAttribute("aria-hidden").ShouldBe("true");
+        button.HasAttribute("aria-label").ShouldBeFalse();
         opened.ShouldBeTrue();
     }
 
