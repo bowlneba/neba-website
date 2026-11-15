@@ -58,7 +58,8 @@ public sealed class HallOfFameInducteeModalTests : IDisposable
         var cut = RenderModal(inductee: null, isOpen: false);
 
         // Assert
-        cut.Markup.Trim().ShouldBeEmpty();
+        // The ip-root wrapper (scope anchor for ::deep) renders empty; no modal markup inside it.
+        cut.Find(".ip-root").InnerHtml.Trim().ShouldBeEmpty();
     }
 
     [Fact(DisplayName = "Header shows name, class year, categories, and initials when there is no photo")]
