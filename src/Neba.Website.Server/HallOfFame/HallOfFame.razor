@@ -147,8 +147,9 @@
                                                       FocalX="@inductee.PhotoFocalX"
                                                       FocalY="@inductee.PhotoFocalY"
                                                       Zoom="@inductee.PhotoZoom"
+                                                      OnOpen="@OpenCallbackFor(inductee)"
                                                       OnEdit="@EditCallbackFor(inductee)" />
-                                    <div class="inductee-name">@inductee.BowlerName</div>
+                                    <button type="button" class="inductee-name" @onclick="@(() => OpenProfile(inductee))">@inductee.BowlerName</button>
                                     <div class="inductee-categories">
                                         @foreach (var category in inductee.Categories)
                                         {
@@ -177,6 +178,10 @@
         </div>
     </div>
 
+    <HallOfFameInducteeModal IsOpen="@(_viewing is not null)"
+                             Inductee="@_viewing"
+                             OnClose="CloseProfile" />
+
     <HallOfFamePhotoEditor IsOpen="@(_editing is not null)"
                            InductionId="@(_editing?.Id ?? string.Empty)"
                            BowlerName="@(_editing?.BowlerName ?? string.Empty)"
@@ -194,6 +199,7 @@
     private List<YearGroup> _years = [];
     private string? _errorMessage;
     private HallOfFameInductionViewModel? _editing;
+    private HallOfFameInductionViewModel? _viewing;
     private bool _canEditPhotos;
     private ElementReference _gallery;
     private IJSObjectReference? _jsModule;
@@ -272,6 +278,15 @@
                     .ThenBy(i => i.BowlerName, StringComparer.OrdinalIgnoreCase)]
             })];
     }
+
+    private EventCallback OpenCallbackFor(HallOfFameInductionViewModel inductee)
+        => EventCallback.Factory.Create(this, () => OpenProfile(inductee));
+
+    private void OpenProfile(HallOfFameInductionViewModel inductee)
+        => _viewing = inductee;
+
+    private void CloseProfile()
+        => _viewing = null;
 
     private EventCallback EditCallbackFor(HallOfFameInductionViewModel inductee)
         => _canEditPhotos

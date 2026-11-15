@@ -311,6 +311,37 @@ const MOCK_HALL_OF_FAME_POINTS = {
   ],
 };
 
+// Detail for inducted bowlers. 203 (Alice Williams) is missing on purpose: the detail route returns 404 for her.
+const MOCK_INDUCTEE_DETAILS = new Map<string, object>([
+  ['01JX0000000000000000000201', {
+    bowlerId: '01JX0000000000000000000201',
+    bowlerName: 'Jane Smith',
+    inductedCategories: ['Superior Performance'],
+    totalPoints: 43,
+    seasonsWithPoints: 3,
+    membershipHistoryComplete: true,
+    breakdown: [
+      { source: 'Bowler of the Year', date: '2003-12-31', points: 12, runningTotal: 12, reachedThreshold: false },
+      { source: 'Singles Title', date: '2009-03-10', points: 6, runningTotal: 18, reachedThreshold: false },
+      { source: 'NEBA Masters Title', date: '2014-09-11', points: 6, runningTotal: 24, reachedThreshold: false },
+    ],
+    membershipYears: [
+      { year: 1999, membershipType: 'New' },
+      { year: 2000, membershipType: 'Renewal' },
+    ],
+  }],
+  ['01JX0000000000000000000202', {
+    bowlerId: '01JX0000000000000000000202',
+    bowlerName: 'Bob Johnson',
+    inductedCategories: ['Meritorious Service'],
+    totalPoints: 0,
+    seasonsWithPoints: 0,
+    membershipHistoryComplete: true,
+    breakdown: [],
+    membershipYears: [],
+  }],
+]);
+
 const MOCK_HALL_OF_FAME_POINTS_DETAIL = (bowlerId: string) => {
   const standing = MOCK_HALL_OF_FAME_POINTS.standings.find((s) => s.bowlerId === bowlerId);
   if (!standing) return null;
@@ -1430,7 +1461,8 @@ function resolveStaticGetRoute(pathname: string): object | null {
   if (pathname === `/bowlers/${PRIMARY_BOWLER_ID}/titles`) return MOCK_BOWLER_TITLES_CURRENT_LEADER;
   if (pathname === `/bowlers/${SECONDARY_BOWLER_ID}/titles`) return MOCK_BOWLER_TITLES_CURRENT_RIVAL;
   if (pathname.startsWith('/hall-of-fame/points/')) {
-    return MOCK_HALL_OF_FAME_POINTS_DETAIL(pathname.slice('/hall-of-fame/points/'.length));
+    const bowlerId = pathname.slice('/hall-of-fame/points/'.length);
+    return MOCK_HALL_OF_FAME_POINTS_DETAIL(bowlerId) ?? MOCK_INDUCTEE_DETAILS.get(bowlerId) ?? null;
   }
   return null;
 }

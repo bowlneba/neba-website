@@ -1,5 +1,5 @@
-<div class="avatar-wrap">
-    <div class="@(Ringed ? "inductee-photo inductee-photo--ringed" : "inductee-photo")">
+@{
+    RenderFragment portrait = @<text>
         @if (PhotoUri is not null)
         {
             <img class="inductee-photo__img" src="@PhotoUri.AbsoluteUri" alt="" style="@ImageStyle" loading="lazy" />
@@ -8,7 +8,25 @@
         {
             @GetInitials(BowlerName)
         }
-    </div>
+    </text>;
+}
+
+<div class="avatar-wrap">
+    @if (OnOpen.HasDelegate)
+    {
+        <button type="button"
+                class="@(PhotoClass + " inductee-photo--button")"
+                aria-label="@("View " + BowlerName + "'s Hall of Fame profile")"
+                @onclick="OnOpen">
+            @portrait
+        </button>
+    }
+    else
+    {
+        <div class="@PhotoClass">
+            @portrait
+        </div>
+    }
 
     @if (OnEdit.HasDelegate)
     {
@@ -43,6 +61,15 @@
     /// </summary>
     [Parameter]
     public EventCallback OnEdit { get; set; }
+
+    /// <summary>
+    /// When set, the portrait is a button that raises this callback (opens the inductee's profile).
+    /// </summary>
+    [Parameter]
+    public EventCallback OnOpen { get; set; }
+
+    private string PhotoClass
+        => Ringed ? "inductee-photo inductee-photo--ringed" : "inductee-photo";
 
     private string ImageStyle
         => new FocalPoint(FocalX ?? FocalPoint.Default.X, FocalY ?? FocalPoint.Default.Y, Zoom ?? FocalPoint.Default.Zoom)

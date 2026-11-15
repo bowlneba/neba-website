@@ -1,6 +1,8 @@
 using Bunit;
 using Bunit.TestDoubles;
 
+using Microsoft.AspNetCore.Components;
+
 using Neba.Api.Contracts.Security;
 using Neba.TestFactory.Attributes;
 using Neba.Website.Server.HallOfFame;
@@ -139,5 +141,33 @@ public sealed class HallOfFameAvatarTests : IDisposable
 
         // Assert
         initials.ShouldBe(expected);
+    }
+
+    [Fact(DisplayName = "Should render the portrait as a labelled button and raise OnOpen when clicked")]
+    public void Render_ShouldRenderButton_WhenOnOpenIsSet()
+    {
+        // Arrange
+        var opened = false;
+        var cut = Render(p => p.Add(x => x.OnOpen, EventCallback.Factory.Create(this, () => opened = true)));
+
+        // Act
+        var button = cut.Find("button.inductee-photo");
+        button.Click();
+
+        // Assert
+        button.GetAttribute("aria-label").ShouldBe("View Jane Smith's Hall of Fame profile");
+        opened.ShouldBeTrue();
+    }
+
+    [Fact(DisplayName = "Should render the portrait as a plain element when OnOpen is not set")]
+    public void Render_ShouldRenderPlainElement_WhenOnOpenIsNotSet()
+    {
+        // Arrange
+        // Act
+        var cut = Render();
+
+        // Assert
+        cut.FindAll("button.inductee-photo").ShouldBeEmpty();
+        cut.Find("div.inductee-photo").ShouldNotBeNull();
     }
 }

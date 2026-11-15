@@ -62,4 +62,46 @@ test.describe('Hall of Fame page', () => {
     await expect(page).toHaveURL(/\/hall-of-fame#hof-criteria$/);
     await expect(page.locator('#hof-criteria')).toBeInViewport();
   });
+
+  test.describe('inductee profile', () => {
+    test('opens from the name with the header and a plain points list', async ({ page }) => {
+      await page.locator('.inductee-name', { hasText: 'Jane Smith' }).click();
+
+      const dialog = page.getByRole('dialog', { name: 'Jane Smith' });
+      await expect(dialog.getByText('Class of 2024')).toBeVisible();
+      await expect(dialog.locator('.ip-chips li')).toHaveText(['Superior Performance']);
+      await expect(dialog.locator('.pm-stat')).toHaveCount(3);
+      await expect(dialog.getByText('Singles Title')).toBeVisible();
+      await expect(dialog.locator('.pm-reached')).toHaveCount(0);
+      await expect(dialog).not.toContainText('of 36');
+    });
+
+    test('opens from the photo circle', async ({ page }) => {
+      await page.getByRole('button', { name: "View Jane Smith's Hall of Fame profile" }).click();
+      await expect(page.getByRole('dialog', { name: 'Jane Smith' })).toBeVisible();
+    });
+
+    test('closes with Escape', async ({ page }) => {
+      await page.locator('.inductee-name', { hasText: 'Jane Smith' }).click();
+      const dialog = page.getByRole('dialog', { name: 'Jane Smith' });
+      await expect(dialog).toBeVisible();
+      // The modal moves focus into itself after it renders; Escape only closes it once that has happened.
+      await expect(dialog).toBeFocused();
+
+      await page.keyboard.press('Escape');
+
+      await expect(dialog).toBeHidden();
+    });
+
+    test('shows a message for an inductee with no points', async ({ page }) => {
+      await page.locator('.inductee-name', { hasText: 'Bob Johnson' }).click();
+      await expect(page.getByRole('dialog', { name: 'Bob Johnson' })).toContainText('not shown yet');
+    });
+
+    test('shows an error with Retry when the points cannot load', async ({ page }) => {
+      await page.locator('.inductee-name', { hasText: 'Alice Williams' }).click();
+      await expect(page.getByRole('dialog', { name: 'Alice Williams' })).toContainText('Could not load points');
+      await expect(page.getByRole('button', { name: 'Retry' })).toBeVisible();
+    });
+  });
 });
