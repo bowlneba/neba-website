@@ -1,21 +1,21 @@
 <Query Kind="Program">
   <Connection>
-    <ID>1fc48aec-40be-4c6b-a8e7-a5b7f0248ee4</ID>
+    <ID>e34b0eb3-dca3-44a7-a425-2099814c6c2d</ID>
     <NamingServiceVersion>3</NamingServiceVersion>
     <Persist>true</Persist>
     <Driver Assembly="(internal)" PublicKeyToken="no-strong-name">LINQPad.Drivers.EFCore.DynamicDriver</Driver>
     <AllowDateOnlyTimeOnly>true</AllowDateOnlyTimeOnly>
     <SqlSecurity>true</SqlSecurity>
-    <UserName>nebaadmin</UserName>
+    <Server>localhost</Server>
+    <UserName>postgres</UserName>
+    <DisplayName>neba-website (localhost)</DisplayName>
     <Database>bowlneba</Database>
-    <Server>postgres-j7jlg5nmk67ym.postgres.database.azure.com</Server>
-    <DisplayName>neba-website</DisplayName>
-    <IsProduction>true</IsProduction>
     <DriverData>
       <EncryptSqlTraffic>True</EncryptSqlTraffic>
-      <MapSQLiteDecimals>true</MapSQLiteDecimals>
       <PreserveNumeric1>True</PreserveNumeric1>
       <EFProvider>Npgsql.EntityFrameworkCore.PostgreSQL</EFProvider>
+      <ExtraCxOptions>Include Error Detail=true;</ExtraCxOptions>
+      <Port>19630</Port>
     </DriverData>
   </Connection>
   <NuGetReference>Ulid</NuGetReference>
@@ -101,7 +101,7 @@ async Task Main()
 /// <summary>
 /// Set to true to write to BowlerMemberships. False is a dry run (validate + dump only).
 /// </summary>
-const bool Commit = false;
+const bool Commit = true;
 
 /// <summary>
 /// Legacy membership id for "System Import". Exists only to satisfy the legacy "every bowler must have a membership" rule; skipped, never migrated.
