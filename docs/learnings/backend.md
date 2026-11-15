@@ -154,3 +154,10 @@ Unmeasured, sized by reading the code (about 1k members, a few hundred bowlers p
 
 - `Ulid.TryParse` (Ulid 1.4.1) returns true for any 26 characters, even `!!` or spaces, so a `.Must(id => Ulid.TryParse(id, out _))` validator rule rejects nothing but wrong length. A malformed ID parses to a garbage ULID and the handler returns `NotFound`. Use a strict pattern if a 400 is needed.
 - A cached query that reads bowler data (names, memberships) must carry the `neba:bowlers` tag; the bowler and membership jobs evict that tag only.
+
+## Known performance limits (reviewed 2026-11-15, nothing to do at current table sizes)
+
+Found in the v1.2.0 performance review. Each is fine at today's and the near-term projected row counts. Look here first if search or the Hall of Fame page slows down.
+
+- **Bowler search scans the table.** `SearchBowlersQueryHandler` runs two `ILike` matches joined by `OR`: `FirstName + " " + LastName`, and `Nickname + " " + LastName` for bowlers with a nickname. Both start with a leading `%`, so the `(LastName, FirstName)` index cannot serve either. Results stop at 20, the picker waits for 3 characters and debounces 300 ms, and the `bowler-search` rate limit applies. If the `bowlers` table reaches tens of thousands of rows, add a `pg_trgm` GIN index on **each** concatenated expression. An index on only one leaves the other branch of the `OR` scanning the whole table.
+- **Hall of Fame points caches evict on every bowler change.** `ListPoints` and each `PointsDetail(bowlerId)` carry the shared `neba:bowlers` tag, so any bowler or membership job evicts all of them. A list miss runs about 6 queries (every title win, award and induction). If sync windows cause repeated cold loads, evict only on name or membership-type changes instead of the shared tag.

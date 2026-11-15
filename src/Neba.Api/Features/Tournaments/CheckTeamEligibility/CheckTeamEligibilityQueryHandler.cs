@@ -68,8 +68,8 @@ internal sealed class CheckTeamEligibilityQueryHandler(
             .Select(bowler => new { bowler.Id, bowler.DateOfBirth, bowler.Name, bowler.UsbcId })
             .ToListAsync(cancellationToken);
 
-        var knownIds = bowlers.Select(bowler => bowler.Id).ToHashSet();
-        var missing = query.BowlerIds.Where(id => !knownIds.Contains(id)).Cast<BowlerId?>().FirstOrDefault();
+        var bowlersById = bowlers.ToDictionary(bowler => bowler.Id);
+        var missing = query.BowlerIds.Where(id => !bowlersById.ContainsKey(id)).Cast<BowlerId?>().FirstOrDefault();
 
         if (missing is { } missingId)
         {
@@ -88,9 +88,7 @@ internal sealed class CheckTeamEligibilityQueryHandler(
         var titles = await titlesReader.LoadAsync(query.BowlerIds, cancellationToken);
 
         // In the order the bowlers were given, then members not in the system.
-        var orderedBowlers = query.BowlerIds
-            .Select(id => bowlers.Single(bowler => bowler.Id == id))
-            .ToList();
+        var orderedBowlers = ResolveInRequestedOrder(query.BowlerIds, bowlersById);
 
         var members = orderedBowlers
             .Select(bowler => new TeamMemberFacts
@@ -117,4 +115,17 @@ internal sealed class CheckTeamEligibilityQueryHandler(
         return new TeamEligibilityDto(
             result.Outcome, result.Reasons, result.DateChecks, Explanation: explanation, MemberIdentities: identities);
     }
+
+    /// <summary>
+    /// Returns the loaded bowlers in the order they were requested. Every requested ID must be in
+    /// <paramref name="loaded"/>: the not-found check has to return before this runs. The explicit throw names
+    /// the broken rule, in case that check is ever moved or loosened.
+    /// </summary>
+    internal static List<TBowler> ResolveInRequestedOrder<TBowler>(
+        IEnumerable<BowlerId> requestedIds,
+        IReadOnlyDictionary<BowlerId, TBowler> loaded)
+        => [.. requestedIds.Select(id => loaded.TryGetValue(id, out var bowler)
+            ? bowler
+            : throw new InvalidOperationException(
+                $"Bowler {id} was requested but not loaded. The not-found check must return before the members are built."))];
 }
