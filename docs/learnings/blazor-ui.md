@@ -158,3 +158,8 @@ A photo shown in a shape (round avatar, later news headers) is framed by three w
 ### Tournament rules anchors
 
 - A new special tournament type with its own rule section needs an entry in `TournamentRulesAnchors` (`Documents/TournamentRulesAnchors.cs`). It drives both the `#slug` scroll on `/tournaments/rules` and the rules slide-out on the tournament detail page.
+
+### Scoped CSS (`::deep`) on a component whose root is another component
+
+- Blazor scoped CSS adds the scope attribute only to elements your own markup renders. If the component's root is a child component (for example `NebaModal`), none of the elements it renders carry your scope, so a bare `::deep .x` rule matches nothing.
+- Wrap the child in a `<div class="ip-root">` and write the rules as `.ip-root ::deep .x`. `HallOfFameInducteeModal.razor` is the reference.
