@@ -4,6 +4,7 @@ using Microsoft.EntityFrameworkCore.Diagnostics;
 using Microsoft.Extensions.DependencyInjection;
 
 using Neba.Api.Database;
+using Neba.Api.Security;
 using Neba.Api.Security.Domain;
 
 using Respawn;
@@ -42,7 +43,12 @@ public sealed class SecurityDbContextFixture : IAsyncLifetime
                 options.User.RequireUniqueEmail = true;
             })
             .AddEntityFrameworkStores<SecurityDbContext>()
-            .AddDefaultTokenProviders();
+            .AddDefaultTokenProviders()
+            .AddTokenProvider<InviteTokenProvider>(InviteTokenProvider.ProviderName)
+            .AddTokenProvider<ResetTokenProvider>(ResetTokenProvider.ProviderName);
+
+        services.Configure<InviteTokenProviderOptions>(o => o.Name = InviteTokenProvider.ProviderName);
+        services.Configure<ResetTokenProviderOptions>(o => o.Name = ResetTokenProvider.ProviderName);
 
         _serviceProvider = services.BuildServiceProvider();
 

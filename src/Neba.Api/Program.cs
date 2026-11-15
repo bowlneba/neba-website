@@ -69,7 +69,7 @@ app.UseOpenApiDocumentation();
 app.UseInfrastructure();
 
 #if DEBUG
-#pragma warning disable CA1031, CA1848
+#pragma warning disable CA1031, CA1848, CA1873
 app.MapGet("/debug/clear-audits", async (
     Azure.Data.Tables.TableServiceClient tableServiceClient,
     ILogger<Program> logger,
@@ -88,6 +88,7 @@ app.MapGet("/debug/clear-audits", async (
             catch (Azure.RequestFailedException ex) when (ex.Status == 404)
             {
                 // Table didn't exist; nothing to delete.
+                logger.LogDebug(ex, "Audit table {TableName} did not exist; nothing to delete", tableName);
             }
 
             await tableServiceClient.CreateTableIfNotExistsAsync(tableName, ct);

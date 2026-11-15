@@ -53,6 +53,7 @@
     <PackageReference Include="Microsoft.FeatureManagement.AspNetCore" />
     <PackageReference Include="Microsoft.OpenApi" />
     <PackageReference Include="Scalar.AspNetCore" />
+    <PackageReference Include="SixLabors.ImageSharp" />
     <PackageReference Include="Scrutor.AspNetCore" />
     <PackageReference Include="StronglyTypedId" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
     <PackageReference Include="StronglyTypedId.Templates" GeneratePathProperty="true" PrivateAssets="all" />

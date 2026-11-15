@@ -1,9 +1,17 @@
 @page "/hall-of-fame"
+@using System.Text.Json
+@using Microsoft.AspNetCore.Authorization
 @using Neba.Api.Contracts.HallOfFame
+@using Neba.Api.Contracts.Security
 @using Neba.Website.Server.Services
 
 @inject ApiExecutor ApiExecutor
 @inject IHallOfFameApi HallOfFameApi
+@inject AuthenticationStateProvider AuthenticationStateProvider
+@inject IAuthorizationService AuthorizationService
+@inject IJSRuntime JsRuntime
+@inject ILogger<HallOfFame> Logger
+@implements IAsyncDisposable
 
 @rendermode @(new InteractiveServerRenderMode(prerender: false))
 
@@ -24,6 +32,13 @@
     <div class="text-center">
         <h1 class="text-3xl font-bold text-[var(--neba-blue-700)]">Hall of Fame</h1>
         <p class="mt-1 text-sm text-gray-600">Honoring Excellence in Bowling</p>
+        <AuthorizeView Policy="@Permissions.EditHallOfFamePhoto.PolicyName">
+            <Authorized>
+                <div class="mt-2">
+                    <HelpButton DocName="edit-hall-of-fame-photo" />
+                </div>
+            </Authorized>
+        </AuthorizeView>
     </div>
 
     <!-- Error Alert -->
@@ -36,13 +51,51 @@
                    OnDismiss="@(() => _errorMessage = null)" />
     }
 
+    <!-- About — static content, always visible -->
+    <section class="hof-about" aria-labelledby="hof-about-title">
+        <img class="hof-about__logo" src="/images/neba-hof-480.jpg" alt="NEBA Hall of Fame logo" width="480" height="436" />
+        <div class="hof-about__main">
+            <div class="hof-about__intro">
+                <h2 id="hof-about-title" class="hof-about__title">About the Hall of Fame</h2>
+                <p>
+                    The Hall of Fame honors the people who made NEBA what it is: its best bowlers, the volunteers who ran it,
+                    and the friends who supported it. NEBA has held at least one tournament every month since 1963, the
+                    longest-running monthly scratch tournament in USBC history. The Hall of Fame began with the Class of 2017.
+                </p>
+                <p>
+                    Inductees are honored at a banquet held every two years. Everyone honored at the same banquet forms that
+                    year's class. <a href="/hall-of-fame#hof-criteria">See the eligibility criteria</a>.
+                </p>
+            </div>
+            <dl class="hof-about__facts">
+                <div><dt>1963</dt><dd>NEBA founded</dd></div>
+                <div><dt>2017</dt><dd>First Hall of Fame class</dd></div>
+            </dl>
+        </div>
+        <div class="hof-about__categories">
+            <div class="hof-about__category">
+                <h3><span class="hof-dot hof-dot--superior"></span>Superior Performance</h3>
+                <p>Bowlers with an outstanding competitive record in NEBA. Eligibility comes from earning 36 Hall of Fame points through tournament titles and Bowler of the Year awards.</p>
+                <a href="/hall-of-fame/points" class="neba-btn neba-btn-sm neba-btn-primary hof-about__cta">See who is eligible and who is closest</a>
+            </div>
+            <div class="hof-about__category">
+                <h3><span class="hof-dot hof-dot--meritorious"></span>Meritorious Service</h3>
+                <p>People who gave significant time to NEBA as board members, officers, or in other leadership roles.</p>
+            </div>
+            <div class="hof-about__category">
+                <h3><span class="hof-dot hof-dot--friend"></span>Friend of NEBA</h3>
+                <p>People who meant a great deal to NEBA but do not qualify under the other two, such as center owners, sponsors, and officials. A NEBA member nominates them and the Hall of Fame Committee votes.</p>
+            </div>
+        </div>
+    </section>
+
     @if (_isLoading)
     {
-        <div class="space-y-8">
+        <div class="hof-stage" aria-busy="true">
             @for (var section = 0; section < 2; section++)
             {
-                <div class="space-y-6">
-                    <NebaSkeletonLoader Type="SkeletonType.Custom" Width="250px" Height="2.5rem" />
+                <div class="hof-year-block">
+                    <NebaSkeletonLoader Type="SkeletonType.Custom" Width="250px" Height="3rem" />
                     <div class="inductees-photo-grid">
                         @for (var i = 0; i < 5; i++)
                         {
@@ -53,84 +106,67 @@
             }
         </div>
     }
-    else if (_inductionsByYear is { Count: > 0 })
+    else if (_inductees.Count > 0)
     {
-        <div class="space-y-12">
-            @foreach (var yearGroup in _inductionsByYear)
-            {
-                <div>
-                    <div class="text-3xl font-bold text-[var(--neba-blue-700)] text-center pb-4 mb-6 border-b-[3px] border-[var(--neba-blue-700)]">
-                        Class of @yearGroup.Year
-                    </div>
+        @* Search and category filtering run in HallOfFame.razor.js (instant, no server round trip). It reads the data- attributes below and only toggles hidden. *@
+        <div @ref="_gallery">
+            @* Hidden until the script is attached, so the controls never show while they cannot work. *@
+            <div class="hof-filters" hidden="@(!_filtersReady)">
+                <input id="hof-search"
+                       type="search"
+                       class="hof-search"
+                       placeholder="Search by name"
+                       aria-label="Search inductees by name"
+                       autocomplete="off"
+                       data-hof-search />
+                <div class="hof-chips" role="group" aria-label="Filter by category">
+                    <button type="button" class="hof-chip" data-hof-category="">All</button>
+                    @foreach (var category in HallOfFameCategories.Names)
+                    {
+                        <button type="button" class="hof-chip" data-hof-category="@category">
+                            <span class="hof-dot @HallOfFameCategories.DotClass(category)"></span>@category
+                        </button>
+                    }
+                </div>
+            </div>
+            <p class="hof-status" role="status" aria-live="polite" data-hof-status></p>
 
-                    <div class="space-y-10">
-                        @foreach (var categoryGroup in yearGroup.InducteesByCategory.OrderBy(c => GetCategoryOrder(c.Category)))
-                        {
-                            var singleCategoryInductees = categoryGroup.Inductees.Where(i => i.Categories.Count == 1).ToList();
-                            @if (singleCategoryInductees.Count > 0)
+            <div class="hof-stage" data-hof-stage>
+                @foreach (var yearGroup in _years)
+                {
+                    <section class="hof-year-block" data-hof-year @key="yearGroup.Year">
+                        <h2 class="hof-year"><span class="hof-year__label">Class of</span> <span class="hof-year__num">@yearGroup.Year</span></h2>
+                        <p class="hof-year__count">@("inductee".ToQuantity(yearGroup.Inductees.Count))<span data-hof-shown></span></p>
+                        <div class="inductees-photo-grid">
+                            @foreach (var inductee in yearGroup.Inductees)
                             {
-                                <div>
-                                    <div class="text-base font-semibold text-gray-700 mb-5 px-5 py-3 bg-gray-50 rounded uppercase tracking-wide">
-                                        @categoryGroup.Category
-                                    </div>
-                                    <div class="inductees-photo-grid">
-                                        @foreach (var inductee in singleCategoryInductees)
+                                <div class="inductee-item" data-hof-card @key="inductee.Id" data-name="@inductee.BowlerName" data-categories="@JsonSerializer.Serialize(inductee.Categories)">
+                                    <HallOfFameAvatar BowlerName="@inductee.BowlerName"
+                                                      Ringed="@true"
+                                                      PhotoUri="@inductee.PhotoUri"
+                                                      FocalX="@inductee.PhotoFocalX"
+                                                      FocalY="@inductee.PhotoFocalY"
+                                                      Zoom="@inductee.PhotoZoom"
+                                                      OnOpen="@OpenCallbackFor(inductee)"
+                                                      OnEdit="@EditCallbackFor(inductee)" />
+                                    <button type="button" class="inductee-name" @onclick="@(() => OpenProfile(inductee))">@inductee.BowlerName</button>
+                                    <div class="inductee-categories">
+                                        @foreach (var category in inductee.Categories)
                                         {
-                                            <div class="inductee-item">
-                                                <div class="inductee-photo" style="@GetPhotoStyle(inductee)">
-                                                    @if (inductee.PhotoUri is null)
-                                                    {
-                                                        @GetInitials(inductee.BowlerName)
-                                                    }
-                                                </div>
-                                                <div class="inductee-name">@inductee.BowlerName</div>
-                                            </div>
+                                            <span class="inductee-category"><span class="hof-dot @HallOfFameCategories.DotClass(category)"></span>@category</span>
                                         }
                                     </div>
                                 </div>
                             }
-                        }
-
-                        @{
-                            var combinedInductees = yearGroup.InducteesByCategory
-                                .SelectMany(c => c.Inductees)
-                                .Where(i => i.Categories.Count > 1)
-                                .Distinct()
-                                .ToList();
-                        }
-                        @if (combinedInductees.Count > 0)
-                        {
-                            <div>
-                                <div class="text-base font-semibold text-gray-700 mb-5 px-5 py-3 bg-gray-50 rounded uppercase tracking-wide">
-                                    Combined
-                                </div>
-                                <div class="inductees-photo-grid">
-                                    @foreach (var inductee in combinedInductees)
-                                    {
-                                        <div class="inductee-item">
-                                            <div class="inductee-photo" style="@GetPhotoStyle(inductee)">
-                                                @if (inductee.PhotoUri is null)
-                                                {
-                                                    @GetInitials(inductee.BowlerName)
-                                                }
-                                            </div>
-                                            <div class="inductee-name">@inductee.BowlerName</div>
-                                            <div class="combined-categories">
-                                                @string.Join(" • ", inductee.Categories)
-                                            </div>
-                                        </div>
-                                    }
-                                </div>
-                            </div>
-                        }
-                    </div>
-                </div>
-            }
+                        </div>
+                    </section>
+                }
+            </div>
         </div>
     }
 
     <!-- Eligibility Criteria — static content, always visible -->
-    <div class="mt-12 pt-8 border-t-2 border-gray-200">
+    <div id="hof-criteria" class="mt-12 pt-8 border-t-2 border-gray-200">
         <h2 class="text-2xl font-bold text-gray-700 mb-6">Eligibility & Criteria</h2>
 
         <div class="max-w-[900px] mx-auto mb-8 bg-gradient-to-br from-gray-50 to-white border border-gray-200 rounded-lg p-6">
@@ -138,50 +174,83 @@
             <p class="text-gray-600 mb-3 leading-relaxed">To be eligible for the NEBA Hall of Fame Superior Performance category, a bowler must meet the following criteria:</p>
             <p class="text-gray-700 mb-3 leading-relaxed"><strong>• Must have been a NEBA member for a minimum of 10 years</strong></p>
             <p class="text-gray-700 mb-3 leading-relaxed"><strong>• Must have won titles or Bowler of Year awards in 3 or more different years</strong></p>
-            <p class="text-gray-700 mb-3 leading-relaxed"><strong>• Must accumulate 36 NEBA Hall of Fame points based on the following:</strong></p>
-        </div>
-
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div class="bg-gradient-to-br from-gray-50 to-white border border-gray-200 rounded-lg p-6">
-                <h3 class="text-xl font-semibold text-[var(--neba-blue-700)] mb-4 pb-2 border-b-2 border-[var(--neba-blue-700)]">Bowler of the Year Awards</h3>
-                <p class="text-gray-600 mb-3 leading-relaxed">12 points - Bowler of the Year</p>
-                <p class="text-gray-600 mb-3 leading-relaxed">2 points - Senior Bowler of the Year</p>
-                <p class="text-gray-600 mb-3 leading-relaxed">2 points - Super Senior Bowler of the Year</p>
-                <p class="text-gray-600 mb-3 leading-relaxed">2 points - Woman Bowler of the Year</p>
-                <p class="text-gray-600 mb-3 leading-relaxed">2 points - Rookie of the Year</p>
-            </div>
-            <div class="bg-gradient-to-br from-gray-50 to-white border border-gray-200 rounded-lg p-6">
-                <h3 class="text-xl font-semibold text-[var(--neba-blue-700)] mb-4 pb-2 border-b-2 border-[var(--neba-blue-700)]">Tournament Titles</h3>
-                <p class="text-gray-600 mb-3 leading-relaxed">6 points - Singles Title</p>
-                <p class="text-gray-600 mb-3 leading-relaxed">6 points - TOC Title</p>
-                <p class="text-gray-600 mb-3 leading-relaxed">6 points - Doubles Title</p>
-                <p class="text-gray-600 mb-3 leading-relaxed">6 points - Points Leader/Invitational Title</p>
-                <p class="text-gray-600 mb-3 leading-relaxed">6 points - NEBA Masters Title</p>
-                <p class="text-gray-600 mb-3 leading-relaxed">3 points - Over/Under Title</p>
-                <p class="text-gray-600 mb-3 leading-relaxed">2 points - Non-Champions Title</p>
-                <p class="text-gray-600 mb-3 leading-relaxed">2 points - Senior Title</p>
-                <p class="text-gray-600 mb-3 leading-relaxed">2 points - NEBA Trios Title</p>
-            </div>
-        </div>
-
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
-            <div class="bg-gradient-to-br from-gray-50 to-white border border-gray-200 rounded-lg p-6">
-                <h3 class="text-xl font-semibold text-[var(--neba-blue-700)] mb-4 pb-2 border-b-2 border-[var(--neba-blue-700)]">Legacy Titles</h3>
-                <p class="italic text-gray-500 mb-3 leading-relaxed">Bowlers may have also accumulated points based on the following:</p>
-                <p class="text-gray-600 mb-3 leading-relaxed">12 points - NEBA Singles Title (prior to 1991)</p>
-                <p class="text-gray-600 mb-3 leading-relaxed">3 points - NEBA High-Roller Title</p>
-                <p class="text-gray-600 mb-3 leading-relaxed">2 points - NEBA Over 40 Title</p>
-            </div>
+            <p class="text-gray-700 mb-3 leading-relaxed"><strong>• Must accumulate 36 NEBA Hall of Fame points</strong> for titles and Bowler of the Year awards. <a href="/hall-of-fame/points">See the points for each title, and who is closest</a>.</p>
         </div>
     </div>
+
+    <HallOfFameInducteeModal IsOpen="@(_viewing is not null)"
+                             Inductee="@_viewing"
+                             OnClose="CloseProfile" />
+
+    <HallOfFamePhotoEditor IsOpen="@(_editing is not null)"
+                           InductionId="@(_editing?.Id ?? string.Empty)"
+                           BowlerName="@(_editing?.BowlerName ?? string.Empty)"
+                           CurrentPhotoUrl="@_editing?.PhotoUri"
+                           CurrentFocalX="@_editing?.PhotoFocalX"
+                           CurrentFocalY="@_editing?.PhotoFocalY"
+                           CurrentZoom="@_editing?.PhotoZoom"
+                           OnClose="CloseEditor"
+                           OnSaved="HandleSavedAsync" />
 </div>
 
 @code {
     private bool _isLoading = true;
-    private List<YearGroup>? _inductionsByYear;
+    private List<HallOfFameInductionViewModel> _inductees = [];
+    private List<YearGroup> _years = [];
     private string? _errorMessage;
+    private HallOfFameInductionViewModel? _editing;
+    private HallOfFameInductionViewModel? _viewing;
+    private bool _canEditPhotos;
+    private ElementReference _gallery;
+    private IJSObjectReference? _jsModule;
+    private bool _attachAttempted;
+    private bool _filtersReady;
+    private bool _refilterPending;
 
     protected override async Task OnInitializedAsync()
+    {
+        // Checked once here so the avatars only get an edit callback (and render an edit button) for editors,
+        // not once per inductee for every visitor.
+        var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+        var authResult = await AuthorizationService.AuthorizeAsync(authState.User, Permissions.EditHallOfFamePhoto.PolicyName);
+        _canEditPhotos = authResult.Succeeded;
+
+        await LoadAsync();
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        // The gallery only exists once the list has loaded, so attach the filter module on the first render that has it.
+        // One attempt only: a second render during the import, or a failed import, must not try again.
+        if (!_attachAttempted && _inductees.Count > 0)
+        {
+            _attachAttempted = true;
+
+            try
+            {
+                _jsModule = await JsRuntime.InvokeAsync<IJSObjectReference>(
+                    "import", "./HallOfFame/HallOfFame.razor.js");
+                await _jsModule.InvokeVoidAsync("initialize", _gallery);
+                _filtersReady = true;
+                StateHasChanged();
+            }
+            catch (Exception ex) when (ex is JSException or JSDisconnectedException)
+            {
+                Logger.LogWarning(ex, "[HallOfFame] The search and filter script could not be attached.");
+            }
+
+            return;
+        }
+
+        // The list was reloaded (a photo was saved): the cards are new or patched, so apply the current filter again.
+        if (_refilterPending && _jsModule is not null)
+        {
+            _refilterPending = false;
+            await _jsModule.InvokeVoidAsync("refresh", _gallery);
+        }
+    }
+
+    private async Task LoadAsync()
     {
         var result = await ApiExecutor.ExecuteAsync(
             "HallOfFame",
@@ -196,65 +265,73 @@
             return;
         }
 
-        _inductionsByYear = result.Value.Items
-            .Select(r => r.ToViewModel())
+        _errorMessage = null;
+        _refilterPending = _jsModule is not null;
+        _inductees = [.. result.Value.Items.Select(r => r.ToViewModel())];
+        _years = [.. _inductees
             .GroupBy(i => i.InductionYear)
             .OrderByDescending(g => g.Key)
-            .Select(yearGroup => new YearGroup
+            .Select(g => new YearGroup
             {
-                Year = yearGroup.Key,
-                InducteesByCategory = yearGroup
-                    .SelectMany(i => i.Categories.Select(c => new { Category = c, Inductee = i }))
-                    .GroupBy(x => x.Category)
-                    .Select(catGroup => new CategoryGroup
-                    {
-                        Category = catGroup.Key,
-                        Inductees = [.. catGroup.Select(x => x.Inductee)]
-                    })
-                    .ToList()
-            })
-            .ToList();
+                Year = g.Key,
+                Inductees = [.. g.OrderBy(i => LastName(i.BowlerName), StringComparer.OrdinalIgnoreCase)
+                    .ThenBy(i => i.BowlerName, StringComparer.OrdinalIgnoreCase)]
+            })];
     }
 
-    internal static string GetInitials(string name)
-    {
-        var parts = name.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+    private EventCallback OpenCallbackFor(HallOfFameInductionViewModel inductee)
+        => EventCallback.Factory.Create(this, () => OpenProfile(inductee));
 
-        if (parts.Length >= 2)
+    private void OpenProfile(HallOfFameInductionViewModel inductee)
+        => _viewing = inductee;
+
+    private void CloseProfile()
+        => _viewing = null;
+
+    private EventCallback EditCallbackFor(HallOfFameInductionViewModel inductee)
+        => _canEditPhotos
+            ? EventCallback.Factory.Create(this, () => OpenEditor(inductee))
+            : default;
+
+    private void OpenEditor(HallOfFameInductionViewModel inductee)
+        => _editing = inductee;
+
+    private void CloseEditor()
+        => _editing = null;
+
+    private async Task HandleSavedAsync()
+    {
+        _editing = null;
+        await LoadAsync();
+    }
+
+    private static string LastName(string name)
+    {
+        var index = name.LastIndexOf(' ');
+        return index < 0 ? name : name[(index + 1)..];
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        if (_jsModule is null)
         {
-            return $"{parts[0][0]}{parts[^1][0]}";
+            return;
         }
 
-        return parts.Length > 0 ? parts[0][0].ToString() : "?";
-    }
-
-    private static string GetPhotoStyle(HallOfFameInductionViewModel inductee)
-    {
-        if (inductee.PhotoUri is not null)
+        try
         {
-            return $"background-image: url('{inductee.PhotoUri}'); background-size: cover; background-position: center;";
+            await _jsModule.InvokeVoidAsync("dispose", _gallery);
+            await _jsModule.DisposeAsync();
         }
-
-        return string.Empty;
+        catch (JSDisconnectedException ex)
+        {
+            Logger.LogInformation(ex, "[HallOfFame] JS cleanup skipped because the circuit disconnected.");
+        }
     }
-
-    private static int GetCategoryOrder(string category) => category switch
-    {
-        "Superior Performance" => 1,
-        "Meritorious Service" => 2,
-        "Friend of NEBA" => 3,
-        _ => 99
-    };
 
     private sealed class YearGroup
     {
         public int Year { get; init; }
-        public List<CategoryGroup> InducteesByCategory { get; init; } = [];
-    }
-
-    private sealed class CategoryGroup
-    {
-        public string Category { get; init; } = string.Empty;
         public List<HallOfFameInductionViewModel> Inductees { get; init; } = [];
     }
 }

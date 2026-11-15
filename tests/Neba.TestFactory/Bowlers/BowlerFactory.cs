@@ -10,7 +10,8 @@ public static class BowlerFactory
         int? websiteId = null,
         int? legacyId = null,
         Gender? gender = null,
-        DateOnly? dateOfBirth = null)
+        DateOnly? dateOfBirth = null,
+        string? usbcId = null)
         => new()
         {
             Id = id ?? BowlerId.New(),
@@ -18,7 +19,8 @@ public static class BowlerFactory
             WebsiteId = websiteId,
             LegacyId = legacyId,
             Gender = gender ?? Gender.Male,
-            DateOfBirth = dateOfBirth ?? new DateOnly(2000, 5, 1)
+            DateOfBirth = dateOfBirth ?? new DateOnly(2000, 5, 1),
+            UsbcId = usbcId
         };
 
     internal static IReadOnlyCollection<Bowler> Bogus(int count, Faker faker)

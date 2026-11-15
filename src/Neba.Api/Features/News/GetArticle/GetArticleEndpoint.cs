@@ -80,6 +80,7 @@ internal sealed class GetArticleEndpoint(
             HeaderImageContentType = dto.HeaderImageContentType,
             HeaderImageSizeInBytes = dto.HeaderImageSizeInBytes,
             PublishDateUtc = dto.PublishDateUtc,
+            AnnouncedAtUtc = dto.AnnouncedAtUtc,
             TournamentId = dto.TournamentId?.Value.ToString(),
             Attachments = [.. dto.Attachments.Select(a => new ArticleAttachmentResponse
             {

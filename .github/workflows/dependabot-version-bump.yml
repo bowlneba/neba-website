@@ -1,0 +1,53 @@
+name: Dependabot Version Bump
+
+# Dependabot cannot edit Directory.Build.props, so the PR's Version Bump Check fails.
+# This workflow raises <Version> to main's patch version + 1 on Dependabot PRs.
+#
+# Needs a Dependabot secret DEPENDABOT_PUSH_TOKEN (Settings > Secrets > Dependabot): a PAT
+# with contents:write. A push made with GITHUB_TOKEN does not start new workflow runs, so the
+# checks would not run again on the bumped commit.
+
+on:
+  pull_request:
+    branches: [main]
+    types: [opened, reopened, synchronize]
+
+jobs:
+  bump-version:
+    name: Bump <Version>
+    # Test the PR author, not the actor: after our push the actor is the token's owner.
+    if: github.event.pull_request.user.login == 'dependabot[bot]'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: write
+
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+          ref: ${{ github.event.pull_request.head.ref }}
+          token: ${{ secrets.DEPENDABOT_PUSH_TOKEN }}
+
+      - name: Raise patch version above main
+        run: |
+          props="Directory.Build.props"
+          read_version() { sed -n 's:.*<Version>\([^<]*\)</Version>.*:\1:p' | head -1; }
+
+          main_version="$(git show "origin/main:$props" | read_version)"
+          current="$(read_version < "$props")"
+          [[ -n "$main_version" && -n "$current" ]] || { echo "::error::No <Version> found."; exit 1; }
+
+          IFS=. read -r major minor patch <<< "$main_version"
+          target="$major.$minor.$((patch + 1))"
+
+          if [[ "$(printf '%s\n%s\n' "$current" "$main_version" | sort -V | tail -1)" == "$current" && "$current" != "$main_version" ]]; then
+            echo "Version $current is already above main ($main_version)."
+            exit 0
+          fi
+
+          sed -i "s:<Version>[^<]*</Version>:<Version>$target</Version>:" "$props"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -am "Bump version to $target"
+          git push

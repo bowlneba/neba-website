@@ -18,7 +18,7 @@ namespace Neba.Api.Database.Migrations
         {
 #pragma warning disable 612, 618
             modelBuilder
-                .HasAnnotation("ProductVersion", "10.0.12")
+                .HasAnnotation("ProductVersion", "10.0.14")
                 .HasAnnotation("Relational:MaxIdentifierLength", 63);
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
@@ -126,6 +126,11 @@ namespace Neba.Api.Database.Migrations
                         .HasColumnType("integer")
                         .HasColumnName("legacy_id");
 
+                    b.Property<string>("UsbcId")
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)")
+                        .HasColumnName("usbc_id");
+
                     b.Property<int?>("WebsiteId")
                         .HasColumnType("integer")
                         .HasColumnName("website_id");
@@ -141,6 +146,11 @@ namespace Neba.Api.Database.Migrations
                         .HasDatabaseName("ix_bowlers_legacy_id");
 
                     NpgsqlIndexBuilderExtensions.AreNullsDistinct(b.HasIndex("LegacyId"), true);
+
+                    b.HasIndex("UsbcId")
+                        .IsUnique()
+                        .HasDatabaseName("ix_bowlers_usbc_id")
+                        .HasFilter("usbc_id IS NOT NULL AND usbc_id <> ''");
 
                     b.HasIndex("WebsiteId")
                         .IsUnique()
@@ -330,6 +340,21 @@ namespace Neba.Api.Database.Migrations
                                 .HasColumnName("photo_size_in_bytes");
                         });
 
+                    b.ComplexProperty(typeof(Dictionary<string, object>), "PhotoFocalPoint", "Neba.Api.Features.HallOfFame.Domain.HallOfFameInduction.PhotoFocalPoint#PhotoFocalPoint", b1 =>
+                        {
+                            b1.Property<int>("X")
+                                .HasColumnType("integer")
+                                .HasColumnName("photo_focal_x");
+
+                            b1.Property<int>("Y")
+                                .HasColumnType("integer")
+                                .HasColumnName("photo_focal_y");
+
+                            b1.Property<int>("Zoom")
+                                .HasColumnType("integer")
+                                .HasColumnName("photo_zoom");
+                        });
+
                     b.HasKey("db_id")
                         .HasName("pk_hall_of_fame_inductions");
 
@@ -348,6 +373,67 @@ namespace Neba.Api.Database.Migrations
                     b.ToTable("hall_of_fame_inductions", "app");
                 });
 
+            modelBuilder.Entity("Neba.Api.Features.Memberships.Domain.BowlerMembership", b =>
+                {
+                    b.Property<int>("db_id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasColumnName("id");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityAlwaysColumn(b.Property<int>("db_id"));
+
+                    b.Property<decimal>("Cost")
+                        .HasPrecision(5, 2)
+                        .HasColumnType("numeric(5,2)")
+                        .HasColumnName("cost");
+
+                    b.Property<DateOnly>("EndDate")
+                        .HasColumnType("date")
+                        .HasColumnName("end_date");
+
+                    b.Property<string>("Id")
+                        .IsRequired()
+                        .HasMaxLength(26)
+                        .HasColumnType("character(26)")
+                        .HasColumnName("domain_id")
+                        .IsFixedLength();
+
+                    b.Property<int?>("LegacyId")
+                        .HasColumnType("integer")
+                        .HasColumnName("legacy_id");
+
+                    b.Property<DateOnly>("StartDate")
+                        .HasColumnType("date")
+                        .HasColumnName("start_date");
+
+                    b.Property<string>("Type")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .HasColumnType("character varying(32)")
+                        .HasColumnName("membership_type");
+
+                    b.Property<int>("bowler_id")
+                        .HasColumnType("integer")
+                        .HasColumnName("bowler_id");
+
+                    b.HasKey("db_id")
+                        .HasName("pk_bowler_memberships");
+
+                    b.HasAlternateKey("Id")
+                        .HasName("ak_bowler_memberships_domain_id");
+
+                    b.HasIndex("LegacyId")
+                        .IsUnique()
+                        .HasDatabaseName("ix_bowler_memberships_legacy_id");
+
+                    NpgsqlIndexBuilderExtensions.AreNullsDistinct(b.HasIndex("LegacyId"), true);
+
+                    b.HasIndex("bowler_id", "StartDate")
+                        .HasDatabaseName("ix_bowler_memberships_bowler_id_start_date");
+
+                    b.ToTable("bowler_memberships", "app");
+                });
+
             modelBuilder.Entity("Neba.Api.Features.News.Domain.Article", b =>
                 {
                     b.Property<int>("db_id")
@@ -356,6 +442,10 @@ namespace Neba.Api.Database.Migrations
                         .HasColumnName("id");
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityAlwaysColumn(b.Property<int>("db_id"));
+
+                    b.Property<DateTimeOffset?>("AnnouncedAtUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("announced_at_utc");
 
                     b.Property<string>("Content")
                         .IsRequired()
@@ -1299,6 +1389,10 @@ namespace Neba.Api.Database.Migrations
                         .HasColumnType("numeric(9,2)")
                         .HasColumnName("neba_added_money");
 
+                    b.Property<DateTimeOffset?>("OilPatternAnnouncedAtUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("oil_pattern_announced_at_utc");
+
                     b.Property<DateTimeOffset?>("OilPatternRevealDateTime")
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("oil_pattern_reveal_date_utc");
@@ -1310,6 +1404,12 @@ namespace Neba.Api.Database.Migrations
                     b.Property<int?>("PatternRatioCategory")
                         .HasColumnType("integer")
                         .HasColumnName("pattern_ratio_category");
+
+                    b.Property<string>("PreviousTournamentId")
+                        .HasMaxLength(26)
+                        .HasColumnType("character(26)")
+                        .HasColumnName("previous_tournament_id")
+                        .IsFixedLength();
 
                     b.Property<string>("SeasonId")
                         .IsRequired()
@@ -1377,6 +1477,9 @@ namespace Neba.Api.Database.Migrations
                         .HasDatabaseName("ix_tournaments_legacy_id");
 
                     NpgsqlIndexBuilderExtensions.AreNullsDistinct(b.HasIndex("LegacyId"), true);
+
+                    b.HasIndex("PreviousTournamentId")
+                        .HasDatabaseName("ix_tournaments_previous_tournament_id");
 
                     b.HasIndex("SeasonId")
                         .HasDatabaseName("ix_tournaments_season_id");
@@ -1746,6 +1849,16 @@ namespace Neba.Api.Database.Migrations
                         .HasConstraintName("fk_hall_of_fame_inductions_bowlers_bowler_id");
 
                     b.Navigation("Bowler");
+                });
+
+            modelBuilder.Entity("Neba.Api.Features.Memberships.Domain.BowlerMembership", b =>
+                {
+                    b.HasOne("Neba.Api.Features.Bowlers.Domain.Bowler", null)
+                        .WithMany("Memberships")
+                        .HasForeignKey("bowler_id")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_bowler_memberships_bowlers_bowler_id");
                 });
 
             modelBuilder.Entity("Neba.Api.Features.News.Domain.Article", b =>
@@ -2118,6 +2231,13 @@ namespace Neba.Api.Database.Migrations
                         .OnDelete(DeleteBehavior.NoAction)
                         .HasConstraintName("fk_tournaments_bowling_centers_bowling_center_id");
 
+                    b.HasOne("Neba.Api.Features.Tournaments.Domain.Tournament", null)
+                        .WithMany()
+                        .HasForeignKey("PreviousTournamentId")
+                        .HasPrincipalKey("Id")
+                        .OnDelete(DeleteBehavior.SetNull)
+                        .HasConstraintName("fk_tournaments_tournaments_previous_tournament_id");
+
                     b.HasOne("Neba.Api.Features.Seasons.Domain.Season", "Season")
                         .WithMany("Tournaments")
                         .HasForeignKey("SeasonId")
@@ -2197,6 +2317,8 @@ namespace Neba.Api.Database.Migrations
 
             modelBuilder.Entity("Neba.Api.Features.Bowlers.Domain.Bowler", b =>
                 {
+                    b.Navigation("Memberships");
+
                     b.Navigation("SeasonStats");
                 });
 

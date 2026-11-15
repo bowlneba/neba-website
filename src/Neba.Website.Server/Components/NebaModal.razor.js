@@ -38,6 +38,28 @@ export function focusElement(element) {
     element.focus({ preventScroll: true });
 }
 
+/** @type {HTMLElement | null} */
+let returnFocusElement = null;
+
+/**
+ * Remembers the focused element so restoreFocus can return to it after a dialog closes.
+ */
+export function rememberFocus() {
+    returnFocusElement = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+}
+
+/**
+ * Returns focus to the element rememberFocus captured, if it is still in the page.
+ */
+export function restoreFocus() {
+    const element = returnFocusElement;
+    returnFocusElement = null;
+
+    if (element?.isConnected) {
+        focusElement(element);
+    }
+}
+
 /**
  * Enables a keyboard focus trap for the provided dialog element.
  * @param {HTMLElement | null} element - The dialog element to trap focus within.

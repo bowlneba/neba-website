@@ -175,4 +175,71 @@ public sealed class TournamentUpcomingCardTests : IDisposable
         // Assert
         cut.FindAll("button.tournament-logo-edit").ShouldBeEmpty();
     }
+
+    [Fact(DisplayName = "Should show the team eligibility link and the defending strip for a scheduled team event")]
+    public void Render_ShouldShowEligibilityLinkAndDefendingStrip_WhenScheduledTeamEvent()
+    {
+        // Arrange
+        var tournament = SeasonTournamentViewModelFactory.Create(
+            tournamentType: "Doubles",
+            teamSize: 2,
+            defendingChampions: [DefendingTeamViewModelFactory.Create(champions: ["Dave Smith", "Dana Jones"])]);
+
+        // Act
+        var cut = _ctx.Render<TournamentUpcomingCard>(parameters => parameters
+            .Add(p => p.Tournament, tournament));
+
+        // Assert
+        cut.Markup.ShouldContain("/tournaments/" + SeasonTournamentViewModelFactory.ValidId + "/team-eligibility");
+        cut.Markup.ShouldContain("Check team eligibility");
+        cut.FindAll(".defending--strip .defending__pill").Select(pill => pill.TextContent).ShouldBe(["Dave Smith", "Dana Jones"]);
+    }
+
+    [Fact(DisplayName = "Should not show the team eligibility link for a singles tournament")]
+    public void Render_ShouldNotShowEligibilityLink_WhenSingles()
+    {
+        // Arrange
+        var tournament = SeasonTournamentViewModelFactory.Create(tournamentType: "Singles", teamSize: 1);
+
+        // Act
+        var cut = _ctx.Render<TournamentUpcomingCard>(parameters => parameters
+            .Add(p => p.Tournament, tournament));
+
+        // Assert
+        cut.Markup.ShouldNotContain("Check team eligibility");
+        cut.FindAll(".defending").ShouldBeEmpty();
+    }
+
+    [Fact(DisplayName = "Should not show the defending strip when the tournament has no defending teams")]
+    public void Render_ShouldNotShowDefendingStrip_WhenNoDefendingTeams()
+    {
+        // Arrange
+        var tournament = SeasonTournamentViewModelFactory.Create(tournamentType: "Doubles", teamSize: 2);
+
+        // Act
+        var cut = _ctx.Render<TournamentUpcomingCard>(parameters => parameters
+            .Add(p => p.Tournament, tournament));
+
+        // Assert
+        cut.FindAll(".defending").ShouldBeEmpty();
+    }
+
+    [Fact(DisplayName = "Should not show the team eligibility link or defending strip for a cancelled tournament")]
+    public void Render_ShouldHideTeamFeatures_WhenCancelled()
+    {
+        // Arrange
+        var tournament = SeasonTournamentViewModelFactory.Create(
+            tournamentType: "Doubles",
+            status: "Cancelled",
+            teamSize: 2,
+            defendingChampions: [DefendingTeamViewModelFactory.Create()]);
+
+        // Act
+        var cut = _ctx.Render<TournamentUpcomingCard>(parameters => parameters
+            .Add(p => p.Tournament, tournament));
+
+        // Assert
+        cut.Markup.ShouldNotContain("Check team eligibility");
+        cut.FindAll(".defending").ShouldBeEmpty();
+    }
 }

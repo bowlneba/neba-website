@@ -120,6 +120,11 @@ public sealed record TournamentDetailDto
     public Uri? LogoUrl { get; init; }
 
     /// <summary>
+    /// The previous (last year's) tournament; null when there is none. Used by the edit form.
+    /// </summary>
+    public TournamentId? PreviousTournamentId { get; init; }
+
+    /// <summary>
     /// Raw storage fields for the tournament logo, for use in editing; only populated when the
     /// caller holds a tournament management permission.
     /// </summary>
@@ -147,6 +152,17 @@ public sealed record TournamentDetailDto
     /// Names of the winning bowler(s); empty for pending/upcoming events.
     /// </summary>
     public IReadOnlyCollection<Name> Winners { get; init; } = [];
+
+    /// <summary>
+    /// Bowlers per entry: 1 for singles-style formats, 2 for doubles, 3 for trios, 5 for baker.
+    /// </summary>
+    public int TeamSize { get; init; } = 1;
+
+    /// <summary>
+    /// Teams that may bowl together as this tournament's defending champions; empty when there is no previous
+    /// tournament or it has no results.
+    /// </summary>
+    public IReadOnlyCollection<DefendingTeamDto> DefendingChampions { get; init; } = [];
 
     /// <summary>
     /// Results for bowlers in this tournament; empty for pending/upcoming events.

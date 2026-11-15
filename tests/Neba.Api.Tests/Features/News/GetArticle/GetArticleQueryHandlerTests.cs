@@ -467,4 +467,70 @@ public sealed class GetArticleQueryHandlerTests(AppDbContextFixture fixture)
         result.IsError.ShouldBeFalse();
         await Verify(result.Value);
     }
+
+    [Fact(DisplayName = "HandleAsync returns the announced time to a caller with article management permission")]
+    public async Task HandleAsync_ShouldReturnAnnouncedAt_WhenCallerHasArticleManagementPermission()
+    {
+        // Arrange
+        var ct = TestContext.Current.CancellationToken;
+        var announcedAt = new DateTimeOffset(2025, 5, 10, 9, 2, 0, TimeSpan.Zero);
+        var article = ArticleFactory.Create(
+            slug: "announced-article",
+            publicationStatus: PublicationStatus.Published,
+            publishDateUtc: new DateTimeOffset(2025, 5, 10, 9, 0, 0, TimeSpan.Zero),
+            announcedAtUtc: announcedAt);
+        await _dbContext.Articles.AddAsync(article, ct);
+        await _dbContext.SaveChangesAsync(ct);
+        var handler = CreateHandler();
+
+        // Act
+        var result = await handler.HandleAsync(QueryFor("announced-article", callerHasArticleManagementPermission: true), ct);
+
+        // Assert
+        result.IsError.ShouldBeFalse();
+        result.Value.AnnouncedAtUtc.ShouldBe(announcedAt);
+    }
+
+    [Fact(DisplayName = "HandleAsync hides the announced time from a caller without article management permission")]
+    public async Task HandleAsync_ShouldHideAnnouncedAt_WhenCallerLacksArticleManagementPermission()
+    {
+        // Arrange
+        var ct = TestContext.Current.CancellationToken;
+        var article = ArticleFactory.Create(
+            slug: "announced-hidden-article",
+            publicationStatus: PublicationStatus.Published,
+            publishDateUtc: new DateTimeOffset(2025, 5, 10, 9, 0, 0, TimeSpan.Zero),
+            announcedAtUtc: new DateTimeOffset(2025, 5, 10, 9, 2, 0, TimeSpan.Zero));
+        await _dbContext.Articles.AddAsync(article, ct);
+        await _dbContext.SaveChangesAsync(ct);
+        var handler = CreateHandler();
+
+        // Act
+        var result = await handler.HandleAsync(QueryFor("announced-hidden-article"), ct);
+
+        // Assert
+        result.IsError.ShouldBeFalse();
+        result.Value.AnnouncedAtUtc.ShouldBeNull();
+    }
+
+    [Fact(DisplayName = "HandleAsync returns no announced time for an article that has not been announced")]
+    public async Task HandleAsync_ShouldReturnNullAnnouncedAt_WhenArticleHasNotBeenAnnounced()
+    {
+        // Arrange
+        var ct = TestContext.Current.CancellationToken;
+        var article = ArticleFactory.Create(
+            slug: "not-announced-article",
+            publicationStatus: PublicationStatus.Published,
+            publishDateUtc: new DateTimeOffset(2025, 5, 10, 9, 0, 0, TimeSpan.Zero));
+        await _dbContext.Articles.AddAsync(article, ct);
+        await _dbContext.SaveChangesAsync(ct);
+        var handler = CreateHandler();
+
+        // Act
+        var result = await handler.HandleAsync(QueryFor("not-announced-article", callerHasArticleManagementPermission: true), ct);
+
+        // Assert
+        result.IsError.ShouldBeFalse();
+        result.Value.AnnouncedAtUtc.ShouldBeNull();
+    }
 }

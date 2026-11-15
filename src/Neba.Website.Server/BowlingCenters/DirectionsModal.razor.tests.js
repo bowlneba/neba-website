@@ -1,6 +1,26 @@
 import { describe, test, expect, beforeEach, afterEach, jest } from '@jest/globals';
 import { getCurrentLocation, searchAddress, openInNewTab, initializeRouteMap, disposeRouteMap } from './DirectionsModal.razor.js';
 
+/** Builds one Geocoding 2026-01-01 feature (GeoJSON, [lon, lat]). */
+function makeFeature({
+  formattedAddress = '123 Main St, Boston, MA 02129',
+  locality = 'Boston',
+  adminDistricts = [{ shortName: 'MA' }, { shortName: 'Suffolk County' }],
+  iso = 'US',
+  coordinates = [-71.0589, 42.3601],
+  geocodePoints,
+} = {}) {
+  return {
+    type: 'Feature',
+    geometry: { type: 'Point', coordinates },
+    properties: {
+      type: 'Address',
+      address: { formattedAddress, locality, adminDistricts, countryRegion: { ISO: iso } },
+      geocodePoints,
+    },
+  };
+}
+
 describe('DirectionsModal', () => {
   beforeEach(() => {
     jest.clearAllMocks();
@@ -212,18 +232,7 @@ describe('DirectionsModal', () => {
 
       const mockResponse = {
         ok: true,
-        json: jest.fn().mockResolvedValue({
-          results: [
-            {
-              address: {
-                freeformAddress: '123 Main St, Boston, MA',
-                municipality: 'Boston',
-                countrySubdivision: 'MA'
-              },
-              position: { lat: 42.3601, lon: -71.0589 }
-            }
-          ]
-        })
+        json: jest.fn().mockResolvedValue({ features: [makeFeature()] })
       };
 
       globalThis.fetch = jest.fn().mockResolvedValue(mockResponse);
@@ -234,13 +243,15 @@ describe('DirectionsModal', () => {
       // Assert
       expect(result).toHaveLength(1);
       expect(result[0]).toEqual({
-        Address: '123 Main St, Boston, MA',
+        Address: '123 Main St, Boston, MA 02129',
         Locality: 'Boston',
         Latitude: 42.3601,
         Longitude: -71.0589
       });
 
       const fetchCall = globalThis.fetch.mock.calls[0][0];
+      expect(fetchCall).toContain('https://atlas.microsoft.com/geocode?');
+      expect(fetchCall).toContain('api-version=2026-01-01');
       expect(fetchCall).toContain('subscription-key=test-key-123');
       expect(fetchCall).toContain(encodeURIComponent('Boston, MA'));
     });
@@ -277,7 +288,7 @@ describe('DirectionsModal', () => {
 
       const mockResponse = {
         ok: true,
-        json: jest.fn().mockResolvedValue({ results: [] })
+        json: jest.fn().mockResolvedValue({ features: [] })
       };
 
       globalThis.fetch = jest.fn().mockResolvedValue(mockResponse);
@@ -289,34 +300,26 @@ describe('DirectionsModal', () => {
       expect(result).toEqual([]);
     });
 
-    test('should log "no results" message when results array is empty', async () => {
+    test('should return an empty array when features array is empty', async () => {
       // Arrange
       globalThis.azureMapsAuthConfig = { subscriptionKey: 'test-key-123' };
-      const logSpy = jest.spyOn(console, 'log').mockImplementation(() => {});
       globalThis.fetch = jest.fn().mockResolvedValue({
         ok: true,
-        json: jest.fn().mockResolvedValue({ results: [] }),
+        json: jest.fn().mockResolvedValue({ features: [] }),
       });
 
       // Act
       const result = await searchAddress('NothingHere');
 
-      // Assert — if ConditionalExpression mutant removes the length===0 check,
-      // map([]) still returns [] but the specific log message won't be called
+      // Assert
       expect(result).toEqual([]);
-      expect(logSpy).toHaveBeenCalledWith(
-        '[DirectionsModal] No results found for query:',
-        'NothingHere'
-      );
-
-      logSpy.mockRestore();
     });
 
-    test('should return empty array without error when data.results is null', async () => {
+    test('should return empty array without error when data.features is null', async () => {
       globalThis.azureMapsAuthConfig = { subscriptionKey: 'test-key-123' };
       globalThis.fetch = jest.fn().mockResolvedValue({
         ok: true,
-        json: jest.fn().mockResolvedValue({ results: null })
+        json: jest.fn().mockResolvedValue({ features: null })
       });
       const errorSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
 
@@ -341,7 +344,7 @@ describe('DirectionsModal', () => {
       expect(result).toEqual([]);
     });
 
-    test('should limit results to 5', async () => {
+    test('should request extra results so non-US matches can be filtered out', async () => {
       // Arrange
       globalThis.azureMapsAuthConfig = {
         subscriptionKey: 'test-key-123'
@@ -349,7 +352,7 @@ describe('DirectionsModal', () => {
 
       globalThis.fetch = jest.fn().mockResolvedValue({
         ok: true,
-        json: jest.fn().mockResolvedValue({ results: [] })
+        json: jest.fn().mockResolvedValue({ features: [] })
       });
 
       // Act
@@ -357,26 +360,117 @@ describe('DirectionsModal', () => {
 
       // Assert
       const fetchCall = globalThis.fetch.mock.calls[0][0];
-      expect(fetchCall).toContain('limit=5');
+      expect(fetchCall).toContain('top=10');
+      expect(fetchCall).not.toContain('countryRegion=');
     });
 
-    test('should restrict search to US', async () => {
+    test('should keep only US results', async () => {
       // Arrange
-      globalThis.azureMapsAuthConfig = {
-        subscriptionKey: 'test-key-123'
-      };
-
+      globalThis.azureMapsAuthConfig = { subscriptionKey: 'test-key-123' };
       globalThis.fetch = jest.fn().mockResolvedValue({
         ok: true,
-        json: jest.fn().mockResolvedValue({ results: [] })
+        json: jest.fn().mockResolvedValue({
+          features: [
+            makeFeature({ formattedAddress: 'Boston, Lincolnshire', iso: 'GB' }),
+            makeFeature({ formattedAddress: '1 Main St, Boston, MA' }),
+          ]
+        })
       });
 
       // Act
-      await searchAddress('Boston');
+      const result = await searchAddress('Boston');
 
       // Assert
-      const fetchCall = globalThis.fetch.mock.calls[0][0];
-      expect(fetchCall).toContain('countrySet=US');
+      expect(result.map(r => r.Address)).toEqual(['1 Main St, Boston, MA']);
+    });
+
+    test('should return empty array when every result is outside the US', async () => {
+      // Arrange
+      globalThis.azureMapsAuthConfig = { subscriptionKey: 'test-key-123' };
+      globalThis.fetch = jest.fn().mockResolvedValue({
+        ok: true,
+        json: jest.fn().mockResolvedValue({ features: [makeFeature({ iso: 'CA' })] })
+      });
+
+      // Act
+      const result = await searchAddress('Toronto');
+
+      // Assert
+      expect(result).toEqual([]);
+    });
+
+    test('should limit results to 5', async () => {
+      // Arrange
+      globalThis.azureMapsAuthConfig = { subscriptionKey: 'test-key-123' };
+      const features = Array.from({ length: 8 }, (_, i) => makeFeature({ formattedAddress: `${i} Main St` }));
+      globalThis.fetch = jest.fn().mockResolvedValue({
+        ok: true,
+        json: jest.fn().mockResolvedValue({ features })
+      });
+
+      // Act
+      const result = await searchAddress('Main St');
+
+      // Assert
+      expect(result.map(r => r.Address)).toEqual(['0 Main St', '1 Main St', '2 Main St', '3 Main St', '4 Main St']);
+    });
+
+    test('should prefer the Route geocode point over the display point', async () => {
+      // Arrange
+      globalThis.azureMapsAuthConfig = { subscriptionKey: 'test-key-123' };
+      const feature = makeFeature({
+        coordinates: [-71.0, 42.0],
+        geocodePoints: [
+          { geometry: { type: 'Point', coordinates: [-71.0, 42.0] }, usageTypes: ['Display'] },
+          { geometry: { type: 'Point', coordinates: [-71.5, 42.5] }, usageTypes: ['Route'] },
+        ],
+      });
+      globalThis.fetch = jest.fn().mockResolvedValue({
+        ok: true,
+        json: jest.fn().mockResolvedValue({ features: [feature] })
+      });
+
+      // Act
+      const result = await searchAddress('Main St');
+
+      // Assert
+      expect(result[0].Longitude).toBe(-71.5);
+      expect(result[0].Latitude).toBe(42.5);
+    });
+
+    test('should use the feature geometry when no Route geocode point exists', async () => {
+      // Arrange
+      globalThis.azureMapsAuthConfig = { subscriptionKey: 'test-key-123' };
+      const feature = makeFeature({
+        coordinates: [-71.0, 42.0],
+        geocodePoints: [{ geometry: { type: 'Point', coordinates: [-71.9, 42.9] }, usageTypes: ['Display'] }],
+      });
+      globalThis.fetch = jest.fn().mockResolvedValue({
+        ok: true,
+        json: jest.fn().mockResolvedValue({ features: [feature] })
+      });
+
+      // Act
+      const result = await searchAddress('Main St');
+
+      // Assert
+      expect(result[0].Longitude).toBe(-71.0);
+      expect(result[0].Latitude).toBe(42.0);
+    });
+
+    test('should fall back to the state when a result has no locality', async () => {
+      // Arrange
+      globalThis.azureMapsAuthConfig = { subscriptionKey: 'test-key-123' };
+      globalThis.fetch = jest.fn().mockResolvedValue({
+        ok: true,
+        json: jest.fn().mockResolvedValue({ features: [makeFeature({ locality: null })] })
+      });
+
+      // Act
+      const result = await searchAddress('Massachusetts');
+
+      // Assert
+      expect(result[0].Locality).toBe('MA');
     });
 
     test('should use Azure AD authentication when accountId is provided', async () => {
@@ -395,12 +489,7 @@ describe('DirectionsModal', () => {
         })
         .mockResolvedValueOnce({
           ok: true,
-          json: jest.fn().mockResolvedValue({
-            results: [{
-              address: { freeformAddress: '123 Main St', municipality: 'Boston' },
-              position: { lat: 42.3601, lon: -71.0589 }
-            }]
-          })
+          json: jest.fn().mockResolvedValue({ features: [makeFeature()] })
         });
 
       // Act

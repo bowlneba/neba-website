@@ -4,6 +4,7 @@ using Neba.Website.Server;
 using Neba.Website.Server.Account;
 using Neba.Website.Server.Account.Session;
 using Neba.Website.Server.Clock;
+using Neba.Website.Server.Documents;
 using Neba.Website.Server.FeatureManagement;
 using Neba.Website.Server.Help;
 using Neba.Website.Server.Maps;
@@ -12,6 +13,7 @@ using Neba.Website.Server.Services;
 using Neba.Website.Server.Stats;
 using Neba.Website.Server.Time;
 using Neba.Website.Server.Tournaments;
+using Neba.Website.Server.Tournaments.TeamEligibility;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -41,9 +43,11 @@ builder.Services.AddSingleton<IStopwatchProvider, StopwatchProvider>();
 builder.Services.AddScoped<Neba.Website.Server.Notifications.ToastService>();
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<ITournamentApiService, TournamentApiService>();
+builder.Services.AddScoped<ITeamEligibilityService, TeamEligibilityService>();
 builder.Services.AddScoped<IReferenceDataService, ReferenceDataService>();
 builder.Services.AddScoped<IClientTimeZoneService, ClientTimeZoneService>();
 builder.Services.AddSingleton<HelpDocumentService>();
+builder.Services.AddScoped<IRulesSectionService, RulesSectionService>();
 
 var app = builder.Build();
 

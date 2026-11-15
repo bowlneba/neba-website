@@ -54,6 +54,8 @@
                     <button type="button" class="account-dropdown-link" @onclick="CopyTokenAsync">Copy Auth Token</button>
                 }
                 <div class="account-divider"></div>
+                <a class="account-dropdown-link" href="/account/change-password" data-enhance-nav="false">Change Password</a>
+                <div class="account-divider"></div>
                 <a class="account-dropdown-link" href="/account/logout" data-enhance-nav="false">Logout</a>
 
             </nav>
@@ -97,7 +99,7 @@
         var token = await GetAccessTokenAsync();
         if (!string.IsNullOrEmpty(token))
         {
-            _backgroundJobsDashboardUrl = new Uri(ApiConfiguration.BaseUrl, "background-jobs")
+            _backgroundJobsDashboardUrl = new Uri(ApiConfiguration.BrowserBaseUrl ?? ApiConfiguration.BaseUrl, "background-jobs")
                 + "?access_token=" + Uri.EscapeDataString(token);
         }
     }

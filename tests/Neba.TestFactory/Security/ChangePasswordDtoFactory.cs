@@ -1,0 +1,49 @@
+using Bogus;
+
+using Neba.Api.Security.Password.ChangePassword;
+
+namespace Neba.TestFactory.Security;
+
+public static class ChangePasswordDtoFactory
+{
+    public const string ValidAccessToken = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.test-access-token";
+    public const string ValidRefreshToken = "test-refresh-token-value";
+    public static readonly DateTimeOffset ValidExpiresAt = new(2030, 1, 1, 0, 0, 0, TimeSpan.Zero);
+    public const string ValidEmail = "test@bowlneba.com";
+
+    internal static ChangePasswordDto Create(
+        string? accessToken = null,
+        string? refreshToken = null,
+        DateTimeOffset? expiresAt = null,
+        Ulid? userId = null,
+        string? email = null)
+        => new()
+        {
+            AccessToken = accessToken ?? ValidAccessToken,
+            RefreshToken = refreshToken ?? ValidRefreshToken,
+            ExpiresAt = expiresAt ?? ValidExpiresAt,
+            UserId = userId ?? Ulid.NewUlid(),
+            Email = email ?? ValidEmail,
+        };
+
+    internal static IReadOnlyCollection<ChangePasswordDto> Bogus(int count, Faker faker)
+    {
+        ArgumentNullException.ThrowIfNull(faker);
+
+        return [.. Enumerable.Range(0, count).Select(_ => new ChangePasswordDto
+        {
+            AccessToken = faker.Random.AlphaNumeric(256),
+            RefreshToken = faker.Random.AlphaNumeric(64),
+            ExpiresAt = faker.Date.FutureOffset(),
+            UserId = Ulid.NewUlid(),
+            Email = faker.Internet.Email(),
+        })];
+    }
+
+    internal static IReadOnlyCollection<ChangePasswordDto> Bogus(int count, int? seed = null)
+    {
+        var faker = new Faker();
+        if (seed.HasValue) faker.Random = new Randomizer(seed.Value);
+        return Bogus(count, faker);
+    }
+}

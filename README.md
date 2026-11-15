@@ -53,7 +53,8 @@ src/
 │   │   ├── Seasons/
 │   │   ├── Stats/
 │   │   ├── News/
-│   │   └── Documents/
+│   │   ├── Documents/
+│   │   └── Memberships/
 │   ├── Database/                # AppDbContext, EF Core entity configurations, migrations
 │   ├── Messaging/                # IQueryHandler<,> / ICommandHandler<,> + handler scanning
 │   ├── Caching/                  # FusionCache setup and decorators
@@ -118,6 +119,7 @@ src/
 | **Local Development** | .NET Aspire |
 | **Production** | Azure (Container Apps, Monitor, Key Vault, Blob Storage, Maps) |
 | **Background Jobs** | Hangfire |
+| **Image Processing** | SixLabors ImageSharp (Hall of Fame photo resize; commercial license) |
 | **Caching** | FusionCache |
 | **API Documentation** | Scalar |
 | **HTTP Client** | Refit |
@@ -179,6 +181,7 @@ ConnectionStrings__bowlneba='Host=localhost;Port=52502;Database=bowlneba;Usernam
 - [x] Tournaments
 - [ ] Tournament Documents
 - [x] Tournament Detail
+- [x] Team Eligibility Checker
 - [x] Sponsors
 - [x] News
 - [x] About

@@ -59,6 +59,9 @@ internal sealed class TournamentConfiguration
         builder.Property(tournament => tournament.OilPatternRevealDateTime)
             .HasColumnName("oil_pattern_reveal_date_utc");
 
+        builder.Property(tournament => tournament.OilPatternAnnouncedAtUtc)
+            .HasColumnName("oil_pattern_announced_at_utc");
+
         builder.Property(tournament => tournament.LegacyId)
             .ValueGeneratedNever();
 
@@ -79,6 +82,19 @@ internal sealed class TournamentConfiguration
             .WithOne(tournamentSponsor => tournamentSponsor.Tournament)
             .HasForeignKey(ForeignKeyName)
             .OnDelete(DeleteBehavior.Cascade);
+
+        builder.Property(tournament => tournament.PreviousTournamentId)
+            .HasColumnName("previous_tournament_id")
+            .HasMaxLength(26)
+            .IsFixedLength();
+
+        builder.HasOne<Tournament>()
+            .WithMany()
+            .HasForeignKey(tournament => tournament.PreviousTournamentId)
+            .HasPrincipalKey(tournament => tournament.Id)
+            .OnDelete(DeleteBehavior.SetNull);
+
+        builder.HasIndex(tournament => tournament.PreviousTournamentId);
 
         builder.Property(tournament => tournament.EntryFee)
             .HasPrecision(5, 2)

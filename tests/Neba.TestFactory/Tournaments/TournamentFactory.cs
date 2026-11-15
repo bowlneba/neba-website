@@ -34,9 +34,11 @@ public static class TournamentFactory
         IReadOnlyCollection<TournamentSponsor>? sponsors = null,
         IReadOnlyCollection<Squad>? squads = null,
         DateTimeOffset? oilPatternRevealDateTime = null,
+        DateTimeOffset? oilPatternAnnouncedAtUtc = null,
         decimal? nebaAddedMoney = null,
         TournamentStatus? status = null,
-        int? entryCountForTitleEligibility = null)
+        int? entryCountForTitleEligibility = null,
+        PreviousTournamentFacts? previousTournament = null)
     {
         var result = Tournament.Create(
             name: name ?? ValidName,
@@ -53,6 +55,7 @@ public static class TournamentFactory
             patternRatioCategory: patternRatioCategory,
             oilPatternRevealDateTime: oilPatternRevealDateTime,
             nebaAddedMoney: nebaAddedMoney ?? 0m,
+            previousTournament: previousTournament,
             id: id,
             legacyId: legacyId);
 
@@ -81,6 +84,11 @@ public static class TournamentFactory
             {
                 throw new InvalidOperationException($"Failed to add squad to tournament: {addResult.Errors[0].Description}");
             }
+        }
+
+        if (oilPatternAnnouncedAtUtc is { } announcedAtUtc)
+        {
+            tournament.MarkOilPatternAnnounced(announcedAtUtc);
         }
 
         if (status is not null && status != TournamentStatus.Scheduled)

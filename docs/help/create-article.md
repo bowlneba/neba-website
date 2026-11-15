@@ -20,7 +20,7 @@ You need the `News.CreateArticle` permission (granted to the `Webmaster` and `Ad
    - **Tournament** — optional. Pick a season, then a tournament within that season, to link the article to it, or leave both as-is to publish with no tournament link. If you opened this page from a tournament's page (a "tournamentId" link), the tournament is already chosen and shown as read-only text instead of the dropdowns.
    - **Header Image** — optional. Drag and drop, or click to browse for, a single image (JPEG/PNG/etc., up to 5 MB) to use as the article's header image.
    - **Attachments** — optional. Drag and drop, or click to browse for, up to 10 files (PDF, Word, Excel, or images, up to 25 MB each) to attach to the article. Any image embedded inline in the Content editor also appears here, tagged **Inline**, alongside any files you add through this uploader.
-   - **Status** — `Draft` (not visible to the public) or `Published`.
+   - **Status** — `Draft` (not visible to the public) or `Published`. A `Published` article is also posted to the NEBA news channel on Discord, about two minutes after its publish date. A `Draft` is not posted.
    - **Publish Date** — shown and entered in your own local time; it's converted to UTC automatically when the article is saved.
 
    ![Blank Create Article form](images/create-article/create-form.png)
@@ -35,7 +35,7 @@ You need the `News.CreateArticle` permission (granted to the `Webmaster` and `Ad
 
 ## What happens after you confirm
 
-- **Success**: an "Article Created" toast appears and you're taken straight to the new article's detail page (`/news/{slug}`).
+- **Success**: an "Article Created" toast appears and you're taken straight to the new article's detail page (`/news/{slug}`). If the article is `Published`, it is posted to Discord about two minutes after its publish date. See [Edit an article](edit-article.md#announcements-on-discord) for what you can see and what happens if you change the date.
 - **Failure**: the form stays on screen with an "Unable to Create Article" message explaining what went wrong (see Troubleshooting below) — nothing is saved, and you can fix the form and try again without re-entering everything.
 
 ## Troubleshooting

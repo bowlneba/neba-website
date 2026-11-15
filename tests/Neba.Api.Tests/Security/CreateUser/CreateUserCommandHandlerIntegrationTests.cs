@@ -321,6 +321,46 @@ public sealed class CreateUserCommandHandlerIntegrationTests(SecurityDbContextFi
         sentMessage.To.ShouldBe(command.Email);
         sentMessage.Subject.ShouldBe("You've been invited to BowlNEBA");
         sentMessage.HtmlBody.ShouldContain($"{BaseUrl}/account/set-password?userId={result.Value.UserId}&amp;token=");
+        sentMessage.HtmlBody.ShouldContain("&amp;reason=invite");
+    }
+
+    [Fact(DisplayName = "HandleAsync issues an invite token only the invite provider accepts")]
+    public async Task HandleAsync_ShouldIssueInviteProviderToken()
+    {
+        // Arrange
+        var ct = TestContext.Current.CancellationToken;
+        using var scope = fixture.CreateScope();
+        var userManager = scope.ServiceProvider.GetRequiredService<UserManager<ApplicationUser>>();
+        var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<ApplicationRole>>();
+        var command = new CreateUserCommand
+        {
+            CallerPermissions = [],
+            Email = LoginRequestFactory.ValidEmail,
+            Roles = [Roles.Member]
+        };
+
+        await SeedRolesAsync(roleManager, command.Roles);
+        EmailMessage? sentMessage = null;
+        _emailSender
+            .Setup(s => s.SendAsync(It.IsAny<EmailMessage>(), ct))
+            .Callback<EmailMessage, CancellationToken>((message, _) => sentMessage = message)
+            .Returns(Task.CompletedTask);
+
+        // Act
+        await CreateHandler(userManager).HandleAsync(command, ct);
+
+        // Assert
+        sentMessage.ShouldNotBeNull();
+        const string marker = "&amp;token=";
+        var start = sentMessage.HtmlBody.IndexOf(marker, StringComparison.Ordinal) + marker.Length;
+        var end = sentMessage.HtmlBody.IndexOf('&', start);
+        var token = System.Net.WebUtility.UrlDecode(sentMessage.HtmlBody[start..end]);
+        var user = await userManager.FindByEmailAsync(command.Email);
+
+        (await userManager.VerifyUserTokenAsync(
+            user!, InviteTokenProvider.ProviderName, UserManager<ApplicationUser>.ResetPasswordTokenPurpose, token)).ShouldBeTrue();
+        (await userManager.VerifyUserTokenAsync(
+            user!, TokenOptions.DefaultProvider, UserManager<ApplicationUser>.ResetPasswordTokenPurpose, token)).ShouldBeFalse();
     }
 
     [Fact(DisplayName = "HandleAsync returns DuplicateEmail conflict when email already exists")]

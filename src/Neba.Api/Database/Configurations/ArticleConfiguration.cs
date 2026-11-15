@@ -44,6 +44,8 @@ internal sealed class ArticleConfiguration
 
         builder.HasIndex(article => new { article.PublicationStatus, article.PublishDateUtc });
 
+        builder.Property(article => article.AnnouncedAtUtc);
+
         builder.HasStoredFile(article => article.HeaderImage,
             containerColumnName: "header_image_container",
             filePathColumnName: "header_image_file_path",

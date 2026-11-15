@@ -6,7 +6,7 @@
     cursor: pointer;
     font-weight: 500;
     font-size: 0.875rem;
-    transition: all 0.15s;
+    transition: border-color 0.15s, background-color 0.15s, color 0.15s;
     color: var(--neba-gray-700);
 }
 

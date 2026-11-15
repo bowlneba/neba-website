@@ -123,6 +123,11 @@ public sealed class Tournament
     /// </summary>
     public StoredFile? Logo { get; private set; }
 
+    /// <summary>
+    /// Gets the tournament this one follows in the prior year, if any; its winners are this one's defending champions.
+    /// </summary>
+    public TournamentId? PreviousTournamentId { get; private set; }
+
     private readonly List<TournamentSponsor> _sponsors = [];
 
     /// <summary>
@@ -139,6 +144,40 @@ public sealed class Tournament
     /// permission always see full details regardless of this value.
     /// </summary>
     public DateTimeOffset? OilPatternRevealDateTime { get; private set; }
+
+    // PostgreSQL stores timestamps to the microsecond. Dropping finer ticks here keeps the in-memory reveal
+    // time equal to the stored one, so a job scheduled with it matches the row exactly.
+    private const long TicksPerMicrosecond = 10;
+
+    private static DateTimeOffset? TruncateToMicroseconds(DateTimeOffset? value)
+        => value is { } instant
+            ? new DateTimeOffset(instant.Ticks - (instant.Ticks % TicksPerMicrosecond), instant.Offset)
+            : null;
+
+    /// <summary>
+    /// When the oil pattern reveal was announced, or <see langword="null"/> if it has not been. Set once.
+    /// </summary>
+    public DateTimeOffset? OilPatternAnnouncedAtUtc { get; private set; }
+
+    /// <summary>
+    /// When the oil pattern reveal should be announced: <paramref name="delay"/> after the reveal time, so the
+    /// page shows the pattern before the link is clicked. <see langword="null"/> when there is no reveal time,
+    /// it has passed, or the reveal was already announced.
+    /// </summary>
+    public DateTimeOffset? GetOilPatternAnnouncementTime(DateTimeOffset now, TimeSpan delay)
+    {
+        return OilPatternRevealDateTime is not { } revealAt
+            || revealAt <= now
+            || OilPatternAnnouncedAtUtc is not null
+            ? null
+            : (revealAt + delay);
+    }
+
+    /// <summary>
+    /// Records that the oil pattern reveal was announced. A second call keeps the first timestamp.
+    /// </summary>
+    public void MarkOilPatternAnnounced(DateTimeOffset now)
+        => OilPatternAnnouncedAtUtc ??= now;
 
     private readonly List<Squad> _squads = [];
 
@@ -242,6 +281,7 @@ public sealed class Tournament
         PatternRatioCategory? patternRatioCategory = null,
         DateTimeOffset? oilPatternRevealDateTime = null,
         decimal nebaAddedMoney = 0,
+        PreviousTournamentFacts? previousTournament = null,
         TournamentId? id = null,
         int? legacyId = null)
     {
@@ -265,6 +305,12 @@ public sealed class Tournament
             return TournamentErrors.InvalidNebaAddedMoney(nebaAddedMoney);
         }
 
+        var previousError = ValidatePreviousTournament(null, tournamentType, startDate, previousTournament);
+        if (previousError is { } error)
+        {
+            return error;
+        }
+
         var tournament = new Tournament
         {
             Id = id ?? TournamentId.New(),
@@ -281,7 +327,8 @@ public sealed class Tournament
             Logo = logo,
             PatternLengthCategory = patternLengthCategory,
             PatternRatioCategory = patternRatioCategory,
-            OilPatternRevealDateTime = oilPatternRevealDateTime,
+            OilPatternRevealDateTime = TruncateToMicroseconds(oilPatternRevealDateTime),
+            PreviousTournamentId = previousTournament?.Id,
             LegacyId = legacyId
         };
 
@@ -305,7 +352,8 @@ public sealed class Tournament
         StoredFile? logo,
         PatternLengthCategory? patternLengthCategory,
         PatternRatioCategory? patternRatioCategory,
-        DateTimeOffset? oilPatternRevealDateTime)
+        DateTimeOffset? oilPatternRevealDateTime,
+        PreviousTournamentFacts? previousTournament)
     {
         if (string.IsNullOrWhiteSpace(name))
         {
@@ -327,6 +375,12 @@ public sealed class Tournament
             return TournamentErrors.InvalidNebaAddedMoney(nebaAddedMoney);
         }
 
+        var previousError = ValidatePreviousTournament(Id, tournamentType, startDate, previousTournament);
+        if (previousError is { } error)
+        {
+            return error;
+        }
+
         Name = name;
         TournamentType = tournamentType;
         StartDate = startDate;
@@ -340,9 +394,43 @@ public sealed class Tournament
         Logo = logo;
         PatternLengthCategory = patternLengthCategory;
         PatternRatioCategory = patternRatioCategory;
-        OilPatternRevealDateTime = oilPatternRevealDateTime;
+        OilPatternRevealDateTime = TruncateToMicroseconds(oilPatternRevealDateTime);
+        PreviousTournamentId = previousTournament?.Id;
 
         return Result.Updated;
+    }
+
+    // A Non-Champions tournament has no defending champions. Otherwise the previous tournament must be a different
+    // tournament of the same type that ends before this one starts.
+    private static Error? ValidatePreviousTournament(
+        TournamentId? selfId,
+        TournamentType tournamentType,
+        DateOnly startDate,
+        PreviousTournamentFacts? previous)
+    {
+        if (previous is not { } facts)
+        {
+            return null;
+        }
+
+        if (tournamentType == TournamentType.NonChampions)
+        {
+            return TournamentErrors.PreviousTournamentNotAllowed(tournamentType);
+        }
+
+        if (selfId is { } id && facts.Id == id)
+        {
+            return TournamentErrors.PreviousTournamentIsSelf;
+        }
+
+        if (facts.TournamentType != tournamentType)
+        {
+            return TournamentErrors.PreviousTournamentTypeMismatch(facts.TournamentType, tournamentType);
+        }
+
+        return facts.EndDate >= startDate
+            ? TournamentErrors.PreviousTournamentNotBefore(facts.EndDate, startDate)
+            : null;
     }
 
     /// <summary>

@@ -129,6 +129,7 @@ public sealed class ResetPasswordCommandHandlerIntegrationTests(SecurityDbContex
         // Assert
         sentMessage.ShouldNotBeNull();
         sentMessage.HtmlBody.ShouldContain($"{BaseUrl}/account/set-password?userId={user.Id}&amp;token=");
+        sentMessage.HtmlBody.ShouldContain("&amp;reason=reset");
     }
 
     [Fact(DisplayName = "HandleAsync generates a token the user can redeem to set a new password")]
@@ -154,15 +155,16 @@ public sealed class ResetPasswordCommandHandlerIntegrationTests(SecurityDbContex
         sentMessage.ShouldNotBeNull();
         var token = ExtractTokenFromLink(sentMessage.HtmlBody);
         var freshUser = await userManager.FindByEmailAsync(LoginRequestFactory.ValidEmail);
-        var resetResult = await userManager.ResetPasswordAsync(freshUser!, token, "SomeNewP@ssw0rd1");
-        resetResult.Succeeded.ShouldBeTrue();
+        var valid = await userManager.VerifyUserTokenAsync(
+            freshUser!, ResetTokenProvider.ProviderName, UserManager<ApplicationUser>.ResetPasswordTokenPurpose, token);
+        valid.ShouldBeTrue();
     }
 
     private static string ExtractTokenFromLink(string htmlBody)
     {
         const string marker = "&amp;token=";
         var start = htmlBody.IndexOf(marker, StringComparison.Ordinal) + marker.Length;
-        var end = htmlBody.IndexOfAny(['"', '<'], start);
+        var end = htmlBody.IndexOfAny(['"', '<', '&'], start);
         return WebUtility.UrlDecode(htmlBody[start..end]);
     }
 }

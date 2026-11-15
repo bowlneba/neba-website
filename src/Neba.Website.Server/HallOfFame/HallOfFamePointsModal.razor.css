@@ -1,0 +1,2 @@
+.pm-title { font-family: var(--neba-font-display); font-size: 1.375rem; font-weight: 800; margin: 0; }
+.pm-flag { display: inline-flex; margin-top: .5rem; padding: .2rem .6rem; border-radius: 999px; background: var(--neba-blue-brand); color: var(--neba-gold); font-size: .75rem; font-weight: 600; }

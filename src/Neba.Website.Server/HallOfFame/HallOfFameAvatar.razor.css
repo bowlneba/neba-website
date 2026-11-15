@@ -1,0 +1,36 @@
+.avatar-wrap {
+    position: relative;
+    margin-bottom: 0.75rem;
+}
+
+.inductee-photo {
+    width: 140px;
+    height: 140px;
+    border-radius: 50%;
+    overflow: hidden;
+    background: linear-gradient(135deg, var(--neba-blue-700) 0%, var(--neba-blue-brand) 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 3rem;
+    font-weight: 600;
+    box-shadow: 0 4px 8px rgba(0, 102, 204, 0.2);
+    transition: transform 0.2s ease;
+}
+
+.inductee-photo__img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+}
+
+/* Gold ring for a dark stage; the gap color is the stage color. */
+.inductee-photo--ringed {
+    box-shadow: 0 0 0 3px var(--avatar-ring-gap, var(--neba-blue-brand)), 0 0 0 5px var(--neba-gold), 0 6px 14px rgba(0, 0, 0, 0.35);
+}
+
+/* The portrait as a button: drop the browser's button look, keep the circle. */
+.inductee-photo--button { padding: 0; border: 0; appearance: none; font-family: inherit; cursor: pointer; }
+.inductee-photo--button:focus-visible { outline: 3px solid var(--neba-gold); outline-offset: 6px; }

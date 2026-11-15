@@ -12,13 +12,15 @@ namespace Neba.Api.RateLimiting;
 internal static class RateLimitingConfiguration
 {
     internal const string PublicPolicy = "public";
+    internal const string PasswordRecoveryPolicy = "password-recovery";
+    internal const string BowlerSearchPolicy = "bowler-search";
 
     extension(IServiceCollection services)
     {
         internal void AddRateLimiting(IConfiguration config)
         {
-            var permitLimit = config.GetValue("RateLimiting:PermitLimit", 100);
-            var windowSeconds = config.GetValue("RateLimiting:WindowSeconds", 60);
+            var permitLimit = config.GetPositiveInt("PermitLimit", 100);
+            var windowSeconds = config.GetPositiveInt("WindowSeconds", 60);
 
             // Authenticated callers aren't meaningfully limited by this policy - they get a high
             // ceiling that only exists to blunt a compromised/malicious authenticated client, not
@@ -26,32 +28,16 @@ internal static class RateLimitingConfiguration
             // since every request from Neba.Website.Server arrives here as one server-to-server
             // connection - partitioning authenticated traffic by IP would still lump every signed-in
             // user behind that one connection into a single shared bucket.
-            var authenticatedPermitLimit = config.GetValue("RateLimiting:AuthenticatedPermitLimit", 1000);
-            var authenticatedWindowSeconds = config.GetValue("RateLimiting:AuthenticatedWindowSeconds", 60);
+            var authenticatedPermitLimit = config.GetPositiveInt("AuthenticatedPermitLimit", 1000);
+            var authenticatedWindowSeconds = config.GetPositiveInt("AuthenticatedWindowSeconds", 60);
 
-            if (permitLimit <= 0)
-            {
-                throw new InvalidOperationException(
-                    $"RateLimiting:PermitLimit must be greater than zero (configured value: {permitLimit}).");
-            }
+            // The forgot-password form sends email, so it gets a much tighter limit than the public default.
+            var passwordRecoveryPermitLimit = config.GetPositiveInt("PasswordRecoveryPermitLimit", 5);
+            var passwordRecoveryWindowSeconds = config.GetPositiveInt("PasswordRecoveryWindowSeconds", 900);
 
-            if (windowSeconds <= 0)
-            {
-                throw new InvalidOperationException(
-                    $"RateLimiting:WindowSeconds must be greater than zero (configured value: {windowSeconds}).");
-            }
-
-            if (authenticatedPermitLimit <= 0)
-            {
-                throw new InvalidOperationException(
-                    $"RateLimiting:AuthenticatedPermitLimit must be greater than zero (configured value: {authenticatedPermitLimit}).");
-            }
-
-            if (authenticatedWindowSeconds <= 0)
-            {
-                throw new InvalidOperationException(
-                    $"RateLimiting:AuthenticatedWindowSeconds must be greater than zero (configured value: {authenticatedWindowSeconds}).");
-            }
+            // The public bowler search runs on every pause in typing, so it gets a tighter limit than the public default.
+            var bowlerSearchPermitLimit = config.GetPositiveInt("BowlerSearchPermitLimit", 60);
+            var bowlerSearchWindowSeconds = config.GetPositiveInt("BowlerSearchWindowSeconds", 60);
 
             // Trust X-Forwarded-For only from RFC 1918 private networks (Azure load balancers
             // and Container Apps infrastructure). RemoteIpAddress is rewritten by
@@ -59,6 +45,11 @@ internal static class RateLimitingConfiguration
             services.Configure<ForwardedHeadersOptions>(options =>
             {
                 options.ForwardedHeaders = ForwardedHeaders.XForwardedFor;
+                // The website adds the visitor's IP and the API's ingress then appends the website's. With the
+                // default limit of 1 the app would read only the website's address, and every visitor would share
+                // one rate-limit bucket. Without a limit, the middleware walks the chain right to left and stops at
+                // the first address outside the networks below, so a spoofed entry from outside is never trusted.
+                options.ForwardLimit = null;
 #pragma warning disable S1313 // RFC 1918 private ranges — Azure load balancers and Container Apps infrastructure
                 options.KnownIPNetworks.Add(new System.Net.IPNetwork(IPAddress.Parse("10.0.0.0"), 8));
                 options.KnownIPNetworks.Add(new System.Net.IPNetwork(IPAddress.Parse("172.16.0.0"), 12));
@@ -89,6 +80,34 @@ internal static class RateLimitingConfiguration
                         contentType: MediaTypeNames.Application.ProblemJson,
                         cancellationToken);
                 };
+
+                options.AddPolicy(PasswordRecoveryPolicy, context =>
+                {
+                    // RemoteIpAddress is the visitor's address once the website forwards X-Forwarded-For
+                    // (UseForwardedHeaders rewrites it).
+                    var ip = context.Connection.RemoteIpAddress?.ToString() ?? "unknown";
+
+                    return RateLimitPartition.GetFixedWindowLimiter($"password-recovery:{ip}",
+                        _ => new FixedWindowRateLimiterOptions
+                        {
+                            PermitLimit = passwordRecoveryPermitLimit,
+                            Window = TimeSpan.FromSeconds(passwordRecoveryWindowSeconds),
+                            QueueLimit = 0,
+                        });
+                });
+
+                options.AddPolicy(BowlerSearchPolicy, context =>
+                {
+                    var ip = context.Connection.RemoteIpAddress?.ToString() ?? "unknown";
+
+                    return RateLimitPartition.GetFixedWindowLimiter($"bowler-search:{ip}",
+                        _ => new FixedWindowRateLimiterOptions
+                        {
+                            PermitLimit = bowlerSearchPermitLimit,
+                            Window = TimeSpan.FromSeconds(bowlerSearchWindowSeconds),
+                            QueueLimit = 0,
+                        });
+                });
 
                 options.AddPolicy(PublicPolicy, context =>
                 {
@@ -124,5 +143,15 @@ internal static class RateLimitingConfiguration
                 });
             });
         }
+    }
+
+    private static int GetPositiveInt(this IConfiguration config, string name, int defaultValue)
+    {
+        var value = config.GetValue($"RateLimiting:{name}", defaultValue);
+
+        return value > 0
+            ? value
+            : throw new InvalidOperationException(
+                $"RateLimiting:{name} must be greater than zero (configured value: {value}).");
     }
 }

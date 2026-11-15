@@ -118,7 +118,8 @@ public sealed class BowlerNameChangeAuditIntegrationTests(
                 LastName nvarchar(100) NOT NULL,
                 Suffix nvarchar(10) NULL,
                 Gender int NOT NULL,
-                DateOfBirth datetime NULL
+                DateOfBirth datetime NULL,
+                UsbcId nvarchar(20) NULL
             )
             """;
         await create.ExecuteNonQueryAsync();

@@ -138,6 +138,17 @@
     color: var(--neba-blue-600, #5563DD);
 }
 
+/* Two meta blocks in one panel: space between them. */
+.sidebar-meta + .sidebar-meta {
+    margin-top: 0.85rem;
+}
+
+/* An unset value reads as muted, not as a date. */
+.sidebar-meta-value--muted {
+    color: var(--neba-text-muted, #737373);
+    font-weight: 500;
+}
+
 /* ─── Tournament link ────────────────────────────────────── */
 .sidebar-tournament-link {
     padding: 0.75rem 1rem;

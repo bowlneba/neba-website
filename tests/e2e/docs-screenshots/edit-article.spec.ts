@@ -9,6 +9,9 @@ import path from 'node:path';
  *
  * Unlike delete, editing has no natural "undo" step, so this script stops at the populated,
  * pre-submit form rather than actually saving changes to the mock article.
+ *
+ * The Article Info panel shots read the mock articles: june-lane-pattern carries an announced
+ * time, points-race-update does not.
  */
 
 const outDir = path.join('docs', 'help', 'images', 'edit-article');
@@ -36,5 +39,21 @@ test.describe('edit-article help screenshots', () => {
     // fullPage so the Tournament/Header Image/Attachments sections (below the initial
     // title/slug/content/status/publish-date fields) are captured, not just the first viewport.
     await page.screenshot({ path: path.join(outDir, 'edit-form.png'), fullPage: true });
+  });
+
+  test('article info panel shows whether the article was announced', async ({ page }) => {
+    await page.goto('/news/june-lane-pattern');
+    await page.waitForSelector('.news-detail-layout');
+
+    const announcedPanel = page.locator('.sidebar-panel').first();
+    await expect(announcedPanel.locator('.sidebar-meta-label', { hasText: 'Announced' })).toBeVisible();
+    await announcedPanel.screenshot({ path: path.join(outDir, 'detail-announced.png') });
+
+    await page.goto('/news/points-race-update');
+    await page.waitForSelector('.news-detail-layout');
+
+    const notAnnouncedPanel = page.locator('.sidebar-panel').first();
+    await expect(notAnnouncedPanel.locator('.sidebar-meta-value--muted')).toHaveText('Not announced');
+    await notAnnouncedPanel.screenshot({ path: path.join(outDir, 'detail-not-announced.png') });
   });
 });

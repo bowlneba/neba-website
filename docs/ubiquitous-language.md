@@ -183,9 +183,11 @@ An Article is only publicly visible when its Publication Status is `Published` *
 | `PublishDate` | DateTimeOffset | No | The date and time the article becomes publicly visible. Required when status is `Published` |
 | `HeaderImage` | `StoredFile?` | No | Storage address of the article's header image. When absent, the NEBA logo is displayed as a fallback (presentation layer — not a domain concept) |
 | `TournamentId` | `TournamentId?` | No | Optional reference to a related Tournament. Enables navigation between the article and the Tournament detail page, and surfaces related articles on the Tournament detail page |
+| `AnnouncedAtUtc` | DateTimeOffset? | No | When the article was announced (posted to an outside channel such as Discord). Null until then. Set once and never cleared, so an article is announced at most once |
 
 **Business Rules**:
 
+- An Article is announced at most once: a Published Article that has not been announced is due an announcement after its Publish Date (and after the later of the Publish Date and the save time, when the date has already passed), plus a configured delay. A `Draft` Article is never announced. Articles Published before announcements existed are treated as already announced
 - An Article is publicly visible only when `PublicationStatus == Published` and `PublishDate <= UtcNow`
 - A `Draft` article is never publicly visible, regardless of `PublishDate`
 - `PublishDate` is required regardless of status — there is no rule tying its value to `PublicationStatus`; visibility is a query-time concern, not a creation-time invariant
@@ -651,6 +653,8 @@ A Bowler record may represent a fully registered active participant or a histori
 | `WebsiteId` | `int?` | Legacy ID from the old NEBA website database. Retained for data migration traceability only. Not exposed in search or UI |
 | `LegacyId` | `int?` | Legacy ID from the organization management software. Retained for data migration traceability only. Not exposed in search or UI |
 
+| `UsbcId` | `string?` | The bowler's USBC membership ID. Null until known. Shown beside the name in the public bowler search so bowlers with the same name can be told apart. Not the same as a bowling center's [Certification Number](#certification-number) |
+
 **Primary lookup pattern**: Search by name → select from result list → navigate by `Id`.
 
 **In Code**:
@@ -925,6 +929,56 @@ Titles are the authoritative source for:
 
 ---
 
+### Previous Tournament
+
+**Definition**: The tournament one tournament follows in the prior year, set by staff on the tournament form. The winners of the previous tournament are the new tournament's **Defending Champions**.
+
+**Rules**:
+
+- A previous tournament must be a different tournament of the same Tournament Type that ends before this one starts
+- A Non-Champions tournament cannot have one
+- The link is optional; with none, the tournament has no defending champions
+- If the previous tournament is deleted, the link is cleared
+
+**In Code**:
+
+- Property: `Tournament.PreviousTournamentId` (`TournamentId?`; no navigation property)
+- Validation: `Tournament.Create`/`Tournament.Update` take `PreviousTournamentFacts` (id, type, end date), loaded by the handler
+
+---
+
+### Defending Champions
+
+**Definition**: The bowlers who won a tournament's Previous Tournament. Bowled together again as the same team, they are exempt from the champion limits in Rules 401 to 403 (Rule 401f lets an over/under team defend if one bowler became an over).
+
+Each defending **team** is listed with the tournament it won. When the previous tournament was **Truncated**, the winners of that tournament and the winners of the tournament before it may each bowl together as a defending team. The earlier winners are marked **Undefended**: they never got to defend because a later tournament was truncated. The chain continues while each tournament reached is also truncated. A winner is a first-place result whether or not the tournament was Title Eligible.
+
+Shown on the tournament list and detail pages for scheduled tournaments only; once a tournament finishes, its winners show instead.
+
+**In Code**:
+
+- `DefendingTeamsReader` / `DefendingTeam` (`Neba.Api.Features.Tournaments`), returned as `DefendingChampions` on the season list and tournament detail
+
+---
+
+### Team Eligibility
+
+**Definition**: Whether a team of bowlers may enter a team tournament (Doubles, Over/Under Doubles, Trios, Baker) under Rules 401 to 403. The rules run at the tournament's start date and end date, in a fixed order, stopping at the first group that fails:
+
+1. **Defending champions** — a team equal to a defending team is eligible and no other rule runs
+2. **Champion and Hall of Fame limits** — doubles: at most one champion; trios: at least one non-champion and at most one multi-time champion; baker: at least one non-champion, at most two multi-time champions and at most one Hall of Fame member for Superior Performance
+3. **Age** (Over/Under only) — one bowler over the age limit (50) and one under, using date of birth
+
+A **champion** is a bowler with a NEBA title inside the window before the date checked: 10 years for regular doubles (5 for a bowler who has reached their 60th birthday; a bowler with no date of birth gets 10), 5 years for everything else. Titles won in tournaments that overlap the tournament's dates do not count.
+
+The two dates combine to **Eligible**, **Ineligible**, or **Depends on date** (eligible at one date and not the other, only from the age rule). PBA and PWBA titles are not checked, and the answer says so. A team member not in the system counts as a non-champion with no date of birth, so an over/under team with one is ineligible. Date of birth never leaves the API.
+
+**In Code**:
+
+- `TeamEligibilityEvaluator` (`Neba.Api.Features.Tournaments.Domain`), `GET /tournaments/{id}/team-eligibility`
+
+---
+
 ### Tournament Sponsor
 
 **Definition**: The sponsorship association between a specific Tournament and a specific Sponsor. A Tournament Sponsor records sponsor participation for that event, including whether the sponsor is the tournament's Title Sponsor (the main sponsor) and the sponsorship amount.
@@ -1116,6 +1170,19 @@ Titles are the authoritative source for:
 
 ---
 
+### Oil Pattern Announcement
+
+**Definition**: The one-time Discord post in the public news channel saying a Tournament's oil pattern has been revealed, with a link to the tournament page. It is sent shortly after the reveal date passes, only for a Tournament that has an oil pattern assigned, and never more than once for the same Tournament. It names the Tournament but does not describe the pattern.
+
+**In Code**:
+
+- Namespace: `Neba.Api.Features.Tournaments.Domain`
+- Type: `Tournament` (state and scheduling rule)
+- Announced time: `Tournament.OilPatternAnnouncedAtUtc`
+- Scheduling rule: `Tournament.GetOilPatternAnnouncementTime`
+
+---
+
 ## Side Cuts
 
 ### Side Cut
@@ -1264,7 +1331,7 @@ A Season is **Complete** once `CompleteSeason()` has been called; it may not be 
 | --- | --- |
 | `SeasonCompleted` | Raised when a Season is marked Complete. Downstream consumers (e.g., Hall of Fame point calculations) react to this event. **Not yet raised in code** — `CompleteSeason()` currently only flips `Complete` and returns `ErrorOr<Success>`; no aggregate in the codebase raises domain events yet (`AggregateRoot.AddDomainEvent` exists but is unused everywhere). Add this event at the same time `CompleteSeason()` gains a real, website-driven caller (see the note under Definition above) |
 
-> **Out of Scope (Current)**: Hall of Fame point values associated with each award type, membership type definitions (New Member, Renewal, etc.), and the formal definition of Tournament stat-eligibility are deferred to their respective modeling sessions. No concept of season templates or recurring schedule patterns is modeled at this time.
+> **Out of Scope (Current)**: The formal definition of Tournament stat-eligibility is deferred to its modeling session. Hall of Fame point values are modeled (see `### Hall of Fame Points`). No concept of season templates or recurring schedule patterns is modeled at this time.
 
 **In Code**:
 
@@ -1339,7 +1406,7 @@ Age eligibility for a category is evaluated as of each tournament date during th
 | `Woman` | Female bowlers |
 | `Senior` | Age 50 or older |
 | `SuperSenior` | Age 60 or older |
-| `Rookie` | Bowlers paying a **New Member** membership in the current season. All subsequent seasons are renewal memberships and no longer qualify. *(See Membership for full membership type definitions — deferred)* |
+| `Rookie` | Bowlers paying a **New Member** membership in the current season. All subsequent seasons are renewal memberships and no longer qualify. *(See [Membership Type](#membership-type) for the type definitions)* |
 | `Youth` | Bowlers under age 18 |
 
 **In Code**:
@@ -1447,6 +1514,28 @@ The NEBA program that formally recognizes individuals for exceptional competitiv
 
 ---
 
+### Induction Photo
+
+**Definition**: An optional photo of an Inductee shown in a round avatar on the Hall of Fame page. Without a photo, the page shows the Inductee's initials. The photo is a `StoredFile` that website staff with the `HallOfFame.EditHallOfFamePhoto` permission upload, replace, or remove. These edits do not change the Induction itself (year, categories); the weekly sync from the legacy software never writes the photo or its framing.
+
+**In Code**: `HallOfFameInduction.Photo` (`StoredFile?`), `HallOfFameInduction.PhotoFocalPoint` (`PhotoFocalPoint?`)
+
+---
+
+### Focal Point
+
+**Definition**: Where a photo is framed when it is cropped to a shape. It holds three whole numbers: X and Y (0 to 100) and a Zoom (100 to 300, where 100 is no zoom). X and Y are the CSS `object-position` percents, and the page scales the photo about that same point. The editor converts a click on the face into the X and Y that put the face at the center of the shape, as near as the photo allows; zooming in lets a face near the photo's edge reach the center. The original file is never cropped or rewritten.
+
+**Characteristics**:
+
+- Set together with the photo; clearing the photo clears the Focal Point
+- Without a saved Focal Point, the page centers the photo with no zoom (50, 50, 100)
+- Reusable by other photos that show in a shape (news header images later)
+
+**In Code**: `PhotoFocalPoint` (value object: `X`, `Y`, `Zoom`)
+
+---
+
 ### Inductee
 
 **Definition**: A Person who has one or more Inductions recorded in the Hall of Fame. Being an Inductee does not preclude future Induction under a different category.
@@ -1471,14 +1560,35 @@ The NEBA program that formally recognizes individuals for exceptional competitiv
 **Characteristics**:
 
 - Eligibility is calculated systematically from tracked tournament and award history
-- Point accumulation logic will be implemented when the tournament and membership management migration is in scope
-- Eligibility criteria and point values are published on the Hall of Fame page
+- Points are calculated by the API (see Hall of Fame Points and Superior Performance Criteria) and published on the Hall of Fame points page
 
 ---
 
 ### Hall of Fame Points
 
-**Definition**: The numeric values assigned to tournament titles and Bowler of the Year awards used to determine eligibility for the Superior Performance Induction Category. A minimum of 36 points is required. Specific point values per award type are published on the Hall of Fame page.
+**Definition**: The numeric values assigned to tournament titles and Bowler of the Year awards, summed to decide eligibility for the Superior Performance Induction Category. Superior Performance takes 36 points. The values live in one table in the API (`HallOfFamePointRules`), and the Hall of Fame points page renders that same table, so the text and the math cannot drift.
+
+**Characteristics**:
+
+- Calculated in memory from titles (historical champions and recorded tournament results) and Bowler of the Year awards; nothing is stored
+- Every bowler with at least one point who is not inducted for Superior Performance is listed. A bowler inducted only for Meritorious Service or Friend of NEBA still appears, with their Superior Performance points
+- A Tournament Type or award category with no entry in the table fails a test, so a new one cannot go unmapped
+- Singles titles before 1991 earn 12 points; later Singles titles earn 6
+
+**In Code**: `HallOfFamePointRules`, `HallOfFamePointRule`
+
+---
+
+### Superior Performance Criteria
+
+**Definition**: The three tests a bowler must pass for Superior Performance: at least 36 Hall of Fame Points, at least one point-earning title or award in each of at least 3 different Seasons, and at least 10 years as a member. A bowler who passes all three is **Eligible**.
+
+**Characteristics**:
+
+- Membership years count one per calendar year of each counting membership's end date, for the types where `MembershipType.CountsTowardHallOfFame` is true (New, Renewal, Military, Honorary, Courtesy, Time Honored). Guest, Non-Member and Reservation do not count
+- Membership records start in 1999. The count can only understate, so a bowler is Eligible only on records we hold; a bowler with counting memberships but no New record joined before 1999 and the page flags the count as possibly low
+
+**In Code**: `HallOfFamePointRules.RequiredPoints`, `RequiredSeasonsWithPoints`, `RequiredMembershipYears`, `MeetsAllCriteria`
 
 ---
 
@@ -1826,6 +1936,55 @@ The NEBA program that formally recognizes individuals for exceptional competitiv
 **Definition**: A non-cash award applied as a discount toward a future tournament entry fee. Credits may be earned by achieving a qualifying score above a defined threshold without advancing to Finals, or may be granted by the Tournament Director at their discretion.
 
 **In Code**: `BowlerSeasonStats.Credits`
+
+---
+
+## Memberships
+
+### Membership Type
+
+**Definition**: A kind of NEBA membership a bowler can hold (New Member, Renewal, Non-Member, Guest, and so on). Defined in code, not in the database. Each type has a permanent code, a display name, a Membership Kind, a cost, an active flag, a Repeat Policy, and two eligibility flags: whether it requires a prior membership, and whether holding it counts as one. Inactive types stay so historical memberships resolve; new memberships cannot use them.
+
+**In Code**:
+
+- Namespace: `Neba.Api.Contracts.Memberships`
+- Type: `MembershipType` (SmartEnum, string value = the code, e.g. `NON_MEMBER`)
+- Property: `MembershipType.LegacyId` (temporary; removed after cutover)
+
+---
+
+### Bowler Membership
+
+**Definition**: A Membership Type a bowler holds over a date range (start and end, both inclusive), with the cost paid at purchase. Owned by the Bowler; the Bowler adds one only if the bowler's existing memberships allow it:
+
+1. The type is active.
+2. The bowler has a prior qualifying membership, if the type requires one.
+3. The type's Repeat Policy allows it.
+4. No other temporary membership is valid on the start date, when buying a temporary one.
+5. The new end date is later than the end date of every membership valid on the start date.
+
+**In Code**:
+
+- Namespace: `Neba.Api.Features.Memberships.Domain`
+- Type: `BowlerMembership` (owned by `Bowler`; added through `Bowler.AddMembership`)
+- Property: `BowlerMembership.LegacyId` (the nebamgmt-v3 membership id; null for memberships made here)
+- Legacy copy: `Bowler.AddLegacyMembership` stores a legacy record as is (cost and dates untouched, no eligibility rules); the migration and feed use it
+
+---
+
+### Membership Kind
+
+**Definition**: How long a membership lasts. **Temporary** memberships last a fixed number of days, counting the start date. **Yearly** memberships last through Dec 31, or through Dec 31 of the next year when bought on or after Nov 1.
+
+**In Code**: `MembershipKind`
+
+---
+
+### Repeat Policy
+
+**Definition**: How often a bowler may buy a Membership Type: unlimited, once per lifetime, or a minimum number of days since the start of the bowler's latest membership of any type.
+
+**In Code**: `RepeatPolicy`, `RepeatPolicyKind`
 
 ---
 

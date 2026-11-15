@@ -9,6 +9,18 @@ function makeVisible(el) {
   el.getClientRects = () => [{}]; // .length === 1
 }
 
+function render(headingsHtml) {
+  document.body.innerHTML = `<div id="content">${headingsHtml}</div><ul id="toc-list"></ul>`;
+  document.querySelectorAll('h3').forEach(h => { h.scrollIntoView = jest.fn(); });
+  globalThis.scrollTo = jest.fn();
+  document.getElementById('content').scrollTo = jest.fn();
+}
+
+function scrolled() {
+  return document.getElementById('content').scrollTo.mock.calls.length > 0
+    || globalThis.scrollTo.mock.calls.length > 0;
+}
+
 describe('NebaDocument', () => {
   let mockDotNetReference;
 
@@ -587,6 +599,86 @@ describe('NebaDocument', () => {
       expect(tocList.querySelector('ul.toc-list')).not.toBeNull();
       expect(tocList.querySelector('ul.toc-list > li.toc-item-h1')).not.toBeNull();
       expect(tocList.querySelector('ul.toc-list > li.toc-item-h2')).not.toBeNull();
+    });
+  });
+
+  describe('scrollToHash anchor aliases', () => {
+    const aliases = {
+      invitational: { headingIdPrefix: 'rule-601-', titleKeyword: 'Invitational' }
+    };
+
+    test('scrolls to the rule heading and keeps the alias in the URL', () => {
+      // Arrange
+      render('<h3 id="rule-601-invitational-tournament-rules">Rule 601- Invitational</h3>');
+      globalThis.history.replaceState(null, '', 'http://localhost/#invitational');
+
+      // Act
+      scrollToHash('content', 'toc-list', aliases);
+
+      // Assert
+      expect(scrolled()).toBe(true);
+      expect(globalThis.location.hash).toBe('#invitational');
+    });
+
+    test('rewrites a non-alias hash to the heading id', () => {
+      // Arrange
+      render('<h3 id="rule-601-invitational-tournament-rules">Rule 601- Invitational</h3>');
+      globalThis.history.replaceState(null, '', 'http://localhost/#rule-601-invitational-tournament-rules');
+
+      // Act
+      scrollToHash('content', 'toc-list', aliases);
+
+      // Assert
+      expect(globalThis.location.hash).toBe('#rule-601-invitational-tournament-rules');
+    });
+
+    test('does not match rule-60- for rule-601-', () => {
+      // Arrange
+      render('<h3 id="rule-60-masters">Rule 60- Masters</h3>');
+      globalThis.history.replaceState(null, '', 'http://localhost/#invitational');
+
+      // Act
+      scrollToHash('content', 'toc-list', aliases);
+
+      // Assert
+      expect(scrolled()).toBe(false);
+      expect(console.warn).toHaveBeenCalled();
+    });
+
+    test('falls back to the keyword when the rule was renumbered', () => {
+      // Arrange
+      render('<h3 id="rule-701-invitational-tournament-rules">Rule 701- Invitational</h3>');
+      globalThis.history.replaceState(null, '', 'http://localhost/#invitational');
+
+      // Act
+      scrollToHash('content', 'toc-list', aliases);
+
+      // Assert
+      expect(scrolled()).toBe(true);
+      expect(globalThis.location.hash).toBe('#invitational');
+    });
+
+    test('never chooses a lettered sub-rule', () => {
+      // Arrange
+      render('<h3 id="rule-703e-invitational">Rule 703e. Invitational</h3>');
+      globalThis.history.replaceState(null, '', 'http://localhost/#invitational');
+
+      // Act
+      scrollToHash('content', 'toc-list', aliases);
+
+      // Assert
+      expect(scrolled()).toBe(false);
+    });
+
+    test('warns and does not throw when nothing matches', () => {
+      // Arrange
+      render('<h3 id="rule-100-general">Rule 100- General</h3>');
+      globalThis.history.replaceState(null, '', 'http://localhost/#invitational');
+
+      // Act & Assert
+      expect(() => scrollToHash('content', 'toc-list', aliases)).not.toThrow();
+      expect(scrolled()).toBe(false);
+      expect(console.warn).toHaveBeenCalled();
     });
   });
 

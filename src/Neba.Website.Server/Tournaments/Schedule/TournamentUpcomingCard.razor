@@ -142,9 +142,21 @@
                 <a href="/tournaments/@Tournament.Id" class="neba-link tournament-upcoming-card__details-link">
                     View Details →
                 </a>
+                @if (Tournament.ShowTeamEligibilityLink)
+                {
+                    <a href="/tournaments/@Tournament.Id/team-eligibility" class="neba-link tournament-upcoming-card__details-link">
+                        <span class="material-symbols-outlined" aria-hidden="true">groups</span>
+                        Check team eligibility
+                    </a>
+                }
             }
         </div>
     </div>
+
+    @if (Tournament.ShowDefendingChampions)
+    {
+        <DefendingChampions Teams="@Tournament.DefendingChampions" Layout="DefendingChampionsLayout.Strip" />
+    }
 </div>
 
 @code {

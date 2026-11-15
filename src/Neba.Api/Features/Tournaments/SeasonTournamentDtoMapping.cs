@@ -28,6 +28,8 @@ internal static class SeasonTournamentDtoMapping
                 OilPatternRevealDateTime = tournament.OilPatternRevealDateTime,
                 LogoUrl = tournament.LogoUrl,
                 Winners = [.. tournament.Winners.Select(w => w.ToDisplayName())],
+                TeamSize = tournament.TeamSize,
+                DefendingChampions = [.. tournament.DefendingChampions.Select(team => team.ToResponse())],
                 BowlingCenter = tournament.BowlingCenter is null ? null : new TournamentBowlingCenterResponse
                 {
                     Name = tournament.BowlingCenter.Name,

@@ -28,6 +28,11 @@ internal static class TournamentInputMapper
                 SizeInBytes = logo.SizeInBytes
             };
 
+    public static TournamentId? ToPreviousTournamentId(string? previousTournamentId) =>
+        string.IsNullOrWhiteSpace(previousTournamentId)
+            ? null
+            : new TournamentId(previousTournamentId);
+
     public static OilPatternId? ToOilPatternId(string? oilPatternId) =>
         string.IsNullOrWhiteSpace(oilPatternId)
             ? null

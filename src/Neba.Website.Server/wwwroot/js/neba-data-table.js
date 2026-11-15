@@ -3,14 +3,77 @@
 
 export const MOBILE_QUERY = '(max-width: 767px)';
 export const PRIMARY_COLUMNS = 3;
+export const COMPACT_CONTAINER_WIDTH = 800;
+// Room for a classic scrollbar (about 17px) plus slack; switching modes can add or remove one.
+export const SCROLLBAR_ALLOWANCE = 30;
+export const COMPACT_RELEASE_WIDTH = COMPACT_CONTAINER_WIDTH + SCROLLBAR_ALLOWANCE;
+const CONTAINER_SELECTOR = '[data-table-container]';
+const EXPANDABLE_ROW = 'table.neba-data-table[data-compact="expandable"] tbody tr[data-expandable]';
+
+const staticContainers = new WeakSet();
 
 const isMobile = () => globalThis.matchMedia?.(MOBILE_QUERY).matches ?? false;
+
+/**
+ * 'expandable': a page grid on a phone (rows open on tap).
+ * 'static': a table in a table container that is narrow or on a phone (rows show every stat, no tap).
+ * null: show all columns.
+ * @param {HTMLTableElement} table
+ */
+export function compactMode(table) {
+    const container = table.closest(CONTAINER_SELECTOR);
+    if (!container) {
+        return isMobile() ? 'expandable' : null;
+    }
+
+    // A table already static stays static until the container clears a wider threshold. Switching modes changes
+    // row height, which can add or remove a scrollbar and shift clientWidth by a few pixels; without the gap a
+    // container near the threshold would flip back and forth.
+    const width = container.clientWidth;
+    // The state lives on the container, not the table: Blazor can replace the table element and its attributes.
+    const limit = staticContainers.has(container) ? COMPACT_RELEASE_WIDTH : COMPACT_CONTAINER_WIDTH;
+    const narrow = width > 0 && width < limit;
+    const isStatic = narrow || isMobile();
+    if (isStatic) {
+        staticContainers.add(container);
+    } else {
+        staticContainers.delete(container);
+    }
+
+    return isStatic ? 'static' : null;
+}
+
+let resizeObserver;
+const watched = new WeakSet();
+
+/** Re-enhance a container's tables when its width changes (the modal opens, or the window resizes). */
+function watchContainer(table) {
+    const container = table.closest(CONTAINER_SELECTOR);
+    if (!container || watched.has(container) || typeof ResizeObserver !== 'function') {
+        return;
+    }
+
+    watched.add(container);
+    resizeObserver ??= new ResizeObserver(entries => {
+        for (const { target } of entries) {
+            if (!target.isConnected) {
+                resizeObserver.unobserve(target);
+                continue;
+            }
+
+            target.querySelectorAll('table.neba-data-table').forEach(enhanceTable);
+        }
+    });
+    resizeObserver.observe(container);
+}
 
 /**
  * Remove everything enhanceTable added, for a table whose header no longer needs it.
  * @param {HTMLTableElement} table
  */
 function resetTable(table) {
+    delete table.dataset.compact;
+
     table.querySelectorAll('[data-secondary]').forEach(el => {
         el.removeAttribute('data-secondary');
         el.removeAttribute('data-label');
@@ -41,12 +104,19 @@ export function enhanceTable(table) {
         }
     });
 
-    const mobile = isMobile();
+    const mode = compactMode(table);
+    if (mode) {
+        table.dataset.compact = mode;
+    } else {
+        delete table.dataset.compact;
+    }
+
+    watchContainer(table);
 
     for (const row of table.querySelectorAll('tbody tr')) {
         const cells = Array.from(row.children).filter(c => c.tagName === 'TD');
         if (cells.length !== headers.length) {
-            continue;
+            continue;   // group, empty-state and Virtualize spacer rows have no matching cells
         }
 
         cells.forEach((cell, i) => {
@@ -58,7 +128,7 @@ export function enhanceTable(table) {
 
         row.dataset.expandable = '';
 
-        if (mobile) {
+        if (mode === 'expandable') {
             row.tabIndex = 0;
             row.setAttribute('aria-expanded', row.hasAttribute('data-open') ? 'true' : 'false');
         } else {
@@ -133,7 +203,7 @@ function toggleRow(row) {
 }
 
 function handleClick(event) {
-    if (!isMobile() || !(event.target instanceof Element)) {
+    if (!(event.target instanceof Element)) {
         return;
     }
 
@@ -144,29 +214,28 @@ function handleClick(event) {
 
     const header = event.target.closest('.neba-collapsible > .neba-collapsible-header');
     if (header) {
-        toggleSection(header);
+        if (isMobile()) {
+            toggleSection(header);
+        }
+
         return;
     }
 
-    const row = event.target.closest('table.neba-data-table tbody tr[data-expandable]');
+    const row = event.target.closest(EXPANDABLE_ROW);
     if (row) {
         toggleRow(row);
     }
 }
 
 function handleKeydown(event) {
-    if (!isMobile() || (event.key !== 'Enter' && event.key !== ' ')) {
+    if ((event.key !== 'Enter' && event.key !== ' ') || !(event.target instanceof Element)) {
         return;
     }
 
-    if (!(event.target instanceof Element)) {
-        return;
-    }
-
-    if (event.target.matches('.neba-collapsible > .neba-collapsible-header')) {
+    if (isMobile() && event.target.matches('.neba-collapsible > .neba-collapsible-header')) {
         event.preventDefault();
         toggleSection(event.target);
-    } else if (event.target.matches('table.neba-data-table tbody tr[data-expandable]')) {
+    } else if (event.target.matches(EXPANDABLE_ROW)) {
         event.preventDefault();
         toggleRow(event.target);
     }

@@ -13,7 +13,8 @@ namespace Neba.Api.Features.Tournaments.ListTournamentsInSeason;
 internal sealed class ListTournamentsInSeasonQueryHandler(
     AppDbContext appDbContext,
     IFileStorageService fileStorageService,
-    TimeProvider timeProvider)
+    TimeProvider timeProvider,
+    DefendingTeamsReader defendingTeamsReader)
     : IQueryHandler<ListTournamentsInSeasonQuery, IReadOnlyCollection<SeasonTournamentDto>>
 {
     private readonly IQueryable<Tournament> _tournaments =
@@ -45,6 +46,7 @@ internal sealed class ListTournamentsInSeasonQueryHandler(
                 Status = tournament.Status.Name,
                 tournament.TitleEligible,
                 TournamentType = tournament.TournamentType.Name,
+                TournamentTypeValue = tournament.TournamentType.Value,
                 BowlingCenter = tournament.BowlingCenter == null
                     ? null
                     : new SeasonTournamentBowlingCenterDto
@@ -115,6 +117,8 @@ internal sealed class ListTournamentsInSeasonQueryHandler(
                 .GroupBy(w => w.TournamentId)
                 .ToDictionary(g => g.Key, g => (IReadOnlyCollection<Name>)[.. g.Select(w => w.Name)]);
 
+        var defendingByTournament = await defendingTeamsReader.LoadAsync([.. rows.Select(row => row.Id)], cancellationToken);
+
         var now = timeProvider.GetUtcNow();
 
         return [.. rows.Select(row =>
@@ -177,6 +181,8 @@ internal sealed class ListTournamentsInSeasonQueryHandler(
                     ? _fileStorageService.GetBlobUri(logoSource.Container, logoSource.Path)
                     : null,
                 Winners = winnersByTournamentDbId.GetValueOrDefault(row.DbId, []),
+                TeamSize = TournamentType.FromValue(row.TournamentTypeValue).TeamSize,
+                DefendingChampions = [.. defendingByTournament.GetValueOrDefault(row.Id, []).Select(team => team.ToDto())],
             };
         })];
     }

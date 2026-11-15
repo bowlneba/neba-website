@@ -1,3 +1,4 @@
+using Neba.Api.Contracts.Memberships;
 using Neba.Api.Legacy.Tournaments.Stats;
 using Neba.TestFactory.Attributes;
 
@@ -8,7 +9,6 @@ namespace Neba.Api.Tests.Legacy.Tournaments.Stats;
 public sealed class LegacySeasonStatsCalculatorTests
 {
     private static readonly DateOnly SeasonEndDate = new(2026, 12, 31);
-    private const int NewMembershipTypeId = 999;
 
     private static LegacyBowlerSeasonStatsResult ComputeSingle(
         IReadOnlyCollection<LegacySeasonTournamentRow>? seasonTournaments = null,
@@ -16,13 +16,12 @@ public sealed class LegacySeasonStatsCalculatorTests
         IReadOnlyCollection<LegacyMatchPlayStatsRow>? matchPlayStats = null,
         IReadOnlyCollection<LegacyBowlerResultRow>? results = null,
         IReadOnlyCollection<LegacyBowlerRow>? bowlers = null,
-        IReadOnlyCollection<LegacyMembershipRow>? memberships = null,
+        IReadOnlyCollection<MembershipRow>? memberships = null,
         IReadOnlyCollection<LegacyCreditRow>? credits = null,
         IReadOnlyCollection<LegacyCupResultRow>? cupResults = null)
     {
         var computed = LegacySeasonStatsCalculator.Compute(
             SeasonEndDate,
-            NewMembershipTypeId,
             new LegacySeasonStatsCalculator.LegacySeasonStatsInput(
                 seasonTournaments ?? [],
                 qualifyingStats ?? [],
@@ -44,7 +43,7 @@ public sealed class LegacySeasonStatsCalculatorTests
     {
         // Arrange
         var qualifying = new[] { new LegacyQualifyingStatsRow(1, 100, 1, 200, 1, 200) };
-        var memberships = new[] { new LegacyMembershipRow(1, 1, SeasonEndDate.ToDateTime(TimeOnly.MinValue)) };
+        var memberships = new[] { new MembershipRow(1, MembershipType.Renewal, SeasonEndDate) };
 
         // Act
         var result = ComputeSingle(qualifyingStats: qualifying, memberships: memberships);
@@ -60,8 +59,8 @@ public sealed class LegacySeasonStatsCalculatorTests
         var qualifying = new[] { new LegacyQualifyingStatsRow(1, 100, 1, 200, 1, 200) };
         var memberships = new[]
         {
-            new LegacyMembershipRow(1, 1, SeasonEndDate.AddYears(-1).ToDateTime(TimeOnly.MinValue)),
-            new LegacyMembershipRow(1, NewMembershipTypeId, SeasonEndDate.ToDateTime(TimeOnly.MinValue))
+            new MembershipRow(1, MembershipType.Renewal, SeasonEndDate.AddYears(-1)),
+            new MembershipRow(1, MembershipType.New, SeasonEndDate)
         };
 
         // Act
@@ -77,7 +76,7 @@ public sealed class LegacySeasonStatsCalculatorTests
     {
         // Arrange
         var qualifying = new[] { new LegacyQualifyingStatsRow(1, 100, 1, 200, 1, 200) };
-        var memberships = new[] { new LegacyMembershipRow(1, NewMembershipTypeId, SeasonEndDate.AddYears(-1).ToDateTime(TimeOnly.MinValue)) };
+        var memberships = new[] { new MembershipRow(1, MembershipType.New, SeasonEndDate.AddYears(-1)) };
 
         // Act
         var result = ComputeSingle(qualifyingStats: qualifying, memberships: memberships);
@@ -718,7 +717,7 @@ public sealed class LegacySeasonStatsCalculatorTests
 
         // Act
         var computed = LegacySeasonStatsCalculator.Compute(
-            SeasonEndDate, NewMembershipTypeId,
+            SeasonEndDate,
             new LegacySeasonStatsCalculator.LegacySeasonStatsInput(seasonTournaments, qualifying, [], [], [], [], [], []));
         var result = computed.Single(r => r.BowlerId == 1);
 

@@ -14,6 +14,7 @@ using Neba.Api.Features.Tournaments.Domain;
 using Neba.TestFactory.Attributes;
 using Neba.TestFactory.Tournaments;
 using Neba.Website.Server.Clock;
+using Neba.Website.Server.Documents;
 using Neba.Website.Server.Help;
 using Neba.Website.Server.Notifications;
 using Neba.Website.Server.Services;
@@ -32,6 +33,7 @@ public sealed class TournamentDetailTests : IDisposable
     private readonly BunitContext _ctx;
     private readonly Mock<ITournamentsApi> _mockApi;
     private readonly Mock<ISponsorsApi> _mockSponsorsApi;
+    private readonly Mock<IRulesSectionService> _mockRulesSectionService;
     private readonly Mock<IClientTimeZoneService> _mockClientTimeZoneService;
     private readonly BunitAuthorizationContext _authContext;
     private readonly ToastService _toastService;
@@ -40,6 +42,7 @@ public sealed class TournamentDetailTests : IDisposable
     {
         _mockApi = new Mock<ITournamentsApi>(MockBehavior.Strict);
         _mockSponsorsApi = new Mock<ISponsorsApi>(MockBehavior.Strict);
+        _mockRulesSectionService = new Mock<IRulesSectionService>(MockBehavior.Strict);
         _mockClientTimeZoneService = new Mock<IClientTimeZoneService>(MockBehavior.Strict);
 
         var mockStopwatch = new Mock<IStopwatchProvider>(MockBehavior.Strict);
@@ -56,6 +59,7 @@ public sealed class TournamentDetailTests : IDisposable
 
         _ctx.Services.AddSingleton(_mockApi.Object);
         _ctx.Services.AddSingleton(_mockSponsorsApi.Object);
+        _ctx.Services.AddSingleton(_mockRulesSectionService.Object);
         _ctx.Services.AddSingleton(_mockClientTimeZoneService.Object);
         _ctx.Services.AddSingleton(sp => new ApiExecutor(mockStopwatch.Object, sp.GetRequiredService<NavigationManager>(), NullLogger<ApiExecutor>.Instance));
         _ctx.Services.AddSingleton(_toastService);
@@ -116,6 +120,110 @@ public sealed class TournamentDetailTests : IDisposable
         // Assert
         var nav = _ctx.Services.GetRequiredService<NavigationManager>();
         nav.Uri.ShouldEndWith("/not-found");
+    }
+
+    // ── Rules link ───────────────────────────────────────────────────────────
+
+    [Fact(DisplayName = "Should show the rules button for a scheduled tournament whose type has a rule section")]
+    public void Render_ShouldShowRulesLink_WhenScheduledInvitational()
+    {
+        // Arrange
+        SetupSuccessResponse(TournamentDetailResponseFactory.Create(
+            status: TournamentStatus.Scheduled, tournamentType: TournamentType.Invitational));
+
+        // Act
+        var cut = _ctx.Render<TournamentDetail>(p => p.Add(x => x.Id, TournamentDetailResponseFactory.ValidId));
+
+        // Assert
+        cut.Find("button.td-rules-link").TextContent.ShouldContain("Invitational rules");
+    }
+
+    [Fact(DisplayName = "Should not show the rules button for a completed tournament")]
+    public void Render_ShouldNotShowRulesLink_WhenCompleted()
+    {
+        // Arrange
+        SetupSuccessResponse(TournamentDetailResponseFactory.Create(
+            status: TournamentStatus.Completed, tournamentType: TournamentType.Invitational));
+
+        // Act
+        var cut = _ctx.Render<TournamentDetail>(p => p.Add(x => x.Id, TournamentDetailResponseFactory.ValidId));
+
+        // Assert
+        cut.FindAll("button.td-rules-link").ShouldBeEmpty();
+    }
+
+    // ── Team eligibility link and defending champions ───────────────────────
+
+    [Fact(DisplayName = "Should show the team eligibility link and defending champions for a scheduled doubles tournament")]
+    public void Render_ShouldShowEligibilityLinkAndDefendingChampions_WhenScheduledDoubles()
+    {
+        // Arrange
+        SetupSuccessResponse(TournamentDetailResponseFactory.Create(
+            status: TournamentStatus.Scheduled,
+            tournamentType: TournamentType.Doubles,
+            teamSize: 2,
+            defendingChampions: [DefendingTeamResponseFactory.Create(champions: ["Dave Smith", "Dana Jones"])]));
+
+        // Act
+        var cut = _ctx.Render<TournamentDetail>(p => p.Add(x => x.Id, TournamentDetailResponseFactory.ValidId));
+
+        // Assert
+        var link = cut.Find("a.td-team-link");
+        link.GetAttribute("href").ShouldBe("/tournaments/" + TournamentDetailResponseFactory.ValidId + "/team-eligibility");
+        link.TextContent.ShouldContain("Check team eligibility");
+        cut.Find(".defending--panel .defending__names").TextContent.ShouldBe("Dave Smith / Dana Jones");
+    }
+
+    [Fact(DisplayName = "Should put the rules card and the team eligibility card in a row under the hero, not inside it")]
+    public void Render_ShouldPutHelpCardsUnderTheHero()
+    {
+        // Arrange
+        SetupSuccessResponse(TournamentDetailResponseFactory.Create(
+            status: TournamentStatus.Scheduled, tournamentType: TournamentType.Doubles, teamSize: 2));
+
+        // Act
+        var cut = _ctx.Render<TournamentDetail>(p => p.Add(x => x.Id, TournamentDetailResponseFactory.ValidId));
+
+        // Assert
+        cut.FindAll(".td-hero .td-team-link, .td-hero .td-rules-link").ShouldBeEmpty();
+        var cards = cut.Find(".td-help-cards");
+        cards.QuerySelector(".td-rules-link")!.TextContent.ShouldContain("Doubles rules");
+        cards.QuerySelector(".td-team-link")!.TextContent.ShouldContain("Pick your two bowlers");
+    }
+
+    [Theory(DisplayName = "Should not show the team eligibility link or defending champions once the tournament is no longer scheduled")]
+    [InlineData("Completed", TestDisplayName = "Completed")]
+    [InlineData("Truncated", TestDisplayName = "Truncated")]
+    [InlineData("Cancelled", TestDisplayName = "Cancelled")]
+    public void Render_ShouldHideEligibilityLinkAndDefendingChampions_WhenNotScheduled(string statusName)
+    {
+        // Arrange
+        SetupSuccessResponse(TournamentDetailResponseFactory.Create(
+            status: TournamentStatus.FromName(statusName),
+            tournamentType: TournamentType.Doubles,
+            teamSize: 2,
+            defendingChampions: [DefendingTeamResponseFactory.Create()]));
+
+        // Act
+        var cut = _ctx.Render<TournamentDetail>(p => p.Add(x => x.Id, TournamentDetailResponseFactory.ValidId));
+
+        // Assert
+        cut.FindAll("a.td-team-link").ShouldBeEmpty();
+        cut.FindAll(".defending").ShouldBeEmpty();
+    }
+
+    [Fact(DisplayName = "Should not show the team eligibility link for a singles tournament")]
+    public void Render_ShouldNotShowEligibilityLink_WhenSingles()
+    {
+        // Arrange
+        SetupSuccessResponse(TournamentDetailResponseFactory.Create(
+            status: TournamentStatus.Scheduled, tournamentType: TournamentType.Singles, teamSize: 1));
+
+        // Act
+        var cut = _ctx.Render<TournamentDetail>(p => p.Add(x => x.Id, TournamentDetailResponseFactory.ValidId));
+
+        // Assert
+        cut.FindAll("a.td-team-link").ShouldBeEmpty();
     }
 
     // ── Page title ───────────────────────────────────────────────────────────

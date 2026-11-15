@@ -24,6 +24,10 @@ internal static class WeeklyLegacySync
     public static readonly IReadOnlyList<Action<IBackgroundJobClient, DateTime>> Tables =
     [
         (jobs, since) => jobs.Enqueue<BowlerWeeklySyncJob>(job => job.SyncAsync(since, CancellationToken.None)),
+
+        // 15 minutes after the bowler step so bowlers exist first and the two jobs do not both create one.
+        (jobs, since) => jobs.Schedule<BowlerMembershipWeeklySyncJob>(
+            job => job.SyncAsync(since, CancellationToken.None), BowlerMembershipWeeklySyncJob.StartDelay),
     ];
 }
 

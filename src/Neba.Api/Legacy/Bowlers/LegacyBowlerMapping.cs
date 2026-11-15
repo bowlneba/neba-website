@@ -1,3 +1,5 @@
+using ErrorOr;
+
 using Neba.Api.Features.Bowlers.Domain;
 
 namespace Neba.Api.Legacy.Bowlers;
@@ -20,6 +22,10 @@ internal static class LegacyBowlerMapping
             ? DateOnly.FromDateTime(legacyDateOfBirth.Value)
             : null;
 
+    // Blank and whitespace-only values become null, so an empty legacy column never overwrites a real ID.
+    public static string? MapUsbcId(string? legacyUsbcId)
+        => string.IsNullOrWhiteSpace(legacyUsbcId) ? null : legacyUsbcId.Trim();
+
     // Legacy Suffix is free text (e.g. "Jr.", "Sr.", "II"); NameSuffix is a closed SmartEnum set
     // whose own Value strings inconsistently carry a trailing period ("Jr.", "Sr." vs. "II", "III").
     // Strip any trailing period from both sides before comparing so "Jr"/"Jr."/"JR." all match
@@ -35,5 +41,32 @@ internal static class LegacyBowlerMapping
 
         return NameSuffix.List.SingleOrDefault(suffix =>
             string.Equals(suffix.Value.TrimEnd('.'), normalized, StringComparison.OrdinalIgnoreCase));
+    }
+
+    // Builds a new Bowler from a Software row: gender, date of birth, suffix and quoted nickname. Logs an
+    // unmapped suffix; the caller logs a returned error, since the log message carries its own job's type.
+    public static ErrorOr<Bowler> CreateBowler(LegacyBowlerRow row, ILogger logger)
+    {
+        ArgumentNullException.ThrowIfNull(row);
+        ArgumentNullException.ThrowIfNull(logger);
+
+        var suffix = MapSuffix(row.Suffix);
+        if (suffix is null && !string.IsNullOrWhiteSpace(row.Suffix))
+        {
+            logger.LogLegacySuffixUnmapped(row.Id, row.Suffix);
+        }
+
+        var (firstName, nickname) = row.FirstName.ExtractQuotedNickname();
+
+        return Bowler.CreateFromLegacy(
+            firstName,
+            row.LastName,
+            middleName: row.MiddleInitial,
+            suffix: suffix,
+            nickname: nickname,
+            legacyId: row.Id,
+            gender: MapGender(row.Gender),
+            dateOfBirth: MapDateOfBirth(row.DateOfBirth),
+            usbcId: MapUsbcId(row.UsbcId));
     }
 }

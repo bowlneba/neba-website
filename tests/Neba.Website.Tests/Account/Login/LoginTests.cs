@@ -185,6 +185,16 @@ public sealed class LoginTests : IDisposable
         cut.Markup.ShouldNotContain("you can now log in");
     }
 
+    [Fact(DisplayName = "Should link to the forgot-password page")]
+    public void Render_ShouldShowForgotPasswordLink()
+    {
+        // Arrange & Act
+        var cut = RenderLogin();
+
+        // Assert
+        cut.Find("a[href='/account/forgot-password']").TextContent.ShouldBe("Forgot password?");
+    }
+
     private IRenderedComponent<Neba.Website.Server.Account.Login.Login> RenderLogin(string? queryString = null)
     {
         var httpContext = new DefaultHttpContext

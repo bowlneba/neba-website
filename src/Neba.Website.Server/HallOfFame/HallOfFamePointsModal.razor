@@ -1,0 +1,52 @@
+@using Neba.Api.Contracts.HallOfFame
+
+<NebaModal IsOpen="@IsOpen" OnClose="@OnClose" MaxWidth="640px" AriaLabel="@("Hall of Fame points for " + BowlerName)">
+    <HeaderContent>
+        <div class="pm-title-wrap">
+            <h2 class="pm-title">@BowlerName</h2>
+            @if (_inductedLine is not null)
+            {
+                <span class="pm-flag">@_inductedLine</span>
+            }
+        </div>
+    </HeaderContent>
+    <ChildContent>
+        <HallOfFamePointsDetailLoader BowlerId="@BowlerId"
+                                      Requirements="@Requirements"
+                                      Cache="@_cache"
+                                      OnLoaded="HandleLoaded" />
+    </ChildContent>
+</NebaModal>
+
+@code {
+    [Parameter, EditorRequired]
+    public bool IsOpen { get; set; }
+
+    [Parameter, EditorRequired]
+    public EventCallback OnClose { get; set; }
+
+    [Parameter, EditorRequired]
+    public string BowlerId { get; set; } = string.Empty;
+
+    [Parameter, EditorRequired]
+    public string BowlerName { get; set; } = string.Empty;
+
+    /// <summary>The thresholds, when the caller has them. Null drops the "of 36" and "needed" text.</summary>
+    [Parameter]
+    public HallOfFamePointRequirements? Requirements { get; set; }
+
+    private readonly Dictionary<string, HallOfFamePointsDetailViewModel> _cache = [];
+    private string? _inductedLine;
+
+    protected override void OnParametersSet()
+    {
+        // The loader is gone while the modal is closed; drop the last bowler's flag so it does not flash on the next open.
+        if (!IsOpen)
+        {
+            _inductedLine = null;
+        }
+    }
+
+    private void HandleLoaded(HallOfFamePointsDetailViewModel detail)
+        => _inductedLine = detail.InductedLine;
+}

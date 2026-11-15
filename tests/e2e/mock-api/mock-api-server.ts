@@ -17,6 +17,17 @@ For membership requirements, see the <a href="/bylaws">NEBA Bylaws</a>.</p>
 <p>All bowling equipment must conform to USBC specifications.</p>
 <h2>Section 3: Scoring</h2>
 <p>Official scoring will follow standard USBC guidelines.</p>
+<h2 id="rule-601-invitational-tournament-rules">Rule 601- Invitational Tournament Rules</h2>
+<p>Invitational eligibility is by invitation only.</p>
+<h2 id="rule-602-masters-tournament-rules">Rule 602- Masters Tournament Rules</h2>
+<p>Masters qualifiers advance by average.</p>
+<h2 id="rule-401-doubles-tournament-format">Rule 401 - Doubles Tournament Format</h2>
+<h4 id="h.401a">401a. Team Composition</h4>
+<p>A doubles team may have at most one champion.</p>
+<h4 id="h.401b">401b. Champion Definition</h4>
+<p>A champion is a bowler who won a NEBA title in the last ten years.</p>
+<h4 id="h.401c">401c. Re-Entries</h4>
+<p>Re-entries are permitted.</p>
 `;
 
 const MOCK_BYLAWS_HTML = `
@@ -42,6 +53,12 @@ function readRequestBody(req: IncomingMessage): Promise<string> {
   });
 }
 
+// An unsigned JWT with a far-future "exp", so the website's token-expiry check treats it as fresh.
+function mockJwt(): string {
+  const encode = (value: object) => Buffer.from(JSON.stringify(value)).toString('base64url');
+  return `${encode({ alg: 'none', typ: 'JWT' })}.${encode({ sub: '01JX0000000000000000000001', exp: 4102444800 })}.mock`;
+}
+
 function sendJsonResponse(res: ServerResponse, data: unknown, statusCode = 200): void {
   res.writeHead(statusCode, { 'Content-Type': 'application/json' });
   res.end(JSON.stringify(data));
@@ -53,7 +70,12 @@ function sendMockOverrideErrorIfSet(res: ServerResponse, pathname: string): bool
   const override = mockOverrides.get(pathname);
 
   if (override?.status != null && override.status >= 400) {
-    sendJsonResponse(res, { error: 'Mock error' }, override.status);
+    // With a detail, answer in the same ProblemDetails shape the real API uses, so the website's
+    // ApiExecutor can show the message. Without one, a bare body (the website shows its generic text).
+    const body = override.detail
+      ? { status: override.status, errors: [{ name: 'generalErrors', reason: override.detail }] }
+      : { error: 'Mock error' };
+    sendJsonResponse(res, body, override.status);
     return true;
   }
 
@@ -245,15 +267,112 @@ export const MOCK_SEASON_TOURNAMENTS = {
   ],
 };
 
-const MOCK_HALL_OF_FAME = {
+interface MockInduction {
+  id: string;
+  bowlerId: string;
+  year: number;
+  bowlerName: string;
+  categories: string[];
+  photoUri: string | null;
+  photoFocalX: number | null;
+  photoFocalY: number | null;
+  photoZoom: number | null;
+}
+
+// Stateful: PUT /hall-of-fame/{id}/photo updates the matching item so the page shows the saved photo after it reloads.
+// Bob and Alice start with photos, Jane and Tom do not, so each e2e test has an inductee of its own.
+const MOCK_HALL_OF_FAME: { items: MockInduction[]; totalItems: number } = {
   items: [
-    { year: 2024, bowlerName: 'Jane Smith', categories: ['Superior Performance'], photoUri: null },
-    { year: 2024, bowlerName: 'Bob Johnson', categories: ['Meritorious Service'], photoUri: null },
-    { year: 2023, bowlerName: 'Alice Williams', categories: ['Friend of NEBA'], photoUri: null },
-    { year: 2023, bowlerName: 'Tom Davis', categories: ['Superior Performance', 'Meritorious Service'], photoUri: null },
+    { id: '01JX0000000000000000000001', bowlerId: '01JX0000000000000000000201', year: 2024, bowlerName: 'Jane Smith', categories: ['Superior Performance'], photoUri: null, photoFocalX: null, photoFocalY: null, photoZoom: null },
+    { id: '01JX0000000000000000000002', bowlerId: '01JX0000000000000000000202', year: 2024, bowlerName: 'Bob Johnson', categories: ['Meritorious Service'], photoUri: 'http://localhost:5151/mock-storage/hall-of-fame/photo/bob.png', photoFocalX: 20, photoFocalY: 50, photoZoom: 100 },
+    { id: '01JX0000000000000000000003', bowlerId: '01JX0000000000000000000203', year: 2023, bowlerName: 'Alice Williams', categories: ['Friend of NEBA'], photoUri: 'http://localhost:5151/mock-storage/hall-of-fame/photo/alice.png', photoFocalX: 50, photoFocalY: 50, photoZoom: 100 },
+    { id: '01JX0000000000000000000004', bowlerId: '01JX0000000000000000000204', year: 2023, bowlerName: 'Tom Davis', categories: ['Superior Performance', 'Meritorious Service'], photoUri: null, photoFocalX: null, photoFocalY: null, photoZoom: null },
   ],
   totalItems: 4,
 };
+
+const INITIAL_HALL_OF_FAME_ITEMS: MockInduction[] = structuredClone(MOCK_HALL_OF_FAME.items);
+
+const MOCK_HALL_OF_FAME_POINTS = {
+  rules: [
+    { group: 'Bowler of the Year Awards', label: 'Bowler of the Year', points: 12 },
+    { group: 'Tournament Titles', label: 'Singles Title', points: 6 },
+    { group: 'Legacy Titles', label: 'NEBA High-Roller Title', points: 3 },
+  ],
+  requiredPoints: 36,
+  requiredSeasonsWithPoints: 3,
+  requiredMembershipYears: 10,
+  membershipDataStartYear: 1999,
+  standings: [
+    { bowlerId: '01JX0000000000000000000101', bowlerName: 'Ray Dunleavy', totalPoints: 42, seasonsWithPoints: 5, membershipYears: 28, membershipHistoryComplete: false, eligible: true, meetsPoints: true, meetsSeasons: true, inductedCategories: [] },
+    { bowlerId: '01JX0000000000000000000102', bowlerName: 'Ken Almeida', totalPoints: 42, seasonsWithPoints: 2, membershipYears: 15, membershipHistoryComplete: true, eligible: false, meetsPoints: true, meetsSeasons: false, inductedCategories: [] },
+    { bowlerId: '01JX0000000000000000000103', bowlerName: 'Walt Brennan', totalPoints: 34, seasonsWithPoints: 6, membershipYears: 28, membershipHistoryComplete: false, eligible: false, meetsPoints: false, meetsSeasons: true, inductedCategories: ['Meritorious Service'] },
+    { bowlerId: '01JX0000000000000000000104', bowlerName: 'José Marchetti', totalPoints: 12, seasonsWithPoints: 2, membershipYears: 8, membershipHistoryComplete: true, eligible: false, meetsPoints: false, meetsSeasons: false, inductedCategories: [] },
+  ],
+};
+
+// Detail for inducted bowlers. 203 (Alice Williams) is missing on purpose: the detail route returns 404 for her.
+const MOCK_INDUCTEE_DETAILS = new Map<string, object>([
+  ['01JX0000000000000000000201', {
+    bowlerId: '01JX0000000000000000000201',
+    bowlerName: 'Jane Smith',
+    inductedCategories: ['Superior Performance'],
+    totalPoints: 43,
+    seasonsWithPoints: 3,
+    membershipHistoryComplete: true,
+    breakdown: [
+      { source: 'Bowler of the Year', date: '2003-12-31', points: 12, runningTotal: 12, reachedThreshold: false },
+      { source: 'Singles Title', date: '2009-03-10', points: 6, runningTotal: 18, reachedThreshold: false },
+      { source: 'NEBA Masters Title', date: '2014-09-11', points: 6, runningTotal: 24, reachedThreshold: false },
+    ],
+    membershipYears: [
+      { year: 1999, membershipType: 'New' },
+      { year: 2000, membershipType: 'Renewal' },
+    ],
+  }],
+  ['01JX0000000000000000000202', {
+    bowlerId: '01JX0000000000000000000202',
+    bowlerName: 'Bob Johnson',
+    inductedCategories: ['Meritorious Service'],
+    totalPoints: 0,
+    seasonsWithPoints: 0,
+    membershipHistoryComplete: true,
+    breakdown: [],
+    membershipYears: [],
+  }],
+]);
+
+const MOCK_HALL_OF_FAME_POINTS_DETAIL = (bowlerId: string) => {
+  const standing = MOCK_HALL_OF_FAME_POINTS.standings.find((s) => s.bowlerId === bowlerId);
+  if (!standing) return null;
+  return {
+    bowlerId: standing.bowlerId,
+    bowlerName: standing.bowlerName,
+    inductedCategories: standing.inductedCategories,
+    totalPoints: standing.totalPoints,
+    seasonsWithPoints: standing.seasonsWithPoints,
+    membershipHistoryComplete: standing.membershipHistoryComplete,
+    breakdown: [
+      { source: 'Bowler of the Year', date: '2017-12-31', points: 12, runningTotal: 12, reachedThreshold: false },
+      { source: 'Singles Title', date: '2019-03-10', points: 6, runningTotal: 18, reachedThreshold: false },
+      { source: 'Doubles Title', date: '2021-05-02', points: 6, runningTotal: 24, reachedThreshold: false },
+      { source: 'NEBA Masters Title', date: '2022-09-11', points: 6, runningTotal: 30, reachedThreshold: false },
+      { source: 'Singles Title', date: '2023-03-05', points: 6, runningTotal: 36, reachedThreshold: true },
+      { source: 'Trios Title', date: '2024-04-14', points: 2, runningTotal: 38, reachedThreshold: false },
+    ],
+    membershipYears: [
+      { year: 2024, membershipType: 'Renewal' },
+      { year: 2025, membershipType: 'Renewal' },
+    ],
+  };
+};
+
+// An 800x600 picture with a head-and-shoulders figure, so the focal point picker has a real image to measure.
+const MOCK_HALL_OF_FAME_PHOTO_SVG = `<svg xmlns="http://www.w3.org/2000/svg" width="800" height="600" viewBox="0 0 800 600">
+  <rect width="800" height="600" fill="#3E4FD9"/>
+  <ellipse cx="560" cy="640" rx="190" ry="230" fill="#052767"/>
+  <circle cx="560" cy="230" r="72" fill="#e8c4a0"/>
+</svg>`;
 
 const MOCK_BOWLER_OF_THE_YEAR_AWARDS = {
   items: [
@@ -511,6 +630,200 @@ const MOCK_TOURNAMENT_TRUNCATE_ACTIONS = {
   name: 'NEBA Truncate Actions Classic',
 };
 
+// Playwright runs every spec once per browser project, all against this one mock server. The
+// status-action tests mutate their tournament (Cancel/Truncate are one-way) and set failure
+// overrides by path, so projects running in parallel would see each other's changes. Each project
+// therefore gets its own copy of those tournaments, with the same id except for a "P<n>" marker.
+export const E2E_PROJECT_NAMES = ['chrome', 'mobile-chrome', 'mobile-safari'] as const;
+
+export function perProjectTournamentId(baseId: string, projectName: string): string {
+  const index = E2E_PROJECT_NAMES.indexOf(projectName as (typeof E2E_PROJECT_NAMES)[number]);
+  if (index < 0) {
+    throw new Error(`Unknown Playwright project "${projectName}"; add it to E2E_PROJECT_NAMES.`);
+  }
+
+  return `${baseId.slice(0, -3)}P${index}${baseId.slice(-1)}`;
+}
+
+const PER_PROJECT_STATUS_TOURNAMENTS: [string, object][] = E2E_PROJECT_NAMES.flatMap((projectName) => [
+  [
+    perProjectTournamentId(MOCK_TOURNAMENT_STATUS_ACTIONS_ID, projectName),
+    {
+      ...MOCK_TOURNAMENT_STATUS_ACTIONS,
+      id: perProjectTournamentId(MOCK_TOURNAMENT_STATUS_ACTIONS_ID, projectName),
+    },
+  ],
+  [
+    perProjectTournamentId(MOCK_TOURNAMENT_TRUNCATE_ACTIONS_ID, projectName),
+    {
+      ...MOCK_TOURNAMENT_TRUNCATE_ACTIONS,
+      id: perProjectTournamentId(MOCK_TOURNAMENT_TRUNCATE_ACTIONS_ID, projectName),
+    },
+  ],
+]);
+
+// Team eligibility fixtures (TeamEligibility.spec.ts, TournamentDetail.spec.ts, Tournaments.spec.ts): an
+// upcoming doubles tournament with defending champions. The errors copy exists so the spec that makes
+// its eligibility check fail does not affect the other specs, and it gets one copy per project like
+// the status-action tournaments above.
+export const MOCK_TOURNAMENT_TEAM_ID = '01JX0000000000000000000090';
+export const MOCK_TOURNAMENT_TEAM_ERRORS_ID = '01JX0000000000000000000091';
+
+export const MOCK_BOWLER_DEFENDER_ONE_ID = '01JX0000000000000000000081';
+export const MOCK_BOWLER_DEFENDER_TWO_ID = '01JX0000000000000000000082';
+export const MOCK_BOWLER_CHAMPION_ONE_ID = '01JX0000000000000000000083';
+export const MOCK_BOWLER_CHAMPION_TWO_ID = '01JX0000000000000000000084';
+export const MOCK_BOWLER_NEWCOMER_ID = '01JX0000000000000000000085';
+
+const MOCK_DEFENDING_CHAMPIONS = [
+  {
+    tournamentName: 'NEBA Team Doubles',
+    seasonDescription: '2098 Season',
+    sourceTruncated: false,
+    undefended: false,
+    champions: ['Dana Defender', 'Dave Defender'],
+  },
+];
+
+const MOCK_TOURNAMENT_TEAM = {
+  ...MOCK_TOURNAMENT_STATUS_ACTIONS,
+  id: MOCK_TOURNAMENT_TEAM_ID,
+  name: 'NEBA Team Doubles',
+  season: '2099 Season',
+  startDate: '2099-03-06',
+  endDate: '2099-03-07',
+  status: 'Scheduled',
+  tournamentType: 'Doubles',
+  teamSize: 2,
+  previousTournamentId: '01JX0000000000000000000089',
+  defendingChampions: MOCK_DEFENDING_CHAMPIONS,
+};
+
+const PER_PROJECT_TEAM_ERRORS_TOURNAMENTS: [string, object][] = E2E_PROJECT_NAMES.map((projectName) => [
+  perProjectTournamentId(MOCK_TOURNAMENT_TEAM_ERRORS_ID, projectName),
+  {
+    ...MOCK_TOURNAMENT_TEAM,
+    id: perProjectTournamentId(MOCK_TOURNAMENT_TEAM_ERRORS_ID, projectName),
+    name: 'NEBA Team Doubles Errors',
+  },
+]);
+
+const MOCK_BOWLER_SEARCH_RESULTS = [
+  { bowlerId: MOCK_BOWLER_DEFENDER_ONE_ID, name: 'Dana Defender', usbcId: '4821-09317' },
+  { bowlerId: MOCK_BOWLER_DEFENDER_TWO_ID, name: 'Dave Defender', usbcId: '4821-09318' },
+  { bowlerId: MOCK_BOWLER_CHAMPION_ONE_ID, name: 'Chris Champion', usbcId: '1111-00001' },
+  { bowlerId: MOCK_BOWLER_CHAMPION_TWO_ID, name: 'Cora Champion', usbcId: '1111-00002' },
+  { bowlerId: MOCK_BOWLER_NEWCOMER_ID, name: 'Nina Newcomer' },
+];
+
+// Title facts for the mock bowlers: [titles in the last 5 years, in the last 10 years, last title year].
+const MOCK_BOWLER_TITLES: Record<string, [number, number, number | null]> = {
+  [MOCK_BOWLER_CHAMPION_ONE_ID]: [1, 2, 2024],
+  [MOCK_BOWLER_CHAMPION_TWO_ID]: [0, 1, 2019],
+};
+
+function mockStanding(titles: number): string {
+  if (titles === 0) {
+    return 'NonChampion';
+  }
+
+  return titles === 1 ? 'OneTimeChampion' : 'MultiTimeChampion';
+}
+
+function mockMemberFacts(bowlerIds: string[], unknownBowlerCount: number, championsFail: boolean): object[] {
+  const known = bowlerIds.map((id) => {
+    const found = MOCK_BOWLER_SEARCH_RESULTS.find((bowler) => bowler.bowlerId === id);
+    const [titles5, titles10, lastTitleYear] = MOCK_BOWLER_TITLES[id] ?? [0, 0, null];
+    const standing = mockStanding(titles10);
+
+    return {
+      name: found?.name ?? 'Unknown Bowler',
+      usbcId: found && 'usbcId' in found ? found.usbcId : null,
+      notInSystem: false,
+      lastTitleYear,
+      titlesLast5Years: titles5,
+      titlesLast10Years: titles10,
+      countsAs: standing,
+      ageVerified: null,
+      hallOfFameSuperiorPerformance: null,
+      titlesBreakRule: championsFail && titles10 > 0,
+      ageBreaksRule: false,
+      hallOfFameBreaksRule: false,
+    };
+  });
+
+  const unknown = Array.from({ length: unknownBowlerCount }, () => ({
+    name: null, usbcId: null, notInSystem: true, lastTitleYear: null, titlesLast5Years: 0, titlesLast10Years: 0,
+    countsAs: 'NonChampion', ageVerified: null, hallOfFameSuperiorPerformance: null,
+    titlesBreakRule: false, ageBreaksRule: false, hallOfFameBreaksRule: false,
+  }));
+
+  return [...known, ...unknown];
+}
+
+const MOCK_FACTS_SUMMARY =
+  'For Doubles, a champion is a bowler with a NEBA title in the 10 years before the tournament (5 years once a bowler has turned 60). The dates checked are Mar 6, 2099 and Mar 7, 2099.';
+
+// A simple stand-in for the real rules, so each outcome has a team that reaches it: the two
+// defenders together are defending champions, the two champions together are over the champion
+// limit, and anyone else is eligible.
+function resolveTeamEligibilityRoute(pathname: string, searchParams: URLSearchParams): object | null {
+  const match = /^\/tournaments\/([^/]+)\/team-eligibility$/.exec(pathname);
+  if (!match) return null;
+
+  const bowlerIds = searchParams.getAll('bowlerIds');
+  const unknownBowlerCount = Number.parseInt(searchParams.get('unknownBowlerCount') ?? '0', 10) || 0;
+  const has = (id: string) => bowlerIds.includes(id);
+
+  if (has(MOCK_BOWLER_DEFENDER_ONE_ID) && has(MOCK_BOWLER_DEFENDER_TWO_ID)) {
+    const source = MOCK_DEFENDING_CHAMPIONS[0];
+    return {
+      outcome: 'DefendingChampions',
+      reasons: [],
+      dateChecks: [],
+      professionalTitlesVerified: false,
+      defendingSource: {
+        tournamentName: source.tournamentName,
+        seasonDescription: source.seasonDescription,
+        sourceTruncated: source.sourceTruncated,
+        undefended: source.undefended,
+      },
+    };
+  }
+
+  if (has(MOCK_BOWLER_CHAMPION_ONE_ID) && has(MOCK_BOWLER_CHAMPION_TWO_ID)) {
+    return {
+      outcome: 'Ineligible',
+      reasons: [{ code: 'Champions.TooMany', message: 'A team may have at most 1 previous champion.' }],
+      dateChecks: [],
+      professionalTitlesVerified: false,
+      defendingSource: null,
+      summary: MOCK_FACTS_SUMMARY,
+      members: mockMemberFacts(bowlerIds, unknownBowlerCount, true),
+      checks: [{ label: 'Champions: 2 (at most 1)', passed: false }],
+    };
+  }
+
+  return {
+    outcome: 'Eligible',
+    reasons: [],
+    dateChecks: [],
+    professionalTitlesVerified: false,
+    defendingSource: null,
+    summary: MOCK_FACTS_SUMMARY,
+    members: mockMemberFacts(bowlerIds, unknownBowlerCount, false),
+    checks: [{ label: 'Champions: 0 (at most 1)', passed: true }],
+  };
+}
+
+function resolveBowlerSearchRoute(pathname: string, searchParams: URLSearchParams): object | null {
+  if (pathname !== '/bowlers') return null;
+
+  const name = (searchParams.get('name') ?? '').toLowerCase();
+  const items = MOCK_BOWLER_SEARCH_RESULTS.filter((bowler) => bowler.name.toLowerCase().includes(name));
+  return { items, totalItems: items.length };
+}
+
 // Added money breakdown fixtures. Separate from MOCK_TOURNAMENT_DETAIL so its fixed sponsor list
 // stays valid for the other tournament-detail tests.
 export const MOCK_TOURNAMENT_ADDED_MONEY_UPCOMING_ID = '01JX0000000000000000000060';
@@ -594,6 +907,31 @@ const MOCK_TOURNAMENT_ADDED_MONEY_PAST = {
   results: [],
 };
 
+// Invitational fixtures for the rules link/slide-out tests: one upcoming (link shows) and one
+// completed (link hidden, because the rules may have changed since it ran).
+export const MOCK_TOURNAMENT_INVITATIONAL_UPCOMING_ID = '01JX0000000000000000000070';
+export const MOCK_TOURNAMENT_INVITATIONAL_PAST_ID = '01JX0000000000000000000071';
+
+const MOCK_TOURNAMENT_INVITATIONAL_UPCOMING = {
+  ...MOCK_TOURNAMENT_STATUS_ACTIONS,
+  id: MOCK_TOURNAMENT_INVITATIONAL_UPCOMING_ID,
+  name: 'NEBA Upcoming Invitational',
+  startDate: '2099-02-15',
+  endDate: '2099-02-15',
+  status: 'Scheduled',
+  tournamentType: 'Invitational',
+};
+
+const MOCK_TOURNAMENT_INVITATIONAL_PAST = {
+  ...MOCK_TOURNAMENT_STATUS_ACTIONS,
+  id: MOCK_TOURNAMENT_INVITATIONAL_PAST_ID,
+  name: 'NEBA Past Invitational',
+  startDate: '2024-02-15',
+  endDate: '2024-02-15',
+  status: 'Completed',
+  tournamentType: 'Invitational',
+};
+
 const EXTRA_TOURNAMENT_DETAILS = new Map<string, object>([
   [MOCK_TOURNAMENT_OIL_REVEAL_PENDING_ID, MOCK_TOURNAMENT_OIL_REVEAL_PENDING],
   [MOCK_TOURNAMENT_OIL_REVEALED_ID, MOCK_TOURNAMENT_OIL_REVEALED],
@@ -603,6 +941,11 @@ const EXTRA_TOURNAMENT_DETAILS = new Map<string, object>([
   [MOCK_TOURNAMENT_TRUNCATE_ACTIONS_ID, MOCK_TOURNAMENT_TRUNCATE_ACTIONS],
   [MOCK_TOURNAMENT_ADDED_MONEY_UPCOMING_ID, MOCK_TOURNAMENT_ADDED_MONEY_UPCOMING],
   [MOCK_TOURNAMENT_ADDED_MONEY_PAST_ID, MOCK_TOURNAMENT_ADDED_MONEY_PAST],
+  [MOCK_TOURNAMENT_INVITATIONAL_UPCOMING_ID, MOCK_TOURNAMENT_INVITATIONAL_UPCOMING],
+  [MOCK_TOURNAMENT_INVITATIONAL_PAST_ID, MOCK_TOURNAMENT_INVITATIONAL_PAST],
+  [MOCK_TOURNAMENT_TEAM_ID, MOCK_TOURNAMENT_TEAM],
+  ...PER_PROJECT_STATUS_TOURNAMENTS,
+  ...PER_PROJECT_TEAM_ERRORS_TOURNAMENTS,
 ]);
 
 type SeasonVariants = {
@@ -668,6 +1011,20 @@ const CURRENT_SEASON: SeasonVariants = {
   winterDate: '2025-01-18',
 };
 
+// A long standings list for the current season, so the full-standings modal has to virtualize its rows.
+function createExtraBowlerOfTheYearRows(count: number): object[] {
+  return Array.from({ length: count }, (_, i) => ({
+    bowlerId: `01JXBOTY${String(i + 2).padStart(18, '0')}`,
+    bowlerName: `Bowler ${i + 2}`,
+    points: Math.max(1, 5000 - (i + 1) * 8),
+    tournaments: 6,
+    entries: 7,
+    finals: 3,
+    averageFinish: 12.5,
+    winnings: 1000,
+  }));
+}
+
 function createStatsResponse(selectedYear: number): object {
   const s = selectedYear === 2021 ? LEGACY_SEASON : CURRENT_SEASON;
 
@@ -686,6 +1043,7 @@ function createStatsResponse(selectedYear: number): object {
     minimumNumberOfEntries: 6,
     bowlerOfTheYear: [
       { bowlerId: PRIMARY_BOWLER_ID, bowlerName: s.leaderName, points: s.points, tournaments: 7, entries: 8, finals: 5, averageFinish: 6.4, winnings: s.winnings },
+      ...(selectedYear === 2021 ? [] : createExtraBowlerOfTheYearRows(559)),
     ],
     seniorOfTheYear: [],
     superSeniorOfTheYear: [],
@@ -836,7 +1194,9 @@ const MOCK_BOWLER_TITLES_CURRENT_RIVAL = {
 };
 
 // Every mock tournament is in the past, so nothing is upcoming. Must stay ahead of the
-// /tournaments/{id} detail route, which would read "upcoming" as a tournament ID.
+// /tournaments/{id} detail route, which would read "upcoming" as a tournament ID. (An upcoming
+// tournament here would also replace the Tournaments page hero, which Tournaments.spec expects to
+// be the plain page title.)
 export const MOCK_UPCOMING_TOURNAMENTS = { items: [], totalItems: 0 };
 
 export const MOCK_SEASONS = {
@@ -912,6 +1272,7 @@ const MOCK_ARTICLE_JUNE_LANE_PATTERN: object = {
   content: '<p>The June monthly at Southside Bowl will feature the WTBA London sport pattern. Download the PDF below and check qualifying details.</p><p>Registration opens May 20th. Entry fee is $75 per bowler.</p>',
   headerImageUrl: null,
   publishDateUtc: '2026-05-01T12:00:00+00:00',
+  announcedAtUtc: '2026-05-01T12:02:00+00:00',
   tournamentId: null,
   attachments: [
     { displayName: 'Lane Pattern PDF', contentType: 'application/pdf', url: 'https://files.bowlneba.com/news/june-lane-pattern/pattern.pdf', isInline: false, container: 'news', path: 'june-lane-pattern/pattern.pdf', sizeInBytes: 156672 },
@@ -1072,6 +1433,7 @@ const routes: Record<string, unknown> = {
   '/news/june-lane-pattern': MOCK_ARTICLE_JUNE_LANE_PATTERN,
   '/news/points-race-update': MOCK_ARTICLE_POINTS_RACE,
   '/hall-of-fame/inductions': MOCK_HALL_OF_FAME,
+  '/hall-of-fame/points': MOCK_HALL_OF_FAME_POINTS,
   '/awards/bowler-of-the-year': MOCK_BOWLER_OF_THE_YEAR_AWARDS,
   '/awards/high-average': MOCK_HIGH_AVERAGE_AWARDS,
   '/awards/high-block': MOCK_HIGH_BLOCK_AWARDS,
@@ -1098,6 +1460,10 @@ function resolveStaticGetRoute(pathname: string): object | null {
   if (pathname === '/tournaments/upcoming') return MOCK_UPCOMING_TOURNAMENTS;
   if (pathname === `/bowlers/${PRIMARY_BOWLER_ID}/titles`) return MOCK_BOWLER_TITLES_CURRENT_LEADER;
   if (pathname === `/bowlers/${SECONDARY_BOWLER_ID}/titles`) return MOCK_BOWLER_TITLES_CURRENT_RIVAL;
+  if (pathname.startsWith('/hall-of-fame/points/')) {
+    const bowlerId = pathname.slice('/hall-of-fame/points/'.length);
+    return MOCK_HALL_OF_FAME_POINTS_DETAIL(bowlerId) ?? MOCK_INDUCTEE_DETAILS.get(bowlerId) ?? null;
+  }
   return null;
 }
 
@@ -1130,6 +1496,8 @@ function resolveGetRoute(pathname: string, searchParams: URLSearchParams): objec
   return (
     resolveStatsRoute(pathname, searchParams) ??
     resolveSeasonTournamentsRoute(pathname) ??
+    resolveTeamEligibilityRoute(pathname, searchParams) ??
+    resolveBowlerSearchRoute(pathname, searchParams) ??
     resolveStaticGetRoute(pathname) ??
     resolveTournamentDetailRoute(pathname) ??
     resolveSponsorDetailRoute(pathname) ??
@@ -1141,6 +1509,7 @@ function resolveGetRoute(pathname: string, searchParams: URLSearchParams): objec
 
 interface MockOverride {
   status?: number;
+  detail?: string;
   delayMs?: number;
 }
 
@@ -1303,6 +1672,33 @@ async function handleRequest(req: IncomingMessage, res: ServerResponse): Promise
     return;
   }
 
+  if (req.method === 'POST' && pathname === '/security/password/forgot') {
+    if (sendMockOverrideErrorIfSet(res, pathname)) return;
+
+    lastRequestBodies.set('POST /security/password/forgot', await readRequestBody(req));
+
+    // Always 204, whether or not the email "exists", like the real endpoint.
+    res.writeHead(204);
+    res.end();
+    return;
+  }
+
+  if (req.method === 'POST' && pathname === '/security/password/change') {
+    if (sendMockOverrideErrorIfSet(res, pathname)) return;
+
+    await readRequestBody(req);
+
+    // Every required ChangePasswordResponse field, or the page fails deterministically.
+    sendJsonResponse(res, {
+      accessToken: mockJwt(),
+      refreshToken: 'mock-refresh-token-after-change',
+      expiresAt: '2099-01-01T00:00:00+00:00',
+      userId: '01JX0000000000000000000001',
+      email: 'e2e-test-user@bowlneba.com',
+    });
+    return;
+  }
+
   if (req.method === 'POST' && pathname === '/security/password/set-from-token') {
     if (sendMockOverrideErrorIfSet(res, pathname)) return;
 
@@ -1348,10 +1744,15 @@ async function handleRequest(req: IncomingMessage, res: ServerResponse): Promise
         oilPatternId?: string;
         patternLengthCategory?: string;
         patternRatioCategory?: string;
+        previousTournamentId?: string | null;
       };
     };
     const tournament = parsed.tournament ?? {};
     const tournamentId = `01JX000000000000000000${nextCreatedTournamentSuffix++}`;
+
+    // Recorded per tournament name, so specs running in parallel on different projects (each with
+    // its own tournament name) can read back the request they sent.
+    lastRequestBodies.set('POST /tournaments:' + (tournament.name ?? ''), body);
 
     createdTournaments.set(tournamentId, {
       id: tournamentId,
@@ -1370,6 +1771,7 @@ async function handleRequest(req: IncomingMessage, res: ServerResponse): Promise
       entryCount: null,
       patternLengthCategory: tournament.patternLengthCategory ?? null,
       patternRatioCategory: tournament.patternRatioCategory ?? null,
+      previousTournamentId: tournament.previousTournamentId ?? null,
       logoUrl: tournament.logo ? `http://localhost:5151/mock-storage/${tournament.logo.path}` : null,
       bowlingCenter: null,
       sponsors: [],
@@ -1380,6 +1782,24 @@ async function handleRequest(req: IncomingMessage, res: ServerResponse): Promise
     });
 
     sendJsonResponse(res, { tournamentId }, 201);
+    return;
+  }
+
+  if (req.method === 'POST' && pathname === '/hall-of-fame/photos') {
+    if (sendMockOverrideErrorIfSet(res, pathname)) return;
+
+    // Body content is discarded — the mock only needs to acknowledge the multipart upload and
+    // hand back a StoredFile pointer, same shape as the real UploadHallOfFamePhoto endpoint.
+    await readRequestBody(req);
+
+    sendJsonResponse(res, {
+      container: 'bowlneba-public',
+      path: 'hall-of-fame/photo/e2e-test-photo.png',
+      fileName: 'e2e-test-photo.png',
+      contentType: 'image/png',
+      sizeInBytes: 4,
+      url: 'http://localhost:5151/mock-storage/hall-of-fame/photo/e2e-test-photo.png',
+    }, 200);
     return;
   }
 
@@ -1522,7 +1942,8 @@ async function handleRequest(req: IncomingMessage, res: ServerResponse): Promise
     if (pathname === '/__mock/fail') {
       const path = requestUrl.searchParams.get('path') ?? '';
       const status = Number.parseInt(requestUrl.searchParams.get('status') ?? '500', 10);
-      mockOverrides.set(path, { ...mockOverrides.get(path), status });
+      const detail = requestUrl.searchParams.get('detail') ?? undefined;
+      mockOverrides.set(path, { ...mockOverrides.get(path), status, detail });
       res.writeHead(200);
       res.end();
       return;
@@ -1550,6 +1971,13 @@ async function handleRequest(req: IncomingMessage, res: ServerResponse): Promise
     }
   }
 
+  if (req.method === 'POST' && pathname === '/__mock/hall-of-fame/reset') {
+    MOCK_HALL_OF_FAME.items = structuredClone(INITIAL_HALL_OF_FAME_ITEMS);
+    res.writeHead(204);
+    res.end();
+    return;
+  }
+
   if (req.method === 'GET' && pathname === '/__mock/last-request') {
     const method = requestUrl.searchParams.get('method') ?? '';
     const path = requestUrl.searchParams.get('path') ?? '';
@@ -1560,6 +1988,12 @@ async function handleRequest(req: IncomingMessage, res: ServerResponse): Promise
     } else {
       sendJsonResponse(res, JSON.parse(body));
     }
+    return;
+  }
+
+  if (req.method === 'GET' && pathname.startsWith('/mock-storage/hall-of-fame/')) {
+    res.writeHead(200, { 'Content-Type': 'image/svg+xml' });
+    res.end(MOCK_HALL_OF_FAME_PHOTO_SVG);
     return;
   }
 
@@ -1590,6 +2024,41 @@ async function handleRequest(req: IncomingMessage, res: ServerResponse): Promise
     if (sendMockOverrideErrorIfSet(res, pathname)) return;
 
     lastRequestBodies.set('PUT ' + pathname, await readRequestBody(req));
+
+    res.writeHead(204);
+    res.end();
+    return;
+  }
+
+  const hallOfFamePhotoMatch = /^\/hall-of-fame\/([^/]+)\/photo$/.exec(pathname);
+  if (req.method === 'PUT' && hallOfFamePhotoMatch) {
+    if (sendMockOverrideErrorIfSet(res, pathname)) return;
+
+    const body = await readRequestBody(req);
+    // Recorded so a test can assert on the submitted photo and framing.
+    lastRequestBodies.set('PUT ' + pathname, body);
+
+    const induction = MOCK_HALL_OF_FAME.items.find((item) => item.id === hallOfFamePhotoMatch[1]);
+    if (!induction) {
+      sendJsonResponse(res, { error: 'Not Found' }, 404);
+      return;
+    }
+
+    // Mirrors EditHallOfFamePhotoCommandHandler: a photo sets or replaces it; no photo and no framing removes it;
+    // no photo with framing keeps the current photo. Keep the two in step when the handler's rules change.
+    const input = (JSON.parse(body) as {
+      input: { photo: { path: string } | null; focalX: number | null; focalY: number | null; zoom: number | null };
+    }).input;
+
+    if (input.photo) {
+      induction.photoUri = `http://localhost:5151/mock-storage/${input.photo.path}`;
+    } else if (input.focalX === null || input.focalX === undefined) {
+      induction.photoUri = null;
+    }
+
+    induction.photoFocalX = induction.photoUri ? input.focalX ?? induction.photoFocalX : null;
+    induction.photoFocalY = induction.photoUri ? input.focalY ?? induction.photoFocalY : null;
+    induction.photoZoom = induction.photoUri ? input.zoom ?? induction.photoZoom : null;
 
     res.writeHead(204);
     res.end();

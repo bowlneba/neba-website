@@ -9,6 +9,7 @@ using Neba.Api.Caching;
 using Neba.Api.Database;
 using Neba.Api.Discord;
 using Neba.Api.Features.Bowlers.Domain;
+using Neba.Api.Features.Tournaments;
 using Neba.Api.Features.Tournaments.Domain;
 
 using ZiggyCreatures.Caching.Fusion;
@@ -68,6 +69,10 @@ internal sealed class SyncTournamentResultsJob(
         // addition to the tournament's own detail view.
         await cache.RemoveByTagAsync($"neba:tournaments:{tournament.Id}", token: ct);
         await cache.RemoveByTagAsync("neba:tournaments:champions", token: ct);
+        await cache.RemoveByTagAsync(CacheDescriptors.HallOfFame.PointsTag, token: ct);
+
+        // The winners are the next tournament's defending champions, which its cached list and detail show.
+        await TournamentSuccessorCacheEviction.EvictAsync(db, cache, tournament.Id, ct);
 
         // Season stats read both the stats-eligible tournament count and these results, so they are
         // stale only once the results are written; evicting at completion would let a request

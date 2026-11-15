@@ -31,6 +31,8 @@ using Neba.Website.Server.Help;
 using Neba.Website.Server.Notifications;
 using Neba.Website.Server.Services;
 using Neba.Website.Server.Time;
+using Neba.Website.Server.Tournaments;
+using Neba.Website.Server.Tournaments.Schedule;
 
 using Refit;
 using Refit.Testing;
@@ -49,6 +51,7 @@ public sealed class EditTournamentTests : IDisposable
     private readonly Mock<IOilPatternsApi> _mockOilPatternsApi;
     private readonly Mock<ISecurityApi> _mockSecurityApi;
     private readonly Mock<IClientTimeZoneService> _mockClientTimeZoneService;
+    private readonly Mock<ITournamentApiService> _mockTournamentApiService;
     private readonly ToastService _toastService;
 
     public EditTournamentTests()
@@ -58,6 +61,12 @@ public sealed class EditTournamentTests : IDisposable
         _mockOilPatternsApi = new Mock<IOilPatternsApi>(MockBehavior.Strict);
         _mockSecurityApi = new Mock<ISecurityApi>(MockBehavior.Strict);
         _mockClientTimeZoneService = new Mock<IClientTimeZoneService>(MockBehavior.Strict);
+
+        // The previous-tournament picker reads the seasons; with none there is nothing to offer.
+        _mockTournamentApiService = new Mock<ITournamentApiService>(MockBehavior.Strict);
+        _mockTournamentApiService
+            .Setup(x => x.GetSeasonsAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new List<SeasonViewModel>());
 
         var mockStopwatch = new Mock<IStopwatchProvider>(MockBehavior.Strict);
         mockStopwatch.Setup(x => x.GetTimestamp()).Returns(0L);
@@ -84,6 +93,7 @@ public sealed class EditTournamentTests : IDisposable
         _ctx.Services.AddSingleton(_mockOilPatternsApi.Object);
         _ctx.Services.AddSingleton(_mockSecurityApi.Object);
         _ctx.Services.AddSingleton(_mockClientTimeZoneService.Object);
+        _ctx.Services.AddSingleton(_mockTournamentApiService.Object);
         _ctx.Services.AddSingleton(sp => new ApiExecutor(mockStopwatch.Object, sp.GetRequiredService<NavigationManager>(), NullLogger<ApiExecutor>.Instance));
         _ctx.Services.AddSingleton(_toastService);
         _ctx.Services.AddSingleton<HelpDocumentService>();
@@ -274,6 +284,49 @@ public sealed class EditTournamentTests : IDisposable
         nav.Uri.ShouldEndWith("/tournaments/01JX0000000000000000000200");
         _toastService.Current.ShouldNotBeNull();
         _toastService.Current.Severity.ShouldBe(NotifySeverity.Success);
+    }
+
+    [Fact(DisplayName = "Should load the saved previous tournament and send it back when saving")]
+    public async Task Submit_ShouldSendSavedPreviousTournament_WhenSavingUnchanged()
+    {
+        // Arrange
+        var tournament = TournamentDetailResponseFactory.Create(
+            id: "01JX0000000000000000000200", name: "NEBA Fall Classic", previousTournamentId: "01JPREVIOUS000000000000001");
+        SetupGetTournamentSuccess(tournament);
+
+        EditTournamentRequest? capturedRequest = null;
+        SetupEditTournamentResponse(capture: r => capturedRequest = r);
+
+        var cut = RenderEditTournament(tournament.Id);
+        await cut.WaitForStateAsync(() => cut.FindAll("#previous-tournament").Count > 0);
+
+        // Act
+        await cut.Find("form").SubmitAsync();
+
+        // Assert
+        capturedRequest.ShouldNotBeNull();
+        capturedRequest.Tournament.PreviousTournamentId.ShouldBe("01JPREVIOUS000000000000001");
+    }
+
+    [Fact(DisplayName = "Should send no previous tournament when the tournament has none")]
+    public async Task Submit_ShouldSendNoPreviousTournament_WhenTournamentHasNone()
+    {
+        // Arrange
+        var tournament = TournamentDetailResponseFactory.Create(id: "01JX0000000000000000000200");
+        SetupGetTournamentSuccess(tournament);
+
+        EditTournamentRequest? capturedRequest = null;
+        SetupEditTournamentResponse(capture: r => capturedRequest = r);
+
+        var cut = RenderEditTournament(tournament.Id);
+        await cut.WaitForStateAsync(() => cut.FindAll("#name").Count > 0);
+
+        // Act
+        await cut.Find("form").SubmitAsync();
+
+        // Assert
+        capturedRequest.ShouldNotBeNull();
+        capturedRequest.Tournament.PreviousTournamentId.ShouldBeNull();
     }
 
     [Fact(DisplayName = "Should show the error description and stay on the page when saving fails")]

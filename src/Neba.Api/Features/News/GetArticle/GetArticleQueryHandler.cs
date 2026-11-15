@@ -51,6 +51,7 @@ internal sealed class GetArticleQueryHandler(
             HeaderImageContentType = article.HeaderImage != null ? article.HeaderImage.ContentType : null,
             HeaderImageSizeInBytes = article.HeaderImage != null ? article.HeaderImage.SizeInBytes : null,
             PublishDateUtc = article.PublishDateUtc,
+            AnnouncedAtUtc = article.AnnouncedAtUtc,
             Attachments = (canManageArticles
                     ? article.Attachments
                     : article.Attachments.Where(attachment => !attachment.IsInline))
@@ -85,6 +86,7 @@ internal sealed class GetArticleQueryHandler(
             HeaderImageContentType = canManageArticles ? row.HeaderImageContentType : null,
             HeaderImageSizeInBytes = canManageArticles ? row.HeaderImageSizeInBytes : null,
             PublishDateUtc = row.PublishDateUtc,
+            AnnouncedAtUtc = canManageArticles ? row.AnnouncedAtUtc : null,
             Attachments = [.. row.Attachments.Select(a => MapAttachment(a, canManageArticles, fileStorageService))],
             TournamentId = row.TournamentId
         };
@@ -114,6 +116,7 @@ internal sealed class GetArticleQueryHandler(
         public string? HeaderImageContentType { get; init; }
         public long? HeaderImageSizeInBytes { get; init; }
         public required DateTimeOffset PublishDateUtc { get; init; }
+        public DateTimeOffset? AnnouncedAtUtc { get; init; }
         public required List<ArticleAttachmentRow> Attachments { get; init; }
         public TournamentId? TournamentId { get; init; }
     }

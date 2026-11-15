@@ -22,26 +22,16 @@ internal static class UpdateBowler
 {
     extension(Bowler bowler)
     {
-        public ErrorOr<Updated> ApplyLegacyUpdate(
-            string firstName,
-            string lastName,
-            string? middleName = null,
-            NameSuffix? suffix = null,
-            string? nickname = null,
+        public void ApplyLegacyUpdate(
+            Name name,
             Gender? gender = null,
-            DateOnly? dateOfBirth = null)
+            DateOnly? dateOfBirth = null,
+            string? usbcId = null)
         {
-            var name = Name.Create(firstName, lastName, middleName, suffix, nickname);
-            if (name.IsError)
-            {
-                return name.Errors;
-            }
-
-            bowler.Name = name.Value;
+            bowler.Name = name;
             bowler.Gender = gender;
             bowler.DateOfBirth = dateOfBirth;
-
-            return Result.Updated;
+            bowler.UsbcId = usbcId;
         }
     }
 }
@@ -104,7 +94,8 @@ internal sealed class UpdateBowlerSyncJob(
                 LastName,
                 Suffix,
                 Gender,
-                DateOfBirth
+                DateOfBirth,
+                UsbcId
             FROM
                 Bowlers
             WHERE
@@ -123,17 +114,6 @@ internal sealed class UpdateBowlerSyncJob(
             return;
         }
 
-        var gender = LegacyBowlerMapping.MapGender(row.Gender);
-        var dateOfBirth = LegacyBowlerMapping.MapDateOfBirth(row.DateOfBirth);
-
-        var suffix = LegacyBowlerMapping.MapSuffix(row.Suffix);
-        if (suffix is null && !string.IsNullOrWhiteSpace(row.Suffix))
-        {
-            logger.LogLegacySuffixUnmappedForUpdate(legacyBowlerId, row.Suffix);
-        }
-
-        var (firstName, nickname) = row.FirstName.ExtractQuotedNickname();
-
         var existing = await db.Set<Bowler>().SingleOrDefaultAsync(bowler => bowler.LegacyId == legacyBowlerId, ct);
 
         if (existing is null)
@@ -144,15 +124,7 @@ internal sealed class UpdateBowlerSyncJob(
             // the update because create-and-update happened to race.
             logger.LogLegacyBowlerNotSyncedYetForUpdate(legacyBowlerId);
 
-            var created = Bowler.CreateFromLegacy(
-                firstName,
-                row.LastName,
-                middleName: row.MiddleInitial,
-                suffix: suffix,
-                nickname: nickname,
-                legacyId: row.Id,
-                gender: gender,
-                dateOfBirth: dateOfBirth);
+            var created = LegacyBowlerMapping.CreateBowler(row, logger);
 
             if (created.IsError)
             {
@@ -168,21 +140,27 @@ internal sealed class UpdateBowlerSyncJob(
             return;
         }
 
-        var updated = existing.ApplyLegacyUpdate(
-            firstName,
-            row.LastName,
-            middleName: row.MiddleInitial,
-            suffix: suffix,
-            nickname: nickname,
-            gender: gender,
-            dateOfBirth: dateOfBirth);
+        var gender = LegacyBowlerMapping.MapGender(row.Gender);
+        var dateOfBirth = LegacyBowlerMapping.MapDateOfBirth(row.DateOfBirth);
 
-        if (updated.IsError)
+        var suffix = LegacyBowlerMapping.MapSuffix(row.Suffix);
+        if (suffix is null && !string.IsNullOrWhiteSpace(row.Suffix))
         {
-            logger.LogLegacyBowlerUpdateFailed(legacyBowlerId, string.Join("; ", updated.Errors.Select(error => error.Description)));
+            logger.LogLegacySuffixUnmappedForUpdate(legacyBowlerId, row.Suffix);
+        }
+
+        var (firstName, nickname) = row.FirstName.ExtractQuotedNickname();
+
+        var name = Name.Create(firstName, row.LastName, row.MiddleInitial, suffix, nickname);
+
+        if (name.IsError)
+        {
+            logger.LogLegacyBowlerUpdateFailed(legacyBowlerId, string.Join("; ", name.Errors.Select(error => error.Description)));
 
             return;
         }
+
+        existing.ApplyLegacyUpdate(name.Value, gender, dateOfBirth, LegacyBowlerMapping.MapUsbcId(row.UsbcId));
 
         // Name is an owned type table-split into the bowlers row. Reassigning it replaces the
         // owned entity's tracked instance, so EF only marks the owned "Name" entry as

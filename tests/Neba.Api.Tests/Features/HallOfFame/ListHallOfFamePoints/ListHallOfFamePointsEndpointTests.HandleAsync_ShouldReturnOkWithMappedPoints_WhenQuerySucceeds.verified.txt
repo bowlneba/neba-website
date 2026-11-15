@@ -1,0 +1,34 @@
+﻿{
+  Rules: [
+    {
+      Group: Bowler of the Year Awards,
+      Label: Bowler of the Year,
+      Points: 12
+    },
+    {
+      Group: Tournament Titles,
+      Label: Singles Title,
+      Points: 6
+    }
+  ],
+  RequiredPoints: 36,
+  RequiredSeasonsWithPoints: 3,
+  RequiredMembershipYears: 10,
+  MembershipDataStartYear: 1999,
+  Standings: [
+    {
+      BowlerId: 01JZ8K3M4N5P6Q7R8S9T0V1W3Z,
+      BowlerName: Ray Dunleavy,
+      TotalPoints: 42,
+      SeasonsWithPoints: 5,
+      MembershipYears: 28,
+      MembershipHistoryComplete: false,
+      Eligible: true,
+      MeetsPoints: true,
+      MeetsSeasons: true,
+      InductedCategories: [
+        Meritorious Service
+      ]
+    }
+  ]
+}

@@ -34,7 +34,8 @@ public sealed record HangfireSettings
     public required int FailedJobsRetentionDays { get; init; }
 
     /// <summary>
-    /// The number of automatic retry attempts for failed jobs.
+    /// The number of automatic retry attempts for failed jobs. Applies to every job except those whose
+    /// argument type carries <see cref="NoAutomaticRetryAttribute"/>, which are never retried.
     /// </summary>
     [Range(1, 10, ErrorMessage = "AutomaticRetryAttempts must be between 1 and 10.")]
     public required int AutomaticRetryAttempts { get; init; }

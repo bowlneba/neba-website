@@ -173,6 +173,12 @@
     [Parameter]
     public DateTimeOffset? LastUpdated { get; set; }
 
+    /// <summary>
+    /// Short anchors (the part after <c>#</c>) and the heading each one points to. Optional.
+    /// </summary>
+    [Parameter]
+    public IReadOnlyDictionary<string, AnchorAlias>? AnchorAliases { get; set; }
+
     [Parameter]
     public DateTimeOffset? SlideoverLastUpdated { get; set; }
 
@@ -295,7 +301,7 @@
             if (success)
             {
                 _tocInitialized = true;
-                await _module.InvokeVoidAsync("scrollToHash", ContentId, TocListId);
+                await _module.InvokeVoidAsync("scrollToHash", ContentId, TocListId, AnchorAliases);
             }
         }
         catch (JSDisconnectedException ex)

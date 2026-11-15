@@ -20,6 +20,7 @@ using Microsoft.Extensions.Options;
 using Neba.Api.Database;
 using Neba.Api.Features.Bowlers.Domain;
 using Neba.Api.Legacy;
+using Neba.Api.Legacy.BowlerMemberships;
 using Neba.Api.Legacy.Bowlers;
 using Neba.Api.Legacy.HallOfFame;
 using Neba.Api.Legacy.Seasons.Complete;
@@ -52,17 +53,12 @@ public sealed class BowlerApplyLegacyUpdateTests
             dateOfBirth: new DateOnly(1980, 1, 1));
 
         // Act
-        var result = bowler.ApplyLegacyUpdate(
-            "David",
-            "Smith",
-            middleName: "M",
-            suffix: NameSuffix.Jr,
-            nickname: "Dave",
+        bowler.ApplyLegacyUpdate(
+            NameFactory.Create(firstName: "David", lastName: "Smith", middleName: "M", suffix: NameSuffix.Jr, nickname: "Dave"),
             gender: Gender.Female,
             dateOfBirth: new DateOnly(1990, 6, 15));
 
         // Assert
-        result.IsError.ShouldBeFalse();
         bowler.Name.FirstName.ShouldBe("David");
         bowler.Name.LastName.ShouldBe("Smith");
         bowler.Name.MiddleName.ShouldBe("M");
@@ -72,6 +68,23 @@ public sealed class BowlerApplyLegacyUpdateTests
         bowler.DateOfBirth.ShouldBe(new DateOnly(1990, 6, 15));
     }
 
+    [Fact(DisplayName = "ApplyLegacyUpdate should set UsbcId, and clear it when none is provided")]
+    public void ApplyLegacyUpdate_ShouldSetUsbcId_WhenProvided()
+    {
+        // Arrange
+        var bowler = BowlerFactory.Create(usbcId: "1111-11111");
+
+        // Act
+        var name = NameFactory.Create(firstName: "David", lastName: "Smith");
+        bowler.ApplyLegacyUpdate(name, usbcId: "4821-09317");
+        var usbcIdAfterSet = bowler.UsbcId;
+        bowler.ApplyLegacyUpdate(name);
+
+        // Assert
+        usbcIdAfterSet.ShouldBe("4821-09317");
+        bowler.UsbcId.ShouldBeNull();
+    }
+
     [Fact(DisplayName = "ApplyLegacyUpdate should set Gender and DateOfBirth to null when not provided")]
     public void ApplyLegacyUpdate_ShouldSetGenderAndDateOfBirthToNull_WhenNotProvided()
     {
@@ -79,29 +92,11 @@ public sealed class BowlerApplyLegacyUpdateTests
         var bowler = BowlerFactory.Create(gender: Gender.Male, dateOfBirth: new DateOnly(1980, 1, 1));
 
         // Act
-        var result = bowler.ApplyLegacyUpdate("David", "Smith");
+        bowler.ApplyLegacyUpdate(NameFactory.Create(firstName: "David", lastName: "Smith"));
 
         // Assert
-        result.IsError.ShouldBeFalse();
         bowler.Gender.ShouldBeNull();
         bowler.DateOfBirth.ShouldBeNull();
-    }
-
-    [Fact(DisplayName = "ApplyLegacyUpdate should return an error and leave the bowler unchanged when the first name is blank")]
-    public void ApplyLegacyUpdate_ShouldReturnErrorAndLeaveBowlerUnchanged_WhenFirstNameIsBlank()
-    {
-        // Arrange
-        var originalName = NameFactory.Create(firstName: "Original", lastName: "Bowler");
-        var bowler = BowlerFactory.Create(name: originalName, gender: Gender.Male, dateOfBirth: new DateOnly(1980, 1, 1));
-
-        // Act
-        var result = bowler.ApplyLegacyUpdate(string.Empty, "Smith");
-
-        // Assert
-        result.IsError.ShouldBeTrue();
-        bowler.Name.ShouldBe(originalName);
-        bowler.Gender.ShouldBe(Gender.Male);
-        bowler.DateOfBirth.ShouldBe(new DateOnly(1980, 1, 1));
     }
 }
 
@@ -158,6 +153,9 @@ public sealed class UpdateBowlerEndpointTests : IAsyncLifetime
         _jobsMock = new Mock<IBackgroundJobClient>(MockBehavior.Strict);
         builder.Services.AddSingleton(_jobsMock.Object);
         builder.Services.AddScoped<IValidator<UpdateBowlerRequest>, UpdateBowlerRequestValidator>();
+        builder.Services.AddScoped<IValidator<NewBowlerMembershipRequest>, NewBowlerMembershipRequestValidator>();
+        builder.Services.AddScoped<IValidator<UpdateBowlerMembershipRequest>, UpdateBowlerMembershipRequestValidator>();
+        builder.Services.AddScoped<IValidator<DeleteBowlerMembershipRequest>, DeleteBowlerMembershipRequestValidator>();
         // NewBowlerRequest's and NewTournamentRequest's validators are also required here:
         // MapLegacyGroup() below maps every endpoint in the /legacy group (not just this one), and
         // ASP.NET Core builds route metadata for the whole group on the first request to any of its
@@ -309,7 +307,8 @@ public sealed class UpdateBowlerSyncJobTests(AppDbContextFixture fixture, Legacy
                 LastName nvarchar(100) NOT NULL,
                 Suffix nvarchar(10) NULL,
                 Gender int NOT NULL,
-                DateOfBirth datetime NULL
+                DateOfBirth datetime NULL,
+                UsbcId nvarchar(20) NULL
             )
             """;
         await create.ExecuteNonQueryAsync();
@@ -329,12 +328,13 @@ public sealed class UpdateBowlerSyncJobTests(AppDbContextFixture fixture, Legacy
         string lastName = "Smith",
         string? suffix = null,
         int gender = 0,
-        DateTime? dateOfBirth = null)
+        DateTime? dateOfBirth = null,
+        string? usbcId = null)
     {
         await using var insert = _legacyConnection.CreateCommand();
         insert.CommandText = """
-            INSERT INTO Bowlers (Id, FirstName, MiddleInitial, LastName, Suffix, Gender, DateOfBirth)
-            VALUES (@Id, @FirstName, @MiddleInitial, @LastName, @Suffix, @Gender, @DateOfBirth)
+            INSERT INTO Bowlers (Id, FirstName, MiddleInitial, LastName, Suffix, Gender, DateOfBirth, UsbcId)
+            VALUES (@Id, @FirstName, @MiddleInitial, @LastName, @Suffix, @Gender, @DateOfBirth, @UsbcId)
             """;
         insert.Parameters.AddWithValue("@Id", id);
         insert.Parameters.AddWithValue("@FirstName", firstName);
@@ -343,12 +343,13 @@ public sealed class UpdateBowlerSyncJobTests(AppDbContextFixture fixture, Legacy
         insert.Parameters.AddWithValue("@Suffix", (object?)suffix ?? DBNull.Value);
         insert.Parameters.AddWithValue("@Gender", gender);
         insert.Parameters.AddWithValue("@DateOfBirth", dateOfBirth is null ? DBNull.Value : dateOfBirth.Value);
+        insert.Parameters.AddWithValue("@UsbcId", (object?)usbcId ?? DBNull.Value);
         await insert.ExecuteNonQueryAsync();
     }
 
-    private async Task<Bowler> SeedExistingBowlerAsync(int legacyId, Name? name = null, Gender? gender = null, DateOnly? dateOfBirth = null)
+    private async Task<Bowler> SeedExistingBowlerAsync(int legacyId, Name? name = null, Gender? gender = null, DateOnly? dateOfBirth = null, string? usbcId = null)
     {
-        var bowler = BowlerFactory.Create(name: name, legacyId: legacyId, gender: gender, dateOfBirth: dateOfBirth);
+        var bowler = BowlerFactory.Create(name: name, legacyId: legacyId, gender: gender, dateOfBirth: dateOfBirth, usbcId: usbcId);
         await _dbContext.Set<Bowler>().AddAsync(bowler, TestContext.Current.CancellationToken);
         await _dbContext.SaveChangesAsync(TestContext.Current.CancellationToken);
         _dbContext.ChangeTracker.Clear();
@@ -414,6 +415,39 @@ public sealed class UpdateBowlerSyncJobTests(AppDbContextFixture fixture, Legacy
         bowler.Name.Suffix.ShouldBe(NameSuffix.Jr);
         bowler.Gender.ShouldBe(Gender.Female);
         bowler.DateOfBirth.ShouldBe(new DateOnly(1990, 1, 1));
+    }
+
+    [Fact(DisplayName = "SyncAsync should update the existing bowler's UsbcId from the legacy row")]
+    public async Task SyncAsync_ShouldUpdateUsbcId_WhenLegacyRowHasOne()
+    {
+        // Arrange
+        var ct = TestContext.Current.CancellationToken;
+        await SeedExistingBowlerAsync(1, usbcId: "1111-11111");
+        await InsertLegacyBowlerAsync(1, usbcId: " 4821-09317 ");
+        var job = CreateJob();
+
+        // Act
+        await job.SyncAsync(1, ct);
+
+        // Assert
+        var bowler = await _dbContext.Set<Bowler>().SingleAsync(b => b.LegacyId == 1, ct);
+        bowler.UsbcId.ShouldBe("4821-09317");
+    }
+
+    [Fact(DisplayName = "SyncAsync should store the legacy UsbcId when it falls back to create")]
+    public async Task SyncAsync_ShouldStoreUsbcId_WhenFallingBackToCreate()
+    {
+        // Arrange
+        var ct = TestContext.Current.CancellationToken;
+        await InsertLegacyBowlerAsync(1, usbcId: "4821-09317");
+        var job = CreateJob();
+
+        // Act
+        await job.SyncAsync(1, ct);
+
+        // Assert
+        var bowler = await _dbContext.Set<Bowler>().SingleAsync(b => b.LegacyId == 1, ct);
+        bowler.UsbcId.ShouldBe("4821-09317");
     }
 
     [Fact(DisplayName = "SyncAsync should extract a quoted nickname from the legacy first name when updating an existing bowler")]

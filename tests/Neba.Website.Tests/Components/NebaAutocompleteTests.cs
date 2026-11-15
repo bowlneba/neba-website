@@ -131,6 +131,79 @@ public sealed class NebaAutocompleteTests : IDisposable
         selected.ShouldBeNull();
     }
 
+    [Fact(DisplayName = "Should not filter items by the typed text when ItemsAreFiltered is true")]
+    public void Input_ShouldShowAllItems_WhenItemsAreFiltered()
+    {
+        // Arrange
+        var cut = RenderAutocomplete(p => p.Add(x => x.ItemsAreFiltered, true));
+        cut.Find("input").TriggerEvent("onfocus", new Microsoft.AspNetCore.Components.Web.FocusEventArgs());
+
+        // Act
+        cut.Find("input").Input("zzz");
+
+        // Assert
+        cut.FindAll(".neba-autocomplete-option").Count.ShouldBe(3);
+    }
+
+    [Fact(DisplayName = "Should show new items right away when Items changes while the list is open and ItemsAreFiltered is true")]
+    public void Parameters_ShouldRefreshOpenList_WhenItemsChangeAndItemsAreFiltered()
+    {
+        // Arrange
+        var cut = RenderAutocomplete(p => p.Add(x => x.ItemsAreFiltered, true));
+        cut.Find("input").TriggerEvent("onfocus", new Microsoft.AspNetCore.Components.Web.FocusEventArgs());
+        cut.FindAll(".neba-autocomplete-option").Count.ShouldBe(3);
+
+        // Act
+        cut.Render(p => p.Add(x => x.Items, (IEnumerable<Item>)[new Item("z", "Zulu Lanes")]));
+
+        // Assert
+        var option = cut.FindAll(".neba-autocomplete-option").ShouldHaveSingleItem();
+        option.TextContent.ShouldBe("Zulu Lanes");
+    }
+
+    [Fact(DisplayName = "Should keep the highlighted option in range when the filtered items shrink")]
+    public void Parameters_ShouldKeepHighlightInRange_WhenFilteredItemsShrink()
+    {
+        // Arrange
+        var cut = RenderAutocomplete(p => p.Add(x => x.ItemsAreFiltered, true));
+        cut.Find("input").TriggerEvent("onfocus", new Microsoft.AspNetCore.Components.Web.FocusEventArgs());
+        cut.Find("input").KeyDown(new Microsoft.AspNetCore.Components.Web.KeyboardEventArgs { Key = "ArrowDown" });
+        cut.Find("input").KeyDown(new Microsoft.AspNetCore.Components.Web.KeyboardEventArgs { Key = "ArrowDown" });
+
+        // Act
+        cut.Render(p => p.Add(x => x.Items, (IEnumerable<Item>)[new Item("z", "Zulu Lanes")]));
+
+        // Assert
+        cut.Find(".neba-autocomplete-option").ClassList.ShouldContain("highlighted");
+    }
+
+    [Fact(DisplayName = "Should render NoResultsContent after the no-results text when nothing matches")]
+    public void Input_ShouldRenderNoResultsContent_WhenNothingMatches()
+    {
+        // Arrange
+        var cut = RenderAutocomplete(p => p.Add(x => x.NoResultsContent, "<button class=\"extra\">Add it</button>"));
+
+        // Act
+        cut.Find("input").Input("zzz");
+
+        // Assert
+        cut.Find(".neba-autocomplete-empty").TextContent.ShouldContain("No matches found");
+        cut.Find(".neba-autocomplete-empty .extra").TextContent.ShouldBe("Add it");
+    }
+
+    [Fact(DisplayName = "Should not render NoResultsContent while items are listed")]
+    public void Focus_ShouldNotRenderNoResultsContent_WhenItemsAreListed()
+    {
+        // Arrange
+        var cut = RenderAutocomplete(p => p.Add(x => x.NoResultsContent, "<button class=\"extra\">Add it</button>"));
+
+        // Act
+        cut.Find("input").TriggerEvent("onfocus", new Microsoft.AspNetCore.Components.Web.FocusEventArgs());
+
+        // Assert
+        cut.FindAll(".extra").ShouldBeEmpty();
+    }
+
     private IRenderedComponent<NebaAutocomplete<string, Item>> RenderAutocomplete(
         Action<ComponentParameterCollectionBuilder<NebaAutocomplete<string, Item>>>? configure = null)
         => _ctx.Render<NebaAutocomplete<string, Item>>(p =>

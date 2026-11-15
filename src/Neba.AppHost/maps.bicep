@@ -15,10 +15,10 @@ resource keyVault 'Microsoft.KeyVault/vaults@2023-07-01' existing = {
 resource mapsAccount 'Microsoft.Maps/accounts@2023-06-01' = {
   name: mapsAccountName
   location: 'global'
-  kind: 'Gen2'
   sku: {
     name: 'G2'
   }
+  kind: 'Gen2'
 }
 
 // Written directly here, rather than seeded from cd.yml like the other Key Vault secrets,

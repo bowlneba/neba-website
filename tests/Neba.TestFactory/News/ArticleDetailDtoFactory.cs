@@ -24,7 +24,8 @@ public static class ArticleDetailDtoFactory
         long? headerImageSizeInBytes = null,
         DateTimeOffset? publishDateUtc = null,
         IReadOnlyCollection<ArticleAttachmentDto>? attachments = null,
-        TournamentId? tournamentId = null)
+        TournamentId? tournamentId = null,
+        DateTimeOffset? announcedAtUtc = null)
         => new()
         {
             Id = id ?? ArticleId.New(),
@@ -38,6 +39,7 @@ public static class ArticleDetailDtoFactory
             HeaderImageContentType = headerImageContentType,
             HeaderImageSizeInBytes = headerImageSizeInBytes,
             PublishDateUtc = publishDateUtc ?? ValidPublishDateUtc,
+            AnnouncedAtUtc = announcedAtUtc,
             Attachments = attachments ?? [],
             TournamentId = tournamentId,
         };

@@ -1,28 +1,40 @@
 ﻿[
   {
+    Id: 01H9GQ3H83BGZMQNWH17AKK7W9,
+    BowlerId: 01F3B89AC4K7X3HX3F18554EFG,
     BowlerName: Myron Okuneva,
     InductionYear: 1992,
     Categories: [
       Superior Performance,
       Meritorious Service
     ],
-    PhotoUri: http://furman.com
+    PhotoUri: http://furman.com,
+    PhotoFocalX: 61,
+    PhotoFocalY: 10,
+    PhotoZoom: 281
   },
   {
+    Id: 01H2BE9JX79V0FYAYB022CNXNB,
+    BowlerId: 01FKHB0AMWBDC0RMAJNS7XP912,
     BowlerName: Myron Okuneva,
     InductionYear: 2006,
     Categories: [
-      Friend of NEBA,
-      Superior Performance
+      Superior Performance,
+      Friend of NEBA
     ]
   },
   {
+    Id: 01FMAGGNQR19Z0Q1FB42QH6NP2,
+    BowlerId: 01J5TQ8DXCB0MBZN9MFYERZ3AW,
     BowlerName: Myron Okuneva,
     InductionYear: 1980,
     Categories: [
       Superior Performance,
       Friend of NEBA
     ],
-    PhotoUri: https://jarrod.biz
+    PhotoUri: https://jarrod.biz,
+    PhotoFocalX: 84,
+    PhotoFocalY: 100,
+    PhotoZoom: 284
   }
 ]

@@ -146,9 +146,25 @@ public sealed record TournamentDetailResponse
     public DateTimeOffset? OilPatternRevealDateTime { get; init; }
 
     /// <summary>
+    /// The previous (last year's) tournament's ID; null when there is none.
+    /// </summary>
+    public string? PreviousTournamentId { get; init; }
+
+    /// <summary>
     /// Display names of the winning bowler(s); empty for pending or upcoming events.
     /// </summary>
     public IReadOnlyCollection<string> Winners { get; init; } = [];
+
+    /// <summary>
+    /// Bowlers per entry: 1 for singles-style formats, 2 for doubles, 3 for trios, 5 for baker.
+    /// </summary>
+    public int TeamSize { get; init; } = 1;
+
+    /// <summary>
+    /// Teams that may bowl together as this tournament's defending champions; empty when there is no previous
+    /// tournament or it has no results.
+    /// </summary>
+    public IReadOnlyCollection<DefendingTeamResponse> DefendingChampions { get; init; } = [];
 
     /// <summary>
     /// Per-bowler results ordered by place (nulls last) then bowler name; empty for upcoming or data-unavailable tournaments.

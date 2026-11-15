@@ -33,7 +33,7 @@ You need the `System.CreateUser` permission, enforced via the dynamic `Permissio
 
 ## Setting the password (invite flow)
 
-The invite email's link opens `/account/set-password` with the new user's id and a one-time token embedded in the URL. This page has no permission requirement — anyone holding a valid, unexpired link can use it.
+The invite email's link opens `/account/set-password` with the new user's id and a one-time token embedded in the URL. This page has no permission requirement — anyone holding a valid, unexpired link can use it. An invite link works once and expires after 1 day.
 
 1. The invitee opens the link from their email and lands on the **Set Your Password** page.
 2. They type a password into **New Password** and repeat it in **Confirm New Password**. A strength meter and a checklist (at least 8 characters, one uppercase letter, one lowercase letter, one number) update as they type.

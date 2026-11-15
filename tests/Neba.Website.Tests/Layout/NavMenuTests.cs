@@ -138,6 +138,35 @@ public sealed class NavMenuTests : IDisposable
         }
     }
 
+    [Fact(DisplayName = "Hall of Fame should be a dropdown with Inductees and Points Standings links")]
+    public void Render_ShouldRenderHallOfFameDropdown_WhenRendered()
+    {
+        // Act
+        var cut = _ctx.Render<NavMenu>();
+
+        // Assert
+        var item = cut.FindAll("li.neba-nav-item[data-action='toggle-dropdown']")
+            .Single(li => li.QuerySelector("a[aria-haspopup='true']")?.TextContent.Trim() == "Hall of Fame");
+
+        var links = item.QuerySelectorAll(".neba-dropdown a.neba-dropdown-link");
+        links.Select(link => (link.TextContent.Trim(), link.GetAttribute("href")))
+            .ShouldBe([("Inductees", "hall-of-fame"), ("Points Standings", "hall-of-fame/points")]);
+    }
+
+    [Fact(DisplayName = "Inductees link should be active only on the Hall of Fame page, not on the points page")]
+    public void Render_ShouldMarkInducteesInactive_WhenOnPointsPage()
+    {
+        // Arrange
+        _ctx.Services.GetRequiredService<NavigationManager>().NavigateTo("hall-of-fame/points");
+
+        // Act
+        var cut = _ctx.Render<NavMenu>();
+
+        // Assert
+        cut.Find("a.neba-dropdown-link[href='hall-of-fame']").ClassList.ShouldNotContain("active");
+        cut.Find("a.neba-dropdown-link[href='hall-of-fame/points']").ClassList.ShouldContain("active");
+    }
+
     [Fact(DisplayName = "CloseMenu should collapse open dropdowns and restore body scrolling through JS")]
     public async Task CloseMenu_ShouldResetMenuUiThroughJs_WhenCalled()
     {

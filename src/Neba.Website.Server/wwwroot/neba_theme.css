@@ -7,6 +7,9 @@
   --neba-blue-100: #D4D9F5;
   --neba-blue-brand: #052767;
 
+  --neba-gold: #E0B454;
+  --neba-gold-deep: #B98C2D;
+
   --neba-gray-050: #FAFAFA;
   --neba-gray-100: #F5F5F5;
   --neba-gray-200: #E5E5E5;
@@ -1680,4 +1683,48 @@ a:focus-visible {
   .neba-skeleton {
     animation: none !important;
   }
+}
+
+/* A card that links to, or opens, a page that helps a visitor (rules, eligibility checker). */
+.neba-help-card {
+  display: flex;
+  gap: 0.875rem;
+  align-items: flex-start;
+  width: 100%;
+  padding: 1rem 1.125rem;
+  background: var(--neba-bg-panel);
+  border: 1px solid var(--neba-border);
+  border-radius: var(--neba-radius-lg);
+  color: var(--neba-text);
+  font: inherit;
+  text-align: left;
+  text-decoration: none;
+  cursor: pointer;
+  transition: border-color var(--neba-transition), box-shadow var(--neba-transition);
+}
+
+.neba-help-card:hover {
+  border-color: var(--neba-blue-300);
+  box-shadow: 0 8px 18px -8px rgba(5, 39, 103, 0.2);
+}
+
+.neba-help-card:focus-visible {
+  outline: 3px solid var(--neba-blue-600);
+  outline-offset: 2px;
+}
+
+.neba-help-card .material-symbols-outlined {
+  font-size: 1.75rem;
+  color: var(--neba-blue-600);
+}
+
+.neba-help-card__text strong {
+  display: block;
+  font-family: var(--neba-font-display);
+  color: var(--neba-blue-brand);
+}
+
+.neba-help-card__text span {
+  font-size: 0.875rem;
+  color: var(--neba-text-muted);
 }

@@ -64,3 +64,17 @@ test.describe('Clear Cache (authenticated, with permission)', () => {
     await expect(page.locator('.neba-toast-message')).toContainText('403');
   });
 });
+
+test.describe('Change Password menu item', () => {
+  test.use({ viewport: { width: 1200, height: 800 } });
+
+  test('is shown to a signed-in user with no permissions', async ({ page }) => {
+    await page.request.post('/__test/login?permissions=');
+
+    await page.goto('/');
+    await page.waitForSelector('.account-menu');
+
+    await page.getByRole('button', { name: 'Account menu' }).hover();
+    await expect(page.getByRole('link', { name: 'Change Password' })).toHaveAttribute('href', '/account/change-password');
+  });
+});

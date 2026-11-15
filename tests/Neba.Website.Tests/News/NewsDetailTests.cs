@@ -396,6 +396,91 @@ public sealed class NewsDetailTests : IDisposable
         cut.Find("span.article-status-badge").ShouldNotBeNull();
     }
 
+    // ── Sidebar: Announced ───────────────────────────────────────────────────
+
+    [Fact(DisplayName = "Should show the announced date and time when the user can manage articles")]
+    public void Render_ShouldShowAnnouncedDateAndTime_WhenUserCanManageArticles()
+    {
+        // Arrange
+        _authContext.SetAuthorized("test-user");
+        _authContext.SetPolicies(Permissions.CanManageArticlesPolicyName);
+        var article = ArticleDetailResponseFactory.Create(
+            announcedAtUtc: new DateTimeOffset(2026, 10, 20, 18, 2, 0, TimeSpan.Zero));
+        SetupSuccessResponse(article);
+
+        // Act
+        var cut = _ctx.Render<NewsDetail>(p => p.Add(x => x.Slug, article.Slug));
+
+        // Assert
+        cut.FindAll(".sidebar-meta-label").Select(label => label.TextContent).ShouldContain("Announced");
+        cut.Markup.ShouldContain("October 20, 2026 6:02 PM");
+    }
+
+    [Fact(DisplayName = "Should show 'Not announced' when the article has no announced time")]
+    public void Render_ShouldShowNotAnnounced_WhenAnnouncedAtIsNull()
+    {
+        // Arrange
+        _authContext.SetAuthorized("test-user");
+        _authContext.SetPolicies(Permissions.CanManageArticlesPolicyName);
+        var article = ArticleDetailResponseFactory.Create(announcedAtUtc: null);
+        SetupSuccessResponse(article);
+
+        // Act
+        var cut = _ctx.Render<NewsDetail>(p => p.Add(x => x.Slug, article.Slug));
+
+        // Assert
+        cut.Find(".sidebar-meta-value--muted").TextContent.ShouldBe("Not announced");
+    }
+
+    [Fact(DisplayName = "Should hide the Announced row from users without article management permission")]
+    public void Render_ShouldHideAnnouncedRow_WhenUserCannotManageArticles()
+    {
+        // Arrange: signed in, but without the CanManageArticles policy; the response carries a value anyway
+        _authContext.SetAuthorized("test-user");
+        var article = ArticleDetailResponseFactory.Create(
+            announcedAtUtc: new DateTimeOffset(2026, 10, 20, 18, 2, 0, TimeSpan.Zero));
+        SetupSuccessResponse(article);
+
+        // Act
+        var cut = _ctx.Render<NewsDetail>(p => p.Add(x => x.Slug, article.Slug));
+
+        // Assert
+        cut.FindAll(".sidebar-meta-label").Select(label => label.TextContent).ShouldNotContain("Announced");
+        cut.Markup.ShouldNotContain("6:02 PM");
+    }
+
+    [Fact(DisplayName = "Should hide the Announced row from anonymous readers")]
+    public void Render_ShouldHideAnnouncedRow_WhenUserIsAnonymous()
+    {
+        // Arrange
+        var article = ArticleDetailResponseFactory.Create();
+        SetupSuccessResponse(article);
+
+        // Act
+        var cut = _ctx.Render<NewsDetail>(p => p.Add(x => x.Slug, article.Slug));
+
+        // Assert
+        cut.FindAll(".sidebar-meta-label").Select(label => label.TextContent).ShouldBe(["Published"]);
+    }
+
+    [Fact(DisplayName = "Should show the announced time in the viewer's local timezone")]
+    public void Render_ShouldShowAnnouncedTime_InViewerLocalTimezone()
+    {
+        // Arrange: US Eastern is 4 hours behind UTC in summer
+        _authContext.SetAuthorized("test-user");
+        _authContext.SetPolicies(Permissions.CanManageArticlesPolicyName);
+        var utc = new DateTimeOffset(2026, 10, 20, 18, 2, 0, TimeSpan.Zero);
+        _mockClientTimeZoneService.Setup(s => s.ToLocalAsync(utc)).ReturnsAsync(utc.AddHours(-4));
+        var article = ArticleDetailResponseFactory.Create(announcedAtUtc: utc);
+        SetupSuccessResponse(article);
+
+        // Act
+        var cut = _ctx.Render<NewsDetail>(p => p.Add(x => x.Slug, article.Slug));
+
+        // Assert
+        cut.Markup.ShouldContain("October 20, 2026 2:02 PM");
+    }
+
     // ── Sidebar: Danger zone / delete ─────────────────────────────────────────
 
     [Fact(DisplayName = "Should not show delete button when user lacks DeleteArticle permission")]

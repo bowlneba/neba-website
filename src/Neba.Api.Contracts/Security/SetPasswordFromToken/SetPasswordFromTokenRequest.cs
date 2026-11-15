@@ -18,4 +18,10 @@ public sealed record SetPasswordFromTokenRequest
     /// <summary>The new password to set.</summary>
     [PrivateData]
     public required string NewPassword { get; init; }
+
+    /// <summary>
+    /// Which kind of link the token came from (see <see cref="PasswordTokenPurpose"/>). Missing means a
+    /// link emailed before this field existed, which keeps working until it expires.
+    /// </summary>
+    public string? Purpose { get; init; }
 }

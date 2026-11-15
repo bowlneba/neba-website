@@ -28,6 +28,13 @@ This means a new lightweight query for an existing resource **cannot reuse the s
 - **Testing gotcha**: `FakeLogger<T>` constructed directly via `new FakeLogger<T>()` bypasses the DI logging pipeline entirely and never redacts anything, even with a classification attribute on the parameter — because it isn't wrapped by `ExtendedLogger`. Tests asserting on redaction must build a small DI container instead: `new ServiceCollection().AddLogging(l => l.AddFakeLogging().EnableRedaction()).AddRedaction(...).BuildServiceProvider()`, then resolve `ILogger<T>` and `IServiceProvider.GetFakeLogCollector()` from it. See `GoogleWorkspaceEmailSenderTests.SendAsync_ShouldMaskRecipientAddress_InFormattedMessageAndStructuredState` for the pattern. Tests that don't assert on log content (e.g. constructed with a plain `new FakeLogger<T>()`) are unaffected and don't need this.
 - `RefitSettings.ExceptionRedactor` in `src/Neba.Website.Server/Services/ApiServicesConfiguration.cs` is an unrelated, pre-existing HTTP-header-scrubbing mechanism — do not confuse it with this feature despite the similar name.
 
+### Password recovery: deliberate exceptions and gotchas
+
+- `ForgotPasswordCommandHandlerLogMessages.LogResetRequestedForUnknownEmail` logs the raw email **without** `[PersonalData]`, on purpose: the address is the evidence needed to recognise and block an enumeration probe. The log also carries a hash, the domain, the client IP and a cleaned user agent. Don't "fix" it, and don't copy the pattern to other log messages.
+- The invite and reset token providers need **different `Name` values** (`InviteTokenProviderOptions.Name`). `DataProtectorTokenProvider` derives its protector from the name, so with the default name a 1-hour reset token also verifies as a 1-day invite token (`HandleAsync_ShouldReturnInvalidOrExpiredToken_WhenResetTokenUsedWithInvitePurpose` guards this).
+- `UserManager.ChangePasswordAsync` does not count wrong passwords toward lockout. `ChangePasswordCommandHandler` checks the current password with `SignInManager.CheckPasswordSignInAsync(lockoutOnFailure: true)` first. Keep that call.
+- The API only sees the visitor's IP because `Neba.Website.Server` forwards `X-Forwarded-For` (`ClientIpForwardingHandler`) and the API trusts it from private networks. Check `RemoteIpAddress` in a real environment before relying on per-IP limits.
+
 ### FusionCache Deserialization Recovery
 
 - Cached query DTOs should use serialization-safe types; do not store domain `SmartEnum` instances directly in cached DTO properties.
@@ -114,3 +121,43 @@ Confirmed and fixed for `Sponsor.PhoneNumbers`, `Sponsor.TournamentsSponsored`, 
 - `Microsoft.Extensions.Diagnostics.ResourceMonitoring` supports Linux and Windows only, so registration is skipped on macOS. Its instrument names are internal, so the meter name is a literal in `TelemetryConfiguration`. `IResourceMonitor` is obsolete; use the instruments.
 - Not adopted: `Microsoft.AspNetCore.Diagnostics.Middleware` request logging. Audit.WebApi (`Neba.Api/Auditing`) and OpenTelemetry request telemetry already record each request.
 
+## ImageSharp license (Six Labors)
+
+`SixLabors.ImageSharp` is licensed. A **Release** build without a license fails (`No Six Labors license found`); Debug builds only warn, so a missing license can pass locally and fail in CI.
+
+- **Local:** put `sixlabors.lic` in the repo root. It is git-ignored; never commit it. `Directory.Build.props` points `SixLaborsLicenseFile` at it, because the package only searches inside each project folder.
+- **CI/CD:** the `SIXLABORS_LICENSE_KEY` repository secret holds the full text of the license file. `ci.yml`, `sonarcloud.yml`, `cd.yml`, and `hotfix.yml` export it as an environment variable, and `Directory.Build.props` maps it to `SixLaborsLicenseKey`. New workflows that build or publish `Neba.Api` need the same. Dependabot runs need the secret under Dependabot secrets too.
+- **Use:** `IImageResizer` (`ImageSharpResizer`) decodes, applies EXIF orientation, shrinks to a maximum side (never enlarges), strips EXIF/XMP/IPTC, and re-encodes in the decoded format. It judges the type by the decoded format, not the client's `Content-Type`. Stage its output with the `Stream` overload of `IUploadStagingService.StageUploadAsync`.
+
+### Bowler memberships
+
+- A bowler owns its memberships (`Bowler.AddMembership`). The eligibility rules read the loaded `Bowler.Memberships`, so every handler that adds one must load the bowler with `Include(b => b.Memberships)`. A bowler loaded without them passes every rule.
+- `Bowler.AddLegacyMembership` copies a legacy record as stored (no eligibility rules, cost and dates untouched). Skip legacy `System Import` (id 8) before calling; resolve the type with `MembershipType.TryFromLegacyId`.
+
+### Legacy season stats calculator performance
+
+Unmeasured, sized by reading the code (about 1k members, a few hundred bowlers per season, a few thousand qualifying rows): `LegacySeasonStatsCalculator.Compute` is fast enough today. We plan to move stats calculation off the Software, so if stats generation slows down or you port it, look here first:
+
+- `ComputeFieldAverage` filters all qualifying rows once per bowler (O(bowlers x rows)); sum per tournament once instead.
+- `eligibleTournamentIdsForBowler` is a `List<int>` used in `Contains` inside `Where`; use a `HashSet<int>`.
+- `GenerateSeasonStatsJob` loads every membership for the season's bowlers (all years), and rewrites the whole season on each tournament completion.
+- Before optimizing, time the Software queries, `Compute` and `SaveChangesAsync` separately; the job has no per-phase timing yet.
+
+## Team eligibility feature
+
+- `EF.Functions.ILike(match, pattern)` with no escape argument did not honor a backslash-escaped `%`, `_` or `\` against Npgsql (a name with a literal `%` never matched). Pass the escape character: `ILike(match, pattern, "\\")`. The bowler search handler does, and its tests cover each wildcard.
+- A class a use case needs from another feature belongs in the using feature's namespace. `FeatureBoundaryTests` reads a feature's root namespace (`Neba.Api.Features.Bowlers`), not only its use-case folders, as use-case code. So `BowlerTitlesReader`, which the tournament eligibility check needs, lives under `Features/Tournaments` instead of `Features/Bowlers`.
+- `Tournament` is public, so a type in its `Create`/`Update` signature (`PreviousTournamentFacts`) must be public too; `PropertyBuilder.IsUlid` needs a non-nullable struct, so a nullable typed ID column (`PreviousTournamentId`) is configured with `HasColumnName`/`HasMaxLength`/`IsFixedLength` directly.
+- A bowler search or any per-keystroke query needs its own rate-limit policy (`bowler-search`, 60 a minute, `RateLimiting:BowlerSearch*`); the group's public policy is 100 a minute.
+
+## ULID validation
+
+- `Ulid.TryParse` (Ulid 1.4.1) returns true for any 26 characters, even `!!` or spaces, so a `.Must(id => Ulid.TryParse(id, out _))` validator rule rejects nothing but wrong length. A malformed ID parses to a garbage ULID and the handler returns `NotFound`. Use a strict pattern if a 400 is needed.
+- A cached query that reads bowler data (names, memberships) must carry the `neba:bowlers` tag; the bowler and membership jobs evict that tag only.
+
+## Known performance limits (reviewed 2026-11-15, nothing to do at current table sizes)
+
+Found in the v1.2.0 performance review. Each is fine at today's and the near-term projected row counts. Look here first if search or the Hall of Fame page slows down.
+
+- **Bowler search scans the table.** `SearchBowlersQueryHandler` runs two `ILike` matches joined by `OR`: `FirstName + " " + LastName`, and `Nickname + " " + LastName` for bowlers with a nickname. Both start with a leading `%`, so the `(LastName, FirstName)` index cannot serve either. Results stop at 20, the picker waits for 3 characters and debounces 300 ms, and the `bowler-search` rate limit applies. If the `bowlers` table reaches tens of thousands of rows, add a `pg_trgm` GIN index on **each** concatenated expression. An index on only one leaves the other branch of the `OR` scanning the whole table.
+- **Hall of Fame points caches evict on every bowler change.** `ListPoints` and each `PointsDetail(bowlerId)` carry the shared `neba:bowlers` tag, so any bowler or membership job evicts all of them. A list miss runs about 6 queries (every title win, award and induction). If sync windows cause repeated cold loads, evict only on name or membership-type changes instead of the shared tag.

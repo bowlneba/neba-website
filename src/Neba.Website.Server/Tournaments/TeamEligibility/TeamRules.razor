@@ -1,0 +1,84 @@
+@using ErrorOr
+@using Neba.Website.Server.Documents
+@implements IDisposable
+
+@inject IRulesSectionService RulesSectionService
+@inject ILogger<TeamRules> Logger
+
+@if (_anchor is not null)
+{
+    <section class="team-rules" aria-labelledby="team-rules-heading">
+        <h2 id="team-rules-heading" class="team-rules__title">Team rules</h2>
+
+        @if (_isLoading)
+        {
+            <p class="team-rules__status">Loading the rules...</p>
+        }
+        else if (_content is { } content)
+        {
+            <div class="team-rules__body">@content</div>
+        }
+        else
+        {
+            <p class="team-rules__status">
+                We couldn't load the rules. <a class="neba-link" href="@_anchor.FullRulesHref">Read the full rules</a>.
+            </p>
+        }
+    </section>
+}
+
+@code {
+    private TeamRulesAnchor? _anchor;
+    private string? _loadedFor;
+    private bool _isLoading;
+    private MarkupString? _content;
+    private readonly CancellationTokenSource _cts = new();
+
+    [Parameter, EditorRequired]
+    public string TournamentType { get; set; } = default!;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (_loadedFor == TournamentType)
+        {
+            return;
+        }
+
+        _loadedFor = TournamentType;
+        _content = null;
+        _anchor = TournamentRulesAnchors.TryGetTeamRules(TournamentType, out var anchor) ? anchor : null;
+
+        if (_anchor is null)
+        {
+            return;
+        }
+
+        _isLoading = true;
+
+        try
+        {
+            var result = await RulesSectionService.GetTeamRulesAsync(_anchor, _cts.Token);
+
+            // The extracted HTML comes from the API's own rules document, as in TournamentRulesLink.
+            _content = result.IsError ? null : new MarkupString(result.Value.Html);
+        }
+        catch (OperationCanceledException) when (_cts.IsCancellationRequested)
+        {
+            // The component was disposed; nothing left to update.
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "[TeamRules] Failed to load the team rules for {TournamentType}.", TournamentType);
+        }
+        finally
+        {
+            _isLoading = false;
+        }
+    }
+
+    public void Dispose()
+    {
+        _cts.Cancel();
+        _cts.Dispose();
+    }
+}

@@ -67,9 +67,10 @@ internal sealed class DiscordJobFailureFilter(IDiscordNotifier discordNotifier) 
             DiscordMessageRedactor.Redact(failedState.Exception.Message),
             new Dictionary<string, string>
             {
-                ["JobName"] = method is not null
-                    ? $"{method.DeclaringType?.Name}.{method.Name}"
-                    : context.BackgroundJob.Id
+                ["JobName"] = context.BackgroundJob.Job?.Args.OfType<IBackgroundJob>().FirstOrDefault()?.JobName
+                    ?? (method is not null
+                        ? $"{method.DeclaringType?.Name}.{method.Name}"
+                        : context.BackgroundJob.Id)
             });
 
         // Fire-and-forget rather than blocking this Hangfire worker thread on the Discord HTTP

@@ -71,6 +71,7 @@ internal static class ApiServicesConfiguration
             services.AddScoped<ISessionCookieSync, SessionCookieSync>();
             services.TryAddSingleton(TimeProvider.System);
             services.AddTransient<BearerTokenHandler>();
+            services.AddTransient<ClientIpForwardingHandler>();
             services.AddMemoryCache();
 
             services.RegisterApiEndpoint<IDocumentsApi>(resilience: options =>
@@ -109,6 +110,7 @@ internal static class ApiServicesConfiguration
                     var apiConfig = sp.GetRequiredService<NebaApiConfiguration>();
                     client.BaseAddress = apiConfig.BaseUrl;
                 })
+                .AddHttpMessageHandler<ClientIpForwardingHandler>()
                 .AddHttpMessageHandler<BearerTokenHandler>();
 
             if (resilience is not null)

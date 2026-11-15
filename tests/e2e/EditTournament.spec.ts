@@ -2,6 +2,8 @@ import { test, expect } from '@playwright/test';
 
 test.describe.configure({ mode: 'serial' });
 
+import { MOCK_TOURNAMENT_TEAM_ID } from './mock-api/mock-api-server';
+
 const MOCK_TOURNAMENT_ID = '01JX0000000000000000000010';
 
 test.describe('Tournament detail page — edit tournament (unauthenticated)', () => {
@@ -106,5 +108,30 @@ test.describe('Tournament detail page — edit tournament (authenticated)', () =
     await page.locator('button.confirm-action-modal-confirm').click();
 
     await expect(page).toHaveURL(new RegExp(`/tournaments/${MOCK_TOURNAMENT_ID}$`));
+  });
+});
+
+test.describe('Tournament detail page — previous tournament on the edit form', () => {
+  test.use({ viewport: { width: 1200, height: 800 } });
+
+  test.beforeEach(async ({ page }) => {
+    await page.request.post('/__test/login?permissions=Tournaments.EditTournament');
+  });
+
+  test('keeps a saved previous tournament that is outside the picker window', async ({ page }) => {
+    await page.goto(`/tournaments/${MOCK_TOURNAMENT_TEAM_ID}/edit`);
+    await page.waitForSelector('#name');
+
+    const picker = page.locator('#previous-tournament');
+    await expect(picker).toHaveValue('01JX0000000000000000000089');
+    await expect(picker.locator('option:checked')).toHaveText('Saved selection');
+    await expect(page.locator('[role="status"]')).toHaveCount(0);
+  });
+
+  test('shows no previous tournament selected when the tournament has none', async ({ page }) => {
+    await page.goto(`/tournaments/${MOCK_TOURNAMENT_ID}/edit`);
+    await page.waitForSelector('#name');
+
+    await expect(page.locator('#previous-tournament')).toHaveValue('');
   });
 });

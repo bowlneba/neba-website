@@ -1,0 +1,121 @@
+@using Neba.Api.Contracts.HallOfFame
+@using Neba.Website.Server.Services
+
+@inject ApiExecutor ApiExecutor
+@inject IHallOfFameApi HallOfFameApi
+
+@if (_state == LoaderState.Loading)
+{
+    <div class="pm-state">
+        <NebaLoadingIndicator />
+        <div>Loading points…</div>
+    </div>
+}
+else if (_state == LoaderState.Error)
+{
+    <div class="pm-state">
+        <h3>Could not load points</h3>
+        <p>Something went wrong fetching this bowler's record.</p>
+        <button type="button" class="pm-retry" @onclick="RetryAsync">Retry</button>
+    </div>
+}
+else if (_data is not null)
+{
+    if (EmptyContent is not null && _data.Breakdown.Count == 0 && _data.MembershipYears.Count == 0)
+    {
+        @EmptyContent
+    }
+    else
+    {
+        <HallOfFamePointsDetailView Detail="@_data" Requirements="@Requirements" Layout="@Layout" />
+    }
+}
+
+@code {
+    [Parameter, EditorRequired]
+    public string BowlerId { get; set; } = string.Empty;
+
+    /// <summary>The thresholds, when the caller has them. Null drops the "of 36" and "needed" text.</summary>
+    [Parameter]
+    public HallOfFamePointRequirements? Requirements { get; set; }
+
+    [Parameter]
+    public HallOfFamePointsDetailLayout Layout { get; set; }
+
+    /// <summary>Shown instead of the data view when the bowler has no points and no membership years.</summary>
+    [Parameter]
+    public RenderFragment? EmptyContent { get; set; }
+
+    /// <summary>Raised after each successful load, so a caller can read the detail (for example the inducted line).</summary>
+    [Parameter]
+    public EventCallback<HallOfFamePointsDetailViewModel> OnLoaded { get; set; }
+
+    /// <summary>Optional store of loaded details by bowler id. A caller that outlives the loader (a closing modal) passes one so a reopen skips the fetch.</summary>
+    [Parameter]
+    public IDictionary<string, HallOfFamePointsDetailViewModel>? Cache { get; set; }
+
+    private enum LoaderState { Loading, Error, Data }
+
+    private LoaderState _state = LoaderState.Loading;
+    private HallOfFamePointsDetailViewModel? _data;
+    private string? _lastLoadedBowlerId;
+    private int _loadVersion;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (string.IsNullOrEmpty(BowlerId) || BowlerId == _lastLoadedBowlerId)
+        {
+            return;
+        }
+
+        await LoadAsync();
+    }
+
+    private async Task LoadAsync()
+    {
+        // Each call takes a version; a response that arrives after a newer call started is dropped.
+        var version = ++_loadVersion;
+        var bowlerId = BowlerId;
+        _lastLoadedBowlerId = bowlerId;
+
+        if (Cache is not null && Cache.TryGetValue(bowlerId, out var cached))
+        {
+            _data = cached;
+            _state = LoaderState.Data;
+            await OnLoaded.InvokeAsync(cached);
+            return;
+        }
+
+        _state = LoaderState.Loading;
+        _data = null;
+        StateHasChanged();
+
+        var result = await ApiExecutor.ExecuteAsync(
+            "HallOfFame",
+            "GetHallOfFamePointsDetail",
+            ct => HallOfFameApi.GetHallOfFamePointsDetailAsync(bowlerId, ct));
+
+        if (version != _loadVersion)
+        {
+            return;
+        }
+
+        if (result.IsError)
+        {
+            _state = LoaderState.Error;
+            return;
+        }
+
+        var data = result.Value.ToViewModel();
+        _data = data;
+        _state = LoaderState.Data;
+        Cache?[bowlerId] = data;
+        await OnLoaded.InvokeAsync(data);
+    }
+
+    private Task RetryAsync()
+    {
+        _lastLoadedBowlerId = null;
+        return LoadAsync();
+    }
+}

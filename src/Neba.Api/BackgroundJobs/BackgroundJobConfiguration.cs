@@ -13,6 +13,7 @@ using Microsoft.Extensions.Options;
 
 using Neba.Api.Auditing;
 using Neba.Api.Discord;
+using Neba.Api.Security;
 
 using Npgsql;
 
@@ -106,11 +107,17 @@ internal static class BackgroundJobsConfiguration
                 HangfireSettings settings = serviceProvider.GetRequiredService<HangfireSettings>();
                 var dataSource = serviceProvider.GetRequiredService<NpgsqlDataSource>();
 
+                // Hangfire registers its own AutomaticRetryAttribute (10 attempts) by default. Before
+                // OptOutAutomaticRetryAttribute, our AutomaticRetryAttribute replaced it because Hangfire keeps one
+                // filter per type. The wrapper is a different type, so the default must go or it would still retry
+                // jobs marked [NoAutomaticRetry]. Removing is idempotent; UseFilter below is just as process-wide.
+                GlobalJobFilters.Filters.Remove<AutomaticRetryAttribute>();
+
                 options
                     .SetDataCompatibilityLevel(CompatibilityLevel.Version_180)
                     .UseSimpleAssemblyNameTypeSerializer()
                     .UseRecommendedSerializerSettings()
-                    .UseFilter(new AutomaticRetryAttribute { Attempts = settings.AutomaticRetryAttempts })
+                    .UseFilter(new OptOutAutomaticRetryAttribute(new AutomaticRetryAttribute { Attempts = settings.AutomaticRetryAttempts }))
                     .UseFilter(new HangfireJobExpirationFilterAttribute(settings))
                     .UseFilter(new HangfireConsoleServerFilter())
                     .UseFilter(new DiscordJobFailureFilter(serviceProvider.GetRequiredService<IDiscordNotifier>()))
@@ -176,8 +183,13 @@ internal static class BackgroundJobsConfiguration
             // This allows test to remove Hangfire services without breaking middleware
             if (app.Services.GetService(typeof(JobStorage)) is not null)
             {
+                var websiteSettings = app.Services.GetService<WebsiteSettings>();
+
                 app.UseHangfireDashboard("/background-jobs", new DashboardOptions
                 {
+                    // "Back to site" link: point at the website, not the API. Tests that remove
+                    // security services leave this unset, which keeps Hangfire's default ("/").
+                    AppPath = websiteSettings?.BaseUrl,
                     Authorization = [new HangfireApiDashboardAuthorizationFilter()],
                     DashboardTitle = "Background Jobs - API",
                     StatsPollingInterval = 5000,

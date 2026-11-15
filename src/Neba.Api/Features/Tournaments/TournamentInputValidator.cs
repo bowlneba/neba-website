@@ -46,6 +46,12 @@ internal sealed class TournamentInputValidator : AbstractValidator<TournamentInp
             .WithMessage("External registration URL must be an absolute URL.")
             .When(t => t.ExternalRegistrationUrl is not null);
 
+        RuleFor(t => t.PreviousTournamentId)
+            .Length(26)
+            .WithErrorCode($"{errorCodePrefix}.PreviousTournamentIdInvalidLength")
+            .WithMessage("Previous tournament ID must be a 26-character ULID.")
+            .When(t => !string.IsNullOrWhiteSpace(t.PreviousTournamentId));
+
         RuleFor(t => t.PatternLengthCategory)
             .Must(c => PatternLengthCategory.List.Any(known => known.Name == c))
             .WithErrorCode($"{errorCodePrefix}.PatternLengthCategoryInvalid")

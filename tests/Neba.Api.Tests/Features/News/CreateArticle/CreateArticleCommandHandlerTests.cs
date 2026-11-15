@@ -2,8 +2,13 @@ using ErrorOr;
 
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Options;
+using Microsoft.Extensions.Time.Testing;
 
+using Neba.Api.BackgroundJobs;
 using Neba.Api.Database;
+using Neba.Api.Features.News;
+using Neba.Api.Features.News.AnnounceArticleToDiscord;
 using Neba.Api.Features.News.CreateArticle;
 using Neba.Api.Features.News.Domain;
 using Neba.Api.Features.Storage.Domain;
@@ -45,10 +50,27 @@ public sealed class CreateArticleCommandHandlerTests(AppDbContextFixture fixture
         await _serviceProvider.DisposeAsync();
     }
 
-    private CreateArticleCommandHandler CreateHandler()
+    private static readonly DateTimeOffset Now = new(2026, 10, 27, 12, 0, 0, TimeSpan.Zero);
+    private static readonly TimeSpan AnnouncementDelay = TimeSpan.FromSeconds(120);
+
+    private CreateArticleCommandHandler CreateHandler(IBackgroundJobScheduler? backgroundJobScheduler = null)
     {
         var cache = _serviceProvider.GetRequiredService<IFusionCache>();
-        return new CreateArticleCommandHandler(_dbContext, cache);
+        var scheduler = backgroundJobScheduler ?? new Mock<IBackgroundJobScheduler>(MockBehavior.Strict).Object;
+        var settings = Options.Create(new NewsAnnouncementSettings { DelaySeconds = (int)AnnouncementDelay.TotalSeconds });
+
+        return new CreateArticleCommandHandler(_dbContext, scheduler, new FakeTimeProvider(Now), settings, cache);
+    }
+
+    private static Mock<IBackgroundJobScheduler> CreateSchedulerCapturing(List<(AnnounceArticleToDiscordJob Job, DateTimeOffset At)> scheduled)
+    {
+        var scheduler = new Mock<IBackgroundJobScheduler>(MockBehavior.Strict);
+        scheduler
+            .Setup(s => s.Schedule(It.IsAny<AnnounceArticleToDiscordJob>(), It.IsAny<DateTimeOffset>()))
+            .Callback<AnnounceArticleToDiscordJob, DateTimeOffset>((job, at) => scheduled.Add((job, at)))
+            .Returns("job-1");
+
+        return scheduler;
     }
 
     private static CreateArticleCommand ValidCommand(
@@ -240,7 +262,8 @@ public sealed class CreateArticleCommandHandlerTests(AppDbContextFixture fixture
     {
         // Arrange
         var ct = TestContext.Current.CancellationToken;
-        var handler = CreateHandler();
+        var scheduler = CreateSchedulerCapturing([]);
+        var handler = CreateHandler(scheduler.Object);
         var command = ValidCommand(
             title: "My New Article",
             slug: "my-new-article",
@@ -519,5 +542,96 @@ public sealed class CreateArticleCommandHandlerTests(AppDbContextFixture fixture
         var stillPending = await _dbContext.PendingUploads.AsNoTracking()
             .AnyAsync(p => p.Container == "unrelated-container" && p.Path == "unrelated-file.jpg", ct);
         stillPending.ShouldBeTrue();
+    }
+
+    [Fact(DisplayName = "HandleAsync schedules the announcement after a future publish date when the article is published")]
+    public async Task HandleAsync_ShouldScheduleAnnouncementAfterPublishDate_WhenPublishedWithFutureDate()
+    {
+        // Arrange
+        var ct = TestContext.Current.CancellationToken;
+        var scheduled = new List<(AnnounceArticleToDiscordJob Job, DateTimeOffset At)>();
+        var handler = CreateHandler(CreateSchedulerCapturing(scheduled).Object);
+        var publishDate = Now.AddDays(3);
+        var command = ValidCommand(
+            slug: "scheduled-announcement-article",
+            publicationStatus: PublicationStatus.Published,
+            publishDate: publishDate);
+
+        // Act
+        var result = await handler.HandleAsync(command, ct);
+
+        // Assert
+        result.IsError.ShouldBeFalse();
+        var (job, at) = scheduled.ShouldHaveSingleItem();
+        at.ShouldBe(publishDate + AnnouncementDelay);
+        job.ArticleId.ShouldBe(result.Value.Id);
+        job.ExpectedPublishDateUtc.ShouldBe(publishDate);
+    }
+
+    [Fact(DisplayName = "HandleAsync schedules the announcement after now when the publish date has passed")]
+    public async Task HandleAsync_ShouldScheduleAnnouncementAfterNow_WhenPublishedWithPastDate()
+    {
+        // Arrange
+        var ct = TestContext.Current.CancellationToken;
+        var scheduled = new List<(AnnounceArticleToDiscordJob Job, DateTimeOffset At)>();
+        var handler = CreateHandler(CreateSchedulerCapturing(scheduled).Object);
+        var publishDate = Now.AddDays(-3);
+        var command = ValidCommand(
+            slug: "past-announcement-article",
+            publicationStatus: PublicationStatus.Published,
+            publishDate: publishDate);
+
+        // Act
+        var result = await handler.HandleAsync(command, ct);
+
+        // Assert
+        result.IsError.ShouldBeFalse();
+        var (job, at) = scheduled.ShouldHaveSingleItem();
+        at.ShouldBe(Now + AnnouncementDelay);
+        job.ExpectedPublishDateUtc.ShouldBe(publishDate);
+    }
+
+    [Fact(DisplayName = "HandleAsync does not schedule an announcement for a draft")]
+    public async Task HandleAsync_ShouldNotScheduleAnnouncement_WhenArticleIsDraft()
+    {
+        // Arrange
+        var ct = TestContext.Current.CancellationToken;
+        var scheduler = new Mock<IBackgroundJobScheduler>(MockBehavior.Strict);
+        var handler = CreateHandler(scheduler.Object);
+        var command = ValidCommand(
+            slug: "draft-announcement-article",
+            publicationStatus: PublicationStatus.Draft,
+            publishDate: Now.AddDays(-1));
+
+        // Act
+        var result = await handler.HandleAsync(command, ct);
+
+        // Assert
+        result.IsError.ShouldBeFalse();
+        scheduler.VerifyNoOtherCalls();
+    }
+
+    [Fact(DisplayName = "HandleAsync schedules the job with a publish date truncated to the microsecond the database stores")]
+    public async Task HandleAsync_ShouldTruncatePublishDateToMicroseconds_InScheduledJob()
+    {
+        // Arrange
+        var ct = TestContext.Current.CancellationToken;
+        var scheduled = new List<(AnnounceArticleToDiscordJob Job, DateTimeOffset At)>();
+        var handler = CreateHandler(CreateSchedulerCapturing(scheduled).Object);
+        var publishDate = Now.AddDays(1).AddTicks(7);
+        var command = ValidCommand(
+            slug: "precision-announcement-article",
+            publicationStatus: PublicationStatus.Published,
+            publishDate: publishDate);
+
+        // Act
+        var result = await handler.HandleAsync(command, ct);
+
+        // Assert
+        result.IsError.ShouldBeFalse();
+        var (job, _) = scheduled.ShouldHaveSingleItem();
+        job.ExpectedPublishDateUtc.ShouldBe(Now.AddDays(1));
+        var persisted = await _dbContext.Articles.AsNoTracking().SingleAsync(a => a.Slug == "precision-announcement-article", ct);
+        persisted.PublishDateUtc.ShouldBe(job.ExpectedPublishDateUtc);
     }
 }

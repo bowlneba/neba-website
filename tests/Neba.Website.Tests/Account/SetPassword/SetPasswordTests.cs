@@ -106,10 +106,90 @@ public sealed class SetPasswordTests : IDisposable
         nav.Uri.ShouldBe(originalUri);
     }
 
-    private IRenderedComponent<SetPasswordPage> RenderSetPassword()
+    [Theory(DisplayName = "Should show the reset or invite copy based on the reason in the link")]
+    [InlineData("&reason=reset", "Choose a New Password")]
+    [InlineData("&reason=invite", "Set Your Password")]
+    [InlineData("", "Set Your Password")]
+    [InlineData("&reason=bogus", "Set Your Password")]
+    public void Render_ShouldShowCopyForLinkType(string reasonQuery, string heading)
+    {
+        // Arrange & Act
+        var cut = RenderSetPassword(reasonQuery);
+
+        // Assert
+        cut.Find("h1").TextContent.ShouldBe(heading);
+    }
+
+    [Theory(DisplayName = "Should send Purpose only for a known reason")]
+    [InlineData("&reason=reset", "reset")]
+    [InlineData("&reason=invite", "invite")]
+    [InlineData("&reason=bogus", null)]
+    [InlineData("", null)]
+    public async Task Submit_ShouldSendPurpose_OnlyForKnownReason(string reasonQuery, string? expected)
+    {
+        // Arrange
+        Neba.Api.Contracts.Security.SetPasswordFromToken.SetPasswordFromTokenRequest? sent = null;
+        using var response = new StubApiResponse<object> { IsSuccessStatusCode = true };
+        _mockApi
+            .Setup(api => api.SetPasswordFromTokenAsync(It.IsAny<Neba.Api.Contracts.Security.SetPasswordFromToken.SetPasswordFromTokenRequest>(), It.IsAny<CancellationToken>()))
+            .Callback<Neba.Api.Contracts.Security.SetPasswordFromToken.SetPasswordFromTokenRequest, CancellationToken>((request, _) => sent = request)
+            .ReturnsAsync(response);
+        var cut = RenderSetPassword(reasonQuery);
+        await cut.InvokeAsync(() => cut.FindAll("input[type=password]")[0].Input("GoodPassword1"));
+        await cut.InvokeAsync(() => cut.FindAll("input[type=password]")[1].Input("GoodPassword1"));
+
+        // Act
+        await cut.Find("form").SubmitAsync();
+
+        // Assert
+        sent.ShouldNotBeNull();
+        sent.Purpose.ShouldBe(expected);
+    }
+
+    [Fact(DisplayName = "Should offer a new link when a reset link is invalid or expired")]
+    public async Task Submit_ShouldLinkToForgotPassword_WhenResetTokenInvalid()
+    {
+        // Arrange
+        using var response = new StubApiResponse<object> { IsSuccessStatusCode = false };
+        _mockApi
+            .Setup(api => api.SetPasswordFromTokenAsync(It.IsAny<Neba.Api.Contracts.Security.SetPasswordFromToken.SetPasswordFromTokenRequest>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(response);
+        var cut = RenderSetPassword("&reason=reset");
+        await cut.InvokeAsync(() => cut.FindAll("input[type=password]")[0].Input("GoodPassword1"));
+        await cut.InvokeAsync(() => cut.FindAll("input[type=password]")[1].Input("GoodPassword1"));
+
+        // Act
+        await cut.Find("form").SubmitAsync();
+
+        // Assert
+        cut.Markup.ShouldContain("This reset link is invalid or has expired.");
+        cut.Find("a[href='/account/forgot-password']").TextContent.ShouldBe("Request a new link");
+    }
+
+    [Fact(DisplayName = "Should keep the invite message and offer no new-link link when an invite is invalid")]
+    public async Task Submit_ShouldKeepInviteMessage_WhenInviteTokenInvalid()
+    {
+        // Arrange
+        using var response = new StubApiResponse<object> { IsSuccessStatusCode = false };
+        _mockApi
+            .Setup(api => api.SetPasswordFromTokenAsync(It.IsAny<Neba.Api.Contracts.Security.SetPasswordFromToken.SetPasswordFromTokenRequest>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(response);
+        var cut = RenderSetPassword("&reason=invite");
+        await cut.InvokeAsync(() => cut.FindAll("input[type=password]")[0].Input("GoodPassword1"));
+        await cut.InvokeAsync(() => cut.FindAll("input[type=password]")[1].Input("GoodPassword1"));
+
+        // Act
+        await cut.Find("form").SubmitAsync();
+
+        // Assert
+        cut.Markup.ShouldContain("Ask an admin to send a new one.");
+        cut.FindAll("a[href='/account/forgot-password']").ShouldBeEmpty();
+    }
+
+    private IRenderedComponent<SetPasswordPage> RenderSetPassword(string extraQuery = "")
     {
         var nav = _ctx.Services.GetRequiredService<NavigationManager>();
-        nav.NavigateTo("/account/set-password?userId=test-user&token=valid-token");
+        nav.NavigateTo("/account/set-password?userId=test-user&token=valid-token" + extraQuery);
 
         return _ctx.Render<SetPasswordPage>();
     }

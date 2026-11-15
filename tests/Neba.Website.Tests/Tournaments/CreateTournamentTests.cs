@@ -30,6 +30,8 @@ using Neba.Website.Server.Help;
 using Neba.Website.Server.Notifications;
 using Neba.Website.Server.Services;
 using Neba.Website.Server.Time;
+using Neba.Website.Server.Tournaments;
+using Neba.Website.Server.Tournaments.Schedule;
 
 using Refit;
 using Refit.Testing;
@@ -47,6 +49,7 @@ public sealed class CreateTournamentTests : IDisposable
     private readonly Mock<IBowlingCentersApi> _mockBowlingCentersApi;
     private readonly Mock<IOilPatternsApi> _mockOilPatternsApi;
     private readonly Mock<IClientTimeZoneService> _mockClientTimeZoneService;
+    private readonly Mock<ITournamentApiService> _mockTournamentApiService;
     private readonly ToastService _toastService;
 
     public CreateTournamentTests()
@@ -55,6 +58,12 @@ public sealed class CreateTournamentTests : IDisposable
         _mockBowlingCentersApi = new Mock<IBowlingCentersApi>(MockBehavior.Strict);
         _mockOilPatternsApi = new Mock<IOilPatternsApi>(MockBehavior.Strict);
         _mockClientTimeZoneService = new Mock<IClientTimeZoneService>(MockBehavior.Strict);
+
+        // The previous-tournament picker reads the seasons; with none there is nothing to offer.
+        _mockTournamentApiService = new Mock<ITournamentApiService>(MockBehavior.Strict);
+        _mockTournamentApiService
+            .Setup(x => x.GetSeasonsAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new List<SeasonViewModel>());
 
         var mockStopwatch = new Mock<IStopwatchProvider>(MockBehavior.Strict);
         mockStopwatch.Setup(x => x.GetTimestamp()).Returns(0L);
@@ -79,6 +88,7 @@ public sealed class CreateTournamentTests : IDisposable
         _ctx.Services.AddSingleton(_mockBowlingCentersApi.Object);
         _ctx.Services.AddSingleton(_mockOilPatternsApi.Object);
         _ctx.Services.AddSingleton(_mockClientTimeZoneService.Object);
+        _ctx.Services.AddSingleton(_mockTournamentApiService.Object);
         _ctx.Services.AddSingleton(sp => new ApiExecutor(mockStopwatch.Object, sp.GetRequiredService<NavigationManager>(), NullLogger<ApiExecutor>.Instance));
         _ctx.Services.AddSingleton(_toastService);
         _ctx.Services.AddSingleton<HelpDocumentService>();
@@ -400,6 +410,74 @@ public sealed class CreateTournamentTests : IDisposable
         capturedInput.OilPatternId.ShouldBe("01J7ZK8X6ZQJ8V3F8N9T9C9R2E");
         capturedInput.PatternLengthCategory.ShouldBeNull();
         capturedInput.PatternRatioCategory.ShouldBeNull();
+    }
+
+    // ── Previous tournament ──────────────────────────────────────────────────
+
+    [Fact(DisplayName = "Should include the chosen previous tournament in the submitted request and mark the form dirty")]
+    public async Task Submit_ShouldIncludePreviousTournament_WhenOneWasChosen()
+    {
+        // Arrange
+        var season = SeasonViewModelFactory.Create(id: "season-2024", startDate: new DateOnly(2024, 9, 1), endDate: new DateOnly(2025, 6, 30));
+        _mockTournamentApiService
+            .Setup(x => x.GetSeasonsAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new List<SeasonViewModel> { season });
+        _mockTournamentApiService
+            .Setup(x => x.GetTournamentsForSeasonAsync(season, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new List<SeasonTournamentViewModel>
+            {
+                SeasonTournamentViewModelFactory.Create(
+                    id: "01JPREVIOUS000000000000001", name: "Fall Classic",
+                    startDate: new DateOnly(2024, 10, 4), endDate: new DateOnly(2024, 10, 5), tournamentType: "Singles", status: "Completed")
+            });
+
+        TournamentInput? capturedInput = null;
+        SetupCreateTournamentResponse(capture: r => capturedInput = r.Tournament);
+
+        var cut = RenderCreateTournament();
+        await FillRequiredFieldsAsync(cut);
+        await cut.WaitForStateAsync(() => cut.FindAll("#previous-tournament option").Count > 1);
+
+        // Act
+        await cut.Find("#previous-tournament").ChangeAsync(new ChangeEventArgs { Value = "01JPREVIOUS000000000000001" });
+        await FindButtonByText(cut, "Cancel").ClickAsync();
+        cut.Markup.ShouldContain("Discard unsaved changes?");
+        await cut.Find("form").SubmitAsync();
+
+        // Assert
+        capturedInput.ShouldNotBeNull();
+        capturedInput.PreviousTournamentId.ShouldBe("01JPREVIOUS000000000000001");
+    }
+
+    [Fact(DisplayName = "Should send no previous tournament when none was chosen")]
+    public async Task Submit_ShouldSendNoPreviousTournament_WhenNoneChosen()
+    {
+        // Arrange
+        TournamentInput? capturedInput = null;
+        SetupCreateTournamentResponse(capture: r => capturedInput = r.Tournament);
+
+        var cut = RenderCreateTournament();
+        await FillRequiredFieldsAsync(cut);
+
+        // Act
+        await cut.Find("form").SubmitAsync();
+
+        // Assert
+        capturedInput.ShouldNotBeNull();
+        capturedInput.PreviousTournamentId.ShouldBeNull();
+    }
+
+    [Fact(DisplayName = "Should hide the previous tournament picker for a Non-Champions tournament")]
+    public async Task Render_ShouldHidePreviousTournamentPicker_WhenNonChampions()
+    {
+        // Arrange
+        var cut = RenderCreateTournament();
+
+        // Act
+        await cut.InvokeAsync(() => cut.Find("#tournament-type").Change("Non-Champions"));
+
+        // Assert
+        cut.FindAll("#previous-tournament").ShouldBeEmpty();
     }
 
     // ── Logo upload ──────────────────────────────────────────────────────────

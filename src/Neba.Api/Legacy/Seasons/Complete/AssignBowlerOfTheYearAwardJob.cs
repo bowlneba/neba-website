@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 
+using Neba.Api.Caching;
 using Neba.Api.Database;
 using Neba.Api.Features.Seasons.Domain;
 
@@ -47,5 +48,6 @@ internal sealed class AssignBowlerOfTheYearAwardJob(
         // Shared tag: ListBowlerOfTheYearAwardsQuery returns one combined list across all six
         // categories, so any category's job writing a winner must evict the same tag.
         await cache.RemoveByTagAsync("neba:awards:bowler-of-the-year", token: ct);
+        await cache.RemoveByTagAsync(CacheDescriptors.HallOfFame.PointsTag, token: ct);
     }
 }

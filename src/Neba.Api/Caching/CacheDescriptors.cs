@@ -125,13 +125,46 @@ public static class CacheDescriptors
     public static class HallOfFame
     {
         /// <summary>
+        /// The tag shared by every cached Hall of Fame inductions entry; remove by it to evict them all.
+        /// </summary>
+        public const string InductionsTag = "neba:hall-of-fame:inductions";
+
+        /// <summary>
         /// Returns a cache descriptor for the list of Hall of Fame inductions, with a key and tags that allow for efficient caching and invalidation of Hall of Fame data.
         /// </summary>
         public static CacheDescriptor ListInductions
             => new()
             {
                 Key = "neba:hall-of-fame:inductions:list",
-                Tags = ["neba", "neba:hall-of-fame", "neba:hall-of-fame:inductions"]
+                Tags = ["neba", "neba:hall-of-fame", InductionsTag]
+            };
+
+        /// <summary>
+        /// The tag shared by every cached Hall of Fame points entry; remove by it to evict them all.
+        /// </summary>
+        public const string PointsTag = "neba:hall-of-fame:points";
+
+        // Points read memberships and bowler names; the membership and bowler jobs evict this tag.
+        private const string BowlersTag = "neba:bowlers";
+
+        /// <summary>
+        /// Returns a cache descriptor for the Hall of Fame points list. It carries the bowlers tag so a membership or name change evicts it.
+        /// </summary>
+        public static CacheDescriptor ListPoints
+            => new()
+            {
+                Key = "neba:hall-of-fame:points:list",
+                Tags = ["neba", "neba:hall-of-fame", PointsTag, BowlersTag]
+            };
+
+        /// <summary>
+        /// Returns a cache descriptor for one bowler's Hall of Fame points detail. It carries the bowlers tag so a membership or name change evicts it.
+        /// </summary>
+        public static CacheDescriptor PointsDetail(BowlerId bowlerId)
+            => new()
+            {
+                Key = $"neba:hall-of-fame:points:{bowlerId}",
+                Tags = ["neba", "neba:hall-of-fame", PointsTag, BowlersTag, $"neba:bowlers:{bowlerId}"]
             };
     }
 

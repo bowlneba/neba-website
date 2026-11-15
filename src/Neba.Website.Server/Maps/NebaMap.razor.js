@@ -53,12 +53,7 @@ function waitForAtlas() {
  * @param {Object} dotNetRef - Reference to .NET component for callbacks
  */
 export async function initializeMap(authConfig, mapConfig, locations, dotNetRef) {
-    console.log('[NebaMap] Initializing Azure Maps...');
-    console.log('[NebaMap] Auth config:', { hasAccountId: !!authConfig.accountId, hasSubscriptionKey: !!authConfig.subscriptionKey });
-    console.log('[NebaMap] Locations count:', locations.length);
-
     await waitForAtlas();
-    console.log('[NebaMap] Azure Maps SDK loaded');
 
     dotNetHelper = dotNetRef;
 
@@ -66,7 +61,6 @@ export async function initializeMap(authConfig, mapConfig, locations, dotNetRef)
 
     let authOptions;
     if (authConfig.subscriptionKey) {
-        console.log('[NebaMap] Using subscription key authentication');
         subscriptionKey = authConfig.subscriptionKey;
         globalThis.azureMapsSubscriptionKey = subscriptionKey;
         authOptions = {
@@ -74,7 +68,6 @@ export async function initializeMap(authConfig, mapConfig, locations, dotNetRef)
             subscriptionKey: authConfig.subscriptionKey
         };
     } else if (authConfig.accountId) {
-        console.log('[NebaMap] Using Azure AD authentication with account:', authConfig.accountId);
         authOptions = {
             authType: 'aad',
             clientId: authConfig.accountId,
@@ -112,8 +105,6 @@ export async function initializeMap(authConfig, mapConfig, locations, dotNetRef)
         });
 
         map.events.add('ready', () => {
-            console.log('[NebaMap] Map ready');
-
             dataSource = new atlas.source.DataSource(null, {
                 cluster: mapConfig.enableClustering,
                 clusterRadius: 50,
@@ -258,12 +249,9 @@ export function updateMarkers(locations) {
         .sort((a, b) => String(a).localeCompare(String(b), undefined, { numeric: true }))
         .join('|');
     if (locationHash === lastLocationHash) {
-        console.log('[NebaMap] Locations unchanged, skipping marker update (cached)');
         return;
     }
     lastLocationHash = locationHash;
-
-    console.log('[NebaMap] Updating markers:', locations.length);
 
     dataSource.clear();
     markers.clear();
@@ -296,7 +284,6 @@ export function updateMarkers(locations) {
             return feature;
         });
 
-    console.log(`[NebaMap] Adding ${features.length} valid markers to map`);
     dataSource.add(features);
 }
 
@@ -451,19 +438,35 @@ export function enterDirectionsPreview(locationId) {
 }
 
 /**
+ * Finds the route path feature (summary properties and line geometry) in a route.
+ * @param {Object} route - GeoJSON FeatureCollection for one route
+ * @returns {Object|undefined} The RoutePath feature, if present
+ */
+function getRoutePath(route) {
+    return route?.features?.find(feature => feature?.properties?.type === 'RoutePath');
+}
+
+/**
+ * Flattens the route path MultiLineString into a single list of points.
+ * @param {Object} route - GeoJSON FeatureCollection for one route
+ * @returns {Array<Array<number>>} Array of [longitude, latitude] positions
+ */
+function getRoutePathPoints(route) {
+    return (getRoutePath(route)?.geometry?.coordinates ?? []).flat();
+}
+
+/**
  * Builds a compact, interop-safe route coordinate list.
  * Long routes can exceed SignalR message limits if every point is returned to .NET.
- * @param {Object} route - Azure Maps route object
+ * @param {Object} route - GeoJSON FeatureCollection for one route
  * @param {number} maxPoints - Maximum number of points to keep
  * @returns {Array<Array<number>>} Array of [longitude, latitude] coordinate pairs
  */
 function buildCompactRouteCoordinates(route, maxPoints = 220) {
-    const rawPoints = (route?.legs ?? []).flatMap(leg => leg?.points ?? []);
-
-    const coordinates = rawPoints
-        .filter(point => point?.longitude !== null && point?.longitude !== undefined)
-        .filter(point => point?.latitude !== null && point?.latitude !== undefined)
-        .map(point => [Number(point?.longitude), Number(point?.latitude)])
+    const coordinates = getRoutePathPoints(route)
+        .filter(point => point?.[0] !== null && point?.[0] !== undefined)
+        .filter(point => point?.[1] !== null && point?.[1] !== undefined)
+        .map(point => [Number(point[0]), Number(point[1])])
         .filter(([longitude, latitude]) => Number.isFinite(longitude) && Number.isFinite(latitude))
         .map(([longitude, latitude]) => [
             Number(longitude.toFixed(6)),
@@ -489,70 +492,72 @@ function buildCompactRouteCoordinates(route, maxPoints = 220) {
 }
 
 /**
- * Builds the Azure Maps route directions URL for a driving route request.
+ * Builds the Azure Maps route directions URL (Route API 2025-01-01).
+ * @returns {string} Request URL without credentials
+ */
+function buildRouteDirectionsUrl() {
+    return 'https://atlas.microsoft.com/route/directions?api-version=2025-01-01';
+}
+
+/**
+ * Builds the GeoJSON request body for a driving route request.
+ * Requests the fastest route with traffic, up to two alternatives, and turn-by-turn text.
  * @param {number[]} origin - Origin coordinates [longitude, latitude]
  * @param {number[]} destination - Destination coordinates [longitude, latitude]
- * @returns {string} Fully composed request URL
+ * @returns {string} JSON request body
  */
-function buildRouteDirectionsUrl(origin, destination) {
-    return `https://atlas.microsoft.com/route/directions/json?` +
-        `api-version=1.0` +
-        `&query=${origin[1]},${origin[0]}:${destination[1]},${destination[0]}` +
-        `&travelMode=car` +
-        `&routeType=fastest` +
-        `&traffic=true` +
-        `&maxAlternatives=2` +
-        `&report=effectiveSettings` +
-        `&sectionType=motorway` +
-        `&instructionsType=text` +
-        `&guidance=true`;
+function buildRouteDirectionsBody(origin, destination) {
+    const waypoint = (coordinates, pointIndex) => ({
+        type: 'Feature',
+        geometry: { type: 'Point', coordinates },
+        properties: { pointIndex, pointType: 'waypoint' }
+    });
+
+    return JSON.stringify({
+        type: 'FeatureCollection',
+        features: [waypoint(origin, 0), waypoint(destination, 1)],
+        travelMode: 'driving',
+        optimizeRoute: 'fastestWithTraffic',
+        maxRouteCount: 3,
+        routeOutputOptions: ['routePath', 'itinerary']
+    });
 }
 
 /**
  * Normalizes route travel time values for comparisons.
- * @param {Object} route - Route candidate returned by Azure Maps
- * @returns {number} Travel time in seconds or Infinity when unavailable
+ * @param {Object} route - GeoJSON FeatureCollection for one route
+ * @returns {number} Travel time in seconds (with traffic when available) or Infinity when unavailable
  */
 function getRouteTravelTime(route) {
-    const travelTime = Number(route?.summary?.travelTimeInSeconds);
+    const properties = getRoutePath(route)?.properties;
+    const travelTime = Number(properties?.durationTrafficInSeconds ?? properties?.durationInSeconds);
     return Number.isFinite(travelTime) ? travelTime : Number.POSITIVE_INFINITY;
 }
 
 /**
- * Extracts human-readable guidance instructions from a route.
- * @param {Object} route - Route object returned by Azure Maps
+ * Extracts human-readable turn-by-turn instructions from a route.
+ * @param {Object} route - GeoJSON FeatureCollection for one route
  * @returns {Array<Object>} Turn-by-turn instruction objects
  */
 function extractGuidanceInstructions(route) {
-    if (route.guidance?.instructions && route.guidance.instructions.length > 0) {
-        return route.guidance.instructions.map(instruction => ({
-            Text: instruction.message || instruction.instructionType || instruction.text || 'Continue',
-            DistanceMeters: instruction.travelDistance || instruction.routeOffsetInMeters || 0
+    return (route?.features ?? [])
+        .filter(feature => feature?.properties?.type === 'ManeuverPoint')
+        .map(feature => ({
+            Text: feature.properties.instruction?.text || feature.properties.instruction?.maneuverType || 'Continue',
+            DistanceMeters: feature.properties.distanceInMeters || 0
         }));
-    }
-
-    if (route.guidance?.instructionGroups && route.guidance.instructionGroups.length > 0) {
-        const allInstructions = route.guidance.instructionGroups.flatMap(group => group.instructions || []);
-        return allInstructions.map(instruction => ({
-            Text: instruction.message || instruction.instructionType || instruction.text || 'Continue',
-            DistanceMeters: instruction.travelDistance || instruction.routeOffsetInMeters || 0
-        }));
-    }
-
-    return [];
 }
 
 /**
  * Builds a RouteData-compatible object for one route candidate.
- * @param {Object} route - Route object returned by Azure Maps
+ * @param {Object} route - GeoJSON FeatureCollection for one route
  * @returns {Object} RouteData-compatible object
  */
 function buildRouteOptionData(route) {
-    const summary = route?.summary;
+    const summary = getRoutePath(route)?.properties;
     const instructions = extractGuidanceInstructions(route);
 
     const routeCoordinates = buildCompactRouteCoordinates(route);
-    const originalPointCount = (route?.legs ?? []).reduce((count, leg) => count + (leg?.points?.length ?? 0), 0);
 
     const routeGeoJson = routeCoordinates.length >= 2
         ? JSON.stringify({
@@ -562,17 +567,9 @@ function buildRouteOptionData(route) {
         })
         : null;
 
-    if (routeCoordinates.length < originalPointCount) {
-        console.log('[NebaMap] Compacted route geometry for interop payload:', {
-            originalPointCount,
-            compactPointCount: routeCoordinates.length,
-            routeGeoJsonLength: routeGeoJson?.length ?? 0
-        });
-    }
-
     return {
-        DistanceMeters: Number(summary?.lengthInMeters) || 0,
-        TravelTimeSeconds: Number(summary?.travelTimeInSeconds) || 0,
+        DistanceMeters: Number(summary?.distanceInMeters) || 0,
+        TravelTimeSeconds: Number(summary?.durationTrafficInSeconds ?? summary?.durationInSeconds) || 0,
         Instructions: instructions,
         RouteGeoJson: routeGeoJson
     };
@@ -580,7 +577,7 @@ function buildRouteOptionData(route) {
 
 /**
  * Builds ranked route options from fastest to slower alternatives.
- * @param {Array} routes - Route candidates returned by Azure Maps
+ * @param {Array} routes - Route candidates (GeoJSON FeatureCollections) returned by Azure Maps
  * @param {number} maxOptions - Maximum options to return
  * @returns {Array<Object>} RouteData-compatible route options
  */
@@ -619,12 +616,13 @@ export async function showRoute(origin, destination) {
         throw error;
     }
 
-    console.log('[NebaMap] Calculating route from', origin, 'to', destination);
-
     try {
-        let url = buildRouteDirectionsUrl(origin, destination);
+        let url = buildRouteDirectionsUrl();
 
-        let headers = {};
+        let headers = {
+            'Content-Type': 'application/geo+json',
+            'Accept-Language': 'en-US'
+        };
 
         if (authConfig.subscriptionKey) {
             url += `&subscription-key=${authConfig.subscriptionKey}`;
@@ -648,7 +646,12 @@ export async function showRoute(origin, destination) {
 
         let response;
         try {
-            response = await fetch(url, { headers, signal: controller.signal });
+            response = await fetch(url, {
+                method: 'POST',
+                headers,
+                body: buildRouteDirectionsBody(origin, destination),
+                signal: controller.signal
+            });
         } finally {
             clearTimeout(timeoutId);
         }
@@ -662,7 +665,8 @@ export async function showRoute(origin, destination) {
 
         const data = await response.json();
 
-        const routes = Array.isArray(data?.routes) ? data.routes : [];
+        const routes = [data, ...(Array.isArray(data?.alternativeRoutes) ? data.alternativeRoutes : [])]
+            .filter(route => getRoutePath(route));
         const routeOptions = buildRouteOptions(routes);
 
         if (routeOptions.length === 0) {
@@ -674,7 +678,6 @@ export async function showRoute(origin, destination) {
 
         const selectedRouteIndex = 0;
         const selectedRoute = routeOptions[selectedRouteIndex];
-        console.log('[NebaMap] Effective route settings:', data?.report?.effectiveSettings ?? []);
 
         const routeData = {
             DistanceMeters: selectedRoute.DistanceMeters,
@@ -696,7 +699,6 @@ export async function showRoute(origin, destination) {
             instruction_count: selectedRoute.Instructions.length
         });
 
-        console.log('[NebaMap] Route calculated:', routeData);
         return routeData;
     } catch (error) {
         if (error.name === 'AbortError') {
@@ -717,8 +719,6 @@ export async function showRoute(origin, destination) {
  * Exits directions mode and returns to overview
  */
 export function exitDirectionsMode() {
-    console.log('[NebaMap] Exiting directions mode');
-
     if (!map) {
         console.warn('[NebaMap] Cannot exit directions mode - map not initialized');
         return;
@@ -781,8 +781,6 @@ async function getAzureADTokenForRoute() {
  * Cleans up the map instance and removes all event listeners
  */
 export function dispose() {
-    console.log('[NebaMap] Disposing map resources...');
-
     if (boundsChangeTimeout) {
         clearTimeout(boundsChangeTimeout);
         boundsChangeTimeout = null;
@@ -804,6 +802,4 @@ export function dispose() {
     lastLocationHash = null;
     markerClickInProgress = false;
     subscriptionKey = null;
-
-    console.log('[NebaMap] Map disposed successfully');
 }

@@ -182,6 +182,49 @@ public sealed class TournamentApiServiceTests
         vm.TitleEligible.ShouldBeTrue();
     }
 
+    [Fact(DisplayName = "GetTournamentsForSeasonAsync should map team size and defending champions")]
+    public async Task GetTournamentsForSeasonAsync_ShouldMapTeamSizeAndDefendingChampions()
+    {
+        // Arrange
+        var season = new SeasonViewModel
+        {
+            Id = "01000000000000000000000001",
+            Description = "2026-2027 Season",
+            StartDate = new DateOnly(2026, 9, 1),
+            EndDate = new DateOnly(2027, 6, 30),
+        };
+
+        var tournament = new SeasonTournamentResponse
+        {
+            Id = "01000000000000000000000002",
+            Name = "NEBA Doubles",
+            StartDate = new DateOnly(2027, 3, 1),
+            EndDate = new DateOnly(2027, 3, 2),
+            TournamentType = "Doubles",
+            Status = "Scheduled",
+            TitleEligible = false,
+            TeamSize = 2,
+            DefendingChampions =
+            [
+                DefendingTeamResponseFactory.Create(sourceTruncated: true),
+                DefendingTeamResponseFactory.Create(tournamentName: "Older Open", undefended: true)
+            ],
+        };
+        SetupTournamentsInSeasonSuccess(season.Id, [tournament]);
+
+        // Act
+        var result = await _service.GetTournamentsForSeasonAsync(season, TestContext.Current.CancellationToken);
+
+        // Assert
+        var mapped = result.Value.Single();
+        mapped.TeamSize.ShouldBe(2);
+        mapped.DefendingChampions.Count.ShouldBe(2);
+        mapped.DefendingChampions[0].SourceTruncated.ShouldBeTrue();
+        mapped.DefendingChampions[0].Champions.ShouldBe(["Dave Smith", "Dana Jones"]);
+        mapped.DefendingChampions[1].Undefended.ShouldBeTrue();
+        mapped.ShowTeamEligibilityLink.ShouldBeTrue();
+    }
+
     [Fact(DisplayName = "GetTournamentsForSeasonAsync should map TitleEligible true for a Scheduled tournament regardless of the API's raw flag")]
     public async Task GetTournamentsForSeasonAsync_ShouldMapTitleEligibleTrue_ForScheduledTournament()
     {

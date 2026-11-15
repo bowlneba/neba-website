@@ -1,0 +1,63 @@
+<NebaModal IsOpen="@IsOpen"
+           OnClose="@OnClose"
+           MaxWidth="640px"
+           CompactSize="@true"
+           AriaLabelledById="@_titleId">
+    <HeaderContent>
+        @if (Inductee is not null)
+        {
+            <div class="ip-band">
+                <img class="ip-logo" src="@LogoPath" alt="NEBA Hall of Fame" width="480" height="436" />
+            </div>
+            <div class="ip-id">
+                <HallOfFameAvatar BowlerName="@Inductee.BowlerName"
+                                  Ringed="@true"
+                                  PhotoUri="@Inductee.PhotoUri"
+                                  FocalX="@Inductee.PhotoFocalX"
+                                  FocalY="@Inductee.PhotoFocalY"
+                                  Zoom="@Inductee.PhotoZoom" />
+                <h2 id="@_titleId" class="ip-name">@Inductee.BowlerName</h2>
+                <p class="ip-class">Class of @Inductee.InductionYear</p>
+                <ul class="ip-chips">
+                    @foreach (var category in Inductee.Categories)
+                    {
+                        <li><span class="ip-dot @HallOfFameCategories.DotClass(category)"></span>@category</li>
+                    }
+                </ul>
+            </div>
+        }
+    </HeaderContent>
+    <ChildContent>
+        @if (Inductee is not null)
+        {
+            <HallOfFamePointsDetailLoader BowlerId="@Inductee.BowlerId"
+                                          Layout="@HallOfFamePointsDetailLayout.Profile">
+                <EmptyContent>
+                    <p class="ip-empty">@EmptyMessage</p>
+                </EmptyContent>
+            </HallOfFamePointsDetailLoader>
+        }
+    </ChildContent>
+</NebaModal>
+
+@code {
+    [Parameter, EditorRequired]
+    public bool IsOpen { get; set; }
+
+    [Parameter, EditorRequired]
+    public EventCallback OnClose { get; set; }
+
+    /// <summary>The inductee to show. Null while the modal is closed.</summary>
+    [Parameter]
+    public HallOfFameInductionViewModel? Inductee { get; set; }
+
+    private const string LogoPath = "/images/neba-hof-480.jpg";
+
+    private readonly string _titleId = "ip-title-" + Guid.NewGuid().ToString("N");
+
+    // Only Superior Performance inductees earn points. For the others, empty data is expected.
+    private string EmptyMessage
+        => Inductee is not null && Inductee.Categories.Contains("Superior Performance")
+            ? "No points or membership details are on file for this inductee."
+            : "Points and membership details for Meritorious Service and Friend of NEBA inductees are not shown yet.";
+}

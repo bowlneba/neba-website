@@ -22,6 +22,7 @@ using Neba.Api.Discord;
 using Neba.Api.Features.Bowlers.Domain;
 using Neba.Api.Features.HallOfFame.Domain;
 using Neba.Api.Legacy;
+using Neba.Api.Legacy.BowlerMemberships;
 using Neba.Api.Legacy.Bowlers;
 using Neba.Api.Legacy.HallOfFame;
 using Neba.Api.Legacy.Seasons.Complete;
@@ -32,6 +33,7 @@ using Neba.TestFactory.Attributes;
 using Neba.TestFactory.Bowlers;
 using Neba.TestFactory.HallOfFame;
 using Neba.TestFactory.Infrastructure;
+using Neba.TestFactory.Storage;
 
 using ZiggyCreatures.Caching.Fusion;
 
@@ -114,6 +116,9 @@ public sealed class NewHallOfFameInductionEndpointTests : IAsyncLifetime
         // that point, not just when that sibling is called.
         builder.Services.AddScoped<IValidator<NewBowlerRequest>, NewBowlerRequestValidator>();
         builder.Services.AddScoped<IValidator<UpdateBowlerRequest>, UpdateBowlerRequestValidator>();
+        builder.Services.AddScoped<IValidator<NewBowlerMembershipRequest>, NewBowlerMembershipRequestValidator>();
+        builder.Services.AddScoped<IValidator<UpdateBowlerMembershipRequest>, UpdateBowlerMembershipRequestValidator>();
+        builder.Services.AddScoped<IValidator<DeleteBowlerMembershipRequest>, DeleteBowlerMembershipRequestValidator>();
         builder.Services.AddScoped<IValidator<NewTournamentRequest>, NewTournamentRequestValidator>();
         builder.Services.AddScoped<IValidator<SyncSquadScoresRequest>, SyncSquadScoresRequestValidator>();
         builder.Services.AddScoped<IValidator<CompleteTournamentRequest>, CompleteTournamentRequestValidator>();
@@ -387,7 +392,7 @@ public sealed class NewHallOfFameInductionSyncJobTests(AppDbContextFixture fixtu
         induction.Categories.ShouldBe([HallOfFameCategory.SuperiorPerformance]);
     }
 
-    [Fact(DisplayName = "SyncAsync should evict the inductions and champions cache tags after saving")]
+    [Fact(DisplayName = "SyncAsync should evict the inductions, champions and Hall of Fame points cache tags after saving")]
     public async Task SyncAsync_ShouldEvictInductionsAndChampionsCacheTags_AfterSaving()
     {
         // Arrange
@@ -400,6 +405,8 @@ public sealed class NewHallOfFameInductionSyncJobTests(AppDbContextFixture fixtu
         const string championsCacheKey = "champions-cache-test";
         await cache.GetOrSetAsync(inductionsCacheKey, _ => Task.FromResult("stale-cached-value"), tags: ["neba:hall-of-fame:inductions"], token: ct);
         await cache.GetOrSetAsync(championsCacheKey, _ => Task.FromResult("stale-cached-value"), tags: ["neba:tournaments:champions"], token: ct);
+        const string pointsCacheKey = "points-cache-test";
+        await cache.GetOrSetAsync(pointsCacheKey, _ => Task.FromResult("stale-cached-value"), tags: ["neba:hall-of-fame:points"], token: ct);
 
         var job = CreateJob();
 
@@ -411,6 +418,8 @@ public sealed class NewHallOfFameInductionSyncJobTests(AppDbContextFixture fixtu
         inductionsValueAfterSync.ShouldBe("fresh-value");
         var championsValueAfterSync = await cache.GetOrSetAsync(championsCacheKey, _ => Task.FromResult("fresh-value"), token: ct);
         championsValueAfterSync.ShouldBe("fresh-value");
+        var pointsValueAfterSync = await cache.GetOrSetAsync(pointsCacheKey, _ => Task.FromResult("fresh-value"), token: ct);
+        pointsValueAfterSync.ShouldBe("fresh-value");
     }
 
     [Theory(DisplayName = "SyncAsync should map the legacy Category column to the right website categories")]
@@ -549,6 +558,41 @@ public sealed class NewHallOfFameInductionSyncJobTests(AppDbContextFixture fixtu
         inductions[0].Categories.ShouldBe(
             [HallOfFameCategory.SuperiorPerformance, HallOfFameCategory.MeritoriousService],
             ignoreOrder: true);
+    }
+
+    [Fact(DisplayName = "SyncAsync should leave the website photo and framing unchanged when a legacy row merges into the induction")]
+    public async Task SyncAsync_ShouldLeavePhotoAndFramingUnchanged_WhenLegacyRowMergesIntoInductionWithPhoto()
+    {
+        // Arrange
+        var ct = TestContext.Current.CancellationToken;
+        var bowler = await CreateSyncedBowlerAsync(legacyBowlerId: 5, ct);
+        var photo = StoredFileFactory.Create(container: "bowlneba-public", path: "hall-of-fame/photo/website.png");
+        var induction = HallOfFameInductionFactory.Create(
+            year: 2025,
+            bowlerId: bowler.Id,
+            categories: [HallOfFameCategory.SuperiorPerformance],
+            photo: photo,
+            photoFocalX: 31,
+            photoFocalY: 36,
+            photoZoom: 175);
+        await _dbContext.HallOfFameInductions.AddAsync(induction, ct);
+        await _dbContext.SaveChangesAsync(ct);
+        _dbContext.ChangeTracker.Clear();
+
+        await InsertLegacyHallOfFameRowAsync(1, bowlerId: 5, category: 200, year: 2025);
+        var job = CreateJob();
+
+        // Act
+        await job.SyncAsync([1], ct);
+
+        // Assert - the sync adds the category and never writes the photo or its framing: the website owns them.
+        _dbContext.ChangeTracker.Clear();
+        var persisted = await _dbContext.HallOfFameInductions.SingleAsync(i => i.BowlerId == bowler.Id, ct);
+        persisted.Categories.ShouldBe(
+            [HallOfFameCategory.SuperiorPerformance, HallOfFameCategory.MeritoriousService],
+            ignoreOrder: true);
+        persisted.Photo.ShouldNotBeNull().Path.ShouldBe(photo.Path);
+        persisted.PhotoFocalPoint.ShouldBe(PhotoFocalPointFactory.Create(31, 36, 175));
     }
 
     [Fact(DisplayName = "SyncAsync should be a no-op and should log information when the legacy row's category was already synced")]

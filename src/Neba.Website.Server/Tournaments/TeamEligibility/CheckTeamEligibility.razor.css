@@ -1,0 +1,44 @@
+.team-eligibility {
+    max-width: 760px;
+    margin-inline: auto;
+    padding: 2rem var(--neba-page-gutter, 1rem) 4rem;
+}
+
+.team-eligibility__title {
+    margin: 1.25rem 0 0.5rem;
+    font-size: 2rem;
+    line-height: 1.15;
+}
+
+.team-eligibility__lead {
+    margin-bottom: 1.75rem;
+    color: var(--neba-text-muted);
+}
+
+.team-eligibility__slots {
+    margin-bottom: 1.5rem;
+}
+
+.team-eligibility__slots h2 {
+    margin-bottom: 0.25rem;
+    font-family: var(--neba-font-display);
+    font-weight: 700;
+    font-size: 1.125rem;
+    color: var(--neba-blue-brand);
+}
+
+.team-eligibility__hint {
+    margin-bottom: 1rem;
+    font-size: 0.875rem;
+    color: var(--neba-text-muted);
+}
+
+.team-eligibility__result {
+    margin-top: 2rem;
+}
+
+@media (max-width: 600px) {
+    .team-eligibility__title {
+        font-size: 1.625rem;
+    }
+}

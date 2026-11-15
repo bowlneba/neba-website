@@ -234,3 +234,10 @@
         height: 3.5rem;
     }
 }
+
+@media (prefers-reduced-motion: reduce) {
+    .skip-link {
+        animation: none;
+        transition: none;
+    }
+}

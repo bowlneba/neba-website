@@ -50,9 +50,7 @@ internal sealed class DocumentSlideoverHandler(
         else
         {
             Content = new MarkupString(result.Value.Html);
-            LastUpdated = result.Value.LastUpdated is { } utc
-                ? await clientTimeZoneService.ToLocalAsync(utc)
-                : null;
+            LastUpdated = await clientTimeZoneService.ToLocalOrNullAsync(result.Value.LastUpdated);
         }
 
         stateHasChanged();

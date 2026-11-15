@@ -37,11 +37,15 @@ internal sealed class DeleteTournamentCommandHandler(
         var seasonId = tournament.SeasonId;
         var logo = tournament.Logo;
 
+        // Found before the delete: the database clears each successor's link to this tournament, and the walk needs it.
+        var successors = await TournamentSuccessorCacheEviction.FindAsync(appDbContext, tournament.Id, cancellationToken);
+
         appDbContext.Tournaments.Remove(tournament);
         await appDbContext.SaveChangesAsync(cancellationToken);
 
         await cache.RemoveByTagAsync($"neba:tournaments:{tournament.Id}", token: cancellationToken);
         await cache.RemoveByTagAsync($"neba:tournaments:{seasonId}", token: cancellationToken);
+        await TournamentSuccessorCacheEviction.EvictAsync(cache, successors, cancellationToken);
 
         if (logo is not null)
         {

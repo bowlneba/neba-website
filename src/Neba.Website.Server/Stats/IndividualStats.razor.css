@@ -282,3 +282,12 @@
     padding: 1rem 1.25rem 1.5rem;
     overflow-x: auto;
 }
+
+@media (prefers-reduced-motion: reduce) {
+    .indiv-points-race-card,
+    .indiv-points-race-card:hover,
+    .indiv-points-race-card:focus-visible {
+        animation: none;
+        transition: none;
+    }
+}

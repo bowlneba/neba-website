@@ -48,9 +48,9 @@ public class SmartFlagEnumJsonConverter<TEnum> : JsonConverter<TEnum>
                         ? throw new JsonException($"Invalid {typeof(TEnum).Name} value: {value}")
                         : items[0];
                 }
-                catch (SmartEnumNotFoundException)
+                catch (SmartEnumNotFoundException ex)
                 {
-                    throw new JsonException($"Invalid {typeof(TEnum).Name} value: {value}");
+                    throw new JsonException($"Invalid {typeof(TEnum).Name} value: {value}", ex);
                 }
             }
 
@@ -80,9 +80,9 @@ public class SmartFlagEnumJsonConverter<TEnum> : JsonConverter<TEnum>
             // Note: This assumes we're deserializing individual categories, not combinations
             return enumItems[0];
         }
-        catch (SmartEnumNotFoundException)
+        catch (SmartEnumNotFoundException ex)
         {
-            throw new JsonException($"Invalid {typeof(TEnum).Name} value: {enumValue}");
+            throw new JsonException($"Invalid {typeof(TEnum).Name} value: {enumValue}", ex);
         }
     }
 

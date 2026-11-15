@@ -1,0 +1,61 @@
+@if (Teams.Count > 0)
+{
+    @if (Layout == DefendingChampionsLayout.Panel)
+    {
+        <div class="defending defending--panel">
+            <h3 class="defending__title">
+                <span class="material-symbols-outlined" aria-hidden="true">shield</span>
+                @Heading
+            </h3>
+            @foreach (var team in Teams)
+            {
+                <div class="defending__row">
+                    <div class="defending__season">
+                        @team.SeasonDescription
+                        @if (team.Note is not null)
+                        {
+                            <small>@team.Note</small>
+                        }
+                    </div>
+                    <div class="defending__names">@string.Join(" / ", team.Champions)</div>
+                </div>
+            }
+        </div>
+    }
+    else
+    {
+        <div class="defending defending--strip">
+            <span class="defending__label">
+                <span class="material-symbols-outlined" aria-hidden="true">shield</span>
+                @Heading
+            </span>
+            @foreach (var team in Teams)
+            {
+                <div class="defending__group">
+                    <div class="defending__pills">
+                        @foreach (var champion in team.Champions)
+                        {
+                            <span class="defending__pill">@champion</span>
+                        }
+                    </div>
+                    <span class="defending__tag">
+                        @team.SeasonDescription winners@(team.Note is null ? string.Empty : ", " + team.Note)
+                    </span>
+                </div>
+            }
+        </div>
+    }
+}
+
+@code {
+    [Parameter, EditorRequired]
+    public IReadOnlyList<DefendingTeamViewModel> Teams { get; set; } = default!;
+
+    [Parameter]
+    public DefendingChampionsLayout Layout { get; set; } = DefendingChampionsLayout.Strip;
+
+    // Plural for any team of more than one bowler, and for two teams after a truncation.
+    private string Heading => Teams.Count > 1 || Teams.Any(team => team.Champions.Count > 1)
+        ? "Defending champions"
+        : "Defending champion";
+}

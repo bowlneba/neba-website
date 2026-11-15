@@ -52,6 +52,13 @@ internal sealed class HallOfFameInductionConfiguration
             contentTypeColumnName: "photo_content_type",
             sizeInBytesColumnName: "photo_size_in_bytes");
 
+        builder.ComplexProperty(induction => induction.PhotoFocalPoint, focalPoint =>
+        {
+            focalPoint.Property(point => point.X).HasColumnName("photo_focal_x");
+            focalPoint.Property(point => point.Y).HasColumnName("photo_focal_y");
+            focalPoint.Property(point => point.Zoom).HasColumnName("photo_zoom");
+        });
+
         builder.HasIndex(induction => induction.Year);
 
         builder.HasAlternateKey(nameof(HallOfFameInduction.Year), nameof(HallOfFameInduction.BowlerId));

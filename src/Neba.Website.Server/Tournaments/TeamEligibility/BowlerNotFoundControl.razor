@@ -1,0 +1,12 @@
+<button type="button" class="bowler-not-found" @onclick="OnToggle">
+    @(IsMarked ? "Undo" : "Mark as not in our system")
+</button>
+
+@code {
+    /// <summary>True when this slot is already marked as a bowler not in the system.</summary>
+    [Parameter]
+    public bool IsMarked { get; set; }
+
+    [Parameter, EditorRequired]
+    public EventCallback OnToggle { get; set; }
+}

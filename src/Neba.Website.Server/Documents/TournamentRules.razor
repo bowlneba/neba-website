@@ -25,6 +25,7 @@
               TableOfContentsTitle="Contents"
               HeadingLevels="h1, h2"
               DocumentId="tournament-rules"
+              AnchorAliases="@TournamentRulesAnchors.AnchorAliases"
               LastUpdated="@_lastUpdated"
               OnSlideoverLinkClicked="@HandleSlideoverLinkClicked"
               SlideoverContent="@_slideover.Content"
@@ -58,9 +59,7 @@
         else
         {
             _content = new MarkupString(result.Value.Html);
-            _lastUpdated = result.Value.LastUpdated is { } utc
-                ? await ClientTimeZoneService.ToLocalAsync(utc)
-                : null;
+            _lastUpdated = await ClientTimeZoneService.ToLocalOrNullAsync(result.Value.LastUpdated);
         }
 
         _isLoading = false;

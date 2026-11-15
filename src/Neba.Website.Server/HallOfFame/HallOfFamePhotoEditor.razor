@@ -1,0 +1,87 @@
+@using ErrorOr
+@using Neba.Api.Contracts.HallOfFame
+@using Neba.Api.Contracts.HallOfFame.EditHallOfFamePhoto
+@using Neba.Api.Contracts.Uploads
+@using Neba.Website.Server.Services
+@using Refit
+@inject ApiExecutor ApiExecutor
+@inject IHallOfFameApi HallOfFameApi
+@inject ToastService ToastService
+
+<EditHallOfFamePhotoModal IsOpen="@IsOpen"
+                          BowlerName="@BowlerName"
+                          CurrentPhotoUrl="@CurrentPhotoUrl"
+                          CurrentFocalX="@CurrentFocalX"
+                          CurrentFocalY="@CurrentFocalY"
+                          CurrentZoom="@CurrentZoom"
+                          OnClose="OnClose"
+                          OnSaved="HandleSavedAsync"
+                          OnUploadRequestedAsync="UploadPhotoAsync"
+                          OnSubmitRequestedAsync="SavePhotoAsync" />
+
+@code {
+    [Parameter, EditorRequired]
+    public bool IsOpen { get; set; }
+
+    [Parameter, EditorRequired]
+    public string InductionId { get; set; } = string.Empty;
+
+    [Parameter, EditorRequired]
+    public string BowlerName { get; set; } = string.Empty;
+
+    [Parameter]
+    public Uri? CurrentPhotoUrl { get; set; }
+
+    [Parameter]
+    public int? CurrentFocalX { get; set; }
+
+    [Parameter]
+    public int? CurrentFocalY { get; set; }
+
+    [Parameter]
+    public int? CurrentZoom { get; set; }
+
+    [Parameter, EditorRequired]
+    public EventCallback OnClose { get; set; }
+
+    /// <summary>
+    /// Raised after the photo saved. The host closes the editor and reloads its data; the toast follows.
+    /// </summary>
+    [Parameter, EditorRequired]
+    public EventCallback OnSaved { get; set; }
+
+    private Task<ErrorOr<UploadedFileResponse>> UploadPhotoAsync(
+        Stream stream, string fileName, string contentType, IProgress<int> progress, CancellationToken ct)
+        => ApiExecutor.ExecuteAsync(
+            "HallOfFameApi",
+            "UploadHallOfFamePhoto",
+            c => HallOfFameApi.UploadHallOfFamePhotoAsync(new StreamPart(stream, fileName, contentType), c),
+            ct);
+
+    private Task<ErrorOr<Success>> SavePhotoAsync(HallOfFamePhotoInput? photo, FocalPoint? framing, CancellationToken ct)
+    {
+        var request = new EditHallOfFamePhotoRequest
+        {
+            Id = InductionId,
+            Input = new EditHallOfFamePhotoInput
+            {
+                Photo = photo,
+                FocalX = framing?.X,
+                FocalY = framing?.Y,
+                Zoom = framing?.Zoom
+            }
+        };
+
+        return ApiExecutor.ExecuteAsync(
+            "HallOfFameApi",
+            "EditHallOfFamePhoto",
+            c => HallOfFameApi.EditHallOfFamePhotoAsync(InductionId, request, c),
+            ct);
+    }
+
+    private async Task HandleSavedAsync()
+    {
+        await OnSaved.InvokeAsync();
+        ToastService.Show("Photo Saved", "The inductee photo was updated.", NotifySeverity.Success);
+    }
+}

@@ -1,0 +1,73 @@
+﻿[
+  {
+    BowlerName: Nils Kreiger,
+    TotalPoints: 4,
+    SeasonsWithPoints: 1,
+    MembershipHistoryComplete: true,
+    Breakdown: [
+      {
+        Source: Bowler of the Year,
+        Year: 2025,
+        Points: 2,
+        RunningTotal: 2,
+        ReachedThreshold: false
+      },
+      {
+        Source: Bowler of the Year,
+        Year: 2025,
+        Points: 2,
+        RunningTotal: 4,
+        ReachedThreshold: false
+      }
+    ],
+    MembershipYears: [
+      {
+        Year: 2024,
+        MembershipType: Renewal
+      },
+      {
+        Year: 2025,
+        MembershipType: Renewal
+      }
+    ]
+  },
+  {
+    BowlerName: Robyn Moore,
+    TotalPoints: 20,
+    SeasonsWithPoints: 1,
+    MembershipHistoryComplete: true,
+    Breakdown: [
+      {
+        Source: Doubles Title,
+        Year: 2025,
+        Points: 12,
+        RunningTotal: 12,
+        ReachedThreshold: false
+      },
+      {
+        Source: Doubles Title,
+        Year: 2025,
+        Points: 2,
+        RunningTotal: 14,
+        ReachedThreshold: false
+      },
+      {
+        Source: Doubles Title,
+        Year: 2025,
+        Points: 6,
+        RunningTotal: 20,
+        ReachedThreshold: false
+      }
+    ],
+    MembershipYears: [
+      {
+        Year: 2024,
+        MembershipType: Renewal
+      },
+      {
+        Year: 2025,
+        MembershipType: Renewal
+      }
+    ]
+  }
+]

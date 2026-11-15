@@ -111,40 +111,62 @@ function atlasMockScript() {
 
 // 20117 m ≈ 12.5 mi  →  FormattedDistance = "12.5 mi"
 // 1440 s = 24 min    →  FormattedTravelTime = "24 min"
+// Shape of an Azure Maps Route Directions 2025-01-01 response (GeoJSON, [lon, lat]).
 const MOCK_ROUTE_RESPONSE = {
-  routes: [
+  type: 'FeatureCollection',
+  features: [
     {
-      summary: {
-        lengthInMeters: 20117,
-        travelTimeInSeconds: 1440,
-      },
-      guidance: {
-        instructions: [
-          { message: 'Head north on Main St', travelDistance: 500 },
-          { message: 'Turn right onto Route 9', travelDistance: 15000 },
-          { message: 'Arrive at Lucky Strike Lanes', travelDistance: 0 },
+      type: 'Feature',
+      geometry: { type: 'Point', coordinates: [-71.0589, 42.3601] },
+      properties: { type: 'Waypoint', order: { inputIndex: 0 } },
+    },
+    ...[
+      { text: 'Head north on Main St', distanceInMeters: 500 },
+      { text: 'Turn right onto Route 9', distanceInMeters: 15000 },
+      { text: 'Arrive at Lucky Strike Lanes', distanceInMeters: 0 },
+    ].map(({ text, distanceInMeters }) => ({
+      type: 'Feature',
+      geometry: { type: 'Point', coordinates: [-71.0589, 42.3601] },
+      properties: { type: 'ManeuverPoint', instruction: { text }, distanceInMeters },
+    })),
+    {
+      type: 'Feature',
+      geometry: {
+        type: 'MultiLineString',
+        coordinates: [
+          [
+            [-71.0589, 42.3601],
+            [-71.1002, 42.4012],
+          ],
         ],
       },
-      legs: [
-        {
-          points: [
-            { longitude: -71.0589, latitude: 42.3601 },
-            { longitude: -71.1002, latitude: 42.4012 },
-          ],
-        },
-      ],
+      properties: {
+        type: 'RoutePath',
+        distanceInMeters: 20117,
+        durationInSeconds: 1380,
+        durationTrafficInSeconds: 1440,
+      },
     },
   ],
+  alternativeRoutes: [],
 };
 
+// Shape of an Azure Maps Search Geocoding 2026-01-01 response (GeoJSON, [lon, lat]).
 const MOCK_ADDRESS_SEARCH_RESPONSE = {
-  results: [
+  type: 'FeatureCollection',
+  features: [
     {
-      address: {
-        freeformAddress: '123 Main St, Boston, MA 02101',
-        municipality: 'Boston',
+      type: 'Feature',
+      geometry: { type: 'Point', coordinates: [-71.0589, 42.3601] },
+      properties: {
+        type: 'Address',
+        address: {
+          formattedAddress: '123 Main St, Boston, MA 02101',
+          locality: 'Boston',
+          adminDistricts: [{ shortName: 'MA' }],
+          countryRegion: { ISO: 'US' },
+        },
       },
-      position: { lat: 42.3601, lon: -71.0589 },
     },
   ],
 };
@@ -160,7 +182,7 @@ test.describe('Bowling Centers page', () => {
     await page.addInitScript(atlasMockScript);
 
     // Mock Azure Maps address search API (called from DirectionsModal.razor.js)
-    await page.route('https://atlas.microsoft.com/search/address/json**', async (route) => {
+    await page.route('https://atlas.microsoft.com/geocode**', async (route) => {
       await route.fulfill({
         status: 200,
         contentType: 'application/json',
@@ -169,7 +191,7 @@ test.describe('Bowling Centers page', () => {
     });
 
     // Mock Azure Maps route directions API (called from NebaMap.razor.js showRoute())
-    await page.route('https://atlas.microsoft.com/route/directions/json**', async (route) => {
+    await page.route('https://atlas.microsoft.com/route/directions**', async (route) => {
       await route.fulfill({
         status: 200,
         contentType: 'application/json',
