@@ -123,6 +123,7 @@ internal static partial class ForgotPasswordCommandHandlerLogMessages
     /// A reset was requested for an address with no account. One of these is a typo; many from one IP, or
     /// many addresses at one domain, is an enumeration attempt. The raw email is logged on purpose: it is the
     /// evidence needed to recognise and block a probe, so this parameter is deliberately not [PersonalData].
+    /// The client IP is logged raw for the same reason.
     /// </summary>
     [LoggerMessage(
         Level = LogLevel.Warning,
