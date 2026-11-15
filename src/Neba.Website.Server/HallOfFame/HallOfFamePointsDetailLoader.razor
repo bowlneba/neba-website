@@ -1,0 +1,83 @@
+@using Neba.Api.Contracts.HallOfFame
+@using Neba.Website.Server.Services
+
+@inject ApiExecutor ApiExecutor
+@inject IHallOfFameApi HallOfFameApi
+
+@if (_state == LoaderState.Loading)
+{
+    <div class="pm-state">
+        <NebaLoadingIndicator />
+        <div>Loading points…</div>
+    </div>
+}
+else if (_state == LoaderState.Error)
+{
+    <div class="pm-state">
+        <h3>Could not load points</h3>
+        <p>Something went wrong fetching this bowler's record.</p>
+        <button type="button" class="pm-retry" @onclick="RetryAsync">Retry</button>
+    </div>
+}
+else if (_data is not null)
+{
+    <HallOfFamePointsDetailView Detail="@_data" Requirements="@Requirements" />
+}
+
+@code {
+    [Parameter, EditorRequired]
+    public string BowlerId { get; set; } = string.Empty;
+
+    /// <summary>The thresholds, when the caller has them. Null drops the "of 36" and "needed" text.</summary>
+    [Parameter]
+    public HallOfFamePointRequirements? Requirements { get; set; }
+
+    /// <summary>Raised after each successful load, so a caller can read the detail (for example the inducted line).</summary>
+    [Parameter]
+    public EventCallback<HallOfFamePointsDetailViewModel> OnLoaded { get; set; }
+
+    private enum LoaderState { Loading, Error, Data }
+
+    private LoaderState _state = LoaderState.Loading;
+    private HallOfFamePointsDetailViewModel? _data;
+    private string? _lastLoadedBowlerId;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (string.IsNullOrEmpty(BowlerId) || BowlerId == _lastLoadedBowlerId)
+        {
+            return;
+        }
+
+        await LoadAsync();
+    }
+
+    private async Task LoadAsync()
+    {
+        _lastLoadedBowlerId = BowlerId;
+        _state = LoaderState.Loading;
+        _data = null;
+        StateHasChanged();
+
+        var result = await ApiExecutor.ExecuteAsync(
+            "HallOfFame",
+            "GetHallOfFamePointsDetail",
+            ct => HallOfFameApi.GetHallOfFamePointsDetailAsync(BowlerId, ct));
+
+        if (result.IsError)
+        {
+            _state = LoaderState.Error;
+            return;
+        }
+
+        _data = result.Value.ToViewModel();
+        _state = LoaderState.Data;
+        await OnLoaded.InvokeAsync(_data);
+    }
+
+    private Task RetryAsync()
+    {
+        _lastLoadedBowlerId = null;
+        return LoadAsync();
+    }
+}

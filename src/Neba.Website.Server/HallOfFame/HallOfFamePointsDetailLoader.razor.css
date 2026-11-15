@@ -1,0 +1,3 @@
+.pm-state { padding: 2.5rem 1rem; text-align: center; color: var(--neba-gray-600); }
+.pm-state h3 { color: #1f2937; margin: .5rem 0 .25rem; }
+.pm-retry { margin-top: .75rem; padding: .5rem 1rem; border: 1px solid var(--neba-blue-700); background: #fff; color: var(--neba-blue-700); border-radius: var(--neba-radius); cursor: pointer; font-weight: 600; }
