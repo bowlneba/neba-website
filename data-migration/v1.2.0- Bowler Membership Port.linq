@@ -1,21 +1,21 @@
 <Query Kind="Program">
   <Connection>
-    <ID>e34b0eb3-dca3-44a7-a425-2099814c6c2d</ID>
+    <ID>1fc48aec-40be-4c6b-a8e7-a5b7f0248ee4</ID>
     <NamingServiceVersion>3</NamingServiceVersion>
     <Persist>true</Persist>
     <Driver Assembly="(internal)" PublicKeyToken="no-strong-name">LINQPad.Drivers.EFCore.DynamicDriver</Driver>
     <AllowDateOnlyTimeOnly>true</AllowDateOnlyTimeOnly>
     <SqlSecurity>true</SqlSecurity>
-    <Server>localhost</Server>
-    <UserName>postgres</UserName>
-    <DisplayName>neba-website (localhost)</DisplayName>
+    <UserName>nebaadmin</UserName>
     <Database>bowlneba</Database>
+    <Server>postgres-j7jlg5nmk67ym.postgres.database.azure.com</Server>
+    <DisplayName>neba-website</DisplayName>
+    <IsProduction>true</IsProduction>
     <DriverData>
       <EncryptSqlTraffic>True</EncryptSqlTraffic>
+      <MapSQLiteDecimals>true</MapSQLiteDecimals>
       <PreserveNumeric1>True</PreserveNumeric1>
       <EFProvider>Npgsql.EntityFrameworkCore.PostgreSQL</EFProvider>
-      <ExtraCxOptions>Include Error Detail=true;</ExtraCxOptions>
-      <Port>19630</Port>
     </DriverData>
   </Connection>
   <NuGetReference>Ulid</NuGetReference>
@@ -114,28 +114,57 @@ record MappedBowlerMembership(int LegacyId, int BowlerId, string MembershipType,
 
 /// <summary>
 /// Inserts mapped rows into BowlerMemberships. Idempotent: rows whose LegacyId already exists are skipped.
-/// Single SaveChanges, so it is all-or-nothing.
+/// Single SaveChanges, so it is all-or-nothing. The plan is dumped either way; only Commit = true writes.
 /// </summary>
 async Task WriteBowlerMembershipsAsync(List<MappedBowlerMembership> mapped, int unknownTypeCount)
 {
-	if (!Commit)
+	var alreadyMigrated = BowlerMemberships
+		.Where(m => m.LegacyId != null)
+		.Select(m => m.LegacyId!.Value)
+		.ToHashSet();
+
+	var pending = mapped.Where(m => !alreadyMigrated.Contains(m.LegacyId)).ToList();
+
+	new
 	{
-		"Dry run - set Commit = true to write to BowlerMemberships.".Dump("Write");
-		return;
-	}
+		Mode = Commit ? "COMMIT" : "Dry run (set Commit = true to write)",
+		WouldInsert = pending.Count,
+		AlreadyMigrated = mapped.Count - pending.Count,
+		BlockedByUnknownTypes = unknownTypeCount > 0
+	}.Dump("Write plan");
+
+	pending
+		.GroupBy(m => m.MembershipType)
+		.Select(g => new
+		{
+			MembershipType = g.Key,
+			Rows = g.Count(),
+			TotalCost = g.Sum(m => m.Cost),
+			EarliestStart = g.Min(m => m.StartDate),
+			LatestStart = g.Max(m => m.StartDate)
+		})
+		.OrderByDescending(x => x.Rows)
+		.Dump("Rows to insert by membership type");
+
+	pending
+		.GroupBy(m => m.StartDate.Year)
+		.Select(g => new { Year = g.Key, Rows = g.Count() })
+		.OrderBy(x => x.Year)
+		.Dump("Rows to insert by start year");
+
+	pending.TakeLast(25).Dump("Most recent rows to insert", 1);
 
 	if (unknownTypeCount > 0)
 	{
 		throw new InvalidOperationException($"{unknownTypeCount} rows have unknown legacy membership types; fix before migrating.");
 	}
 
-	var alreadyMigrated = BowlerMemberships
-		.Where(m => m.LegacyId != null)
-		.Select(m => m.LegacyId!.Value)
-		.ToHashSet();
+	if (!Commit)
+	{
+		return;
+	}
 
-	var toInsert = mapped
-		.Where(m => !alreadyMigrated.Contains(m.LegacyId))
+	var toInsert = pending
 		.Select(m => new BowlerMemberships
 		{
 			DomainId = Guid.AsDomainId(),
@@ -151,7 +180,7 @@ async Task WriteBowlerMembershipsAsync(List<MappedBowlerMembership> mapped, int 
 	BowlerMemberships.AddRange(toInsert);
 	await SaveChangesAsync();
 
-	new { Inserted = toInsert.Count, AlreadyMigrated = mapped.Count - toInsert.Count }.Dump("Write");
+	new { Inserted = toInsert.Count, AlreadyMigrated = mapped.Count - toInsert.Count }.Dump("Write result");
 }
 
 /// <summary>
