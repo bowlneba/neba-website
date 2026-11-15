@@ -29,12 +29,12 @@
 
 <div class="neba-space-y-6">
     <!-- Page Header -->
-    <div class="text-center">
+    <div class="relative text-center">
         <h1 class="text-3xl font-bold text-[var(--neba-blue-700)]">Hall of Fame</h1>
         <p class="mt-1 text-sm text-gray-600">Honoring Excellence in Bowling</p>
         <AuthorizeView Policy="@Permissions.EditHallOfFamePhoto.PolicyName">
             <Authorized>
-                <div class="mt-2">
+                <div class="absolute top-0 right-0">
                     <HelpButton DocName="edit-hall-of-fame-photo" />
                 </div>
             </Authorized>
