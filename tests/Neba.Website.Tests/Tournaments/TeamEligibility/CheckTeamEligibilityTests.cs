@@ -181,6 +181,20 @@ public sealed class CheckTeamEligibilityTests : IDisposable
         cut.Markup.ShouldContain("All " + teamSize + " bowlers are required.");
     }
 
+    [Fact(DisplayName = "Should warn before the check that PBA and PWBA titles are not verified")]
+    public void Render_ShouldWarnThatProfessionalTitlesAreNotVerified()
+    {
+        // Arrange
+        SetupTournament(TournamentType.Doubles, 2);
+
+        // Act
+        var cut = Render();
+
+        // Assert
+        cut.Markup.ShouldContain("We can't verify PBA or PWBA titles");
+        cut.Markup.ShouldContain("responsible for making sure everyone is eligible");
+    }
+
     [Fact(DisplayName = "Should show the team rules for the format")]
     public void Render_ShouldShowTeamRules()
     {

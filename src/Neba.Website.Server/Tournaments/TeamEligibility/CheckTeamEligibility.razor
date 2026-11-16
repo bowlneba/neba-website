@@ -34,6 +34,10 @@
 
         <TeamRules TournamentType="@_model.TournamentType" />
 
+        <NebaAlert Severity="NotifySeverity.Warning"
+                   Title="We can't verify PBA or PWBA titles"
+                   Message="This tool checks NEBA titles, age, and Hall of Fame membership only. It has no PBA or PWBA title records. Your team is responsible for making sure everyone is eligible to bowl together, including any professional titles. A result here does not confirm eligibility." />
+
         <section class="team-eligibility__slots" aria-labelledby="team-heading">
             <h2 id="team-heading">Your team</h2>
             <p class="team-eligibility__hint">

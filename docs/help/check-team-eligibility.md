@@ -48,7 +48,7 @@ Under every answer except "defending champions", **What we checked** shows how e
 
 A card turns red when that fact counts against a rule the team broke, and a short list under the bowlers gives each rule's tally, such as "Multi-time champions: 2 (at most 1)". A bowler marked as not in our system counts as a non-champion with no age. The counts are as of the tournament's first day.
 
-PBA and PWBA titles are not checked. When a team passes, the answer reminds you to make sure no one on it has a professional title inside the champion window.
+We cannot verify PBA or PWBA titles. A notice on the page says so before you check, and a team that passes sees it again with the answer. The team is responsible for making sure everyone is eligible to bowl together, including any professional titles inside the champion window. A passing answer does not confirm eligibility.
 
 ## Troubleshooting
 
