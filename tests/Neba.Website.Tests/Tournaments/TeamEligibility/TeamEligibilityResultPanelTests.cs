@@ -20,14 +20,14 @@ public sealed class TeamEligibilityResultPanelTests : IDisposable
             .Add(x => x.Result, result)
             .Add(x => x.OnCheckAnother, () => onCheckAnother?.Invoke()));
 
-    [Fact(DisplayName = "Eligible should say the team can bowl together and show the pro-title note, with no contact line")]
+    [Fact(DisplayName = "Eligible should say the team is eligible to bowl and show the pro-title note, with no contact line")]
     public void Render_ShouldShowEligibleState()
     {
         // Arrange & Act
         var cut = Render(new TeamEligibilityResultViewModel { Outcome = TeamEligibilityOutcomeKind.Eligible });
 
         // Assert
-        cut.Markup.ShouldContain("This team can bowl together.");
+        cut.Markup.ShouldContain("This team is eligible to bowl.");
         cut.Find(".result--ok").ShouldNotBeNull();
         cut.Find(".result__note").TextContent.ShouldContain("PBA or PWBA");
         cut.FindAll(".result__contact").ShouldBeEmpty();
@@ -44,7 +44,7 @@ public sealed class TeamEligibilityResultPanelTests : IDisposable
         });
 
         // Assert
-        cut.Markup.ShouldContain("This team can't bowl together.");
+        cut.Markup.ShouldContain("This team is not eligible to bowl.");
         cut.FindAll("li").Select(item => item.TextContent).ShouldBe(["Too many champions.", "Not enough non-champions."]);
         cut.Find(".result__contact a").GetAttribute("href").ShouldBe("mailto:info@bowlneba.com");
         cut.FindAll(".result__note").ShouldBeEmpty();
@@ -69,9 +69,9 @@ public sealed class TeamEligibilityResultPanelTests : IDisposable
         var rows = cut.FindAll(".result__date");
         rows.Count.ShouldBe(2);
         rows[0].ClassList.ShouldContain("result__date--good");
-        rows[0].TextContent.ShouldContain("Can bowl together");
+        rows[0].TextContent.ShouldContain("Eligible to bowl");
         rows[1].ClassList.ShouldContain("result__date--bad");
-        rows[1].TextContent.ShouldContain("Can't bowl together. Both in one group.");
+        rows[1].TextContent.ShouldContain("Not eligible to bowl. Both in one group.");
         cut.FindAll(".result__note").Count.ShouldBe(1);
         cut.FindAll(".result__contact").Count.ShouldBe(1);
     }

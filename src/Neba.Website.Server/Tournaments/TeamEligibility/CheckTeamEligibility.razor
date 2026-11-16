@@ -34,6 +34,10 @@
 
         <TeamRules TournamentType="@_model.TournamentType" />
 
+        <NebaAlert Severity="NotifySeverity.Warning"
+                   Title="@ProfessionalTitlesNotice.Headline"
+                   Message="@ProfessionalTitlesNotice.AlertMessage" />
+
         <section class="team-eligibility__slots" aria-labelledby="team-heading">
             <h2 id="team-heading">Your team</h2>
             <p class="team-eligibility__hint">

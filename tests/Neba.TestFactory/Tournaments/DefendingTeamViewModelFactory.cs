@@ -18,5 +18,5 @@ public static class DefendingTeamViewModelFactory
             seasonDescription ?? ValidSeasonDescription,
             sourceTruncated ?? false,
             undefended ?? false,
-            champions ?? ["Dave Smith", "Dana Jones"]);
+            champions ?? ["Dave Smith"]);
 }

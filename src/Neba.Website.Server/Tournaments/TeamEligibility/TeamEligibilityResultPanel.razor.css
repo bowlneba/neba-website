@@ -38,12 +38,13 @@
 }
 
 .result__note {
-    margin-top: 0.875rem;
-    padding: 0.625rem 0.75rem;
+    margin: 0 0 1rem;
+    padding: 0.5rem 0.75rem;
+    border-left: 3px solid var(--neba-warning);
     border-radius: var(--neba-radius);
     background: var(--neba-gray-100);
-    font-size: 0.875rem;
-    color: var(--neba-gray-700);
+    font-size: 0.9375rem;
+    color: var(--neba-text);
 }
 
 .result__contact {

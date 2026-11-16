@@ -38,6 +38,11 @@ test.describe('Team eligibility page', () => {
     await expect(checkTeamButton(page)).toBeDisabled();
   });
 
+  test('warns before the check that PBA and PWBA titles are not verified', async ({ page }) => {
+    await expect(page.locator('.neba-alert-title', { hasText: "We can't verify PBA or PWBA titles" })).toBeVisible();
+    await expect(page.locator('.neba-alert', { hasText: "We can't verify" })).toContainText('A result here does not confirm eligibility.');
+  });
+
   test('has a page title', async ({ page }) => {
     await expect(page).toHaveTitle('Check Team Eligibility - BowlNEBA');
   });
@@ -58,14 +63,14 @@ test.describe('Team eligibility page', () => {
     await expect(page.locator('.neba-autocomplete-option', { hasText: 'Chris Champion (1111-00001)' })).toBeVisible();
   });
 
-  test('says a team that is over the champion limit cannot bowl together, and shows how to ask about it', async ({ page }) => {
+  test('says a team that is over the champion limit is not eligible to bowl, and shows how to ask about it', async ({ page }) => {
     await pickBowler(page, 1, 'chris', 'Chris Champion');
     await pickBowler(page, 2, 'cora', 'Cora Champion');
     await expect(checkTeamButton(page)).toBeEnabled();
 
     await checkTeamButton(page).click();
 
-    await expect(page.locator('.result')).toContainText("This team can't bowl together.");
+    await expect(page.locator('.result')).toContainText("This team is not eligible to bowl.");
     await expect(page.locator('.result')).toContainText('A team may have at most 1 previous champion.');
     await expect(page.locator('.result__contact a')).toHaveAttribute('href', 'mailto:info@bowlneba.com');
   });
@@ -110,13 +115,13 @@ test.describe('Team eligibility page', () => {
     expect(overflows).toBe(false);
   });
 
-  test('says a team that is eligible can bowl together, with a note that pro titles are not checked', async ({ page }) => {
+  test('says a team that is eligible to bowl, with a note that pro titles are not checked', async ({ page }) => {
     await pickBowler(page, 1, 'chris', 'Chris Champion');
     await pickBowler(page, 2, 'nina', 'Nina Newcomer');
 
     await checkTeamButton(page).click();
 
-    await expect(page.locator('.result')).toContainText('This team can bowl together.');
+    await expect(page.locator('.result')).toContainText('This team is eligible to bowl.');
     await expect(page.locator('.result__note')).toContainText('PBA or PWBA');
     await expect(page.locator('.result__contact')).toHaveCount(0);
   });
@@ -207,8 +212,8 @@ test.describe('Team eligibility page — other cases', () => {
       await page.request.post(`http://localhost:5151/__mock/fail?path=${failPath}&status=400`);
       await checkTeamButton(page).click();
 
-      await expect(page.locator('.neba-alert-title')).toContainText('Unable to check this team');
-      await expect(page.locator('.neba-alert')).toContainText("We couldn't check this team.");
+      await expect(page.locator('.neba-alert-title', { hasText: 'Unable to check this team' })).toBeVisible();
+      await expect(page.locator('.neba-alert', { hasText: 'Unable to check this team' })).toContainText("We couldn't check this team.");
       await expect(page).toHaveURL(new RegExp(`${failPath}$`));
       await expect(page.locator('.result')).toHaveCount(0);
     } finally {
@@ -231,7 +236,7 @@ test.describe('Team eligibility page — other cases', () => {
           encodeURIComponent('This tournament needs exactly 2 bowlers.'));
       await checkTeamButton(page).click();
 
-      await expect(page.locator('.neba-alert')).toContainText('This tournament needs exactly 2 bowlers.');
+      await expect(page.locator('.neba-alert', { hasText: 'This tournament needs exactly 2 bowlers.' })).toBeVisible();
     } finally {
       await page.request.post(`http://localhost:5151/__mock/reset?path=${failPath}`);
     }
