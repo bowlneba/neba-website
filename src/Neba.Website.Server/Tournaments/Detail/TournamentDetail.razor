@@ -254,7 +254,7 @@ else
 
                         @if (!_model.IsUpcoming && _model.ShowChampionBadge)
                         {
-                            <div class="td-hero__champion-pill" aria-label="@("Tournament " + "champion".ToQuantity(_model.Winners.Count, ShowQuantityAs.None) + ": " + WinnersText)">
+                            <div class="td-hero__champion-pill" aria-label="@ChampionPillLabel">
                                 <span class="material-symbols-outlined" aria-hidden="true">emoji_events</span>
                                 <span>@WinnersText</span>
                             </div>
@@ -737,6 +737,11 @@ else
 
     private string WinnersText =>
         _model is null ? string.Empty : string.Join(" / ", _model.Winners);
+
+    private string ChampionPillLabel =>
+        _model is null
+            ? string.Empty
+            : "Tournament " + "champion".ToQuantity(_model.Winners.Count, ShowQuantityAs.None) + ": " + WinnersText;
 
     private TournamentDetailViewModel Model => _model!;
 

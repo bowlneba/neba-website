@@ -14,7 +14,9 @@ None. The page is public: you do not need to sign in. It works for scheduled tea
 
 2. Read the **Team rules** at the top of the page: the team composition rule and the champion definition for this format, taken from the NEBA rules document.
 
-   ![The checker page with the team rules and one empty picker per team member](images/check-team-eligibility/checker-page.png)
+   A warning under the rules says the tool cannot verify PBA or PWBA titles and that your team is responsible for them.
+
+   ![The checker page with the team rules, the PBA and PWBA warning and one empty picker per team member](images/check-team-eligibility/checker-page.png)
 
 3. Under **Your team**, fill in every bowler. Type at least three letters of a name into a picker and choose the right bowler from the list. Each entry shows the bowler's name and USBC ID, so bowlers with the same name are easy to tell apart. A bowler you already chose does not show in the other pickers.
 
