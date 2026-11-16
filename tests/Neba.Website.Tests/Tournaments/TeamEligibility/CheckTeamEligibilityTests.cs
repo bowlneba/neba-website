@@ -247,7 +247,7 @@ public sealed class CheckTeamEligibilityTests : IDisposable
         // Assert
         sentIds.ShouldBe(["id-1"]);
         sentUnknown.ShouldBe(1);
-        cut.Markup.ShouldContain("This team can bowl together.");
+        cut.Markup.ShouldContain("This team is eligible to bowl.");
     }
 
     [Fact(DisplayName = "Should show the reasons when the team is ineligible")]
@@ -268,7 +268,7 @@ public sealed class CheckTeamEligibilityTests : IDisposable
         await cut.FindAll("button").First(b => b.TextContent.Trim() == "Check team").ClickAsync();
 
         // Assert
-        cut.Markup.ShouldContain("This team can't bowl together.");
+        cut.Markup.ShouldContain("This team is not eligible to bowl.");
         cut.Markup.ShouldContain("Too many champions.");
         cut.Markup.ShouldContain("info@bowlneba.com");
     }

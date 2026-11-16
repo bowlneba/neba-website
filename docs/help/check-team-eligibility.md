@@ -33,12 +33,12 @@ None. The page is public: you do not need to sign in. It works for scheduled tea
 | Answer | What it means |
 | --- | --- |
 | **These are the defending champions.** | The team is the previous tournament's winners (or, after a truncated tournament, the winners before it), so the champion limits do not apply. The answer names the tournament they won. |
-| **This team can bowl together.** | The team passes the champion, Hall of Fame and age rules on every date of the tournament. |
-| **This team can't bowl together.** | The team breaks a rule. Each reason is listed. |
+| **This team is eligible to bowl.** | The team passes the champion, Hall of Fame and age rules on every date of the tournament. |
+| **This team is not eligible to bowl.** | The team breaks a rule. Each reason is listed. |
 | **The answer depends on the squad date.** | The team passes on some days of the tournament and not others (for example, a bowler turns 50 during the event). Each date shows its own verdict. |
 
 ![A team that is over the champion limit, with the reason and the contact line](images/check-team-eligibility/result-not-eligible.png)
-![A team that can bowl together, with the note that pro titles are not checked](images/check-team-eligibility/result-eligible.png)
+![A team that is eligible to bowl, with the note that pro titles are not checked](images/check-team-eligibility/result-eligible.png)
 
 Under every answer except "defending champions", **What we checked** shows how each bowler counts: a line with the bowler's name, USBC ID and last NEBA title, and on the right whether they count as a non-champion, a one-time champion or a multi-time champion. Small cards under it show the facts that decided it:
 

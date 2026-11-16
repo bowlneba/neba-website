@@ -58,14 +58,14 @@ test.describe('Team eligibility page', () => {
     await expect(page.locator('.neba-autocomplete-option', { hasText: 'Chris Champion (1111-00001)' })).toBeVisible();
   });
 
-  test('says a team that is over the champion limit cannot bowl together, and shows how to ask about it', async ({ page }) => {
+  test('says a team that is over the champion limit is not eligible to bowl, and shows how to ask about it', async ({ page }) => {
     await pickBowler(page, 1, 'chris', 'Chris Champion');
     await pickBowler(page, 2, 'cora', 'Cora Champion');
     await expect(checkTeamButton(page)).toBeEnabled();
 
     await checkTeamButton(page).click();
 
-    await expect(page.locator('.result')).toContainText("This team can't bowl together.");
+    await expect(page.locator('.result')).toContainText("This team is not eligible to bowl.");
     await expect(page.locator('.result')).toContainText('A team may have at most 1 previous champion.');
     await expect(page.locator('.result__contact a')).toHaveAttribute('href', 'mailto:info@bowlneba.com');
   });
@@ -110,13 +110,13 @@ test.describe('Team eligibility page', () => {
     expect(overflows).toBe(false);
   });
 
-  test('says a team that is eligible can bowl together, with a note that pro titles are not checked', async ({ page }) => {
+  test('says a team that is eligible to bowl, with a note that pro titles are not checked', async ({ page }) => {
     await pickBowler(page, 1, 'chris', 'Chris Champion');
     await pickBowler(page, 2, 'nina', 'Nina Newcomer');
 
     await checkTeamButton(page).click();
 
-    await expect(page.locator('.result')).toContainText('This team can bowl together.');
+    await expect(page.locator('.result')).toContainText('This team is eligible to bowl.');
     await expect(page.locator('.result__note')).toContainText('PBA or PWBA');
     await expect(page.locator('.result__contact')).toHaveCount(0);
   });

@@ -21,7 +21,7 @@
         case TeamEligibilityOutcomeKind.Eligible:
             <div class="result__headline">
                 <span class="material-symbols-outlined" aria-hidden="true">check_circle</span>
-                This team can bowl together.
+                This team is eligible to bowl.
             </div>
             <p>We checked NEBA titles, age, and Hall of Fame membership. Everyone qualifies.</p>
             break;
@@ -31,13 +31,13 @@
                 <span class="material-symbols-outlined" aria-hidden="true">event</span>
                 The answer depends on the squad date.
             </div>
-            <p>This team can bowl together on some days of the tournament but not others.</p>
+            <p>This team is eligible to bowl on some days of the tournament but not others.</p>
             <div class="result__dates">
                 @foreach (var check in Result.DateChecks)
                 {
                     <div class="result__date @(check.Eligible ? "result__date--good" : "result__date--bad")">
                         <span class="result__when">@check.AsOf.ToString("ddd, MMM d, yyyy", CultureInfo.CurrentCulture)</span>
-                        <span>@(check.Eligible ? "Can bowl together" : "Can't bowl together. " + string.Join(" ", check.Reasons))</span>
+                        <span>@(check.Eligible ? "Eligible to bowl" : "Not eligible to bowl. " + string.Join(" ", check.Reasons))</span>
                     </div>
                 }
             </div>
@@ -46,7 +46,7 @@
         default:
             <div class="result__headline">
                 <span class="material-symbols-outlined" aria-hidden="true">block</span>
-                This team can't bowl together.
+                This team is not eligible to bowl.
             </div>
             <ul>
                 @foreach (var reason in Result.Reasons)
