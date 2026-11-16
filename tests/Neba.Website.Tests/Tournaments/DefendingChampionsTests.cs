@@ -52,11 +52,24 @@ public sealed class DefendingChampionsTests : IDisposable
         cut.FindAll(".defending--panel").ShouldBeEmpty();
     }
 
+    [Fact(DisplayName = "Strip should tag a single champion as winner, not winners")]
+    public void Render_ShouldUseSingularWinner_WhenTeamHasOneChampion()
+    {
+        // Arrange
+        var team = DefendingTeamViewModelFactory.Create();
+
+        // Act
+        var cut = Render([team], DefendingChampionsLayout.Strip);
+
+        // Assert
+        cut.Find(".defending__tag").TextContent.Trim().ShouldBe("2025 Season winner");
+    }
+
     [Fact(DisplayName = "Strip should note a truncated tournament after the season")]
     public void Render_ShouldNoteTruncatedSource_InStripLayout()
     {
         // Arrange
-        var team = DefendingTeamViewModelFactory.Create(sourceTruncated: true);
+        var team = DefendingTeamViewModelFactory.Create(sourceTruncated: true, champions: ["Dave Smith", "Dana Jones"]);
 
         // Act
         var cut = Render([team], DefendingChampionsLayout.Strip);

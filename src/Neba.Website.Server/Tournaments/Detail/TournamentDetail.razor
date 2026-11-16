@@ -254,7 +254,7 @@ else
 
                         @if (!_model.IsUpcoming && _model.ShowChampionBadge)
                         {
-                            <div class="td-hero__champion-pill" aria-label="@("Tournament champion: " + WinnersText)">
+                            <div class="td-hero__champion-pill" aria-label="@("Tournament " + "champion".ToQuantity(_model.Winners.Count, ShowQuantityAs.None) + ": " + WinnersText)">
                                 <span class="material-symbols-outlined" aria-hidden="true">emoji_events</span>
                                 <span>@WinnersText</span>
                             </div>

@@ -343,6 +343,23 @@ titleEligible: true, winners: ["Alex Example", "Jamie Sample"]));
         cut.Find(".tournament-detail__champion-bar").TextContent.ShouldContain("Alex Example / Jamie Sample");
     }
 
+    [Theory(DisplayName = "Should label the hero champion pill singular or plural by winner count")]
+    [InlineData(1, "Tournament champion: Alex Example", TestDisplayName = "One winner")]
+    [InlineData(2, "Tournament champions: Alex Example / Jamie Sample", TestDisplayName = "Two winners")]
+    public void Render_ShouldPluralizeChampionPillLabel_ByWinnerCount(int winnerCount, string expected)
+    {
+        // Arrange
+        string[] winners = ["Alex Example", "Jamie Sample"];
+        SetupSuccessResponse(TournamentDetailResponseFactory.Create(
+            startDate: DateOnly.FromDateTime(DateTime.Today).AddDays(-30), status: TournamentStatus.Completed, titleEligible: true, winners: winners[..winnerCount]));
+
+        // Act
+        var cut = _ctx.Render<TournamentDetail>(p => p.Add(x => x.Id, TournamentDetailResponseFactory.ValidId));
+
+        // Assert
+        cut.Find(".td-hero__champion-pill").GetAttribute("aria-label").ShouldBe(expected);
+    }
+
     [Fact(DisplayName = "Should not render champion bar when no winners")]
     public void Render_ShouldNotRenderChampionBar_WhenNoWinners()
     {
