@@ -1,0 +1,291 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Create Series - BowlNEBA (editor)</title>
+<link rel="stylesheet" href="mockup.css">
+<style>
+  .form { padding: 24px; display: grid; gap: 22px; }
+  .field { display: grid; gap: 6px; max-width: 520px; }
+  .field label, .grid-label { font-weight: 600; font-size: 14px; }
+  .field label small, .grid-label small { font-weight: 400; color: var(--muted); }
+  input[type=text], input[type=number], input[type=date], input[type=time], select {
+    font: 15px var(--font-base);
+    color: var(--text);
+    background: var(--panel);
+    border: 1px solid var(--border-strong);
+    border-radius: var(--radius);
+    padding: 8px 10px;
+    min-width: 0;
+    width: 100%;
+  }
+  input[disabled], select[disabled] { background: var(--surface-high); color: var(--muted); }
+  .readonly-value { padding: 8px 0; font-weight: 600; }
+
+  .banner { border-radius: var(--radius-lg); padding: 12px 16px; font-size: 14px; }
+  .banner-error { background: rgba(204,8,10,.08); color: var(--neba-accent-red); border: 1px solid rgba(204,8,10,.25); }
+  .banner-lock { background: rgba(217,119,6,.1); color: var(--neba-warning); border: 1px solid rgba(217,119,6,.3); }
+
+  /* Stage grid */
+  .grid-head, .stage-row {
+    display: grid;
+    grid-template-columns: 34px 140px minmax(220px, 1fr) 110px 300px 108px;
+    gap: 10px;
+    align-items: start;
+  }
+  .grid-head { font-size: 12.5px; color: var(--muted); font-weight: 600; padding: 0 12px 6px; border-bottom: 1px solid var(--border); }
+  .stages { list-style: none; margin: 0; padding: 0; }
+  .stage-row { padding: 12px; border-bottom: 1px solid var(--border); }
+  .stage-row.has-error { background: rgba(204,8,10,.04); box-shadow: inset 3px 0 0 var(--neba-accent-red); }
+  .stage-order { font-family: var(--font-display); font-weight: 700; color: var(--muted); padding-top: 8px; text-align: center; }
+  .hint { font-size: 12.5px; color: var(--muted); margin-top: 4px; }
+  .squad { display: grid; grid-template-columns: 1fr 135px; gap: 6px; }
+  .no-squad { color: var(--muted); font-size: 13px; padding-top: 9px; }
+  .row-actions { display: flex; gap: 4px; padding-top: 3px; }
+  .row-error { grid-column: 2 / -1; color: var(--neba-accent-red); font-size: 13.5px; margin: 2px 0 0; }
+  .ro { padding-top: 8px; }
+
+  .grid-foot { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 12px; flex-wrap: wrap; }
+  .actions { display: flex; justify-content: flex-end; gap: 8px; padding-top: 4px; border-top: 1px solid var(--border); padding-top: 18px; }
+
+  body.is-locked .editable-only { display: none; }
+
+  /* Modal (simulates ConfirmActionModal) */
+  .modal-backdrop { position: fixed; inset: 0; background: rgba(0,0,0,.45); display: none; place-items: center; padding: 16px; }
+  .modal-backdrop.open { display: grid; }
+  .modal { max-width: 440px; padding: 22px; }
+  .modal h2 { font-family: var(--font-display); font-size: 18px; margin: 0 0 8px; }
+  .modal .actions { border: 0; padding-top: 12px; }
+
+  @media (max-width: 1000px) {
+    .grid-head { display: none; }
+    .stage-row { grid-template-columns: 34px 1fr 1fr; }
+    .stage-row > .cell-tournament, .stage-row > .cell-squad { grid-column: 2 / -1; }
+    .stage-row > .row-actions { grid-column: 2 / -1; }
+    .stage-row .cell-label { display: block; }
+  }
+  .cell-label { display: none; font-size: 12.5px; color: var(--muted); font-weight: 600; margin-bottom: 4px; }
+</style>
+</head>
+<body>
+<div class="mock-switcher">
+  <strong>Series editor (one mockup for create and edit)</strong>
+  <label><input type="radio" name="mode" value="create" checked> Create</label>
+  <label><input type="radio" name="mode" value="edit"> Edit</label>
+  <label><input type="radio" name="mode" value="locked"> Edit, locked</label>
+  <button type="button" id="simulate-errors">Simulate a failed save</button>
+  <span id="dirty-flag">Clean</span>
+</div>
+
+<nav class="site-nav"><div class="site-nav-inner">
+  <a class="site-logo" href="#">NEBA</a>
+  <div class="site-links"><span class="is-active">Tournaments <small>(Schedule · Series · Rules)</small></span><span>Stats</span><span>About</span><span>News</span><span>History</span></div>
+</div></nav>
+
+<header class="title-bar"><div class="title-bar-inner">
+  <div>
+    <h1 id="page-title">Create Series</h1>
+    <p id="page-sub">Set the Stages in order. Each Stage is one tournament's role in the Series.</p>
+  </div>
+  <a class="btn btn-on-blue" href="#">? Help</a>
+</div></header>
+
+<main class="page">
+  <form class="panel form" onsubmit="return false">
+    <div class="banner banner-lock" id="lock-banner" hidden>Processing has begun for this Series. Only its name can change.</div>
+    <div class="banner banner-error" id="error-banner" hidden></div>
+
+    <div class="field">
+      <label for="name">Name <small>(required)</small></label>
+      <input id="name" type="text" value="2026 Vincent Hall Memorial Series">
+    </div>
+
+    <div class="field" id="season-field">
+      <label for="season">Season <small>(required)</small></label>
+      <select id="season">
+        <option value="2026" selected>2026 (1/1/2026 to 12/31/2026)</option>
+        <option value="2027">2027 (1/1/2027 to 12/31/2027)</option>
+      </select>
+      <span class="hint">Fixed after the Series is created. Tournaments come from this season.</span>
+    </div>
+    <div class="field" id="season-readonly" hidden>
+      <span class="grid-label">Season</span>
+      <span class="readonly-value">2026 (1/1/2026 to 12/31/2026)</span>
+    </div>
+
+    <div>
+      <p class="grid-label" style="margin:0 0 10px">Stages <small>(order must follow tournament dates: Qualifying, then Survivor, then Placement)</small></p>
+      <div class="grid-head" aria-hidden="true">
+        <span>#</span><span>Kind</span><span>Tournament</span><span>Advancing</span><span>Squad (Survivor only)</span><span></span>
+      </div>
+      <ol class="stages" id="stages"></ol>
+      <div class="grid-foot editable-only">
+        <button class="btn btn-secondary" type="button" id="add-stage">+ Add Stage</button>
+        <span class="hint" id="tournament-note">2 of the season's tournaments are in another Series and are not listed.</span>
+      </div>
+    </div>
+
+    <div class="actions">
+      <a class="btn btn-secondary" href="series-detail-option-1.html">Cancel</a>
+      <button class="btn btn-primary" type="submit" id="save">Create Series</button>
+    </div>
+  </form>
+</main>
+
+<div class="modal-backdrop" id="season-modal">
+  <div class="panel modal" role="dialog" aria-modal="true" aria-labelledby="season-modal-title">
+    <h2 id="season-modal-title">Change season?</h2>
+    <p>Tournaments belong to one season, so changing it clears the Stages you've added.</p>
+    <div class="actions">
+      <button class="btn btn-secondary" type="button" id="season-cancel">Keep season</button>
+      <button class="btn btn-danger" type="button" id="season-confirm">Change and clear Stages</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  // The season's tournaments, sorted by start date (2026 sample).
+  const TOURNAMENTS = [
+    { id: 't1', label: "Fri 1/23 · Callahan's Bowl-O-Rama", teamSize: 1, start: '2026-01-23', end: '2026-01-24' },
+    { id: 't2', label: 'Fri 2/20 · Trios Team Event', teamSize: 3, start: '2026-02-20', end: '2026-02-20' },
+    { id: 't3', label: 'Sat 2/21 · NEBA Doubles, Baker Finals', teamSize: 2, start: '2026-02-21', end: '2026-02-21' },
+    { id: 't4', label: 'Sat 3/21 · Sparetime', teamSize: 1, start: '2026-03-21', end: '2026-03-21' },
+    { id: 't5', label: 'Sat 4/25 · BuddiesProShop.com Open', teamSize: 1, start: '2026-04-25', end: '2026-04-25' },
+    { id: 't6', label: 'Sat 5/30 · Westgate Lanes', teamSize: 1, start: '2026-05-30', end: '2026-05-30' },
+    { id: 't7', label: 'Sat 6/13 · Over 50 / Under Baker Doubles', teamSize: 2, start: '2026-06-13', end: '2026-06-13' },
+    { id: 't8', label: 'Sun 6/14 · Singles, Cranston', teamSize: 1, start: '2026-06-14', end: '2026-06-14' },
+    { id: 't9', label: "Sat 7/11 · Callahan's Bowl-O-Rama", teamSize: 1, start: '2026-07-11', end: '2026-07-12' },
+    { id: 't10', label: "Sat 8/22 · Lang's Singles Open", teamSize: 1, start: '2026-08-22', end: '2026-08-22' },
+    { id: 't11', label: 'Sun 9/13 · East Providence Singles', teamSize: 1, start: '2026-09-13', end: '2026-09-13' },
+    { id: 't12', label: 'Sat 10/17 · Tournament of Champions', teamSize: 1, start: '2026-10-17', end: '2026-10-17' },
+  ];
+
+  let rows = [
+    { kind: 'Qualifying', t: 't1', count: 8 },
+    { kind: 'Qualifying', t: 't2', count: 2 },
+    { kind: 'Qualifying', t: 't3', count: 4 },
+    { kind: 'Survivor', t: 't9', count: 40, squadDate: '2026-07-11', squadTime: '09:00' },
+    { kind: 'Placement', t: 't11', count: 4 },
+  ];
+  let errors = {};
+  let locked = false;
+  let dirty = false;
+
+  const markDirty = () => { dirty = true; document.getElementById('dirty-flag').textContent = 'Dirty (DirtyFormGuard would prompt on leave)'; };
+  const tById = id => TOURNAMENTS.find(t => t.id === id);
+
+  function render() {
+    const used = rows.map(r => r.t);
+    document.getElementById('stages').innerHTML = rows.map((r, i) => {
+      const t = tById(r.t);
+      const err = errors[i];
+      if (locked) {
+        return `<li class="stage-row">
+          <span class="stage-order">${i + 1}</span>
+          <span class="ro">${r.kind}</span>
+          <span class="ro cell-tournament">${t ? t.label : '—'}</span>
+          <span class="ro">${r.count}${t && t.teamSize > 1 ? ' teams' : ''}</span>
+          <span class="ro cell-squad">${r.kind === 'Survivor' ? `${r.squadTime} on ${r.squadDate}` : '—'}</span>
+          <span></span>
+        </li>`;
+      }
+      const options = ['<option value="">Choose a tournament</option>']
+        .concat(TOURNAMENTS.filter(x => x.id === r.t || !used.includes(x.id))
+          .map(x => `<option value="${x.id}" ${x.id === r.t ? 'selected' : ''}>${x.label}</option>`)).join('');
+      return `<li class="stage-row ${err ? 'has-error' : ''}" data-i="${i}">
+        <span class="stage-order">${i + 1}</span>
+        <div><span class="cell-label">Kind</span>
+          <select data-f="kind" aria-label="Stage ${i + 1} kind">
+            ${['Qualifying', 'Survivor', 'Placement'].map(k => `<option ${k === r.kind ? 'selected' : ''}>${k}</option>`).join('')}
+          </select></div>
+        <div class="cell-tournament"><span class="cell-label">Tournament</span>
+          <select data-f="t" aria-label="Stage ${i + 1} tournament">${options}</select></div>
+        <div><span class="cell-label">Advancing</span>
+          <input type="number" min="1" data-f="count" value="${r.count}" aria-label="Stage ${i + 1} advancing count">
+          ${t && t.teamSize > 1 && r.kind === 'Qualifying' ? `<div class="hint">Teams of ${t.teamSize}<br>(${r.count * t.teamSize} bowlers)</div>` : ''}
+          ${r.kind === 'Placement' ? '<div class="hint">Finale size</div>' : ''}</div>
+        <div class="cell-squad"><span class="cell-label">Squad</span>
+          ${r.kind === 'Survivor'
+            ? `<div class="squad">
+                 <input type="date" data-f="squadDate" value="${r.squadDate ?? ''}" aria-label="Stage ${i + 1} squad date">
+                 <input type="time" data-f="squadTime" value="${r.squadTime ?? ''}" aria-label="Stage ${i + 1} squad start time">
+               </div>`
+            : '<span class="no-squad">No squad</span>'}</div>
+        <div class="row-actions">
+          <button type="button" class="btn-icon" data-a="up" ${i === 0 ? 'disabled' : ''} aria-label="Move Stage ${i + 1} up">↑</button>
+          <button type="button" class="btn-icon" data-a="down" ${i === rows.length - 1 ? 'disabled' : ''} aria-label="Move Stage ${i + 1} down">↓</button>
+          <button type="button" class="btn-icon" data-a="remove" aria-label="Remove Stage ${i + 1}">✕</button>
+        </div>
+        ${err ? `<p class="row-error" role="alert">${err}</p>` : ''}
+      </li>`;
+    }).join('');
+  }
+
+  document.getElementById('stages').addEventListener('change', e => {
+    const li = e.target.closest('li'); if (!li) return;
+    const r = rows[+li.dataset.i]; const f = e.target.dataset.f;
+    if (f === 'count') r.count = +e.target.value; else r[f] = e.target.value;
+    if (f === 'kind') {
+      if (r.kind === 'Survivor') { r.squadDate = tById(r.t)?.start ?? ''; r.squadTime = r.squadTime ?? ''; }
+      else { delete r.squadDate; delete r.squadTime; }
+    }
+    if (f === 't' && r.kind === 'Survivor') r.squadDate = tById(r.t)?.start ?? '';
+    markDirty(); render();
+  });
+  document.getElementById('stages').addEventListener('click', e => {
+    const a = e.target.dataset.a; if (!a) return;
+    const i = +e.target.closest('li').dataset.i;
+    if (a === 'remove') rows.splice(i, 1);
+    if (a === 'up') [rows[i - 1], rows[i]] = [rows[i], rows[i - 1]];
+    if (a === 'down') [rows[i + 1], rows[i]] = [rows[i], rows[i + 1]];
+    errors = {}; markDirty(); render();
+  });
+  document.getElementById('add-stage').addEventListener('click', () => { rows.push({ kind: 'Qualifying', t: '', count: 8 }); markDirty(); render(); });
+  document.getElementById('name').addEventListener('input', markDirty);
+
+  document.getElementById('simulate-errors').addEventListener('click', () => {
+    errors = {
+      3: 'Stage 4 (Callahan\'s Bowl-O-Rama): the squad date 7/13/2026 is outside the tournament\'s dates (7/11/2026 to 7/12/2026).',
+      4: 'Stage 5 (East Providence Singles): a Finale of 50 cannot be larger than the last Survivor Stage\'s 40.',
+    };
+    rows[3].squadDate = '2026-07-13'; rows[4].count = 50;
+    const banner = document.getElementById('error-banner');
+    banner.hidden = false;
+    banner.textContent = '2 Stages need changes before this Series can be saved.';
+    render();
+  });
+
+  // Season change with confirmation
+  const season = document.getElementById('season');
+  let currentSeason = season.value;
+  season.addEventListener('change', () => {
+    if (rows.length) document.getElementById('season-modal').classList.add('open');
+    else currentSeason = season.value;
+  });
+  document.getElementById('season-cancel').addEventListener('click', () => { season.value = currentSeason; document.getElementById('season-modal').classList.remove('open'); });
+  document.getElementById('season-confirm').addEventListener('click', () => {
+    currentSeason = season.value; rows = []; errors = {}; markDirty(); render();
+    document.getElementById('season-modal').classList.remove('open');
+  });
+
+  // Mode switch
+  document.querySelectorAll('input[name=mode]').forEach(el => el.addEventListener('change', e => {
+    const mode = e.target.value;
+    locked = mode === 'locked';
+    document.body.classList.toggle('is-locked', locked);
+    const editing = mode !== 'create';
+    document.getElementById('page-title').textContent = editing ? 'Edit Series' : 'Create Series';
+    document.title = (editing ? 'Edit Series' : 'Create Series') + ' - BowlNEBA (editor)';
+    document.getElementById('season-field').hidden = editing;
+    document.getElementById('season-readonly').hidden = !editing;
+    document.getElementById('lock-banner').hidden = !locked;
+    document.getElementById('save').textContent = editing ? 'Save changes' : 'Create Series';
+    errors = {}; document.getElementById('error-banner').hidden = true;
+    render();
+  }));
+
+  render();
+</script>
+</body>
+</html>
