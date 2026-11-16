@@ -1,13 +1,6 @@
 @using System.Globalization
 
 <section class="result @CssClass">
-    @if (Result.ShowProfessionalTitlesNote)
-    {
-        <p class="result__note">
-            <strong>@(ProfessionalTitlesNotice.Headline).</strong> Your team is responsible for making sure no one on it has a professional title inside the champion window, and that everyone is eligible to bowl together. This result does not confirm it.
-        </p>
-    }
-
     @switch (Result.Outcome)
     {
         case TeamEligibilityOutcomeKind.DefendingChampions:
@@ -58,6 +51,13 @@
     }
 
     <TeamEligibilityFacts Members="@Result.Members" Checks="@Result.Checks" Summary="@Result.Summary" />
+
+    @if (Result.ShowProfessionalTitlesNote)
+    {
+        <p class="result__note">
+            <strong>@(ProfessionalTitlesNotice.Headline).</strong> @ProfessionalTitlesNotice.Responsibility
+        </p>
+    }
 
     @if (Result.Outcome is TeamEligibilityOutcomeKind.Ineligible or TeamEligibilityOutcomeKind.DependsOnDate)
     {

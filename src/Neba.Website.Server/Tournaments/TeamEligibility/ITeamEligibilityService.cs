@@ -5,7 +5,7 @@ namespace Neba.Website.Server.Tournaments.TeamEligibility;
 internal interface ITeamEligibilityService
 {
     /// <summary>
-    /// Checks whether the team may bowl together. <paramref name="unknownBowlerCount"/> counts members not found
+    /// Checks whether the team is eligible to bowl. <paramref name="unknownBowlerCount"/> counts members not found
     /// in the system.
     /// </summary>
     Task<ErrorOr<TeamEligibilityResultViewModel>> CheckAsync(

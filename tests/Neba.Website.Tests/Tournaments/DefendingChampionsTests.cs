@@ -127,6 +127,7 @@ public sealed class DefendingChampionsTests : IDisposable
     [Theory(DisplayName = "Heading should be plural for a team of more than one bowler or for two teams")]
     [InlineData(2, 1, "Defending champions", TestDisplayName = "A two-bowler team")]
     [InlineData(1, 1, "Defending champion", TestDisplayName = "One bowler, one team")]
+    [InlineData(0, 1, "Defending champion", TestDisplayName = "A team with no champions listed")]
     [InlineData(1, 2, "Defending champions", TestDisplayName = "One bowler, two teams")]
     public void Render_ShouldPluralizeHeading(int bowlers, int teams, string expected)
     {

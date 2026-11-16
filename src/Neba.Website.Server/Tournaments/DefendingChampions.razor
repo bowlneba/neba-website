@@ -54,7 +54,8 @@
     [Parameter]
     public DefendingChampionsLayout Layout { get; set; } = DefendingChampionsLayout.Strip;
 
-    // Plural for any team of more than one bowler, and for two teams after a truncation.
+    // Plural when more than one bowler holds the title (a team of two, or two teams after a truncation).
+    // An empty list stays singular.
     private string Heading => "Defending champion".ToQuantity(
-        Teams.Sum(team => team.Champions.Count), ShowQuantityAs.None);
+        Math.Max(1, Teams.Sum(team => team.Champions.Count)), ShowQuantityAs.None);
 }
