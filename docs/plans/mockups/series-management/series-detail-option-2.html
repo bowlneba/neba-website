@@ -1,0 +1,140 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>2025 Vincent Hall Memorial Series - BowlNEBA (detail option 2)</title>
+<link rel="stylesheet" href="mockup.css">
+<style>
+  .layout { display: grid; grid-template-columns: 1fr 280px; gap: 28px; align-items: start; }
+
+  /* Season timeline: one rail colored by kind, months on the left */
+  .timeline { list-style: none; margin: 0; padding: 8px 0; }
+  .timeline li {
+    display: grid;
+    grid-template-columns: 52px 22px 1fr;
+    gap: 0 14px;
+    align-items: start;
+    position: relative;
+  }
+  .month { font-family: var(--font-display); font-weight: 700; color: var(--muted); font-size: 14px; padding-top: 16px; text-align: right; }
+  .month.repeat { visibility: hidden; }
+  .rail { position: relative; align-self: stretch; }
+  .rail::before { content: ""; position: absolute; left: 10px; top: 0; bottom: 0; width: 2px; background: var(--border); }
+  .rail i {
+    position: absolute;
+    left: 4px;
+    top: 20px;
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    border: 3px solid var(--panel);
+    box-shadow: 0 0 0 2px currentColor;
+    background: currentColor;
+  }
+  .card { padding: 12px 18px; margin: 6px 0; display: grid; grid-template-columns: 1fr auto; gap: 4px 16px; }
+  .card a { font-weight: 600; text-decoration: none; }
+  .card a:hover { text-decoration: underline; }
+  .card .meta { color: var(--muted); font-size: 13.5px; grid-column: 1; }
+  .card .adv { font-weight: 700; font-family: var(--font-display); grid-row: 1 / span 2; grid-column: 2; align-self: center; text-align: right; }
+  .card .adv small { display: block; font-family: var(--font-base); font-weight: 400; font-size: 12.5px; color: var(--muted); }
+  .card.is-survivor { border-left: 4px solid var(--kind-survivor); }
+  .card.is-placement { border-left: 4px solid var(--kind-placement); }
+
+  .aside { padding: 20px; position: sticky; top: 16px; }
+  .aside h2 { font-family: var(--font-display); font-size: 16px; margin: 0 0 12px; }
+  .aside dl { margin: 0; display: grid; gap: 10px; }
+  .aside dt { font-size: 13px; color: var(--muted); }
+  .aside dd { margin: 0; font-weight: 600; }
+  .aside .admin-block { margin-top: 18px; padding-top: 16px; border-top: 1px solid var(--border); display: grid; gap: 8px; }
+  .lock-note { display: none; font-size: 13px; color: var(--neba-warning); margin: 0; }
+  body.is-locked .lock-note { display: block; }
+
+  @media (max-width: 900px) {
+    .layout { grid-template-columns: 1fr; }
+    .aside { position: static; order: -1; }
+  }
+  @media (max-width: 767px) {
+    .timeline li { grid-template-columns: 40px 18px 1fr; gap: 0 8px; }
+    .card { grid-template-columns: 1fr; }
+    .card .adv { grid-row: auto; grid-column: 1; text-align: left; }
+  }
+</style>
+</head>
+<body class="is-admin">
+<div class="mock-switcher">
+  <strong>Detail option 2: season timeline with a summary sidebar</strong>
+  <a href="series-detail-option-1.html">Option 1</a>
+  <a href="series-detail-option-3.html">Option 3</a>
+  <label><input type="checkbox" id="toggle-admin" checked> Signed in as admin</label>
+  <label><input type="checkbox" id="toggle-locked"> Locked</label>
+</div>
+
+<nav class="site-nav"><div class="site-nav-inner">
+  <a class="site-logo" href="#">NEBA</a>
+  <div class="site-links"><span class="is-active">Tournaments <small>(Schedule · Series · Rules)</small></span><span>Stats</span><span>About</span><span>News</span><span>History</span></div>
+</div></nav>
+
+<header class="title-bar"><div class="title-bar-inner">
+  <div>
+    <h1 id="series-name"></h1>
+    <p id="series-season"></p>
+  </div>
+</div></header>
+
+<main class="page layout">
+  <ol class="timeline" id="timeline"></ol>
+
+  <aside class="panel aside">
+    <h2>At a glance</h2>
+    <dl>
+      <div><dt>Qualifying events</dt><dd id="q-count"></dd></div>
+      <div><dt>Up to</dt><dd id="q-slots"></dd></div>
+      <div><dt>Survivor rounds</dt><dd id="s-summary"></dd></div>
+      <div><dt>Finale</dt><dd id="finale"></dd></div>
+    </dl>
+    <div class="admin-block admin-only">
+      <a class="btn btn-secondary" href="series-editor.html">Edit Series</a>
+      <button class="btn btn-danger" id="delete-btn" type="button">Delete Series</button>
+      <p class="lock-note">Processing has begun, so this Series can't be deleted.</p>
+    </div>
+  </aside>
+</main>
+
+<script src="series-data.js"></script>
+<script>
+  const s = window.SERIES;
+  document.getElementById('series-name').textContent = s.name;
+  document.getElementById('series-season').textContent = s.season;
+
+  const kindClass = { Qualifying: 'kind-qualifying', Survivor: 'kind-survivor', Placement: 'kind-placement' };
+  let lastMonth = '';
+  document.getElementById('timeline').innerHTML = s.stages.map((x, i) => {
+    const repeat = x.month === lastMonth;
+    lastMonth = x.month;
+    const sub = x.kind === 'Qualifying' ? (x.teamSize > 1 ? `${x.teamSize}-bowler teams` : 'Singles') : x.kind === 'Survivor' ? x.squad : 'Ranked by position';
+    return `
+      <li>
+        <span class="month ${repeat ? 'repeat' : ''}">${x.month}</span>
+        <span class="rail ${kindClass[x.kind]}"><i></i></span>
+        <div class="panel card ${x.kind === 'Survivor' ? 'is-survivor' : x.kind === 'Placement' ? 'is-placement' : ''}">
+          <a href="#">${x.tournament}</a>
+          <span class="adv">${window.advancingLabel(x)}<small>${x.kind}</small></span>
+          <span class="meta">Stage ${i + 1} · ${x.dates} · ${sub}</span>
+        </div>
+      </li>`;
+  }).join('');
+
+  const survivors = s.stages.filter(x => x.kind === 'Survivor');
+  document.getElementById('q-count').textContent = s.stages.filter(x => x.kind === 'Qualifying').length;
+  document.getElementById('q-slots').textContent = `${window.qualifyingSlots(s.stages)} qualifiers`;
+  document.getElementById('s-summary').textContent = survivors.map(x => x.count).join(', then ');
+  document.getElementById('finale').textContent = `Top ${s.stages.find(x => x.kind === 'Placement').count}`;
+
+  window.wireAdminToggle();
+  document.getElementById('toggle-locked').addEventListener('change', e => {
+    document.getElementById('delete-btn').disabled = e.target.checked;
+  });
+</script>
+</body>
+</html>
