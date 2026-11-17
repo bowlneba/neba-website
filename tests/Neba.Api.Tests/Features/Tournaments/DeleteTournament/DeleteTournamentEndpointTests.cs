@@ -82,6 +82,28 @@ public sealed class DeleteTournamentEndpointTests
         endpoint.HttpContext.Response.StatusCode.ShouldBe(409);
     }
 
+    [Fact(DisplayName = "HandleAsync should return 409 naming the Series when the tournament is a Series Stage")]
+    public async Task HandleAsync_ShouldReturn409NamingSeries_WhenTournamentIsASeriesStage()
+    {
+        // Arrange
+        var request = new DeleteTournamentRequest { Id = ValidTournamentId };
+        var ct = TestContext.Current.CancellationToken;
+
+        var commandHandlerMock = new Mock<NebaMessaging.ICommandHandler<DeleteTournamentCommand, Deleted>>(MockBehavior.Strict);
+        commandHandlerMock
+            .Setup(h => h.HandleAsync(It.IsAny<DeleteTournamentCommand>(), ct))
+            .ReturnsAsync(TournamentErrors.IsSeriesStage(new TournamentId(ValidTournamentId), "Vincent Hall"));
+
+        var endpoint = Factory.Create<DeleteTournamentEndpoint>(commandHandlerMock.Object);
+
+        // Act
+        await endpoint.HandleAsync(request, ct);
+
+        // Assert
+        endpoint.HttpContext.Response.StatusCode.ShouldBe(409);
+        endpoint.ValidationFailures.Single().ErrorMessage.ShouldContain("Vincent Hall");
+    }
+
     [Fact(DisplayName = "Configure should register a permission-protected DELETE route under /tournaments")]
     public void Configure_ShouldRegisterPermissionProtectedDeleteRoute_UnderTournamentsPath()
     {

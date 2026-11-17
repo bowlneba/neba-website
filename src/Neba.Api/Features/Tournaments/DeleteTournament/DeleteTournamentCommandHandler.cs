@@ -29,6 +29,17 @@ internal sealed class DeleteTournamentCommandHandler(
             return Result.Deleted;
         }
 
+        // A Series Stage references the tournament with a foreign key, so deleting it would fail as a 500.
+        var seriesName = await appDbContext.Series
+            .Where(series => series.Stages.Any(stage => stage.TournamentId == command.TournamentId))
+            .Select(series => series.Name)
+            .FirstOrDefaultAsync(cancellationToken);
+
+        if (seriesName is not null)
+        {
+            return TournamentErrors.IsSeriesStage(command.TournamentId, seriesName);
+        }
+
         if (await HasHistoricalRecordsAsync(tournament, cancellationToken))
         {
             return TournamentErrors.HasHistoricalRecords(command.TournamentId);
