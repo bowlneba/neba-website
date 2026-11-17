@@ -59,7 +59,7 @@ public sealed class SecurityRoleSeederTests
 
         if (roleUnderTest != Roles.Manager)
         {
-            SetupRoleAlreadySynced(mock, Roles.Manager, [Permissions.CreateArticle, Permissions.EditArticle, Permissions.DeleteArticle, Permissions.CreateSponsor, Permissions.EditSponsor, Permissions.EditHallOfFamePhoto, Permissions.CreateTournament, Permissions.EditTournament, Permissions.EditTournamentLogo, Permissions.ManageTournamentSponsors, Permissions.ManageTournamentStatus]);
+            SetupRoleAlreadySynced(mock, Roles.Manager, [Permissions.CreateArticle, Permissions.EditArticle, Permissions.DeleteArticle, Permissions.CreateSponsor, Permissions.EditSponsor, Permissions.EditHallOfFamePhoto, Permissions.CreateTournament, Permissions.EditTournament, Permissions.EditTournamentLogo, Permissions.ManageTournamentSponsors, Permissions.ManageTournamentStatus, Permissions.CreateSeries, Permissions.EditSeries, Permissions.DeleteSeries, Permissions.EditSeriesLogo]);
         }
 
         if (roleUnderTest != Roles.TournamentDirector)
@@ -282,7 +282,7 @@ public sealed class SecurityRoleSeederTests
         roleManagerMock.VerifyAll();
     }
 
-    [Fact(DisplayName = "SeedAsync should create the Manager role and add exactly the CreateArticle, EditArticle, DeleteArticle, CreateSponsor, EditSponsor, EditHallOfFamePhoto, CreateTournament, EditTournament, EditTournamentLogo, ManageTournamentSponsors, and ManageTournamentStatus permission claims when the role does not exist")]
+    [Fact(DisplayName = "SeedAsync should create the Manager role and add exactly the CreateArticle, EditArticle, DeleteArticle, CreateSponsor, EditSponsor, EditHallOfFamePhoto, CreateTournament, EditTournament, EditTournamentLogo, ManageTournamentSponsors, ManageTournamentStatus, CreateSeries, EditSeries, DeleteSeries, and EditSeriesLogo permission claims when the role does not exist")]
     public async Task SeedAsync_ShouldCreateManagerRoleAndAddExpectedClaims_WhenRoleDoesNotExist()
     {
         // Arrange
@@ -298,7 +298,11 @@ public sealed class SecurityRoleSeederTests
             Permissions.EditTournament,
             Permissions.EditTournamentLogo,
             Permissions.ManageTournamentSponsors,
-            Permissions.ManageTournamentStatus
+            Permissions.ManageTournamentStatus,
+            Permissions.CreateSeries,
+            Permissions.EditSeries,
+            Permissions.DeleteSeries,
+            Permissions.EditSeriesLogo
         };
 
         var roleManagerMock = CreateRoleManagerMock();
@@ -348,7 +352,11 @@ public sealed class SecurityRoleSeederTests
                 Permissions.EditTournament,
                 Permissions.EditTournamentLogo,
                 Permissions.ManageTournamentSponsors,
-                Permissions.ManageTournamentStatus
+                Permissions.ManageTournamentStatus,
+                Permissions.CreateSeries,
+                Permissions.EditSeries,
+                Permissions.DeleteSeries,
+                Permissions.EditSeriesLogo
             }
             .Select(p => new Claim(SecurityRoleSeeder.PermissionClaimType, p.Value))
             .Append(staleClaim)
