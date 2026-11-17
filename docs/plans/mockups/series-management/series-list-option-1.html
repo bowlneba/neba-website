@@ -8,7 +8,7 @@
 <style>
   .current {
     display: grid;
-    grid-template-columns: 1fr auto;
+    grid-template-columns: auto 1fr auto;
     gap: 24px;
     padding: 28px;
     text-decoration: none;
@@ -46,7 +46,7 @@
   .past-list li + li { border-top: 1px solid var(--border); }
   .past-list a {
     display: grid;
-    grid-template-columns: 120px 1fr auto;
+    grid-template-columns: 36px 80px 1fr auto;
     gap: 16px;
     padding: 14px 20px;
     text-decoration: none;
@@ -62,9 +62,12 @@
   .empty p { margin: 0 auto; max-width: 48ch; color: var(--muted); }
 
   @media (max-width: 767px) {
-    .current { grid-template-columns: 1fr; padding: 20px; }
+    .current { grid-template-columns: auto 1fr; padding: 20px; }
+    .next-stage { grid-column: 1 / -1; }
     .next-stage { border-left: 0; border-top: 1px solid var(--border); padding: 16px 0 0; }
-    .past-list a { grid-template-columns: 1fr; gap: 2px; }
+    .past-list a { grid-template-columns: 36px 1fr; gap: 2px 12px; }
+    .past-list a .past-year { grid-column: 2; }
+    .past-list a .past-name { grid-column: 2; }
   }
 </style>
 </head>
@@ -91,6 +94,7 @@
 <main class="page">
   <div id="has-data">
     <a class="panel current" href="series-detail-option-1.html">
+      <span class="logo-tile logo-tile--large"><img src="vincent-hall-logo.png" alt="2026 Vincent Hall Memorial Series logo"></span>
       <div>
         <p class="current-season">1/1/2026 to 12/31/2026</p>
         <h2>2026 Vincent Hall Memorial Series</h2>
@@ -110,6 +114,7 @@
     <h3 class="past-heading">Past Series</h3>
     <ul class="panel past-list">
       <li><a href="series-detail-option-1.html">
+        <span class="logo-tile logo-tile--small logo-tile--initials" aria-hidden="true">VH</span>
         <span class="past-year">2025</span>
         <span class="past-name">2025 Vincent Hall Memorial Series <span class="muted">· 1/1/2025 to 12/31/2025</span></span>
         <span class="badge-locked admin-only">Locked</span>

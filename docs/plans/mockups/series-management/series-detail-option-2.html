@@ -129,7 +129,7 @@
   document.getElementById('q-count').textContent = s.stages.filter(x => x.kind === 'Qualifying').length;
   document.getElementById('q-slots').textContent = `${window.qualifyingSlots(s.stages)} qualifiers`;
   document.getElementById('s-summary').textContent = survivors.map(x => x.count).join(', then ');
-  document.getElementById('finale').textContent = `Top ${s.stages.find(x => x.kind === 'Placement').count}`;
+  document.getElementById('finale').textContent = `Top ${s.finale.count}`;
 
   window.wireAdminToggle();
   document.getElementById('toggle-locked').addEventListener('change', e => {

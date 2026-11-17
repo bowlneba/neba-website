@@ -28,6 +28,7 @@
   --kind-qualifying: var(--neba-blue-600);
   --kind-survivor: var(--neba-gold-deep);
   --kind-placement: var(--neba-blue-brand);
+  --kind-finale: var(--neba-accent-red);
 }
 
 @media (prefers-color-scheme: dark) {
@@ -213,6 +214,7 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
 .kind-qualifying { color: var(--kind-qualifying); }
 .kind-survivor { color: var(--kind-survivor); }
 .kind-placement { color: var(--kind-placement); }
+.kind-finale { color: var(--kind-finale); }
 
 .admin-only { display: none; }
 body.is-admin .admin-only { display: revert; }
@@ -228,3 +230,12 @@ body.is-admin .admin-only.flex { display: flex; }
 
 /* Second line under a team Stage's advancing label */
 .adv-sub { display: block; font-weight: 400; font-size: 13px; color: var(--muted); }
+
+/* Series logo tile (mirrors the planned SeriesLogoTile) */
+.logo-tile { flex: none; display: inline-grid; place-items: center; background: #fff; border: 1px solid var(--border); border-radius: var(--radius-lg); overflow: hidden; }
+.logo-tile img { width: 100%; height: 100%; object-fit: contain; }
+.logo-tile--large { width: 72px; height: 72px; }
+.logo-tile--small { width: 36px; height: 36px; border-radius: var(--radius); }
+.logo-tile--initials { background: var(--neba-blue-brand); color: #fff; font-family: var(--font-display); font-weight: 800; border-color: transparent; }
+.logo-tile--large.logo-tile--initials { font-size: 24px; }
+.logo-tile--small.logo-tile--initials { font-size: 13px; }

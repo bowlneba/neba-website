@@ -51,6 +51,11 @@
   .squad { font-size: 14px; color: var(--muted); }
 
   .hero-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+  .hero-id { display: flex; gap: 18px; align-items: center; }
+  .hero-logo { position: relative; }
+  .hero-logo .logo-tile { width: 88px; height: 88px; }
+  .logo-edit { position: absolute; right: -8px; bottom: -8px; width: 30px; height: 30px; border-radius: 999px; border: 2px solid #fff; background: var(--neba-blue-600); color: #fff; cursor: pointer; font-size: 14px; }
+  .funnel > p.funnel-caption { margin: 14px 0 0; font-size: 14px; color: var(--muted); }
   .lock-note { display: none; color: rgba(255,255,255,.85); font-size: 13px; margin-top: 6px; }
   body.is-locked.is-admin .lock-note { display: block; }
 
@@ -68,6 +73,8 @@
   <a href="series-detail-option-3.html">Option 3</a>
   <label><input type="checkbox" id="toggle-admin" checked> Signed in as admin</label>
   <label><input type="checkbox" id="toggle-locked"> Locked</label>
+  <label><input type="checkbox" id="toggle-nofinale"> No Finale</label>
+  <label><input type="checkbox" id="toggle-nologo"> No logo</label>
 </div>
 
 <nav class="site-nav"><div class="site-nav-inner">
@@ -76,9 +83,15 @@
 </div></nav>
 
 <header class="title-bar"><div class="title-bar-inner">
-  <div>
-    <h1 id="series-name"></h1>
-    <p id="series-season"></p>
+  <div class="hero-id">
+    <div class="hero-logo">
+      <span class="logo-tile" id="hero-logo"><img src="vincent-hall-logo.png" alt="2025 Vincent Hall Memorial Series logo"></span>
+      <button type="button" class="logo-edit admin-only" aria-label="Edit logo for 2025 Vincent Hall Memorial Series" title="Opens the shared Edit logo modal">✎</button>
+    </div>
+    <div>
+      <h1 id="series-name"></h1>
+      <p id="series-season"></p>
+    </div>
   </div>
   <div class="admin-only">
     <div class="hero-actions">
@@ -92,8 +105,9 @@
 <main class="page">
   <section class="panel funnel" aria-labelledby="funnel-title">
     <h2 id="funnel-title">How the field narrows</h2>
-    <p>Bowlers qualify at the early events, are cut by squad score, and the last round decides the Finale.</p>
+    <p id="funnel-intro"></p>
     <div class="funnel-rows" id="funnel"></div>
+    <p class="funnel-caption" id="funnel-caption" hidden>No Finale: the Placement Round sets the final standings.</p>
   </section>
 
   <div id="groups"></div>
@@ -105,14 +119,19 @@
   document.getElementById('series-name').textContent = s.name;
   document.getElementById('series-season').textContent = s.season;
 
+  function render() {
   const max = window.qualifyingSlots(s.stages);
   const survivors = s.stages.filter(x => x.kind === 'Survivor');
-  const placement = s.stages.find(x => x.kind === 'Placement');
+  const finale = s.finale;
   const rows = [
     { label: 'Qualifiers', sub: `${s.stages.filter(x => x.kind === 'Qualifying').length} events, top finishers`, n: max, cls: 'q', prefix: 'Up to ' },
     ...survivors.map(x => ({ label: x.tournament, sub: `Survivor · ${x.dates}`, n: x.count, cls: 's' })),
-    { label: 'Finale', sub: `From ${placement.tournament}`, n: placement.count, cls: 'p' },
+    ...(finale ? [{ label: 'Finale', sub: finale.when, n: finale.count, cls: 'p' }] : []),
   ];
+  document.getElementById('funnel-intro').textContent = finale
+    ? 'Bowlers qualify at the early events, are cut by squad score, and the last round decides the Finale.'
+    : 'Bowlers qualify at the early events, are cut by squad score, and the last round decides the final standings.';
+  document.getElementById('funnel-caption').hidden = !!finale;
   document.getElementById('funnel').innerHTML = rows.map(r => `
     <div class="funnel-row">
       <div class="funnel-label">${r.label}<small>${r.sub}</small></div>
@@ -137,7 +156,25 @@
             <span class="squad">${x.squad ?? ''}</span>
           </li>`).join('')}
       </ol>`;
-  }).join('');
+  }).join('') + (finale ? `
+      <h2 class="section-title">Finale <span>Top ${finale.count} of the Placement Round</span></h2>
+      <div class="panel" style="padding:16px 20px;display:flex;gap:28px;flex-wrap:wrap">
+        <span style="font-weight:600">${finale.when}</span>
+        <span>${finale.host ?? 'Host center to be announced'}</span>
+      </div>` : '');
+  }
+  const finale0 = s.finale;
+  render();
+
+  document.getElementById('toggle-nofinale').addEventListener('change', e => {
+    s.finale = e.target.checked ? null : finale0;
+    render();
+  });
+  document.getElementById('toggle-nologo').addEventListener('change', e => {
+    const tile = document.getElementById('hero-logo');
+    tile.className = e.target.checked ? 'logo-tile logo-tile--large logo-tile--initials' : 'logo-tile';
+    tile.innerHTML = e.target.checked ? 'VH' : '<img src="vincent-hall-logo.png" alt="2025 Vincent Hall Memorial Series logo">';
+  });
 
   window.wireAdminToggle();
   document.getElementById('toggle-locked').addEventListener('change', e => {

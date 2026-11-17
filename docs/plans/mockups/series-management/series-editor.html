@@ -66,6 +66,16 @@
     .stage-row .cell-label { display: block; }
   }
   .cell-label { display: none; font-size: 12.5px; color: var(--muted); font-weight: 600; margin-bottom: 4px; }
+  .finale { border-top: 1px solid var(--border); padding-top: 18px; }
+  .finale-toggle { display: inline-flex; gap: 8px; align-items: center; font-weight: 600; margin-bottom: 4px; }
+  .finale .hint { display: block; margin: 2px 0; }
+  .finale-fields { display: grid; grid-template-columns: 120px 160px 130px 1fr; gap: 14px; margin-top: 12px; }
+  .finale-fields label { display: block; font-size: 13px; font-weight: 600; margin-bottom: 4px; }
+  .finale-fields label small { font-weight: 400; color: var(--muted); }
+  .finale-fields input, .finale-fields select { width: 100%; font: inherit; padding: 8px 10px; border: 1px solid var(--border-strong); border-radius: var(--radius); background: var(--panel); color: var(--text); }
+  .locked-only { display: none !important; }
+  body.is-locked .locked-only { display: block !important; }
+  @media (max-width: 767px) { .finale-fields { grid-template-columns: 1fr 1fr; } }
 </style>
 </head>
 <body>
@@ -114,6 +124,15 @@
       <span class="readonly-value">2026 (1/1/2026 to 12/31/2026)</span>
     </div>
 
+    <div class="field">
+      <span class="grid-label">Logo</span>
+      <div style="display:flex; gap:14px; align-items:center">
+        <span class="logo-tile logo-tile--large" id="logo-preview"><img src="vincent-hall-logo.png" alt="Series logo"></span>
+        <button class="btn btn-secondary" type="button" id="logo-toggle">Remove logo</button>
+      </div>
+      <span class="hint">Shown on the Series list and detail pages. It can change even after processing begins.</span>
+    </div>
+
     <div>
       <p class="grid-label" style="margin:0 0 10px">Stages <small>(order must follow tournament dates: Qualifying, then Survivor, then Placement)</small></p>
       <div class="grid-head" aria-hidden="true">
@@ -124,6 +143,26 @@
         <button class="btn btn-secondary" type="button" id="add-stage">+ Add Stage</button>
         <span class="hint" id="tournament-note">2 of the season's tournaments are in another Series and are not listed.</span>
       </div>
+    </div>
+
+    <div class="finale" aria-labelledby="finale-h">
+      <p class="grid-label" id="finale-h" style="margin:0 0 6px">Finale</p>
+      <label class="finale-toggle"><input type="checkbox" id="finale-toggle" checked> This Series has a Finale</label>
+      <span class="hint">The Finale is its own event, held after the Placement Round. It shows in the tournament list with the Series logo.</span>
+      <span class="hint locked-only">Whether a Series has a Finale, and how many finalists go, is fixed once processing begins. The date, start time and center can still change.</span>
+      <div class="finale-fields" id="finale-fields">
+        <div><label for="finale-count">Finalists <small>(required)</small></label><input id="finale-count" type="number" min="1" value="4"></div>
+        <div><label for="finale-date">Date <small>(required)</small></label><input id="finale-date" type="date" value="2026-09-27"><span class="hint">After every Stage's tournament ends.</span></div>
+        <div><label for="finale-time">Start time <small>(required)</small></label><input id="finale-time" type="time" value="14:00"></div>
+        <div><label for="finale-center">Host center</label>
+          <select id="finale-center">
+            <option value="">To be announced</option>
+            <option selected>Callahan's Bowl-O-Rama — Seekonk, MA</option>
+            <option>Lang's Bowlarama — Dedham, MA</option>
+            <option>East Providence Lanes — East Providence, RI</option>
+          </select></div>
+      </div>
+      <p class="row-error" id="finale-error" role="alert" hidden></p>
     </div>
 
     <div class="actions">
@@ -166,7 +205,7 @@
     { kind: 'Qualifying', t: 't2', count: 2 },
     { kind: 'Qualifying', t: 't3', count: 4 },
     { kind: 'Survivor', t: 't9', count: 40, squadDate: '2026-07-11', squadTime: '09:00' },
-    { kind: 'Placement', t: 't11', count: 4 },
+    { kind: 'Placement', t: 't11', count: null },
   ];
   let errors = {};
   let locked = false;
@@ -185,7 +224,7 @@
           <span class="stage-order">${i + 1}</span>
           <span class="ro">${r.kind}</span>
           <span class="ro cell-tournament">${t ? t.label : '—'}</span>
-          <span class="ro">${r.count}${t && t.teamSize > 1 ? ' teams' : ''}</span>
+          <span class="ro">${r.kind === 'Placement' ? 'Final standings' : r.count}${t && t.teamSize > 1 ? ' teams' : ''}</span>
           <span class="ro cell-squad">${r.kind === 'Survivor' ? `${r.squadTime} on ${r.squadDate}` : '—'}</span>
           <span></span>
         </li>`;
@@ -202,9 +241,10 @@
         <div class="cell-tournament"><span class="cell-label">Tournament</span>
           <select data-f="t" aria-label="Stage ${i + 1} tournament">${options}</select></div>
         <div><span class="cell-label">Advancing</span>
-          <input type="number" min="1" data-f="count" value="${r.count}" aria-label="Stage ${i + 1} advancing count">
-          ${t && t.teamSize > 1 && r.kind === 'Qualifying' ? `<div class="hint">Teams of ${t.teamSize}<br>(${r.count * t.teamSize} bowlers)</div>` : ''}
-          ${r.kind === 'Placement' ? '<div class="hint">Finale size</div>' : ''}</div>
+          ${r.kind === 'Placement'
+            ? '<span class="no-squad">No count</span><div class="hint">Ranks by tournament position. Set the Finale below.</div>'
+            : `<input type="number" min="1" data-f="count" value="${r.count ?? ''}" aria-label="Stage ${i + 1} advancing count">
+          ${t && t.teamSize > 1 && r.kind === 'Qualifying' ? `<div class="hint">Teams of ${t.teamSize}<br>(${r.count * t.teamSize} bowlers)</div>` : ''}`}</div>
         <div class="cell-squad"><span class="cell-label">Squad</span>
           ${r.kind === 'Survivor'
             ? `<div class="squad">
@@ -225,7 +265,7 @@
   document.getElementById('stages').addEventListener('change', e => {
     const li = e.target.closest('li'); if (!li) return;
     const r = rows[+li.dataset.i]; const f = e.target.dataset.f;
-    if (f === 'count') r.count = +e.target.value; else r[f] = e.target.value;
+    if (f === 'count') r.count = e.target.value === '' ? null : +e.target.value; else r[f] = e.target.value;
     if (f === 'kind') {
       if (r.kind === 'Survivor') { r.squadDate = tById(r.t)?.start ?? ''; r.squadTime = r.squadTime ?? ''; }
       else { delete r.squadDate; delete r.squadTime; }
@@ -243,16 +283,34 @@
   });
   document.getElementById('add-stage').addEventListener('click', () => { rows.push({ kind: 'Qualifying', t: '', count: 8 }); markDirty(); render(); });
   document.getElementById('name').addEventListener('input', markDirty);
+  document.getElementById('finale-toggle').addEventListener('change', e => {
+    document.getElementById('finale-fields').hidden = !e.target.checked;
+    document.getElementById('finale-error').hidden = true;
+    markDirty();
+  });
+  document.getElementById('finale-fields').addEventListener('input', markDirty);
+  document.getElementById('logo-toggle').addEventListener('click', e => {
+    const preview = document.getElementById('logo-preview');
+    const removing = e.target.textContent === 'Remove logo';
+    preview.innerHTML = removing ? '' : '<img src="vincent-hall-logo.png" alt="Series logo">';
+    preview.className = removing ? 'logo-tile logo-tile--large logo-tile--initials' : 'logo-tile logo-tile--large';
+    if (removing) preview.textContent = 'VH';
+    e.target.textContent = removing ? 'Upload a logo' : 'Remove logo';
+    markDirty();
+  });
 
   document.getElementById('simulate-errors').addEventListener('click', () => {
     errors = {
       3: 'Stage 4 (Callahan\'s Bowl-O-Rama): the squad date 7/13/2026 is outside the tournament\'s dates (7/11/2026 to 7/12/2026).',
-      4: 'Stage 5 (East Providence Singles): a Finale of 50 cannot be larger than the last Survivor Stage\'s 40.',
     };
-    rows[3].squadDate = '2026-07-13'; rows[4].count = 50;
+    rows[3].squadDate = '2026-07-13';
+    document.getElementById('finale-count').value = 50;
+    const fe = document.getElementById('finale-error');
+    fe.hidden = false;
+    fe.textContent = 'A Finale of 50 cannot be larger than the last Survivor Stage\'s 40.';
     const banner = document.getElementById('error-banner');
     banner.hidden = false;
-    banner.textContent = '2 Stages need changes before this Series can be saved.';
+    banner.textContent = '1 Stage needs changes before this Series can be saved.';
     render();
   });
 
@@ -273,6 +331,8 @@
   document.querySelectorAll('input[name=mode]').forEach(el => el.addEventListener('change', e => {
     const mode = e.target.value;
     locked = mode === 'locked';
+    document.getElementById('finale-toggle').disabled = locked;
+    document.getElementById('finale-count').disabled = locked;
     document.body.classList.toggle('is-locked', locked);
     const editing = mode !== 'create';
     document.getElementById('page-title').textContent = editing ? 'Edit Series' : 'Create Series';
