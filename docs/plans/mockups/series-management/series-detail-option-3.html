@@ -89,7 +89,7 @@
   const survivors = s.stages.filter(x => x.kind === 'Survivor');
   document.getElementById('q-slots').textContent = `Up to ${window.qualifyingSlots(s.stages)}`;
   document.getElementById('s-path').textContent = survivors.map(x => x.count).join(' → ');
-  document.getElementById('finale').textContent = `Top ${s.stages.find(x => x.kind === 'Placement').count}`;
+  document.getElementById('finale').textContent = `Top ${s.finale.count}`;
 
   const kindClass = { Qualifying: 'kind-qualifying', Survivor: 'kind-survivor', Placement: 'kind-placement' };
   document.getElementById('rows').innerHTML = s.stages.map((x, i) => `

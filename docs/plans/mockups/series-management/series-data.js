@@ -14,8 +14,10 @@ window.SERIES = {
     { kind: 'Qualifying', tournament: 'Singles, Cranston', dates: '6/14', month: 'Jun', count: 8, teamSize: 1 },
     { kind: 'Survivor', tournament: "Callahan's Bowl-O-Rama", dates: '7/12', month: 'Jul', count: 40, teamSize: 1, squad: '9:00 AM squad on 7/12' },
     { kind: 'Survivor', tournament: "Lang's Singles Open", dates: '8/23', month: 'Aug', count: 20, teamSize: 1, squad: '9:00 AM squad on 8/23' },
-    { kind: 'Placement', tournament: 'East Providence Singles', dates: '9/13', month: 'Sep', count: 4, teamSize: 1 },
+    { kind: 'Placement', tournament: 'East Providence Singles', dates: '9/13', month: 'Sep', count: null, teamSize: 1 },
   ],
+  // The Finale is its own event, not a Stage and not a tournament.
+  finale: { count: 4, when: 'Sat 9/27 at 2:00 PM', host: "Callahan's Bowl-O-Rama, Seekonk, MA" },
 };
 
 // Display label for a Stage's advancing count (mirrors the planned SeriesDisplay formatter).
@@ -26,7 +28,8 @@ window.advancingLabel = function (s) {
       : `Top ${s.count}`;
   }
   if (s.kind === 'Survivor') return `${s.count} advance`;
-  return `Top ${s.count} to the Finale`;
+  const f = window.SERIES.finale;
+  return f ? `Top ${f.count} to the Finale` : 'Final standings<small class="adv-sub">(no Finale)</small>';
 };
 
 // Most bowlers who can qualify: sum of Qualifying slots (teams count as team size).
