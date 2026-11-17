@@ -148,3 +148,7 @@ When you add a spec:
 - Add the spec under `tests/e2e/`. Group by page, and put closely related pages in one file.
 - Anchor structural assertions on stable CSS class selectors (BEM, `.block__element--modifier`), not on text.
 - Wait with `page.waitForSelector()` in `beforeEach` for data-driven content. Never sleep.
+
+### Integration tests share one Postgres container
+
+`PostgreSqlFixture` (behind `AppDbContextFixture` and `SecurityDbContextFixture`) starts one `postgres:17` container per test process, with up to three start attempts. Each fixture creates its own database on it and drops it on dispose. Do not start a container per fixture again: with over a hundred fixture classes, one slow Docker start failed a whole class at random ("Npgsql.NpgsqlException: The operation has timed out", 0 ms, in `InitializeAsync`). Connections use a 60 second timeout for the same reason. A new class needs nothing beyond `IClassFixture<AppDbContextFixture>`; it gets its own database. Azurite and SQL Server fixtures still start their own containers.
