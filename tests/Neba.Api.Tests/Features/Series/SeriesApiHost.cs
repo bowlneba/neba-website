@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Hosting.Server;
 using Microsoft.AspNetCore.Hosting.Server.Features;
+using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -17,8 +18,10 @@ using Neba.Api.Features.Series;
 using Neba.Api.Messaging;
 using Neba.Api.Security;
 using Neba.Api.Storage;
+using Neba.Api.Uploads;
 using Neba.Api.Versioning;
 using Neba.TestFactory.Infrastructure;
+using Neba.TestFactory.Storage;
 
 using Npgsql;
 
@@ -77,6 +80,11 @@ internal sealed class SeriesApiHost : IAsyncDisposable
         storage.Setup(s => s.GetBlobUri(It.IsAny<string>(), It.IsAny<string>()))
             .Returns((string container, string path) => new Uri($"https://storage.example.com/{container}/{path}"));
         builder.Services.AddSingleton(storage.Object);
+
+        var staging = new Mock<IUploadStagingService>(MockBehavior.Strict);
+        staging.Setup(s => s.StageUploadAsync(It.IsAny<IFormFile>(), "bowlneba-public", "series/logo", null, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(StoredFileFactory.Create(container: "bowlneba-public", path: "series/logo/staged.png", contentType: "image/png"));
+        builder.Services.AddSingleton(staging.Object);
 
         var scheduler = new Mock<IBackgroundJobScheduler>(MockBehavior.Loose);
         builder.Services.AddSingleton(scheduler.Object);
