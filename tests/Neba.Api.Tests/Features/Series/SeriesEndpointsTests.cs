@@ -435,5 +435,61 @@ public sealed class SeriesEndpointsTests(AppDbContextFixture fixture, SecurityDb
         recount.StatusCode.ShouldBe(HttpStatusCode.Conflict);
     }
 
-    // ---- delete is added with its endpoint ----
+    // ---- delete ----
+
+    [Fact(DisplayName = "DELETE /series/{id} returns 401 without a token and 403 for a Member")]
+    public async Task Delete_ShouldReturn401And403_WhenNotAuthorized()
+    {
+        // Arrange
+        var series = await SeedSeriesAsync("VH");
+
+        // Act
+        using var anonymous = await SendAsync(HttpMethod.Delete, $"/series/{series.Id.Value}", null);
+        using var member = await SendAsync(HttpMethod.Delete, $"/series/{series.Id.Value}", SeriesApiHost.MemberToken());
+
+        // Assert
+        anonymous.StatusCode.ShouldBe(HttpStatusCode.Unauthorized);
+        member.StatusCode.ShouldBe(HttpStatusCode.Forbidden);
+    }
+
+    [Fact(DisplayName = "DELETE /series/{id} returns 204, and 204 again once the Series is gone")]
+    public async Task Delete_ShouldReturn204_AndBeIdempotent()
+    {
+        // Arrange
+        var series = await SeedSeriesAsync("VH");
+        var token = SeriesApiHost.ManagerToken();
+
+        // Act
+        using var first = await SendAsync(HttpMethod.Delete, $"/series/{series.Id.Value}", token);
+        using var second = await SendAsync(HttpMethod.Delete, $"/series/{series.Id.Value}", token);
+        using var read = await SendAsync(HttpMethod.Get, $"/series/{series.Id.Value}", null);
+
+        // Assert
+        first.StatusCode.ShouldBe(HttpStatusCode.NoContent);
+        second.StatusCode.ShouldBe(HttpStatusCode.NoContent);
+        read.StatusCode.ShouldBe(HttpStatusCode.NotFound);
+    }
+
+    [Fact(DisplayName = "DELETE /series/{id} returns 409 for a locked Series")]
+    public async Task Delete_ShouldReturn409_WhenLocked()
+    {
+        // Arrange
+        var series = await SeedSeriesAsync("VH", StageStatus.Computed);
+
+        // Act
+        using var response = await SendAsync(HttpMethod.Delete, $"/series/{series.Id.Value}", SeriesApiHost.AdminToken());
+
+        // Assert
+        response.StatusCode.ShouldBe(HttpStatusCode.Conflict);
+    }
+
+    [Fact(DisplayName = "DELETE /series/{id} returns 400 for an id of the wrong length")]
+    public async Task Delete_ShouldReturn400_WhenIdHasWrongLength()
+    {
+        // Arrange & Act
+        using var response = await SendAsync(HttpMethod.Delete, "/series/short", SeriesApiHost.ManagerToken());
+
+        // Assert
+        response.StatusCode.ShouldBe(HttpStatusCode.BadRequest);
+    }
 }
