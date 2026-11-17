@@ -64,7 +64,7 @@ public sealed class ListTournamentsInSeasonQueryHandlerTests(AppDbContextFixture
         await _dbContext.Tournaments.AddRangeAsync([older, truncated, current, alone], ct);
         await _dbContext.SaveChangesAsync(ct);
         var fileStorageMock = new Mock<IFileStorageService>(MockBehavior.Strict);
-        var handler = new ListTournamentsInSeasonQueryHandler(_dbContext, fileStorageMock.Object, TimeProvider.System, new DefendingTeamsReader(_dbContext));
+        var handler = new ListTournamentsInSeasonQueryHandler(_dbContext, fileStorageMock.Object, TimeProvider.System, new DefendingTeamsReader(_dbContext), new TournamentSeriesReader(_dbContext, fileStorageMock.Object));
 
         // Act
         var result = await handler.HandleAsync(
@@ -91,6 +91,30 @@ public sealed class ListTournamentsInSeasonQueryHandlerTests(AppDbContextFixture
         singles.DefendingChampions.ShouldBeEmpty();
     }
 
+    [Fact(DisplayName = "HandleAsync sets Series for a tournament that is a Series Stage and leaves it null for the others")]
+    public async Task HandleAsync_ShouldSetSeries_OnlyForSeriesStageTournaments()
+    {
+        // Arrange
+        var ct = TestContext.Current.CancellationToken;
+        var season = await Neba.Api.Tests.Features.Series.SeriesSeed.AddSeasonAsync(_dbContext, 2025, ct);
+        var series = await Neba.Api.Tests.Features.Series.SeriesSeed.AddSeriesAsync(_dbContext, season, new DateOnly(2025, 2, 1), ct, name: "VH");
+        var loner = await Neba.Api.Tests.Features.Series.SeriesSeed.AddTournamentAsync(_dbContext, season, "Loner", new DateOnly(2025, 11, 1), null, ct);
+        var fileStorageMock = new Mock<IFileStorageService>(MockBehavior.Strict);
+        var handler = new ListTournamentsInSeasonQueryHandler(_dbContext, fileStorageMock.Object, TimeProvider.System, new DefendingTeamsReader(_dbContext), new TournamentSeriesReader(_dbContext, fileStorageMock.Object));
+
+        // Act
+        var result = await handler.HandleAsync(
+            new ListTournamentsInSeasonQuery { SeasonId = season.Id, CallerIsAuthenticated = false, CallerHasTournamentManagementPermission = false }, ct);
+
+        // Assert
+        result.Count.ShouldBe(4);
+        result.Single(dto => dto.Id == loner.Id).Series.ShouldBeNull();
+        var stageDtos = result.Where(dto => dto.Series is not null).ToList();
+        stageDtos.Count.ShouldBe(3);
+        stageDtos.ShouldAllBe(dto => dto.Series!.SeriesId == series.Id && dto.Series.Name == "VH");
+        stageDtos.Select(dto => dto.Series!.Kind).ShouldBe(["Qualifying", "Survivor", "Placement"], ignoreOrder: true);
+    }
+
     [Fact(DisplayName = "HandleAsync returns empty collection when no tournaments exist for season")]
     public async Task HandleAsync_ShouldReturnEmpty_WhenNoTournamentsExistForSeason()
     {
@@ -101,7 +125,7 @@ public sealed class ListTournamentsInSeasonQueryHandlerTests(AppDbContextFixture
         await _dbContext.SaveChangesAsync(ct);
 
         var fileStorageMock = new Mock<IFileStorageService>(MockBehavior.Strict);
-        var handler = new ListTournamentsInSeasonQueryHandler(_dbContext, fileStorageMock.Object, TimeProvider.System, new DefendingTeamsReader(_dbContext));
+        var handler = new ListTournamentsInSeasonQueryHandler(_dbContext, fileStorageMock.Object, TimeProvider.System, new DefendingTeamsReader(_dbContext), new TournamentSeriesReader(_dbContext, fileStorageMock.Object));
 
         // Act
         var result = await handler.HandleAsync(
@@ -127,7 +151,7 @@ public sealed class ListTournamentsInSeasonQueryHandlerTests(AppDbContextFixture
         await _dbContext.SaveChangesAsync(ct);
 
         var fileStorageMock = new Mock<IFileStorageService>(MockBehavior.Strict);
-        var handler = new ListTournamentsInSeasonQueryHandler(_dbContext, fileStorageMock.Object, TimeProvider.System, new DefendingTeamsReader(_dbContext));
+        var handler = new ListTournamentsInSeasonQueryHandler(_dbContext, fileStorageMock.Object, TimeProvider.System, new DefendingTeamsReader(_dbContext), new TournamentSeriesReader(_dbContext, fileStorageMock.Object));
 
         // Act
         var result = await handler.HandleAsync(
@@ -156,7 +180,7 @@ public sealed class ListTournamentsInSeasonQueryHandlerTests(AppDbContextFixture
         await _dbContext.SaveChangesAsync(ct);
 
         var fileStorageMock = new Mock<IFileStorageService>(MockBehavior.Strict);
-        var handler = new ListTournamentsInSeasonQueryHandler(_dbContext, fileStorageMock.Object, TimeProvider.System, new DefendingTeamsReader(_dbContext));
+        var handler = new ListTournamentsInSeasonQueryHandler(_dbContext, fileStorageMock.Object, TimeProvider.System, new DefendingTeamsReader(_dbContext), new TournamentSeriesReader(_dbContext, fileStorageMock.Object));
 
         // Act
         var result = await handler.HandleAsync(
@@ -190,7 +214,7 @@ public sealed class ListTournamentsInSeasonQueryHandlerTests(AppDbContextFixture
         fileStorageMock
             .Setup(s => s.GetBlobUri("logos", "tournaments/neba-singles.jpg"))
             .Returns(expectedUri);
-        var handler = new ListTournamentsInSeasonQueryHandler(_dbContext, fileStorageMock.Object, TimeProvider.System, new DefendingTeamsReader(_dbContext));
+        var handler = new ListTournamentsInSeasonQueryHandler(_dbContext, fileStorageMock.Object, TimeProvider.System, new DefendingTeamsReader(_dbContext), new TournamentSeriesReader(_dbContext, fileStorageMock.Object));
 
         // Act
         var result = await handler.HandleAsync(
@@ -225,7 +249,7 @@ public sealed class ListTournamentsInSeasonQueryHandlerTests(AppDbContextFixture
         fileStorageMock
             .Setup(s => s.GetBlobUri("sponsor-logos", "sponsors/title-sponsor.jpg"))
             .Returns(expectedUri);
-        var handler = new ListTournamentsInSeasonQueryHandler(_dbContext, fileStorageMock.Object, TimeProvider.System, new DefendingTeamsReader(_dbContext));
+        var handler = new ListTournamentsInSeasonQueryHandler(_dbContext, fileStorageMock.Object, TimeProvider.System, new DefendingTeamsReader(_dbContext), new TournamentSeriesReader(_dbContext, fileStorageMock.Object));
 
         // Act
         var result = await handler.HandleAsync(
@@ -264,7 +288,7 @@ public sealed class ListTournamentsInSeasonQueryHandlerTests(AppDbContextFixture
         fileStorageMock
             .Setup(s => s.GetBlobUri("sponsor-logos", "sponsors/title-sponsor.jpg"))
             .Returns(new Uri("https://storage.example.com/sponsor-logos/sponsors/title-sponsor.jpg"));
-        var handler = new ListTournamentsInSeasonQueryHandler(_dbContext, fileStorageMock.Object, TimeProvider.System, new DefendingTeamsReader(_dbContext));
+        var handler = new ListTournamentsInSeasonQueryHandler(_dbContext, fileStorageMock.Object, TimeProvider.System, new DefendingTeamsReader(_dbContext), new TournamentSeriesReader(_dbContext, fileStorageMock.Object));
 
         // Act
         var result = await handler.HandleAsync(
@@ -298,7 +322,7 @@ public sealed class ListTournamentsInSeasonQueryHandlerTests(AppDbContextFixture
         fileStorageMock
             .Setup(s => s.GetBlobUri("sponsor-logos", "sponsors/regular-sponsor.jpg"))
             .Returns(new Uri("https://storage.example.com/sponsor-logos/sponsors/regular-sponsor.jpg"));
-        var handler = new ListTournamentsInSeasonQueryHandler(_dbContext, fileStorageMock.Object, TimeProvider.System, new DefendingTeamsReader(_dbContext));
+        var handler = new ListTournamentsInSeasonQueryHandler(_dbContext, fileStorageMock.Object, TimeProvider.System, new DefendingTeamsReader(_dbContext), new TournamentSeriesReader(_dbContext, fileStorageMock.Object));
 
         // Act
         var result = await handler.HandleAsync(
@@ -330,7 +354,7 @@ public sealed class ListTournamentsInSeasonQueryHandlerTests(AppDbContextFixture
         await _dbContext.SaveChangesAsync(ct);
 
         var fileStorageMock = new Mock<IFileStorageService>(MockBehavior.Strict);
-        var handler = new ListTournamentsInSeasonQueryHandler(_dbContext, fileStorageMock.Object, TimeProvider.System, new DefendingTeamsReader(_dbContext));
+        var handler = new ListTournamentsInSeasonQueryHandler(_dbContext, fileStorageMock.Object, TimeProvider.System, new DefendingTeamsReader(_dbContext), new TournamentSeriesReader(_dbContext, fileStorageMock.Object));
 
         // Act
         var result = await handler.HandleAsync(
@@ -357,7 +381,7 @@ public sealed class ListTournamentsInSeasonQueryHandlerTests(AppDbContextFixture
         await _dbContext.SaveChangesAsync(ct);
 
         var fileStorageMock = new Mock<IFileStorageService>(MockBehavior.Strict);
-        var handler = new ListTournamentsInSeasonQueryHandler(_dbContext, fileStorageMock.Object, TimeProvider.System, new DefendingTeamsReader(_dbContext));
+        var handler = new ListTournamentsInSeasonQueryHandler(_dbContext, fileStorageMock.Object, TimeProvider.System, new DefendingTeamsReader(_dbContext), new TournamentSeriesReader(_dbContext, fileStorageMock.Object));
 
         // Act
         var result = await handler.HandleAsync(
@@ -401,7 +425,7 @@ public sealed class ListTournamentsInSeasonQueryHandlerTests(AppDbContextFixture
         var season = await SeedSeasonWithTournamentsAsync(now.AddDays(-1), now.AddDays(5), ct);
 
         var fileStorageMock = new Mock<IFileStorageService>(MockBehavior.Strict);
-        var handler = new ListTournamentsInSeasonQueryHandler(_dbContext, fileStorageMock.Object, new FakeTimeProvider(now), new DefendingTeamsReader(_dbContext));
+        var handler = new ListTournamentsInSeasonQueryHandler(_dbContext, fileStorageMock.Object, new FakeTimeProvider(now), new DefendingTeamsReader(_dbContext), new TournamentSeriesReader(_dbContext, fileStorageMock.Object));
 
         // Act
         var result = await handler.HandleAsync(
@@ -427,7 +451,7 @@ public sealed class ListTournamentsInSeasonQueryHandlerTests(AppDbContextFixture
         var season = await SeedSeasonWithTournamentsAsync(now.AddDays(-1), gatedRevealAt, ct);
 
         var fileStorageMock = new Mock<IFileStorageService>(MockBehavior.Strict);
-        var handler = new ListTournamentsInSeasonQueryHandler(_dbContext, fileStorageMock.Object, new FakeTimeProvider(now), new DefendingTeamsReader(_dbContext));
+        var handler = new ListTournamentsInSeasonQueryHandler(_dbContext, fileStorageMock.Object, new FakeTimeProvider(now), new DefendingTeamsReader(_dbContext), new TournamentSeriesReader(_dbContext, fileStorageMock.Object));
 
         // Act
         var result = await handler.HandleAsync(
@@ -449,7 +473,7 @@ public sealed class ListTournamentsInSeasonQueryHandlerTests(AppDbContextFixture
         var season = await SeedSeasonWithTournamentsAsync(now.AddDays(-1), gatedRevealAt, ct);
 
         var fileStorageMock = new Mock<IFileStorageService>(MockBehavior.Strict);
-        var handler = new ListTournamentsInSeasonQueryHandler(_dbContext, fileStorageMock.Object, new FakeTimeProvider(now), new DefendingTeamsReader(_dbContext));
+        var handler = new ListTournamentsInSeasonQueryHandler(_dbContext, fileStorageMock.Object, new FakeTimeProvider(now), new DefendingTeamsReader(_dbContext), new TournamentSeriesReader(_dbContext, fileStorageMock.Object));
 
         // Act
         var result = await handler.HandleAsync(
@@ -470,7 +494,7 @@ public sealed class ListTournamentsInSeasonQueryHandlerTests(AppDbContextFixture
         var season = await SeedSeasonWithTournamentsAsync(now.AddDays(-5), now.AddDays(-1), ct);
 
         var fileStorageMock = new Mock<IFileStorageService>(MockBehavior.Strict);
-        var handler = new ListTournamentsInSeasonQueryHandler(_dbContext, fileStorageMock.Object, new FakeTimeProvider(now), new DefendingTeamsReader(_dbContext));
+        var handler = new ListTournamentsInSeasonQueryHandler(_dbContext, fileStorageMock.Object, new FakeTimeProvider(now), new DefendingTeamsReader(_dbContext), new TournamentSeriesReader(_dbContext, fileStorageMock.Object));
 
         // Act
         var result = await handler.HandleAsync(
@@ -502,7 +526,7 @@ public sealed class ListTournamentsInSeasonQueryHandlerTests(AppDbContextFixture
         await _dbContext.SaveChangesAsync(ct);
 
         var fileStorageMock = new Mock<IFileStorageService>(MockBehavior.Strict);
-        var handler = new ListTournamentsInSeasonQueryHandler(_dbContext, fileStorageMock.Object, TimeProvider.System, new DefendingTeamsReader(_dbContext));
+        var handler = new ListTournamentsInSeasonQueryHandler(_dbContext, fileStorageMock.Object, TimeProvider.System, new DefendingTeamsReader(_dbContext), new TournamentSeriesReader(_dbContext, fileStorageMock.Object));
 
         // Act
         var result = await handler.HandleAsync(
@@ -540,7 +564,7 @@ public sealed class ListTournamentsInSeasonQueryHandlerTests(AppDbContextFixture
         await _dbContext.SaveChangesAsync(ct);
 
         var fileStorageMock = new Mock<IFileStorageService>(MockBehavior.Strict);
-        var handler = new ListTournamentsInSeasonQueryHandler(_dbContext, fileStorageMock.Object, TimeProvider.System, new DefendingTeamsReader(_dbContext));
+        var handler = new ListTournamentsInSeasonQueryHandler(_dbContext, fileStorageMock.Object, TimeProvider.System, new DefendingTeamsReader(_dbContext), new TournamentSeriesReader(_dbContext, fileStorageMock.Object));
 
         // Act
         var result = await handler.HandleAsync(
@@ -561,7 +585,7 @@ public sealed class ListTournamentsInSeasonQueryHandlerTests(AppDbContextFixture
         var season = await SeedSeasonWithTournamentsAsync(null, null, ct);
 
         var fileStorageMock = new Mock<IFileStorageService>(MockBehavior.Strict);
-        var handler = new ListTournamentsInSeasonQueryHandler(_dbContext, fileStorageMock.Object, TimeProvider.System, new DefendingTeamsReader(_dbContext));
+        var handler = new ListTournamentsInSeasonQueryHandler(_dbContext, fileStorageMock.Object, TimeProvider.System, new DefendingTeamsReader(_dbContext), new TournamentSeriesReader(_dbContext, fileStorageMock.Object));
 
         // Act
         var result = await handler.HandleAsync(

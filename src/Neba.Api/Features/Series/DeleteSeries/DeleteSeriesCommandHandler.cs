@@ -3,13 +3,16 @@ using ErrorOr;
 using Microsoft.EntityFrameworkCore;
 
 using Neba.Api.BackgroundJobs;
+using Neba.Api.Caching;
 using Neba.Api.Database;
 using Neba.Api.Messaging;
 using Neba.Api.Uploads;
 
+using ZiggyCreatures.Caching.Fusion;
+
 namespace Neba.Api.Features.Series.DeleteSeries;
 
-internal sealed class DeleteSeriesCommandHandler(AppDbContext appDbContext, IBackgroundJobScheduler backgroundJobScheduler)
+internal sealed class DeleteSeriesCommandHandler(AppDbContext appDbContext, IBackgroundJobScheduler backgroundJobScheduler, IFusionCache cache)
     : ICommandHandler<DeleteSeriesCommand, Deleted>
 {
     public async Task<ErrorOr<Deleted>> HandleAsync(DeleteSeriesCommand command, CancellationToken cancellationToken)
@@ -33,6 +36,7 @@ internal sealed class DeleteSeriesCommandHandler(AppDbContext appDbContext, IBac
 
         appDbContext.Series.Remove(series);
         await appDbContext.SaveChangesAsync(cancellationToken);
+        await cache.RemoveByTagAsync(CacheDescriptors.Tournaments.Tag, token: cancellationToken);
 
         StoredFileCleanup.ScheduleDeleteOfReplaced(backgroundJobScheduler, logo, current: null);
 

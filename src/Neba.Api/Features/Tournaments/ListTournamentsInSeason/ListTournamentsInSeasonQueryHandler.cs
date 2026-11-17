@@ -14,7 +14,8 @@ internal sealed class ListTournamentsInSeasonQueryHandler(
     AppDbContext appDbContext,
     IFileStorageService fileStorageService,
     TimeProvider timeProvider,
-    DefendingTeamsReader defendingTeamsReader)
+    DefendingTeamsReader defendingTeamsReader,
+    TournamentSeriesReader tournamentSeriesReader)
     : IQueryHandler<ListTournamentsInSeasonQuery, IReadOnlyCollection<SeasonTournamentDto>>
 {
     private readonly IQueryable<Tournament> _tournaments =
@@ -119,6 +120,8 @@ internal sealed class ListTournamentsInSeasonQueryHandler(
 
         var defendingByTournament = await defendingTeamsReader.LoadAsync([.. rows.Select(row => row.Id)], cancellationToken);
 
+        var seriesByTournament = await tournamentSeriesReader.LoadAsync([.. rows.Select(row => row.Id)], cancellationToken);
+
         var now = timeProvider.GetUtcNow();
 
         return [.. rows.Select(row =>
@@ -183,6 +186,7 @@ internal sealed class ListTournamentsInSeasonQueryHandler(
                 Winners = winnersByTournamentDbId.GetValueOrDefault(row.DbId, []),
                 TeamSize = TournamentType.FromValue(row.TournamentTypeValue).TeamSize,
                 DefendingChampions = [.. defendingByTournament.GetValueOrDefault(row.Id, []).Select(team => team.ToDto())],
+                Series = seriesByTournament.GetValueOrDefault(row.Id),
             };
         })];
     }

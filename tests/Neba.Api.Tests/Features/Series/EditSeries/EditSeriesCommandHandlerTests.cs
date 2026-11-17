@@ -49,11 +49,15 @@ public sealed class EditSeriesCommandHandlerTests(AppDbContextFixture fixture)
         return mock.Object;
     }
 
-    private EditSeriesCommandHandler CreateHandler(IPermissionDenialReader? denial = null, IBackgroundJobScheduler? scheduler = null)
+    private EditSeriesCommandHandler CreateHandler(
+        IPermissionDenialReader? denial = null,
+        IBackgroundJobScheduler? scheduler = null,
+        Mock<ZiggyCreatures.Caching.Fusion.IFusionCache>? cache = null)
         => new(
             _dbContext,
             denial ?? Denial(denied: false, expectLookup: false),
-            scheduler ?? new Mock<IBackgroundJobScheduler>(MockBehavior.Strict).Object);
+            scheduler ?? new Mock<IBackgroundJobScheduler>(MockBehavior.Strict).Object,
+            (cache ?? SeriesCache.Evicting()).Object);
 
     /// <summary>The Series' current Stages as definitions carrying their ids.</summary>
     private static List<SeriesStageDefinition> Current(SeriesAggregate series)
@@ -115,6 +119,35 @@ public sealed class EditSeriesCommandHandlerTests(AppDbContextFixture fixture)
         result.IsError.ShouldBeFalse();
         _dbContext.ChangeTracker.Clear();
         (await _dbContext.Series.AsNoTracking().SingleAsync(ct)).Name.ShouldBe("Renamed");
+    }
+
+    [Fact(DisplayName = "HandleAsync should clear the tournament cache tag once after a successful save")]
+    public async Task HandleAsync_ShouldEvictTournamentCache_AfterSave()
+    {
+        // Arrange
+        var series = await SeedAsync();
+        var cache = SeriesCache.Evicting();
+
+        // Act
+        var result = await CreateHandler(cache: cache).HandleAsync(Command(series, name: "Renamed"), TestContext.Current.CancellationToken);
+
+        // Assert
+        result.IsError.ShouldBeFalse();
+        SeriesCache.VerifyEvictedOnce(cache);
+    }
+
+    [Fact(DisplayName = "HandleAsync should not touch the tournament cache when the edit fails")]
+    public async Task HandleAsync_ShouldNotEvictTournamentCache_WhenEditFails()
+    {
+        // Arrange
+        var series = await SeedAsync(status: StageStatus.Computed);
+        var changed = Current(series).Skip(1).ToList();
+
+        // Act (an untouched strict cache fails the test if it is called)
+        var result = await CreateHandler(cache: SeriesCache.Untouched()).HandleAsync(Command(series, changed), TestContext.Current.CancellationToken);
+
+        // Assert
+        result.IsError.ShouldBeTrue();
     }
 
     [Fact(DisplayName = "HandleAsync should not report the Series' own tournaments as held by another Series")]

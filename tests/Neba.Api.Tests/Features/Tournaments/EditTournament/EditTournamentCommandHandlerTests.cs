@@ -876,7 +876,7 @@ public sealed class EditTournamentCommandHandlerTests(AppDbContextFixture fixtur
         persisted.PatternRatioCategory.ShouldBe(oilPattern.RatioCategory);
 
         var fileStorageMock = new Mock<IFileStorageService>(MockBehavior.Strict);
-        var getTournamentHandler = new GetTournamentQueryHandler(_dbContext, fileStorageMock.Object, TimeProvider.System, new DefendingTeamsReader(_dbContext));
+        var getTournamentHandler = new GetTournamentQueryHandler(_dbContext, fileStorageMock.Object, TimeProvider.System, new DefendingTeamsReader(_dbContext), new TournamentSeriesReader(_dbContext, fileStorageMock.Object));
         var getResult = await getTournamentHandler.HandleAsync(
             new GetTournamentQuery { Id = tournament.Id, CallerIsAuthenticated = true, CallerHasTournamentManagementPermission = true },
             ct);
@@ -920,7 +920,7 @@ public sealed class EditTournamentCommandHandlerTests(AppDbContextFixture fixtur
         // Assert
         secondResult.IsError.ShouldBeFalse();
         var fileStorageMock = new Mock<IFileStorageService>(MockBehavior.Strict);
-        var getTournamentHandler = new GetTournamentQueryHandler(_dbContext, fileStorageMock.Object, TimeProvider.System, new DefendingTeamsReader(_dbContext));
+        var getTournamentHandler = new GetTournamentQueryHandler(_dbContext, fileStorageMock.Object, TimeProvider.System, new DefendingTeamsReader(_dbContext), new TournamentSeriesReader(_dbContext, fileStorageMock.Object));
         var getResult = await getTournamentHandler.HandleAsync(
             new GetTournamentQuery { Id = tournament.Id, CallerIsAuthenticated = true, CallerHasTournamentManagementPermission = true },
             ct);

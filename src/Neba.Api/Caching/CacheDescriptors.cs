@@ -368,7 +368,10 @@ public static class CacheDescriptors
     /// </summary>
     public static class Tournaments
     {
-        private const string Tag = "neba:tournaments";
+        /// <summary>
+        /// The tag every cached tournament list and detail carries. Clearing it clears them all.
+        /// </summary>
+        public const string Tag = "neba:tournaments";
 
         private static string ResolveScope(bool callerIsAuthenticated, bool callerHasTournamentManagementPermission)
         {

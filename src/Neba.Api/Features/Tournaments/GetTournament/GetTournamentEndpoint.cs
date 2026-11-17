@@ -130,6 +130,7 @@ internal sealed class GetTournamentEndpoint(
             Winners = [.. dto.Winners.Select(w => w.ToDisplayName())],
             TeamSize = dto.TeamSize,
             DefendingChampions = [.. dto.DefendingChampions.Select(team => team.ToResponse())],
+            Series = dto.Series?.ToResponse(),
             Results = [.. dto.Results.Select(r => new TournamentResultResponse
             {
                 BowlerName = r.BowlerName.ToDisplayName(),

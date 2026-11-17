@@ -31,8 +31,8 @@ public sealed class CreateSeriesCommandHandlerTests(AppDbContextFixture fixture)
         await _dbContext.DisposeAsync();
     }
 
-    private CreateSeriesCommandHandler CreateHandler()
-        => new(_dbContext);
+    private CreateSeriesCommandHandler CreateHandler(Mock<ZiggyCreatures.Caching.Fusion.IFusionCache>? cache = null)
+        => new(_dbContext, (cache ?? SeriesCache.Evicting()).Object);
 
     private static CreateSeriesCommand Command(
         SeasonId seasonId,
@@ -78,6 +78,36 @@ public sealed class CreateSeriesCommandHandlerTests(AppDbContextFixture fixture)
         var saved = await _dbContext.Series.AsNoTracking().Include(s => s.Stages).SingleAsync(ct);
         saved.Id.ShouldBe(result.Value);
         saved.Stages.Single().TournamentId.ShouldBe(tournament.Id);
+    }
+
+    [Fact(DisplayName = "HandleAsync should clear the tournament cache tag once after a successful save")]
+    public async Task HandleAsync_ShouldEvictTournamentCache_AfterSave()
+    {
+        // Arrange
+        var (season, tournament) = await SeedAsync();
+        var cache = SeriesCache.Evicting();
+
+        // Act
+        var result = await CreateHandler(cache).HandleAsync(
+            Command(season.Id, [SeriesStageDefinitionFactory.Create(tournamentId: tournament.Id)]), TestContext.Current.CancellationToken);
+
+        // Assert
+        result.IsError.ShouldBeFalse();
+        SeriesCache.VerifyEvictedOnce(cache);
+    }
+
+    [Fact(DisplayName = "HandleAsync should not touch the tournament cache when the save fails validation")]
+    public async Task HandleAsync_ShouldNotEvictTournamentCache_WhenValidationFails()
+    {
+        // Arrange
+        var (season, tournament) = await SeedAsync();
+        var broken = SeriesStageDefinitionFactory.Create(tournamentId: tournament.Id, advancingCount: null);
+
+        // Act (an untouched strict cache fails the test if it is called)
+        var result = await CreateHandler(SeriesCache.Untouched()).HandleAsync(Command(season.Id, [broken]), TestContext.Current.CancellationToken);
+
+        // Assert
+        result.IsError.ShouldBeTrue();
     }
 
     [Fact(DisplayName = "HandleAsync should return the domain errors and save nothing")]

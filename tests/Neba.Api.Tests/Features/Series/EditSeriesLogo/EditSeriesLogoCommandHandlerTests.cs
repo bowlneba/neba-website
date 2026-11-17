@@ -31,8 +31,11 @@ public sealed class EditSeriesLogoCommandHandlerTests(AppDbContextFixture fixtur
         await _dbContext.DisposeAsync();
     }
 
-    private static EditSeriesLogoCommandHandler CreateHandler(AppDbContext db, IBackgroundJobScheduler? scheduler = null)
-        => new(db, scheduler ?? new Mock<IBackgroundJobScheduler>(MockBehavior.Strict).Object);
+    private static EditSeriesLogoCommandHandler CreateHandler(
+        AppDbContext db,
+        IBackgroundJobScheduler? scheduler = null,
+        Mock<ZiggyCreatures.Caching.Fusion.IFusionCache>? cache = null)
+        => new(db, scheduler ?? new Mock<IBackgroundJobScheduler>(MockBehavior.Strict).Object, (cache ?? SeriesCache.Evicting()).Object);
 
     private async Task<SeriesAggregate> SeedAsync(Neba.Api.Features.Storage.Domain.StoredFile? logo = null, StageStatus? status = null)
     {
@@ -93,6 +96,36 @@ public sealed class EditSeriesLogoCommandHandlerTests(AppDbContextFixture fixtur
         _dbContext.ChangeTracker.Clear();
         (await _dbContext.Series.AsNoTracking().SingleAsync(ct)).Logo!.Path.ShouldBe("new.png");
         (await _dbContext.PendingUploads.CountAsync(ct)).ShouldBe(0);
+    }
+
+    [Fact(DisplayName = "HandleAsync should clear the tournament cache tag once after a successful save")]
+    public async Task HandleAsync_ShouldEvictTournamentCache_AfterSave()
+    {
+        // Arrange
+        var series = await SeedAsync();
+        var cache = SeriesCache.Evicting();
+
+        // Act
+        var result = await CreateHandler(_dbContext, cache: cache).HandleAsync(
+            new EditSeriesLogoCommand { SeriesId = series.Id }, TestContext.Current.CancellationToken);
+
+        // Assert
+        result.IsError.ShouldBeFalse();
+        SeriesCache.VerifyEvictedOnce(cache);
+    }
+
+    [Fact(DisplayName = "HandleAsync should not touch the tournament cache when the file was not staged")]
+    public async Task HandleAsync_ShouldNotEvictTournamentCache_WhenNotStaged()
+    {
+        // Arrange
+        var series = await SeedAsync();
+        var command = new EditSeriesLogoCommand { SeriesId = series.Id, Logo = StoredFileFactory.Create(container: "series", path: "new.png") };
+
+        // Act (an untouched strict cache fails the test if it is called)
+        var result = await CreateHandler(_dbContext, cache: SeriesCache.Untouched()).HandleAsync(command, TestContext.Current.CancellationToken);
+
+        // Assert
+        result.IsError.ShouldBeTrue();
     }
 
     [Fact(DisplayName = "HandleAsync should replace the logo and schedule deletion of the old file, even while locked")]

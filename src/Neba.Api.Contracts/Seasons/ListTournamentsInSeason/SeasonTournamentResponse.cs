@@ -103,6 +103,9 @@ public sealed record SeasonTournamentResponse
     /// </summary>
     public IReadOnlyCollection<DefendingTeamResponse> DefendingChampions { get; init; } = [];
 
+    /// <summary>The Series this tournament is a Stage of, or null.</summary>
+    public TournamentSeriesResponse? Series { get; init; }
+
     /// <summary>
     /// Host bowling center; null until confirmed.
     /// </summary>

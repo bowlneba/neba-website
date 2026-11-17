@@ -32,7 +32,7 @@ public sealed class DeleteSeriesCommandHandlerTests(AppDbContextFixture fixture)
     public async Task HandleAsync_ShouldReturnDeleted_WhenSeriesIsMissing()
     {
         // Arrange (a strict scheduler with no setup fails the test if it is called)
-        var handler = new DeleteSeriesCommandHandler(_dbContext, new Mock<IBackgroundJobScheduler>(MockBehavior.Strict).Object);
+        var handler = new DeleteSeriesCommandHandler(_dbContext, new Mock<IBackgroundJobScheduler>(MockBehavior.Strict).Object, SeriesCache.Untouched().Object);
 
         // Act
         var result = await handler.HandleAsync(new DeleteSeriesCommand { SeriesId = SeriesId.New() }, TestContext.Current.CancellationToken);
@@ -49,7 +49,7 @@ public sealed class DeleteSeriesCommandHandlerTests(AppDbContextFixture fixture)
         var season = await SeriesSeed.AddSeasonAsync(_dbContext, 2025, ct);
         var series = await SeriesSeed.AddSeriesAsync(_dbContext, season, new DateOnly(2025, 2, 1), ct, status: StageStatus.Computed);
         _dbContext.ChangeTracker.Clear();
-        var handler = new DeleteSeriesCommandHandler(_dbContext, new Mock<IBackgroundJobScheduler>(MockBehavior.Strict).Object);
+        var handler = new DeleteSeriesCommandHandler(_dbContext, new Mock<IBackgroundJobScheduler>(MockBehavior.Strict).Object, SeriesCache.Untouched().Object);
 
         // Act
         var result = await handler.HandleAsync(new DeleteSeriesCommand { SeriesId = series.Id }, ct);
@@ -70,10 +70,11 @@ public sealed class DeleteSeriesCommandHandlerTests(AppDbContextFixture fixture)
         var series = await SeriesSeed.AddSeriesAsync(_dbContext, season, new DateOnly(2025, 2, 1), ct, logo: logo);
         _dbContext.ChangeTracker.Clear();
 
+        var cache = SeriesCache.Evicting();
         var scheduler = new Mock<IBackgroundJobScheduler>(MockBehavior.Strict);
         scheduler.Setup(s => s.Enqueue(It.Is<DeleteStoredFilesJob>(job => job.Files.Single().Container == "series" && job.Files.Single().Path == "logo.png")))
             .Returns("job");
-        var handler = new DeleteSeriesCommandHandler(_dbContext, scheduler.Object);
+        var handler = new DeleteSeriesCommandHandler(_dbContext, scheduler.Object, cache.Object);
 
         // Act
         var result = await handler.HandleAsync(new DeleteSeriesCommand { SeriesId = series.Id }, ct);
@@ -81,6 +82,7 @@ public sealed class DeleteSeriesCommandHandlerTests(AppDbContextFixture fixture)
         // Assert
         result.IsError.ShouldBeFalse();
         scheduler.VerifyAll();
+        SeriesCache.VerifyEvictedOnce(cache);
         (await _dbContext.Series.CountAsync(ct)).ShouldBe(0);
         (await _dbContext.Database.SqlQueryRaw<int>("SELECT count(*)::int AS \"Value\" FROM app.series_stages").SingleAsync(ct)).ShouldBe(0);
     }
@@ -93,7 +95,7 @@ public sealed class DeleteSeriesCommandHandlerTests(AppDbContextFixture fixture)
         var season = await SeriesSeed.AddSeasonAsync(_dbContext, 2025, ct);
         var series = await SeriesSeed.AddSeriesAsync(_dbContext, season, new DateOnly(2025, 2, 1), ct);
         _dbContext.ChangeTracker.Clear();
-        var handler = new DeleteSeriesCommandHandler(_dbContext, new Mock<IBackgroundJobScheduler>(MockBehavior.Strict).Object);
+        var handler = new DeleteSeriesCommandHandler(_dbContext, new Mock<IBackgroundJobScheduler>(MockBehavior.Strict).Object, SeriesCache.Evicting().Object);
 
         // Act
         var result = await handler.HandleAsync(new DeleteSeriesCommand { SeriesId = series.Id }, ct);

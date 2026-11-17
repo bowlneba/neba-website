@@ -30,6 +30,7 @@ internal static class SeasonTournamentDtoMapping
                 Winners = [.. tournament.Winners.Select(w => w.ToDisplayName())],
                 TeamSize = tournament.TeamSize,
                 DefendingChampions = [.. tournament.DefendingChampions.Select(team => team.ToResponse())],
+                Series = tournament.Series?.ToResponse(),
                 BowlingCenter = tournament.BowlingCenter is null ? null : new TournamentBowlingCenterResponse
                 {
                     Name = tournament.BowlingCenter.Name,

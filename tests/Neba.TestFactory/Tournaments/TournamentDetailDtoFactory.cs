@@ -38,6 +38,7 @@ public static class TournamentDetailDtoFactory
         IReadOnlyCollection<TournamentDetailArticleDto>? articles = null,
         int? teamSize = null,
         IReadOnlyCollection<DefendingTeamDto>? defendingChampions = null,
+        TournamentSeriesDto? series = null,
         TournamentId? previousTournamentId = null)
             => new()
             {
@@ -68,6 +69,7 @@ public static class TournamentDetailDtoFactory
                 Articles = articles ?? [],
                 TeamSize = teamSize ?? 1,
                 DefendingChampions = defendingChampions ?? [],
+                Series = series,
                 PreviousTournamentId = previousTournamentId,
             };
 

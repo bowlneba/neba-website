@@ -34,6 +34,7 @@ public static class ApplicationConfiguration
             services.AddSingleton<IHallOfFamePointsCalculator, HallOfFamePointsCalculator>();
             services.AddScoped<HallOfFamePointsReader>();
             services.AddScoped<DefendingTeamsReader>();
+            services.AddScoped<TournamentSeriesReader>();
             services.AddScoped<BowlerTitlesReader>();
             services.AddScoped<PasswordChangedNotifier>();
         }

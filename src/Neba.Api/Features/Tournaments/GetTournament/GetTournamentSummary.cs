@@ -11,7 +11,7 @@ internal sealed class GetTournamentSummary : Summary<GetTournamentEndpoint>
     public GetTournamentSummary()
     {
         Summary = "Gets tournament details.";
-        Description = "Retrieves full details for a tournament including schedule, entry info, bowling center, sponsors, oil patterns, and results (if available).";
+        Description = "Retrieves full details for a tournament including schedule, entry info, bowling center, sponsors, oil patterns, and results (if available). Includes the Series the tournament is a Stage of, when it is one.";
 
         Response(200, "The tournament detail.",
             contentType: MediaTypeNames.Application.Json,

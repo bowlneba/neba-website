@@ -3,18 +3,22 @@ using ErrorOr;
 using Microsoft.EntityFrameworkCore;
 
 using Neba.Api.BackgroundJobs;
+using Neba.Api.Caching;
 using Neba.Api.Database;
 using Neba.Api.Features.Series.Domain;
 using Neba.Api.Messaging;
 using Neba.Api.Security.Infrastructure.Authorization;
 using Neba.Api.Uploads;
 
+using ZiggyCreatures.Caching.Fusion;
+
 namespace Neba.Api.Features.Series.EditSeries;
 
 internal sealed class EditSeriesCommandHandler(
         AppDbContext appDbContext,
         IPermissionDenialReader permissionDenialReader,
-        IBackgroundJobScheduler backgroundJobScheduler)
+        IBackgroundJobScheduler backgroundJobScheduler,
+        IFusionCache cache)
     : ICommandHandler<EditSeriesCommand, Updated>
 {
     public async Task<ErrorOr<Updated>> HandleAsync(EditSeriesCommand command, CancellationToken cancellationToken)
@@ -69,6 +73,7 @@ internal sealed class EditSeriesCommandHandler(
 
         await PendingUploadCleaner.RemoveClaimedAsync(appDbContext, logo, cancellationToken);
         await appDbContext.SaveChangesAsync(cancellationToken);
+        await cache.RemoveByTagAsync(CacheDescriptors.Tournaments.Tag, token: cancellationToken);
 
         StoredFileCleanup.ScheduleDeleteOfReplaced(backgroundJobScheduler, previousLogo, logo);
 
