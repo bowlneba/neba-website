@@ -12,6 +12,7 @@ using Microsoft.Extensions.DependencyInjection;
 
 using Neba.Api.BackgroundJobs;
 using Neba.Api.Contracts.Security;
+using Neba.Api.ErrorHandling;
 using Neba.Api.Features.Series;
 using Neba.Api.Messaging;
 using Neba.Api.Security;
@@ -104,9 +105,7 @@ internal sealed class SeriesApiHost : IAsyncDisposable
             config.Binding.UsePropertyNamingPolicy = false;
             config.Validation.UsePropertyNamingPolicy = false;
 
-            // Not ConfigureErrorHandling(): its title transformer returns problemDetails.Title for any status
-            // it does not list (such as 422), which calls the transformer again and overflows the stack.
-            config.Errors.UseProblemDetails();
+            config.Errors.ConfigureErrorHandling();
         });
 
         await app.StartAsync();

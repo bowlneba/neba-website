@@ -1,4 +1,7 @@
 using FastEndpoints;
+
+using Microsoft.AspNetCore.WebUtilities;
+
 namespace Neba.Api.ErrorHandling;
 
 internal static class ErrorHandlingConfiguration
@@ -23,6 +26,23 @@ internal static class ErrorHandlingConfiguration
         }
     }
 
+    /// <summary>
+    /// The ProblemDetails title for a status. Never reads <c>ProblemDetails.Title</c>: FastEndpoints calls the
+    /// transformer from that getter, so reading it here recurses until the stack overflows.
+    /// </summary>
+    internal static string TitleFor(int status)
+        => status switch
+        {
+            400 => "Bad Request",
+            401 => "Unauthorized",
+            403 => "Forbidden",
+            404 => "Not Found",
+            409 => "Conflict",
+            422 => "Unprocessable Entity",
+            500 => "Internal Server Error",
+            _ => ReasonPhrases.GetReasonPhrase(status) is { Length: > 0 } phrase ? phrase : "Error"
+        };
+
     extension(ErrorOptions options)
     {
         /// <summary>
@@ -38,16 +58,7 @@ internal static class ErrorHandlingConfiguration
 
                 problemDetailsOptions.TypeValue = "https://www.rfc-editor.org/rfc/rfc9457";
 
-                problemDetailsOptions.TitleTransformer = problemDetails => problemDetails.Status switch
-                {
-                    400 => "Bad Request",
-                    401 => "Unauthorized",
-                    403 => "Forbidden",
-                    404 => "Not Found",
-                    409 => "Conflict",
-                    500 => "Internal Server Error",
-                    _ => problemDetails.Title
-                };
+                problemDetailsOptions.TitleTransformer = problemDetails => TitleFor(problemDetails.Status);
             });
 
             options.StatusCode = 400;
