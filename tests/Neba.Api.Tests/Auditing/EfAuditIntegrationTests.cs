@@ -5,9 +5,12 @@ using Azure.Data.Tables;
 using Neba.Api.Database;
 using Neba.Api.Database.Interceptors;
 using Neba.Api.Features.Bowlers.Domain;
+using Neba.Api.Features.Series.Domain;
 using Neba.TestFactory.Attributes;
 using Neba.TestFactory.Bowlers;
 using Neba.TestFactory.Infrastructure;
+using Neba.TestFactory.Seasons;
+using Neba.TestFactory.Series;
 using Neba.TestFactory.Tournaments;
 
 using Shouldly;
@@ -48,7 +51,9 @@ public sealed class EfAuditIntegrationTests(AppDbContextFixture appDbContextFixt
                 .AuditEventType("EF:{context}")
                 .IncludeEntityObjects(true))
             .UseOptIn()
-            .Include<Bowler>();
+            .Include<Bowler>()
+            .Include<Series>()
+            .Include<SeriesStage>();
     }
 
     public ValueTask DisposeAsync() => ValueTask.CompletedTask;
@@ -59,6 +64,33 @@ public sealed class EfAuditIntegrationTests(AppDbContextFixture appDbContextFixt
         // Arrange
         await using var dbContext = appDbContextFixture.CreateDbContext(_auditInterceptor);
         await dbContext.Bowlers.AddAsync(BowlerFactory.Create(), TestContext.Current.CancellationToken);
+
+        // Act
+        await dbContext.SaveChangesAsync(TestContext.Current.CancellationToken);
+
+        // Assert
+        var eventCount = await CountEventsAsync();
+        eventCount.ShouldBeGreaterThan(0);
+    }
+
+    [Fact(DisplayName = "Saving a Series should write an EF audit event")]
+    public async Task SaveChanges_ShouldWriteAuditEvents_WhenSeriesAndStagesAreSaved()
+    {
+        // Arrange
+        var season = SeasonFactory.Create();
+        var tournament = TournamentFactory.Create(seasonId: season.Id);
+        await using (var seed = appDbContextFixture.CreateDbContext())
+        {
+            seed.Seasons.Add(season);
+            seed.Tournaments.Add(tournament);
+            await seed.SaveChangesAsync(TestContext.Current.CancellationToken);
+        }
+
+        await ClearTableAsync();
+
+        var series = SeriesFactory.CreateFor(season, [(tournament, StageKind.Qualifying, 8, null, null)]);
+        await using var dbContext = appDbContextFixture.CreateDbContext(_auditInterceptor);
+        dbContext.Series.Add(series);
 
         // Act
         await dbContext.SaveChangesAsync(TestContext.Current.CancellationToken);
