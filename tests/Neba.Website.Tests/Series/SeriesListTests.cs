@@ -17,6 +17,7 @@ using Neba.Website.Server.Series;
 using Neba.Website.Server.Services;
 using Neba.Website.Server.Time;
 
+using Refit;
 using Refit.Testing;
 
 namespace Neba.Website.Tests.Series;
@@ -80,6 +81,22 @@ public sealed class SeriesListTests : IDisposable
             seasonStartDate: new DateOnly(2024, 1, 1),
             seasonEndDate: new DateOnly(2024, 12, 31),
             isLocked: locked);
+
+    [Fact(DisplayName = "Should show the loading skeleton while the list loads")]
+    public void Render_ShouldShowSkeleton_WhileLoading()
+    {
+        // Arrange
+        _seriesApi
+            .Setup(x => x.ListSeriesAsync(It.IsAny<CancellationToken>()))
+            .Returns(new TaskCompletionSource<IApiResponse<CollectionResponse<SeriesSummaryResponse>>>().Task);
+
+        // Act
+        var cut = _ctx.Render<SeriesList>();
+
+        // Assert
+        cut.FindAll(".neba-skeleton").ShouldNotBeEmpty();
+        cut.FindAll(".series-current").ShouldBeEmpty();
+    }
 
     [Fact(DisplayName = "Should feature a Series whose season has not ended and list the rest as past")]
     public void Render_ShouldSplitCurrentAndPast()

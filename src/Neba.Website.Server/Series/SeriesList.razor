@@ -3,7 +3,7 @@
 @using Neba.Api.Contracts.Series
 @using Neba.Website.Server.Services
 @using Neba.Website.Server.Time
-@rendermode InteractiveServer
+@rendermode @(new InteractiveServerRenderMode(prerender: false))
 
 @inject ApiExecutor ApiExecutor
 @inject ISeriesApi SeriesApi
@@ -22,7 +22,8 @@
 
     @if (_isLoading)
     {
-        <NebaSkeletonLoader Type="SkeletonType.Card" Count="2" />
+        <NebaSkeletonLoader Type="SkeletonType.Card" />
+        <NebaSkeletonLoader Type="SkeletonType.Card" />
     }
     else if (_hasError)
     {

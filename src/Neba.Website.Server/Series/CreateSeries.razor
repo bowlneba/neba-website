@@ -3,7 +3,7 @@
 @using Neba.Api.Contracts.Security
 @using Neba.Website.Server.Services
 @using Neba.Website.Server.Time
-@rendermode InteractiveServer
+@rendermode @(new InteractiveServerRenderMode(prerender: false))
 
 @inject ApiExecutor ApiExecutor
 @inject ISeasonsApi SeasonsApi
@@ -25,7 +25,7 @@
 
             @if (_seasons is null)
             {
-                <NebaSkeletonLoader Type="SkeletonType.Card" Count="1" />
+                <NebaSkeletonLoader Type="SkeletonType.Card" />
             }
             else
             {
