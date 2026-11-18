@@ -28,7 +28,15 @@ Copy from a real file, not from memory:
 - PostgreSQL through Npgsql with the snake-case naming convention. Tables sit in `AppDbContext.DefaultSchema`.
 - Entities use the shadow-id helper `ConfigureShadowId()` plus `IsUlid()` on the typed ID and an alternate key. Follow the copied configuration exactly.
 - `Neba.MigrationService` applies migrations; it takes `app` or `security` as its one argument.
-- Migrations live in `Neba.Api`. The design-time factories are `AppDbContextDesignTimeFactory` and `SecurityDbContextDesignTimeFactory`. Confirm the exact `dotnet ef` command (project, context, output folder) from them and from `dotnet ef migrations list` before you run `migrations add`. Do not guess flags.
+- Migrations live in `Neba.Api`. The design-time factories are `AppDbContextDesignTimeFactory` and `SecurityDbContextDesignTimeFactory`. Run `dotnet ef` from `src/Neba.Api`. The factory reads `ConnectionStrings:bowlneba` and throws without it; supply it through user secrets or the `ConnectionStrings__bowlneba` environment variable. `migrations add` and `migrations list --no-connect` need no live database, so a dummy value is enough.
+
+  ```
+  dotnet ef migrations add <Name> --context AppDbContext --output-dir Database/Migrations
+  dotnet ef migrations add <Name> --context SecurityDbContext --output-dir Database/Migrations/Security
+  ```
+
+  `migrations list --no-connect` for `AppDbContext` was run and works. `migrations add` has not been run yet; the output folder is inferred from the existing layout, so check where the files land and fix this section if it is wrong.
+- **Tool version mismatch:** the global `dotnet ef` tool is 11.0.0 but the EF packages are 10.0.x, and `.config/dotnet-tools.json` lists only husky. If `migrations add` warns about a version mismatch or generates different output than the existing migrations, stop and report it. The fix is a pinned local tool, which is the caller's call.
 
 ## Rules
 
@@ -47,7 +55,7 @@ Invoke `dotnet-data:optimizing-ef-core-queries` through the Skill tool for query
 
 ## Checking real data
 
-The `postgres` MCP server (read-only) is configured in `.mcp.json`. It needs `POSTGRES_RO_PASSWORD` and a running database. If the tools are missing, say so and continue without them. Never write to a database.
+The `postgres` MCP server (read-only) is configured in `.mcp.json`. It needs `POSTGRES_RO_PASSWORD` and a running database, and it can be down even when configured (one trial found it failed to connect). If the tools are missing, say so and continue without them. Never write to a database.
 
 ## Verify
 

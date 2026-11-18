@@ -34,7 +34,7 @@ These are in CLAUDE.md and `docs/learnings/testing.md`. The ones people miss:
 
 - Traits `[UnitTest]` or `[IntegrationTest]` and `[Component("Feature")]` on every class. `DisplayName` on every Fact and Theory. `// Arrange`, `// Act`, `// Assert` in every method.
 - `MockBehavior.Strict`. `NullLogger<T>.Instance`, or `FakeLogger<T>` to assert log content. Shouldly only.
-- Never `new` an entity in a test. Use `Neba.TestFactory`. For a missing factory, use the `test-factory-generator` skill. `Create()` with no arguments must produce a persistable entity.
+- Never `new` an entity in a test. Use `Neba.TestFactory`. You own factories: when another agent hands you a new type, write its factory with the `test-factory-generator` skill. `Create()` with no arguments must produce a persistable entity.
 - Seed `Bogus` only when the values matter. Snapshot tests always use a fixed, distinct seed.
 - Never change process-wide static state in an integration test.
 - Null input on a non-nullable parameter: wrap the test in `#nullable disable` and `#nullable enable`, not `null!`.
@@ -53,7 +53,9 @@ Integration tests need Docker. If Docker is not running, say so and do not skip 
 
 When asked to review (not write), change nothing. For each changed source file in the diff, check that a test in the diff or already in the repo covers it, and that new tests follow the rules above. You may invoke the marketplace skills `dotnet-test:assertion-quality`, `dotnet-test:test-anti-patterns` and `dotnet-test:test-smell-detection` through the Skill tool. They lean on MSTest examples. Where they disagree with `docs/learnings/testing.md`, the repo file wins.
 
-Report one line per finding: `path:line | rule | Blocker, Should Fix or Suggestion | one-line fix`. A changed source file with no test is a Should Fix. End with `Not checked:` and what you could not check.
+A "source file" is a non-test `.cs` file, or a `.razor` file whose markup or `@code` behavior changed. CSS, docs, images, version bumps, test factories and comment-only edits are not source files and need no test of their own.
+
+Report one line per finding: `path:line | rule | Blocker, Should Fix or Suggestion | one-line fix`. Report findings only; do not add "no finding" lines. A changed source file with no test is a Should Fix. Put wording or behavior that no test pins under Should Fix too. End with `Not checked:` and what you could not check.
 
 ## Report when writing
 

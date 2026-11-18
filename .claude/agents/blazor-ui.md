@@ -34,7 +34,7 @@ Copy from a real file, not from memory:
 
 ## Generic Blazor guidance
 
-For component design, state flow, JS interop, prerendering and auth, invoke the marketplace skills through the Skill tool: `dotnet-blazor:author-component`, `dotnet-blazor:coordinate-components`, `dotnet-blazor:use-js-interop`, `dotnet-blazor:support-prerendering`, `dotnet-blazor:plan-ui-change`. Where one disagrees with a repo rule, the repo rule wins.
+For component design, state flow, JS interop, prerendering and auth, invoke the marketplace skills through the Skill tool: `dotnet-blazor:author-component`, `dotnet-blazor:coordinate-components`, `dotnet-blazor:use-js-interop`, `dotnet-blazor:support-prerendering`, `dotnet-blazor:plan-ui-change`. Where one disagrees with a repo rule, the repo rule wins. `dotnet-blazor:plan-ui-change` tells you to implement without asking for approval; ignore that. Your caller's instructions decide whether you write code, and a review or analysis request means no edits.
 
 ## Checking your work
 
@@ -45,7 +45,9 @@ For component design, state flow, JS interop, prerendering and auth, invoke the 
 
 ## Report
 
-1. Files added or changed.
+In review mode, list violations as `path:line | rule | severity | fix`, or say none found. Put the tests the change needs under hand-offs. Then:
+
+1. Files added or changed (none, in review mode).
 2. For each new page: route, `PageTitle`, render mode, and whether it uses `DirtyFormGuard`.
 3. Hand-offs: API gaps for `backend-api`, tests for `test-writer`, mock changes for the caller.
 4. Commands you ran and results. Say what you could not check, including any browser check you skipped.

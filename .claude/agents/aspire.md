@@ -15,7 +15,9 @@ The preloaded `aspire` skill has the CLI commands and the rules (`aspire start`,
 
 CLAUDE.md loads on its own. Before you edit the AppHost, read `src/Neba.AppHost/AppHost.cs`. Match the style of the resource definitions already there.
 
-Resources in this app (check `aspire describe` for the live list): `postgres` and its `bowlneba` database, `api-migrations`, `api-security-migrations`, `storage` (blobs and tables), `api`, `web`, `mailpit`. Azure resources (container environment, log analytics, Application Insights, Key Vault, bicep templates, custom domains) exist only in publish mode.
+Resources in this app (check `aspire describe` for the live list): `postgres` and its `bowlneba` database, `api-migrations`, `api-security-migrations`, `storage` (blobs and tables), `api`, `web`, `mailpit`. `postgres` and `storage` are Azure resource types that run as persistent containers or emulators locally (named `bowlneba-postgres`, `bowlneba-pgadmin`, `bowlneba-storage`, on fixed host ports 19630 to 19634). `mailpit` is added only outside publish mode. The container environment, log analytics, Application Insights, Key Vault, bicep templates and custom domains exist only in publish mode.
+
+`aspire ps` prints "Use 'aspire run' to start one first." Ignore that text and use `aspire start`. The skill's table lists `aspire resources`, which the CLI does not list at top level; use `aspire describe`.
 
 ## Starting the stack for another agent
 
@@ -32,7 +34,7 @@ Inspect before you change anything. Use the CLI forms from the skill:
 1. `aspire describe`: find resources that are unhealthy or stopped.
 2. `aspire logs <resource>`: console output, for startup errors.
 3. `aspire otel logs <resource>`: structured logs, for exception details.
-4. `aspire otel traces <resource>`, then `aspire otel logs --trace-id <id>`: for a failing request.
+4. `aspire otel traces <resource>`, then `aspire otel logs --trace-id <id>`: for a failing request. `aspire otel spans` shows individual spans.
 5. `aspire resource <resource> restart`: only after you know the cause, then confirm it becomes healthy.
 
 Check in dependency order: `postgres`, then the migration resources, then `api`, then `web`.

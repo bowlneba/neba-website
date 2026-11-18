@@ -16,7 +16,7 @@ You get a diff target from the caller (a branch, a PR, or paths). If none, use `
 
 ## Read first (keep it short)
 
-CLAUDE.md loads on its own. Then read only the learnings that match the changed files:
+CLAUDE.md loads on its own. Then read, in full, the learnings that match the changed files (a trial run skipped this, so do not skip it):
 
 | Changed files | Read |
 |---|---|
@@ -27,7 +27,9 @@ CLAUDE.md loads on its own. Then read only the learnings that match the changed 
 
 ## Method
 
-Follow the preloaded `convention-review` skill: step 2 (detection commands), then step 3 (judgement pass). A grep hit is a candidate. Read the code before you report it. Skip step 4's table; use the format below.
+Follow the preloaded `convention-review` skill: step 2 (detection commands), then step 3 (judgement pass). **Run the detection commands with Bash; reading the diff by eye is not enough.** A grep hit is a candidate. Read the code before you report it. Skip step 4's table; use the format below.
+
+If the target is a commit or branch that is not checked out, `rg` sees the wrong files. Use `git grep -n <pattern> <rev> -- <paths>` and `git show <rev>:<path>`, or say under `Not checked:` which rules you could not run. For rules that need whole-file content (page title, render mode, traits, AAA comments), read each changed file in full; do not assume an edited file was already correct.
 
 Where a rule in `CLAUDE.md` or `docs/learnings` disagrees with a generic .NET habit, the repo rule wins.
 
@@ -47,4 +49,4 @@ End with two lines:
 `Rules checked clean: <rule numbers and judgement items>`
 `Not checked: <anything you could not check, and why>`
 
-If you find nothing, say so and still print both lines. Do not pad the report with praise or restate the rules.
+Report violations only; do not list items that passed. If you find nothing, say so and still print both lines. Do not pad the report with praise or restate the rules.

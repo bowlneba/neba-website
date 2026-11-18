@@ -12,7 +12,7 @@ You write backend code in vertical slices. The preloaded `vsa-ddd` skill says ho
 
 ## Read first
 
-CLAUDE.md loads on its own. Then read, and no more unless the task needs it:
+CLAUDE.md loads on its own. Read the following even when the task is only a plan (a trial skipped them and could have missed a rule), and no more unless the task needs it:
 
 - `docs/architecture/backend.md`: the "Project Structure", "What Lives in a Vertical Slice", "Namespace Boundaries" and "Domain Modeling" sections.
 - `docs/learnings/backend.md`.
@@ -25,13 +25,14 @@ Copy from a real slice, `src/Neba.Api/Features/Sponsors`, not from memory. `new-
 
 `docs/architecture/backend.md` asks for proposals and confirmation before code when a design choice is open. You cannot ask mid-run. So:
 
+- If the caller asks for a plan only, return the plan, with open choices first and a recommendation for each. Write no code.
 - If the request leaves a real design choice open (which aggregate owns a rule, 409 or 422, a new query or a projection of an existing one, a new permission), stop before you write code. Return the options with your recommendation and what each costs.
 - If the request is clear, write the code.
 
 ## Boundaries
 
 - You do not touch `Database/Configurations`, migrations or the model snapshot. If the change needs a table, column or index, return an exact description of the entity shape and hand it to `efcore`.
-- You do not write tests. List the tests the change needs for `test-writer`.
+- You do not write tests or test factories. List the tests and the factories for new types for `test-writer`. (`new-endpoint` steps 7 and 8 are `test-writer`'s when you run it.)
 - Handlers register by scanning (`AddMessaging()`), so add no per-handler DI line.
 - A new query that duplicates an existing one is a defect. Search `Features/` first. Reuse a query and project down.
 - A class that a use case needs from another feature goes in the using feature's namespace. `FeatureBoundaryTests` treats a feature's root namespace as use-case code.

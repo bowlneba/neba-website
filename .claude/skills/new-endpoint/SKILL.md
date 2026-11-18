@@ -29,7 +29,7 @@ Add one use case. Copy a real slice, do not write from memory. Read `CLAUDE.md` 
 4. **Endpoint.** `internal sealed`. Version with `Options(WithVersionSet(...).MapToApiVersion(...))`, never in the path. Routes have no `/api` prefix. Standard REST: id in the path, the verb names the action.
 5. **Description.** `WithName()` and `WithTags()`. Declare every status code with `Produces` and `ProducesProblemDetails`.
 6. **Handler.** Commands return `ErrorOr<T>`. Queries return DTOs. Inject `AppDbContext`, no repository.
-7. **Factories.** One for every new type: internal DTOs, response contracts, request types.
+7. **Factories.** One for every new type: internal DTOs, response contracts, request types. (An agent running this skill lists them for `test-writer`.)
 8. **Tests.** Endpoint, handler, validator, summary and authorization tests. Rules: `docs/learnings/testing.md`. If a Blazor page calls the new method, add a bUnit test using `StubApiResponse<T>`.
 9. **E2E mock.** A new `required` field on a Contracts DTO needs a matching change in `tests/e2e/mock-api/mock-api-server.ts`, or Playwright fails every time.
 10. **Help and policy docs.** Run `help-documentation` or `policy-documentation` if the change is user-facing or adds a policy.
