@@ -20,7 +20,7 @@ After a restart, check in this order:
 4. Run a read-only trial of `ui-design`, `e2e` and `docs`, as the first six had.
 5. Run `/pull-request-prep` on a branch with real C# and Razor changes.
 
-Decisions made along the way: writers inherit the session model, and `convention-reviewer` uses `sonnet`. Subagents can nest according to the docs, but the main-session design stays. Plugin skills are named in agent bodies for on-demand use, not preloaded. `.github/skills` holds mirrored copies of the two trimmed skills; the new skills are not mirrored.
+Decisions made along the way: writers inherit the session model, and `convention-reviewer` uses `sonnet`. Subagents can nest according to the docs, but the main-session design stays. Plugin skills are named in agent bodies for on-demand use, not preloaded. `.github/skills` mirrors the skills a PR reviewer can use (`vsa-ddd`, `new-endpoint`, `new-domain-entity`, `add-ef-migration`, `new-blazor-page`, `new-background-job`, `write-tests`, `convention-review`, `aspire`, and the two trimmed generic skills). The copies are byte-identical; recopy a skill there whenever you change it in `.claude/skills/`.
 
 
 ## Why

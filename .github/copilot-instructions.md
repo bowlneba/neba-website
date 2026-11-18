@@ -2,6 +2,8 @@
 
 Read `AGENTS.md` for the project map and `CLAUDE.md` for the rules. For PR reviews, also follow `.github/instructions/pull-request-review.instructions.md`.
 
+Skills in `.github/skills/` carry the repo's procedures: `vsa-ddd` (slice and domain design), `new-endpoint`, `new-domain-entity`, `add-ef-migration`, `new-blazor-page`, `new-background-job`, `write-tests`, and `convention-review` (the convention checklist). They mirror `.claude/skills/`; where a skill mentions an "agent", that is a Claude Code feature and you can ignore it.
+
 ## Architecture
 
 This project uses **Vertical Slice Architecture** with a DDD design approach. All backend logic lives in `Neba.Api`. There are no separate Domain, Application, or Infrastructure projects. Each feature is a slice under `Neba.Api/Features/{Feature}/`:
