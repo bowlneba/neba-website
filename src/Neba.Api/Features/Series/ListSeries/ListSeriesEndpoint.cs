@@ -52,6 +52,7 @@ internal sealed class ListSeriesEndpoint(
                 PlacementStageCount = dto.PlacementStageCount,
                 IsLocked = dto.IsLocked,
                 LogoUrl = dto.LogoUrl,
+                StageTournamentIds = [.. dto.StageTournamentIds.Select(id => id.Value.ToString())],
                 NextStage = dto.NextStage is null ? null : new SeriesNextStageResponse
                 {
                     Kind = dto.NextStage.Kind,

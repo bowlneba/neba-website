@@ -23,6 +23,7 @@ public static class SeriesSummaryResponseFactory
         int? placementStageCount = null,
         bool? isLocked = null,
         Uri? logoUrl = null,
+        IReadOnlyCollection<string>? stageTournamentIds = null,
         SeriesNextStageResponse? nextStage = null)
         => new()
         {
@@ -37,6 +38,7 @@ public static class SeriesSummaryResponseFactory
             PlacementStageCount = placementStageCount ?? 1,
             IsLocked = isLocked ?? false,
             LogoUrl = logoUrl,
+            StageTournamentIds = stageTournamentIds ?? [],
             NextStage = nextStage,
         };
 

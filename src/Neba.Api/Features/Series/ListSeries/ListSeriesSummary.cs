@@ -32,6 +32,7 @@ internal sealed class ListSeriesSummary : Summary<ListSeriesEndpoint>
                         SurvivorStageCount = 2,
                         PlacementStageCount = 1,
                         IsLocked = false,
+                        StageTournamentIds = ["01JSTX1234567890ABCDEFGHIL"],
                         NextStage = new SeriesNextStageResponse
                         {
                             Kind = "Qualifying",

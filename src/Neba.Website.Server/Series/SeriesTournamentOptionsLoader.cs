@@ -30,18 +30,10 @@ internal sealed class SeriesTournamentOptionsLoader(ApiExecutor apiExecutor, ISe
             return allSeries.Errors;
         }
 
-        var held = new HashSet<string>(StringComparer.Ordinal);
-        foreach (var other in allSeries.Value.Items.Where(s => s.SeasonId == seasonId && s.Id != editingSeriesId))
-        {
-            var detail = await apiExecutor.ExecuteAsync("SeriesApi", "GetSeries",
-                token => seriesApi.GetSeriesAsync(other.Id, token), ct);
-            if (detail.IsError)
-            {
-                return detail.Errors;
-            }
-
-            held.UnionWith(detail.Value.Stages.Select(stage => stage.TournamentId));
-        }
+        var held = allSeries.Value.Items
+            .Where(s => s.SeasonId == seasonId && s.Id != editingSeriesId)
+            .SelectMany(s => s.StageTournamentIds)
+            .ToHashSet(StringComparer.Ordinal);
 
         IReadOnlyList<SeriesTournamentOption> options = [.. tournaments.Value.Items
             .Where(t => t.Status != "Cancelled" && !held.Contains(t.Id))

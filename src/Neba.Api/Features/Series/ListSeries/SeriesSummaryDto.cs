@@ -1,5 +1,6 @@
 using Neba.Api.Features.Seasons.Domain;
 using Neba.Api.Features.Series.Domain;
+using Neba.Api.Features.Tournaments.Domain;
 
 namespace Neba.Api.Features.Series.ListSeries;
 
@@ -22,6 +23,9 @@ internal sealed record SeriesSummaryDto
 
     /// <summary>Projection only; not mapped to the response.</summary>
     public string? LogoPath { get; init; }
+
+    /// <summary>The tournament of every Stage, in Stage order.</summary>
+    public IReadOnlyCollection<TournamentId> StageTournamentIds { get; init; } = [];
 
     /// <summary>The first Stage (by order) whose tournament hasn't ended; null when all have.</summary>
     public SeriesNextStageDto? NextStage { get; init; }

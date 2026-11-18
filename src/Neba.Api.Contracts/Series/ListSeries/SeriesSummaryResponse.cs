@@ -26,6 +26,9 @@ public sealed record SeriesSummaryResponse
     /// <summary>The logo url.</summary>
     public Uri? LogoUrl { get; init; }
 
+    /// <summary>The tournament id of every Stage, in Stage order.</summary>
+    public required IReadOnlyCollection<string> StageTournamentIds { get; init; }
+
     /// <summary>The first Stage whose tournament hasn't ended; null once every Stage's tournament is over.</summary>
     public SeriesNextStageResponse? NextStage { get; init; }
 }

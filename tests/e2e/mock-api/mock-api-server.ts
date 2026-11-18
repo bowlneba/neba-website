@@ -363,7 +363,7 @@ function mockSeriesDetail(id: string): Record<string, unknown> | null {
 }
 
 function mockSeriesSummary(detail: Record<string, unknown>): object {
-  const stages = detail.stages as { kind: string }[];
+  const stages = detail.stages as { kind: string; tournamentId: string }[];
   const count = (kind: string) => stages.filter((stage) => stage.kind === kind).length;
   return {
     id: detail.id,
@@ -377,6 +377,7 @@ function mockSeriesSummary(detail: Record<string, unknown>): object {
     placementStageCount: count('Placement'),
     isLocked: detail.isLocked,
     logoUrl: detail.logoUrl,
+    stageTournamentIds: stages.map((stage) => stage.tournamentId),
     nextStage:
       detail.id === MOCK_SERIES_ID
         ? { kind: 'Qualifying', tournamentId: '01JX0000000000000000000705', tournamentName: 'Westgate Lanes', tournamentStartDate: '2025-05-31', tournamentEndDate: '2025-05-31' }

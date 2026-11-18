@@ -1,6 +1,7 @@
 using Neba.Api.Features.Seasons.Domain;
 using Neba.Api.Features.Series.Domain;
 using Neba.Api.Features.Series.ListSeries;
+using Neba.Api.Features.Tournaments.Domain;
 
 namespace Neba.TestFactory.Series;
 
@@ -18,6 +19,7 @@ internal static class SeriesSummaryDtoFactory
         int? placementStageCount = null,
         bool? isLocked = null,
         Uri? logoUrl = null,
+        IReadOnlyCollection<TournamentId>? stageTournamentIds = null,
         SeriesNextStageDto? nextStage = null)
         => new()
         {
@@ -32,6 +34,7 @@ internal static class SeriesSummaryDtoFactory
             PlacementStageCount = placementStageCount ?? 1,
             IsLocked = isLocked ?? false,
             LogoUrl = logoUrl,
+            StageTournamentIds = stageTournamentIds ?? [],
             NextStage = nextStage,
         };
 

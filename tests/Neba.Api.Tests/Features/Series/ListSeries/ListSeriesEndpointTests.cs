@@ -2,6 +2,7 @@ using FastEndpoints;
 
 using Neba.Api.Features.Series.ListSeries;
 using Neba.Api.Messaging;
+using Neba.Api.Features.Tournaments.Domain;
 using Neba.TestFactory.Attributes;
 using Neba.TestFactory.Series;
 
@@ -32,7 +33,7 @@ public sealed class ListSeriesEndpointTests
         // Arrange
         var ct = TestContext.Current.CancellationToken;
         var next = SeriesNextStageDtoFactory.Create(kind: "Survivor", tournamentName: "Lang's");
-        var withNext = SeriesSummaryDtoFactory.Create(name: "With", nextStage: next, logoUrl: new Uri("https://example.com/l.png"), isLocked: true);
+        var withNext = SeriesSummaryDtoFactory.Create(name: "With", stageTournamentIds: [TournamentId.New(), TournamentId.New()], nextStage: next, logoUrl: new Uri("https://example.com/l.png"), isLocked: true);
         var withoutNext = SeriesSummaryDtoFactory.Create(name: "Without");
 
         var handler = new Mock<IQueryHandler<ListSeriesQuery, IReadOnlyCollection<SeriesSummaryDto>>>(MockBehavior.Strict);
@@ -51,6 +52,7 @@ public sealed class ListSeriesEndpointTests
         first.IsLocked.ShouldBeTrue();
         first.LogoUrl.ShouldBe(new Uri("https://example.com/l.png"));
         first.QualifyingStageCount.ShouldBe(withNext.QualifyingStageCount);
+        first.StageTournamentIds.ShouldBe([.. withNext.StageTournamentIds.Select(id => id.Value.ToString())]);
         first.NextStage.ShouldNotBeNull();
         first.NextStage.Kind.ShouldBe("Survivor");
         first.NextStage.TournamentId.ShouldBe(next.TournamentId.Value.ToString());

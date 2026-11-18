@@ -43,21 +43,25 @@ internal sealed class ListSeriesQueryHandler(AppDbContext appDbContext, IFileSto
             ? s with { LogoUrl = fileStorageService.GetBlobUri(s.LogoContainer, s.LogoPath) }
             : s)];
 
-        // Upcoming Stages across all Series (a few dozen rows at most), reduced to the first per Series.
-        var upcoming = await appDbContext.Series.AsNoTracking()
+        // Every Stage of every Series (a few dozen rows at most), in one query. It gives each Series' tournament
+        // IDs, and the first Stage that has not ended.
+        var stages = await appDbContext.Series.AsNoTracking()
             .SelectMany(series => series.Stages, (series, stage) => new { SeriesId = series.Id, stage.Order, stage.Kind, stage.TournamentId })
             .Join(appDbContext.Tournaments.AsNoTracking(), x => x.TournamentId, t => t.Id,
                 (x, t) => new { x.SeriesId, x.Order, x.Kind, x.TournamentId, t.Name, t.StartDate, t.EndDate })
-            .Where(x => x.EndDate >= cutoff)
             .ToListAsync(cancellationToken);
 
-        var nextBySeries = upcoming
+        var stagesBySeries = stages.ToLookup(x => x.SeriesId);
+
+        var nextBySeries = stages
+            .Where(x => x.EndDate >= cutoff)
             .GroupBy(x => x.SeriesId)
             .ToDictionary(g => g.Key, g => g.MinBy(x => x.Order)!);
 
         return [.. summaries.Select(summary => nextBySeries.TryGetValue(summary.Id, out var next)
             ? summary with
             {
+                StageTournamentIds = [.. stagesBySeries[summary.Id].OrderBy(x => x.Order).Select(x => x.TournamentId)],
                 NextStage = new SeriesNextStageDto
                 {
                     Kind = next.Kind.Name,
@@ -67,6 +71,6 @@ internal sealed class ListSeriesQueryHandler(AppDbContext appDbContext, IFileSto
                     TournamentEndDate = next.EndDate,
                 },
             }
-            : summary)];
+            : summary with { StageTournamentIds = [.. stagesBySeries[summary.Id].OrderBy(x => x.Order).Select(x => x.TournamentId)] })];
     }
 }

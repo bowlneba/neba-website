@@ -455,6 +455,23 @@ public static class CacheDescriptors
     }
 
     /// <summary>
+    /// Cache descriptors for Series data.
+    /// </summary>
+    public static class Series
+    {
+        /// <summary>
+        /// Returns a cache descriptor for the list of Series Finales. It carries the tournaments tag, which
+        /// every Series command clears, and the bowling centers tag, because it embeds a center's name.
+        /// </summary>
+        public static CacheDescriptor ListFinales
+            => new()
+            {
+                Key = "neba:series:finales:list",
+                Tags = ["neba", Tournaments.Tag, "neba:bowling-centers", "neba:series"]
+            };
+    }
+
+    /// <summary>
     /// Cache descriptors for security data.
     /// </summary>
     public static class Security

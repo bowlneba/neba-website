@@ -1,3 +1,4 @@
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Time.Testing;
 
 using Neba.Api.Database;
@@ -109,6 +110,27 @@ public sealed class ListSeriesQueryHandlerTests(AppDbContextFixture fixture)
         next.Kind.ShouldBe("Survivor");
         next.TournamentName.ShouldBe("S Survivor");
         next.TournamentStartDate.ShouldBe(new DateOnly(2025, 3, 3));
+    }
+
+    [Fact(DisplayName = "HandleAsync should list every Stage tournament in Stage order, including ended ones")]
+    public async Task HandleAsync_ShouldListEveryStageTournamentInOrder()
+    {
+        // Arrange
+        var ct = TestContext.Current.CancellationToken;
+        var season = await SeriesSeed.AddSeasonAsync(_dbContext, 2025, ct);
+        await SeriesSeed.AddSeriesAsync(_dbContext, season, new DateOnly(2025, 2, 1), ct, name: "S");
+        var handler = CreateHandler(At(2025, 12, 1)); // every tournament has ended
+
+        // Act
+        var result = (await handler.HandleAsync(new ListSeriesQuery(), ct)).Single();
+
+        // Assert
+        result.NextStage.ShouldBeNull();
+        var expected = await _dbContext.Series.AsNoTracking()
+            .SelectMany(series => series.Stages.OrderBy(stage => stage.Order).Select(stage => stage.TournamentId))
+            .ToListAsync(ct);
+        result.StageTournamentIds.ShouldBe(expected);
+        result.StageTournamentIds.Count.ShouldBe(3);
     }
 
     [Theory(DisplayName = "HandleAsync should count a tournament that ended up to a day before today as still upcoming")]

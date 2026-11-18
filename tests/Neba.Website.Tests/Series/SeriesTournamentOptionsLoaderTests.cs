@@ -4,7 +4,6 @@ using Neba.Api.Contracts;
 using Neba.Api.Contracts.Seasons;
 using Neba.Api.Contracts.Seasons.ListTournamentsInSeason;
 using Neba.Api.Contracts.Series;
-using Neba.Api.Contracts.Series.GetSeries;
 using Neba.Api.Contracts.Series.ListSeries;
 using Neba.TestFactory.Attributes;
 using Neba.TestFactory.Series;
@@ -91,19 +90,6 @@ public sealed class SeriesTournamentOptionsLoaderTests : IDisposable
         _seriesApi.Setup(x => x.ListSeriesAsync(It.IsAny<CancellationToken>())).ReturnsAsync(response);
     }
 
-    private void SetupSeriesDetail(string seriesId, params string[] tournamentIds)
-    {
-        var response = Own(new StubApiResponse<SeriesDetailResponse>
-        {
-            IsSuccessStatusCode = true,
-            StatusCode = System.Net.HttpStatusCode.OK,
-            Content = SeriesDetailResponseFactory.Create(
-                id: seriesId,
-                stages: [.. tournamentIds.Select((id, i) => SeriesStageResponseFactory.Create(order: i + 1, tournamentId: id))]),
-        });
-        _seriesApi.Setup(x => x.GetSeriesAsync(seriesId, It.IsAny<CancellationToken>())).ReturnsAsync(response);
-    }
-
     [Fact(DisplayName = "LoadAsync should leave out tournaments held by another Series and cancelled ones, sorted by date")]
     public async Task LoadAsync_ShouldExcludeHeldAndCancelled_AndSortByDate()
     {
@@ -113,8 +99,7 @@ public sealed class SeriesTournamentOptionsLoaderTests : IDisposable
             Tournament("held", new DateOnly(2025, 2, 1)),
             Tournament("cancelled", new DateOnly(2025, 3, 1), status: "Cancelled"),
             Tournament("early", new DateOnly(2025, 1, 1), teamSize: 3));
-        SetupSeriesList(SeriesSummaryResponseFactory.Create(id: "other", seasonId: SeasonId));
-        SetupSeriesDetail("other", "held");
+        SetupSeriesList(SeriesSummaryResponseFactory.Create(id: "other", seasonId: SeasonId, stageTournamentIds: ["held"]));
 
         // Act
         var result = await _loader.LoadAsync(SeasonId, null, TestContext.Current.CancellationToken);
@@ -131,7 +116,7 @@ public sealed class SeriesTournamentOptionsLoaderTests : IDisposable
     {
         // Arrange
         SetupTournaments(Tournament("mine", new DateOnly(2025, 1, 1)));
-        SetupSeriesList(SeriesSummaryResponseFactory.Create(id: "editing", seasonId: SeasonId));
+        SetupSeriesList(SeriesSummaryResponseFactory.Create(id: "editing", seasonId: SeasonId, stageTournamentIds: ["mine"]));
 
         // Act
         var result = await _loader.LoadAsync(SeasonId, "editing", TestContext.Current.CancellationToken);
@@ -147,7 +132,7 @@ public sealed class SeriesTournamentOptionsLoaderTests : IDisposable
     {
         // Arrange
         SetupTournaments(Tournament("t1", new DateOnly(2025, 1, 1)));
-        SetupSeriesList(SeriesSummaryResponseFactory.Create(id: "elsewhere", seasonId: "season-2"));
+        SetupSeriesList(SeriesSummaryResponseFactory.Create(id: "elsewhere", seasonId: "season-2", stageTournamentIds: ["t1"]));
 
         // Act
         var result = await _loader.LoadAsync(SeasonId, null, TestContext.Current.CancellationToken);
