@@ -42,100 +42,44 @@ These are working documents for the feature, not project history — by default 
 - Delete it, **unless** there's a concrete reason to keep it (e.g. the plan doubles as ongoing design reference for a phased/multi-PR feature, or the mockups are linked from a doc that stays). If so, keep it and call out the reason explicitly in the Pre-PR Review output (a new **📐 Plans & Mockups** section — see step 6) rather than deleting silently.
 - If deleted, note it in that same section so the user can see what was removed and why.
 
+A plan that spans several PRs (such as `docs/plans/claude-agents.md`) is a concrete reason to keep it. Say so in the section below, or delete it when the last PR ships.
+
 Skip this step entirely when base-branch is not `main` (e.g. merging into a long-lived feature/integration branch, where plans may still be useful to the next PR in the chain).
 
-### 4. Load the review guidelines
+### 4. Run the reviewers in parallel
 
-Read `.github/instructions/pull-request-review.instructions.md` in full before reviewing. Every flag in the review must be traceable to a rule in that file or in CLAUDE.md.
+Read `.github/instructions/pull-request-review.instructions.md` only as far as you need to judge a disputed finding. The agents read it for their own layer. Every flag in the final review must trace to a rule in that file, CLAUDE.md, or `docs/learnings/`.
 
-### 5. Review the changes
+Pick agents from the step 1 file list and start them **in one message** so they run in parallel:
 
-Work through the diff layer by layer. For each issue found, record:
-- **File and line** (link using `[file.cs:42](path/file.cs#L42)`)
-- **Rule violated** (cite the section, e.g. "API Endpoint Checklist — authorization not explicitly configured")
-- **Severity** (see below)
+| Agent | Run when the diff has |
+|---|---|
+| `convention-reviewer` | always |
+| `test-writer` (review mode) | always: checks every changed source file has a test and the test rules hold |
+| `efcore` | anything under `Database/`, a migration, an `*Configuration.cs`, or an EF query change |
+| `backend-api` | anything under `src/Neba.Api/Features/` or `src/Neba.Api.Contracts/` |
+| `blazor-ui` | a `.razor`, `.razor.js`, or `Neba.Website.Server` change |
+| `aspire` | anything under `src/Neba.AppHost/` or `aspire.config.json` |
 
-#### Severity levels
+Give each agent the same brief: "Review mode. Review only the changes in `git diff <base-branch>...HEAD`. Change no files. Report findings only, one per line: `path:line | rule | Blocker, Should Fix or Suggestion | one-line fix`. End with `Not checked:`." If the branch is checked out, say so; the agents run their greps against the working tree.
+
+### 5. Merge the findings
+
+- Dedupe by file and line first, then by rule or wording. Two agents often report one issue in different words. Keep the clearer line and the more severe level.
+- Map each finding into 🚫 Blockers, ⚠️ Should Fix and 💡 Suggestions below. Severity meanings:
 
 | Level | Meaning |
 |---|---|
-| 🚫 **Blocker** | Violates a hard architectural rule, missing required element (auth, error handling, test trait), or introduces a security/correctness risk. Must be fixed before opening the PR. |
-| ⚠️ **Should Fix** | Clearly violates a convention but is unlikely to cause a runtime failure — e.g. missing `DisplayName`, wrong extension method syntax, unsealed class. Should be fixed unless there's a deliberate reason not to. |
-| 💡 **Suggestion** | Improvement that's nice to have but doesn't break rules — e.g. an opportunity for a cleaner abstraction, a missing E2E test consideration, a metrics opportunity. |
+| 🚫 **Blocker** | Violates a hard architectural rule, misses a required element (auth, error handling, test trait, a test for a changed source file), or risks security or correctness. Fix before opening the PR. |
+| ⚠️ **Should Fix** | Clearly breaks a convention but is unlikely to fail at runtime (missing `DisplayName`, unsealed class). Fix unless there is a reason not to. |
+| 💡 **Suggestion** | Nice to have; breaks no rule. |
 
-#### Checklist to work through (from the review guidelines)
+- A new or changed source file with no test is a 🚫 Blocker. Name the file and say it has zero coverage.
+- Collect every agent's `Not checked:` line. Report anything that matters under Suggestions as "not reviewed: ...", so a gap is visible.
+- If an agent fails or returns nothing, say so in the review. Do not treat silence as a pass.
+- Check the findings yourself before you report them. An agent can be wrong; if a finding contradicts the review instructions, drop it.
 
-**Architecture & Code Quality**
-- [ ] Layer boundaries respected (no cross-domain references beyond strongly-typed IDs)
-- [ ] Commands return `ErrorOr<T>`
-- [ ] Queries return DTOs, not entities
-- [ ] `extension()` block syntax used, not legacy `this` parameter
-- [ ] `DateTimeOffset` used instead of `DateTime` for points in time
-- [ ] No banned libraries (AutoMapper, Newtonsoft.Json, BinaryFormatter)
-
-**API Endpoints** (if any endpoints changed)
-- [ ] Use case folder structure (Endpoint, Summary, Validator per folder)
-- [ ] Authorization explicitly configured
-- [ ] `WithName()` in Description
-- [ ] Tags match authorization (Public/Authenticated/Admin)
-- [ ] All status codes documented — **check the endpoint group first**: `ProducesProblemDetails(500)` is declared on the group (e.g., `AwardsEndpointGroup`, `BowlingCentersEndpointGroup`) and does not need to be repeated on each endpoint. Individual endpoints only need `Produces<TResponse>(200)` and any status codes unique to that endpoint (e.g., `ProducesProblemDetails(404)` for endpoints that can 404)
-- [ ] Validator present and contains only structural validation
-- [ ] All errors return ProblemDetails (bare `Send.NotFoundAsync()` is acceptable for simple 404s)
-- [ ] Summary class with realistic examples
-- [ ] Inline mapping (no mapper classes)
-- [ ] No `/api` prefix or version segment in route
-
-**Contracts** (if any contracts changed)
-- [ ] Request wraps Input for commands
-- [ ] XML documentation on public types and properties
-- [ ] `{ get; init; }` not `{ get; set; }`
-- [ ] Refit interface updated
-
-**Testing**
-- [ ] **Every new or meaningfully-changed source file has a corresponding test file in the diff.** Do this check explicitly, don't infer it from the presence of *other* tests in the diff:
-  1. From the step 1 file list, build the set of new/changed non-test source files that carry logic — `.cs` files under `src/` with a handler, endpoint, domain type, or non-trivial method body; `.razor` files with an `@code` block containing more than a trivial parameter passthrough.
-  2. For each, check whether the diff also touches a matching test file (`tests/Neba.Api.Tests/**/{Name}Tests.cs`, `tests/Neba.Website.Tests/**/{Name}Tests.cs`, or an e2e spec covering it per the Playwright table below).
-  3. A `.razor` **page** (has `@page`) or any component with event handlers, conditional rendering, or API calls is not covered by "some other file in this PR has tests" — it needs its own test file. A pure layout/presentational component with no `@code` logic is exempt.
-  4. Flag any source file with no matching test file as a 🚫 **Blocker** — name the file and state plainly that it has zero test coverage, don't downgrade this to a suggestion.
-- [ ] New entities/value objects/DTOs/responses have factory classes in `Neba.TestFactory` (SmartEnums, strongly-typed IDs, and input objects are exempt)
-- [ ] Tests use factories, not manual instantiation
-- [ ] Tests have `[UnitTest]` or `[IntegrationTest]` trait
-- [ ] Tests have `[Component]` trait
-- [ ] Facts and Theories have `DisplayName`
-- [ ] No `.Verify()` calls when using `MockBehavior.Strict`
-- [ ] No `null!` for null-argument tests — uses `#nullable disable`/`#nullable enable`
-
-**Playwright E2E tests** (if Blazor pages added or changed)
-
-Playwright is the right tool when the behavior involves the real browser + real HTTP stack together — things bUnit cannot exercise:
-
-| Add a Playwright test when… | Skip it when… |
-|---|---|
-| New page with API-backed rendering (verify end-to-end data flow) | Internal component logic or rendering — use bUnit |
-| Navigation flow between pages (link → URL change) | Pure UI state within one component — use bUnit |
-| URL query parameter drives page behavior | Data transformation or business logic — use unit tests |
-| Modal / overlay lifecycle (open, close via button or backdrop) | Static-only page with no API or interactions |
-| Redirect / not-found state triggered by API 404 | Page that is covered by an existing Playwright test already |
-| Cross-page state persistence (e.g. season preserved across nav) | |
-| Keyboard accessibility for interactive widgets | |
-
-When adding Playwright tests:
-- [ ] New mock API endpoint added to `tests/e2e/mock-api/mock-api-server.ts` for any new API route the page calls
-- [ ] Spec file added under `tests/e2e/` (group by page; combine closely related pages in one file)
-- [ ] Tests anchor on stable CSS class selectors (BEM `.block__element--modifier`), not text content for structural assertions
-- [ ] `page.waitForSelector()` used in `beforeEach` (not arbitrary sleeps) to wait for data-driven content to appear
-
-**Observability**
-- [ ] Logging present with appropriate levels
-- [ ] No sensitive data logged unredacted — check every new/changed `[LoggerMessage]` parameter for PII (bowler name, email, phone, address, or similar). If found:
-  - Apply `[PrivateData]` (`Neba.Api.Compliance.PrivateDataAttribute`) to the parameter — do not hand-roll masking helpers. See CLAUDE.md's "PII Redaction in Logs" learning for the full pattern and the `EnableRedaction()` gotcha.
-  - If the PII category doesn't fit the existing `DataTaxonomy.PrivateData` classification, flag it as a 💡 suggestion to extend the taxonomy rather than inventing a parallel mechanism.
-  - Flag raw SQL/query text or full request/response bodies logged at any level as a 🚫 blocker or ⚠️ should-fix (depending on log level and whether it's gated behind `IsEnabled` checks) — these can carry parameter values that bypass classification entirely.
-- [ ] Business operations have activity spans
-
-**Blazor**
-- [ ] Components don't fetch data directly
-- [ ] Pages are thin orchestrators
+These stay in the skill because they are not layer work: `npm audit` (step 2), the plans and mockups cleanup (step 3), the README checks and follow-up review recommendations below, and the PR description.
 
 **Follow-up review recommendations**
 

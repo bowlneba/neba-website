@@ -1,289 +1,105 @@
 ---
 name: dotnet-entity-framework-core
-version: "1.0.0"
+version: "2.0.0"
 category: "Data"
-description: "Design, tune, or review EF Core data access with proper modeling, migrations, query translation, performance, and lifetime management for modern .NET applications."
-compatibility: "Requires EF Core 7+ (preferably 8/9 for latest features)."
+description: "Set up and review EF Core DbContext configuration, migrations, data migrations, and concurrency handling. For query shape, tracking, N+1, paging, and bulk-update performance, use the dotnet-data:optimizing-ef-core-queries skill instead."
+compatibility: "Requires EF Core 7+."
 ---
 
 # Entity Framework Core
 
-## Trigger On
+Generic EF Core guidance. Repo-specific rules live in `CLAUDE.md` and `docs/learnings/backend.md`; where they disagree with this file, they win.
 
-- working on `DbContext`, migrations, model configuration, or EF queries
-- reviewing tracking, loading, performance, or transaction behavior
-- porting data access from EF6 or custom repositories to EF Core
-- optimizing slow database queries
+## Use this skill for
 
-## Documentation
+- `DbContext` registration and entity configuration
+- Creating and reviewing migrations
+- Data changes inside a migration
+- Concurrency tokens and conflict handling
 
-- [EF Core Overview](https://learn.microsoft.com/en-us/ef/core/)
-- [Performance](https://learn.microsoft.com/en-us/ef/core/performance/)
-- [Efficient Querying](https://learn.microsoft.com/en-us/ef/core/performance/efficient-querying)
-- [Migrations](https://learn.microsoft.com/en-us/ef/core/managing-schemas/migrations/)
-- [What's New in EF Core 9](https://learn.microsoft.com/en-us/ef/core/what-is-new/ef-core-9.0/whatsnew)
+## Use something else for
 
-### References
-
-- [patterns.md](references/patterns.md) - Query patterns, tracking strategies, loading strategies, projections, compiled queries, pagination, and temporal tables
-- [anti-patterns.md](references/anti-patterns.md) - Common EF Core mistakes including N+1 queries, large contexts, generic repositories, and missing indexes
+- Slow queries, tracking, N+1, projections, paging, bulk updates, indexes: `dotnet-data:optimizing-ef-core-queries`.
+- Docs: [EF Core](https://learn.microsoft.com/en-us/ef/core/), [Migrations](https://learn.microsoft.com/en-us/ef/core/managing-schemas/migrations/).
 
 ## Workflow
 
-1. **Prefer EF Core for new development** unless a documented gap requires Dapper or raw SQL
-2. **Keep `DbContext` lifetime scoped** — align with unit of work
-3. **Review query translation** — check generated SQL, avoid N+1
-4. **Treat migrations as first-class** — reviewable, not throwaway
-5. **Be deliberate about provider behavior** — cross-provider but not identical
-6. **Validate with query inspection** — not just in-memory mental model
+1. Keep `DbContext` scoped, one per unit of work.
+2. Treat migrations as code that gets reviewed, not as throwaway output.
+3. Check the generated SQL for anything you change.
+4. Be deliberate about provider behavior. Providers share an API but not semantics.
 
-## DbContext Patterns
+## DbContext and configuration
 
-### Basic Configuration
+Put each entity's mapping in an `IEntityTypeConfiguration<T>` class and load them together:
+
 ```csharp
-public class AppDbContext : DbContext
-{
-    public DbSet<Product> Products => Set<Product>();
-    public DbSet<Order> Orders => Set<Order>();
+protected override void OnModelCreating(ModelBuilder modelBuilder)
+    => modelBuilder.ApplyConfigurationsFromAssembly(typeof(AppDbContext).Assembly);
 
-    protected override void OnModelCreating(ModelBuilder modelBuilder)
-    {
-        modelBuilder.ApplyConfigurationsFromAssembly(typeof(AppDbContext).Assembly);
-    }
-}
-
-// Entity Configuration (Fluent API)
-public class ProductConfiguration : IEntityTypeConfiguration<Product>
+public sealed class ProductConfiguration : IEntityTypeConfiguration<Product>
 {
     public void Configure(EntityTypeBuilder<Product> builder)
     {
         builder.HasKey(p => p.Id);
         builder.Property(p => p.Name).HasMaxLength(200).IsRequired();
         builder.HasIndex(p => p.Sku).IsUnique();
-        builder.HasMany(p => p.OrderItems).WithOne(oi => oi.Product);
     }
 }
 ```
 
-### Registration with DI
-```csharp
-builder.Services.AddDbContext<AppDbContext>(options =>
-    options.UseSqlServer(connectionString)
-           .EnableSensitiveDataLogging()  // Dev only
-           .EnableDetailedErrors());      // Dev only
+Register with the provider package for your database (`UseNpgsql` for PostgreSQL). Enable `EnableSensitiveDataLogging` and `EnableDetailedErrors` in development only. `AddDbContextPool` helps when the context holds no per-request state.
 
-// Or with pooling (better performance)
-builder.Services.AddDbContextPool<AppDbContext>(options =>
-    options.UseSqlServer(connectionString));
-```
+Do not wrap `DbContext` in a generic repository. It hides query composition and adds nothing that `DbSet<T>` lacks.
 
-## Query Patterns
+## Migrations
 
-### Use AsNoTracking for Read-Only
-```csharp
-// Bad - tracks entities unnecessarily
-var products = await db.Products.ToListAsync();
-
-// Good - no tracking overhead
-var products = await db.Products
-    .AsNoTracking()
-    .ToListAsync();
-```
-
-### Project to DTOs
-```csharp
-// Bad - loads entire entity graph
-var orders = await db.Orders
-    .Include(o => o.Items)
-    .Include(o => o.Customer)
-    .ToListAsync();
-
-// Good - loads only needed data
-var orders = await db.Orders
-    .Select(o => new OrderDto
-    {
-        Id = o.Id,
-        CustomerName = o.Customer.Name,
-        ItemCount = o.Items.Count,
-        Total = o.Items.Sum(i => i.Price)
-    })
-    .ToListAsync();
-```
-
-### Avoid N+1 Queries
-```csharp
-// Bad - N+1 problem
-foreach (var order in orders)
-{
-    var items = await db.OrderItems
-        .Where(i => i.OrderId == order.Id)
-        .ToListAsync();
-}
-
-// Good - eager loading
-var orders = await db.Orders
-    .Include(o => o.Items)
-    .ToListAsync();
-
-// Good - split query for large graphs
-var orders = await db.Orders
-    .Include(o => o.Items)
-    .AsSplitQuery()
-    .ToListAsync();
-```
-
-### Compiled Queries (EF Core 9)
-```csharp
-// Pre-compiled for frequently used queries
-private static readonly Func<AppDbContext, int, Task<Product?>> GetProductById =
-    EF.CompileAsyncQuery((AppDbContext db, int id) =>
-        db.Products.FirstOrDefault(p => p.Id == id));
-
-// Usage
-var product = await GetProductById(db, productId);
-```
-
-## Migration Patterns
-
-### Creating Migrations
 ```bash
-# Add migration
-dotnet ef migrations add AddProductIndex
-
-# Apply to database
+dotnet ef migrations add <Name>
 dotnet ef database update
-
-# Generate SQL script
 dotnet ef migrations script --idempotent -o migrate.sql
 ```
 
-### Data Migrations
+Review each migration before you commit it:
+
+- The `Up` and `Down` methods match what you intended. Read renames carefully: EF can emit a drop and add, which loses data.
+- No column drop or type narrowing without a plan for existing rows.
+- A new required column on a populated table has a default or a backfill.
+- Indexes exist for columns you filter or sort on.
+- Do not edit a migration that has shipped. Add a new one.
+
+## Data migrations
+
+Put data changes in `migrationBuilder.Sql(...)` in the same migration, after the schema change they depend on:
+
 ```csharp
-public partial class AddProductIndex : Migration
-{
-    protected override void Up(MigrationBuilder migrationBuilder)
-    {
-        migrationBuilder.CreateIndex(
-            name: "IX_Products_Sku",
-            table: "Products",
-            column: "Sku",
-            unique: true);
-
-        // Data migration (if needed)
-        migrationBuilder.Sql(@"
-            UPDATE Products
-            SET NormalizedName = UPPER(Name)
-            WHERE NormalizedName IS NULL");
-    }
-
-    protected override void Down(MigrationBuilder migrationBuilder)
-    {
-        migrationBuilder.DropIndex(
-            name: "IX_Products_Sku",
-            table: "Products");
-    }
-}
+migrationBuilder.AddColumn<string>("NormalizedName", "Products", nullable: true);
+migrationBuilder.Sql("UPDATE \"Products\" SET \"NormalizedName\" = UPPER(\"Name\") WHERE \"NormalizedName\" IS NULL");
 ```
 
-## Anti-Patterns to Avoid
+Make the SQL safe to read twice (guard with `WHERE`). Quote identifiers the way your provider needs. Keep large backfills out of the schema migration if they could lock the table for long.
 
-| Anti-Pattern | Why It's Bad | Better Approach |
-|--------------|--------------|-----------------|
-| `ToList()` then filter | Loads all data to memory | Filter in query |
-| Multiple DbContext per request | Transaction issues | Scoped lifetime |
-| Lazy loading everywhere | N+1 queries | Explicit Include |
-| Generic repository wrapper | Removes query power | Use DbContext directly |
-| Ignoring generated SQL | Hidden performance issues | Log and review |
-| `SaveChanges()` in loops | Many roundtrips | Batch then save |
+## Concurrency
 
-## Performance Best Practices
-
-1. **Index frequently queried columns:**
-   ```csharp
-   builder.HasIndex(p => p.CreatedAt);
-   builder.HasIndex(p => new { p.Category, p.Status });
-   ```
-
-2. **Use pagination:**
-   ```csharp
-   var page = await db.Products
-       .OrderBy(p => p.Id)
-       .Skip(pageSize * pageNumber)
-       .Take(pageSize)
-       .ToListAsync();
-   ```
-
-3. **Batch updates (EF Core 7+):**
-   ```csharp
-   await db.Products
-       .Where(p => p.Category == "Obsolete")
-       .ExecuteDeleteAsync();
-
-   await db.Products
-       .Where(p => p.Category == "Sale")
-       .ExecuteUpdateAsync(p => p.SetProperty(x => x.Price, x => x.Price * 0.9m));
-   ```
-
-4. **Minimize network roundtrips:**
-   ```csharp
-   // Bad - 3 roundtrips
-   var product = await db.Products.FindAsync(id);
-   var reviews = await db.Reviews.Where(r => r.ProductId == id).ToListAsync();
-   var related = await db.Products.Where(p => p.Category == product.Category).ToListAsync();
-
-   // Good - 1 roundtrip
-   var data = await db.Products
-       .Where(p => p.Id == id)
-       .Select(p => new
-       {
-           Product = p,
-           Reviews = p.Reviews,
-           Related = db.Products.Where(r => r.Category == p.Category).Take(5)
-       })
-       .FirstOrDefaultAsync();
-   ```
-
-## Concurrency Patterns
+Add a concurrency token to entities that two users can edit at once:
 
 ```csharp
-public class Product
-{
-    public int Id { get; set; }
-    public string Name { get; set; }
+builder.Property(p => p.RowVersion).IsRowVersion();   // or .IsConcurrencyToken() on a version column
 
-    [ConcurrencyCheck]
-    public int Version { get; set; }
-
-    // Or use RowVersion
-    [Timestamp]
-    public byte[] RowVersion { get; set; }
-}
-
-// Handle concurrency conflicts
-try
-{
-    await db.SaveChangesAsync();
-}
+try { await db.SaveChangesAsync(ct); }
 catch (DbUpdateConcurrencyException ex)
 {
     var entry = ex.Entries.Single();
-    var databaseValues = await entry.GetDatabaseValuesAsync();
-    // Resolve conflict...
+    var current = await entry.GetDatabaseValuesAsync(ct);   // null if the row was deleted
+    // Decide: reload and retry, merge, or return a conflict to the caller.
 }
 ```
 
-## Deliver
-
-- EF Core models and queries that match the domain
-- safer migrations and lifetime management
-- performance-aware data access decisions
-- proper indexing and query optimization
+How a row-version column maps differs by provider. Check the provider docs.
 
 ## Validate
 
-- query behavior is intentional (check SQL logs)
-- migrations are reviewable and correct
-- no N+1 queries in common paths
-- indexes exist for filtered/sorted columns
-- DbContext lifetime is scoped properly
-- concurrency is handled for critical entities
+- Generated SQL is what you expect.
+- Migration is reviewable and loses no data.
+- `DbContext` lifetime is scoped.
+- Concurrency is handled for entities that need it.

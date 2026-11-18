@@ -21,7 +21,7 @@ If a PR number or branch was given instead, diff against that. If the diff is la
 
 ## Step 2 — Review by category
 
-Only evaluate categories relevant to what actually changed (don't force a Blazor finding out of a pure API diff). For each, check against the patterns below — these are drawn from CLAUDE.md's own "Learnings" (FusionCache, EF Core navigation fixup, Blazor Server round-trips) plus the `dotnet-entity-framework-core`/`dotnet-blazor` skills, not generic advice.
+Only evaluate categories relevant to what actually changed (don't force a Blazor finding out of a pure API diff). For each, check against the patterns below — these are drawn from CLAUDE.md's own "Learnings" (FusionCache, EF Core navigation fixup, Blazor Server round-trips) plus the `dotnet-entity-framework-core` skill and the `dotnet-blazor` and `dotnet-data` plugin skills, not generic advice.
 
 **EF Core / Database**
 - A loop that issues a query per iteration (N+1) instead of a single batched query.
@@ -43,7 +43,7 @@ Only evaluate categories relevant to what actually changed (don't force a Blazor
 - An unbounded loop making external calls (HTTP, storage, email) one at a time where batching is possible.
 
 **Blazor**
-- A component fetching its own data directly instead of through a query/service (also a `pull-request-prep` correctness check, but re-flag here if it also implies a per-render fetch cost).
+- A component fetching its own data directly instead of through a query/service (also a correctness check in `pull-request-review.instructions.md`, but re-flag here if it also implies a per-render fetch cost).
 - A large collection rendered with no paging/virtualization on a list page.
 - New per-keystroke or high-frequency interactive behavior implemented via C# `@onkeydown`/server round-trips instead of colocated JS — this is the exact race condition documented in CLAUDE.md's "Custom Interactive Blazor Server Inputs" learning, not just a style preference.
 - A render-mode choice that causes the same data to be re-fetched on every reconnect/prerender cycle unnecessarily.

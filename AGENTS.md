@@ -1,70 +1,102 @@
-# Copilot instructions
+# NEBA website: project map
 
-This repository is set up to use Aspire. Aspire is an orchestrator for the entire application and will take care of configuring dependencies, building, and running the application. The resources that make up the application are defined in `apphost.cs` including application code and external dependencies.
+The website for the New England Bowlers Association (NEBA). It runs tournaments, applies NEBA and USBC rules, and manages members. It has a public site, an admin area, a REST API, and a temporary bridge (`/legacy`) that mirrors actions from the old desktop "Software" into this database. The bridge goes away when Software sunsets.
 
-## General recommendations for working with Aspire
+Stack: .NET 10, ASP.NET Core with Fast Endpoints, EF Core on PostgreSQL, Blazor Server, Hangfire, Aspire, xUnit v3 with Shouldly, Playwright.
 
-1. Before making any changes always run the apphost using `aspire run` and inspect the state of resources to make sure you are building from a known state.
-2. Changes to the _apphost.cs_ file will require a restart of the application to take effect.
-3. Make changes incrementally and run the aspire application using the `aspire run` command to validate changes.
-4. Use the Aspire MCP tools to check the status of resources and debug issues.
+Read `CLAUDE.md` first. It holds the rules. This file says where things are.
 
-## Running the application
+## Solution map
 
-To run the application run the following command:
+| Path | What it is |
+|---|---|
+| `src/Neba.Api` | The API and all backend logic. Vertical slices under `Features/`. No separate Domain, Application or Infrastructure projects. |
+| `src/Neba.Api.Contracts` | Public request and response types shared with the website. |
+| `src/Neba.Website.Server` | The Blazor Server site. Pages sit in feature folders (`Sponsors/`, `HallOfFame/`). Shared components are in `Components/`. API calls go through `Services/ApiExecutor.cs`. |
+| `src/Neba.Website.Client` | The WebAssembly entry point. Almost empty. |
+| `src/Neba.MigrationService` | Runs EF migrations. |
+| `src/Neba.AppHost` | Aspire app model (`AppHost.cs`). |
+| `src/Neba.ServiceDefaults` | Shared telemetry and health defaults. |
+| `tests/Neba.Api.Tests` | Unit and integration tests for the API. Mirrors `src/Neba.Api` folders. |
+| `tests/Neba.Website.Tests` | bUnit tests for Blazor. |
+| `tests/Neba.TestFactory` | Test data factories. Never build entities by hand in tests. |
+| `tests/e2e` | Playwright specs. `mock-api/mock-api-server.ts` fakes the API. |
+| `docs/` | `architecture/`, `learnings/`, `adr/`, `help/`, `policies/`, `ubiquitous-language.md`. |
 
-```bash
-aspire run
-```
+## Where things go
 
-If there is already an instance of the application running it will prompt to stop the existing instance. You only need to restart the application if code in `apphost.cs` is changed, but if you experience problems it can be useful to reset everything to the starting state.
+**A use case** is one folder: `src/Neba.Api/Features/{Feature}/{UseCase}/`.
+It holds the endpoint, summary, command or query, handler, validator and its own DTO.
+A use case never depends on another feature's use-case code.
+Example to copy: `Features/Sponsors/CreateSponsor` (command) and `Features/Sponsors/ListActiveSponsors` (query).
 
-## Checking resources
+**Domain types** go in `Features/{Feature}/Domain/` (aggregates, entities, value objects, typed IDs).
+Shared base types are in `src/Neba.Api/Domain/`.
+Example: `Features/Sponsors/Domain`.
 
-To check the status of resources defined in the app model use the _list resources_ tool. This will show you the current state of each resource and if there are any issues. If a resource is not running as expected you can use the _execute resource command_ tool to restart it or perform other actions.
+**Cross-cutting code** (caching, email, storage, security, telemetry, background jobs) sits in the top-level folders of `src/Neba.Api`, beside `Features/`.
 
-## Listing integrations
+**Database code** (`AppDbContext`, entity configuration) is in `src/Neba.Api/Database/`.
+Handlers inject `AppDbContext`. There are no repositories.
 
-IMPORTANT! When a user asks you to add a resource to the app model you should first use the _list integrations_ tool to get a list of the current versions of all the available integrations. You should try to use the version of the integration which aligns with the version of the Aspire.AppHost.Sdk. Some integration versions may have a preview suffix. Once you have identified the correct integration you should always use the _get integration docs_ tool to fetch the latest documentation for the integration and follow the links to get additional guidance.
+**Legacy bridge** code is in `src/Neba.Api/Legacy/`. Do not copy its route shape into new routes.
 
-## Debugging issues
+**A Blazor page** goes in a feature folder in `Neba.Website.Server`, with its `.razor.css` and `.razor.js` beside it.
+Example: `Sponsors/CreateSponsor.razor`.
 
-IMPORTANT! Aspire is designed to capture rich logs and telemetry for all resources defined in the app model. Use the following diagnostic tools when debugging issues with the application before making changes to make sure you are focusing on the right things.
+**Tests** mirror the source folder. A test for `Features/Sponsors/CreateSponsor` goes in `tests/Neba.Api.Tests/Features/Sponsors/`.
+A new `required` field on a Contracts DTO also needs an update in `tests/e2e/mock-api/mock-api-server.ts`.
 
-1. _list structured logs_; use this tool to get details about structured logs.
-2. _list console logs_; use this tool to get details about console logs.
-3. _list traces_; use this tool to get details about traces.
-4. _list trace structured logs_; use this tool to get logs related to a trace
+## Which skill for which task
 
-## Other Aspire MCP tools
+| Task | Skill |
+|---|---|
+| Add an API endpoint | `new-endpoint` |
+| Design a domain model, aggregate or slice | `vsa-ddd` |
+| Plan a feature (API, then UI) | `feature-plan` |
+| Run, debug or change the Aspire stack | `aspire` |
+| Add or change a migration, or port Software data | `add-ef-migration` |
+| Add a Blazor page | `new-blazor-page` |
+| Add an aggregate, entity or typed ID | `new-domain-entity` |
+| Add a Hangfire job | `new-background-job` |
+| Pick and write tests | `write-tests` |
+| Add a query cache descriptor | `cache-descriptor` |
+| Add a test factory | `test-factory-generator` |
+| Check changes against repo conventions | `convention-review` |
+| Review for performance | `performance-review` |
+| Prepare, describe and open a PR | `pull-request-prep`, `write-pr`, `create-pr` |
+| Address PR review comments | `pull-request-comments` |
+| Review a major dependency upgrade | `dependency-upgrade-review` |
+| Ship a hotfix | `hotfix` |
+| Write user help or policy docs | `help-documentation`, `policy-documentation` |
+| Check domain terms against the glossary | `ubiquitous-language-review` |
+| Kill surviving mutants | `mutation-score-dotnet`, `mutation-score-js` |
+| Refresh plugin marketplaces | `marketplace-refresh` |
 
-1. _select apphost_; use this tool if working with multiple app hosts within a workspace.
-2. _list apphosts_; use this tool to get details about active app hosts.
+## Which agent for which task
 
-## Playwright MCP server
+Agents start with a clean context and do one layer. The main session picks them, and `feature-plan` and `pull-request-prep` route to them.
 
-The playwright MCP server has also been configured in this repository and you should use it to perform functional investigations of the resources defined in the app model as you work on the codebase. To get endpoints that can be used for navigation using the playwright MCP server use the list resources tool.
+| Task | Agent |
+|---|---|
+| Endpoint, handler, validator, domain type, cache descriptor | `backend-api` |
+| Table, configuration, migration, query shape | `efcore` |
+| Blazor page or component | `blazor-ui` |
+| Unit, integration or bUnit tests, test factories | `test-writer` |
+| Playwright specs and the e2e mock API | `e2e` |
+| Convention check with fresh eyes (read-only) | `convention-reviewer` |
+| Design and accessibility critique (read-only) | `ui-design` |
+| Help docs, policy docs, glossary | `docs` |
+| Run or debug the local stack, edit the AppHost | `aspire` |
+| Workflows, hotfix, deploy, failed CI runs (never pushes) | `devops` |
 
-## Updating the app host
+Generic .NET help (Blazor, EF Core queries, ASP.NET Core, testing) comes from the `dotnet-*` plugins. Where a plugin skill and a repo rule disagree, the repo rule wins.
 
-The user may request that you update the Aspire apphost. You can do this using the `aspire update` command. This will update the apphost to the latest version and some of the Aspire specific packages in referenced projects, however you may need to manually update other packages in the solution to ensure compatibility. You can consider using the `dotnet-outdated` with the users consent. To install the `dotnet-outdated` tool use the following command:
+## More detail
 
-```bash
-dotnet tool install --global dotnet-outdated-tool
-```
-
-## Persistent containers
-
-IMPORTANT! Consider avoiding persistent containers early during development to avoid creating state management issues when restarting the app.
-
-## Aspire workload
-
-IMPORTANT! The aspire workload is obsolete. You should never attempt to install or use the Aspire workload.
-
-## Official documentation
-
-IMPORTANT! Always prefer official documentation when available. The following sites contain the official documentation for Aspire and related components
-
-1. https://aspire.dev
-2. https://learn.microsoft.com/dotnet/aspire
-3. https://nuget.org (for specific integration package details)
+- Rules and gotchas: `CLAUDE.md` and `docs/learnings/*.md`.
+- Backend design: `docs/architecture/backend.md`.
+- Blazor design: `docs/architecture/blazor.md`.
+- Domain terms: `docs/ubiquitous-language.md`.
+- PR review rules: `.github/instructions/pull-request-review.instructions.md`.
+- Design sketches in `reference/` are not production code.

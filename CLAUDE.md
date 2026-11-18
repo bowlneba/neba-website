@@ -139,6 +139,7 @@ Detailed write-ups live in `docs/learnings/`. Read the matching file before work
 - Polling helpers must pick the latest event and tolerate a torn read on a live collection.
 - Assert log content with `FakeLogger<T>`; assert redaction through a DI container with `EnableRedaction()`.
 - E2E failure tests use a 4xx (a 5xx retries past the expect timeout), and `MOCK_UPCOMING_TOURNAMENTS` stays empty (`docs/learnings/testing.md`).
+- Endpoint tests use Verify snapshots with a fixed seed; Blazor tests build Refit responses with `StubApiResponse<T>` (`docs/learnings/testing.md`).
 - FastEndpoints mutation testing has unkillable mutants; see the file for `ignore-methods` and Stryker disable comments.
 
 ### Backend — `docs/learnings/backend.md`

@@ -1,6 +1,20 @@
 {
+  "extraKnownMarketplaces": {
+    "dotnet-agent-skills": {
+      "source": {
+        "source": "github",
+        "repo": "dotnet/skills"
+      }
+    }
+  },
   "enabledPlugins": {
-    "frontend-design@claude-plugins-official": true
+    "frontend-design@claude-plugins-official": true,
+    "dotnet-aspnetcore@dotnet-agent-skills": true,
+    "dotnet-blazor@dotnet-agent-skills": true,
+    "dotnet-data@dotnet-agent-skills": true,
+    "dotnet-test@dotnet-agent-skills": true,
+    "dotnet-upgrade@dotnet-agent-skills": true,
+    "dotnet11@dotnet-agent-skills": true
   },
   "hooks": {
     "PreToolUse": [
@@ -10,6 +24,11 @@
           {
             "type": "command",
             "command": "\"$CLAUDE_PROJECT_DIR/scripts/block-secrets.sh\""
+          },
+          {
+            "type": "command",
+            "command": "\"$CLAUDE_PROJECT_DIR/scripts/check-architecture.sh\"",
+            "timeout": 600
           }
         ]
       }
