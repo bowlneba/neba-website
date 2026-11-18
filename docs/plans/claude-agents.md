@@ -1,6 +1,27 @@
 # Claude agents and skills rework
 
-Status: draft for review. Nothing here is built yet.
+Status (2026-11-18): Phases 0 to 6 are built on branch `agentCleanup`, nothing pushed. Verified means run or tested here; the rest is open.
+
+| Phase | State | Verified | Not yet verified |
+|---|---|---|---|
+| 0 Marketplace | Done | Plugins enabled; skills load | none |
+| 1 Foundations | Done | References updated; no stale names left | none |
+| 2 First-wave agents (6) | Done | Each ran a read-only trial; plugin skills load through the Skill tool | `efcore` `migrations add` command (inferred; `list` works); the postgres MCP server (it was down) |
+| 3 Rewiring | Done | Headings the agents cite exist | `pull-request-prep` and `feature-plan` not run end to end |
+| 4 Task skills (5) | Done | Every named file and claim checked against the code | none run on a real task |
+| 5 Second-wave agents (4) | Written | none | `ui-design`, `e2e`, `docs`, `devops` have never run: they were not loaded in the session that wrote them |
+| 6 Hooks | Written | The three scripts, by hand, against about 50 commands | The wiring: settings and frontmatter hooks were added after this session started, so no running agent or session used them. Hooks fail open (a missing script does not block). |
+
+After a restart, check in this order:
+
+1. `git commit --dry-run` with a staged use-case-to-use-case dependency (see the commit message of c140c139) should be blocked by the architecture hook.
+2. Ask `convention-reviewer` to run `touch` on a scratch file. The hook should block it.
+3. Ask `devops` to run `git push --dry-run origin HEAD`. The hook should block it.
+4. Run a read-only trial of `ui-design`, `e2e` and `docs`, as the first six had.
+5. Run `/pull-request-prep` on a branch with real C# and Razor changes.
+
+Decisions made along the way: writers inherit the session model, and `convention-reviewer` uses `sonnet`. Subagents can nest according to the docs, but the main-session design stays. Plugin skills are named in agent bodies for on-demand use, not preloaded. `.github/skills` holds mirrored copies of the two trimmed skills; the new skills are not mirrored.
+
 
 ## Why
 

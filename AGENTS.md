@@ -73,6 +73,23 @@ A new `required` field on a Contracts DTO also needs an update in `tests/e2e/moc
 | Kill surviving mutants | `mutation-score-dotnet`, `mutation-score-js` |
 | Refresh plugin marketplaces | `marketplace-refresh` |
 
+## Which agent for which task
+
+Agents start with a clean context and do one layer. The main session picks them, and `feature-plan` and `pull-request-prep` route to them.
+
+| Task | Agent |
+|---|---|
+| Endpoint, handler, validator, domain type, cache descriptor | `backend-api` |
+| Table, configuration, migration, query shape | `efcore` |
+| Blazor page or component | `blazor-ui` |
+| Unit, integration or bUnit tests, test factories | `test-writer` |
+| Playwright specs and the e2e mock API | `e2e` |
+| Convention check with fresh eyes (read-only) | `convention-reviewer` |
+| Design and accessibility critique (read-only) | `ui-design` |
+| Help docs, policy docs, glossary | `docs` |
+| Run or debug the local stack, edit the AppHost | `aspire` |
+| Workflows, hotfix, deploy, failed CI runs (never pushes) | `devops` |
+
 Generic .NET help (Blazor, EF Core queries, ASP.NET Core, testing) comes from the `dotnet-*` plugins. Where a plugin skill and a repo rule disagree, the repo rule wins.
 
 ## More detail
