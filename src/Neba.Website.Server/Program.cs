@@ -44,6 +44,7 @@ builder.Services.AddScoped<Neba.Website.Server.Notifications.ToastService>();
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<ITournamentApiService, TournamentApiService>();
 builder.Services.AddScoped<ITeamEligibilityService, TeamEligibilityService>();
+builder.Services.AddScoped<Neba.Website.Server.Series.SeriesTournamentOptionsLoader>();
 builder.Services.AddScoped<IReferenceDataService, ReferenceDataService>();
 builder.Services.AddScoped<IClientTimeZoneService, ClientTimeZoneService>();
 builder.Services.AddSingleton<HelpDocumentService>();

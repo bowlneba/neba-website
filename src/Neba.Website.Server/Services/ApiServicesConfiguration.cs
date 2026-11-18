@@ -17,6 +17,7 @@ using Neba.Api.Contracts.OilPatterns;
 using Neba.Api.Contracts.ReferenceData;
 using Neba.Api.Contracts.Seasons;
 using Neba.Api.Contracts.Security;
+using Neba.Api.Contracts.Series;
 using Neba.Api.Contracts.Sponsors;
 using Neba.Api.Contracts.Stats;
 using Neba.Api.Contracts.Tournaments;
@@ -94,6 +95,7 @@ internal static class ApiServicesConfiguration
             services.RegisterApiEndpoint<IStatsApi>();
             services.RegisterApiEndpoint<ITournamentsApi>();
             services.RegisterApiEndpoint<IBowlersApi>();
+            services.RegisterApiEndpoint<ISeriesApi>();
             services.RegisterApiEndpoint<ISecurityApi>();
             services.RegisterApiEndpoint<ICacheApi>();
 
