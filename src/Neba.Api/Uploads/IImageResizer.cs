@@ -22,6 +22,22 @@ internal interface IImageResizer
         int maxDimension,
         IReadOnlySet<string> allowedContentTypes,
         CancellationToken cancellationToken);
+
+    /// <summary>
+    /// Does everything <see cref="ResizeAsync"/> does, and first crops the transparent border off the image
+    /// (keeping a small even margin) so the logo sits centered and fills its frame. An image with no
+    /// transparent border, or no transparency at all, is not cropped.
+    /// </summary>
+    /// <param name="content">The uploaded bytes.</param>
+    /// <param name="maxDimension">The most pixels the longest side may keep.</param>
+    /// <param name="allowedContentTypes">The image types to accept, judged by the decoded format and not the client's header.</param>
+    /// <param name="cancellationToken">A token to cancel the operation.</param>
+    /// <returns>The cropped and resized image, or a validation error when the bytes are not an allowed image.</returns>
+    Task<ErrorOr<ResizedImage>> ResizeLogoAsync(
+        Stream content,
+        int maxDimension,
+        IReadOnlySet<string> allowedContentTypes,
+        CancellationToken cancellationToken);
 }
 
 /// <summary>

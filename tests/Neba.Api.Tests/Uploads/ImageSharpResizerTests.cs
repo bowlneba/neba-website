@@ -310,4 +310,75 @@ public sealed class ImageSharpResizerTests
     {
         public override bool CanSeek => false;
     }
+
+    private static MemoryStream PaddedLogo(int width, int height, Rectangle visible)
+    {
+        using var image = new Image<Rgba32>(width, height);
+        for (var y = visible.Top; y < visible.Bottom; y++)
+        {
+            for (var x = visible.Left; x < visible.Right; x++)
+            {
+                image[x, y] = new Rgba32(0, 0, 255, 255);
+            }
+        }
+
+        var stream = new MemoryStream();
+        image.Save(stream, new PngEncoder());
+        stream.Position = 0;
+        return stream;
+    }
+
+    [Fact(DisplayName = "ResizeLogoAsync should crop the transparent border and keep an even margin around the logo")]
+    public async Task ResizeLogoAsync_ShouldCropTransparentBorder_WhenLogoHasPadding()
+    {
+        // Arrange
+        var ct = TestContext.Current.CancellationToken;
+        await using var source = PaddedLogo(408, 612, new Rectangle(46, 99, 315, 394));
+
+        // Act
+        var result = await _sut.ResizeLogoAsync(source, 1000, Allowed, ct);
+
+        // Assert
+        result.IsError.ShouldBeFalse();
+        using var output = Image.Load<Rgba32>(result.Value.Content);
+        const int margin = 16; // 4% of the 394px longest side
+        output.Width.ShouldBe(315 + (2 * margin));
+        output.Height.ShouldBe(394 + (2 * margin));
+        output[0, 0].A.ShouldBe((byte)0);
+        output[output.Width / 2, output.Height / 2].A.ShouldBe((byte)255);
+        output[margin, margin].A.ShouldBe((byte)255);
+        output[margin - 1, margin - 1].A.ShouldBe((byte)0);
+    }
+
+    [Fact(DisplayName = "ResizeLogoAsync should leave an image with nothing visible uncropped")]
+    public async Task ResizeLogoAsync_ShouldNotCrop_WhenImageIsFullyTransparent()
+    {
+        // Arrange
+        var ct = TestContext.Current.CancellationToken;
+        await using var source = Png(50, 80);
+
+        // Act
+        var result = await _sut.ResizeLogoAsync(source, 1000, Allowed, ct);
+
+        // Assert
+        result.IsError.ShouldBeFalse();
+        using var output = Image.Load(result.Value.Content);
+        output.Width.ShouldBe(50);
+        output.Height.ShouldBe(80);
+    }
+
+    [Fact(DisplayName = "ResizeAsync should not crop a transparent border")]
+    public async Task ResizeAsync_ShouldNotCrop_WhenLogoHasPadding()
+    {
+        // Arrange
+        var ct = TestContext.Current.CancellationToken;
+        await using var source = PaddedLogo(100, 100, new Rectangle(40, 40, 20, 20));
+
+        // Act
+        var result = await _sut.ResizeAsync(source, 1000, Allowed, ct);
+
+        // Assert
+        using var output = Image.Load(result.Value.Content);
+        output.Width.ShouldBe(100);
+    }
 }

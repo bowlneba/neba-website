@@ -1,3 +1,5 @@
+using ErrorOr;
+
 using FastEndpoints;
 
 using Microsoft.AspNetCore.Http;
@@ -21,15 +23,31 @@ public sealed class UploadSeriesLogoEndpointTests
             ContentType = "image/png"
         };
 
+    private static Mock<IImageResizer> CreateResizerMock(ErrorOr<ResizedImage> result)
+    {
+        var mock = new Mock<IImageResizer>(MockBehavior.Strict);
+        mock.Setup(r => r.ResizeLogoAsync(
+                It.IsAny<Stream>(),
+                UploadSeriesLogoEndpoint.MaxLogoDimension,
+                UploadSeriesLogoRequestValidator.AllowedContentTypes,
+                It.IsAny<CancellationToken>()))
+            .ReturnsAsync(result);
+        return mock;
+    }
+
+    private static ResizedImage Resized()
+        => new() { Content = [1, 2, 3], ContentType = "image/png", FileExtension = "png" };
+
     [Fact(DisplayName = "Configure should register a POST route at /series/logo behind the CanUploadSeriesLogo policy")]
     public void Configure_ShouldRegisterPostRouteWithPolicy()
     {
         // Arrange
         var staging = new Mock<IUploadStagingService>(MockBehavior.Strict);
         var storage = new Mock<IFileStorageService>(MockBehavior.Strict);
+        var resizer = new Mock<IImageResizer>(MockBehavior.Strict);
 
         // Act
-        var endpoint = Factory.Create<UploadSeriesLogoEndpoint>(staging.Object, storage.Object);
+        var endpoint = Factory.Create<UploadSeriesLogoEndpoint>(staging.Object, storage.Object, resizer.Object);
 
         // Assert
         endpoint.Definition.Verbs.ShouldContain("POST");
@@ -46,10 +64,11 @@ public sealed class UploadSeriesLogoEndpointTests
         var blobUri = new Uri("https://storage.example.com/test-container/logo.png");
 
         var staging = new Mock<IUploadStagingService>(MockBehavior.Strict);
-        staging.Setup(s => s.StageUploadAsync(It.IsAny<IFormFile>(), "bowlneba-public", "series/logo", null, ct)).ReturnsAsync(storedFile);
+        staging.Setup(s => s.StageUploadAsync(It.IsAny<Stream>(), "logo.png", "image/png", "bowlneba-public", "series/logo", null, ct)).ReturnsAsync(storedFile);
         var storage = new Mock<IFileStorageService>(MockBehavior.Strict);
         storage.Setup(s => s.GetBlobUri(storedFile.Container, storedFile.Path)).Returns(blobUri);
-        var endpoint = Factory.Create<UploadSeriesLogoEndpoint>(staging.Object, storage.Object);
+        var resizer = CreateResizerMock(Resized());
+        var endpoint = Factory.Create<UploadSeriesLogoEndpoint>(staging.Object, storage.Object, resizer.Object);
 
         // Act
         await endpoint.HandleAsync(new UploadSeriesLogoRequest { File = CreateFile() }, ct);
@@ -62,5 +81,23 @@ public sealed class UploadSeriesLogoEndpointTests
         endpoint.Response.ContentType.ShouldBe(storedFile.ContentType);
         endpoint.Response.SizeInBytes.ShouldBe(storedFile.SizeInBytes);
         endpoint.Response.Url.ShouldBe(blobUri);
+    }
+
+    [Fact(DisplayName = "HandleAsync should return 422 and stage nothing when the image cannot be read")]
+    public async Task HandleAsync_ShouldReturn422_WhenResizerFails()
+    {
+        // Arrange
+        var ct = TestContext.Current.CancellationToken;
+        var staging = new Mock<IUploadStagingService>(MockBehavior.Strict);
+        var storage = new Mock<IFileStorageService>(MockBehavior.Strict);
+        var resizer = CreateResizerMock(ImageErrors.Unreadable);
+        var endpoint = Factory.Create<UploadSeriesLogoEndpoint>(staging.Object, storage.Object, resizer.Object);
+
+        // Act
+        await endpoint.HandleAsync(new UploadSeriesLogoRequest { File = CreateFile() }, ct);
+
+        // Assert
+        endpoint.HttpContext.Response.StatusCode.ShouldBe(422);
+        staging.VerifyNoOtherCalls();
     }
 }

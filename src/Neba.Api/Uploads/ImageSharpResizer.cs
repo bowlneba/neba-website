@@ -3,6 +3,7 @@ using ErrorOr;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.Formats;
 using SixLabors.ImageSharp.Memory;
+using SixLabors.ImageSharp.PixelFormats;
 using SixLabors.ImageSharp.Processing;
 
 namespace Neba.Api.Uploads;
@@ -21,10 +22,35 @@ internal sealed class ImageSharpResizer(ILogger<ImageSharpResizer> logger)
     /// </summary>
     internal const long MaxSourcePixels = 50_000_000;
 
-    public async Task<ErrorOr<ResizedImage>> ResizeAsync(
+    /// <summary>
+    /// Pixels with an alpha at or below this count as empty when cropping a logo.
+    /// </summary>
+    private const byte EmptyAlphaThreshold = 8;
+
+    /// <summary>
+    /// The margin a cropped logo keeps on each side, as a share of its longest side.
+    /// </summary>
+    private const double LogoMarginRatio = 0.04;
+
+    public Task<ErrorOr<ResizedImage>> ResizeAsync(
         Stream content,
         int maxDimension,
         IReadOnlySet<string> allowedContentTypes,
+        CancellationToken cancellationToken)
+        => ProcessAsync(content, maxDimension, allowedContentTypes, trimTransparentBorder: false, cancellationToken);
+
+    public Task<ErrorOr<ResizedImage>> ResizeLogoAsync(
+        Stream content,
+        int maxDimension,
+        IReadOnlySet<string> allowedContentTypes,
+        CancellationToken cancellationToken)
+        => ProcessAsync(content, maxDimension, allowedContentTypes, trimTransparentBorder: true, cancellationToken);
+
+    private async Task<ErrorOr<ResizedImage>> ProcessAsync(
+        Stream content,
+        int maxDimension,
+        IReadOnlySet<string> allowedContentTypes,
+        bool trimTransparentBorder,
         CancellationToken cancellationToken)
     {
         // A seekable stream is read in place (identify, rewind, decode); only a forward-only one is copied.
@@ -74,9 +100,15 @@ internal sealed class ImageSharpResizer(ILogger<ImageSharpResizer> logger)
                 source.Position = 0;
                 using var image = await Image.LoadAsync(new DecoderOptions { MaxFrames = 1 }, source, cancellationToken);
 
+                image.Mutate(context => context.AutoOrient());
+
+                if (trimTransparentBorder)
+                {
+                    TrimTransparentBorder(image);
+                }
+
                 image.Mutate(context =>
                 {
-                    context.AutoOrient();
 
                     if (image.Width > maxDimension || image.Height > maxDimension)
                     {
@@ -108,6 +140,60 @@ internal sealed class ImageSharpResizer(ILogger<ImageSharpResizer> logger)
                 return ImageErrors.Unreadable;
             }
         }
+    }
+
+    /// <summary>
+    /// Crops <paramref name="image"/> to the pixels that are not (nearly) transparent, plus an even margin.
+    /// Leaves it alone when nothing is transparent or nothing is visible.
+    /// </summary>
+    private static void TrimTransparentBorder(Image image)
+    {
+        using var pixels = image.CloneAs<Rgba32>();
+
+        int minX = pixels.Width, minY = pixels.Height, maxX = -1, maxY = -1;
+        pixels.ProcessPixelRows(accessor =>
+        {
+            for (var y = 0; y < accessor.Height; y++)
+            {
+                var row = accessor.GetRowSpan(y);
+                for (var x = 0; x < row.Length; x++)
+                {
+                    if (row[x].A <= EmptyAlphaThreshold)
+                    {
+                        continue;
+                    }
+
+                    minX = Math.Min(minX, x);
+                    maxX = Math.Max(maxX, x);
+                    minY = Math.Min(minY, y);
+                    maxY = Math.Max(maxY, y);
+                }
+            }
+        });
+
+        if (maxX < 0)
+        {
+            return;
+        }
+
+        var bounds = new Rectangle(minX, minY, maxX - minX + 1, maxY - minY + 1);
+        if (bounds.Width == image.Width && bounds.Height == image.Height)
+        {
+            return;
+        }
+
+        var margin = (int)Math.Round(Math.Max(bounds.Width, bounds.Height) * LogoMarginRatio);
+        image.Mutate(context =>
+        {
+            context.Crop(bounds);
+            context.Resize(new ResizeOptions
+            {
+                Size = new Size(bounds.Width + (2 * margin), bounds.Height + (2 * margin)),
+                Mode = ResizeMode.BoxPad,
+                PadColor = Color.Transparent,
+                Position = AnchorPositionMode.Center
+            });
+        });
     }
 
     /// <summary>

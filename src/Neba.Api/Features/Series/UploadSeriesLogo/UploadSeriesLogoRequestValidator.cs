@@ -14,7 +14,7 @@ internal sealed class UploadSeriesLogoRequestValidator
     private const long MaxSizeMb = 5;
     private const long MaxSizeBytes = MaxSizeMb * 1024 * 1024;
 
-    private static readonly IReadOnlySet<string> AllowedContentTypes = new HashSet<string>
+    internal static readonly IReadOnlySet<string> AllowedContentTypes = new HashSet<string>
     {
         MediaTypeNames.Image.Jpeg,
         MediaTypeNames.Image.Png,
