@@ -14,9 +14,9 @@ using Neba.Api.Features.HallOfFame.Domain;
 using Neba.Api.Features.Memberships.Domain;
 using Neba.Api.Features.News.Domain;
 using Neba.Api.Features.Seasons.Domain;
+using Neba.Api.Features.Series.Domain;
 using Neba.Api.Features.Sponsors.Domain;
 using Neba.Api.Features.Stats.Domain;
-using Neba.Api.Features.Series.Domain;
 using Neba.Api.Features.Tournaments.Domain;
 using Neba.Api.Uploads;
 

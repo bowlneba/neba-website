@@ -19,7 +19,12 @@ internal sealed class GetSeriesQueryHandler(AppDbContext appDbContext, IFileStor
             .Join(appDbContext.Seasons.AsNoTracking(), series => series.SeasonId, season => season.Id,
                 (series, season) => new
                 {
-                    series.Id, series.Name, SeasonId = season.Id, season.Description, season.StartDate, season.EndDate,
+                    series.Id,
+                    series.Name,
+                    SeasonId = season.Id,
+                    season.Description,
+                    season.StartDate,
+                    season.EndDate,
                     IsLocked = series.Stages.Any(s => s.Status != StageStatus.Pending),
                     series.Logo,
                     series.Finale,
@@ -39,11 +44,18 @@ internal sealed class GetSeriesQueryHandler(AppDbContext appDbContext, IFileStor
             .OrderBy(x => x.stage.Order)
             .Select(x => new
             {
-                x.stage.Id, x.stage.Order, x.stage.Kind, x.stage.Status, x.stage.AdvancingCount,
+                x.stage.Id,
+                x.stage.Order,
+                x.stage.Kind,
+                x.stage.Status,
+                x.stage.AdvancingCount,
                 SquadDate = x.stage.SquadDesignation == null ? (DateOnly?)null : x.stage.SquadDesignation.Date,
                 SquadStartTime = x.stage.SquadDesignation == null ? (TimeOnly?)null : x.stage.SquadDesignation.StartTime,
-                TournamentId = x.tournament.Id, TournamentName = x.tournament.Name,
-                x.tournament.StartDate, x.tournament.EndDate, x.tournament.TournamentType,
+                TournamentId = x.tournament.Id,
+                TournamentName = x.tournament.Name,
+                x.tournament.StartDate,
+                x.tournament.EndDate,
+                x.tournament.TournamentType,
             })
             .ToListAsync(cancellationToken);
 

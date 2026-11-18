@@ -23,7 +23,7 @@ public sealed class SeriesFormModel
     public Uri? LogoUrl { get; set; }
 
     /// <summary>The Stage rows, in order.</summary>
-    [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1002:Do not expose generic lists", Justification="A mutable form model the editor binds to.")]
+    [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1002:Do not expose generic lists", Justification = "A mutable form model the editor binds to.")]
     public List<SeriesStageRowModel> Stages { get; } = [];
 
     /// <summary>Null means the Series has no Finale. The editor's "This Series has a Finale" toggle sets or clears it.</summary>
@@ -49,6 +49,6 @@ public sealed class SeriesFinaleFormModel
     public string? BowlingCenterId { get; set; }
 
     /// <summary>Server errors named <c>Series.Finale.*</c>.</summary>
-    [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1002:Do not expose generic lists", Justification="A mutable form model the editor binds to.")]
+    [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1002:Do not expose generic lists", Justification = "A mutable form model the editor binds to.")]
     public List<string> Errors { get; } = [];
 }

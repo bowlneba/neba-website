@@ -17,7 +17,10 @@ internal sealed class ListSeriesFinalesQueryHandler(AppDbContext appDbContext, I
             .Where(series => series.Finale != null)
             .Select(series => new
             {
-                series.Id, series.Name, series.SeasonId, series.Finale,
+                series.Id,
+                series.Name,
+                series.SeasonId,
+                series.Finale,
                 LogoContainer = series.Logo == null ? null : series.Logo.Container,
                 LogoPath = series.Logo == null ? null : series.Logo.Path,
             })

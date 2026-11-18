@@ -136,7 +136,7 @@ public sealed class Series
         // Tournament facts of the Stages the Finale must follow: the stored Stages when unchanged, else the submitted ones.
         var stageFacts = stagesUnchanged
             ? _stages.Select(s => tournaments.GetValueOrDefault(s.TournamentId)).OfType<StageTournamentFacts>().ToList()
-            : candidates.Select(c => c.Facts).ToList();
+            : [.. candidates.Select(c => c.Facts)];
 
         errors.AddRange(CheckFinale(finale, lastSurvivorCount, stageFacts));
 

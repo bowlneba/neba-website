@@ -22,6 +22,6 @@ public sealed class SeriesStageRowModel
     public TimeOnly? SquadStartTime { get; set; }
 
     /// <summary>Server errors named <c>Series.Stages[i]</c> for this row.</summary>
-    [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1002:Do not expose generic lists", Justification="A mutable form model the editor binds to.")]
+    [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1002:Do not expose generic lists", Justification = "A mutable form model the editor binds to.")]
     public List<string> Errors { get; } = [];
 }
