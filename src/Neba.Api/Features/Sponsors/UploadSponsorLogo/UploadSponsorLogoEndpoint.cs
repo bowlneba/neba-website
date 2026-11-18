@@ -13,7 +13,7 @@ using PermissionCatalog = Neba.Api.Contracts.Security.Permissions;
 namespace Neba.Api.Features.Sponsors.UploadSponsorLogo;
 
 internal sealed class UploadSponsorLogoEndpoint(IUploadStagingService stagingService, IFileStorageService fileStorageService, IImageResizer imageResizer)
-    : Endpoint<UploadSponsorLogoRequest, UploadedFileResponse>
+    : LogoUploadEndpoint<UploadSponsorLogoRequest>
 {
     public override void Configure()
     {
@@ -42,19 +42,6 @@ internal sealed class UploadSponsorLogoEndpoint(IUploadStagingService stagingSer
         var result = await LogoUploadProcessor.ResizeAndStageAsync(
             req.File, "sponsors/logo", UploadSponsorLogoRequestValidator.AllowedContentTypes, imageResizer, stagingService, fileStorageService, ct);
 
-        if (result.IsError)
-        {
-            foreach (var error in result.Errors)
-            {
-                AddError(error.Description);
-            }
-
-            await Send.ErrorsAsync(StatusCodes.Status422UnprocessableEntity, ct);
-            // Stryker disable once Statement
-            return;
-        }
-
-        // Stryker disable once Statement
-        await Send.OkAsync(result.Value, ct);
+        await SendResultAsync(result, ct);
     }
 }

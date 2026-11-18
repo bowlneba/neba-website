@@ -152,6 +152,13 @@ else
 
         if (result.IsError)
         {
+            // A reload after a logo save keeps the page it has and tells the admin; a first load has nothing to keep.
+            if (_model is not null && Id == _model.Id && result.FirstError.Type != ErrorOr.ErrorType.NotFound)
+            {
+                ToastService.Show("Reload Failed", "The logo was saved, but the page could not refresh. Reload the page to see it.", NotifySeverity.Warning);
+                return;
+            }
+
             _notFound = result.FirstError.Type == ErrorOr.ErrorType.NotFound;
             _model = null;
         }

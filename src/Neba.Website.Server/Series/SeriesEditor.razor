@@ -27,6 +27,12 @@
                 <NebaAlert Severity="NotifySeverity.Warning" Title="This Series is locked" Message="Processing has begun for this Series. Its Stages and whether it has a Finale are fixed. The name, the logo, and the Finale's date, time and center can still change." />
             }
 
+            @if (_optionsError is not null || _bowlingCentersError is not null)
+            {
+                <NebaAlert Severity="NotifySeverity.Error" Title="Unable to load the Series form"
+                           Message="@string.Join(" ", new[] { _optionsError, _bowlingCentersError }.OfType<string>())" />
+            }
+
             @if (_generalErrors.Count > 0)
             {
                 <NebaAlert Severity="NotifySeverity.Error" Title="Unable to save the Series" Message="@string.Join(" ", _generalErrors)" Dismissible="true"
@@ -143,6 +149,8 @@
     private IReadOnlyCollection<BowlingCenterSummaryResponse> _bowlingCenters = [];
     private int _heldElsewhere;
     private List<string> _generalErrors = [];
+    private string? _optionsError;
+    private string? _bowlingCentersError;
     private string? _pendingSeasonId;
     private int _seasonSelectKey;
     private bool _isLogoUploading;
@@ -191,10 +199,11 @@
     // The Finale's host picker, loaded the way EditTournament loads its picker.
     private async Task LoadBowlingCentersAsync()
     {
+        _bowlingCentersError = null;
         var result = await ApiExecutor.ExecuteAsync("BowlingCenters", "ListBowlingCenters", BowlingCentersApi.ListBowlingCentersAsync);
         if (result.IsError)
         {
-            _generalErrors = [.. _generalErrors, result.FirstError.Description];
+            _bowlingCentersError = result.FirstError.Description;
             return;
         }
 
@@ -204,6 +213,7 @@
     private async Task LoadOptionsAsync()
     {
         // Loaded even when locked: the read-only grid uses the options for tournament labels and team sizes.
+        _optionsError = null;
         if (string.IsNullOrEmpty(Model.SeasonId))
         {
             _options = [];
@@ -213,7 +223,7 @@
         var result = await OptionsLoader.LoadAsync(Model.SeasonId, SeriesId);
         if (result.IsError)
         {
-            _generalErrors = [.. _generalErrors, result.FirstError.Description];
+            _optionsError = result.FirstError.Description;
             return;
         }
 

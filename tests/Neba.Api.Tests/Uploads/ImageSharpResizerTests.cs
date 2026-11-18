@@ -263,6 +263,44 @@ public sealed class ImageSharpResizerTests
         _logger.Collector.GetSnapshot().ShouldContain(record => record.Level == LogLevel.Information && record.Message.Contains("2 frames"));
     }
 
+    [Fact(DisplayName = "ResizeLogoAsync should return Image.Animated when a GIF has more than one frame")]
+    public async Task ResizeLogoAsync_ShouldReturnAnimated_WhenGifIsAnimated()
+    {
+        // Arrange
+        var ct = TestContext.Current.CancellationToken;
+        using var animated = new Image<Rgba32>(20, 20);
+        using (var second = new Image<Rgba32>(20, 20))
+        {
+            animated.Frames.AddFrame(second.Frames.RootFrame);
+        }
+
+        var stream = new MemoryStream();
+        await animated.SaveAsync(stream, new GifEncoder(), ct);
+        stream.Position = 0;
+
+        // Act
+        var result = await _sut.ResizeLogoAsync(stream, 100, Allowed, ct);
+
+        // Assert
+        result.IsError.ShouldBeTrue();
+        result.FirstError.Code.ShouldBe("Image.Animated");
+    }
+
+    [Fact(DisplayName = "ResizeLogoAsync should resize a JPEG, which has no alpha to trim")]
+    public async Task ResizeLogoAsync_ShouldResizeJpeg_WhenFormatHasNoAlpha()
+    {
+        // Arrange
+        var ct = TestContext.Current.CancellationToken;
+        using var stream = Encode("jpeg", 200, 100);
+
+        // Act
+        var result = await _sut.ResizeLogoAsync(stream, 100, Allowed, ct);
+
+        // Assert
+        result.IsError.ShouldBeFalse();
+        Image.Identify(result.Value.Content).Width.ShouldBe(100);
+    }
+
     [Fact(DisplayName = "ResizeAsync should drop EXIF, XMP, and IPTC profiles")]
     public async Task ResizeAsync_ShouldDropAllMetadataProfiles()
     {

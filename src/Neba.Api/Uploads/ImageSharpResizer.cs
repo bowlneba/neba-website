@@ -37,20 +37,20 @@ internal sealed class ImageSharpResizer(ILogger<ImageSharpResizer> logger)
         int maxDimension,
         IReadOnlySet<string> allowedContentTypes,
         CancellationToken cancellationToken)
-        => ProcessAsync(content, maxDimension, allowedContentTypes, trimTransparentBorder: false, cancellationToken);
+        => ProcessAsync(content, maxDimension, allowedContentTypes, isLogo: false, cancellationToken);
 
     public Task<ErrorOr<ResizedImage>> ResizeLogoAsync(
         Stream content,
         int maxDimension,
         IReadOnlySet<string> allowedContentTypes,
         CancellationToken cancellationToken)
-        => ProcessAsync(content, maxDimension, allowedContentTypes, trimTransparentBorder: true, cancellationToken);
+        => ProcessAsync(content, maxDimension, allowedContentTypes, isLogo: true, cancellationToken);
 
     private async Task<ErrorOr<ResizedImage>> ProcessAsync(
         Stream content,
         int maxDimension,
         IReadOnlySet<string> allowedContentTypes,
-        bool trimTransparentBorder,
+        bool isLogo,
         CancellationToken cancellationToken)
     {
         // A seekable stream is read in place (identify, rewind, decode); only a forward-only one is copied.
@@ -92,6 +92,13 @@ internal sealed class ImageSharpResizer(ILogger<ImageSharpResizer> logger)
 
             if (info.FrameMetadataCollection.Count > 1)
             {
+                // A logo is one still image: reject an animation instead of silently flattening it.
+                if (isLogo)
+                {
+                    logger.LogImageAnimatedRejected(info.FrameMetadataCollection.Count, format.DefaultMimeType);
+                    return ImageErrors.Animated;
+                }
+
                 logger.LogImageFramesDropped(info.FrameMetadataCollection.Count, format.DefaultMimeType);
             }
 
@@ -102,7 +109,7 @@ internal sealed class ImageSharpResizer(ILogger<ImageSharpResizer> logger)
 
                 image.Mutate(context => context.AutoOrient());
 
-                if (trimTransparentBorder)
+                if (isLogo)
                 {
                     TrimTransparentBorder(image);
                 }
@@ -148,7 +155,15 @@ internal sealed class ImageSharpResizer(ILogger<ImageSharpResizer> logger)
     /// </summary>
     private static void TrimTransparentBorder(Image image)
     {
-        using var pixels = image.CloneAs<Rgba32>();
+        // A format with no alpha channel (JPEG) has nothing to trim, so skip the scan.
+        if (image.PixelType.AlphaRepresentation is PixelAlphaRepresentation.None)
+        {
+            return;
+        }
+
+        // Scan the decoded image in place when it is already Rgba32; clone only for other pixel types.
+        using var clone = image is Image<Rgba32> ? null : image.CloneAs<Rgba32>();
+        var pixels = image as Image<Rgba32> ?? clone!;
 
         int minX = pixels.Width, minY = pixels.Height, maxX = -1, maxY = -1;
         pixels.ProcessPixelRows(accessor =>
@@ -227,10 +242,16 @@ internal static partial class ImageSharpResizerLogMessages
 
     [LoggerMessage(Level = LogLevel.Information, Message = "Uploaded {ContentType} image has {FrameCount} frames; only the first is kept.")]
     public static partial void LogImageFramesDropped(this ILogger<ImageSharpResizer> logger, int frameCount, string contentType);
+
+    [LoggerMessage(Level = LogLevel.Information, Message = "Uploaded {ContentType} logo rejected: it has {FrameCount} frames.")]
+    public static partial void LogImageAnimatedRejected(this ILogger<ImageSharpResizer> logger, int frameCount, string contentType);
 }
 
 internal static class ImageErrors
 {
+    public static Error Animated
+        => Error.Validation("Image.Animated", "A logo must be a still image. Upload one without animation.");
+
     public static Error Unreadable
         => Error.Validation("Image.Unreadable", "The file could not be read as an image.");
 

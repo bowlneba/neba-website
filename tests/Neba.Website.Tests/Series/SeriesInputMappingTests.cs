@@ -16,6 +16,19 @@ public sealed class SeriesInputMappingTests
         return model;
     }
 
+    [Fact(DisplayName = "StageKinds.ToValue should map an unknown kind to 0 instead of throwing")]
+    public void ToValue_ShouldReturnZero_WhenKindIsUnknown()
+    {
+        // Arrange
+        const string kind = "Unknown";
+
+        // Act
+        var value = StageKinds.ToValue(kind);
+
+        // Assert
+        value.ShouldBe(0);
+    }
+
     [Fact(DisplayName = "ToCreateInput should trim the name and keep row order")]
     public void ToCreateInput_ShouldKeepRowOrder()
     {

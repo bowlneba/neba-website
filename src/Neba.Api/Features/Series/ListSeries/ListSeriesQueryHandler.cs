@@ -58,19 +58,26 @@ internal sealed class ListSeriesQueryHandler(AppDbContext appDbContext, IFileSto
             .GroupBy(x => x.SeriesId)
             .ToDictionary(g => g.Key, g => g.MinBy(x => x.Order)!);
 
-        return [.. summaries.Select(summary => nextBySeries.TryGetValue(summary.Id, out var next)
-            ? summary with
+        return [.. summaries.Select(summary =>
+        {
+            var withIds = summary with
             {
                 StageTournamentIds = [.. stagesBySeries[summary.Id].OrderBy(x => x.Order).Select(x => x.TournamentId)],
-                NextStage = new SeriesNextStageDto
+            };
+
+            return nextBySeries.TryGetValue(summary.Id, out var next)
+                ? withIds with
                 {
-                    Kind = next.Kind.Name,
-                    TournamentId = next.TournamentId,
-                    TournamentName = next.Name,
-                    TournamentStartDate = next.StartDate,
-                    TournamentEndDate = next.EndDate,
-                },
-            }
-            : summary with { StageTournamentIds = [.. stagesBySeries[summary.Id].OrderBy(x => x.Order).Select(x => x.TournamentId)] })];
+                    NextStage = new SeriesNextStageDto
+                    {
+                        Kind = next.Kind.Name,
+                        TournamentId = next.TournamentId,
+                        TournamentName = next.Name,
+                        TournamentStartDate = next.StartDate,
+                        TournamentEndDate = next.EndDate,
+                    },
+                }
+                : withIds;
+        })];
     }
 }

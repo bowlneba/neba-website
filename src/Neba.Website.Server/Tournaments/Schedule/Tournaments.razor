@@ -72,7 +72,7 @@
             {
                 var filtered = FilteredEntries;
                 <div class="tournaments-page__list" id="tournament-list" role="list" aria-live="polite"
-                     aria-label="@($"{filtered.Count} events")">
+                     aria-label="@("event".ToQuantity(filtered.Count, formatProvider: DisplayCulture.English))">
 
                     @if (_activeTab == TournamentTab.Upcoming)
                     {
