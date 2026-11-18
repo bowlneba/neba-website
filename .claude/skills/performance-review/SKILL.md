@@ -21,7 +21,7 @@ If a PR number or branch was given instead, diff against that. If the diff is la
 
 ## Step 2 — Review by category
 
-Only evaluate categories relevant to what actually changed (don't force a Blazor finding out of a pure API diff). For each, check against the patterns below — these are drawn from CLAUDE.md's own "Learnings" (FusionCache, EF Core navigation fixup, Blazor Server round-trips) plus the `dotnet-entity-framework-core`/`dotnet-blazor` skills, not generic advice.
+Only evaluate categories relevant to what actually changed (don't force a Blazor finding out of a pure API diff). For each, check against the patterns below — these are drawn from CLAUDE.md's own "Learnings" (FusionCache, EF Core navigation fixup, Blazor Server round-trips) plus the `dotnet-entity-framework-core` skill and the `dotnet-blazor` and `dotnet-data` plugin skills, not generic advice.
 
 **EF Core / Database**
 - A loop that issues a query per iteration (N+1) instead of a single batched query.

@@ -51,7 +51,7 @@ compatibility: "Requires an ASP.NET Core project or solution."
    - Use `IHostedService` / `BackgroundService` for background work
 
 4. **Route specialized work to specific skills:**
-   - UI and components → `dotnet-blazor`
+   - UI and components → the `dotnet-blazor` plugin skills (`author-component`, `coordinate-components`)
    - Real-time → `dotnet-signalr`
    - RPC → `dotnet-grpc`
    - New HTTP APIs → `dotnet-minimal-apis` (prefer unless controllers needed)
