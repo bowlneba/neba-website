@@ -124,7 +124,7 @@
     public EventCallback OnChanged { get; set; }
 
     private string HeldElsewhereNote
-        => "tournament".ToQuantity(HeldElsewhere) + " in this season " + (HeldElsewhere == 1 ? "is" : "are") + " in another Series and not listed.";
+        => "Not listed: " + "tournament".ToQuantity(HeldElsewhere, formatProvider: DisplayCulture.English) + " in this season already in another Series.";
 
     private SeriesTournamentOption? OptionFor(SeriesStageRowModel row)
         => Options.FirstOrDefault(o => o.Id == row.TournamentId);

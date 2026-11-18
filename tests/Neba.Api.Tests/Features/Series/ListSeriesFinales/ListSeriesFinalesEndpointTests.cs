@@ -34,7 +34,7 @@ public sealed class ListSeriesFinalesEndpointTests
         var hosted = SeriesFinaleSummaryDtoFactory.Create(
             seriesName: "Hosted",
             logoUrl: new Uri("https://example.com/l.png"),
-            finale: SeriesFinaleDtoFactory.Create(bowlingCenterId: "01948", bowlingCenterName: "Callahan's", bowlingCenterCity: "Seekonk", bowlingCenterState: "MA"));
+            finale: SeriesFinaleScheduleDtoFactory.Create(bowlingCenterId: "01948", bowlingCenterName: "Callahan's", bowlingCenterCity: "Seekonk", bowlingCenterState: "MA"));
         var unhosted = SeriesFinaleSummaryDtoFactory.Create(seriesName: "Unhosted");
 
         var handler = new Mock<IQueryHandler<ListSeriesFinalesQuery, IReadOnlyCollection<SeriesFinaleSummaryDto>>>(MockBehavior.Strict);

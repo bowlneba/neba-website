@@ -16,7 +16,7 @@ internal sealed class SeriesStageInputValidator
             .WithMessage("Stage ID must be a 26-character ULID.");
 
         RuleFor(s => s.Kind)
-            .Must(kind => StageKind.TryFromName(kind, out _))
+            .Must(kind => StageKind.TryFromValue(kind, out _))
             .WithErrorCode("SeriesStageInput.KindInvalid")
             .WithMessage("Stage kind must be Qualifying, Survivor, or Placement.");
 

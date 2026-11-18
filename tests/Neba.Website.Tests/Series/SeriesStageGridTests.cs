@@ -264,7 +264,7 @@ public sealed class SeriesStageGridTests : IDisposable
 
         // Assert
         cut.Find(".series-grid__foot .series-editor__hint").TextContent
-            .ShouldBe("2 tournaments in this season are in another Series and not listed.");
+            .ShouldBe("Not listed: 2 tournaments in this season already in another Series.");
     }
 
     [Fact(DisplayName = "OnChanged should fire on each edit")]

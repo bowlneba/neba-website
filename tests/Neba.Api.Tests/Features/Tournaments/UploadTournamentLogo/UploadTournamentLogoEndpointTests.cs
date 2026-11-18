@@ -40,7 +40,7 @@ public sealed class UploadTournamentLogoEndpointTests
         var mock = new Mock<IImageResizer>(MockBehavior.Strict);
         mock.Setup(r => r.ResizeLogoAsync(
                 It.IsAny<Stream>(),
-                UploadTournamentLogoEndpoint.MaxLogoDimension,
+                LogoUploadProcessor.MaxLogoDimension,
                 UploadTournamentLogoRequestValidator.AllowedContentTypes,
                 It.IsAny<CancellationToken>()))
             .ReturnsAsync(result);

@@ -15,11 +15,6 @@ namespace Neba.Api.Features.Sponsors.UploadSponsorLogo;
 internal sealed class UploadSponsorLogoEndpoint(IUploadStagingService stagingService, IFileStorageService fileStorageService, IImageResizer imageResizer)
     : Endpoint<UploadSponsorLogoRequest, UploadedFileResponse>
 {
-    /// <summary>
-    /// The longest side a stored logo keeps, large enough for a high-density screen.
-    /// </summary>
-    internal const int MaxLogoDimension = 512;
-
     public override void Configure()
     {
         Post("logo");
@@ -44,12 +39,12 @@ internal sealed class UploadSponsorLogoEndpoint(IUploadStagingService stagingSer
 
     public override async Task HandleAsync(UploadSponsorLogoRequest req, CancellationToken ct)
     {
-        await using var upload = req.File.OpenReadStream();
-        var resized = await imageResizer.ResizeLogoAsync(upload, MaxLogoDimension, UploadSponsorLogoRequestValidator.AllowedContentTypes, ct);
+        var result = await LogoUploadProcessor.ResizeAndStageAsync(
+            req.File, "sponsors/logo", UploadSponsorLogoRequestValidator.AllowedContentTypes, imageResizer, stagingService, fileStorageService, ct);
 
-        if (resized.IsError)
+        if (result.IsError)
         {
-            foreach (var error in resized.Errors)
+            foreach (var error in result.Errors)
             {
                 AddError(error.Description);
             }
@@ -59,24 +54,7 @@ internal sealed class UploadSponsorLogoEndpoint(IUploadStagingService stagingSer
             return;
         }
 
-        // The resizer re-encodes in the format the bytes decoded as, which can differ from the client's file name.
-        var fileName = $"{Path.GetFileNameWithoutExtension(req.File.FileName)}.{resized.Value.FileExtension}";
-
-        await using var content = new MemoryStream(resized.Value.Content);
-        var storedFile = await stagingService.StageUploadAsync(
-            content, fileName, resized.Value.ContentType, "bowlneba-public", "sponsors/logo", null, ct);
-
-        var response = new UploadedFileResponse
-        {
-            Container = storedFile.Container,
-            Path = storedFile.Path,
-            FileName = fileName,
-            ContentType = storedFile.ContentType,
-            SizeInBytes = storedFile.SizeInBytes,
-            Url = fileStorageService.GetBlobUri(storedFile.Container, storedFile.Path)
-        };
-
         // Stryker disable once Statement
-        await Send.OkAsync(response, ct);
+        await Send.OkAsync(result.Value, ct);
     }
 }

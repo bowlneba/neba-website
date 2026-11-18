@@ -4,8 +4,8 @@ using FastEndpoints;
 using FastEndpoints.AspVersioning;
 
 using Neba.Api.Contracts;
+using Neba.Api.Contracts.Series.GetSeries;
 using Neba.Api.Contracts.Series.ListSeriesFinales;
-using Neba.Api.Features.Series.GetSeries;
 using Neba.Api.Messaging;
 
 namespace Neba.Api.Features.Series.ListSeriesFinales;
@@ -46,7 +46,16 @@ internal sealed class ListSeriesFinalesEndpoint(
                 SeriesName = dto.SeriesName,
                 SeasonId = dto.SeasonId.Value.ToString(),
                 LogoUrl = dto.LogoUrl,
-                Finale = dto.Finale.ToResponse(),
+                Finale = new SeriesFinaleResponse
+                {
+                    FinalistCount = dto.Finale.FinalistCount,
+                    Date = dto.Finale.Date,
+                    StartTime = dto.Finale.StartTime,
+                    BowlingCenterId = dto.Finale.BowlingCenterId,
+                    BowlingCenterName = dto.Finale.BowlingCenterName,
+                    BowlingCenterCity = dto.Finale.BowlingCenterCity,
+                    BowlingCenterState = dto.Finale.BowlingCenterState,
+                },
             })],
         };
 

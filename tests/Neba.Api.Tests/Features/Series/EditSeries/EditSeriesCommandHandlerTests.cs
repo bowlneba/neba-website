@@ -204,6 +204,54 @@ public sealed class EditSeriesCommandHandlerTests(AppDbContextFixture fixture)
             [StageKind.Qualifying, StageKind.Qualifying, StageKind.Survivor, StageKind.Placement]);
     }
 
+    [Fact(DisplayName = "HandleAsync should give a new Stage the tournament of the Stage it replaces, despite the unique tournament index")]
+    public async Task HandleAsync_ShouldReuseRemovedStageTournament_ForNewStage()
+    {
+        // Arrange
+        var ct = TestContext.Current.CancellationToken;
+        var series = await SeedAsync();
+        var original = Current(series);
+        var replacement = SeriesStageDefinitionFactory.Create(
+            kind: original[0].Kind, tournamentId: original[0].TournamentId, advancingCount: original[0].AdvancingCount);
+        var stages = new List<SeriesStageDefinition> { replacement, original[1], original[2] };
+
+        // Act
+        var result = await CreateHandler().HandleAsync(Command(series, stages), ct);
+
+        // Assert
+        result.IsError.ShouldBeFalse();
+        _dbContext.ChangeTracker.Clear();
+        var saved = await _dbContext.Series.AsNoTracking().Include(s => s.Stages).SingleAsync(ct);
+        saved.Stages.Count.ShouldBe(3);
+        saved.Stages.Select(s => s.Id).ShouldNotContain(series.Stages.First().Id);
+        saved.Stages.Single(s => s.Order == 1).TournamentId.ShouldBe(original[0].TournamentId);
+    }
+
+    [Fact(DisplayName = "HandleAsync should move a removed Stage's tournament and order to a kept Stage, despite the unique indexes")]
+    public async Task HandleAsync_ShouldMoveRemovedStageSlot_ToKeptStage()
+    {
+        // Arrange
+        var ct = TestContext.Current.CancellationToken;
+        var series = await SeedAsync();
+        var original = Current(series);
+
+        // The Survivor Stage goes; the Placement Stage keeps its id and takes the Survivor's tournament and order.
+        var placement = original[2] with { TournamentId = original[1].TournamentId };
+        var stages = new List<SeriesStageDefinition> { original[0], placement };
+
+        // Act
+        var result = await CreateHandler().HandleAsync(Command(series, stages), ct);
+
+        // Assert
+        result.IsError.ShouldBeFalse();
+        _dbContext.ChangeTracker.Clear();
+        var saved = await _dbContext.Series.AsNoTracking().Include(s => s.Stages).SingleAsync(ct);
+        saved.Stages.OrderBy(s => s.Order).Select(s => s.Order).ShouldBe([1, 2]);
+        var kept = saved.Stages.Single(s => s.Id == placement.StageId);
+        kept.Order.ShouldBe(2);
+        kept.TournamentId.ShouldBe(original[1].TournamentId);
+    }
+
     [Fact(DisplayName = "HandleAsync should return the domain errors and save nothing")]
     public async Task HandleAsync_ShouldReturnDomainErrors()
     {

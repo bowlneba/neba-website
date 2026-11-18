@@ -6,8 +6,8 @@ public sealed record SeriesStageInput
     /// <summary>Existing Stage ID when editing; null for a new Stage.</summary>
     public string? Id { get; init; }
 
-    /// <summary>"Qualifying", "Survivor", or "Placement".</summary>
-    public required string Kind { get; init; }
+    /// <summary>1 = Qualifying, 2 = Survivor, 3 = Placement.</summary>
+    public required int Kind { get; init; }
 
     /// <summary>The tournament id.</summary>
     public required string TournamentId { get; init; }

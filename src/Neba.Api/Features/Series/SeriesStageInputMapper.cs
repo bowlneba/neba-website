@@ -37,7 +37,7 @@ internal static class SeriesStageInputMapper
         => [.. stages.Select(stage => new SeriesStageDefinition
         {
             StageId = stage.Id is null ? null : new SeriesStageId(stage.Id),
-            Kind = StageKind.FromName(stage.Kind),
+            Kind = StageKind.FromValue(stage.Kind),
             TournamentId = new TournamentId(stage.TournamentId),
             AdvancingCount = stage.AdvancingCount,
             SquadDate = stage.SquadDate,

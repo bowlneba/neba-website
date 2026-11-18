@@ -54,9 +54,9 @@ public sealed class SeriesStageInputMapperTests
         var tournamentId = new string('1', 26);
         IReadOnlyList<Neba.Api.Contracts.Series.CreateSeries.SeriesStageInput> inputs =
         [
-            SeriesStageInputFactory.Create(id: stageId, kind: "Survivor", tournamentId: tournamentId, advancingCount: 20,
+            SeriesStageInputFactory.Create(id: stageId, kind: StageKind.Survivor.Value, tournamentId: tournamentId, advancingCount: 20,
                 squadDate: new DateOnly(2025, 7, 12), squadStartTime: new TimeOnly(9, 0)),
-            SeriesStageInputFactory.Create(kind: "Placement", advancingCount: null),
+            SeriesStageInputFactory.Create(kind: StageKind.Placement.Value, advancingCount: null),
         ];
 
         // Act

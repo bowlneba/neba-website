@@ -25,7 +25,7 @@ public sealed class CreateSeriesEndpointTests
             Series = SeriesInputFactory.Create(
                 seasonId: new string('2', 26),
                 logo: SeriesLogoInputFactory.Create(),
-                stages: [SeriesStageInputFactory.Create(kind: "Survivor", tournamentId: new string('1', 26), advancingCount: 20,
+                stages: [SeriesStageInputFactory.Create(kind: 2, tournamentId: new string('1', 26), advancingCount: 20,
                     squadDate: new DateOnly(2025, 7, 12), squadStartTime: new TimeOnly(9, 0))],
                 finale: SeriesFinaleInputFactory.Create(bowlingCenterId: "01948")),
         };

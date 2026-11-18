@@ -63,7 +63,7 @@ public sealed class EditSeriesRequestValidatorTests
     {
         // Arrange
         var request = Request(
-            stages: [SeriesStageInputFactory.Create(kind: "Nope", tournamentId: new string('1', 26))],
+            stages: [SeriesStageInputFactory.Create(kind: 99, tournamentId: new string('1', 26))],
             finale: new SeriesFinaleInput { FinalistCount = 4 });
 
         // Act

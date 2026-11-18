@@ -41,7 +41,7 @@ public sealed class SeriesInputValidatorTests
     public async Task Stage_ShouldFail_ForUnknownKind()
     {
         // Arrange
-        var input = SeriesStageInputFactory.Create(kind: "Finale", tournamentId: new string('1', 26));
+        var input = SeriesStageInputFactory.Create(kind: 99, tournamentId: new string('1', 26));
 
         // Act
         var result = await _stage.ValidateAsync(input, TestContext.Current.CancellationToken);

@@ -33,7 +33,7 @@ internal static class SeriesInputMapping
         => [.. model.Stages.Select(row => new SeriesStageInput
         {
             Id = row.StageId,
-            Kind = row.Kind,
+            Kind = StageKinds.ToValue(row.Kind),
             TournamentId = row.TournamentId ?? string.Empty,
             AdvancingCount = row.Kind == StageKinds.Placement ? null : row.AdvancingCount,
             SquadDate = row.Kind == StageKinds.Survivor ? row.SquadDate : null,

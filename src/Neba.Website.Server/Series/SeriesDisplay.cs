@@ -40,8 +40,8 @@ internal static class SeriesDisplay
                 ? new AdvancingLabel("Top " + finalists.ToString(Culture) + " to the Finale", null)
                 : new AdvancingLabel("Final standings", "(no Finale)"),
             (StageKinds.Qualifying, { } n) when teamSize > 1 => new AdvancingLabel(
-                "Top " + "team".ToQuantity(n),
-                "(" + "bowler".ToQuantity(n * teamSize) + ")"),
+                "Top " + "team".ToQuantity(n, formatProvider: DisplayCulture.English),
+                "(" + "bowler".ToQuantity(n * teamSize, formatProvider: DisplayCulture.English) + ")"),
             (StageKinds.Qualifying, { } n) => new AdvancingLabel("Top " + n.ToString(Culture), null),
             (StageKinds.Survivor, { } n) => new AdvancingLabel(n.ToString(Culture) + " advance", null),
             _ => new AdvancingLabel("—", null), // a saved Qualifying/Survivor Stage always has a count
@@ -64,7 +64,7 @@ internal static class SeriesDisplay
         string? bowlers = null;
         if (count is { } n)
         {
-            bowlers = "(" + "bowler".ToQuantity(n * teamSize) + ")";
+            bowlers = "(" + "bowler".ToQuantity(n * teamSize, formatProvider: DisplayCulture.English) + ")";
         }
 
         return new AdvancingLabel("Teams of " + teamSize.ToString(Culture), bowlers);
@@ -100,7 +100,7 @@ internal static class SeriesDisplay
 
         if (qualifying.Count > 0)
         {
-            steps.Add(new FieldStep("Qualifiers", "event".ToQuantity(qualifying.Count) + ", top finishers",
+            steps.Add(new FieldStep("Qualifiers", "event".ToQuantity(qualifying.Count, formatProvider: DisplayCulture.English) + ", top finishers",
                 QualifierCeiling(qualifying), StageKinds.Qualifying, IsCeiling: true));
         }
 
@@ -138,8 +138,8 @@ internal static class SeriesDisplay
                 "Final standings. The top " + finaleCount.Value.ToString(Culture) + " go to the Finale.",
                 finaleDate is { } fd && finaleStartTime is { } ft ? "Finale: " + FinaleWhen(fd, ft) + "." : null),
             (StageKinds.Qualifying, { } n) when teamSize > 1 => new AdvancingLabel(
-                "Top " + "team".ToQuantity(n) + " enter the Series field.",
-                "(" + "bowler".ToQuantity(n * teamSize) + ")"),
+                "Top " + "team".ToQuantity(n, formatProvider: DisplayCulture.English) + " enter the Series field.",
+                "(" + "bowler".ToQuantity(n * teamSize, formatProvider: DisplayCulture.English) + ")"),
             (StageKinds.Qualifying, { } n) => new AdvancingLabel("Top " + n.ToString(Culture) + " finishers enter the Series field.", null),
             (StageKinds.Survivor, { } n) => new AdvancingLabel(
                 n.ToString(Culture) + " bowlers advance.",
@@ -175,7 +175,7 @@ internal static class SeriesDisplay
 
     /// <summary>"1 Stage needs changes…" / "2 Stages need changes…" for the editor banner.</summary>
     public static string RowsNeedChanges(int count)
-        => "Stage".ToQuantity(count) + (count == 1 ? " needs" : " need") + " changes before this Series can be saved.";
+        => "Stage".ToQuantity(count, formatProvider: DisplayCulture.English) + (count == 1 ? " needs" : " need") + " changes before this Series can be saved.";
 
     /// <summary>Two initials for a logo-less tile: "2025 Vincent Hall Memorial Series" -> "VH".</summary>
     public static string Initials(string name)

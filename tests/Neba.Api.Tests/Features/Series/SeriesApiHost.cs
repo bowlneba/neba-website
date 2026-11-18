@@ -84,9 +84,18 @@ internal sealed class SeriesApiHost : IAsyncDisposable
         var staging = new Mock<IUploadStagingService>(MockBehavior.Strict);
         staging.Setup(s => s.StageUploadAsync(It.IsAny<IFormFile>(), "bowlneba-public", "series/logo", null, It.IsAny<CancellationToken>()))
             .ReturnsAsync(StoredFileFactory.Create(container: "bowlneba-public", path: "series/logo/staged.png", contentType: "image/png"));
+        staging.Setup(s => s.StageUploadAsync(It.IsAny<Stream>(), It.IsAny<string>(), It.IsAny<string>(), "bowlneba-public", "series/logo", null, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(StoredFileFactory.Create(container: "bowlneba-public", path: "series/logo/staged.png", contentType: "image/png"));
         builder.Services.AddSingleton(staging.Object);
 
-        var scheduler = new Mock<IBackgroundJobScheduler>(MockBehavior.Loose);
+        var resizer = new Mock<IImageResizer>(MockBehavior.Strict);
+        resizer.Setup(r => r.ResizeLogoAsync(It.IsAny<Stream>(), It.IsAny<int>(), It.IsAny<IReadOnlySet<string>>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new ResizedImage { Content = [1, 2, 3], ContentType = "image/png", FileExtension = "png" });
+        builder.Services.AddSingleton(resizer.Object);
+
+        // The only job the Series endpoints enqueue is the delete of a replaced or removed logo.
+        var scheduler = new Mock<IBackgroundJobScheduler>(MockBehavior.Strict);
+        scheduler.Setup(s => s.Enqueue(It.IsAny<DeleteStoredFilesJob>())).Returns("job-id");
         builder.Services.AddSingleton(scheduler.Object);
 
         MessagingConfiguration.AddMessaging(builder.Services);

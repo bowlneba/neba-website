@@ -206,7 +206,7 @@ test.describe('Series (admin)', () => {
       .get('http://localhost:5151/__mock/last-request?method=POST&path=/series:E2E%20Series')
       .then((r) => r.json());
     expect(sent.series.name).toBe('E2E Series');
-    expect(sent.series.stages.map((stage: { kind: string }) => stage.kind)).toEqual(['Qualifying', 'Survivor', 'Placement']);
+    expect(sent.series.stages.map((stage: { kind: number }) => stage.kind)).toEqual([1, 2, 3]);
     expect(sent.series.stages[1].squadStartTime).toBe('09:00:00');
   });
 

@@ -4,6 +4,8 @@ using FluentValidation;
 
 using Neba.Api.Contracts.Series.EditSeries;
 
+using SeriesAggregate = Neba.Api.Features.Series.Domain.Series;
+
 namespace Neba.Api.Features.Series.EditSeries;
 
 internal sealed class EditSeriesRequestValidator
@@ -17,7 +19,7 @@ internal sealed class EditSeriesRequestValidator
 
         RuleFor(r => r.Series.Name)
             .NotEmpty().WithErrorCode("EditSeriesRequest.NameRequired").WithMessage("Series name is required.")
-            .MaximumLength(127).WithErrorCode("EditSeriesRequest.NameTooLong").WithMessage("Series name must be 127 characters or fewer.");
+            .MaximumLength(SeriesAggregate.NameMaxLength).WithErrorCode("EditSeriesRequest.NameTooLong").WithMessage($"Series name must be {SeriesAggregate.NameMaxLength} characters or fewer.");
 
         RuleForEach(r => r.Series.Stages).SetValidator(new SeriesStageInputValidator());
 

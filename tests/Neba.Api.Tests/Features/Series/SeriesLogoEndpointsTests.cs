@@ -225,7 +225,7 @@ public sealed class SeriesLogoEndpointsTests(AppDbContextFixture fixture, Securi
         var token = TestAccessTokenFactory.Create(permissions: [Permissions.EditSeries], userId: user.Id);
         var detail = await GetAsync(series);
         var stages = detail.Stages.Select(s => SeriesStageInputFactory.Create(
-            s.Id, s.Kind, s.TournamentId, s.AdvancingCount, s.SquadDate, s.SquadStartTime)).ToList();
+            s.Id, Neba.Api.Features.Series.Domain.StageKind.FromName(s.Kind).Value, s.TournamentId, s.AdvancingCount, s.SquadDate, s.SquadStartTime)).ToList();
 
         EditSeriesRequest Request(SeriesLogoInput? logo) => new()
         {

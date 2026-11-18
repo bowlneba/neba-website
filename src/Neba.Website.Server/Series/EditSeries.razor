@@ -2,7 +2,7 @@
 @using Neba.Api.Contracts.Security
 @using Neba.Api.Contracts.Series
 @using Neba.Website.Server.Services
-@rendermode InteractiveServer
+@rendermode @(new InteractiveServerRenderMode(prerender: false))
 
 @inject ApiExecutor ApiExecutor
 @inject ISeriesApi SeriesApi
@@ -33,9 +33,9 @@
                 <SeriesEditor Model="@_model"
                               SeriesId="@Id"
                               SeasonLabel="@SeasonLabel"
-                              FinaleHost="@_detail?.Finale?.Host"
+                              FinaleHost="@_detail.Finale?.Host"
                               IsCreate="false"
-                              IsLocked="@(_detail?.IsLocked ?? false)" />
+                              IsLocked="@_detail.IsLocked" />
             }
         </div>
     </Authorized>

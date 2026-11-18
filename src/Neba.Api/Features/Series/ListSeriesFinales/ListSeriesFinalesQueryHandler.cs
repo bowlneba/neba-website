@@ -2,7 +2,6 @@ using Microsoft.EntityFrameworkCore;
 
 using Neba.Api.Database;
 using Neba.Api.Features.BowlingCenters.Domain;
-using Neba.Api.Features.Series.GetSeries;
 using Neba.Api.Messaging;
 using Neba.Api.Storage;
 
@@ -49,7 +48,7 @@ internal sealed class ListSeriesFinalesQueryHandler(AppDbContext appDbContext, I
                     LogoUrl = row.LogoContainer is not null && row.LogoPath is not null
                         ? fileStorageService.GetBlobUri(row.LogoContainer, row.LogoPath)
                         : null,
-                    Finale = new SeriesFinaleDto
+                    Finale = new SeriesFinaleScheduleDto
                     {
                         FinalistCount = finale.FinalistCount,
                         Date = finale.Date,

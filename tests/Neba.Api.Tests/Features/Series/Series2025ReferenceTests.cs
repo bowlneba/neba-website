@@ -64,7 +64,7 @@ public sealed class Series2025ReferenceTests(AppDbContextFixture fixture, Securi
                 name: "2025 Vincent Hall Memorial Series",
                 seasonId: reference.Season.Id.Value.ToString(),
                 stages: [.. reference.Stages.Select(stage => SeriesStageInputFactory.Create(
-                    kind: stage.Kind.Name,
+                    kind: stage.Kind.Value,
                     tournamentId: stage.TournamentId.Value.ToString(),
                     advancingCount: stage.AdvancingCount,
                     squadDate: stage.SquadDate,

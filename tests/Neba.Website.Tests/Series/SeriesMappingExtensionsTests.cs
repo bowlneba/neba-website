@@ -19,12 +19,29 @@ public sealed class SeriesMappingExtensionsTests
 
         // Assert
         model.Id.ShouldBe(response.Id);
+        model.Name.ShouldBe(response.Name);
         model.SeasonYear.ShouldBe(2025);
         model.SeasonEndDate.ShouldBe(response.SeasonEndDate);
         model.SeasonDateRange.ShouldBe("1/1/2025 to 12/31/2025");
         model.QualifyingStageCount.ShouldBe(8);
+        model.SurvivorStageCount.ShouldBe(response.SurvivorStageCount);
+        model.PlacementStageCount.ShouldBe(response.PlacementStageCount);
+        model.IsLocked.ShouldBeFalse();
         model.NextStage.ShouldBeNull();
         model.LogoUrl.ShouldBeNull();
+    }
+
+    [Fact(DisplayName = "Summary should carry the locked flag")]
+    public void SummaryToViewModel_ShouldMapIsLocked()
+    {
+        // Arrange
+        var response = SeriesSummaryResponseFactory.Create(isLocked: true);
+
+        // Act
+        var model = response.ToViewModel();
+
+        // Assert
+        model.IsLocked.ShouldBeTrue();
     }
 
     [Fact(DisplayName = "Summary should map the next Stage and the logo when present")]

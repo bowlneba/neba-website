@@ -71,8 +71,11 @@ public sealed class UpcomingScheduleTests
     [Fact(DisplayName = "GroupBySeason should return no sections for an empty list")]
     public void GroupBySeason_ShouldReturnNoSections_WhenListIsEmpty()
     {
+        // Arrange
+        List<SeasonTournamentViewModel> tournaments = [];
+
         // Act
-        var sections = UpcomingSchedule.GroupBySeason([], [Season2026], leadingSeasonLabel: null);
+        var sections = UpcomingSchedule.GroupBySeason(tournaments, [Season2026], leadingSeasonLabel: null);
 
         // Assert
         sections.ShouldBeEmpty();
@@ -142,8 +145,11 @@ public sealed class UpcomingScheduleTests
     [Fact(DisplayName = "ResolveSeasonLabel should return the label of the season containing the date")]
     public void ResolveSeasonLabel_ShouldReturnContainingSeasonLabel()
     {
+        // Arrange
+        var date = new DateOnly(2027, 2, 6);
+
         // Act
-        var label = UpcomingSchedule.ResolveSeasonLabel(new DateOnly(2027, 2, 6), [Season2026, Season2027]);
+        var label = UpcomingSchedule.ResolveSeasonLabel(date, [Season2026, Season2027]);
 
         // Assert
         label.ShouldBe("2027");
@@ -152,8 +158,11 @@ public sealed class UpcomingScheduleTests
     [Fact(DisplayName = "ResolveSeasonLabel should fall back to the year when no season contains the date")]
     public void ResolveSeasonLabel_ShouldFallBackToYear_WhenNoSeasonContainsDate()
     {
+        // Arrange
+        var date = new DateOnly(2031, 2, 6);
+
         // Act
-        var label = UpcomingSchedule.ResolveSeasonLabel(new DateOnly(2031, 2, 6), [Season2026, Season2027]);
+        var label = UpcomingSchedule.ResolveSeasonLabel(date, [Season2026, Season2027]);
 
         // Assert
         label.ShouldBe("2031");

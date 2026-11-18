@@ -4,6 +4,8 @@ using FluentValidation;
 
 using Neba.Api.Contracts.Series.CreateSeries;
 
+using SeriesAggregate = Neba.Api.Features.Series.Domain.Series;
+
 namespace Neba.Api.Features.Series.CreateSeries;
 
 internal sealed class CreateSeriesRequestValidator
@@ -13,7 +15,7 @@ internal sealed class CreateSeriesRequestValidator
     {
         RuleFor(r => r.Series.Name)
             .NotEmpty().WithErrorCode("CreateSeriesRequest.NameRequired").WithMessage("Series name is required.")
-            .MaximumLength(127).WithErrorCode("CreateSeriesRequest.NameTooLong").WithMessage("Series name must be 127 characters or fewer.");
+            .MaximumLength(SeriesAggregate.NameMaxLength).WithErrorCode("CreateSeriesRequest.NameTooLong").WithMessage($"Series name must be {SeriesAggregate.NameMaxLength} characters or fewer.");
 
         RuleFor(r => r.Series.SeasonId)
             .NotEmpty().Length(26).WithErrorCode("CreateSeriesRequest.SeasonIdInvalid").WithMessage("Season is required.");

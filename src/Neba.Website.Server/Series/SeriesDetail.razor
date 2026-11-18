@@ -2,7 +2,7 @@
 @using Neba.Api.Contracts.Security
 @using Neba.Api.Contracts.Series
 @using Neba.Website.Server.Services
-@rendermode InteractiveServer
+@rendermode @(new InteractiveServerRenderMode(prerender: false))
 
 @inject ApiExecutor ApiExecutor
 @inject ISeriesApi SeriesApi
@@ -132,7 +132,7 @@ else
     private async Task HandleLogoSavedAsync()
     {
         _isLogoEditorOpen = false;
-        await OnParametersSetAsync(); // reload so the hero shows the new logo
+        await LoadAsync(); // reload so the hero shows the new logo, without the page-wide spinner
     }
 
     private string PageTitleText => _model?.Name ?? "Series";
@@ -142,6 +142,12 @@ else
     protected override async Task OnParametersSetAsync()
     {
         _isLoading = true;
+        await LoadAsync();
+        _isLoading = false;
+    }
+
+    private async Task LoadAsync()
+    {
         var result = await ApiExecutor.ExecuteAsync("SeriesApi", "GetSeries", ct => SeriesApi.GetSeriesAsync(Id, ct));
 
         if (result.IsError)
@@ -154,8 +160,6 @@ else
             _model = result.Value.ToViewModel();
             _steps = SeriesDisplay.FieldSteps(_model.Stages, _model.Finale);
         }
-
-        _isLoading = false;
     }
 
     private List<SeriesStageViewModel> StagesOf(string kind) => [.. _model!.Stages.Where(s => s.Kind == kind)];

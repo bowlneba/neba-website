@@ -69,7 +69,7 @@ public sealed class SeriesEndpointsTests(AppDbContextFixture fixture, SecurityDb
         return await SeriesSeed.AddSeriesAsync(db, season, new DateOnly(2025, 2, 1), ct, name: name, status: status, finale: finale);
     }
 
-    private static SeriesStageInput Stage(Tournament tournament, string kind = "Qualifying", int? count = 8, string? id = null, bool squad = false)
+    private static SeriesStageInput Stage(Tournament tournament, int kind = 1, int? count = 8, string? id = null, bool squad = false)
         => SeriesStageInputFactory.Create(
             id: id,
             kind: kind,
@@ -108,7 +108,7 @@ public sealed class SeriesEndpointsTests(AppDbContextFixture fixture, SecurityDb
     {
         var detail = await Client.GetFromJsonAsync<SeriesDetailResponse>(new Uri($"/series/{series.Id.Value}", UriKind.Relative), TestContext.Current.CancellationToken);
         var stages = detail!.Stages.Select(s => SeriesStageInputFactory.Create(
-            s.Id, s.Kind, s.TournamentId, s.AdvancingCount, s.SquadDate, s.SquadStartTime)).ToList();
+            s.Id, Neba.Api.Features.Series.Domain.StageKind.FromName(s.Kind).Value, s.TournamentId, s.AdvancingCount, s.SquadDate, s.SquadStartTime)).ToList();
 
         return new EditSeriesRequest
         {
@@ -358,7 +358,7 @@ public sealed class SeriesEndpointsTests(AppDbContextFixture fixture, SecurityDb
 
         // Act
         using var response = await SendAsync(HttpMethod.Post, "/series", SeriesApiHost.ManagerToken(),
-            Create(season, [Stage(tournaments[0], kind: "Placement", count: 4)]));
+            Create(season, [Stage(tournaments[0], kind: 3, count: 4)]));
 
         // Assert
         response.StatusCode.ShouldBe(HttpStatusCode.UnprocessableEntity);

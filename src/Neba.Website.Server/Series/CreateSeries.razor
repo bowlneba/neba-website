@@ -29,6 +29,11 @@
             }
             else
             {
+                @if (_seasonsFailed)
+                {
+                    <NebaAlert Severity="NotifySeverity.Error" Title="Unable to load seasons" Message="The season list did not load, so a Series can't be created yet. Refresh the page to try again." />
+                }
+
                 <SeriesEditor Model="@_model" Seasons="@_seasons" IsCreate="true" IsLocked="false" />
             }
         </div>
@@ -41,10 +46,12 @@
 @code {
     private readonly SeriesFormModel _model = new();
     private IReadOnlyList<SeasonOption>? _seasons;
+    private bool _seasonsFailed;
 
     protected override async Task OnInitializedAsync()
     {
         var result = await ApiExecutor.ExecuteAsync("SeasonsApi", "ListSeasons", ct => SeasonsApi.ListSeasonsAsync(ct));
+        _seasonsFailed = result.IsError;
         var seasons = result.IsError ? [] : result.Value.Items.Select(SeasonOption.From).OrderByDescending(s => s.StartDate).ToList();
 
         var local = await ClientTimeZoneService.ToLocalAsync(TimeProvider.GetUtcNow());

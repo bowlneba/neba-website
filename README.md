@@ -48,6 +48,7 @@ src/
 │   │   ├── Bowlers/
 │   │   ├── BowlingCenters/
 │   │   ├── Sponsors/
+│   │   ├── Series/
 │   │   ├── HallOfFame/
 │   │   ├── Awards/
 │   │   ├── Seasons/
@@ -72,6 +73,7 @@ src/
 ├── Neba.Website.Server/          # Blazor Web App — all pages, all Interactive Server today
 │   ├── Tournaments/               # Feature folder: pages + feature-specific components
 │   ├── Sponsors/
+│   ├── Series/
 │   ├── Account/                   # Login/Logout, admin auth
 │   ├── Components/                # Generic, reusable components (no domain knowledge)
 │   ├── Layout/
@@ -183,6 +185,7 @@ ConnectionStrings__bowlneba='Host=localhost;Port=52502;Database=bowlneba;Usernam
 - [x] Tournament Detail
 - [x] Team Eligibility Checker
 - [x] Sponsors
+- [x] Series
 - [x] News
 - [x] About
 - [x] Stats
@@ -197,6 +200,7 @@ ConnectionStrings__bowlneba='Host=localhost;Port=52502;Database=bowlneba;Usernam
   - [x] Edit Tournament
   - [x] Delete Tournament
   - [x] Truncate / Cancel Tournament
+  - [x] Series Management
 - [ ] Bowler Management
 - [x] Content Management
 

@@ -4,14 +4,15 @@ namespace Neba.TestFactory.Series;
 
 public static class SeriesStageInputFactory
 {
-    public const string ValidKind = "Qualifying";
+    /// <summary>The Qualifying value.</summary>
+    public const int ValidKind = 1;
     public const string ValidTournamentId = "01JBQ5Y7K3M9N2P4R6T8V0W1X2";
     public const int ValidAdvancingCount = 8;
 
     /// <summary>A Qualifying Stage advancing 8. Pass a null count for a Placement Stage.</summary>
     public static SeriesStageInput Create(
         string? id = null,
-        string? kind = null,
+        int? kind = null,
         string? tournamentId = null,
         int? advancingCount = ValidAdvancingCount,
         DateOnly? squadDate = null,

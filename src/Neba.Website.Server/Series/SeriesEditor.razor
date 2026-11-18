@@ -43,7 +43,7 @@
             {
                 <div class="series-editor__field">
                     <FormLabel TargetId="series-season" For="@(() => Model.SeasonId)">Season</FormLabel>
-                    <select id="series-season" class="neba-select" value="@Model.SeasonId" @onchange="HandleSeasonChanging" aria-describedby="series-season-hint">
+                    <select @key="_seasonSelectKey" id="series-season" class="neba-select" value="@Model.SeasonId" @onchange="HandleSeasonChanging" aria-describedby="series-season-hint">
                         @foreach (var season in Seasons)
                         {
                             <option value="@season.Id">@season.Label</option>
@@ -108,7 +108,7 @@
                     CancelLabel="Keep season"
                     IsBusy="false"
                     OnConfirm="ConfirmSeasonChangeAsync"
-                    OnCancel="@(() => _pendingSeasonId = null)" />
+                    OnCancel="CancelSeasonChange" />
 
 @code {
     [Parameter, EditorRequired]
@@ -144,6 +144,7 @@
     private int _heldElsewhere;
     private List<string> _generalErrors = [];
     private string? _pendingSeasonId;
+    private int _seasonSelectKey;
     private bool _isLogoUploading;
 
     private Task<ErrorOr.ErrorOr<UploadedFileResponse>> UploadLogoAsync(
@@ -193,7 +194,7 @@
         var result = await ApiExecutor.ExecuteAsync("BowlingCenters", "ListBowlingCenters", BowlingCentersApi.ListBowlingCentersAsync);
         if (result.IsError)
         {
-            _generalErrors = [result.FirstError.Description];
+            _generalErrors = [.. _generalErrors, result.FirstError.Description];
             return;
         }
 
@@ -212,7 +213,7 @@
         var result = await OptionsLoader.LoadAsync(Model.SeasonId, SeriesId);
         if (result.IsError)
         {
-            _generalErrors = [result.FirstError.Description];
+            _generalErrors = [.. _generalErrors, result.FirstError.Description];
             return;
         }
 
@@ -229,13 +230,19 @@
 
         if (Model.Stages.Count > 0)
         {
-            _pendingSeasonId = seasonId; // confirmation modal; the select re-renders with the old value
+            _pendingSeasonId = seasonId; // confirmation modal; Cancel rebuilds the select to show the old value
             return;
         }
 
         Model.SeasonId = seasonId;
         MarkDirty();
         await LoadOptionsAsync();
+    }
+
+    private void CancelSeasonChange()
+    {
+        _pendingSeasonId = null;
+        _seasonSelectKey++; // the model kept the old season, so Blazor sees no diff; a new key rebuilds the select with it
     }
 
     private async Task ConfirmSeasonChangeAsync()
