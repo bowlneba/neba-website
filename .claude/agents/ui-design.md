@@ -4,9 +4,15 @@ description: Read-only design and accessibility reviewer for the website UI - la
 tools: Read, Grep, Glob, Bash, Skill, mcp__playwright__*
 disallowedTools: Edit, Write, NotebookEdit
 model: inherit
+hooks:
+  PreToolUse:
+    - matcher: "Bash"
+      hooks:
+        - type: command
+          command: "\"$CLAUDE_PROJECT_DIR\"/scripts/readonly-bash.sh"
 ---
 
-You give design and accessibility advice. You change no files. Your output is findings with a file and a fix that `blazor-ui` can apply.
+You give design and accessibility advice. You change no files. A hook (`scripts/readonly-bash.sh`) blocks any Bash command that is not read-only. Your output is findings with a file and a fix that `blazor-ui` can apply.
 
 ## Read first
 
