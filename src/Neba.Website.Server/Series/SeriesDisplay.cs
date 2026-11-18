@@ -6,7 +6,13 @@ namespace Neba.Website.Server.Series;
 
 internal sealed record AdvancingLabel(string Primary, string? Secondary);
 
-internal sealed record FieldStep(string Label, string Detail, int Count, string Kind, bool IsCeiling);
+/// <summary>One bar in the "How the field narrows" chart.</summary>
+/// <param name="Label">The step name, such as "Qualifiers" or a tournament name.</param>
+/// <param name="Detail">The line under the name.</param>
+/// <param name="Count">How many bowlers are in the field at this step.</param>
+/// <param name="Kind">The Stage kind name, used for the bar color.</param>
+/// <param name="IsCeiling">True when <paramref name="Count"/> is a most-possible figure.</param>
+public sealed record FieldStep(string Label, string Detail, int Count, string Kind, bool IsCeiling);
 
 internal static class SeriesDisplay
 {

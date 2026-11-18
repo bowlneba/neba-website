@@ -1,0 +1,31 @@
+<span class="@CssClass" aria-hidden="@(LogoUrl is null ? "true" : null)">
+    @if (LogoUrl is not null)
+    {
+        <img src="@LogoUrl" alt="@AltText" loading="lazy" />
+    }
+    else
+    {
+        <span class="series-logo-tile__initials">@Initials</span>
+    }
+</span>
+
+@code {
+    public const string Large = "large";
+    public const string Small = "small";
+
+    [Parameter]
+    public Uri? LogoUrl { get; set; }
+
+    [Parameter, EditorRequired]
+    public string Name { get; set; } = string.Empty;
+
+    [Parameter]
+    public string Size { get; set; } = Large;
+
+    private string CssClass => "series-logo-tile series-logo-tile--" + Size;
+
+    private string AltText => Name + " logo";
+
+    /// <summary>"Vincent Hall Memorial Series" -> "VH": the first two capitalized words that aren't a year.</summary>
+    private string Initials => SeriesDisplay.Initials(Name);
+}

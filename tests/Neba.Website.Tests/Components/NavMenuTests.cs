@@ -242,6 +242,18 @@ public sealed class NavMenuTests : IDisposable
         scheduleLink.TextContent.ShouldContain("Schedule");
     }
 
+    [Fact(DisplayName = "Should render the Series link in the Tournaments dropdown")]
+    public void Render_ShouldContainSeriesLink_WhenRendered()
+    {
+        // Arrange & Act
+        var cut = _ctx.Render<NavMenu>();
+
+        // Assert
+        var seriesLink = cut.Find("a[href='series']");
+        seriesLink.TextContent.ShouldContain("Series");
+        seriesLink.ClassList.ShouldContain("neba-dropdown-link");
+    }
+
     [Fact(DisplayName = "Should render Tournament Rules link")]
     public void Render_ShouldContainTournamentRulesLink_WhenRendered()
     {

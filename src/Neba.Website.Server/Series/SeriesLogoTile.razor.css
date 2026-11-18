@@ -1,0 +1,46 @@
+.series-logo-tile {
+    display: inline-grid;
+    place-items: center;
+    flex-shrink: 0;
+    border-radius: var(--neba-radius-lg);
+    overflow: hidden;
+    background: #fff;
+    border: 1px solid var(--neba-border);
+}
+
+.series-logo-tile--large {
+    width: 72px;
+    height: 72px;
+}
+
+.series-logo-tile--small {
+    width: 36px;
+    height: 36px;
+    border-radius: var(--neba-radius);
+}
+
+.series-logo-tile img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    display: block;
+}
+
+.series-logo-tile:not(:has(img)) {
+    background: var(--neba-blue-brand);
+    border-color: var(--neba-blue-brand);
+}
+
+.series-logo-tile__initials {
+    font-family: var(--neba-font-display);
+    font-weight: 800;
+    color: #fff;
+}
+
+.series-logo-tile--large .series-logo-tile__initials {
+    font-size: 1.5rem;
+}
+
+.series-logo-tile--small .series-logo-tile__initials {
+    font-size: 0.8125rem;
+}

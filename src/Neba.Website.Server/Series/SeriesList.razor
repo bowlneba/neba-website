@@ -1,0 +1,120 @@
+@page "/series"
+@using Neba.Api.Contracts.Security
+@using Neba.Api.Contracts.Series
+@using Neba.Website.Server.Services
+@using Neba.Website.Server.Time
+@rendermode InteractiveServer
+
+@inject ApiExecutor ApiExecutor
+@inject ISeriesApi SeriesApi
+@inject TimeProvider TimeProvider
+@inject IClientTimeZoneService ClientTimeZoneService
+
+<PageTitle>Series - BowlNEBA</PageTitle>
+
+<div class="neba-space-y-6">
+    <div class="page-title-bar">
+        <div class="page-title-inner">
+            <h1>Series</h1>
+            <p>The Vincent Hall Memorial Series runs across designated NEBA tournaments each season. Qualify at the early events, survive the cuts, and finish in the money.</p>
+        </div>
+    </div>
+
+    @if (_isLoading)
+    {
+        <NebaSkeletonLoader Type="SkeletonType.Card" Count="2" />
+    }
+    else if (_hasError)
+    {
+        <NebaAlert Severity="NotifySeverity.Error" Title="Unable to load Series" Message="Something went wrong while loading the Series. Try again later." />
+    }
+    else if (_current.Count == 0 && _past.Count == 0)
+    {
+        <div class="neba-card series-empty">
+            <h2>No Series yet</h2>
+            <p>When a Series is set up for a season, its qualifying events and cuts appear here.</p>
+        </div>
+    }
+    else
+    {
+        @foreach (var series in _current)
+        {
+            <a class="neba-card series-current" href="@SeriesHref(series)">
+                <SeriesLogoTile LogoUrl="@series.LogoUrl" Name="@series.Name" Size="@SeriesLogoTile.Large" />
+                <div>
+                    <p class="series-current__season">@series.SeasonDateRange</p>
+                    <h2 class="series-current__name">@series.Name</h2>
+                    <div class="series-kind-counts">
+                        <span class="kind-chip kind-qualifying">@series.QualifyingStageCount Qualifying</span>
+                        <span class="kind-chip kind-survivor">@series.SurvivorStageCount Survivor</span>
+                        <span class="kind-chip kind-placement">@series.PlacementStageCount Placement</span>
+                    </div>
+                </div>
+                @if (series.NextStage is { } next)
+                {
+                    <div class="series-current__next">
+                        <p class="series-current__next-label">Next Stage</p>
+                        <p class="series-current__next-name">@next.TournamentName</p>
+                        <p class="series-current__next-date">@next.Kind · @next.Dates</p>
+                    </div>
+                }
+            </a>
+        }
+
+        @if (_past.Count > 0)
+        {
+            <h2 class="series-past-heading">Past Series</h2>
+            <ul class="neba-card series-past">
+                @foreach (var series in _past)
+                {
+                    <li>
+                        <a href="@SeriesHref(series)">
+                            <SeriesLogoTile LogoUrl="@series.LogoUrl" Name="@series.Name" Size="@SeriesLogoTile.Small" />
+                            <span class="series-past__year">@series.SeasonYear</span>
+                            <span class="series-past__name">@series.Name <span class="series-muted">· @series.SeasonDateRange</span></span>
+                            @if (series.IsLocked)
+                            {
+                                <AuthorizeView Policy="@Permissions.EditSeries.PolicyName">
+                                    <span class="series-locked-badge">Locked</span>
+                                </AuthorizeView>
+                            }
+                        </a>
+                    </li>
+                }
+            </ul>
+        }
+    }
+</div>
+
+<AuthorizeView Policy="@Permissions.CreateSeries.PolicyName">
+    <FabCreateButton Href="/series/new" Label="Create Series" />
+</AuthorizeView>
+
+@code {
+    private bool _isLoading = true;
+    private bool _hasError;
+    private List<SeriesSummaryViewModel> _current = [];
+    private List<SeriesSummaryViewModel> _past = [];
+
+    protected override async Task OnInitializedAsync()
+    {
+        var result = await ApiExecutor.ExecuteAsync("SeriesApi", "ListSeries", ct => SeriesApi.ListSeriesAsync(ct));
+
+        if (result.IsError)
+        {
+            _hasError = true;
+            _isLoading = false;
+            return;
+        }
+
+        var local = await ClientTimeZoneService.ToLocalAsync(TimeProvider.GetUtcNow());
+        var today = DateOnly.FromDateTime(local.DateTime);
+        var all = result.Value.Items.Select(s => s.ToViewModel()).ToList();
+
+        _current = [.. all.Where(s => s.SeasonEndDate >= today)];
+        _past = [.. all.Where(s => s.SeasonEndDate < today)];
+        _isLoading = false;
+    }
+
+    private static string SeriesHref(SeriesSummaryViewModel series) => "/series/" + series.Id;
+}

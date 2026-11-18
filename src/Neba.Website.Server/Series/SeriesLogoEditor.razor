@@ -1,0 +1,66 @@
+@using ErrorOr
+@using Neba.Api.Contracts.Series
+@using Neba.Api.Contracts.Series.CreateSeries
+@using Neba.Api.Contracts.Series.EditSeriesLogo
+@using Neba.Api.Contracts.Uploads
+@using Neba.Website.Server.Services
+@using Refit
+
+@inject ApiExecutor ApiExecutor
+@inject ISeriesApi SeriesApi
+@inject ToastService ToastService
+
+<EditLogoModal IsOpen="@IsOpen"
+               OwnerName="@SeriesName"
+               CurrentLogoUrl="@CurrentLogoUrl"
+               OnClose="OnClose"
+               OnSaved="HandleSavedAsync"
+               OnUploadRequestedAsync="UploadLogoAsync"
+               OnSubmitRequestedAsync="SaveLogoAsync" />
+
+@code {
+    [Parameter, EditorRequired]
+    public bool IsOpen { get; set; }
+
+    [Parameter, EditorRequired]
+    public string SeriesId { get; set; } = string.Empty;
+
+    [Parameter, EditorRequired]
+    public string SeriesName { get; set; } = string.Empty;
+
+    [Parameter]
+    public Uri? CurrentLogoUrl { get; set; }
+
+    [Parameter, EditorRequired]
+    public EventCallback OnClose { get; set; }
+
+    [Parameter, EditorRequired]
+    public EventCallback OnSaved { get; set; }
+
+    private Task<ErrorOr<UploadedFileResponse>> UploadLogoAsync(
+        Stream stream, string fileName, string contentType, IProgress<int> progress, CancellationToken ct)
+        => ApiExecutor.ExecuteAsync("SeriesApi", "UploadSeriesLogo",
+            c => SeriesApi.UploadSeriesLogoAsync(new StreamPart(stream, fileName, contentType), c), ct);
+
+    private Task<ErrorOr<Success>> SaveLogoAsync(UploadedFileResponse? staged, CancellationToken ct)
+    {
+        var request = new EditSeriesLogoRequest
+        {
+            Id = SeriesId,
+            Input = new EditSeriesLogoInput
+            {
+                Logo = staged is null
+                    ? null
+                    : new SeriesLogoInput { Container = staged.Container, Path = staged.Path, ContentType = staged.ContentType, SizeInBytes = staged.SizeInBytes },
+            },
+        };
+
+        return ApiExecutor.ExecuteAsync("SeriesApi", "EditSeriesLogo", c => SeriesApi.EditSeriesLogoAsync(SeriesId, request, c), ct);
+    }
+
+    private async Task HandleSavedAsync()
+    {
+        ToastService.Show("Logo Saved", "The logo for \"" + SeriesName + "\" was saved.", NotifySeverity.Success);
+        await OnSaved.InvokeAsync();
+    }
+}

@@ -268,3 +268,13 @@ h1:focus {
 .logo-edit-button .material-symbols-outlined {
     font-size: 1.125rem;
 }
+
+/* Stage kind chips (Series list and detail) */
+.kind-chip { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 600; white-space: nowrap; }
+.kind-chip::before { content: ""; width: 8px; height: 8px; border-radius: 2px; background: currentColor; }
+.kind-qualifying { color: var(--neba-blue-600); }
+.kind-survivor { color: var(--neba-gold-deep); }
+.kind-placement { color: var(--neba-blue-brand); }
+.dark .kind-placement { color: var(--neba-blue-300); }
+
+.series-locked-badge { font-size: 12px; font-weight: 600; color: var(--neba-warning); background: rgb(217 119 6 / 0.1); border-radius: 999px; padding: 2px 10px; }
