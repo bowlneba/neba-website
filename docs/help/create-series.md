@@ -12,11 +12,14 @@ Create the season's tournaments first. A Stage can only use a tournament that al
 
 1. Go to **Tournaments**, then **Series** (`/series`).
 2. Click the blue **+** button in the bottom-right corner.
+
+   ![Series list with the blue create button in the bottom-right corner](images/create-series/series-list-create-button.png)
+
 3. On the **Create Series** page, fill in:
    - **Name** (required), up to 127 characters, for example "2027 Vincent Hall Memorial Series".
    - **Season** (required). You cannot change it after you save. To move a Series to another season, delete it and create it again.
    - **Logo** (optional). Drag an image onto the upload area, or click to browse (one image, up to 5 MB). Without a logo, the pages show the Series' initials.
-   - **Stages**. Click **Add stage** for each tournament in the Series. For each row choose:
+   - **Stages**. Click **+ Add Stage** for each tournament in the Series. For each row choose:
      - **Kind**: **Qualifying**, **Survivor** or **Placement**. Qualifying Stages come first, then Survivor, then at most one Placement, which must be last.
      - **Tournament**. The list shows the season's tournaments that are not already in another Series.
      - **Advancing count**. Required on Qualifying and Survivor rows, and it must be above zero. For a team event the hint reads, for example, "Teams of 3", with "(6 bowlers)" below it. A Placement row has no count. Each Survivor count must be smaller than the one before it.
@@ -24,6 +27,8 @@ Create the season's tournaments first. A Stage can only use a tournament that al
 
      Use the arrows to move a row up or down. Stages must follow tournament start dates, so the order has to match the calendar.
    - **Finale** (optional). Turn on **This Series has a Finale**, then enter the number of **finalists**, the **date**, the **start time**, and, if you know it, the **host center**. Leave the host blank until it is announced. The finalist count must be above zero and no larger than the last Survivor Stage's count. Every Stage's tournament must end before the Finale date.
+   ![Create Series form filled in with three Stages and a Finale](images/create-series/create-form.png)
+
 4. Click **Create Series** to save, or **Cancel** to discard and return to the list.
 
 You can save a Series that is not finished, for example with no Placement Stage yet. Add the rest later with **Edit**.

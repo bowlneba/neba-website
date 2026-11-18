@@ -11,8 +11,13 @@ Changing the logo through this form also needs the logo permission to be intact.
 ## Steps
 
 1. Go to the Series' page (`/series/{id}`) and click **Edit**.
+
+   ![Series page with the Edit button at the top right](images/edit-series/detail-edit-button.png)
+
 2. The form opens filled in with the current values. Change what you need. The fields work as they do when you create a Series (see [`create-series.md`](create-series.md)), with one difference: **Season** is shown but cannot be changed.
-3. Click **Save** to save, or **Cancel** to leave the Series as it was.
+   ![Edit Series form filled with the Series' current Stages and Finale](images/edit-series/edit-form.png)
+
+3. Click **Save changes** to save, or **Cancel** to leave the Series as it was.
 
 The whole Series saves at once: the name, the logo, the full list of Stages and the Finale. If any rule is broken, nothing is saved and each message appears next to the row or field it names.
 

@@ -10,7 +10,12 @@ You need the `Series.DeleteSeries` permission, enforced through the dynamic `Per
 
 1. Go to the Series' page (`/series/{id}`).
 2. Click **Delete** near the top of the page.
-3. A confirmation dialog titled **"Delete series?"** names the Series and warns that its Stages are removed too. Deleting is not reversible.
+
+   ![Series page with the Delete button at the top right](images/delete-series/detail-delete-button.png)
+
+3. A confirmation dialog titled **"Delete Series?"** names the Series and warns that its Stages are removed too. Deleting is not reversible.
+   ![Delete Series confirmation dialog](images/delete-series/detail-confirm-dialog.png)
+
 4. Click **Delete** to confirm, or **Cancel** to leave the Series untouched.
 
 Deleting a Series does not delete its tournaments. They stay on the schedule and become free to use in another Series.

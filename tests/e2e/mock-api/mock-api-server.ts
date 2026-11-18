@@ -246,6 +246,7 @@ export const MOCK_TOURNAMENT_ID = '01JX0000000000000000000010';
 // ── Series fixtures (Series.spec.ts) ─────────────────────────────────────────────────────────
 // The Series pages and the Series tag, callout and Finale card on the tournament pages.
 export const MOCK_SERIES_SEASON_ID = '01JX0000000000000000020002';
+export const MOCK_SERIES_PAST_SEASON_ID = '01JX0000000000000000020003';
 export const MOCK_SERIES_ID = '01JX0000000000000000000500'; // current Series with a Finale and a logo
 export const MOCK_SERIES_NO_FINALE_ID = '01JX0000000000000000000501'; // past Series, no Finale, locked
 export const MOCK_SERIES_LOGO_ID = '01JX0000000000000000000502'; // logo edit; one copy per project
@@ -299,9 +300,9 @@ const MOCK_SERIES_FINALE = {
   finalistCount: 4,
   date: MOCK_SERIES_FINALE_DATE,
   startTime: '14:00:00',
-  bowlingCenterId: '01JX0000000000000000000301',
-  bowlingCenterName: "Callahan's Bowl-O-Rama",
-  bowlingCenterCity: 'Seekonk',
+  bowlingCenterId: '12345',
+  bowlingCenterName: 'Lucky Strike Lanes',
+  bowlingCenterCity: 'Boston',
   bowlingCenterState: 'MA',
 };
 
@@ -347,7 +348,7 @@ function mockSeriesDetail(id: string): Record<string, unknown> | null {
     return {
       id,
       name: '2024 Vincent Hall Memorial Series',
-      seasonId: MOCK_SERIES_SEASON_ID,
+      seasonId: MOCK_SERIES_PAST_SEASON_ID,
       seasonDescription: '2024 Season',
       seasonStartDate: '2024-01-01',
       seasonEndDate: '2024-12-31',
@@ -388,9 +389,9 @@ function mockSeriesFinales(): object {
     finalistCount: 4,
     date,
     startTime: '14:00:00',
-    bowlingCenterId: withHost ? '01JX0000000000000000000301' : null,
-    bowlingCenterName: withHost ? "Callahan's Bowl-O-Rama" : null,
-    bowlingCenterCity: withHost ? 'Seekonk' : null,
+    bowlingCenterId: withHost ? '12345' : null,
+    bowlingCenterName: withHost ? 'Lucky Strike Lanes' : null,
+    bowlingCenterCity: withHost ? 'Boston' : null,
     bowlingCenterState: withHost ? 'MA' : null,
   });
 
@@ -402,6 +403,15 @@ function mockSeriesFinales(): object {
       { seriesId: '01JX0000000000000000000511', seriesName: 'Winter Classic Series', seasonId: MOCK_SEASON_ID, logoUrl: null, finale: finale(isoDate(-10), true) },
     ],
     totalItems: 3,
+  };
+}
+
+// The tournaments the Series editor offers for the Series season: one per Stage of the reference Series.
+function mockSeriesSeasonTournaments(): object {
+  return {
+    items: SERIES_STAGE_ROWS.map(([name, start], index) =>
+      seriesStageSeasonItem(`01JX00000000000000000007${String(index).padStart(2, '0')}`, name, start, null)
+    ),
   };
 }
 
@@ -1708,6 +1718,7 @@ function resolveSeasonTournamentsRoute(pathname: string): object | null {
   if (!pathname.startsWith('/seasons/') || !pathname.endsWith('/tournaments')) return null;
 
   const seasonId = pathname.slice('/seasons/'.length, -'/tournaments'.length);
+  if (seasonId === MOCK_SERIES_SEASON_ID) return mockSeriesSeasonTournaments();
   return seasonId === MOCK_SEASON_ID ? MOCK_SEASON_TOURNAMENTS : null;
 }
 
@@ -2249,6 +2260,12 @@ async function handleRequest(req: IncomingMessage, res: ServerResponse): Promise
     return;
   }
 
+  if (req.method === 'GET' && pathname.startsWith('/mock-storage/series/')) {
+    res.writeHead(200, { 'Content-Type': 'image/svg+xml' });
+    res.end(MOCK_HALL_OF_FAME_PHOTO_SVG);
+    return;
+  }
+
   if (req.method === 'GET' && pathname.startsWith('/mock-storage/hall-of-fame/')) {
     res.writeHead(200, { 'Content-Type': 'image/svg+xml' });
     res.end(MOCK_HALL_OF_FAME_PHOTO_SVG);
@@ -2354,11 +2371,12 @@ async function handleRequest(req: IncomingMessage, res: ServerResponse): Promise
     if (sendMockOverrideErrorIfSet(res, pathname)) return;
 
     const body = await readRequestBody(req);
-    lastRequestBodies.set('POST /series', body);
     const parsed = JSON.parse(body) as {
       series?: { name?: string; finale?: { finalistCount?: number } | null };
     };
     const series = parsed.series ?? {};
+    // Recorded per Series name, so specs running in parallel on different projects do not overwrite each other.
+    lastRequestBodies.set('POST /series:' + (series.name ?? ''), body);
 
     // The name "fail" stands in for a Stage the server rejects (a 4xx, so the page does not retry).
     if (series.name === 'fail') {

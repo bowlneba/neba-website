@@ -56,7 +56,7 @@ test.describe('Series (public)', () => {
 
     const finale = page.locator('.series-finale');
     await expect(finale).toContainText('Sat 9/28 at 2:00 PM');
-    await expect(finale).toContainText("Callahan's Bowl-O-Rama, Seekonk, MA");
+    await expect(finale).toContainText("Lucky Strike Lanes, Boston, MA");
     await expect(page.locator('.series-stage-list li').last()).toContainText('Top 4 to the Finale');
   });
 
@@ -133,7 +133,7 @@ test.describe('Series on the tournament pages (public)', () => {
     const cards = page.locator('.series-finale-card');
     await expect(cards).toHaveCount(2);
     await expect(cards.nth(0)).toContainText(`${MOCK_SERIES_NAME} Finale`);
-    await expect(cards.nth(0)).toContainText("Callahan's Bowl-O-Rama, Seekonk, MA");
+    await expect(cards.nth(0)).toContainText("Lucky Strike Lanes, Boston, MA");
     await expect(cards.nth(0)).toContainText('4 finalists');
     await expect(cards.nth(0).locator('img')).toBeVisible();
     await expect(cards.nth(1)).toContainText('Fall Challenge Series Finale');
@@ -203,7 +203,7 @@ test.describe('Series (admin)', () => {
     await expect(page).toHaveURL(new RegExp(`/series/${MOCK_SERIES_ID}$`));
 
     const sent = await page.request
-      .get('http://localhost:5151/__mock/last-request?method=POST&path=/series')
+      .get('http://localhost:5151/__mock/last-request?method=POST&path=/series:E2E%20Series')
       .then((r) => r.json());
     expect(sent.series.name).toBe('E2E Series');
     expect(sent.series.stages.map((stage: { kind: string }) => stage.kind)).toEqual(['Qualifying', 'Survivor', 'Placement']);
@@ -300,12 +300,16 @@ test.describe('Series on a phone', () => {
     await page.waitForSelector('.series-stage-list');
 
     const row = page.locator('.series-stage-list li').first();
-    const tournament = await row.locator('.series-stage__tournament').boundingBox();
-    const advancing = await row.locator('.series-stage__advancing').boundingBox();
-    expect(tournament).not.toBeNull();
-    expect(advancing).not.toBeNull();
+    await expect(row.locator('.series-stage__advancing')).toBeVisible();
+
     // The advancing text wraps under the tournament instead of sitting beside it.
-    expect(advancing!.y).toBeGreaterThanOrEqual(tournament!.y + tournament!.height - 1);
+    await expect
+      .poll(async () => {
+        const tournament = await row.locator('.series-stage__tournament').boundingBox();
+        const advancing = await row.locator('.series-stage__advancing').boundingBox();
+        return tournament !== null && advancing !== null && advancing.y >= tournament.y + tournament.height - 1;
+      })
+      .toBe(true);
   });
 
   test('the editor grid collapses to a narrow layout', async ({ page }) => {

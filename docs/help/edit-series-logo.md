@@ -13,7 +13,13 @@ If you lack the permission, no edit-logo button appears. The full edit form beha
 ## Steps
 
 1. Go to the Series' page (`/series/{id}`). The **Edit logo** button sits on the logo at the top of the page.
+
+   ![Series page with the Edit logo button on the logo](images/edit-series-logo/detail-edit-logo-button.png)
+
 2. Click it. The **Edit logo** window opens with the Series' name and its current logo, or its initials if it has none.
+
+   ![Edit logo window showing the current logo and the upload area](images/edit-series-logo/edit-logo-window.png)
+
 3. Do one of:
    - **Replace it.** Drag an image onto the upload area, or click to browse (one image, up to 5 MB, JPEG, PNG, WebP or GIF). The preview switches to the new logo and is marked **New logo**. Choose **Discard new logo** to go back to the current one.
    - **Remove it.** Click **Remove current logo**. The Series then shows its initials. A Series has no sponsor fallback.
