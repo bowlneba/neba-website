@@ -55,6 +55,11 @@ A new `required` field on a Contracts DTO also needs an update in `tests/e2e/moc
 | Design a domain model, aggregate or slice | `vsa-ddd` |
 | Plan a feature (API, then UI) | `feature-plan` |
 | Run, debug or change the Aspire stack | `aspire` |
+| Add or change a migration, or port Software data | `add-ef-migration` |
+| Add a Blazor page | `new-blazor-page` |
+| Add an aggregate, entity or typed ID | `new-domain-entity` |
+| Add a Hangfire job | `new-background-job` |
+| Pick and write tests | `write-tests` |
 | Add a query cache descriptor | `cache-descriptor` |
 | Add a test factory | `test-factory-generator` |
 | Check changes against repo conventions | `convention-review` |
