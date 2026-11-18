@@ -1,3 +1,5 @@
+using ErrorOr;
+
 using FastEndpoints;
 
 using Microsoft.AspNetCore.Http;
@@ -33,6 +35,21 @@ public sealed class UploadTournamentLogoEndpointTests
         return mock;
     }
 
+    private static Mock<IImageResizer> CreateResizerMock(ErrorOr<ResizedImage> result)
+    {
+        var mock = new Mock<IImageResizer>(MockBehavior.Strict);
+        mock.Setup(r => r.ResizeLogoAsync(
+                It.IsAny<Stream>(),
+                UploadTournamentLogoEndpoint.MaxLogoDimension,
+                UploadTournamentLogoRequestValidator.AllowedContentTypes,
+                It.IsAny<CancellationToken>()))
+            .ReturnsAsync(result);
+        return mock;
+    }
+
+    private static ResizedImage Resized()
+        => new() { Content = [1, 2, 3], ContentType = "image/png", FileExtension = "png" };
+
     [Fact(DisplayName = "HandleAsync should return OK with the staged file mapped to the response")]
     public async Task HandleAsync_ShouldReturnOkWithMappedFile_WhenStagingSucceeds()
     {
@@ -43,12 +60,12 @@ public sealed class UploadTournamentLogoEndpointTests
 
         var stagingServiceMock = new Mock<IUploadStagingService>(MockBehavior.Strict);
         stagingServiceMock
-            .Setup(s => s.StageUploadAsync(It.IsAny<IFormFile>(), "bowlneba-public", "tournaments/logo", null, ct))
+            .Setup(s => s.StageUploadAsync(It.IsAny<Stream>(), "logo.png", "image/png", "bowlneba-public", "tournaments/logo", null, ct))
             .ReturnsAsync(storedFile);
 
         var fileStorageServiceMock = CreateFileStorageServiceMock(blobUri);
 
-        var endpoint = Factory.Create<UploadTournamentLogoEndpoint>(stagingServiceMock.Object, fileStorageServiceMock.Object);
+        var endpoint = Factory.Create<UploadTournamentLogoEndpoint>(stagingServiceMock.Object, fileStorageServiceMock.Object, CreateResizerMock(Resized()).Object);
         var file = CreateFile();
         await using var stream = file.OpenReadStream();
 
@@ -73,31 +90,37 @@ public sealed class UploadTournamentLogoEndpointTests
         var file = CreateFile();
         var request = new UploadTournamentLogoRequest { File = file };
 
-        IFormFile? capturedFile = null;
+        Stream? capturedContent = null;
+        string? capturedFileName = null;
+        string? capturedContentType = null;
         string? capturedContainer = null;
         string? capturedPathPrefix = null;
         IDictionary<string, string>? capturedMetadata = null;
 
         var stagingServiceMock = new Mock<IUploadStagingService>(MockBehavior.Strict);
         stagingServiceMock
-            .Setup(s => s.StageUploadAsync(It.IsAny<IFormFile>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<IDictionary<string, string>?>(), ct))
-            .Callback<IFormFile, string, string, IDictionary<string, string>?, CancellationToken>(
-                (f, container, pathPrefix, metadata, _) =>
+            .Setup(s => s.StageUploadAsync(It.IsAny<Stream>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<IDictionary<string, string>?>(), ct))
+            .Callback<Stream, string, string, string, string, IDictionary<string, string>?, CancellationToken>(
+                (content, fileName, contentType, container, pathPrefix, metadata, _) =>
                 {
-                    capturedFile = f;
+                    capturedContent = content;
+                    capturedFileName = fileName;
+                    capturedContentType = contentType;
                     capturedContainer = container;
                     capturedPathPrefix = pathPrefix;
                     capturedMetadata = metadata;
                 })
             .ReturnsAsync(StoredFileFactory.Create());
 
-        var endpoint = Factory.Create<UploadTournamentLogoEndpoint>(stagingServiceMock.Object, CreateFileStorageServiceMock().Object);
+        var endpoint = Factory.Create<UploadTournamentLogoEndpoint>(stagingServiceMock.Object, CreateFileStorageServiceMock().Object, CreateResizerMock(Resized()).Object);
 
         // Act
         await endpoint.HandleAsync(request, ct);
 
         // Assert
-        capturedFile.ShouldBeSameAs(file);
+        capturedContent.ShouldNotBeNull();
+        capturedFileName.ShouldBe("logo.png");
+        capturedContentType.ShouldBe("image/png");
         capturedContainer.ShouldBe("bowlneba-public");
         capturedPathPrefix.ShouldBe("tournaments/logo");
         capturedMetadata.ShouldBeNull();
@@ -108,12 +131,28 @@ public sealed class UploadTournamentLogoEndpointTests
     {
         // Arrange
         var stagingServiceMock = new Mock<IUploadStagingService>(MockBehavior.Strict);
-        var endpoint = Factory.Create<UploadTournamentLogoEndpoint>(stagingServiceMock.Object, CreateFileStorageServiceMock().Object);
+        var endpoint = Factory.Create<UploadTournamentLogoEndpoint>(stagingServiceMock.Object, CreateFileStorageServiceMock().Object, new Mock<IImageResizer>(MockBehavior.Strict).Object);
 
         // Assert
         endpoint.Definition.Verbs.ShouldContain("POST");
         endpoint.Definition.Routes.ShouldContain(r => r.Contains("logo"), "should register the logo route");
         endpoint.Definition.Routes.ShouldContain(r => r.Contains("tournaments"), "should be under the /tournaments path");
         endpoint.Definition.AnonymousVerbs.ShouldBeNull();
+    }
+
+    [Fact(DisplayName = "HandleAsync should return 422 and stage nothing when the image cannot be read")]
+    public async Task HandleAsync_ShouldReturn422_WhenResizerFails()
+    {
+        // Arrange
+        var ct = TestContext.Current.CancellationToken;
+        var stagingServiceMock = new Mock<IUploadStagingService>(MockBehavior.Strict);
+        var endpoint = Factory.Create<UploadTournamentLogoEndpoint>(stagingServiceMock.Object, CreateFileStorageServiceMock().Object, CreateResizerMock(ImageErrors.Unreadable).Object);
+
+        // Act
+        await endpoint.HandleAsync(new UploadTournamentLogoRequest { File = CreateFile() }, ct);
+
+        // Assert
+        endpoint.HttpContext.Response.StatusCode.ShouldBe(422);
+        stagingServiceMock.VerifyNoOtherCalls();
     }
 }

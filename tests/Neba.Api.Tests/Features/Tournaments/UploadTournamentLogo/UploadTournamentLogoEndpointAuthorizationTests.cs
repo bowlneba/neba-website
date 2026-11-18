@@ -61,13 +61,21 @@ public sealed class UploadTournamentLogoEndpointAuthorizationTests(SecurityDbCon
         var stagingServiceMock = new Mock<IUploadStagingService>(MockBehavior.Strict);
         stagingServiceMock
             .Setup(s => s.StageUploadAsync(
-                It.IsAny<IFormFile>(),
+                It.IsAny<Stream>(),
+                It.IsAny<string>(),
+                It.IsAny<string>(),
                 "bowlneba-public",
                 "tournaments/logo",
                 null,
                 It.IsAny<CancellationToken>()))
             .ReturnsAsync(StoredFileFactory.Create());
         builder.Services.AddSingleton(stagingServiceMock.Object);
+
+        var imageResizerMock = new Mock<IImageResizer>(MockBehavior.Strict);
+        imageResizerMock
+            .Setup(r => r.ResizeLogoAsync(It.IsAny<Stream>(), It.IsAny<int>(), It.IsAny<IReadOnlySet<string>>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new ResizedImage { Content = [1, 2, 3], ContentType = "image/png", FileExtension = "png" });
+        builder.Services.AddSingleton(imageResizerMock.Object);
 
         var fileStorageServiceMock = new Mock<IFileStorageService>(MockBehavior.Strict);
         fileStorageServiceMock

@@ -12,9 +12,14 @@ using PermissionCatalog = Neba.Api.Contracts.Security.Permissions;
 
 namespace Neba.Api.Features.Tournaments.UploadTournamentLogo;
 
-internal sealed class UploadTournamentLogoEndpoint(IUploadStagingService stagingService, IFileStorageService fileStorageService)
+internal sealed class UploadTournamentLogoEndpoint(IUploadStagingService stagingService, IFileStorageService fileStorageService, IImageResizer imageResizer)
     : Endpoint<UploadTournamentLogoRequest, UploadedFileResponse>
 {
+    /// <summary>
+    /// The longest side a stored logo keeps, large enough for a high-density screen.
+    /// </summary>
+    internal const int MaxLogoDimension = 512;
+
     public override void Configure()
     {
         Post("logo");
@@ -33,18 +38,39 @@ internal sealed class UploadTournamentLogoEndpoint(IUploadStagingService staging
             .Produces<UploadedFileResponse>(StatusCodes.Status200OK)
             .ProducesProblemDetails(StatusCodes.Status400BadRequest)
             .ProducesProblemDetails(StatusCodes.Status401Unauthorized)
-            .ProducesProblemDetails(StatusCodes.Status403Forbidden));
+            .ProducesProblemDetails(StatusCodes.Status403Forbidden)
+            .ProducesProblemDetails(StatusCodes.Status422UnprocessableEntity));
     }
 
     public override async Task HandleAsync(UploadTournamentLogoRequest req, CancellationToken ct)
     {
-        var storedFile = await stagingService.StageUploadAsync(req.File, "bowlneba-public", "tournaments/logo", null, ct);
+        await using var upload = req.File.OpenReadStream();
+        var resized = await imageResizer.ResizeLogoAsync(upload, MaxLogoDimension, UploadTournamentLogoRequestValidator.AllowedContentTypes, ct);
+
+        if (resized.IsError)
+        {
+            foreach (var error in resized.Errors)
+            {
+                AddError(error.Description);
+            }
+
+            await Send.ErrorsAsync(StatusCodes.Status422UnprocessableEntity, ct);
+            // Stryker disable once Statement
+            return;
+        }
+
+        // The resizer re-encodes in the format the bytes decoded as, which can differ from the client's file name.
+        var fileName = $"{Path.GetFileNameWithoutExtension(req.File.FileName)}.{resized.Value.FileExtension}";
+
+        await using var content = new MemoryStream(resized.Value.Content);
+        var storedFile = await stagingService.StageUploadAsync(
+            content, fileName, resized.Value.ContentType, "bowlneba-public", "tournaments/logo", null, ct);
 
         var response = new UploadedFileResponse
         {
             Container = storedFile.Container,
             Path = storedFile.Path,
-            FileName = req.File.FileName,
+            FileName = fileName,
             ContentType = storedFile.ContentType,
             SizeInBytes = storedFile.SizeInBytes,
             Url = fileStorageService.GetBlobUri(storedFile.Container, storedFile.Path)
