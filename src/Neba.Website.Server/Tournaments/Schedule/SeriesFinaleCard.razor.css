@@ -1,0 +1,119 @@
+.series-finale-card {
+    margin-bottom: 1rem;
+    border: 1px solid var(--neba-border);
+    transition: border 0.2s ease, box-shadow 0.2s ease;
+}
+
+.series-finale-card:hover {
+    border-color: var(--neba-blue-200);
+    box-shadow: 0 10px 20px -5px rgba(5, 39, 103, 0.12);
+}
+
+.series-finale-card--past {
+    opacity: 0.92;
+}
+
+.series-finale-card--past:hover {
+    opacity: 1;
+}
+
+.series-finale-card__grid {
+    display: grid;
+    grid-template-columns: 200px 1fr 260px;
+    gap: 1.5rem;
+    align-items: center;
+}
+
+.series-finale-card__logo {
+    display: grid;
+    place-items: center;
+}
+
+.series-finale-card__content {
+    display: flex;
+    flex-direction: column;
+    gap: 0.625rem;
+    padding: 0.25rem 0;
+}
+
+.series-finale-card__eyebrow {
+    display: flex;
+    align-items: center;
+    gap: 0.375rem;
+    font-size: 0.8125rem;
+    color: var(--neba-gray-500);
+    flex-wrap: wrap;
+}
+
+.series-finale-card__title {
+    margin: 0;
+    font-size: 1.25rem;
+}
+
+.series-finale-card__title a {
+    color: inherit;
+    text-decoration: none;
+}
+
+.series-finale-card__title a:hover {
+    text-decoration: underline;
+}
+
+.series-finale-card__host {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+    margin: 0;
+    color: var(--neba-gray-600);
+}
+
+.series-finale-card__host .material-symbols-outlined {
+    font-size: 1.125rem;
+}
+
+.series-finale-card__host--tba {
+    font-style: italic;
+    color: var(--neba-gray-400);
+}
+
+.series-finale-card__chips {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+}
+
+.series-finale-card__chip {
+    background: var(--neba-gray-100);
+    border-radius: 999px;
+    padding: 0.125rem 0.625rem;
+    font-size: 0.75rem;
+    font-weight: 600;
+}
+
+.series-finale-card__actions {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 0.5rem;
+}
+
+@media (max-width: 1100px) {
+    .series-finale-card__grid {
+        grid-template-columns: 96px 1fr;
+    }
+
+    .series-finale-card__actions {
+        grid-column: 1 / -1;
+        align-items: flex-start;
+    }
+}
+
+@media (max-width: 767px) {
+    .series-finale-card__grid {
+        grid-template-columns: 1fr;
+    }
+
+    .series-finale-card__logo {
+        justify-items: start;
+    }
+}

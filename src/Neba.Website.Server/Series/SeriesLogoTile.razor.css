@@ -55,3 +55,12 @@
 .series-logo-tile--tag .series-logo-tile__initials {
     font-size: 0.5625rem;
 }
+
+.series-logo-tile--card {
+    width: 96px;
+    height: 96px;
+}
+
+.series-logo-tile--card .series-logo-tile__initials {
+    font-size: 2rem;
+}

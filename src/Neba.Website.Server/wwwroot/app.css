@@ -276,5 +276,6 @@ h1:focus {
 .kind-survivor { color: var(--neba-gold-deep); }
 .kind-placement { color: var(--neba-blue-brand); }
 .dark .kind-placement { color: var(--neba-blue-300); }
+.kind-finale { --kind-finale: var(--neba-accent-red); color: var(--kind-finale); }
 
 .series-locked-badge { font-size: 12px; font-weight: 600; color: var(--neba-warning); background: rgb(217 119 6 / 0.1); border-radius: 999px; padding: 2px 10px; }

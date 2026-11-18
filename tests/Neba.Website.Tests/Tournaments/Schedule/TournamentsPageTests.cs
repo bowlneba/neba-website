@@ -7,9 +7,13 @@ using Microsoft.AspNetCore.Components;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging.Abstractions;
 
+using Neba.Api.Contracts;
+using Neba.Api.Contracts.Series;
+using Neba.Api.Contracts.Series.ListSeriesFinales;
 using Neba.Api.Contracts.Tournaments;
 using Neba.Api.Contracts.Tournaments.EditTournamentLogo;
 using Neba.TestFactory.Attributes;
+using Neba.TestFactory.Series;
 using Neba.TestFactory.Tournaments;
 using Neba.Website.Server.Clock;
 using Neba.Website.Server.History.Champions;
@@ -33,6 +37,8 @@ public sealed class TournamentsPageTests : IDisposable
     private readonly BunitAuthorizationContext _authContext;
     private readonly ToastService _toastService;
     private readonly Mock<ITournamentsApi> _tournamentsApi = new(MockBehavior.Strict);
+    private readonly Mock<ISeriesApi> _seriesApi = new(MockBehavior.Strict);
+    private readonly List<IDisposable> _disposables = [];
 
     public TournamentsPageTests()
     {
@@ -53,6 +59,8 @@ public sealed class TournamentsPageTests : IDisposable
         _toastService = new ToastService();
 
         _ctx.Services.AddSingleton(_tournamentsApi.Object);
+        _ctx.Services.AddSingleton(_seriesApi.Object);
+        SetupFinales();
         _ctx.Services.AddSingleton(sp => new ApiExecutor(mockStopwatch.Object, sp.GetRequiredService<NavigationManager>(), NullLogger<ApiExecutor>.Instance));
         _ctx.Services.AddSingleton(_toastService);
     }
@@ -61,6 +69,43 @@ public sealed class TournamentsPageTests : IDisposable
     {
         _ctx.Dispose();
         _toastService.Dispose();
+        foreach (var disposable in _disposables)
+        {
+            disposable.Dispose();
+        }
+    }
+
+    private void SetupFinales(params SeriesFinaleSummaryResponse[] finales)
+    {
+        var response = new StubApiResponse<CollectionResponse<SeriesFinaleSummaryResponse>>
+        {
+            IsSuccessStatusCode = true,
+            StatusCode = System.Net.HttpStatusCode.OK,
+            Content = new CollectionResponse<SeriesFinaleSummaryResponse> { Items = finales },
+        };
+        _disposables.Add(response);
+        _seriesApi.Setup(x => x.ListSeriesFinalesAsync(It.IsAny<CancellationToken>())).ReturnsAsync(response);
+    }
+
+    private static SeriesFinaleSummaryResponse FinaleOn(
+        DateOnly date, string seasonId, string seriesName = "Vincent Hall Memorial Series", string? center = null)
+        => SeriesFinaleSummaryResponseFactory.Create(
+            seriesName: seriesName,
+            seasonId: seasonId,
+            finale: SeriesFinaleResponseFactory.Create(date: date, bowlingCenterName: center));
+
+    private SeasonViewModel ArrangeCurrentSeasonWithTournament(string tournamentName = "Spring Classic")
+    {
+        var season = MakeSeason(DateTime.Today.Year);
+        _dataService.Seasons = [season];
+        _dataService.SeasonData[season.Label] =
+        [
+            SeasonTournamentViewModelFactory.Create(
+                id: "upcoming", name: tournamentName, season: season.Label,
+                startDate: DateOnly.FromDateTime(DateTime.Today.AddDays(10)),
+                endDate: DateOnly.FromDateTime(DateTime.Today.AddDays(10))),
+        ];
+        return season;
     }
 
     [Fact(DisplayName = "Should render hero and upcoming tournament card for current season route")]
@@ -521,6 +566,145 @@ public sealed class TournamentsPageTests : IDisposable
 
         // Assert
         cut.Markup.ShouldContain("No upcoming tournaments are scheduled for this season.");
+    }
+
+    // ── Series Finales ─────────────────────────────────────────────────────
+
+    [Fact(DisplayName = "Should show an upcoming Finale in date order with the tournaments")]
+    public void Render_ShouldShowUpcomingFinaleInDateOrder()
+    {
+        // Arrange
+        var season = ArrangeCurrentSeasonWithTournament();
+        SetupFinales(FinaleOn(DateOnly.FromDateTime(DateTime.Today.AddDays(5)), season.Id));
+
+        // Act
+        var cut = _ctx.Render<TournamentsPage>();
+
+        // Assert
+        var cards = cut.FindAll(".tournament-upcoming-card, .series-finale-card");
+        cards.Count.ShouldBe(2);
+        cards[0].ClassList.ShouldContain("series-finale-card");
+        cards[1].ClassList.ShouldContain("tournament-upcoming-card");
+    }
+
+    [Fact(DisplayName = "Should treat a Finale today as upcoming")]
+    public void Render_ShouldTreatFinaleTodayAsUpcoming()
+    {
+        // Arrange
+        var season = ArrangeCurrentSeasonWithTournament();
+        SetupFinales(FinaleOn(DateOnly.FromDateTime(DateTime.Today), season.Id));
+
+        // Act
+        var cut = _ctx.Render<TournamentsPage>();
+
+        // Assert
+        cut.FindAll(".series-finale-card").Count.ShouldBe(1);
+        cut.Find(".series-finale-card").ClassList.ShouldNotContain("series-finale-card--past");
+    }
+
+    [Fact(DisplayName = "Should not show yesterday's Finale on the Upcoming tab")]
+    public void Render_ShouldHideYesterdaysFinaleFromUpcoming()
+    {
+        // Arrange
+        var season = ArrangeCurrentSeasonWithTournament();
+        SetupFinales(FinaleOn(DateOnly.FromDateTime(DateTime.Today.AddDays(-1)), season.Id));
+
+        // Act
+        var cut = _ctx.Render<TournamentsPage>();
+
+        // Assert
+        cut.FindAll(".series-finale-card").ShouldBeEmpty();
+    }
+
+    [Fact(DisplayName = "Should show a past Finale of the selected season on the Past tab")]
+    public async Task PastTab_ShouldShowPastFinaleOfSelectedSeason()
+    {
+        // Arrange
+        var season = ArrangeCurrentSeasonWithTournament();
+        var otherSeason = MakeSeason(DateTime.Today.Year - 1);
+        _dataService.Seasons = [season, otherSeason];
+        SetupFinales(
+            FinaleOn(DateOnly.FromDateTime(DateTime.Today.AddDays(-2)), season.Id, "Current Series"),
+            FinaleOn(DateOnly.FromDateTime(DateTime.Today.AddDays(-400)), otherSeason.Id, "Old Series"));
+        var cut = _ctx.Render<TournamentsPage>();
+
+        // Act
+        await cut.FindAll("button[role=tab]")[1].ClickAsync();
+
+        // Assert
+        var cards = cut.FindAll(".series-finale-card");
+        cards.Count.ShouldBe(1);
+        cards[0].TextContent.ShouldContain("Current Series Finale");
+        cards[0].ClassList.ShouldContain("series-finale-card--past");
+    }
+
+    [Fact(DisplayName = "Should still show the tournaments when the Finale call fails")]
+    public void Render_ShouldShowTournaments_WhenFinaleCallFails()
+    {
+        // Arrange
+        ArrangeCurrentSeasonWithTournament();
+        _seriesApi.Setup(x => x.ListSeriesFinalesAsync(It.IsAny<CancellationToken>()))
+            .ThrowsAsync(new HttpRequestException("boom"));
+
+        // Act
+        var cut = _ctx.Render<TournamentsPage>();
+
+        // Assert
+        cut.FindAll(".tournament-upcoming-card, .tournament-hero").ShouldNotBeEmpty();
+        cut.FindAll(".series-finale-card").ShouldBeEmpty();
+    }
+
+    [Fact(DisplayName = "Should hide Finales under a format filter and show them again under All")]
+    public async Task FormatFilter_ShouldHideFinales()
+    {
+        // Arrange
+        var season = ArrangeCurrentSeasonWithTournament();
+        SetupFinales(FinaleOn(DateOnly.FromDateTime(DateTime.Today.AddDays(5)), season.Id));
+        var cut = _ctx.Render<TournamentsPage>();
+
+        // Act
+        await cut.FindAll(".tournament-filter-bar__type-filter button").First(b => b.TextContent == "Doubles").ClickAsync();
+        var hidden = cut.FindAll(".series-finale-card").Count;
+        await cut.FindAll(".tournament-filter-bar__type-filter button").First(b => b.TextContent == "All").ClickAsync();
+
+        // Assert
+        hidden.ShouldBe(0);
+        cut.FindAll(".series-finale-card").Count.ShouldBe(1);
+    }
+
+    [Theory(DisplayName = "Should match a Finale by its title, Series name or host in the search box")]
+    [InlineData("Memorial Series Finale")]
+    [InlineData("Vincent Hall")]
+    [InlineData("Callahan")]
+    public async Task Search_ShouldMatchFinale(string term)
+    {
+        // Arrange
+        var season = ArrangeCurrentSeasonWithTournament();
+        SetupFinales(FinaleOn(DateOnly.FromDateTime(DateTime.Today.AddDays(5)), season.Id, center: "Callahan's Bowl-O-Rama"));
+        var cut = _ctx.Render<TournamentsPage>();
+
+        // Act
+        await cut.Find("input.tournament-filter-bar__search")
+            .InputAsync(new Microsoft.AspNetCore.Components.ChangeEventArgs { Value = term });
+
+        // Assert
+        cut.FindAll(".series-finale-card").Count.ShouldBe(1);
+        cut.FindAll(".tournament-upcoming-card").ShouldBeEmpty();
+    }
+
+    [Fact(DisplayName = "Should leave the hero on the next tournament even when a Finale comes first")]
+    public void Render_ShouldIgnoreFinaleForHero()
+    {
+        // Arrange
+        var season = ArrangeCurrentSeasonWithTournament("Spring Classic");
+        SetupFinales(FinaleOn(DateOnly.FromDateTime(DateTime.Today.AddDays(2)), season.Id));
+
+        // Act
+        var cut = _ctx.Render<TournamentsPage>();
+
+        // Assert
+        cut.Find(".tournament-hero").TextContent.ShouldContain("Spring Classic");
+        cut.Find(".tournament-hero").TextContent.ShouldNotContain("Finale");
     }
 
     // ── Helpers ────────────────────────────────────────────────────────────
