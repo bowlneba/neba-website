@@ -73,6 +73,12 @@ public sealed record TournamentDetailViewModel
     /// </summary>
     public bool IsCancelled => Status == "Cancelled";
 
+    /// <summary>The Series this tournament is a Stage of, or null.</summary>
+    public TournamentSeriesViewModel? Series { get; init; }
+
+    /// <summary>True when the tournament is a Stage of a Series.</summary>
+    public bool IsSeriesStage => Series is not null;
+
     /// <summary>
     /// True for a scheduled tournament whose type has its own rule section. Completed, truncated and
     /// cancelled tournaments get no link, because the rules may have changed since they ran.

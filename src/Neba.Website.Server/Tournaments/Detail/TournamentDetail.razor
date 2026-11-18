@@ -270,6 +270,11 @@ else
                 </div>
             </header>
 
+            @if (_model.IsSeriesStage)
+            {
+                <TournamentSeriesCallout Series="@(_model.Series!)" TeamSize="@_model.TeamSize" />
+            }
+
             @if (_model.ShowRulesLink || _model.ShowTeamEligibilityLink)
             {
                 <div class="td-help-cards">

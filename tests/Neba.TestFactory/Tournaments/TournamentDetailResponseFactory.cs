@@ -44,7 +44,8 @@ public static class TournamentDetailResponseFactory
         IReadOnlyCollection<TournamentDetailArticleResponse>? articles = null,
         int? teamSize = null,
         string? previousTournamentId = null,
-        IReadOnlyCollection<DefendingTeamResponse>? defendingChampions = null)
+        IReadOnlyCollection<DefendingTeamResponse>? defendingChampions = null,
+        TournamentSeriesResponse? series = null)
         => new()
         {
             Id = id ?? ValidId,
@@ -80,6 +81,7 @@ public static class TournamentDetailResponseFactory
             TeamSize = teamSize ?? 1,
             PreviousTournamentId = previousTournamentId,
             DefendingChampions = defendingChampions ?? [],
+            Series = series,
         };
 
     public static IReadOnlyCollection<TournamentDetailResponse> Bogus(int count, int? seed = null)

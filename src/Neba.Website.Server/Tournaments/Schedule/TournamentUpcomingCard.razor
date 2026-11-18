@@ -41,6 +41,11 @@
                         @Tournament.UrgencyLabel
                     </span>
                 }
+                @if (Tournament.IsSeriesStage)
+                {
+                    <span aria-hidden="true">·</span>
+                    <TournamentSeriesTag Series="@(Tournament.Series!)" />
+                }
             </div>
 
             <h3 class="tournament-upcoming-card__title">

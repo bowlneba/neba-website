@@ -242,4 +242,34 @@ public sealed class TournamentUpcomingCardTests : IDisposable
         cut.Markup.ShouldNotContain("Check team eligibility");
         cut.FindAll(".defending").ShouldBeEmpty();
     }
+
+    [Fact(DisplayName = "Should show the Series tag for a Stage tournament, including a cancelled one")]
+    public void Render_ShouldShowSeriesTag_WhenSeriesStage()
+    {
+        // Arrange
+        var tournament = SeasonTournamentViewModelFactory.Create(
+            status: "Cancelled", series: TournamentSeriesViewModelFactory.Create());
+
+        // Act
+        var cut = _ctx.Render<TournamentUpcomingCard>(parameters => parameters
+            .Add(p => p.Tournament, tournament));
+
+        // Assert
+        cut.Find("a.tournament-series-tag").GetAttribute("href")
+            .ShouldBe("/series/" + TournamentSeriesViewModelFactory.ValidSeriesId);
+    }
+
+    [Fact(DisplayName = "Should not show the Series tag when the tournament is not a Stage")]
+    public void Render_ShouldNotShowSeriesTag_WhenNotSeriesStage()
+    {
+        // Arrange
+        var tournament = SeasonTournamentViewModelFactory.Create();
+
+        // Act
+        var cut = _ctx.Render<TournamentUpcomingCard>(parameters => parameters
+            .Add(p => p.Tournament, tournament));
+
+        // Assert
+        cut.FindAll(".tournament-series-tag").ShouldBeEmpty();
+    }
 }

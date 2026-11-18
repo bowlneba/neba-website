@@ -1500,4 +1500,38 @@ tournamentType: TournamentType.Doubles, logoUrl: null));
             .Setup(x => x.GetTournamentAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(response);
     }
+
+    [Theory(DisplayName = "Should show the Series callout for a Stage tournament, including a cancelled one")]
+    [InlineData("Scheduled", TestDisplayName = "Scheduled")]
+    [InlineData("Cancelled", TestDisplayName = "Cancelled")]
+    public void Render_ShouldShowSeriesCallout_WhenSeriesStage(string statusName)
+    {
+        // Arrange
+        SetupSuccessResponse(TournamentDetailResponseFactory.Create(
+            status: TournamentStatus.FromName(statusName),
+            series: TournamentSeriesResponseFactory.Create()));
+
+        // Act
+        var cut = _ctx.Render<TournamentDetail>(p => p.Add(x => x.Id, TournamentDetailResponseFactory.ValidId));
+
+        // Assert
+        var callout = cut.Find(".tournament-series-callout");
+        callout.TextContent.ShouldContain(TournamentSeriesResponseFactory.ValidName);
+        callout.TextContent.ShouldContain("Qualifying Round");
+        callout.QuerySelector("a.neba-btn")!.GetAttribute("href")
+            .ShouldBe("/series/" + TournamentSeriesResponseFactory.ValidSeriesId);
+    }
+
+    [Fact(DisplayName = "Should not show the Series callout when the tournament is not a Stage")]
+    public void Render_ShouldNotShowSeriesCallout_WhenNotSeriesStage()
+    {
+        // Arrange
+        SetupSuccessResponse(TournamentDetailResponseFactory.Create());
+
+        // Act
+        var cut = _ctx.Render<TournamentDetail>(p => p.Add(x => x.Id, TournamentDetailResponseFactory.ValidId));
+
+        // Assert
+        cut.FindAll(".tournament-series-callout").ShouldBeEmpty();
+    }
 }

@@ -312,4 +312,54 @@ public sealed class SeriesDisplayTests
         // Assert
         label.ShouldBe("Sat 7/12 · Callahan's Bowl-O-Rama");
     }
+
+    [Theory(DisplayName = "RoundLabel should append 'Round' to the kind")]
+    [InlineData("Qualifying", "Qualifying Round")]
+    [InlineData("Survivor", "Survivor Round")]
+    [InlineData("Placement", "Placement Round")]
+    public void RoundLabel_ShouldAppendRound(string kind, string expected)
+    {
+        // Arrange & Act
+        var label = SeriesDisplay.RoundLabel(kind);
+
+        // Assert
+        label.ShouldBe(expected);
+    }
+
+    [Theory(DisplayName = "CalloutRule should say what each round decides")]
+    [InlineData("Qualifying", 8, 1, false, null, false, "Top 8 finishers enter the Series field.", null)]
+    [InlineData("Qualifying", 2, 3, false, null, false, "Top 2 teams enter the Series field.", "(6 bowlers)")]
+    [InlineData("Survivor", 40, 1, true, null, false, "40 bowlers advance.", "Series squad: 9:00 AM on 7/12.")]
+    [InlineData("Survivor", 40, 1, false, null, false, "40 bowlers advance.", null)]
+    [InlineData("Placement", null, 1, false, 4, true, "Final standings. The top 4 go to the Finale.", "Finale: Sat 9/27 at 2:00 PM.")]
+    [InlineData("Placement", null, 1, false, 4, false, "Final standings. The top 4 go to the Finale.", null)]
+    [InlineData("Placement", null, 1, false, null, false, "Final standings (no Finale).", null)]
+    public void CalloutRule_ShouldDescribeRound(
+        string kind, int? count, int teamSize, bool hasSquad, int? finaleCount, bool hasFinaleTime,
+        string primary, string? secondary)
+    {
+        // Arrange
+        DateOnly? squadDate = hasSquad ? new DateOnly(2025, 7, 12) : null;
+        TimeOnly? squadTime = hasSquad ? new TimeOnly(9, 0) : null;
+        DateOnly? finaleDate = finaleCount is not null ? new DateOnly(2025, 9, 27) : null;
+        TimeOnly? finaleTime = hasFinaleTime ? new TimeOnly(14, 0) : null;
+
+        // Act
+        var rule = SeriesDisplay.CalloutRule(kind, count, teamSize, squadDate, squadTime, finaleCount, finaleDate, finaleTime);
+
+        // Assert
+        rule.Primary.ShouldBe(primary);
+        rule.Secondary.ShouldBe(secondary);
+    }
+
+    [Fact(DisplayName = "CalloutRule should fall back when a Qualifying Stage has no count")]
+    public void CalloutRule_ShouldFallBack_WhenNoCount()
+    {
+        // Arrange & Act
+        var rule = SeriesDisplay.CalloutRule("Qualifying", null, 1, null, null, null, null, null);
+
+        // Assert
+        rule.Primary.ShouldBe("Part of the Series.");
+        rule.Secondary.ShouldBeNull();
+    }
 }

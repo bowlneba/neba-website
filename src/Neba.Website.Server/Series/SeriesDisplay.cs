@@ -123,6 +123,32 @@ internal static class SeriesDisplay
     public static string BarWidthStyle(int count, int max)
         => "width:" + Math.Max(8, max == 0 ? 0 : count * 100 / max).ToString(Culture) + "%";
 
+    /// <summary>"Qualifying Round", "Survivor Round", "Placement Round".</summary>
+    public static string RoundLabel(string kind)
+        => kind + " Round";
+
+    /// <summary>What the round decides, for the detail callout. Secondary is the "(6 bowlers)" or squad line.</summary>
+    public static AdvancingLabel CalloutRule(
+        string kind, int? count, int teamSize, DateOnly? squadDate, TimeOnly? squadStartTime,
+        int? finaleCount, DateOnly? finaleDate, TimeOnly? finaleStartTime)
+        => (kind, count) switch
+        {
+            (StageKinds.Placement, _) when finaleCount is null => new AdvancingLabel("Final standings (no Finale).", null),
+            (StageKinds.Placement, _) => new AdvancingLabel(
+                "Final standings. The top " + finaleCount.Value.ToString(Culture) + " go to the Finale.",
+                finaleDate is { } fd && finaleStartTime is { } ft ? "Finale: " + FinaleWhen(fd, ft) + "." : null),
+            (StageKinds.Qualifying, { } n) when teamSize > 1 => new AdvancingLabel(
+                "Top " + "team".ToQuantity(n) + " enter the Series field.",
+                "(" + "bowler".ToQuantity(n * teamSize) + ")"),
+            (StageKinds.Qualifying, { } n) => new AdvancingLabel("Top " + n.ToString(Culture) + " finishers enter the Series field.", null),
+            (StageKinds.Survivor, { } n) => new AdvancingLabel(
+                n.ToString(Culture) + " bowlers advance.",
+                squadDate is { } d && squadStartTime is { } t
+                    ? "Series squad: " + t.ToString("h:mm tt", Culture) + " on " + d.ToString("M/d", Culture) + "."
+                    : null),
+            _ => new AdvancingLabel("Part of the Series.", null), // a saved Qualifying/Survivor Stage always has a count
+        };
+
     public static string KindClass(string kind)
         => kind switch
         {

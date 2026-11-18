@@ -1,0 +1,31 @@
+@using Neba.Website.Server.Series
+@namespace Neba.Website.Server.Tournaments.Detail
+
+<aside class="neba-card tournament-series-callout @SeriesDisplay.KindClass(Series.Kind)-border" aria-label="Series">
+    <SeriesLogoTile LogoUrl="@Series.LogoUrl" Name="@Series.Name" Size="@SeriesLogoTile.Large" />
+    <div class="tournament-series-callout__body">
+        <p class="tournament-series-callout__lead">This tournament is part of a Series</p>
+        <h2 class="tournament-series-callout__name">@Series.Name</h2>
+        <p class="tournament-series-callout__round">
+            <span class="kind-chip @SeriesDisplay.KindClass(Series.Kind)">@SeriesDisplay.RoundLabel(Series.Kind)</span>
+        </p>
+        <p class="tournament-series-callout__rule">@Rule.Primary</p>
+        @if (Rule.Secondary is not null)
+        {
+            <p class="tournament-series-callout__rule-detail">@Rule.Secondary</p>
+        }
+    </div>
+    <a href="@Series.Href" class="neba-btn neba-btn-secondary">View Series →</a>
+</aside>
+
+@code {
+    [Parameter, EditorRequired]
+    public TournamentSeriesViewModel Series { get; set; } = default!;
+
+    [Parameter]
+    public int TeamSize { get; set; } = 1;
+
+    private AdvancingLabel Rule => SeriesDisplay.CalloutRule(
+        Series.Kind, Series.AdvancingCount, TeamSize, Series.SquadDate, Series.SquadStartTime,
+        Series.FinaleCount, Series.FinaleDate, Series.FinaleStartTime);
+}
