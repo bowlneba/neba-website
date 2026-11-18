@@ -17,7 +17,7 @@ Source: Anton DevTips email "Claude doesn't respect your architecture" (2026-11-
 |---|---|
 | `/feature-plan` | Layer agents draft their own plan sections. The skill coordinates and you still confirm each stage. The commit plan names the agent that implements each commit. |
 | `/pull-request-prep` | Run layer reviewer agents in parallel, chosen from the diff. The skill merges their findings into the existing Blockers / Should Fix / Suggestions report. |
-| `ddd-clean-architecture` | Rename and rewrite as vertical slice architecture with a DDD design approach. |
+| `ddd-clean-architecture` | Renamed `vsa-ddd` and rewritten as vertical slice architecture with a DDD design approach (step 1.2, done). |
 | Scope | First-wave agents, skill rewiring, AGENTS.md and skill audit, second-wave agents, hooks, missing skills. |
 
 ## How the pieces fit

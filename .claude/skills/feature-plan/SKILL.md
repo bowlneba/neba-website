@@ -132,7 +132,7 @@ Draft, at functional level:
 - Anything this phase deliberately defers to Phase 2 or out of scope entirely.
 - If Step 2 ran: how each confirmed NFR target is satisfied here — e.g. the query is listed as an `ICachedQuery` because of the performance target, a concurrency token is added to the aggregate because of the concurrency target, a new `[PrivateData]` classification is applied because of the security target. Don't restate the targets — show the concrete decision each one produced.
 
-If `ddd-clean-architecture`, `dotnet-aspnet-core`, or `dotnet-entity-framework-core` skills are relevant to decisions being made in this draft (e.g. aggregate boundaries, EF Core modeling choices), invoke them to inform the draft rather than guessing at conventions — don't just cite them by name without applying what they say.
+If `vsa-ddd`, `dotnet-aspnet-core`, or `dotnet-entity-framework-core` skills are relevant to decisions being made in this draft (e.g. aggregate boundaries, EF Core modeling choices), invoke them to inform the draft rather than guessing at conventions — don't just cite them by name without applying what they say.
 
 Replace the `*(Not yet drafted.)*` placeholder under `## Phase 1: API` (written in Step 6) with this draft, structured as a checklist-style breakdown by layer (Domain / Application / Infrastructure / API / Contracts / Tests), mirroring the "What Changed" layer grouping used in `pull-request-prep`.
 
@@ -142,7 +142,7 @@ Do not proceed until confirmed.
 
 ## Step 8 — Phase 1 code draft (API)
 
-Once Step 7 is confirmed, expand each item in the Phase 1 section into actual code: real class/record signatures, method bodies where the logic isn't obvious boilerplate, route strings, validator rules, DI registration snippets, and factory method signatures. Use the patterns and templates in the `new-endpoint` command and `ddd-clean-architecture` skill as the baseline shape, adapted to this feature's actual types and rules — don't reproduce their placeholder syntax verbatim.
+Once Step 7 is confirmed, expand each item in the Phase 1 section into actual code: real class/record signatures, method bodies where the logic isn't obvious boilerplate, route strings, validator rules, DI registration snippets, and factory method signatures. Use the patterns and templates in the `new-endpoint` command and `vsa-ddd` skill as the baseline shape, adapted to this feature's actual types and rules — don't reproduce their placeholder syntax verbatim.
 
 Replace the Step 7 functional bullets in `docs/plans/{feature-name}.md` under `## Phase 1: API` with this code-level detail (keep the layer-grouped structure, but each item is now a fenced code block instead of a one-line bullet).
 
