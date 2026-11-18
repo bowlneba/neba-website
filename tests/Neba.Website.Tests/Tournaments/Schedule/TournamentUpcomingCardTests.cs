@@ -156,7 +156,7 @@ public sealed class TournamentUpcomingCardTests : IDisposable
             .Add(p => p.OnEditLogo, t => raised = t));
 
         // Act
-        await cut.Find("button.tournament-logo-edit").ClickAsync();
+        await cut.Find("button.logo-edit-button").ClickAsync();
 
         // Assert
         raised.ShouldBe(tournament);
@@ -173,7 +173,7 @@ public sealed class TournamentUpcomingCardTests : IDisposable
             .Add(p => p.Tournament, tournament));
 
         // Assert
-        cut.FindAll("button.tournament-logo-edit").ShouldBeEmpty();
+        cut.FindAll("button.logo-edit-button").ShouldBeEmpty();
     }
 
     [Fact(DisplayName = "Should show the team eligibility link and the defending strip for a scheduled team event")]

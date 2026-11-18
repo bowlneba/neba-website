@@ -3,33 +3,34 @@ using Bunit.TestDoubles;
 
 using Neba.Api.Contracts.Security;
 using Neba.TestFactory.Attributes;
-using Neba.Website.Server.Tournaments;
+using Neba.Website.Server.Components;
 
-namespace Neba.Website.Tests.Tournaments;
+namespace Neba.Website.Tests.Components;
 
 [UnitTest]
-[Component("Website.Tournaments.TournamentLogoEditButton")]
-public sealed class TournamentLogoEditButtonTests : IDisposable
+[Component("Website.Components.LogoEditButton")]
+public sealed class LogoEditButtonTests : IDisposable
 {
     private readonly BunitContext _ctx = new();
     private readonly BunitAuthorizationContext _authContext;
 
-    public TournamentLogoEditButtonTests()
+    public LogoEditButtonTests()
     {
         _authContext = _ctx.AddAuthorization();
     }
 
     public void Dispose() => _ctx.Dispose();
 
-    private IRenderedComponent<TournamentLogoEditButton> Render(bool showLabel = false, Action? onClick = null)
-        => _ctx.Render<TournamentLogoEditButton>(p =>
+    private IRenderedComponent<LogoEditButton> Render(bool showLabel = false, Action? onClick = null)
+        => _ctx.Render<LogoEditButton>(p =>
         {
-            p.Add(x => x.TournamentName, "Spring Open");
+            p.Add(x => x.Policy, Permissions.EditTournamentLogo.PolicyName);
+            p.Add(x => x.OwnerName, "Spring Open");
             p.Add(x => x.ShowLabel, showLabel);
             p.Add(x => x.OnClick, onClick ?? (() => { }));
         });
 
-    [Fact(DisplayName = "Should render the button when the caller holds the EditTournamentLogo permission")]
+    [Fact(DisplayName = "Should render the button when the caller holds the policy")]
     public void Render_ShouldShowButton_WhenPolicySatisfied()
     {
         // Arrange
@@ -40,7 +41,7 @@ public sealed class TournamentLogoEditButtonTests : IDisposable
         var cut = Render();
 
         // Assert
-        cut.FindAll("button.tournament-logo-edit").Count.ShouldBe(1);
+        cut.FindAll("button.logo-edit-button").Count.ShouldBe(1);
     }
 
     [Fact(DisplayName = "Should render nothing when the caller does not satisfy the policy")]
@@ -69,8 +70,8 @@ public sealed class TournamentLogoEditButtonTests : IDisposable
         cut.FindAll("button").ShouldBeEmpty();
     }
 
-    [Fact(DisplayName = "Should name the tournament in the accessible label")]
-    public void Render_ShouldIncludeTournamentNameInAriaLabel()
+    [Fact(DisplayName = "Should name the owner in the accessible label")]
+    public void Render_ShouldIncludeOwnerNameInAriaLabel()
     {
         // Arrange
         _authContext.SetAuthorized("test-user");

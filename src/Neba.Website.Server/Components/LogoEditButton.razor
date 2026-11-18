@@ -1,0 +1,29 @@
+<AuthorizeView Policy="@Policy">
+    <Authorized>
+        <button type="button" class="logo-edit-button @(ShowLabel ? "logo-edit-button--labelled" : null)"
+                aria-label="@("Edit logo for " + OwnerName)" @onclick="OnClick">
+            <span class="material-symbols-outlined" aria-hidden="true">edit</span>
+            @if (ShowLabel)
+            {
+                <span>Edit logo</span>
+            }
+        </button>
+    </Authorized>
+</AuthorizeView>
+
+@code {
+    /// <summary>
+    /// The policy that shows the button, such as the owner's edit-logo permission.
+    /// </summary>
+    [Parameter, EditorRequired]
+    public string Policy { get; set; } = string.Empty;
+
+    [Parameter, EditorRequired]
+    public string OwnerName { get; set; } = string.Empty;
+
+    [Parameter]
+    public bool ShowLabel { get; set; }
+
+    [Parameter, EditorRequired]
+    public EventCallback OnClick { get; set; }
+}

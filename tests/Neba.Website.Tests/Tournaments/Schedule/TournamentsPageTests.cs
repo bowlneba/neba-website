@@ -119,7 +119,7 @@ public sealed class TournamentsPageTests : IDisposable
         var cut = _ctx.Render<TournamentsPage>();
 
         // Act
-        await cut.Find(".tournament-upcoming-card button.tournament-logo-edit").ClickAsync();
+        await cut.Find(".tournament-upcoming-card button.logo-edit-button").ClickAsync();
 
         // Assert
         cut.Find(".elm-subtitle").TextContent.Trim().ShouldBe("Spring Classic");
@@ -156,7 +156,7 @@ public sealed class TournamentsPageTests : IDisposable
             .ReturnsAsync(saveResponse);
 
         var cut = _ctx.Render<TournamentsPage>();
-        await cut.Find(".tournament-upcoming-card button.tournament-logo-edit").ClickAsync();
+        await cut.Find(".tournament-upcoming-card button.logo-edit-button").ClickAsync();
         await cut.Find(".elm-link-danger").ClickAsync();
 
         // Act
@@ -202,7 +202,7 @@ public sealed class TournamentsPageTests : IDisposable
             .ReturnsAsync(saveResponse);
 
         var cut = _ctx.Render<TournamentsPage>();
-        await cut.Find(".tournament-upcoming-card button.tournament-logo-edit").ClickAsync();
+        await cut.Find(".tournament-upcoming-card button.logo-edit-button").ClickAsync();
         await cut.Find(".elm-link-danger").ClickAsync();
         _dataService.UpcomingLoadFails = true;
 

@@ -117,7 +117,7 @@
     /// <summary>
     /// Saves the photo. A null photo with a null framing removes the photo; a null photo with a framing keeps the
     /// current photo and changes its framing; a photo with a framing sets or replaces it. Kept feature-agnostic,
-    /// like <c>EditTournamentLogoModal</c>; the host wires the real call.
+    /// like <c>EditLogoModal</c>; the host wires the real call.
     /// </summary>
     [Parameter, EditorRequired]
     public Func<HallOfFamePhotoInput?, FocalPoint?, CancellationToken, Task<ErrorOr<Success>>> OnSubmitRequestedAsync { get; set; } = default!;

@@ -1,5 +1,4 @@
 @using ErrorOr
-@using Neba.Api.Contracts.Tournaments.CreateTournament
 @using Neba.Api.Contracts.Uploads
 
 <DirtyFormGuard IsDirty="@(IsOpen && IsDirty)" />
@@ -17,7 +16,7 @@
     <HeaderContent>
         <div>
             <h2 class="neba-modal-title" id="edit-logo-title">Edit logo</h2>
-            <div class="elm-subtitle">@TournamentName</div>
+            <div class="elm-subtitle">@OwnerName</div>
         </div>
     </HeaderContent>
     <ChildContent>
@@ -81,10 +80,10 @@
     public bool IsOpen { get; set; }
 
     [Parameter, EditorRequired]
-    public string TournamentName { get; set; } = string.Empty;
+    public string OwnerName { get; set; } = string.Empty;
 
     /// <summary>
-    /// The tournament's own logo, or null when it has none. Pass the real logo URL, never the
+    /// The owner's own logo, or null when it has none. Pass the real logo URL, never the
     /// default-artwork fallback, so the default is not shown as an uploaded logo.
     /// </summary>
     [Parameter]
@@ -100,11 +99,11 @@
     public Func<Stream, string, string, IProgress<int>, CancellationToken, Task<ErrorOr<UploadedFileResponse>>> OnUploadRequestedAsync { get; set; } = default!;
 
     /// <summary>
-    /// Saves the logo. A null input removes the current logo. Kept feature-agnostic, like
-    /// <c>AddTournamentSponsorModal.OnSubmitRequestedAsync</c>; the host wires the real call.
+    /// Saves the logo. It gets the staged upload, or null to remove the current logo. Each host
+    /// maps the upload to its own contract type and makes the real call.
     /// </summary>
     [Parameter, EditorRequired]
-    public Func<TournamentLogoInput?, CancellationToken, Task<ErrorOr<Success>>> OnSubmitRequestedAsync { get; set; } = default!;
+    public Func<UploadedFileResponse?, CancellationToken, Task<ErrorOr<Success>>> OnSubmitRequestedAsync { get; set; } = default!;
 
     private UploadedFileResponse? _staged;
     private bool _removed;
@@ -157,8 +156,8 @@
             }
 
             return _removed || CurrentLogoUrl is null
-                ? "Visitors see the default artwork for this tournament type."
-                : "This is what shows on the tournament page and the schedule.";
+                ? "Visitors see the default artwork."
+                : "This is the logo visitors see.";
         }
     }
 
@@ -220,17 +219,7 @@
         _isSubmitting = true;
         _errorMessage = null;
 
-        var logo = _staged is null
-            ? null
-            : new TournamentLogoInput
-            {
-                Container = _staged.Container,
-                Path = _staged.Path,
-                ContentType = _staged.ContentType,
-                SizeInBytes = _staged.SizeInBytes
-            };
-
-        var result = await OnSubmitRequestedAsync(logo, CancellationToken.None);
+        var result = await OnSubmitRequestedAsync(_staged, CancellationToken.None);
 
         _isSubmitting = false;
 

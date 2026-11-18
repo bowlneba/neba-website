@@ -24,7 +24,7 @@ test.describe('Edit tournament logo (unauthenticated)', () => {
   test('does not show the edit-logo button on the tournament detail page', async ({ page }) => {
     await page.goto(`/tournaments/${MOCK_TOURNAMENT_ID}`);
     await page.waitForSelector('.td-hero');
-    await expect(page.locator('button.tournament-logo-edit')).toHaveCount(0);
+    await expect(page.locator('button.logo-edit-button')).toHaveCount(0);
   });
 
   test('does not show the edit-logo button on the tournament schedule', async ({ page }) => {
@@ -32,7 +32,7 @@ test.describe('Edit tournament logo (unauthenticated)', () => {
     await page.waitForSelector('.tournament-tab-bar');
     await page.locator('.neba-segment-button', { hasText: 'Past' }).click();
     await page.waitForSelector('.tournament-past-card');
-    await expect(page.locator('button.tournament-logo-edit')).toHaveCount(0);
+    await expect(page.locator('button.logo-edit-button')).toHaveCount(0);
   });
 });
 

@@ -1,11 +1,12 @@
 @namespace Neba.Website.Server.Tournaments.Schedule
+@using Neba.Api.Contracts.Security
 
 <div class="neba-card tournament-past-card">
     <div class="tournament-past-card__grid">
         <div class="tournament-past-card__logo">
             <img src="@Tournament.DisplayLogoSrc"
                  alt="@Tournament.Name logo" class="tournament-past-card__logo-img" />
-            <TournamentLogoEditButton TournamentName="@Tournament.Name"
+            <LogoEditButton Policy="@Permissions.EditTournamentLogo.PolicyName" OwnerName="@Tournament.Name"
                                       OnClick="@(() => OnEditLogo.InvokeAsync(Tournament))" />
         </div>
 

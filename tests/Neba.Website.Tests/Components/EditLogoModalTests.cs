@@ -4,24 +4,22 @@ using ErrorOr;
 
 using Microsoft.AspNetCore.Components.Forms;
 
-using Neba.Api.Contracts.Tournaments.CreateTournament;
 using Neba.Api.Contracts.Uploads;
 using Neba.TestFactory.Attributes;
 using Neba.TestFactory.Uploads;
 using Neba.Website.Server.Components;
-using Neba.Website.Server.Tournaments;
 
-namespace Neba.Website.Tests.Tournaments;
+namespace Neba.Website.Tests.Components;
 
 [UnitTest]
-[Component("Website.Tournaments.EditTournamentLogoModal")]
-public sealed class EditTournamentLogoModalTests : IDisposable
+[Component("Website.Components.EditLogoModal")]
+public sealed class EditLogoModalTests : IDisposable
 {
     private static readonly Uri CurrentLogo = new("https://storage.example.com/bowlneba-public/tournaments/logo/current.png");
 
     private readonly BunitContext _ctx;
 
-    public EditTournamentLogoModalTests()
+    public EditLogoModalTests()
     {
         _ctx = new BunitContext();
         _ctx.JSInterop.Mode = JSRuntimeMode.Loose;
@@ -31,16 +29,16 @@ public sealed class EditTournamentLogoModalTests : IDisposable
 
     public void Dispose() => _ctx.Dispose();
 
-    private IRenderedComponent<EditTournamentLogoModal> Render(
+    private IRenderedComponent<EditLogoModal> Render(
         Uri? currentLogoUrl = null,
         Func<Stream, string, string, IProgress<int>, CancellationToken, Task<ErrorOr<UploadedFileResponse>>>? onUpload = null,
-        Func<TournamentLogoInput?, CancellationToken, Task<ErrorOr<Success>>>? onSubmit = null,
+        Func<UploadedFileResponse?, CancellationToken, Task<ErrorOr<Success>>>? onSubmit = null,
         Action? onSaved = null,
         Action? onClose = null)
-        => _ctx.Render<EditTournamentLogoModal>(p =>
+        => _ctx.Render<EditLogoModal>(p =>
         {
             p.Add(x => x.IsOpen, true);
-            p.Add(x => x.TournamentName, "Spring Open");
+            p.Add(x => x.OwnerName, "Spring Open");
             p.Add(x => x.CurrentLogoUrl, currentLogoUrl);
             p.Add(x => x.OnUploadRequestedAsync, onUpload ?? DefaultUpload);
             p.Add(x => x.OnSubmitRequestedAsync, onSubmit ?? ((_, _) => Task.FromResult<ErrorOr<Success>>(Result.Success)));
@@ -55,7 +53,7 @@ public sealed class EditTournamentLogoModalTests : IDisposable
             contentType: "image/png",
             sizeInBytes: 4096));
 
-    private static async Task UploadFileAsync(IRenderedComponent<EditTournamentLogoModal> cut)
+    private static async Task UploadFileAsync(IRenderedComponent<EditLogoModal> cut)
     {
         var input = cut.FindComponent<FileUpload>().FindComponent<InputFile>();
         await cut.InvokeAsync(() => input.UploadFiles(
@@ -63,14 +61,14 @@ public sealed class EditTournamentLogoModalTests : IDisposable
         await cut.WaitForAssertionAsync(() => cut.FindAll(".neba-file-upload-item-status--success").Count.ShouldBe(1));
     }
 
-    private static AngleSharp.Dom.IElement SaveButton(IRenderedComponent<EditTournamentLogoModal> cut)
+    private static AngleSharp.Dom.IElement SaveButton(IRenderedComponent<EditLogoModal> cut)
         => cut.Find("button.neba-btn-primary");
 
-    private static AngleSharp.Dom.IElement CancelButton(IRenderedComponent<EditTournamentLogoModal> cut)
+    private static AngleSharp.Dom.IElement CancelButton(IRenderedComponent<EditLogoModal> cut)
         => cut.FindAll("button").First(b => b.TextContent.Trim() == "Cancel");
 
-    [Fact(DisplayName = "Should show the tournament name in the header")]
-    public void Render_ShouldShowTournamentName()
+    [Fact(DisplayName = "Should show the owner name in the header")]
+    public void Render_ShouldShowOwnerName()
     {
         // Arrange & Act
         var cut = Render(CurrentLogo);
@@ -118,7 +116,7 @@ public sealed class EditTournamentLogoModalTests : IDisposable
     {
         // Arrange
         var submitted = false;
-        TournamentLogoInput? captured = new() { Container = "x", Path = "x", ContentType = "x", SizeInBytes = 1 };
+        UploadedFileResponse? captured = UploadedFileResponseFactory.Create();
         var saved = 0;
 
         var cut = Render(
@@ -147,7 +145,7 @@ public sealed class EditTournamentLogoModalTests : IDisposable
     public async Task Save_ShouldSubmitUploadedLogo_WhenReplacementUploaded()
     {
         // Arrange
-        TournamentLogoInput? captured = null;
+        UploadedFileResponse? captured = null;
         var cut = Render(
             CurrentLogo,
             onSubmit: (logo, _) =>

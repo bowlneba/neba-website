@@ -963,7 +963,7 @@ tournamentType: TournamentType.Doubles, logoUrl: null));
         var cut = _ctx.Render<TournamentDetail>(p => p.Add(x => x.Id, TournamentDetailResponseFactory.ValidId));
 
         // Assert
-        cut.FindAll("button.tournament-logo-edit").ShouldBeEmpty();
+        cut.FindAll("button.logo-edit-button").ShouldBeEmpty();
     }
 
     [Fact(DisplayName = "Should open the edit-logo modal when an authorized caller clicks the edit-logo button")]
@@ -980,7 +980,7 @@ tournamentType: TournamentType.Doubles, logoUrl: null));
         var cut = _ctx.Render<TournamentDetail>(p => p.Add(x => x.Id, TournamentDetailResponseFactory.ValidId));
 
         // Act
-        await cut.Find("button.tournament-logo-edit").ClickAsync();
+        await cut.Find("button.logo-edit-button").ClickAsync();
 
         // Assert
         cut.Find(".elm-subtitle").TextContent.Trim().ShouldBe("Spring Open");
@@ -1014,7 +1014,7 @@ tournamentType: TournamentType.Doubles, logoUrl: null));
             .ReturnsAsync(editResponse);
 
         var cut = _ctx.Render<TournamentDetail>(p => p.Add(x => x.Id, TournamentDetailResponseFactory.ValidId));
-        await cut.Find("button.tournament-logo-edit").ClickAsync();
+        await cut.Find("button.logo-edit-button").ClickAsync();
         await cut.Find(".elm-link-danger").ClickAsync();
 
         // Act

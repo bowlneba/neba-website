@@ -263,7 +263,7 @@ else
 
                     <div class="td-hero__tile">
                         <img src="@_model.DisplayLogoSrc" alt="@(_model.Name + " logo")" class="td-hero__logo-img" />
-                        <TournamentLogoEditButton TournamentName="@_model.Name" ShowLabel="true"
+                        <LogoEditButton Policy="@Permissions.EditTournamentLogo.PolicyName" OwnerName="@_model.Name" ShowLabel="true"
                                                   OnClick="@(() => _isEditLogoOpen = true)" />
                     </div>
 

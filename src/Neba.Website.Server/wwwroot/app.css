@@ -233,3 +233,38 @@ h1:focus {
         padding-top: 5.5rem !important;
     }
 }
+
+.logo-edit-button {
+    position: absolute;
+    right: 0.5rem;
+    bottom: 0.5rem;
+    min-width: 44px;
+    min-height: 44px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.375rem;
+    padding: 0 0.625rem;
+    border: 0;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.96);
+    color: var(--neba-blue-brand);
+    font-size: 0.8125rem;
+    font-weight: 600;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.35);
+    cursor: pointer;
+}
+
+.logo-edit-button:hover {
+    background: #fff;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.4);
+}
+
+.logo-edit-button:focus-visible {
+    outline: 3px solid var(--tournaments-gold-light);
+    outline-offset: 2px;
+}
+
+.logo-edit-button .material-symbols-outlined {
+    font-size: 1.125rem;
+}

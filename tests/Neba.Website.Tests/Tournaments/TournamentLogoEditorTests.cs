@@ -1,17 +1,22 @@
 using Bunit;
 
 using Microsoft.AspNetCore.Components;
+using Microsoft.AspNetCore.Components.Forms;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging.Abstractions;
 
 using Neba.Api.Contracts.Tournaments;
 using Neba.Api.Contracts.Tournaments.EditTournamentLogo;
+using Neba.Api.Contracts.Uploads;
 using Neba.TestFactory.Attributes;
+using Neba.TestFactory.Uploads;
 using Neba.Website.Server.Clock;
+using Neba.Website.Server.Components;
 using Neba.Website.Server.Notifications;
 using Neba.Website.Server.Services;
 using Neba.Website.Server.Tournaments;
 
+using Refit;
 using Refit.Testing;
 
 namespace Neba.Website.Tests.Tournaments;
@@ -88,6 +93,53 @@ public sealed class TournamentLogoEditorTests : IDisposable
         savedCount.ShouldBe(1);
         _toastService.Current.ShouldNotBeNull();
         _toastService.Current.Title.ShouldBe("Logo Saved");
+    }
+
+    [Fact(DisplayName = "Should map the uploaded file to the tournament logo input when a new logo is saved")]
+    public async Task Save_ShouldMapUploadToTournamentLogoInput_WhenLogoUploaded()
+    {
+        // Arrange
+        using var uploadResponse = new StubApiResponse<UploadedFileResponse>
+        {
+            IsSuccessStatusCode = true,
+            StatusCode = System.Net.HttpStatusCode.OK,
+            Content = UploadedFileResponseFactory.Create(
+                container: "bowlneba-public",
+                path: "tournaments/logo/new.png",
+                contentType: "image/png",
+                sizeInBytes: 4096)
+        };
+        _tournamentsApi
+            .Setup(x => x.UploadTournamentLogoAsync(It.IsAny<StreamPart>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(uploadResponse);
+
+        EditTournamentLogoRequest? captured = null;
+        using var editResponse = new StubApiResponse<object>
+        {
+            IsSuccessStatusCode = true,
+            StatusCode = System.Net.HttpStatusCode.NoContent
+        };
+        _tournamentsApi
+            .Setup(x => x.EditTournamentLogoAsync(TournamentId, It.IsAny<EditTournamentLogoRequest>(), It.IsAny<CancellationToken>()))
+            .Callback<string, EditTournamentLogoRequest, CancellationToken>((_, r, _) => captured = r)
+            .ReturnsAsync(editResponse);
+
+        var cut = RenderEditor(() => { });
+        var input = cut.FindComponent<FileUpload>().FindComponent<InputFile>();
+        await cut.InvokeAsync(() => input.UploadFiles(
+            InputFileContent.CreateFromBinary([1, 2, 3], "new.png", contentType: "image/png")));
+        await cut.WaitForAssertionAsync(() => cut.FindAll(".neba-file-upload-item-status--success").Count.ShouldBe(1));
+
+        // Act
+        await cut.Find("button.neba-btn-primary").ClickAsync();
+
+        // Assert
+        captured.ShouldNotBeNull();
+        var logo = captured.Input.Logo.ShouldNotBeNull();
+        logo.Container.ShouldBe("bowlneba-public");
+        logo.Path.ShouldBe("tournaments/logo/new.png");
+        logo.ContentType.ShouldBe("image/png");
+        logo.SizeInBytes.ShouldBe(4096);
     }
 
     [Fact(DisplayName = "Should neither notify the host nor show a toast when the save fails")]
