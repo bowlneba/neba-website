@@ -1,8 +1,8 @@
 using FastEndpoints;
 
 using Neba.Api.Features.Series.ListSeries;
-using Neba.Api.Messaging;
 using Neba.Api.Features.Tournaments.Domain;
+using Neba.Api.Messaging;
 using Neba.TestFactory.Attributes;
 using Neba.TestFactory.Series;
 
