@@ -54,3 +54,7 @@ Return:
 2. Decisions you made and why (one line each).
 3. Hand-offs: for `efcore` (entity shape), for `test-writer` (test list), for `blazor-ui` (Refit method and response shape), for the caller (docs, e2e mock).
 4. The commands you ran and their results. Say what you could not run.
+
+## Review mode
+
+When the caller asks for a review (for example from `pull-request-prep`), change nothing. Review only the diff you are given. Read the sections of `.github/instructions/pull-request-review.instructions.md` for your layer: "Architecture & Feature Boundaries" (Domain, Handlers, Infrastructure), "API Layer", "Contracts Layer", "REST API Conventions", "SmartEnum Serialization", and the Review Checklist items for API endpoints, Contracts and REST. Do not read the whole file. Report findings only, one per line: `path:line | rule | Blocker, Should Fix or Suggestion | one-line fix`. Do not list items that passed. End with `Not checked:`.

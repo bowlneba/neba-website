@@ -127,3 +127,24 @@ _mockApi.Setup(x => x.ListActiveSponsorsAsync(It.IsAny<CancellationToken>())).Re
 - Pass the stub straight to `.ReturnsAsync(response)`. Do not add `.Object`: the stub is the `IApiResponse<T>`, not a wrapper.
 - `Task<T>` is invariant. When a lambda returns `Task.FromResult(response)`, the type is `Task<StubApiResponse<T>>`. Write `Task.FromResult<IApiResponse<T>>(response)` or declare `IApiResponse<T> response = ...`. In that case use `#pragma warning disable CA2000` with a reason instead of `using var`, because `using` next to `Task.FromResult` trips `CA2025`.
 - Mock only the Refit interface. The response it returns is the stub.
+
+### E2E: when to add a Playwright spec
+
+Playwright covers what bUnit cannot: the real browser and the real HTTP stack together. The rule that a new routable page needs a spec is in `.github/instructions/pull-request-review.instructions.md` ("E2E Coverage for New UI Features").
+
+| Add a Playwright test when | Skip it when |
+|---|---|
+| A new page renders API data (check the data flow end to end) | The logic is inside one component: use bUnit |
+| A link changes the URL (navigation between pages) | The state is pure UI inside one component: use bUnit |
+| A URL query parameter drives the page | It is data transformation or business logic: use a unit test |
+| A modal or overlay opens and closes (button or backdrop) | The page is static, with no API call or interaction |
+| An API 404 triggers a redirect or a not-found state | An existing Playwright test already covers the page |
+| State survives navigation (the season stays selected across pages) | |
+| Keyboard access for an interactive widget | |
+
+When you add a spec:
+
+- Add a mock route in `tests/e2e/mock-api/mock-api-server.ts` for every new API route the page calls.
+- Add the spec under `tests/e2e/`. Group by page, and put closely related pages in one file.
+- Anchor structural assertions on stable CSS class selectors (BEM, `.block__element--modifier`), not on text.
+- Wait with `page.waitForSelector()` in `beforeEach` for data-driven content. Never sleep.

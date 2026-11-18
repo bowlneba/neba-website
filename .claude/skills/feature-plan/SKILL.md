@@ -182,7 +182,7 @@ Same shape as Step 7, but for the Blazor side. The screens/actions/data needs we
 - State/dirty-tracking needs — call out explicitly if `DirtyFormGuard` applies (per CLAUDE.md's "Dirty Form Guard" learning) for any new data-entry form.
 - `<PageTitle>` requirement and render mode, per CLAUDE.md's "Page Titles" learning.
 - Any FAB / list-page entry point needed, per CLAUDE.md's "List Page Add New Pattern", if this feature adds a creatable list.
-- Playwright/bUnit test needs, using the decision table from `pull-request-prep` (bUnit for internal component logic, Playwright for real browser + HTTP flows).
+- Playwright/bUnit test needs, using the decision table in `docs/learnings/testing.md` ("E2E: when to add a Playwright spec"): bUnit for internal component logic, Playwright for real browser + HTTP flows.
 - If the feature has no UI surface at all, state that explicitly here rather than fabricating one.
 
 Ask `blazor-ui` to draft the pages and components, and `test-writer` for the bUnit and e2e test list, including `tests/e2e/mock-api/mock-api-server.ts` changes for any new Contracts field. Mockups (Step 10) stay in the main session. If the `dotnet-blazor` plugin skills (`plan-ui-change`, `author-component`, `coordinate-components`, `fetch-and-send-data`) or `docs/learnings/blazor-ui.md` are relevant to a decision in this draft, apply them rather than guessing. Where they disagree, the repo learnings win.

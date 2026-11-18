@@ -64,3 +64,7 @@ Build with `dotnet build`. Run the configuration and handler tests for the featu
 ## Report
 
 List files changed, the migration name and what it does to existing rows, the commands you ran and their results, and anything you could not check.
+
+## Review mode
+
+When the caller asks for a review (for example from `pull-request-prep`), change nothing and run no `migrations add`. Review only the diff you are given. Read the "Domain", "Handlers" and "Infrastructure" subsections of `.github/instructions/pull-request-review.instructions.md` (under "Architecture & Feature Boundaries"). Check configuration, migration data safety, query shape, collection navigations and the `ILike` escape. Report findings only, one per line: `path:line | rule | Blocker, Should Fix or Suggestion | one-line fix`. Do not list items that passed. End with `Not checked:`.

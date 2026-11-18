@@ -61,3 +61,7 @@ Check in dependency order: `postgres`, then the migration resources, then `api`,
 2. For a failure: the resource, the evidence (log line or trace id), and your read of the cause. Say which part is a guess.
 3. For an AppHost edit: files changed and the build result.
 4. What you could not check, such as Docker not running.
+
+## Review mode
+
+When the caller asks for a review (for example from `pull-request-prep`), change nothing and start nothing. Review only the AppHost diff you are given: resource definitions match the style of the existing ones, Azure resources stay inside the publish-mode block, an integration version matches the `Aspire.AppHost.Sdk` version in the csproj, and no persistent container is added without a reason. `.github/instructions/pull-request-review.instructions.md` has no AppHost section, so rely on CLAUDE.md and this file. Report findings only, one per line: `path:line | rule | Blocker, Should Fix or Suggestion | one-line fix`. Do not list items that passed. End with `Not checked:`.

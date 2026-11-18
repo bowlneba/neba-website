@@ -45,7 +45,7 @@ For component design, state flow, JS interop, prerendering and auth, invoke the 
 
 ## Report
 
-In review mode, list violations as `path:line | rule | severity | fix`, or say none found. Put the tests the change needs under hand-offs. Then:
+In review mode, change nothing. Review only the diff you are given. Besides the learnings above, read the "Blazor" subsection of `.github/instructions/pull-request-review.instructions.md` (under "Architecture & Feature Boundaries"), "E2E Coverage for New UI Features" and the "User Help Documentation" section. List violations as `path:line | rule | Blocker, Should Fix or Suggestion | fix`, or say none found. Do not list items that passed. Put the tests the change needs under hand-offs, and end with `Not checked:`. Then:
 
 1. Files added or changed (none, in review mode).
 2. For each new page: route, `PageTitle`, render mode, and whether it uses `DirtyFormGuard`.

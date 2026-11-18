@@ -31,7 +31,7 @@ Follow the preloaded `convention-review` skill: step 2 (detection commands), the
 
 If the target is a commit or branch that is not checked out, `rg` sees the wrong files. Use `git grep -n <pattern> <rev> -- <paths>` and `git show <rev>:<path>`, or say under `Not checked:` which rules you could not run. For rules that need whole-file content (page title, render mode, traits, AAA comments), read each changed file in full; do not assume an edited file was already correct.
 
-Where a rule in `CLAUDE.md` or `docs/learnings` disagrees with a generic .NET habit, the repo rule wins.
+Also read the "Code Style & Conventions" and "Common Anti-Patterns to Flag" sections of `.github/instructions/pull-request-review.instructions.md` (CLAUDE.md says to read that file before reviewing; read these two sections, not all of it). Where a rule in `CLAUDE.md` or `docs/learnings` disagrees with a generic .NET habit, the repo rule wins.
 
 ## Report format
 

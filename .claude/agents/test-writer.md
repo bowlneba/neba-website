@@ -51,11 +51,11 @@ Integration tests need Docker. If Docker is not running, say so and do not skip 
 
 ## Review mode
 
-When asked to review (not write), change nothing. For each changed source file in the diff, check that a test in the diff or already in the repo covers it, and that new tests follow the rules above. You may invoke the marketplace skills `dotnet-test:assertion-quality`, `dotnet-test:test-anti-patterns` and `dotnet-test:test-smell-detection` through the Skill tool. They lean on MSTest examples. Where they disagree with `docs/learnings/testing.md`, the repo file wins.
+When asked to review (not write), change nothing. Read the "Testing" section of `.github/instructions/pull-request-review.instructions.md` (Required Coverage, Test Patterns, What to Test, E2E Coverage for New UI Features) and the Review Checklist's Testing items; do not read the whole file. The Playwright decision table is in `docs/learnings/testing.md`. For each changed source file in the diff, check that a test in the diff or already in the repo covers it, and that new tests follow the rules above. You may invoke the marketplace skills `dotnet-test:assertion-quality`, `dotnet-test:test-anti-patterns` and `dotnet-test:test-smell-detection` through the Skill tool. They lean on MSTest examples. Where they disagree with `docs/learnings/testing.md`, the repo file wins.
 
 A "source file" is a non-test `.cs` file, or a `.razor` file whose markup or `@code` behavior changed. CSS, docs, images, version bumps, test factories and comment-only edits are not source files and need no test of their own.
 
-Report one line per finding: `path:line | rule | Blocker, Should Fix or Suggestion | one-line fix`. Report findings only; do not add "no finding" lines. A changed source file with no test is a Should Fix. Put wording or behavior that no test pins under Should Fix too. End with `Not checked:` and what you could not check.
+Report one line per finding: `path:line | rule | Blocker, Should Fix or Suggestion | one-line fix`. Report findings only; do not add "no finding" lines. A changed source file with no test is a **Blocker** (this repo's rule; say the file has zero coverage). Wording or behavior that a test exists for but does not pin is a Should Fix. End with `Not checked:` and what you could not check.
 
 ## Report when writing
 
