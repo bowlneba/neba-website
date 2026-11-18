@@ -227,15 +227,21 @@ internal sealed class ApiExecutor(
         // 4xx: the server has already produced a human-readable reason (validation failure,
         // conflict, etc.) - surface it instead of a bare status code. 5xx stays generic so we
         // never leak internal details to the user.
-        var detail = statusCode is >= 400 and < 500 && response.HasResponseError(out var responseError)
+        var (detail, fieldErrors) = statusCode is >= 400 and < 500 && response.HasResponseError(out var responseError)
             ? TryExtractErrorDetail(responseError.Content)
-            : null;
+            : (null, []);
 
         if (detail is not null)
         {
+            // The flattened description stays the same, so callers that only show it are unaffected.
+            // Callers that need to put each message next to its field read the named errors from the metadata.
+            var metadata = fieldErrors.Count > 0
+                ? new Dictionary<string, object> { [ApiFieldErrorExtensions.MetadataKey] = fieldErrors }
+                : null;
+
             return statusCode == StatusCodes.Status409Conflict
-                ? Error.Conflict($"{apiName}.{operationName}.Conflict", detail)
-                : Error.Validation($"{apiName}.{operationName}.Validation", detail);
+                ? Error.Conflict($"{apiName}.{operationName}.Conflict", detail, metadata)
+                : Error.Validation($"{apiName}.{operationName}.Validation", detail, metadata);
         }
 
         return Error.Failure(
@@ -275,46 +281,49 @@ internal sealed class ApiExecutor(
         );
 
         var detail = ex is ApiException apiException && httpStatusCode is >= 400 and < 500
-            ? TryExtractErrorDetail(apiException.Content)
+            ? TryExtractErrorDetail(apiException.Content).Detail
             : null;
 
         return Error.Failure($"{apiName}.{operationName}.Exception", detail ?? ex.Message);
     }
 
     /// <summary>
-    /// Pulls a human-readable message out of the API's RFC 9457 <c>ProblemDetails</c> body
+    /// Pulls a human-readable message, and the named errors, out of the API's RFC 9457 <c>ProblemDetails</c> body
     /// (<c>{ "detail": ..., "errors": [{ "name": ..., "reason": "..." }] }</c> - FastEndpoints'
-    /// <c>ErrOpts.UseProblemDetails()</c>), preferring the flattened validation/conflict reasons over the
-    /// generic "detail" text. Returns null on anything that doesn't parse, so callers can fall back to a
+    /// <c>ErrOpts.UseProblemDetails()</c>). The message prefers the flattened validation/conflict reasons over the
+    /// generic "detail" text. Returns a null message on anything that doesn't parse, so callers can fall back to a
     /// generic message instead of showing raw JSON.
     /// </summary>
-    private string? TryExtractErrorDetail(string? content)
+    private (string? Detail, IReadOnlyList<ApiFieldError> FieldErrors) TryExtractErrorDetail(string? content)
     {
         if (string.IsNullOrWhiteSpace(content))
         {
-            return null;
+            return (null, []);
         }
 
         try
         {
             var payload = JsonSerializer.Deserialize<ProblemDetailsPayload>(content, JsonSerializerOptions.Web);
 
-            var reasons = payload?.Errors
-                .Select(error => error.Reason)
-                .Where(reason => !string.IsNullOrWhiteSpace(reason))
-                .ToList();
+            var errors = payload?.Errors
+                .Where(error => !string.IsNullOrWhiteSpace(error.Reason))
+                .ToList() ?? [];
 
-            if (reasons is { Count: > 0 })
+            IReadOnlyList<ApiFieldError> fieldErrors = [.. errors
+                .Where(error => !string.IsNullOrWhiteSpace(error.Name))
+                .Select(error => new ApiFieldError(error.Name, error.Reason))];
+
+            if (errors.Count > 0)
             {
-                return string.Join(" ", reasons);
+                return (string.Join(" ", errors.Select(error => error.Reason)), fieldErrors);
             }
 
-            return string.IsNullOrWhiteSpace(payload?.Detail) ? null : payload.Detail;
+            return (string.IsNullOrWhiteSpace(payload?.Detail) ? null : payload.Detail, fieldErrors);
         }
         catch (JsonException ex)
         {
             logger.LogErrorDetailUnparseable(ex);
-            return null;
+            return (null, []);
         }
     }
 
@@ -327,6 +336,8 @@ internal sealed class ApiExecutor(
 
     private sealed class ProblemDetailsError
     {
+        public string Name { get; init; } = string.Empty;
+
         public string Reason { get; init; } = string.Empty;
     }
 
