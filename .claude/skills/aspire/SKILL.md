@@ -67,7 +67,13 @@ Before making code changes, inspect the app state:
 
 Use `aspire docs search` to find integration documentation, then `aspire docs get` to read the full guide. Use `aspire add` to add the integration package to the AppHost.
 
+Pick the integration version that matches the `Aspire.AppHost.Sdk` version in the AppHost project. Some versions carry a preview suffix. Read the integration's docs (and the pages they link) before you write the resource.
+
 After adding an integration, restart the app with `aspire start` for the new resource to take effect.
+
+### Updating the AppHost
+
+`aspire update` moves the AppHost and the Aspire packages in referenced projects to the latest version. Other packages may need a manual bump. With the user's consent, `dotnet-outdated` helps: `dotnet tool install --global dotnet-outdated-tool`.
 
 ### Using resource MCP tools
 
@@ -86,8 +92,8 @@ aspire mcp call <resource> <tool> --input '{"key":"value"}'   # invoke a tool
 - Use `--isolated` when working in a worktree.
 - **Avoid persistent containers** early in development to prevent state management issues.
 - **Never install the Aspire workload** — it is obsolete.
-- Prefer `aspire.dev` and `learn.microsoft.com/dotnet/aspire` for official documentation.
+- Prefer official documentation: `aspire.dev`, `learn.microsoft.com/dotnet/aspire`, and `nuget.org` for integration package details.
 
-## Playwright CLI
+## Playwright
 
-If configured, use Playwright CLI for functional testing of resources. Get endpoints via `aspire describe`. Run `playwright-cli --help` for available commands.
+The Playwright MCP server is configured in this repo, and the `playwright-cli` skill covers the CLI. Use either to check resources in a browser. Get endpoints via `aspire describe`.
