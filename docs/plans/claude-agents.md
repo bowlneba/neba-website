@@ -24,10 +24,10 @@ Source: Anton DevTips email "Claude doesn't respect your architecture" (2026-11-
 
 - A **skill** is a procedure. It runs in the main session and loads only when needed.
 - An **agent** (`.claude/agents/*.md`) is a specialist with its own context, tools and model. It starts cold, so its file must say which docs and skills to read first.
-- **I believe a subagent cannot start another subagent**, so `/feature-plan` and `/pull-request-prep` (main session) do the coordinating and agents only do their layer. This needs checking: the `dotnet-test` plugin's `test-engineer` agent lists other agents in an `agents:` field, which may be a different tool's format or may mean nesting works. If nesting works, an `efcore`-then-`backend-api` handoff could live in an agent, but keep the main-session design anyway; it is easier to see and to stop.
+- **Subagent nesting (docs, 2026-11-18; not yet tested here):** the Claude Code docs say a subagent can start subagents (default depth three, `CLAUDE_CODE_MAX_SUBAGENT_SPAWN_DEPTH` changes it), and there is no `agents:` frontmatter field, so the `dotnet-test` `agents:` list is another tool's format. Keep the main-session design anyway; it is easier to see and to stop.
 - The agent files list the project docs to read and the one real example file to copy. They do not repeat rules that CLAUDE.md or `docs/learnings/` already hold.
 
-To verify before building: that the agent frontmatter supports a `skills` field to preload skills, and the exact `tools` and `model` syntax. Check the current docs (use the `claude-code-guide` agent).
+Verified 2026-11-18 against the docs (read through a summarizing fetch): `name` and `description` are required. `tools` is a comma list (`Read, Grep, Glob, Bash`); `disallowedTools` removes tools. `tools` cannot limit Bash to given commands; that takes a `PreToolUse` hook in the agent's `hooks:`. `skills` preloads full skill content (it does not restrict skills). `model` takes `sonnet`, `opus`, `haiku`, `fable`, a full ID, or `inherit`. Subagents load CLAUDE.md unless `omitClaudeMd: true`. **Not documented:** whether `skills` accepts plugin-namespaced names such as `dotnet-test:assertion-quality`. Test that before the `test-writer` agent relies on it.
 
 ## Phase 0: Refresh the dotnet/skills marketplace
 
