@@ -1,0 +1,299 @@
+@using Microsoft.AspNetCore.Components.Forms
+@using Neba.Api.Contracts.BowlingCenters
+@using Neba.Api.Contracts.BowlingCenters.ListBowlingCenters
+@using Neba.Api.Contracts.Series
+@using Neba.Api.Contracts.Series.CreateSeries
+@using Neba.Api.Contracts.Series.EditSeries
+@using Neba.Api.Contracts.Uploads
+@using Neba.Website.Server.Services
+@implements IDisposable
+
+@inject ApiExecutor ApiExecutor
+@inject ISeriesApi SeriesApi
+@inject IBowlingCentersApi BowlingCentersApi
+@inject SeriesTournamentOptionsLoader OptionsLoader
+@inject NavigationManager NavigationManager
+@inject ToastService ToastService
+
+<DirtyFormGuard IsDirty="@_isDirty" />
+
+<div class="neba-card">
+    <EditForm EditContext="_editContext" FormName="SeriesForm" OnValidSubmit="HandleSaveAsync">
+        <DataAnnotationsValidator />
+        <div class="neba-space-y-6">
+
+            @if (IsLocked)
+            {
+                <NebaAlert Severity="NotifySeverity.Warning" Title="This Series is locked" Message="Processing has begun for this Series. Its Stages and whether it has a Finale are fixed. The name, the logo, and the Finale's date, time and center can still change." />
+            }
+
+            @if (_generalErrors.Count > 0)
+            {
+                <NebaAlert Severity="NotifySeverity.Error" Title="Unable to save the Series" Message="@string.Join(" ", _generalErrors)" Dismissible="true"
+                           OnDismiss="@(() => _generalErrors = [])" />
+            }
+
+            <div class="series-editor__field">
+                <FormLabel TargetId="series-name" For="@(() => Model.Name)">Name</FormLabel>
+                <InputText id="series-name" @bind-Value="Model.Name" class="neba-input" aria-describedby="series-name-error" />
+                <NebaValidationMessage For="@(() => Model.Name)" Id="series-name-error" Class="block text-sm text-red-600 mt-1" />
+            </div>
+
+            @if (IsCreate)
+            {
+                <div class="series-editor__field">
+                    <FormLabel TargetId="series-season" For="@(() => Model.SeasonId)">Season</FormLabel>
+                    <select id="series-season" class="neba-select" value="@Model.SeasonId" @onchange="HandleSeasonChanging" aria-describedby="series-season-hint">
+                        @foreach (var season in Seasons)
+                        {
+                            <option value="@season.Id">@season.Label</option>
+                        }
+                    </select>
+                    <p id="series-season-hint" class="series-editor__hint">Fixed after the Series is created. Tournaments come from this season.</p>
+                </div>
+            }
+            else
+            {
+                <div class="series-editor__field">
+                    <span class="series-editor__label">Season</span>
+                    <span class="series-editor__readonly">@SeasonLabel</span>
+                </div>
+            }
+
+            <section class="series-editor__logo">
+                <span class="series-editor__label">Logo</span>
+                @if (Model.LogoUrl is not null)
+                {
+                    <div class="series-editor__logo-current">
+                        <SeriesLogoTile LogoUrl="@Model.LogoUrl" Name="@Model.Name" Size="SeriesLogoTile.Large" />
+                        <button type="button" class="neba-btn neba-btn-secondary" @onclick="RemoveLogo">Remove logo</button>
+                    </div>
+                }
+                else
+                {
+                    <FileUpload MaxFiles="1" Accept="image/*" MaxFileSizeBytes="@(5 * 1024 * 1024)" Label="Upload a logo"
+                                OnUploadRequestedAsync="UploadLogoAsync"
+                                OnFileUploaded="HandleLogoUploaded"
+                                OnFileRemoved="@(_ => RemoveLogo())"
+                                OnBusyChanged="@(busy => _isLogoUploading = busy)" />
+                }
+                <p class="series-editor__hint">Shown on the Series list and detail pages. It can change even after processing begins.</p>
+            </section>
+
+            <SeriesStageGrid Rows="@Model.Stages"
+                             Options="@_options"
+                             HeldElsewhere="@_heldElsewhere"
+                             ReadOnly="@IsLocked"
+                             OnChanged="MarkDirty" />
+
+            <SeriesFinaleSection Model="@Model"
+                                 BowlingCenters="@_bowlingCenters"
+                                 CurrentHost="@FinaleHost"
+                                 IsLocked="@IsLocked"
+                                 OnChanged="MarkDirty" />
+
+            <div class="series-editor__actions">
+                <button type="button" class="neba-btn neba-btn-secondary" @onclick="HandleCancel">Cancel</button>
+                <button type="submit" class="neba-btn neba-btn-primary" disabled="@(_isSubmitting || _isLogoUploading)">@SaveLabel</button>
+            </div>
+        </div>
+    </EditForm>
+</div>
+
+<ConfirmActionModal IsOpen="@(_pendingSeasonId is not null)"
+                    Title="Change season?"
+                    Message="Tournaments belong to one season, so changing it clears the Stages you've added."
+                    ConfirmLabel="Change and clear Stages"
+                    BusyLabel="Changing..."
+                    CancelLabel="Keep season"
+                    IsBusy="false"
+                    OnConfirm="ConfirmSeasonChangeAsync"
+                    OnCancel="@(() => _pendingSeasonId = null)" />
+
+@code {
+    [Parameter, EditorRequired]
+    public SeriesFormModel Model { get; set; } = default!;
+
+    [Parameter, EditorRequired]
+    public bool IsCreate { get; set; }
+
+    [Parameter, EditorRequired]
+    public bool IsLocked { get; set; }
+
+    /// <summary>Create only.</summary>
+    [Parameter]
+    public IReadOnlyList<SeasonOption> Seasons { get; set; } = [];
+
+    /// <summary>Edit only.</summary>
+    [Parameter]
+    public string? SeriesId { get; set; }
+
+    /// <summary>Edit only.</summary>
+    [Parameter]
+    public string SeasonLabel { get; set; } = string.Empty;
+
+    /// <summary>Edit only: the Finale's saved host text, for a center that has left the Open list.</summary>
+    [Parameter]
+    public string? FinaleHost { get; set; }
+
+    private EditContext _editContext = default!;
+    private bool _isDirty;
+    private bool _isSubmitting;
+    private IReadOnlyList<SeriesTournamentOption> _options = [];
+    private IReadOnlyCollection<BowlingCenterSummaryResponse> _bowlingCenters = [];
+    private int _heldElsewhere;
+    private List<string> _generalErrors = [];
+    private string? _pendingSeasonId;
+    private bool _isLogoUploading;
+
+    private Task<ErrorOr.ErrorOr<UploadedFileResponse>> UploadLogoAsync(
+        Stream stream, string fileName, string contentType, IProgress<int> progress, CancellationToken ct)
+        => ApiExecutor.ExecuteAsync("SeriesApi", "UploadSeriesLogo",
+            c => SeriesApi.UploadSeriesLogoAsync(new Refit.StreamPart(stream, fileName, contentType), c), ct);
+
+    private void HandleLogoUploaded(UploadedFileResponse response)
+    {
+        Model.Logo = new SeriesLogoInput
+        {
+            Container = response.Container,
+            Path = response.Path,
+            ContentType = response.ContentType,
+            SizeInBytes = response.SizeInBytes,
+        };
+        Model.LogoUrl = response.Url;
+        MarkDirty();
+    }
+
+    private void RemoveLogo()
+    {
+        Model.Logo = null;
+        Model.LogoUrl = null;
+        MarkDirty();
+    }
+
+    private string SaveLabel => IsCreate ? "Create Series" : "Save changes";
+
+    protected override async Task OnInitializedAsync()
+    {
+        _editContext = new EditContext(Model);
+        _editContext.OnFieldChanged += HandleFieldChanged;
+        await LoadOptionsAsync();
+        await LoadBowlingCentersAsync();
+    }
+
+    public void Dispose() => _editContext.OnFieldChanged -= HandleFieldChanged;
+
+    private void HandleFieldChanged(object? sender, FieldChangedEventArgs e) => MarkDirty();
+
+    private void MarkDirty() => _isDirty = true;
+
+    // The Finale's host picker, loaded the way EditTournament loads its picker.
+    private async Task LoadBowlingCentersAsync()
+    {
+        var result = await ApiExecutor.ExecuteAsync("BowlingCenters", "ListBowlingCenters", BowlingCentersApi.ListBowlingCentersAsync);
+        if (result.IsError)
+        {
+            _generalErrors = [result.FirstError.Description];
+            return;
+        }
+
+        _bowlingCenters = result.Value.Items;
+    }
+
+    private async Task LoadOptionsAsync()
+    {
+        // Loaded even when locked: the read-only grid uses the options for tournament labels and team sizes.
+        if (string.IsNullOrEmpty(Model.SeasonId))
+        {
+            _options = [];
+            return;
+        }
+
+        var result = await OptionsLoader.LoadAsync(Model.SeasonId, SeriesId);
+        if (result.IsError)
+        {
+            _generalErrors = [result.FirstError.Description];
+            return;
+        }
+
+        (_options, _heldElsewhere) = result.Value;
+    }
+
+    private async Task HandleSeasonChanging(ChangeEventArgs e)
+    {
+        var seasonId = e.Value?.ToString();
+        if (seasonId == Model.SeasonId)
+        {
+            return;
+        }
+
+        if (Model.Stages.Count > 0)
+        {
+            _pendingSeasonId = seasonId; // confirmation modal; the select re-renders with the old value
+            return;
+        }
+
+        Model.SeasonId = seasonId;
+        MarkDirty();
+        await LoadOptionsAsync();
+    }
+
+    private async Task ConfirmSeasonChangeAsync()
+    {
+        Model.SeasonId = _pendingSeasonId;
+        Model.Stages.Clear();
+        _pendingSeasonId = null;
+        MarkDirty();
+        await LoadOptionsAsync();
+    }
+
+    private async Task HandleSaveAsync()
+    {
+        _isSubmitting = true;
+        _generalErrors = [];
+
+        ErrorOr.ErrorOr<string> result;
+        if (IsCreate)
+        {
+            var request = new CreateSeriesRequest { Series = SeriesInputMapping.ToCreateInput(Model) };
+            var created = await ApiExecutor.ExecuteAsync("SeriesApi", "CreateSeries", ct => SeriesApi.CreateSeriesAsync(request, ct));
+            result = created.IsError ? created.Errors : created.Value.SeriesId;
+        }
+        else
+        {
+            var request = new EditSeriesRequest { Id = SeriesId!, Series = SeriesInputMapping.ToEditInput(Model) };
+            var edited = await ApiExecutor.ExecuteAsync("SeriesApi", "EditSeries", ct => SeriesApi.EditSeriesAsync(SeriesId!, request, ct));
+            result = edited.IsError ? edited.Errors : SeriesId!;
+        }
+
+        _isSubmitting = false;
+
+        if (result.IsError)
+        {
+            var fieldErrors = result.FirstError.GetFieldErrors();
+            _generalErrors = fieldErrors.Count == 0
+                ? [result.FirstError.Description]
+                : [.. SeriesInputMapping.ApplyFieldErrors(Model, fieldErrors)];
+
+            var rowsWithErrors = Model.Stages.Count(row => row.Errors.Count > 0);
+            if (rowsWithErrors > 0 && _generalErrors.Count == 0)
+            {
+                _generalErrors = [SeriesDisplay.RowsNeedChanges(rowsWithErrors)];
+            }
+
+            return;
+        }
+
+        _isDirty = false;
+        ToastService.Show(IsCreate ? "Series Created" : "Series Saved", "\"" + Model.Name.Trim() + "\" was saved.", NotifySeverity.Success);
+
+        // Same as EditTournament: let the guard see IsDirty=false before navigating.
+        StateHasChanged();
+        await Task.Yield();
+
+        NavigationManager.NavigateTo("/series/" + result.Value);
+    }
+
+    private void HandleCancel()
+        => NavigationManager.NavigateTo(IsCreate ? "/series" : "/series/" + SeriesId);
+}

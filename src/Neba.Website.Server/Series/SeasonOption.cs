@@ -2,8 +2,14 @@ using Neba.Api.Contracts.Seasons.ListSeasons;
 
 namespace Neba.Website.Server.Series;
 
-internal sealed record SeasonOption(string Id, string Label, DateOnly StartDate, DateOnly EndDate)
+/// <summary>A season the create page can pick.</summary>
+/// <param name="Id">The season ID.</param>
+/// <param name="Label">The picker text with the date range.</param>
+/// <param name="StartDate">The first day of the season.</param>
+/// <param name="EndDate">The last day of the season.</param>
+public sealed record SeasonOption(string Id, string Label, DateOnly StartDate, DateOnly EndDate)
 {
+    /// <summary>Builds the option for a season from the API.</summary>
     public static SeasonOption From(SeasonResponse season)
     {
         ArgumentNullException.ThrowIfNull(season);

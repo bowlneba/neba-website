@@ -1,0 +1,240 @@
+<div class="series-grid">
+    <p class="series-editor__label">Stages <small>(order must follow tournament dates: Qualifying, then Survivor, then Placement)</small></p>
+
+    <div class="series-grid__head" aria-hidden="true">
+        <span>#</span><span>Kind</span><span>Tournament</span><span>Advancing</span><span>Squad (Survivor only)</span><span></span>
+    </div>
+
+    <ol class="series-grid__rows">
+        @for (var index = 0; index < Rows.Count; index++)
+        {
+            var i = index;
+            var row = Rows[i];
+            var option = OptionFor(row);
+            var order = i + 1;
+
+            <li @key="row.RowKey" class="@RowClass(row)">
+                <span class="series-grid__order">@order</span>
+
+                @if (ReadOnly)
+                {
+                    <span class="series-grid__ro">@row.Kind</span>
+                    <span class="series-grid__ro series-grid__tournament">@(option?.Label ?? "—")</span>
+                    <span class="series-grid__ro">@ReadOnlyCount(row, option)</span>
+                    <span class="series-grid__ro series-grid__squad">@(SeriesDisplay.Squad(row.SquadDate, row.SquadStartTime) ?? "—")</span>
+                    <span></span>
+                }
+                else
+                {
+                    <div>
+                        <label class="series-grid__cell-label" for="@FieldId("kind", i)">Kind</label>
+                        <select id="@FieldId("kind", i)" class="neba-select" value="@row.Kind" @onchange="@(e => HandleKindChanged(row, e))">
+                            @foreach (var kind in StageKinds.All)
+                            {
+                                <option value="@kind">@kind</option>
+                            }
+                        </select>
+                    </div>
+
+                    <div class="series-grid__tournament">
+                        <label class="series-grid__cell-label" for="@FieldId("tournament", i)">Tournament</label>
+                        <select id="@FieldId("tournament", i)" class="neba-select" value="@row.TournamentId" @onchange="@(e => HandleTournamentChanged(row, e))">
+                            <option value="">Choose a tournament</option>
+                            @foreach (var choice in ChoicesFor(row))
+                            {
+                                <option value="@choice.Id">@choice.Label</option>
+                            }
+                        </select>
+                    </div>
+
+                    <div>
+                        @if (row.Kind == StageKinds.Placement)
+                        {
+                            <span class="series-grid__cell-label series-grid__cell-label--always">Advancing</span>
+                            <span class="series-grid__no-count">No count</span>
+                            <div class="series-editor__hint">Ranks by tournament position. Set the Finale below.</div>
+                        }
+                        else
+                        {
+                            <label class="series-grid__cell-label series-grid__cell-label--always" for="@FieldId("count", i)">Advancing</label>
+                            <input id="@FieldId("count", i)" type="number" min="1" class="neba-input" value="@row.AdvancingCount" @onchange="@(e => HandleCountChanged(row, e))" />
+                            @if (SeriesDisplay.TeamHint(row.Kind, row.AdvancingCount, option?.TeamSize ?? 1) is { } hint)
+                            {
+                                <div class="series-editor__hint">@hint.Primary<br />@hint.Secondary</div>
+                            }
+                        }
+                    </div>
+
+                    <div class="series-grid__squad">
+                        <span class="series-grid__cell-label">Squad</span>
+                        @if (row.Kind == StageKinds.Survivor)
+                        {
+                            <div class="series-grid__squad-inputs">
+                                <NebaDateInput id="@FieldId("squad-date", i)" Value="@row.SquadDate" ValueChanged="@((DateOnly? d) => HandleSquadDateChanged(row, d))" ValueExpression="@(() => row.SquadDate)" aria-label="@AriaLabel("squad date", order)" />
+                                <input id="@FieldId("squad-time", i)" type="time" class="neba-input" value="@TimeValue(row)" @onchange="@(e => HandleSquadTimeChanged(row, e))" aria-label="@AriaLabel("squad start time", order)" />
+                            </div>
+                        }
+                        else
+                        {
+                            <span class="series-grid__no-squad">No squad</span>
+                        }
+                    </div>
+
+                    <div class="series-grid__actions">
+                        <button type="button" class="neba-btn-icon" disabled="@(i == 0)" @onclick="@(() => Move(i, -1))" aria-label="@AriaLabel("move up", order)">↑</button>
+                        <button type="button" class="neba-btn-icon" disabled="@IsLast(i)" @onclick="@(() => Move(i, 1))" aria-label="@AriaLabel("move down", order)">↓</button>
+                        <button type="button" class="neba-btn-icon" @onclick="@(() => Remove(i))" aria-label="@AriaLabel("remove", order)">✕</button>
+                    </div>
+                }
+
+                @foreach (var error in row.Errors)
+                {
+                    <p class="series-grid__error" role="alert">@error</p>
+                }
+            </li>
+        }
+    </ol>
+
+    @if (!ReadOnly)
+    {
+        <div class="series-grid__foot">
+            <button type="button" class="neba-btn neba-btn-secondary" @onclick="Add">+ Add Stage</button>
+            @if (HeldElsewhere > 0)
+            {
+                <span class="series-editor__hint">@HeldElsewhereNote</span>
+            }
+        </div>
+    }
+</div>
+
+@code {
+    [Parameter, EditorRequired]
+    public List<SeriesStageRowModel> Rows { get; set; } = default!;
+
+    [Parameter, EditorRequired]
+    public IReadOnlyList<SeriesTournamentOption> Options { get; set; } = default!;
+
+    [Parameter, EditorRequired]
+    public bool ReadOnly { get; set; }
+
+    [Parameter]
+    public int HeldElsewhere { get; set; }
+
+    [Parameter, EditorRequired]
+    public EventCallback OnChanged { get; set; }
+
+    private string HeldElsewhereNote
+        => "tournament".ToQuantity(HeldElsewhere) + " in this season " + (HeldElsewhere == 1 ? "is" : "are") + " in another Series and not listed.";
+
+    private SeriesTournamentOption? OptionFor(SeriesStageRowModel row)
+        => Options.FirstOrDefault(o => o.Id == row.TournamentId);
+
+    /// <summary>A tournament picked on another row drops out of this row's list.</summary>
+    private IEnumerable<SeriesTournamentOption> ChoicesFor(SeriesStageRowModel row)
+        => Options.Where(o => o.Id == row.TournamentId || !Rows.Any(other => other.TournamentId == o.Id));
+
+    private static string RowClass(SeriesStageRowModel row)
+        => row.Errors.Count > 0 ? "series-grid__row series-grid__row--error" : "series-grid__row";
+
+    private static string FieldId(string field, int index) => "stage-" + index + "-" + field;
+
+    private static string AriaLabel(string what, int order) => "Stage " + order + " " + what;
+
+    private bool IsLast(int index) => index == Rows.Count - 1;
+
+    private static string? TimeValue(SeriesStageRowModel row) => row.SquadStartTime?.ToString("HH:mm", System.Globalization.CultureInfo.InvariantCulture);
+
+    private static string ReadOnlyCount(SeriesStageRowModel row, SeriesTournamentOption? option)
+        => row.Kind == StageKinds.Placement
+            ? "Final standings"
+            : SeriesDisplay.Advancing(row.Kind, row.AdvancingCount, option?.TeamSize ?? 1).Primary;
+
+    private Task HandleKindChanged(SeriesStageRowModel row, ChangeEventArgs e)
+    {
+        row.Kind = e.Value?.ToString() ?? StageKinds.Qualifying;
+
+        // A Placement Stage has no count; switching away leaves the count empty for the admin to fill in.
+        if (row.Kind == StageKinds.Placement)
+        {
+            row.AdvancingCount = null;
+        }
+
+        if (row.Kind == StageKinds.Survivor)
+        {
+            row.SquadDate ??= OptionFor(row)?.StartDate;
+        }
+        else
+        {
+            row.SquadDate = null;
+            row.SquadStartTime = null;
+        }
+
+        return ChangedAsync(row);
+    }
+
+    private Task HandleTournamentChanged(SeriesStageRowModel row, ChangeEventArgs e)
+    {
+        row.TournamentId = string.IsNullOrEmpty(e.Value?.ToString()) ? null : e.Value!.ToString();
+
+        if (row.Kind == StageKinds.Survivor)
+        {
+            row.SquadDate = OptionFor(row)?.StartDate;
+        }
+
+        return ChangedAsync(row);
+    }
+
+    /// <summary>Empty input means no count; the server rejects an empty Qualifying or Survivor count.</summary>
+    private Task HandleCountChanged(SeriesStageRowModel row, ChangeEventArgs e)
+    {
+        row.AdvancingCount = int.TryParse(e.Value?.ToString(), out var count) ? count : null;
+        return ChangedAsync(row);
+    }
+
+    private Task HandleSquadDateChanged(SeriesStageRowModel row, DateOnly? date)
+    {
+        row.SquadDate = date;
+        return ChangedAsync(row);
+    }
+
+    private Task HandleSquadTimeChanged(SeriesStageRowModel row, ChangeEventArgs e)
+    {
+        row.SquadStartTime = TimeOnly.TryParse(e.Value?.ToString(), System.Globalization.CultureInfo.InvariantCulture, out var time) ? time : null;
+        return ChangedAsync(row);
+    }
+
+    private Task Move(int index, int offset)
+    {
+        (Rows[index], Rows[index + offset]) = (Rows[index + offset], Rows[index]);
+        ClearErrors();
+        return OnChanged.InvokeAsync();
+    }
+
+    private Task Remove(int index)
+    {
+        Rows.RemoveAt(index);
+        ClearErrors();
+        return OnChanged.InvokeAsync();
+    }
+
+    private Task Add()
+    {
+        Rows.Add(new SeriesStageRowModel());
+        return OnChanged.InvokeAsync();
+    }
+
+    /// <summary>A row's server errors refer to its old position, so a move or removal clears them all.</summary>
+    private void ClearErrors()
+    {
+        foreach (var row in Rows)
+        {
+            row.Errors.Clear();
+        }
+    }
+
+    private Task ChangedAsync(SeriesStageRowModel row)
+    {
+        row.Errors.Clear();
+        return OnChanged.InvokeAsync();
+    }
+}

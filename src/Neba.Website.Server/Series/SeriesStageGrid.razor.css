@@ -1,0 +1,101 @@
+.series-grid__head,
+.series-grid__row {
+    display: grid;
+    grid-template-columns: 34px 140px minmax(220px, 1fr) 110px 300px 108px;
+    gap: 0.75rem;
+    align-items: start;
+}
+
+.series-grid__head {
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    color: var(--neba-gray-500);
+    padding: 0.5rem 0;
+}
+
+.series-grid__rows {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+.series-grid__row {
+    padding: 0.75rem 0;
+    border-top: 1px solid var(--neba-border);
+}
+
+.series-grid__row--error {
+    background: rgba(204, 8, 10, 0.05);
+    box-shadow: inset 3px 0 0 var(--neba-accent-red);
+}
+
+.series-grid__order {
+    font-weight: 700;
+    padding-top: 0.5rem;
+}
+
+.series-grid__cell-label {
+    display: none;
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--neba-gray-500);
+}
+
+.series-grid__cell-label--always {
+    display: block;
+}
+
+.series-grid__squad-inputs {
+    display: grid;
+    grid-template-columns: 1fr 135px;
+    gap: 0.5rem;
+}
+
+.series-grid__no-count,
+.series-grid__no-squad {
+    color: var(--neba-gray-400);
+    font-style: italic;
+}
+
+.series-grid__actions {
+    display: flex;
+    gap: 0.25rem;
+}
+
+.series-grid__ro {
+    padding-top: 0.5rem;
+}
+
+.series-grid__error {
+    grid-column: 1 / -1;
+    margin: 0;
+    color: var(--neba-accent-red);
+    font-size: 0.875rem;
+}
+
+.series-grid__foot {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding-top: 0.75rem;
+}
+
+@media (max-width: 1000px) {
+    .series-grid__head {
+        display: none;
+    }
+
+    .series-grid__row {
+        grid-template-columns: 34px 1fr 1fr;
+    }
+
+    .series-grid__tournament,
+    .series-grid__squad {
+        grid-column: 1 / -1;
+    }
+
+    .series-grid__cell-label {
+        display: block;
+    }
+}

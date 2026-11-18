@@ -1,0 +1,37 @@
+.series-editor__field {
+    display: flex;
+    flex-direction: column;
+    gap: 0.375rem;
+}
+
+.series-editor__label {
+    font-weight: 600;
+}
+
+.series-editor__readonly {
+    color: var(--neba-gray-700);
+}
+
+.series-editor__hint {
+    margin: 0;
+    font-size: 0.8125rem;
+    color: var(--neba-gray-500);
+}
+
+.series-editor__logo {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.series-editor__logo-current {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.series-editor__actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 0.75rem;
+}

@@ -1,0 +1,24 @@
+.series-finale-editor {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.series-finale-editor__toggle {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-weight: 600;
+}
+
+.series-finale-editor__fields {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1rem;
+}
+
+.series-editor__row-error {
+    margin: 0;
+    color: var(--neba-accent-red);
+    font-size: 0.875rem;
+}
