@@ -96,3 +96,34 @@ The repo's `node_modules` comes from a `node:24-slim` container (see the lockfil
 docker run --rm -v "$PWD":/app -w /app node:24-slim npx jest src/Neba.Website.Server/Components/FocalPointPicker.razor.tests.js
 ```
 
+
+### Endpoint tests: Verify snapshots
+
+Endpoint tests are unit tests. They build the endpoint with `Factory.Create<TEndpoint>(handlerMock.Object)` from FastEndpoints and call `HandleAsync` directly. Copy `tests/Neba.Api.Tests/Features/Sponsors/ListActiveSponsors/ListActiveSponsorsEndpointTests.cs`.
+
+- Use `await Verify(endpoint.Response)` to snapshot the full mapped response for the happy path. This is VerifyXunit (`global using static VerifyXunit.Verifier`), not Moq's `Verify`.
+- Always use a fixed seed (`Bogus(count, seed)`) in a snapshot test, so the output is the same each run.
+- The first run writes `*.received.txt`. Check it, then copy it over `*.verified.txt` and commit the `.verified.txt`.
+- Use explicit Shouldly assertions for edge cases (empty collection, error status codes) where the shape needs no snapshot.
+- For a handler that returns `ErrorOr<T>`, add one test per error path and assert `endpoint.HttpContext.Response.StatusCode`.
+- For a paged endpoint, assert `PageNumber`, `PageSize` and `TotalItems` explicitly. `WithTotalItems` in `PagedResultExtensions` builds the paged result.
+- Each endpoint also gets an authorization test (`CreateSponsorEndpointAuthorizationTests`) and a summary test (`CreateSponsorSummaryTests`).
+
+### Blazor tests: `StubApiResponse<T>` for Refit responses
+
+When a page or component calls a Refit interface through `ApiExecutor`, mock the interface with `Mock<I...Api>(MockBehavior.Strict)`. Build the `IApiResponse<T>` it returns with `StubApiResponse<T>` from `Refit.Testing`, never `Mock<IApiResponse<T>>`.
+
+```csharp
+using var response = new StubApiResponse<CollectionResponse<SponsorSummaryResponse>>
+{
+    IsSuccessStatusCode = true,
+    StatusCode = HttpStatusCode.OK,
+    Content = new CollectionResponse<SponsorSummaryResponse> { Items = items }
+};
+_mockApi.Setup(x => x.ListActiveSponsorsAsync(It.IsAny<CancellationToken>())).ReturnsAsync(response);
+```
+
+- Wrap the stub in `using var`. Its `Dispose()` does nothing, but `CA2000` flags a bare `IDisposable`.
+- Pass the stub straight to `.ReturnsAsync(response)`. Do not add `.Object`: the stub is the `IApiResponse<T>`, not a wrapper.
+- `Task<T>` is invariant. When a lambda returns `Task.FromResult(response)`, the type is `Task<StubApiResponse<T>>`. Write `Task.FromResult<IApiResponse<T>>(response)` or declare `IApiResponse<T> response = ...`. In that case use `#pragma warning disable CA2000` with a reason instead of `using var`, because `using` next to `Task.FromResult` trips `CA2025`.
+- Mock only the Refit interface. The response it returns is the stub.

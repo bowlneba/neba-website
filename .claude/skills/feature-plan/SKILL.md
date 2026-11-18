@@ -142,7 +142,7 @@ Do not proceed until confirmed.
 
 ## Step 8 — Phase 1 code draft (API)
 
-Once Step 7 is confirmed, expand each item in the Phase 1 section into actual code: real class/record signatures, method bodies where the logic isn't obvious boilerplate, route strings, validator rules, DI registration snippets, and factory method signatures. Use the patterns and templates in the `new-endpoint` command and `vsa-ddd` skill as the baseline shape, adapted to this feature's actual types and rules — don't reproduce their placeholder syntax verbatim.
+Once Step 7 is confirmed, expand each item in the Phase 1 section into actual code: real class/record signatures, method bodies where the logic isn't obvious boilerplate, route strings, validator rules, DI registration snippets, and factory method signatures. Use the patterns and templates in the `new-endpoint` and `vsa-ddd` skills as the baseline shape, adapted to this feature's actual types and rules — don't reproduce their placeholder syntax verbatim.
 
 Replace the Step 7 functional bullets in `docs/plans/{feature-name}.md` under `## Phase 1: API` with this code-level detail (keep the layer-grouped structure, but each item is now a fenced code block instead of a one-line bullet).
 
@@ -159,7 +159,7 @@ Same shape as Step 7, but for the Blazor side. The screens/actions/data needs we
 - State/dirty-tracking needs — call out explicitly if `DirtyFormGuard` applies (per CLAUDE.md's "Dirty Form Guard" learning) for any new data-entry form.
 - `<PageTitle>` requirement and render mode, per CLAUDE.md's "Page Titles" learning.
 - Any FAB / list-page entry point needed, per CLAUDE.md's "List Page Add New Pattern", if this feature adds a creatable list.
-- Playwright/bUnit test needs, using the decision table from `new-endpoint`/`pull-request-prep` (bUnit for internal component logic, Playwright for real browser + HTTP flows).
+- Playwright/bUnit test needs, using the decision table from `pull-request-prep` (bUnit for internal component logic, Playwright for real browser + HTTP flows).
 - If the feature has no UI surface at all, state that explicitly here rather than fabricating one.
 
 If the `dotnet-blazor` plugin skills (`plan-ui-change`, `author-component`, `coordinate-components`, `fetch-and-send-data`) or `docs/learnings/blazor-ui.md` are relevant to a decision in this draft, apply them rather than guessing. Where they disagree, the repo learnings win.
