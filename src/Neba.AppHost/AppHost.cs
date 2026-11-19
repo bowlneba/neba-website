@@ -264,10 +264,24 @@ if (builder.ExecutionContext.IsPublishMode)
     // validated, provision a free managed certificate for that hostname via the Portal and
     // feed its name back in via the certificate-name parameter (AZURE_*_CERTIFICATE_NAME repo var) - that permanently
     // binds it (BindingType SniEnabled) from then on. See
-    var webCustomDomain = builder.AddParameter("webCustomDomain");
-    var webCertificateName = builder.AddParameter("webCertificateName").AsOptional();
-    var apiCustomDomain = builder.AddParameter("apiCustomDomain");
-    var apiCertificateName = builder.AddParameter("apiCertificateName").AsOptional();
+    // A custom domain is declared only when its parameter has a value, so an environment with
+    // no DNS (staging) deploys without binding any hostname. Production always sets all of them.
+    IResourceBuilder<ParameterResource>? webCustomDomain = null;
+    IResourceBuilder<ParameterResource>? webCertificateName = null;
+    IResourceBuilder<ParameterResource>? apiCustomDomain = null;
+    IResourceBuilder<ParameterResource>? apiCertificateName = null;
+
+    if (HasValue("webCustomDomain"))
+    {
+        webCustomDomain = builder.AddParameter("webCustomDomain");
+        webCertificateName = builder.AddParameter("webCertificateName").AsOptional();
+    }
+
+    if (HasValue("apiCustomDomain"))
+    {
+        apiCustomDomain = builder.AddParameter("apiCustomDomain");
+        apiCertificateName = builder.AddParameter("apiCertificateName").AsOptional();
+    }
 
     // Optional second hostname on the web app (www.<apex>). The app redirects www to the apex,
     // so www must reach the container app over HTTPS, which needs its own binding and managed
@@ -275,17 +289,26 @@ if (builder.ExecutionContext.IsPublishMode)
     IResourceBuilder<ParameterResource>? webWwwCustomDomain = null;
     IResourceBuilder<ParameterResource>? webWwwCertificateName = null;
 
-    if (!string.IsNullOrWhiteSpace(builder.Configuration["Parameters:webWwwCustomDomain"]))
+    if (HasValue("webWwwCustomDomain"))
     {
         webWwwCustomDomain = builder.AddParameter("webWwwCustomDomain");
         webWwwCertificateName = builder.AddParameter("webWwwCertificateName").AsOptional();
     }
 
 #pragma warning disable ASPIREACADOMAINS001
-    api.PublishAsAzureContainerApp(configureScale + ((_, app) => app.ConfigureCustomDomain(apiCustomDomain, apiCertificateName)));
+    api.PublishAsAzureContainerApp(configureScale + ((_, app) =>
+    {
+        if (apiCustomDomain is not null && apiCertificateName is not null)
+        {
+            app.ConfigureCustomDomain(apiCustomDomain, apiCertificateName);
+        }
+    }));
     web.PublishAsAzureContainerApp(configureScale + ((_, app) =>
     {
-        app.ConfigureCustomDomain(webCustomDomain, webCertificateName);
+        if (webCustomDomain is not null && webCertificateName is not null)
+        {
+            app.ConfigureCustomDomain(webCustomDomain, webCertificateName);
+        }
 
         if (webWwwCustomDomain is not null && webWwwCertificateName is not null)
         {
@@ -351,6 +374,9 @@ postgres.WithDisplayOrder(10);
 storage.WithDisplayOrder(10);
 
 await builder.Build().RunAsync();
+
+bool HasValue(string parameterName)
+    => !string.IsNullOrWhiteSpace(builder.Configuration[$"Parameters:{parameterName}"]);
 
 // Container App scale values are ints, but Aspire parameters are strings: convert in Bicep.
 static BicepValue<int> ToBicepInt(BicepValue<string> value)

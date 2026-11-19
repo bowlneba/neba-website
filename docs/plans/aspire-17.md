@@ -255,6 +255,28 @@ New file `src/Neba.AppHost/MigrationPipelineStep.cs` and a `run-migrations` step
 - **Not verified:** the by-tag wiring and the job runs. List mode skips the configuration callback. First real check is the staging run: confirm in its output that `run-migrations` ran after the job deploys and before api and web.
 - **Open:** whether the OIDC login lasts through a full `aspire deploy` plus up to 10 minutes of polling.
 
+### B1 staging setup (workflow written, not run)
+
+Workflow: `.github/workflows/staging.yml` (manual dispatch, GitHub environment `Staging`, job group `staging-deploy`). It checks settings, logs in, installs the CLI, runs `aspire deploy --environment staging --non-interactive`, then lists the resources it created.
+
+Defaults:
+
+- Resource group `rg-bowlneba-staging`, same subscription as production, created by the deploy. The workflow refuses any group name without `staging` in it.
+- No custom domains. The AppHost now declares a domain only when its parameter has a value, so staging binds no hostnames. With all domain parameters set (production) the generated Bicep is byte-identical to before.
+- Replicas 0 to 1, concurrency 50. Postgres `Standard_B1ms` / `Burstable` (same as prod).
+- Test secrets in the Staging environment (done by the user, all 11 present).
+
+Setup the user must do before the first run:
+
+1. **OIDC.** Add a federated credential on the deploy app registration (`AZURE_CLIENT_ID`) with subject `repo:bowlneba/neba-website:environment:Staging`. Without it `azure/login` fails.
+2. **Staging environment variables** (the Staging environment has none today):
+   - New: `AZURE_RESOURCE_GROUP` = `rg-bowlneba-staging`.
+   - Needed because a missing one falls back to the repo-level or Production value, or fails the check step: `AZURE_PRINCIPAL_ID` (same value as production), `AZURE_CONTAINERAPP_MIN_REPLICAS` = `0`, `AZURE_CONTAINERAPP_MAX_REPLICAS` = `1`.
+   - Inherited from repo level if set there (confirm each resolves): `AZURE_CLIENT_ID`, `AZURE_TENANT_ID`, `AZURE_SUBSCRIPTION_ID`, `AZURE_LOCATION`, `AZURE_POSTGRES_SKU_NAME`, `AZURE_POSTGRES_SKU_TIER`, `AZURE_CONTAINERAPP_CONCURRENT_REQUESTS`.
+3. Production's role for the deploy principal must allow creating a resource group and role assignments at subscription scope (it has Contributor and User Access Administrator today).
+
+Local note: `aspire publish` caches parameter values per environment in `~/.aspire/deployments`. To test a no-domain publish on a machine that has run production values, pass `--environment staging`. Fresh CI runners have no cache.
+
 ### B1. Staging deploy (do this before touching production)
 
 Lower priority now. Production's data (Postgres, storage) is covered by B1a. Staging is for the pipeline, migration step, and Key Vault secrets, which what-if cannot show.
