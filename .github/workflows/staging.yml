@@ -3,7 +3,7 @@ name: Staging Deploy
 # Deploys the whole stack with `aspire deploy` into its own resource group in the production
 # subscription. It exists to prove the deploy pipeline (provisioning, secrets, migration jobs,
 # api and web) before production moves off azd. Manual only. The app does not need to work.
-# Setup notes live in docs/plans/aspire-17.md (B1).
+# Setup notes live in docs/plans/aspire-17.md (B1). Staging runs in westus2 (Staging AZURE_LOCATION).
 
 on:
   workflow_dispatch:
