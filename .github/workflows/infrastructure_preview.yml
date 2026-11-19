@@ -60,6 +60,10 @@ jobs:
           rm -f install-aspire.sh
           echo "$HOME/.aspire/bin" >> "$GITHUB_PATH"
 
+      # azd finds the AppHost through MSBuild properties that the Aspire package sets only after restore.
+      - name: Restore AppHost
+        run: dotnet restore src/Neba.AppHost
+
       - name: Configure azd authentication
         run: azd config set auth.useAzCliAuth true
 
