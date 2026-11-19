@@ -42,10 +42,10 @@ internal static class SeriesErrors
         => Error.Forbidden("Series.Logo.ChangeDenied", "Your account is not allowed to change Series logos.");
 
     // Stage errors. "Stage 9 (Callahan's Bowl-O-Rama): ..." names the offending row.
-    public static Error StageNotFound(int order, SeriesStageId stageId)
+    public static Error StageNotFound(int order)
         => Stage(order, null, "Series.Stage.NotFound", "this Stage no longer exists. Reload the Series and try again.", ErrorType.Validation);
 
-    public static Error TournamentNotFound(int order, TournamentId tournamentId)
+    public static Error TournamentNotFound(int order)
         => Stage(order, null, "Series.Stage.TournamentNotFound", "the selected tournament does not exist.", ErrorType.Validation);
 
     public static Error DuplicateTournament(int order, string tournament)

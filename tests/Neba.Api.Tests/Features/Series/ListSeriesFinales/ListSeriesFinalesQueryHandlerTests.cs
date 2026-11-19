@@ -102,8 +102,8 @@ public sealed class ListSeriesFinalesQueryHandlerTests(AppDbContextFixture fixtu
         var ct = TestContext.Current.CancellationToken;
         var season = await SeriesSeed.AddSeasonAsync(_dbContext, 2025, ct);
         var logo = StoredFileFactory.Create(container: "series", path: "logo.png");
-        await SeriesSeed.AddSeriesAsync(_dbContext, season, new DateOnly(2025, 1, 1), ct, name: "With", logo: logo,
-            finale: SeriesFinaleDefinitionFactory.Create(date: new DateOnly(2025, 12, 1)));
+        await SeriesSeed.AddSeriesAsync(_dbContext, season, new DateOnly(2025, 1, 1), ct, name: "With",
+            finale: SeriesFinaleDefinitionFactory.Create(date: new DateOnly(2025, 12, 1)), logo: logo);
         await SeriesSeed.AddSeriesAsync(_dbContext, season, new DateOnly(2025, 3, 1), ct, name: "Without",
             finale: SeriesFinaleDefinitionFactory.Create(date: new DateOnly(2025, 12, 2)));
 

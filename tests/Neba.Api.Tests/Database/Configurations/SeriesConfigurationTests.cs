@@ -79,7 +79,7 @@ public sealed class SeriesConfigurationTests(AppDbContextFixture fixture)
             await setup.SaveChangesAsync(TestContext.Current.CancellationToken);
         }
 
-        var finale = SeriesFinaleDefinitionFactory.Create(bowlingCenterId: center.CertificationNumber, date: new DateOnly(2025, 12, 1));
+        var finale = SeriesFinaleDefinitionFactory.Create(date: new DateOnly(2025, 12, 1), bowlingCenterId: center.CertificationNumber);
         var logo = StoredFileFactory.Create();
         var series = Build(season, tournaments, finale, logo: logo);
 
@@ -195,7 +195,7 @@ public sealed class SeriesConfigurationTests(AppDbContextFixture fixture)
         // Arrange
         var (season, tournaments) = await SeedAsync(3);
         var unknown = CertificationNumberFactory.Create("99999");
-        var series = Build(season, tournaments, SeriesFinaleDefinitionFactory.Create(bowlingCenterId: unknown, date: new DateOnly(2025, 12, 1)));
+        var series = Build(season, tournaments, SeriesFinaleDefinitionFactory.Create(date: new DateOnly(2025, 12, 1), bowlingCenterId: unknown));
 
         await using var write = fixture.CreateDbContext();
         write.Series.Add(series);

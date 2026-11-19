@@ -66,7 +66,7 @@ public sealed class SeriesEndpointsTests(AppDbContextFixture fixture, SecurityDb
         var ct = TestContext.Current.CancellationToken;
         await using var db = fixture.CreateDbContext();
         var season = await SeriesSeed.AddSeasonAsync(db, 2025, ct);
-        return await SeriesSeed.AddSeriesAsync(db, season, new DateOnly(2025, 2, 1), ct, name: name, status: status, finale: finale);
+        return await SeriesSeed.AddSeriesAsync(db, season, new DateOnly(2025, 2, 1), ct, name: name, finale: finale, status: status);
     }
 
     private static SeriesStageInput Stage(Tournament tournament, int kind = 1, int? count = 8, string? id = null, bool squad = false)

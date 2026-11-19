@@ -178,7 +178,7 @@ public sealed class EditSeriesCommandHandlerTests(AppDbContextFixture fixture)
         result.IsError.ShouldBeFalse();
         _dbContext.ChangeTracker.Clear();
         var saved = await _dbContext.Series.AsNoTracking().Include(s => s.Stages).SingleAsync(ct);
-        saved.Stages.Select(s => s.Order).OrderBy(o => o).ShouldBe([1, 2]);
+        saved.Stages.Select(s => s.Order).Order().ShouldBe([1, 2]);
         saved.Stages.Select(s => s.Kind).ShouldBe([StageKind.Survivor, StageKind.Placement], ignoreOrder: true);
     }
 
@@ -358,7 +358,7 @@ public sealed class EditSeriesCommandHandlerTests(AppDbContextFixture fixture)
         _dbContext.ChangeTracker.Clear();
 
         // Act
-        var result = await CreateHandler().HandleAsync(Command(series, finale: finale, name: "Still fine"), ct);
+        var result = await CreateHandler().HandleAsync(Command(series, name: "Still fine", finale: finale), ct);
 
         // Assert
         result.IsError.ShouldBeFalse();

@@ -179,13 +179,13 @@ public sealed class Series
 
             if (definition.StageId is { } stageId && !_stages.Exists(s => s.Id == stageId))
             {
-                errors.Add(SeriesErrors.StageNotFound(order, stageId));
+                errors.Add(SeriesErrors.StageNotFound(order));
                 continue;
             }
 
             if (!tournaments.TryGetValue(definition.TournamentId, out var facts))
             {
-                errors.Add(SeriesErrors.TournamentNotFound(order, definition.TournamentId));
+                errors.Add(SeriesErrors.TournamentNotFound(order));
                 continue;
             }
 
@@ -251,19 +251,9 @@ public sealed class Series
         {
             var (order, definition, facts) = stages[i];
 
-            if (i > 0)
+            foreach (var error in CheckAgainstPrevious(stages, i))
             {
-                var previous = stages[i - 1];
-
-                if (definition.Kind.Value < previous.Definition.Kind.Value)
-                {
-                    yield return SeriesErrors.KindOutOfOrder(order, facts.TournamentName, definition.Kind, previous.Definition.Kind);
-                }
-
-                if (facts.StartDate <= previous.Facts.StartDate)
-                {
-                    yield return SeriesErrors.DateNotAfterPrevious(order, facts.TournamentName, facts.StartDate, previous.Facts.StartDate);
-                }
+                yield return error;
             }
 
             if (definition.Kind == StageKind.Survivor && definition.AdvancingCount is { } survivorCount)
@@ -278,18 +268,46 @@ public sealed class Series
 
             if (definition.Kind == StageKind.Placement)
             {
-                if (placementSeen)
+                if (CheckPlacement(order, facts, placementSeen, isLast: i == stages.Count - 1) is { } placementError)
                 {
-                    yield return SeriesErrors.MultiplePlacementStages(order, facts.TournamentName);
-                }
-                else if (i != stages.Count - 1)
-                {
-                    yield return SeriesErrors.PlacementNotLast(order, facts.TournamentName);
+                    yield return placementError;
                 }
 
                 placementSeen = true;
             }
         }
+    }
+
+    private static IEnumerable<Error> CheckAgainstPrevious(
+        List<(int Order, SeriesStageDefinition Definition, StageTournamentFacts Facts)> stages, int index)
+    {
+        if (index == 0)
+        {
+            yield break;
+        }
+
+        var (order, definition, facts) = stages[index];
+        var (_, previousDefinition, previousFacts) = stages[index - 1];
+
+        if (definition.Kind.Value < previousDefinition.Kind.Value)
+        {
+            yield return SeriesErrors.KindOutOfOrder(order, facts.TournamentName, definition.Kind, previousDefinition.Kind);
+        }
+
+        if (facts.StartDate <= previousFacts.StartDate)
+        {
+            yield return SeriesErrors.DateNotAfterPrevious(order, facts.TournamentName, facts.StartDate, previousFacts.StartDate);
+        }
+    }
+
+    private static Error? CheckPlacement(int order, StageTournamentFacts facts, bool placementSeen, bool isLast)
+    {
+        if (placementSeen)
+        {
+            return SeriesErrors.MultiplePlacementStages(order, facts.TournamentName);
+        }
+
+        return isLast ? null : SeriesErrors.PlacementNotLast(order, facts.TournamentName);
     }
 
     // #6: the Finale's count is above zero and no larger than the last Survivor count (no check without a Survivor Stage).

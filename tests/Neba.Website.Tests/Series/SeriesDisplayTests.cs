@@ -345,7 +345,8 @@ public sealed class SeriesDisplayTests
         TimeOnly? finaleTime = hasFinaleTime ? new TimeOnly(14, 0) : null;
 
         // Act
-        var rule = SeriesDisplay.CalloutRule(kind, count, teamSize, squadDate, squadTime, finaleCount, finaleDate, finaleTime);
+        var rule = SeriesDisplay.CalloutRule(
+            kind, count, teamSize, new SquadSlot(squadDate, squadTime), new FinaleSlot(finaleCount, finaleDate, finaleTime));
 
         // Assert
         rule.Primary.ShouldBe(primary);
@@ -356,7 +357,7 @@ public sealed class SeriesDisplayTests
     public void CalloutRule_ShouldFallBack_WhenNoCount()
     {
         // Arrange & Act
-        var rule = SeriesDisplay.CalloutRule("Qualifying", null, 1, null, null, null, null, null);
+        var rule = SeriesDisplay.CalloutRule("Qualifying", null, 1, new SquadSlot(null, null), new FinaleSlot(null, null, null));
 
         // Assert
         rule.Primary.ShouldBe("Part of the Series.");

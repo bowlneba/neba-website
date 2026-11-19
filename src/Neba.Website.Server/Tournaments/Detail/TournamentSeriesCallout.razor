@@ -26,6 +26,7 @@
     public int TeamSize { get; set; } = 1;
 
     private AdvancingLabel Rule => SeriesDisplay.CalloutRule(
-        Series.Kind, Series.AdvancingCount, TeamSize, Series.SquadDate, Series.SquadStartTime,
-        Series.FinaleCount, Series.FinaleDate, Series.FinaleStartTime);
+        Series.Kind, Series.AdvancingCount, TeamSize,
+        new SquadSlot(Series.SquadDate, Series.SquadStartTime),
+        new FinaleSlot(Series.FinaleCount, Series.FinaleDate, Series.FinaleStartTime));
 }

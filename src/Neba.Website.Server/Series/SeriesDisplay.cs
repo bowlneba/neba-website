@@ -6,6 +6,12 @@ namespace Neba.Website.Server.Series;
 
 internal sealed record AdvancingLabel(string Primary, string? Secondary);
 
+/// <summary>The Series squad a Survivor Stage names.</summary>
+internal sealed record SquadSlot(DateOnly? Date, TimeOnly? StartTime);
+
+/// <summary>What a Placement Stage says about the Finale.</summary>
+internal sealed record FinaleSlot(int? Count, DateOnly? Date, TimeOnly? StartTime);
+
 /// <summary>One bar in the "How the field narrows" chart.</summary>
 /// <param name="Label">The step name, such as "Qualifiers" or a tournament name.</param>
 /// <param name="Detail">The line under the name.</param>
@@ -129,21 +135,20 @@ internal static class SeriesDisplay
 
     /// <summary>What the round decides, for the detail callout. Secondary is the "(6 bowlers)" or squad line.</summary>
     public static AdvancingLabel CalloutRule(
-        string kind, int? count, int teamSize, DateOnly? squadDate, TimeOnly? squadStartTime,
-        int? finaleCount, DateOnly? finaleDate, TimeOnly? finaleStartTime)
+        string kind, int? count, int teamSize, SquadSlot squad, FinaleSlot finale)
         => (kind, count) switch
         {
-            (StageKinds.Placement, _) when finaleCount is null => new AdvancingLabel("Final standings (no Finale).", null),
+            (StageKinds.Placement, _) when finale.Count is null => new AdvancingLabel("Final standings (no Finale).", null),
             (StageKinds.Placement, _) => new AdvancingLabel(
-                "Final standings. The top " + finaleCount.Value.ToString(Culture) + " go to the Finale.",
-                finaleDate is { } fd && finaleStartTime is { } ft ? "Finale: " + FinaleWhen(fd, ft) + "." : null),
+                "Final standings. The top " + finale.Count.Value.ToString(Culture) + " go to the Finale.",
+                finale.Date is { } fd && finale.StartTime is { } ft ? "Finale: " + FinaleWhen(fd, ft) + "." : null),
             (StageKinds.Qualifying, { } n) when teamSize > 1 => new AdvancingLabel(
                 "Top " + "team".ToQuantity(n, formatProvider: DisplayCulture.English) + " enter the Series field.",
                 "(" + "bowler".ToQuantity(n * teamSize, formatProvider: DisplayCulture.English) + ")"),
             (StageKinds.Qualifying, { } n) => new AdvancingLabel("Top " + n.ToString(Culture) + " finishers enter the Series field.", null),
             (StageKinds.Survivor, { } n) => new AdvancingLabel(
                 n.ToString(Culture) + " bowlers advance.",
-                squadDate is { } d && squadStartTime is { } t
+                squad.Date is { } d && squad.StartTime is { } t
                     ? "Series squad: " + t.ToString("h:mm tt", Culture) + " on " + d.ToString("M/d", Culture) + "."
                     : null),
             _ => new AdvancingLabel("Part of the Series.", null), // a saved Qualifying/Survivor Stage always has a count

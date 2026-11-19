@@ -291,7 +291,7 @@ public sealed class ImageSharpResizerTests
     {
         // Arrange
         var ct = TestContext.Current.CancellationToken;
-        using var stream = Encode("jpeg", 200, 100);
+        await using var stream = Encode("jpeg", 200, 100);
 
         // Act
         var result = await _sut.ResizeLogoAsync(stream, 100, Allowed, ct);

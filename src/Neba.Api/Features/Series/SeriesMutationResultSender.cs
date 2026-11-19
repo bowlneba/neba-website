@@ -8,7 +8,7 @@ namespace Neba.Api.Features.Series;
 
 internal static class SeriesMutationResultSender
 {
-    public static async Task SendAsync(
+    public static Task SendAsync(
         IReadOnlyList<Error> errors,
         Action<ValidationFailure> addError,
         Func<int, CancellationToken, Task> sendErrorsAsync,
@@ -22,7 +22,7 @@ internal static class SeriesMutationResultSender
             addError(ToFailure(error));
         }
 
-        await sendErrorsAsync(
+        return sendErrorsAsync(
             validation.Count > 0 ? StatusCodes.Status422UnprocessableEntity : StatusCodes.Status409Conflict, ct);
     }
 

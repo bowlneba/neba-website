@@ -278,6 +278,8 @@ const SERIES_STAGE_ROWS: [string, string, string, number | null, number, string 
   ['East Providence Singles', '2025-09-13', 'Placement', null, 1, null],
 ];
 
+const TEAM_SIZE_TYPES: Record<number, string> = { 1: 'Singles', 2: 'Doubles' };
+
 function mockSeriesStages(rows = SERIES_STAGE_ROWS): object[] {
   return rows.map(([name, start, kind, count, teamSize, squad], index) => ({
     id: `01JX00000000000000000006${String(index).padStart(2, '0')}`,
@@ -291,7 +293,7 @@ function mockSeriesStages(rows = SERIES_STAGE_ROWS): object[] {
     tournamentName: name,
     tournamentStartDate: start,
     tournamentEndDate: start,
-    tournamentType: teamSize === 1 ? 'Singles' : teamSize === 2 ? 'Doubles' : 'Trios',
+    tournamentType: TEAM_SIZE_TYPES[teamSize] ?? 'Trios',
     teamSize,
   }));
 }

@@ -33,7 +33,7 @@ public sealed class ListSeriesEndpointTests
         // Arrange
         var ct = TestContext.Current.CancellationToken;
         var next = SeriesNextStageDtoFactory.Create(kind: "Survivor", tournamentName: "Lang's");
-        var withNext = SeriesSummaryDtoFactory.Create(name: "With", stageTournamentIds: [TournamentId.New(), TournamentId.New()], nextStage: next, logoUrl: new Uri("https://example.com/l.png"), isLocked: true);
+        var withNext = SeriesSummaryDtoFactory.Create(name: "With", isLocked: true, logoUrl: new Uri("https://example.com/l.png"), stageTournamentIds: [TournamentId.New(), TournamentId.New()], nextStage: next);
         var withoutNext = SeriesSummaryDtoFactory.Create(name: "Without");
 
         var handler = new Mock<IQueryHandler<ListSeriesQuery, IReadOnlyCollection<SeriesSummaryDto>>>(MockBehavior.Strict);

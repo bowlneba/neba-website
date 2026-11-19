@@ -25,7 +25,7 @@ public sealed class SeriesErrorsTests
     public void StageErrors_ShouldOmitTournament_WhenNameIsUnknown()
     {
         // Arrange & Act
-        var error = SeriesErrors.StageNotFound(2, SeriesStageId.New());
+        var error = SeriesErrors.StageNotFound(2);
 
         // Assert
         error.Description.ShouldStartWith("Stage 2: ");

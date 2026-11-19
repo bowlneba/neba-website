@@ -78,16 +78,16 @@ public sealed class SeriesDetailTests : IDisposable
         [
             SeriesStageResponseFactory.Create(id: "q1", order: 1, kind: "Qualifying", advancingCount: 8, tournamentId: "tq1", tournamentName: "Callahan's"),
             SeriesStageResponseFactory.Create(id: "q2", order: 2, kind: "Qualifying", advancingCount: 2, tournamentId: "tq2", tournamentName: "Trios", teamSize: 3),
-            SeriesStageResponseFactory.Create(id: "s1", order: 3, kind: "Survivor", advancingCount: 40, tournamentId: "ts1", tournamentName: "Survivor One",
-                squadDate: new DateOnly(2025, 7, 12), squadStartTime: new TimeOnly(9, 0)),
+            SeriesStageResponseFactory.Create(id: "s1", order: 3, kind: "Survivor", advancingCount: 40,
+                squadDate: new DateOnly(2025, 7, 12), squadStartTime: new TimeOnly(9, 0), tournamentId: "ts1", tournamentName: "Survivor One"),
             SeriesStageResponseFactory.Create(id: "p1", order: 4, kind: "Placement", advancingCount: null, tournamentId: "tp1", tournamentName: "East Providence"),
         ];
 
         return SeriesDetailResponseFactory.Create(
             id: SeriesId,
             isLocked: locked,
-            logoUrl: logo,
             finale: withFinale ? SeriesFinaleResponseFactory.Create() : null,
+            logoUrl: logo,
             stages: stages);
     }
 

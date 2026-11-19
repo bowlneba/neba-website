@@ -32,7 +32,7 @@ internal static class SeriesSeed
         TournamentType? type = null)
     {
         var tournament = TournamentFactory.Create(
-            name: name, startDate: start, endDate: end ?? start, seasonId: season.Id, tournamentType: type);
+            name: name, tournamentType: type, startDate: start, endDate: end ?? start, seasonId: season.Id);
 
         dbContext.Tournaments.Add(tournament);
         await dbContext.SaveChangesAsync(ct);

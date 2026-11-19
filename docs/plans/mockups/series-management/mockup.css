@@ -153,7 +153,7 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
 .btn-primary { background: var(--neba-blue-600); color: #fff; }
 .btn-primary:hover { background: var(--neba-blue-700); }
 .btn-secondary { background: var(--panel); color: var(--text); border-color: var(--border-strong); }
-.btn-on-blue { background: rgba(255,255,255,.12); color: #fff; border-color: rgba(255,255,255,.4); }
+.btn-on-blue { background: var(--neba-blue-700); color: #fff; border-color: rgba(255,255,255,.4); }
 .btn-danger { background: var(--neba-accent-red); color: #fff; }
 .btn-danger-on-blue { background: transparent; color: #fff; border-color: rgba(255,255,255,.4); }
 .btn[disabled] { opacity: .5; cursor: not-allowed; }
@@ -223,10 +223,10 @@ body.is-admin .admin-only.flex { display: flex; }
 .muted { color: var(--muted); }
 
 @media (prefers-reduced-motion: reduce) {
-  * { transition: none !important; animation: none !important; }
+  :root *, :root *::before, :root *::after { transition: none; animation: none; }
 }
 
-[hidden] { display: none !important; }
+[hidden][hidden] { display: none; }
 
 /* Second line under a team Stage's advancing label */
 .adv-sub { display: block; font-weight: 400; font-size: 13px; color: var(--muted); }

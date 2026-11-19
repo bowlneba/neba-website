@@ -21,6 +21,7 @@ internal sealed class TournamentSeriesReader(AppDbContext appDbContext, IFileSto
             return new Dictionary<TournamentId, TournamentSeriesDto>();
         }
 
+        // EF turns a navigation through an optional owned type into a null-safe left join, so no null checks here.
         var rows = await appDbContext.Series.AsNoTracking()
             .SelectMany(series => series.Stages
                 .Where(stage => tournamentIds.Contains(stage.TournamentId))
@@ -29,15 +30,15 @@ internal sealed class TournamentSeriesReader(AppDbContext appDbContext, IFileSto
                     stage.TournamentId,
                     SeriesId = series.Id,
                     series.Name,
-                    LogoContainer = series.Logo == null ? null : series.Logo.Container,
-                    LogoPath = series.Logo == null ? null : series.Logo.Path,
+                    LogoContainer = series.Logo!.Container,
+                    LogoPath = series.Logo.Path,
                     stage.Kind,
                     stage.AdvancingCount,
-                    SquadDate = stage.SquadDesignation == null ? (DateOnly?)null : stage.SquadDesignation.Date,
-                    SquadStartTime = stage.SquadDesignation == null ? (TimeOnly?)null : stage.SquadDesignation.StartTime,
-                    FinaleCount = series.Finale == null ? (int?)null : series.Finale.FinalistCount,
-                    FinaleDate = series.Finale == null ? (DateOnly?)null : series.Finale.Date,
-                    FinaleStartTime = series.Finale == null ? (TimeOnly?)null : series.Finale.StartTime,
+                    SquadDate = (DateOnly?)stage.SquadDesignation!.Date,
+                    SquadStartTime = (TimeOnly?)stage.SquadDesignation.StartTime,
+                    FinaleCount = (int?)series.Finale!.FinalistCount,
+                    FinaleDate = (DateOnly?)series.Finale.Date,
+                    FinaleStartTime = (TimeOnly?)series.Finale.StartTime,
                 }))
             .ToListAsync(cancellationToken);
 

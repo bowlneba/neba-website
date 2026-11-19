@@ -165,7 +165,7 @@ internal sealed class ImageSharpResizer(ILogger<ImageSharpResizer> logger)
         using var clone = image is Image<Rgba32> ? null : image.CloneAs<Rgba32>();
         var pixels = image as Image<Rgba32> ?? clone!;
 
-        int minX = pixels.Width, minY = pixels.Height, maxX = -1, maxY = -1;
+        var found = new OpaqueExtent(pixels.Width, pixels.Height);
         pixels.ProcessPixelRows(accessor =>
         {
             for (var y = 0; y < accessor.Height; y++)
@@ -173,25 +173,20 @@ internal sealed class ImageSharpResizer(ILogger<ImageSharpResizer> logger)
                 var row = accessor.GetRowSpan(y);
                 for (var x = 0; x < row.Length; x++)
                 {
-                    if (row[x].A <= EmptyAlphaThreshold)
+                    if (row[x].A > EmptyAlphaThreshold)
                     {
-                        continue;
+                        found.Include(x, y);
                     }
-
-                    minX = Math.Min(minX, x);
-                    maxX = Math.Max(maxX, x);
-                    minY = Math.Min(minY, y);
-                    maxY = Math.Max(maxY, y);
                 }
             }
         });
 
-        if (maxX < 0)
+        if (found.IsEmpty)
         {
             return;
         }
 
-        var bounds = new Rectangle(minX, minY, maxX - minX + 1, maxY - minY + 1);
+        var bounds = found.ToRectangle();
         if (bounds.Width == image.Width && bounds.Height == image.Height)
         {
             return;
@@ -224,6 +219,27 @@ internal sealed class ImageSharpResizer(ILogger<ImageSharpResizer> logger)
             or EndOfStreamException
             or IndexOutOfRangeException
             or OverflowException;
+
+    /// <summary>Running bounds of the opaque pixels. A class, so the pixel-row lambda can update it.</summary>
+    private sealed class OpaqueExtent(int width, int height)
+    {
+        private int _minX = width;
+        private int _minY = height;
+        private int _maxX = -1;
+        private int _maxY = -1;
+
+        public bool IsEmpty => _maxX < 0;
+
+        public void Include(int x, int y)
+        {
+            _minX = Math.Min(_minX, x);
+            _maxX = Math.Max(_maxX, x);
+            _minY = Math.Min(_minY, y);
+            _maxY = Math.Max(_maxY, y);
+        }
+
+        public Rectangle ToRectangle() => new(_minX, _minY, _maxX - _minX + 1, _maxY - _minY + 1);
+    }
 }
 
 internal static partial class ImageSharpResizerLogMessages

@@ -30,12 +30,12 @@
     font-size: 1.25rem;
 }
 
-.tournament-series-callout__round {
-    margin-top: 0.25rem !important;
+.tournament-series-callout__body .tournament-series-callout__round {
+    margin-top: 0.25rem;
 }
 
-.tournament-series-callout__rule {
-    margin-top: 0.5rem !important;
+.tournament-series-callout__body .tournament-series-callout__rule {
+    margin-top: 0.5rem;
     font-weight: 600;
 }
 

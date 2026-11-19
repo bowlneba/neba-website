@@ -44,39 +44,13 @@ public sealed class SeriesStage
 
     internal ErrorOr<Updated> Update(int order, SeriesStageDefinition definition, StageTournamentFacts facts)
     {
-        var errors = new List<Error>();
-
-        // #8: required and above zero on Qualifying and Survivor; a Placement Stage has none (the Finale carries its own count).
-        if (definition.Kind == StageKind.Placement)
+        var errors = new[]
         {
-            if (definition.AdvancingCount is not null)
-            {
-                errors.Add(SeriesErrors.AdvancingCountNotAllowed(order, facts.TournamentName));
-            }
-        }
-        else if (definition.AdvancingCount is null)
-        {
-            errors.Add(SeriesErrors.AdvancingCountRequired(order, facts.TournamentName, definition.Kind));
-        }
-        else if (definition.AdvancingCount <= 0)
-        {
-            errors.Add(SeriesErrors.AdvancingCountNotPositive(order, facts.TournamentName));
-        }
+            AdvancingCountError(order, definition, facts),
+            SquadError(order, definition, facts),
+        }.OfType<Error>().ToList();
 
         var hasSquad = definition.SquadDate is not null && definition.SquadStartTime is not null;
-
-        if (definition.Kind == StageKind.Survivor && !hasSquad)
-        {
-            errors.Add(SeriesErrors.SquadRequired(order, facts.TournamentName));
-        }
-        else if (definition.Kind != StageKind.Survivor && (definition.SquadDate is not null || definition.SquadStartTime is not null))
-        {
-            errors.Add(SeriesErrors.SquadNotAllowed(order, facts.TournamentName, definition.Kind));
-        }
-        else if (hasSquad && (definition.SquadDate < facts.StartDate || definition.SquadDate > facts.EndDate))
-        {
-            errors.Add(SeriesErrors.SquadDateOutsideTournament(order, facts.TournamentName, definition.SquadDate.Value, facts.StartDate, facts.EndDate));
-        }
 
         if (errors.Count > 0)
         {
@@ -92,6 +66,47 @@ public sealed class SeriesStage
             : null;
 
         return Result.Updated;
+    }
+
+    // #8: required and above zero on Qualifying and Survivor; a Placement Stage has none (the Finale carries its own count).
+    private static Error? AdvancingCountError(int order, SeriesStageDefinition definition, StageTournamentFacts facts)
+    {
+        if (definition.Kind == StageKind.Placement)
+        {
+            return definition.AdvancingCount is null
+                ? null
+                : SeriesErrors.AdvancingCountNotAllowed(order, facts.TournamentName);
+        }
+
+        if (definition.AdvancingCount is null)
+        {
+            return SeriesErrors.AdvancingCountRequired(order, facts.TournamentName, definition.Kind);
+        }
+
+        return definition.AdvancingCount <= 0
+            ? SeriesErrors.AdvancingCountNotPositive(order, facts.TournamentName)
+            : null;
+    }
+
+    private static Error? SquadError(int order, SeriesStageDefinition definition, StageTournamentFacts facts)
+    {
+        var hasSquad = definition.SquadDate is not null && definition.SquadStartTime is not null;
+
+        if (definition.Kind == StageKind.Survivor)
+        {
+            if (!hasSquad)
+            {
+                return SeriesErrors.SquadRequired(order, facts.TournamentName);
+            }
+        }
+        else if (definition.SquadDate is not null || definition.SquadStartTime is not null)
+        {
+            return SeriesErrors.SquadNotAllowed(order, facts.TournamentName, definition.Kind);
+        }
+
+        return hasSquad && (definition.SquadDate < facts.StartDate || definition.SquadDate > facts.EndDate)
+            ? SeriesErrors.SquadDateOutsideTournament(order, facts.TournamentName, definition.SquadDate.Value, facts.StartDate, facts.EndDate)
+            : null;
     }
 
     internal bool Matches(int order, SeriesStageDefinition definition)
