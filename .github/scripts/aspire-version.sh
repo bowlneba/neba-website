@@ -7,7 +7,7 @@ set -euo pipefail
 props="${1:-$(dirname "${BASH_SOURCE[0]}")/../../Directory.Packages.props}"
 version="$(sed -n 's/.*Include="Aspire\.Hosting\.AppHost"[[:space:]]*Version="\([^"]*\)".*/\1/p' "$props")"
 
-if [ -z "$version" ]; then
+if [[ -z "$version" ]]; then
   echo "Aspire.Hosting.AppHost PackageVersion not found in Directory.Packages.props" >&2
   exit 1
 fi

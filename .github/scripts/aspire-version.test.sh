@@ -21,12 +21,12 @@ cat > "$tmp/mixed.props" <<'PROPS'
 </Project>
 PROPS
 actual="$("$script" "$tmp/mixed.props")"
-[ "$actual" = "17.2.3" ] || fail "mixed props: expected 17.2.3, got '$actual'"
+[[ "$actual" = "17.2.3" ]] || fail "mixed props: expected 17.2.3, got '$actual'"
 
 # Pre-release versions come back whole.
 sed 's/17.2.3/17.0.0-preview.1/' "$tmp/mixed.props" > "$tmp/preview.props"
 actual="$("$script" "$tmp/preview.props")"
-[ "$actual" = "17.0.0-preview.1" ] || fail "preview props: expected 17.0.0-preview.1, got '$actual'"
+[[ "$actual" = "17.0.0-preview.1" ]] || fail "preview props: expected 17.0.0-preview.1, got '$actual'"
 
 # A missing entry exits non-zero.
 grep -v 'Aspire.Hosting.AppHost' "$tmp/mixed.props" > "$tmp/missing.props"
@@ -38,9 +38,9 @@ fi
 actual="$("$script" "$repo_props")"
 [[ "$actual" =~ ^[0-9]+\.[0-9]+\.[0-9]+ ]] || fail "repo props: '$actual' is not a version"
 expected="$(grep -o 'Include="Aspire.Hosting.AppHost" Version="[^"]*"' "$repo_props" | sed 's/.*Version="//;s/"//')"
-[ "$actual" = "$expected" ] || fail "repo props: expected $expected, got '$actual'"
+[[ "$actual" = "$expected" ]] || fail "repo props: expected $expected, got '$actual'"
 
-if [ "$failures" -gt 0 ]; then
+if [[ "$failures" -gt 0 ]]; then
   echo "$failures failure(s)" >&2
   exit 1
 fi
