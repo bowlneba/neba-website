@@ -296,9 +296,15 @@ What the third run proved:
 - **Names.** Same resource types as prod. Staging has no managed certificates, no DNS zone, and no Smart Detection action group, which prod holds from manual or automatic setup.
 - **Timing.** Postgres took 9 min 49 s and the container environment 12 min 4 s, in parallel. These two set the run time.
 
+Hotfix test (run 44613719760, success, 5 min 53 s): `aspire do provision-api-containerapp`, then `aspire do provision-web-containerapp`, `Migrations__Run` empty, on top of the existing staging deploy.
+
+- No `run-migrations` step and no migration job step or image appeared. The workflow checks the log for this.
+- Both apps updated in place. Api took 4 min 37 s (it also ran its build and push, and the dependency steps), web about 1 min 20 s.
+- Each `aspire do` pulls in the infra provisioning steps the app depends on (storage, Key Vault, Postgres, environment, role assignments) and applies their Bicep again. They are idempotent and quick when nothing changed, but a hotfix therefore re-applies the infra template on its branch, which azd's per-service deploy did not. Safe, because a hotfix branch is cut from the release tag and carries that release's Bicep.
+- `aspire do` takes one step per call, so a hotfix runs it twice (api, then web).
+
 Open after staging:
 
-- A hotfix run (`aspire do provision-api-containerapp` and `provision-web-containerapp` with `Migrations__Run` unset): not run yet. Test it in staging before writing `hotfix.yml`.
 - A deploy with a required parameter missing: not tested.
 - The `deploy_pipeline` Key Vault role is not needed: secrets go in through ARM, not the data plane. Remove it, and the `deployPrincipalId` parameter, at cutover. Prod keeps its existing role assignment (Bicep does not delete it).
 - Staging still exists and costs a little. Keep it until the hotfix path is tested, then delete `rg-bowlneba-staging` and purge its Key Vault.
