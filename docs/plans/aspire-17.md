@@ -244,6 +244,17 @@ Notes:
 - The vault also holds `Discord--WebhookUrl` and `AzureMaps--SubscriptionKey`. The first is stale and unmanaged (delete by hand when convenient). The second comes from `maps.bicep` and is untouched.
 - The `deploy_pipeline` Key Vault role stays for now. Remove it only after staging shows `aspire deploy` needs no data-plane access (the old azd flow does).
 
+### B4 step 4 result (code done, not yet run)
+
+New file `src/Neba.AppHost/MigrationPipelineStep.cs` and a `run-migrations` step in `AppHost.cs`. It is a port of the shell loop in `cd.yml`: it runs `az containerapp job start` for `api-migrations` and `api-security-migrations`, polls every 10 seconds for up to 10 minutes, and fails the deploy unless each ends `Succeeded`.
+
+- **Order:** a pipeline configuration callback makes `run-migrations` depend on the two jobs' `deploy-compute` steps, and makes the api and web `deploy-compute` steps depend on it. Wiring is by resource and tag, not by step name, because those steps are created late and `--list-steps` does not show them. The same step also feeds `deploy` (it shows in `aspire deploy --list-steps`).
+- **Opt-in:** the step does nothing unless `Migrations__Run=true`. Any run that deploys api or web passes through it (hotfix, a retry of one app), and only the full CD run may touch the schema. The new CD workflow sets the flag. The hotfix workflow never does.
+- **Needs from CI:** `Azure__ResourceGroup` (required, the step fails without it), optional `Azure__SubscriptionId`, an `az` login that stays valid for the run, and `az` on the PATH.
+- **Verified:** it builds, `aspire publish` still works, the step is in the deploy list.
+- **Not verified:** the by-tag wiring and the job runs. List mode skips the configuration callback. First real check is the staging run: confirm in its output that `run-migrations` ran after the job deploys and before api and web.
+- **Open:** whether the OIDC login lasts through a full `aspire deploy` plus up to 10 minutes of polling.
+
 ### B1. Staging deploy (do this before touching production)
 
 Lower priority now. Production's data (Postgres, storage) is covered by B1a. Staging is for the pipeline, migration step, and Key Vault secrets, which what-if cannot show.

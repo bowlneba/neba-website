@@ -1,4 +1,7 @@
 using Aspire.Hosting.Azure;
+using Aspire.Hosting.Pipelines;
+
+using Neba.AppHost;
 
 using Azure.Provisioning;
 using Azure.Provisioning.AppContainers;
@@ -291,11 +294,42 @@ if (builder.ExecutionContext.IsPublishMode)
     }));
 #pragma warning restore ASPIREACADOMAINS001
 
-    // Manually-triggered jobs, not started automatically by azd deploy - cd.yml deploys these
-    // two job images first, triggers each with `az containerapp job start`, and waits for them
-    // to finish before deploying api/web, so the schema is migrated before new code takes traffic.
+    // Manually-triggered jobs, not started by the deploy itself - the run-migrations step below
+    // starts them.
     appMigrations.PublishAsAzureContainerAppJob();
     securityMigrations.PublishAsAzureContainerAppJob();
+
+    // Starts both jobs and waits for them, after their images are deployed and before api or
+    // web deploy, so the schema is migrated before new code takes traffic. It runs only when
+    // Migrations__Run=true (CD sets it; a hotfix deploy does not). The deploy steps are wired
+    // by resource and tag, because Aspire creates them late and --list-steps does not show them.
+    builder.Pipeline.AddStep(
+        MigrationPipelineStep.StepName,
+        context => MigrationPipelineStep.RunAsync(context, ["api-migrations", "api-security-migrations"]),
+        requiredBy: WellKnownPipelineSteps.Deploy);
+
+    builder.Pipeline.AddPipelineConfiguration(context =>
+    {
+        var migrate = context.Steps.Single(step => step.Name == MigrationPipelineStep.StepName);
+
+        foreach (var job in new IResource[] { appMigrations.Resource, securityMigrations.Resource })
+        {
+            foreach (var deployStep in context.GetSteps(job, WellKnownPipelineTags.DeployCompute))
+            {
+                migrate.DependsOn(deployStep);
+            }
+        }
+
+        foreach (var app in new IResource[] { api.Resource, web.Resource })
+        {
+            foreach (var deployStep in context.GetSteps(app, WellKnownPipelineTags.DeployCompute))
+            {
+                deployStep.DependsOn(migrate);
+            }
+        }
+
+        return Task.CompletedTask;
+    });
 }
 else
 {
