@@ -53,7 +53,7 @@ jobs:
       - name: Install Aspire CLI
         run: |
           set -euo pipefail
-          aspire_version="$(grep -oP '(?<=Aspire\.AppHost\.Sdk/)[0-9.]+' src/Neba.AppHost/Neba.AppHost.csproj)"
+          aspire_version="$(.github/scripts/aspire-version.sh)"
           curl -sSL --fail --proto '=https' --tlsv1.2 https://aspire.dev/install.sh -o install-aspire.sh
           [ -s install-aspire.sh ]
           bash install-aspire.sh --version "$aspire_version"
