@@ -1,0 +1,101 @@
+name: Destroy Staging
+
+# Deletes the staging resource group and purges the staging Key Vault, so a later staging
+# deploy starts clean and its Key Vault name is free again. Manual only. It can only touch a
+# resource group with "staging" in its name, and you must type that name to confirm.
+# Production is never a target: this job runs in the Staging environment.
+
+on:
+  workflow_dispatch:
+    inputs:
+      confirm:
+        description: "Type the staging resource group name to confirm (for example rg-bowlneba-staging)"
+        type: string
+        required: true
+
+concurrency:
+  group: staging-deploy
+  cancel-in-progress: false
+
+jobs:
+  destroy:
+    name: Destroy staging
+    runs-on: ubuntu-latest
+    environment: Staging
+    permissions:
+      contents: read
+      id-token: write
+
+    steps:
+      - name: Check the target
+        env:
+          AZURE_RESOURCE_GROUP: ${{ vars.AZURE_RESOURCE_GROUP }}
+          CONFIRM: ${{ inputs.confirm }}
+        run: |
+          set -euo pipefail
+
+          if [ -z "$AZURE_RESOURCE_GROUP" ]; then
+            echo "::error::AZURE_RESOURCE_GROUP is not set for the Staging environment"
+            exit 1
+          fi
+
+          # Production lives in this subscription. Never delete a group that is not staging.
+          if [[ "$AZURE_RESOURCE_GROUP" != *staging* ]]; then
+            echo "::error::AZURE_RESOURCE_GROUP '$AZURE_RESOURCE_GROUP' must contain 'staging'"
+            exit 1
+          fi
+
+          if [ "$CONFIRM" != "$AZURE_RESOURCE_GROUP" ]; then
+            echo "::error::Confirmation '$CONFIRM' does not match '$AZURE_RESOURCE_GROUP'"
+            exit 1
+          fi
+
+      - name: Login to Azure
+        uses: azure/login@93381592711f247e165c389ebb30b596c84cdc48 # v3
+        with:
+          tenant-id: ${{ vars.AZURE_TENANT_ID }}
+          subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+          client-id: ${{ vars.AZURE_CLIENT_ID }}
+
+      # Find the vaults first: after the group is deleted they are only soft-deleted records.
+      - name: Delete the resource group
+        env:
+          AZURE_RESOURCE_GROUP: ${{ vars.AZURE_RESOURCE_GROUP }}
+        run: |
+          set -euo pipefail
+
+          if [ "$(az group exists --name "$AZURE_RESOURCE_GROUP")" != "true" ]; then
+            echo "Resource group '$AZURE_RESOURCE_GROUP' does not exist. Nothing to delete."
+            exit 0
+          fi
+
+          az keyvault list --resource-group "$AZURE_RESOURCE_GROUP" --query "[].{name:name, location:location}" --output json > vaults.json
+          cat vaults.json
+
+          az group delete --name "$AZURE_RESOURCE_GROUP" --yes
+          echo "Deleted '$AZURE_RESOURCE_GROUP'."
+
+      # Deleting the group soft-deletes its vault and keeps the name reserved. Purge it so the
+      # next deploy can reuse the name.
+      - name: Purge the Key Vault
+        env:
+          AZURE_RESOURCE_GROUP: ${{ vars.AZURE_RESOURCE_GROUP }}
+        run: |
+          set -euo pipefail
+
+          if [ ! -f vaults.json ]; then
+            echo "No vault list, so the group was already gone. Checking for soft-deleted vaults left from it."
+          fi
+
+          # Purge only vaults that belonged to this staging group.
+          az keyvault list-deleted \
+            --query "[?contains(properties.vaultId, '/resourceGroups/${AZURE_RESOURCE_GROUP}/') || contains(properties.vaultId, '/resourcegroups/${AZURE_RESOURCE_GROUP}/')].{name:name, location:properties.location}" \
+            --output tsv | while IFS=$'\t' read -r name location; do
+              [ -n "$name" ] || continue
+              echo "Purging $name ($location)"
+              az keyvault purge --name "$name" --location "$location"
+            done
+
+          echo "Soft-deleted vaults left for this group: $(az keyvault list-deleted \
+            --query "length([?contains(properties.vaultId, '/resourceGroups/${AZURE_RESOURCE_GROUP}/') || contains(properties.vaultId, '/resourcegroups/${AZURE_RESOURCE_GROUP}/')])" \
+            --output tsv)"

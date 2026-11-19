@@ -21,6 +21,7 @@ patterns=(
     "(^|[;&|[:space:]])gh$S+(secret|variable)$S+(set|delete|remove)"
     "(^|[;&|[:space:]])gh$S+api$S+.*(-X$S*(POST|PUT|PATCH|DELETE)|--method|-f$S|-F$S|--field|--raw-field|--input)"
     "(^|[;&|[:space:]])azd$S+(up|deploy|provision|down|pipeline|env$S+set)"
+    "(^|[;&|[:space:]])aspire$S+(deploy|do|destroy)($S|$)"
     "(^|[;&|[:space:]])az$S+.*(create|set|delete|update|deploy|add|remove|purge|start|stop|restart|import|assign|role)($S|$)"
     "(^|[;&|[:space:]])curl$S+.*(-X$S*(POST|PUT|PATCH|DELETE)|--data|--form|--upload-file|-d$S|-F$S|-T$S)"
 )

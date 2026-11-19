@@ -257,7 +257,7 @@ if (builder.ExecutionContext.IsPublishMode)
     };
 
     // Custom domain + managed certificate binding, codified so it survives every future
-    // `azd provision` (previously these were only bound by hand in the Portal, and a fresh
+    // deploy (previously these were only bound by hand in the Portal, and a fresh
     // provision wiped them out - see issue #116). Certificate name parameters start empty:
     // the first deploy after adding a new domain binds the hostname only (BindingType
     // Disabled, no cert), which is enough for Azure to validate the DNS records. Once

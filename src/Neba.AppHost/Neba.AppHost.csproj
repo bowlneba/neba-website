@@ -2,8 +2,6 @@
 
   <PropertyGroup>
     <OutputType>Exe</OutputType>
-    <!-- azd detects the AppHost from this property before any restore; the package only sets it after restore. -->
-    <IsAspireHost>true</IsAspireHost>
     <UserSecretsId>fb1757d7-5c3a-4383-9853-755863fbb858</UserSecretsId>
   </PropertyGroup>
 

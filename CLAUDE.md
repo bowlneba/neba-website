@@ -161,4 +161,4 @@ Detailed write-ups live in `docs/learnings/`. Read the matching file before work
 
 - Emergency fixes go on a `hotfix/*` branch cut from the latest release tag (tagged by hand after each deploy) and deploy with `hotfix.yml` (manual dispatch). Open the PR to `main` right away; never leave a hotfix off `main`.
 - Release version lives in `<Version>` in `Directory.Build.props`. PRs to `main` must raise it above `main`'s version, PRs to `release/vX.Y.Z` must set it to `X.Y.Z`, and hotfixes must exceed the base tag (`.github/scripts/check-version-bump.sh`).
-- Hotfixes never run migrations. `hotfix.yml` and `cd.yml` hold copies of the deploy steps; change both.
+- Hotfixes never run migrations (`Migrations__Run` stays unset). `hotfix.yml`, `cd.yml` and `staging.yml` hold copies of the deploy settings; change all three. Deploys use `aspire deploy`, and `cd.yml` and `hotfix.yml` run a read-only what-if first (`.github/scripts/whatif-guard.sh`). Test pipeline changes with `staging.yml` (`docs/learnings/aspire-deploy.md`).

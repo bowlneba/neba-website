@@ -1,5 +1,11 @@
 name: Continuous Deployment
 
+# Deploys the whole stack to production with `aspire deploy`: provision, seed Key Vault,
+# run the migration jobs, then deploy api and web. A read-only what-if runs first and stops
+# the deploy if it would create or delete Postgres or the storage account.
+#
+# Keep the deploy settings in step with hotfix.yml and staging.yml.
+
 on:
   workflow_call:
 
@@ -8,23 +14,9 @@ env:
   SIXLABORS_LICENSE_KEY: ${{ secrets.SIXLABORS_LICENSE_KEY }}
 
 jobs:
-  infra-preview:
-    name: Infrastructure Preview
-    uses: ./.github/workflows/infrastructure_preview.yml
-    with:
-      azure_env_name: ${{ vars.AZURE_ENV_NAME }}
-      azure_location: ${{ vars.AZURE_LOCATION }}
-      artifact_name: cd-azd-preview
-    secrets:
-      SIXLABORS_LICENSE_KEY: ${{ secrets.SIXLABORS_LICENSE_KEY }}
-    permissions:
-      contents: read
-      id-token: write
-
   deploy:
     name: Deploy to Azure
     runs-on: ubuntu-latest
-    needs: infra-preview
     environment: Production
     # Same group as hotfix.yml's deploy job, so a main deploy and a hotfix queue.
     concurrency:
@@ -37,14 +29,10 @@ jobs:
     steps:
       - uses: actions/checkout@v7
 
-      - name: Download preview artifact
-        uses: actions/download-artifact@v8
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v6
         with:
-          name: ${{ needs.infra-preview.outputs.artifact-name }}
-          path: .
-
-      - name: Show preview context
-        run: cat azd-preview.txt
+          dotnet-version: 10.0.x
 
       - name: Login to Azure
         uses: azure/login@93381592711f247e165c389ebb30b596c84cdc48 # v3
@@ -52,9 +40,6 @@ jobs:
           tenant-id: ${{ vars.AZURE_TENANT_ID }}
           subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
           client-id: ${{ vars.AZURE_CLIENT_ID }}
-
-      - name: Setup azd
-        uses: Azure/setup-azd@80591774c092d5d640d43663766a76728d66e07d # v2.3.0
 
       - name: Install Aspire CLI
         run: |
@@ -66,231 +51,82 @@ jobs:
           rm -f install-aspire.sh
           echo "$HOME/.aspire/bin" >> "$GITHUB_PATH"
 
-      # azd finds the AppHost through MSBuild properties that the Aspire package sets only after restore.
-      - name: Restore AppHost
-        run: dotnet restore src/Neba.AppHost
-
-      - name: Configure azd authentication
-        run: azd config set auth.useAzCliAuth true
-
-      - name: Provision infrastructure
+      # Stops the deploy if it would create or delete the database or storage account (a wrong
+      # resource group or a renamed resource would do that). Reads Azure only.
+      - name: What-if guard
         env:
-          AZURE_ENV_NAME: ${{ vars.AZURE_ENV_NAME }}
-          AZURE_LOCATION: ${{ vars.AZURE_LOCATION }}
-          AZURE_TENANT_ID: ${{ vars.AZURE_TENANT_ID }}
           AZURE_SUBSCRIPTION_ID: ${{ vars.AZURE_SUBSCRIPTION_ID }}
-          AZURE_CLIENT_ID: ${{ vars.AZURE_CLIENT_ID }}
-          AZURE_PRINCIPAL_ID: ${{ vars.AZURE_PRINCIPAL_ID }}
-          AZURE_CONTAINERAPP_MIN_REPLICAS: ${{ vars.AZURE_CONTAINERAPP_MIN_REPLICAS }}
-          AZURE_CONTAINERAPP_MAX_REPLICAS: ${{ vars.AZURE_CONTAINERAPP_MAX_REPLICAS }}
-          AZURE_CONTAINERAPP_CONCURRENT_REQUESTS: ${{ vars.AZURE_CONTAINERAPP_CONCURRENT_REQUESTS }}
-          AZURE_POSTGRES_SKU_NAME: ${{ vars.AZURE_POSTGRES_SKU_NAME }}
-          AZURE_POSTGRES_SKU_TIER: ${{ vars.AZURE_POSTGRES_SKU_TIER }}
-          AZURE_WEB_CUSTOM_DOMAIN: ${{ vars.AZURE_WEB_CUSTOM_DOMAIN }}
-          AZURE_WEB_CERTIFICATE_NAME: ${{ vars.AZURE_WEB_CERTIFICATE_NAME }}
-          AZURE_WEB_WWW_CUSTOM_DOMAIN: ${{ vars.AZURE_WEB_WWW_CUSTOM_DOMAIN }}
-          AZURE_WEB_WWW_CERTIFICATE_NAME: ${{ vars.AZURE_WEB_WWW_CERTIFICATE_NAME }}
-          AZURE_API_CUSTOM_DOMAIN: ${{ vars.AZURE_API_CUSTOM_DOMAIN }}
-          AZURE_API_CERTIFICATE_NAME: ${{ vars.AZURE_API_CERTIFICATE_NAME }}
-          AZD_AUTH_USE_AZURE_CLI: "true"
-        run: azd provision --no-prompt
+          AZURE_RESOURCE_GROUP: ${{ vars.AZURE_RESOURCE_GROUP }}
+          AZURE_LOCATION: ${{ vars.AZURE_LOCATION }}
+          Parameters__postgresSkuName: ${{ vars.AZURE_POSTGRES_SKU_NAME }}
+          Parameters__postgresSkuTier: ${{ vars.AZURE_POSTGRES_SKU_TIER }}
+          Parameters__deployPrincipalId: ${{ vars.AZURE_PRINCIPAL_ID }}
+          Parameters__minReplicas: ${{ vars.AZURE_CONTAINERAPP_MIN_REPLICAS }}
+          Parameters__maxReplicas: ${{ vars.AZURE_CONTAINERAPP_MAX_REPLICAS }}
+          Parameters__concurrentRequests: ${{ vars.AZURE_CONTAINERAPP_CONCURRENT_REQUESTS }}
+          Parameters__webCustomDomain: ${{ vars.AZURE_WEB_CUSTOM_DOMAIN }}
+          Parameters__webCertificateName: ${{ vars.AZURE_WEB_CERTIFICATE_NAME }}
+          Parameters__webWwwCustomDomain: ${{ vars.AZURE_WEB_WWW_CUSTOM_DOMAIN }}
+          Parameters__webWwwCertificateName: ${{ vars.AZURE_WEB_WWW_CERTIFICATE_NAME }}
+          Parameters__apiCustomDomain: ${{ vars.AZURE_API_CUSTOM_DOMAIN }}
+          Parameters__apiCertificateName: ${{ vars.AZURE_API_CERTIFICATE_NAME }}
+        run: .github/scripts/whatif-guard.sh
 
-      # Re-authenticate: azd provision can run long enough (Postgres alone took ~7m in
-      # one run) that the OIDC client assertion from the earlier login step expires
-      # (~5 min validity), causing subsequent az CLI calls to fail with AADSTS700024.
-      - name: Re-login to Azure
-        uses: azure/login@93381592711f247e165c389ebb30b596c84cdc48 # v3
-        with:
-          tenant-id: ${{ vars.AZURE_TENANT_ID }}
-          subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
-          client-id: ${{ vars.AZURE_CLIENT_ID }}
-
-      - name: Seed Key Vault secrets
+      # Migrations__Run registers the run-migrations step, which starts the two migration jobs
+      # after their images deploy and before api and web deploy (see MigrationPipelineStep.cs).
+      # The resource group must already exist: production never creates it.
+      - name: Deploy
         env:
-          AZURE_ENV_NAME: ${{ vars.AZURE_ENV_NAME }}
-          GOOGLE_PRIVATE_KEY: ${{ secrets.GOOGLE_PRIVATE_KEY }}
-          GOOGLE_PRIVATE_KEY_ID: ${{ secrets.GOOGLE_PRIVATE_KEY_ID }}
-          GOOGLE_CLIENT_EMAIL: ${{ secrets.GOOGLE_CLIENT_EMAIL }}
-          GOOGLE_PASSWORD: ${{ secrets.GOOGLE_PASSWORD }}
-          JWT_SIGNING_KEY: ${{ secrets.JWT_SIGNING_KEY }}
-          LEGACY_API_KEY: ${{ secrets.LEGACY_API_KEY }}
-          LEGACY_DB_CONNECTION_STRING: ${{ secrets.LEGACY_DB_CONNECTION_STRING }}
-          DISCORD_API_LOGS_WEBHOOK_URL: ${{ secrets.DISCORD_API_LOGS_WEBHOOK_URL }}
-          DISCORD_MANUAL_INTERVENTION_WEBHOOK_URL: ${{ secrets.DISCORD_MANUAL_INTERVENTION_WEBHOOK_URL }}
-          DISCORD_NEWS_WEBHOOK_URL: ${{ secrets.DISCORD_NEWS_WEBHOOK_URL }}
+          Azure__SubscriptionId: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+          Azure__TenantId: ${{ vars.AZURE_TENANT_ID }}
+          Azure__Location: ${{ vars.AZURE_LOCATION }}
+          Azure__ResourceGroup: ${{ vars.AZURE_RESOURCE_GROUP }}
+          Azure__AllowResourceGroupCreation: "false"
+          Migrations__Run: "true"
+          Parameters__postgresSkuName: ${{ vars.AZURE_POSTGRES_SKU_NAME }}
+          Parameters__postgresSkuTier: ${{ vars.AZURE_POSTGRES_SKU_TIER }}
+          Parameters__deployPrincipalId: ${{ vars.AZURE_PRINCIPAL_ID }}
+          Parameters__minReplicas: ${{ vars.AZURE_CONTAINERAPP_MIN_REPLICAS }}
+          Parameters__maxReplicas: ${{ vars.AZURE_CONTAINERAPP_MAX_REPLICAS }}
+          Parameters__concurrentRequests: ${{ vars.AZURE_CONTAINERAPP_CONCURRENT_REQUESTS }}
+          Parameters__webCustomDomain: ${{ vars.AZURE_WEB_CUSTOM_DOMAIN }}
+          Parameters__webCertificateName: ${{ vars.AZURE_WEB_CERTIFICATE_NAME }}
+          Parameters__webWwwCustomDomain: ${{ vars.AZURE_WEB_WWW_CUSTOM_DOMAIN }}
+          Parameters__webWwwCertificateName: ${{ vars.AZURE_WEB_WWW_CERTIFICATE_NAME }}
+          Parameters__apiCustomDomain: ${{ vars.AZURE_API_CUSTOM_DOMAIN }}
+          Parameters__apiCertificateName: ${{ vars.AZURE_API_CERTIFICATE_NAME }}
+          Parameters__googlePrivateKey: ${{ secrets.GOOGLE_PRIVATE_KEY }}
+          Parameters__googlePrivateKeyId: ${{ secrets.GOOGLE_PRIVATE_KEY_ID }}
+          Parameters__googleClientEmail: ${{ secrets.GOOGLE_CLIENT_EMAIL }}
+          Parameters__emailAppPassword: ${{ secrets.GOOGLE_PASSWORD }}
+          Parameters__jwtSigningKey: ${{ secrets.JWT_SIGNING_KEY }}
+          Parameters__legacyApiKey: ${{ secrets.LEGACY_API_KEY }}
+          Parameters__legacyConnectionString: ${{ secrets.LEGACY_DB_CONNECTION_STRING }}
+          Parameters__discordApiLogsWebhookUrl: ${{ secrets.DISCORD_API_LOGS_WEBHOOK_URL }}
+          Parameters__discordManualInterventionWebhookUrl: ${{ secrets.DISCORD_MANUAL_INTERVENTION_WEBHOOK_URL }}
+          Parameters__discordNewsWebhookUrl: ${{ secrets.DISCORD_NEWS_WEBHOOK_URL }}
+        run: aspire deploy --environment production --non-interactive --include-exception-details
+
+      # Container Apps run in single-revision mode, so a new revision takes traffic only
+      # once it passes its readiness probe. This step confirms the live site afterward.
+      - name: Smoke test
+        env:
+          AZURE_API_CUSTOM_DOMAIN: ${{ vars.AZURE_API_CUSTOM_DOMAIN }}
+          AZURE_WEB_CUSTOM_DOMAIN: ${{ vars.AZURE_WEB_CUSTOM_DOMAIN }}
         run: |
           set -euo pipefail
-
-          # The API fails startup validation when any webhook URL is blank, so stop the deploy here.
-          for name in DISCORD_API_LOGS_WEBHOOK_URL DISCORD_MANUAL_INTERVENTION_WEBHOOK_URL DISCORD_NEWS_WEBHOOK_URL; do
-            if [ -z "${!name}" ]; then
-              echo "::error::GitHub secret $name is not set"
-              exit 1
-            fi
-          done
-
-          VAULT_NAME=$(azd env get-value KEYVAULT_VAULTURI | sed 's|https://||;s|\.vault\.azure\.net.*||')
-
-          az keyvault secret set --vault-name "$VAULT_NAME" \
-            --name "Google--Credentials--PrivateKey" \
-            --value "$GOOGLE_PRIVATE_KEY"
-
-          az keyvault secret set --vault-name "$VAULT_NAME" \
-            --name "Google--Credentials--PrivateKeyId" \
-            --value "$GOOGLE_PRIVATE_KEY_ID"
-
-          az keyvault secret set --vault-name "$VAULT_NAME" \
-            --name "Google--Credentials--ClientEmail" \
-            --value "$GOOGLE_CLIENT_EMAIL"
-
-          az keyvault secret set --vault-name "$VAULT_NAME" \
-            --name "EmailSettings--AppPassword" \
-            --value "$GOOGLE_PASSWORD"
-
-          az keyvault secret set --vault-name "$VAULT_NAME" \
-            --name "JwtSettings--SigningKey" \
-            --value "$JWT_SIGNING_KEY"
-
-          az keyvault secret set --vault-name "$VAULT_NAME" \
-            --name "Legacy--ApiKey" \
-            --value "$LEGACY_API_KEY"
-
-          az keyvault secret set --vault-name "$VAULT_NAME" \
-            --name "Legacy--ConnectionString" \
-            --value "$LEGACY_DB_CONNECTION_STRING"
-
-          az keyvault secret set --vault-name "$VAULT_NAME" \
-            --name "Discord--ApiLogsWebhookUrl" \
-            --value "$DISCORD_API_LOGS_WEBHOOK_URL"
-
-          az keyvault secret set --vault-name "$VAULT_NAME" \
-            --name "Discord--ManualInterventionWebhookUrl" \
-            --value "$DISCORD_MANUAL_INTERVENTION_WEBHOOK_URL"
-
-          az keyvault secret set --vault-name "$VAULT_NAME" \
-            --name "Discord--NewsWebhookUrl" \
-            --value "$DISCORD_NEWS_WEBHOOK_URL"
-
-      - name: Deploy migration jobs
-        env:
-          AZURE_ENV_NAME: ${{ vars.AZURE_ENV_NAME }}
-          AZURE_LOCATION: ${{ vars.AZURE_LOCATION }}
-          AZURE_TENANT_ID: ${{ vars.AZURE_TENANT_ID }}
-          AZURE_SUBSCRIPTION_ID: ${{ vars.AZURE_SUBSCRIPTION_ID }}
-          AZURE_CLIENT_ID: ${{ vars.AZURE_CLIENT_ID }}
-          AZURE_PRINCIPAL_ID: ${{ vars.AZURE_PRINCIPAL_ID }}
-          AZURE_CONTAINERAPP_MIN_REPLICAS: ${{ vars.AZURE_CONTAINERAPP_MIN_REPLICAS }}
-          AZURE_CONTAINERAPP_MAX_REPLICAS: ${{ vars.AZURE_CONTAINERAPP_MAX_REPLICAS }}
-          AZURE_CONTAINERAPP_CONCURRENT_REQUESTS: ${{ vars.AZURE_CONTAINERAPP_CONCURRENT_REQUESTS }}
-          AZURE_POSTGRES_SKU_NAME: ${{ vars.AZURE_POSTGRES_SKU_NAME }}
-          AZURE_POSTGRES_SKU_TIER: ${{ vars.AZURE_POSTGRES_SKU_TIER }}
-          AZURE_WEB_CUSTOM_DOMAIN: ${{ vars.AZURE_WEB_CUSTOM_DOMAIN }}
-          AZURE_WEB_CERTIFICATE_NAME: ${{ vars.AZURE_WEB_CERTIFICATE_NAME }}
-          AZURE_WEB_WWW_CUSTOM_DOMAIN: ${{ vars.AZURE_WEB_WWW_CUSTOM_DOMAIN }}
-          AZURE_WEB_WWW_CERTIFICATE_NAME: ${{ vars.AZURE_WEB_WWW_CERTIFICATE_NAME }}
-          AZURE_API_CUSTOM_DOMAIN: ${{ vars.AZURE_API_CUSTOM_DOMAIN }}
-          AZURE_API_CERTIFICATE_NAME: ${{ vars.AZURE_API_CERTIFICATE_NAME }}
-          AZD_AUTH_USE_AZURE_CLI: "true"
-        run: |
-          azd deploy api-migrations --no-prompt
-          azd deploy api-security-migrations --no-prompt
-
-      # See "Re-login to Azure" above - by this point the token from that step (before Key
-      # Vault seeding) is several minutes old (Seed Key Vault + Deploy migration jobs), close
-      # to the ~5 min OIDC validity window, and this step's own az CLI calls need a fresh one.
-      - name: Re-login to Azure (pre-migrations)
-        uses: azure/login@93381592711f247e165c389ebb30b596c84cdc48 # v3
-        with:
-          tenant-id: ${{ vars.AZURE_TENANT_ID }}
-          subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
-          client-id: ${{ vars.AZURE_CLIENT_ID }}
-
-      # These jobs run Neba.Api's EF Core migrations (Neba.MigrationService, see AppHost.cs)
-      # against Postgres using the job's own managed identity - no DB credentials touch this
-      # pipeline. Triggered here, before the api/web deploy below, so the schema is up to date
-      # before new application code takes traffic.
-      - name: Run database migrations
-        env:
-          AZURE_ENV_NAME: ${{ vars.AZURE_ENV_NAME }}
-        run: |
-          set -euo pipefail
-
-          RESOURCE_GROUP=$(az group list --tag "azd-env-name=$AZURE_ENV_NAME" --query "[0].name" -o tsv)
-
-          if [[ -z "$RESOURCE_GROUP" ]]; then
-            echo "Could not resolve resource group for azd environment '$AZURE_ENV_NAME'." >&2
-            exit 1
-          fi
-
-          echo "Resolved resource group: $RESOURCE_GROUP"
-
-          run_migration_job() {
-            local job_name="$1"
-
-            echo "Starting job execution: $job_name"
-            local execution_name
-            execution_name=$(az containerapp job start \
-              --name "$job_name" \
-              --resource-group "$RESOURCE_GROUP" \
-              --query "name" -o tsv)
-
-            echo "Waiting for job execution '$execution_name' to complete..."
-            local status="Running"
-            local attempts=0
-            while [[ "$status" == "Running" || "$status" == "Processing" ]]; do
-              if (( attempts >= 60 )); then
-                echo "Timed out waiting for job '$job_name' execution '$execution_name' to complete." >&2
-                exit 1
+          check() {
+            local url="$1"
+            for attempt in $(seq 1 24); do
+              if curl --fail --silent --show-error --max-time 10 "$url" > /dev/null; then
+                echo "OK: $url"
+                return 0
               fi
-              sleep 10
-              status=$(az containerapp job execution show \
-                --name "$job_name" \
-                --resource-group "$RESOURCE_GROUP" \
-                --job-execution-name "$execution_name" \
-                --query "properties.status" -o tsv)
-              attempts=$((attempts + 1))
+              echo "Waiting for $url (attempt $attempt)..."
+              sleep 5
             done
-
-            if [[ "$status" != "Succeeded" ]]; then
-              echo "Job '$job_name' execution '$execution_name' finished with status '$status'." >&2
-              exit 1
-            fi
-
-            echo "Job '$job_name' completed successfully."
+            echo "::error::Smoke test failed: $url"
+            return 1
           }
-
-          run_migration_job "api-migrations"
-          run_migration_job "api-security-migrations"
-
-      # See "Re-login to Azure" above - migration jobs can poll for up to 10 minutes,
-      # long enough to expire the OIDC client assertion again.
-      - name: Re-login to Azure (post-migrations)
-        uses: azure/login@93381592711f247e165c389ebb30b596c84cdc48 # v3
-        with:
-          tenant-id: ${{ vars.AZURE_TENANT_ID }}
-          subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
-          client-id: ${{ vars.AZURE_CLIENT_ID }}
-
-      - name: Deploy application
-        env:
-          AZURE_ENV_NAME: ${{ vars.AZURE_ENV_NAME }}
-          AZURE_LOCATION: ${{ vars.AZURE_LOCATION }}
-          AZURE_TENANT_ID: ${{ vars.AZURE_TENANT_ID }}
-          AZURE_SUBSCRIPTION_ID: ${{ vars.AZURE_SUBSCRIPTION_ID }}
-          AZURE_CLIENT_ID: ${{ vars.AZURE_CLIENT_ID }}
-          AZURE_PRINCIPAL_ID: ${{ vars.AZURE_PRINCIPAL_ID }}
-          AZURE_CONTAINERAPP_MIN_REPLICAS: ${{ vars.AZURE_CONTAINERAPP_MIN_REPLICAS }}
-          AZURE_CONTAINERAPP_MAX_REPLICAS: ${{ vars.AZURE_CONTAINERAPP_MAX_REPLICAS }}
-          AZURE_CONTAINERAPP_CONCURRENT_REQUESTS: ${{ vars.AZURE_CONTAINERAPP_CONCURRENT_REQUESTS }}
-          AZURE_POSTGRES_SKU_NAME: ${{ vars.AZURE_POSTGRES_SKU_NAME }}
-          AZURE_POSTGRES_SKU_TIER: ${{ vars.AZURE_POSTGRES_SKU_TIER }}
-          AZURE_WEB_CUSTOM_DOMAIN: ${{ vars.AZURE_WEB_CUSTOM_DOMAIN }}
-          AZURE_WEB_CERTIFICATE_NAME: ${{ vars.AZURE_WEB_CERTIFICATE_NAME }}
-          AZURE_WEB_WWW_CUSTOM_DOMAIN: ${{ vars.AZURE_WEB_WWW_CUSTOM_DOMAIN }}
-          AZURE_WEB_WWW_CERTIFICATE_NAME: ${{ vars.AZURE_WEB_WWW_CERTIFICATE_NAME }}
-          AZURE_API_CUSTOM_DOMAIN: ${{ vars.AZURE_API_CUSTOM_DOMAIN }}
-          AZURE_API_CERTIFICATE_NAME: ${{ vars.AZURE_API_CERTIFICATE_NAME }}
-          AZD_AUTH_USE_AZURE_CLI: "true"
-        run: |
-          azd deploy api --no-prompt
-          azd deploy web --no-prompt
+          check "https://${AZURE_API_CUSTOM_DOMAIN}/health"
+          check "https://${AZURE_WEB_CUSTOM_DOMAIN}/health"

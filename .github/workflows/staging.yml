@@ -81,6 +81,11 @@ jobs:
           subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
           client-id: ${{ vars.AZURE_CLIENT_ID }}
 
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v6
+        with:
+          dotnet-version: 10.0.x
+
       - name: Install Aspire CLI
         run: |
           set -euo pipefail
@@ -90,6 +95,23 @@ jobs:
           bash install-aspire.sh --version "$aspire_version"
           rm -f install-aspire.sh
           echo "$HOME/.aspire/bin" >> "$GITHUB_PATH"
+
+      # Same read-only check as production runs before it deploys. A new staging environment has
+      # nothing yet, so creating Postgres and storage is allowed here (ALLOW_CREATE).
+      - name: What-if guard
+        env:
+          ASPIRE_ENVIRONMENT: staging
+          ALLOW_CREATE: "true"
+          AZURE_SUBSCRIPTION_ID: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+          AZURE_RESOURCE_GROUP: ${{ vars.AZURE_RESOURCE_GROUP }}
+          AZURE_LOCATION: ${{ vars.AZURE_LOCATION }}
+          Parameters__postgresSkuName: ${{ vars.AZURE_POSTGRES_SKU_NAME }}
+          Parameters__postgresSkuTier: ${{ vars.AZURE_POSTGRES_SKU_TIER }}
+          Parameters__deployPrincipalId: ${{ vars.AZURE_PRINCIPAL_ID }}
+          Parameters__minReplicas: ${{ vars.AZURE_CONTAINERAPP_MIN_REPLICAS }}
+          Parameters__maxReplicas: ${{ vars.AZURE_CONTAINERAPP_MAX_REPLICAS }}
+          Parameters__concurrentRequests: ${{ vars.AZURE_CONTAINERAPP_CONCURRENT_REQUESTS }}
+        run: .github/scripts/whatif-guard.sh
 
       # Custom domains are left unset on purpose: staging has no DNS, and the AppHost skips a
       # domain whose parameter is empty. Migrations__Run is what registers the run-migrations step

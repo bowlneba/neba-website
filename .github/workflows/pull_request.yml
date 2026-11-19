@@ -164,19 +164,15 @@ jobs:
         with:
           filters: |
             apphost:
-              - 'src/Neba.AppHost/AppHost.cs'
+              - 'src/Neba.AppHost/**'
 
-  azd-provision-preview:
+  infra-whatif:
     name: Infrastructure Preview
     if: needs.detect-apphost-changes.outputs.apphost_changed == 'true'
     needs: detect-apphost-changes
     uses: ./.github/workflows/infrastructure_preview.yml
     with:
-      azure_env_name: bowlneba-prod
-      azure_location: ${{ vars.AZURE_LOCATION }}
-      artifact_name: pr-azd-preview
-    secrets:
-      SIXLABORS_LICENSE_KEY: ${{ secrets.SIXLABORS_LICENSE_KEY }}
+      artifact_name: pr-infra-whatif
     permissions:
       contents: read
       id-token: write
@@ -188,7 +184,7 @@ jobs:
     runs-on: ubuntu-latest
     needs:
       - detect-apphost-changes
-      - azd-provision-preview
+      - infra-whatif
     permissions:
       contents: read
       pull-requests: write
@@ -197,7 +193,7 @@ jobs:
       - name: Download preview artifact
         uses: actions/download-artifact@v8
         with:
-          name: ${{ needs.azd-provision-preview.outputs.artifact-name }}
+          name: ${{ needs.infra-whatif.outputs.artifact-name }}
           path: /tmp
 
       - name: Comment preview on PR
@@ -206,16 +202,12 @@ jobs:
           PR_NUMBER: ${{ github.event.pull_request.number }}
           REPO: ${{ github.repository }}
         run: |
-          PREVIEW=$(cat /tmp/azd-preview.txt)
-          BODY="<!-- azd-provision-preview -->
-          ## Infrastructure Preview
-
-          \`\`\`
-          ${PREVIEW}
-          \`\`\`"
+          PREVIEW=$(cat /tmp/whatif-summary.md)
+          BODY="<!-- infra-whatif -->
+          ${PREVIEW}"
 
           COMMENT_ID=$(gh api "repos/${REPO}/issues/${PR_NUMBER}/comments" \
-            --jq '.[] | select(.body | startswith("<!-- azd-provision-preview -->")) | .id' | head -1)
+            --jq '.[] | select(.body | startswith("<!-- infra-whatif -->")) | .id' | head -1)
 
           if [ -n "$COMMENT_ID" ]; then
             gh api "repos/${REPO}/issues/comments/${COMMENT_ID}" -X PATCH -f body="$BODY"
