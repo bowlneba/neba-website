@@ -35,7 +35,7 @@ CLAUDE.md loads on its own, including the "Hotfix deploys" rules. Then:
 - **`hotfix.yml` and `cd.yml` hold copies of the deploy steps. Change both**, or say why you changed one.
 - Hotfixes never run migrations.
 - The release version is `<Version>` in `Directory.Build.props`. `.github/scripts/check-version-bump.sh` enforces it: a PR to `main` raises it above `main`'s version, a PR to `release/vX.Y.Z` sets it to `X.Y.Z`, and a hotfix exceeds the base tag. Run the script locally to check a change.
-- Do not hardcode the Aspire CLI version in workflow YAML. Read it from the `Aspire.AppHost.Sdk/<version>` attribute in `src/Neba.AppHost/Neba.AppHost.csproj`.
+- Do not hardcode the Aspire CLI version in workflow YAML. Read it with `.github/scripts/aspire-version.sh`, which takes the `Aspire.Hosting.AppHost` version from `Directory.Packages.props`.
 - `package-lock.json` changes are regenerated on Linux (a `node:24-slim` container), not by a bare `npm install` on macOS.
 - Key Vault secrets use the `--` separator (for example `GoogleDrive--Credentials--PrivateKey`). The CI identity needs the Key Vault Secrets Officer role to write them. Local development uses user secrets.
 - ImageSharp needs `SIXLABORS_LICENSE_KEY` in Release builds (CI secret).

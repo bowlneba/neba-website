@@ -41,6 +41,10 @@ jobs:
             .github/scripts/check-version-bump.sh
           fi
 
+      # CD, hotfix and infrastructure preview install the Aspire CLI at the version this script prints.
+      - name: Test aspire-version.sh
+        run: .github/scripts/aspire-version.test.sh
+
   format-check:
     name: Code Format Check
     runs-on: ubuntu-latest

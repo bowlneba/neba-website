@@ -1,24 +1,21 @@
-<Project Sdk="Aspire.AppHost.Sdk/13.6.5">
+<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <OutputType>Exe</OutputType>
+    <!-- azd detects the AppHost from this property before any restore; the package only sets it after restore. -->
+    <IsAspireHost>true</IsAspireHost>
     <UserSecretsId>fb1757d7-5c3a-4383-9853-755863fbb858</UserSecretsId>
-    <AspireUseCliBundle>true</AspireUseCliBundle>
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\Neba.Api\Neba.Api.csproj" />
-    <ProjectReference Include="..\Neba.MigrationService\Neba.MigrationService.csproj" />
-    <ProjectReference Include="..\Neba.Website.Server\Neba.Website.Server.csproj" />
-  </ItemGroup>
-
-  <ItemGroup>
+    <PackageReference Include="Aspire.Hosting.AppHost" />
     <PackageReference Include="Aspire.Hosting.Azure.AppContainers" />
     <PackageReference Include="Aspire.Hosting.Azure.ApplicationInsights" />
     <PackageReference Include="Aspire.Hosting.Azure.KeyVault" />
     <PackageReference Include="Aspire.Hosting.Azure.PostgreSQL" />
     <PackageReference Include="Aspire.Hosting.Azure.Storage" />
     <PackageReference Include="Aspire.Hosting.Browsers" />
+    <PackageReference Include="Aspire.Hosting.Dotnet" />
     <PackageReference Include="Aspire.Hosting.PostgreSQL" />
     <PackageReference Include="CommunityToolkit.Aspire.Hosting.MailPit" />
     <PackageReference Include="MessagePack" />

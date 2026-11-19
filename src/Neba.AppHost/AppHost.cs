@@ -8,6 +8,9 @@ using Azure.Provisioning.KeyVault;
 using Azure.Provisioning.PostgreSql;
 using Azure.Provisioning.Storage;
 
+// WithDisplayOrder is experimental in Aspire 17.
+#pragma warning disable ASPIRERESOURCETRAITS001
+
 var builder = DistributedApplication.CreateBuilder(new DistributedApplicationOptions
 {
     Args = args,
@@ -31,12 +34,14 @@ var database = postgres.AddDatabase("bowlneba");
 // process that exits after applying pending migrations, using the same managed-identity
 // Postgres auth as the api - so no DB credentials are needed here or in CD. See
 // .github/workflows/cd.yml for how these are triggered as Azure Container App Jobs.
-var appMigrations = builder.AddProject<Projects.Neba_MigrationService>("api-migrations")
+const string migrationServiceDirectory = "../Neba.MigrationService/";
+
+var appMigrations = builder.AddDotnetProject("api-migrations", migrationServiceDirectory)
     .WithArgs("app")
     .WithReference(database)
     .WaitFor(database);
 
-var securityMigrations = builder.AddProject<Projects.Neba_MigrationService>("api-security-migrations")
+var securityMigrations = builder.AddDotnetProject("api-security-migrations", migrationServiceDirectory)
     .WithArgs("security")
     .WithReference(database)
     .WaitFor(database);
@@ -53,7 +58,7 @@ var storage = builder.AddAzureStorage("storage")
 var blobs = storage.AddBlobs("blob");
 var tables = storage.AddTables("tables");
 
-var api = builder.AddProject<Projects.Neba_Api>("api")
+var api = builder.AddDotnetProject("api", "../Neba.Api/")
     .WithExternalHttpEndpoints()
     .WithHttpHealthCheck("/health")
     .WithReference(database)
@@ -89,7 +94,7 @@ var api = builder.AddProject<Projects.Neba_Api>("api")
     });
 
 #pragma warning disable ASPIREBROWSERLOGS001
-var web = builder.AddProject<Projects.Neba_Website_Server>("web")
+var web = builder.AddDotnetProject("web", "../Neba.Website.Server/")
     .WithExternalHttpEndpoints()
     .WithHttpHealthCheck("/health")
     .WithReference(api)
@@ -297,11 +302,21 @@ if (builder.ExecutionContext.IsPublishMode)
 }
 else
 {
-    var mailpit = builder.AddMailPit("mailpit");
+    var mailpit = builder.AddMailPit("mailpit")
+        .WithDisplayOrder(-10);
 
     api
         .WithReference(mailpit)
         .WaitFor(mailpit);
 }
+
+// Dashboard order, highest first: the apps you open, then migrations, then backing services.
+// Resources without a value (pgAdmin, blob and table children) sort after these by type and name.
+web.WithDisplayOrder(50);
+api.WithDisplayOrder(40);
+appMigrations.WithDisplayOrder(30);
+securityMigrations.WithDisplayOrder(20);
+postgres.WithDisplayOrder(10);
+storage.WithDisplayOrder(10);
 
 await builder.Build().RunAsync();

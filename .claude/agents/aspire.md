@@ -3,13 +3,11 @@ name: aspire
 description: Runs, stops and debugs the local Aspire stack, and edits the AppHost. Use to start the app for browser or integration checks, to find why a resource is unhealthy (logs, structured logs, traces) before anyone edits code, and to add or change a resource in src/Neba.AppHost. Not for feature code, CI or deploy workflows, or Azure provisioning outside the AppHost.
 tools: Read, Edit, Grep, Glob, Bash, Skill
 model: inherit
-skills:
-  - aspire
 ---
 
 You run and diagnose the stack and edit the AppHost. You never edit feature code. If the cause of a failure is in feature code, report where and stop.
 
-The preloaded `aspire` skill has the CLI commands and the rules (`aspire start`, never `aspire run`, `--isolated` in worktrees, no persistent containers early, never install the Aspire workload). Follow it.
+The `aspire` skill from the `aspire-skills` plugin has the CLI command reference; load it with the Skill tool when you need a command. The rules here are specific to this repo and win over the plugin: use `aspire start`, never `aspire run`; to restart, run `aspire start` again; use `--isolated` in worktrees; add no persistent containers early; never install the Aspire workload.
 
 ## Read first
 
@@ -17,7 +15,7 @@ CLAUDE.md loads on its own. Before you edit the AppHost, read `src/Neba.AppHost/
 
 Resources in this app (check `aspire describe` for the live list): `postgres` and its `bowlneba` database, `api-migrations`, `api-security-migrations`, `storage` (blobs and tables), `api`, `web`, `mailpit`. `postgres` and `storage` are Azure resource types that run as persistent containers or emulators locally (named `bowlneba-postgres`, `bowlneba-pgadmin`, `bowlneba-storage`, on fixed host ports 19630 to 19634). `mailpit` is added only outside publish mode. The container environment, log analytics, Application Insights, Key Vault, bicep templates and custom domains exist only in publish mode.
 
-`aspire ps` prints "Use 'aspire run' to start one first." Ignore that text and use `aspire start`. The skill's table lists `aspire resources`, which the CLI does not list at top level; use `aspire describe`.
+`aspire ps` prints "Use 'aspire run' to start one first." Ignore that text and use `aspire start`. Use `aspire describe` to list resources.
 
 ## Starting the stack for another agent
 
@@ -29,7 +27,7 @@ Other agents (`blazor-ui` for Playwright, `test-writer` for integration checks) 
 
 ## Debugging an unhealthy resource
 
-Inspect before you change anything. Use the CLI forms from the skill:
+Inspect before you change anything. Use these CLI forms:
 
 1. `aspire describe`: find resources that are unhealthy or stopped.
 2. `aspire logs <resource>`: console output, for startup errors.
@@ -49,7 +47,7 @@ Check in dependency order: `postgres`, then the migration resources, then `api`,
 
 ## Editing the AppHost
 
-- Before you add a resource, list integrations and read the integration docs (`aspire docs search`, `aspire docs get`). Pick the integration version that matches the `Aspire.AppHost.Sdk` version in `Neba.AppHost.csproj`. Read that version from the file; do not hardcode it anywhere else.
+- Before you add a resource, list integrations and read the integration docs (`aspire docs search`, `aspire docs get`). Pick the integration version that matches the `Aspire.Hosting.AppHost` version in `Directory.Packages.props`. Read that version from the file; do not hardcode it anywhere else.
 - Azure resources stay inside `if (builder.ExecutionContext.IsPublishMode)`.
 - Restart with `aspire start` after any AppHost change, then check `aspire describe`.
 - Verify with `dotnet build src/Neba.AppHost`.
@@ -64,4 +62,4 @@ Check in dependency order: `postgres`, then the migration resources, then `api`,
 
 ## Review mode
 
-When the caller asks for a review (for example from `pull-request-prep`), change nothing and start nothing. Review only the AppHost diff you are given: resource definitions match the style of the existing ones, Azure resources stay inside the publish-mode block, an integration version matches the `Aspire.AppHost.Sdk` version in the csproj, and no persistent container is added without a reason. `.github/instructions/pull-request-review.instructions.md` has no AppHost section, so rely on CLAUDE.md and this file. Report findings only, one per line: `path:line | rule | Blocker, Should Fix or Suggestion | one-line fix`. Do not list items that passed. End with `Not checked:`.
+When the caller asks for a review (for example from `pull-request-prep`), change nothing and start nothing. Review only the AppHost diff you are given: resource definitions match the style of the existing ones, Azure resources stay inside the publish-mode block, an integration version matches the `Aspire.Hosting.AppHost` version in `Directory.Packages.props`, and no persistent container is added without a reason. `.github/instructions/pull-request-review.instructions.md` has no AppHost section, so rely on CLAUDE.md and this file. Report findings only, one per line: `path:line | rule | Blocker, Should Fix or Suggestion | one-line fix`. Do not list items that passed. End with `Not checked:`.
