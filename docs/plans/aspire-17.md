@@ -218,6 +218,32 @@ Not tested: a deploy with a required value missing. `aspire publish` does not fa
 
 GitHub changes: none now. The old `AZURE_*` repo variables stay as they are (release/v1.3.0 still uses them). The new workflows map each old variable to its `Parameters__<name>` on the deploy step (step 7). Staging will need its own values (domains, SKU, certificate names), so it needs its own GitHub environment.
 
+### B4 step 3 result (done)
+
+The ten secrets from the `cd.yml` seed step are now `keyVault.AddSecret(...)` calls in `AppHost.cs`, each fed by a `secret: true` parameter. Secret names are unchanged. Aspire resource names forbid `--`, so the code uses the `AddSecret(name, secretName, parameter)` overload.
+
+| Key Vault secret | Parameter | GitHub secret |
+| --- | --- | --- |
+| `Google--Credentials--PrivateKey` | `googlePrivateKey` | `GOOGLE_PRIVATE_KEY` |
+| `Google--Credentials--PrivateKeyId` | `googlePrivateKeyId` | `GOOGLE_PRIVATE_KEY_ID` |
+| `Google--Credentials--ClientEmail` | `googleClientEmail` | `GOOGLE_CLIENT_EMAIL` |
+| `EmailSettings--AppPassword` | `emailAppPassword` | `GOOGLE_PASSWORD` |
+| `JwtSettings--SigningKey` | `jwtSigningKey` | `JWT_SIGNING_KEY` |
+| `Legacy--ApiKey` | `legacyApiKey` | `LEGACY_API_KEY` |
+| `Legacy--ConnectionString` | `legacyConnectionString` | `LEGACY_DB_CONNECTION_STRING` |
+| `Discord--ApiLogsWebhookUrl` | `discordApiLogsWebhookUrl` | `DISCORD_API_LOGS_WEBHOOK_URL` |
+| `Discord--ManualInterventionWebhookUrl` | `discordManualInterventionWebhookUrl` | `DISCORD_MANUAL_INTERVENTION_WEBHOOK_URL` |
+| `Discord--NewsWebhookUrl` | `discordNewsWebhookUrl` | `DISCORD_NEWS_WEBHOOK_URL` |
+
+Checks: the generated `keyvault.bicep` takes each value as a `@secure()` parameter and holds no secret value. A what-if with dummy values against prod found all ten names already in the vault, so a deploy writes a new version of each in place. The required-parameter rule replaces the shell check for blank Discord URLs.
+
+Notes:
+
+- No GitHub secret changes. The new workflow maps each GitHub secret to `Parameters__<parameter>` on the deploy step. The `cd.yml` seed step stays until release/v1.3.0 reaches main.
+- Staging needs a value for all ten (dummy values work), because every one is required.
+- The vault also holds `Discord--WebhookUrl` and `AzureMaps--SubscriptionKey`. The first is stale and unmanaged (delete by hand when convenient). The second comes from `maps.bicep` and is untouched.
+- The `deploy_pipeline` Key Vault role stays for now. Remove it only after staging shows `aspire deploy` needs no data-plane access (the old azd flow does).
+
 ### B1. Staging deploy (do this before touching production)
 
 Lower priority now. Production's data (Postgres, storage) is covered by B1a. Staging is for the pipeline, migration step, and Key Vault secrets, which what-if cannot show.

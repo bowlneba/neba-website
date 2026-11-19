@@ -167,6 +167,32 @@ if (builder.ExecutionContext.IsPublishMode)
         infra.Add(roleAssignment);
     });
 
+    // App secrets, written to the vault by the deploy (the Key Vault secret names are what the
+    // apps read as configuration keys, so they must not change). Each value arrives as a secret
+    // parameter - CI maps the GitHub secret of the same purpose to Parameters__<name>. A required
+    // parameter rejects an empty value, so a blank secret stops the deploy before it reaches
+    // Azure (the API fails startup validation on a blank Discord webhook URL, for example).
+    (string SecretName, string ParameterName)[] secrets =
+    [
+        ("Google--Credentials--PrivateKey", "googlePrivateKey"),
+        ("Google--Credentials--PrivateKeyId", "googlePrivateKeyId"),
+        ("Google--Credentials--ClientEmail", "googleClientEmail"),
+        ("EmailSettings--AppPassword", "emailAppPassword"),
+        ("JwtSettings--SigningKey", "jwtSigningKey"),
+        ("Legacy--ApiKey", "legacyApiKey"),
+        ("Legacy--ConnectionString", "legacyConnectionString"),
+        ("Discord--ApiLogsWebhookUrl", "discordApiLogsWebhookUrl"),
+        ("Discord--ManualInterventionWebhookUrl", "discordManualInterventionWebhookUrl"),
+        ("Discord--NewsWebhookUrl", "discordNewsWebhookUrl"),
+    ];
+
+    foreach (var (secretName, parameterName) in secrets)
+    {
+        // Aspire resource names forbid consecutive hyphens, so the vault secret name is passed
+        // separately from the resource name.
+        keyVault.AddSecret($"{parameterName}Secret", secretName, builder.AddParameter(parameterName, secret: true).Resource);
+    }
+
     // Aspire's default Storage Account bicep sets AllowBlobPublicAccess to false. That's an
     // account-level gate: even though bowlneba-public is created with PublicAccessType.Blob
     // (AzureBlobStorageService), the account itself refuses anonymous reads until this is
