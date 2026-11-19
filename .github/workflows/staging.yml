@@ -7,6 +7,11 @@ name: Staging Deploy
 
 on:
   workflow_dispatch:
+  # Temporary: GitHub cannot dispatch a workflow that exists only on a feature branch, so a push
+  # to this branch that changes this file starts a run. Remove with the Part B cutover.
+  push:
+    branches: [aspire-deploy]
+    paths: [.github/workflows/staging.yml]
 
 concurrency:
   group: staging-deploy
