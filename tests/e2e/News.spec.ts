@@ -63,7 +63,7 @@ test.describe('News list page — error state', () => {
   test.use({ viewport: { width: 1200, height: 800 } });
 
   test('shows error alert when API returns an error', async ({ page }) => {
-    await page.request.post('http://localhost:5151/__mock/fail?path=/news&status=500');
+    await page.request.post('http://localhost:5151/__mock/fail?path=/news&status=422');
     await page.goto('/news');
     await page.waitForSelector('.neba-alert');
     await expect(page.locator('.neba-alert')).toContainText('Error Loading Articles');
@@ -176,7 +176,7 @@ test.describe('News detail page — error state', () => {
   test.use({ viewport: { width: 1200, height: 800 } });
 
   test('shows error alert when API returns a server error', async ({ page }) => {
-    await page.request.post('http://localhost:5151/__mock/fail?path=/news/season-champions-2026&status=500');
+    await page.request.post('http://localhost:5151/__mock/fail?path=/news/season-champions-2026&status=422');
     await page.goto('/news/season-champions-2026');
     await page.waitForSelector('.neba-alert');
     await expect(page.locator('.neba-alert')).toContainText('Error Loading Article');

@@ -72,7 +72,7 @@ test.describe('Users page (authenticated)', () => {
   });
 
   test('shows an error alert and stays on the page when loading the user list fails', async ({ page }) => {
-    await page.request.post('http://localhost:5151/__mock/fail?path=/security/users&status=500');
+    await page.request.post('http://localhost:5151/__mock/fail?path=/security/users&status=422');
 
     await page.goto('/account/users');
     await page.waitForSelector('.neba-alert');
