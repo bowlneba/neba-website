@@ -1,6 +1,6 @@
 # Aspire 17 upgrade and `aspire deploy` move
 
-Status: plan only. No code changed yet.
+Status: Part A done on branch `aspire17` (4 commits, not pushed as of writing). Part B not started.
 Audience: agents that pick up this work. Read the whole file before you start.
 
 Two parts, two branches:
@@ -8,7 +8,7 @@ Two parts, two branches:
 - **Part A** (branch `aspire17`): move the repo to Aspire 17 so it looks as if we built it on 17 from the start. Ships as one PR.
 - **Part B** (new branch, cut from `aspire17` after Part A merges or stacks): replace `azd` with `aspire deploy`. Kept apart so the user can delete the branch if it fails.
 
-Do not start Part B work on the `aspire17` branch.
+Do not start Part B work on the `aspire17` branch. Cut the Part B branch from `aspire17`.
 
 ## Sources
 
@@ -18,7 +18,7 @@ Do not start Part B work on the `aspire17` branch.
   `whats-new-in-aspire-170`, `upgrade-aspire-to-the-latest-version`, `deploy-to-azure`,
   `deploy-to-azure-container-apps`, `use-existing-azd-workflows`, `deployment-state-caching`,
   `azure-container-app-jobs`, `set-up-azure-key-vault-in-the-apphost`, `pipelines-and-app-topology`, `aspire-do-command`.
-- The installed CLI is already 17.0.0. Repo packages are still 13.6.5.
+- The installed CLI is 17.0.0. Repo packages are now 17.x (Part A).
 
 ## Decisions the user made
 
@@ -129,6 +129,30 @@ PRs to `main` must raise `<Version>` in `Directory.Build.props` (now 1.3.0) abov
 4. Publish check: `aspire publish` (or `aspire do` with `--list-steps`) generates Bicep for publish mode without errors. Set the required `AZURE_*` env vars first (see `AppHost.cs`). Compare generated Bicep with a build from `main` and report differences.
 5. E2E: `npm run test:e2e`.
 
+### Part A result (done)
+
+Commits on `aspire17`:
+
+1. Move the AppHost to Aspire 17 with path-based `AddDotnetProject`.
+2. Add an `https` launch profile on `bowlneba.dev.localhost` (https 17107, http 15107).
+3. CI reads the Aspire CLI version through `.github/scripts/aspire-version.sh`, which takes `Aspire.Hosting.AppHost` from `Directory.Packages.props`. `cd.yml`, `hotfix.yml` and `infrastructure_preview.yml` call it. It has not yet run in CI.
+4. Enable the `aspire-skills` plugin. Removed `.claude/skills/aspire`, `.github/skills/aspire` and `.aspire/settings.json`.
+
+Differences from the plan above:
+
+- `Aspire.Hosting.Browsers` is `17.0.0-preview.1.26567.5` (the only 17 build). `CommunityToolkit.Aspire.Hosting.MailPit` is `17.0.0-beta.1078` (only betas exist for 17).
+- `aspire update` added `sdk.version` to `aspire.config.json`. It was removed, because the AppHost no longer uses the SDK.
+- Both `ASPIREBROWSERLOGS001` and `ASPIREACADOMAINS001` pragmas were removed: the build is clean without them on 17.
+- `<TargetFramework>` is not in the AppHost csproj. `Directory.Build.props` already sets it.
+- `.claude/agents/aspire.md` no longer preloads the `aspire` skill. It holds the repo rules itself (never `aspire run`, `--isolated` in worktrees, no early persistent containers) and loads the plugin skill for the command reference.
+- `<Version>` stays 1.3.0 (user decision). Before the PR, confirm `main` is below 1.3.0. The PR title needs the `[v1.3.0]` prefix.
+
+Verification: solution builds with 0 warnings. `aspire start` brought up every resource healthy. 5,769 unit and 1,315 integration tests pass. The user confirmed a normal local start on the real `bowlneba-pgdata` volume. E2E: 1,223 passed; 4 mobile-safari password-page specs failed once and passed on re-run (flaky, not tied to Aspire).
+
+Publish check (`aspire publish -o <dir> --non-interactive`) works. Compared with `main`, resource names are identical. Differences: storage Bicep API version `2024-01-01` to `2026-06-01` (properties reordered), and a new `env` output `AZURE_CONTAINER_APPS_ENVIRONMENT_LOCATION`. Env vars needed for it: `AZURE_POSTGRES_SKU_NAME`, `AZURE_POSTGRES_SKU_TIER`, `AZURE_PRINCIPAL_ID` (any GUID), `AZURE_CONTAINERAPP_MIN_REPLICAS`, `AZURE_CONTAINERAPP_MAX_REPLICAS`, `AZURE_CONTAINERAPP_CONCURRENT_REQUESTS`, `AZURE_WEB_CUSTOM_DOMAIN`, `AZURE_API_CUSTOM_DOMAIN`, optionally `AZURE_WEB_WWW_CUSTOM_DOMAIN`.
+
+Pipeline step names seen in the publish output (a start for B0; `aspire deploy --list-steps` is still needed for the deploy steps): `process-parameters`, `publish-prereq`, `publish-azure-environment`, `publish`, `azure-prepare-resources`, `validate-azure-container-apps`, `prepare-azure-container-apps-env`, `before-start`, `pipeline-execution`, `validate-build-only-container-references`.
+
 ### Part A risks
 
 - `aspire run --watch` does not work for the new resource model. We use `aspire start`, so this should not matter.
@@ -196,5 +220,5 @@ On the Part B branch, before design work, run in the AppHost folder (with publis
 
 ## Open items
 
-- Part A: the right `CommunityToolkit.Aspire.Hosting.MailPit` version for 17 (A1).
+- Part A: none. Push and PR are the user's call.
 - Part B: real pipeline step names (B0), and whether `aspire deploy` can run non-interactively with only env vars.
