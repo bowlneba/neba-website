@@ -1,9 +1,9 @@
-using System.Globalization;
-
 using Aspire.Hosting.Azure;
 
+using Azure.Provisioning;
 using Azure.Provisioning.AppContainers;
 using Azure.Provisioning.Authorization;
+using Azure.Provisioning.Expressions;
 using Azure.Provisioning.KeyVault;
 using Azure.Provisioning.PostgreSql;
 using Azure.Provisioning.Storage;
@@ -116,27 +116,28 @@ if (builder.ExecutionContext.IsPublishMode)
     var appInsights = builder.AddAzureApplicationInsights("appinsights")
         .WithLogAnalyticsWorkspace(workspace);
 
-    // Postgres compute comes from the AZURE_POSTGRES_SKU_* repo vars (currently
-    // Standard_B2s/Burstable) so switching tiers - e.g. downgrading to Standard_B1ms during a
-    // off-season "dark" period - is a config change, not code change. See
-    // .github/workflows/infrastructure_preview.yml and cd.yml for where these are supplied.
-    var postgresSkuName = Environment.GetEnvironmentVariable("AZURE_POSTGRES_SKU_NAME")
-        ?? throw new InvalidOperationException("AZURE_POSTGRES_SKU_NAME environment variable is not set.");
-    var postgresSkuTier = Enum.Parse<PostgreSqlFlexibleServerSkuTier>(
-        Environment.GetEnvironmentVariable("AZURE_POSTGRES_SKU_TIER")
-            ?? throw new InvalidOperationException("AZURE_POSTGRES_SKU_TIER environment variable is not set."));
+    // Deploy-time values arrive as Aspire parameters: set Parameters__<name> environment
+    // variables (CI maps them from the AZURE_* repo vars) or user secrets. A required
+    // parameter rejects an empty value.
+
+    // Postgres compute (currently Standard_B1ms/Burstable) comes from parameters so switching
+    // tiers - e.g. downgrading during an off-season "dark" period - is a config change, not a
+    // code change.
+    var postgresSkuName = builder.AddParameter("postgresSkuName");
+    var postgresSkuTier = builder.AddParameter("postgresSkuTier");
 
     postgres.ConfigureInfrastructure(infra =>
     {
         var server = infra.GetProvisionableResources().OfType<PostgreSqlFlexibleServer>().Single();
         server.Sku = new PostgreSqlFlexibleServerSku
         {
-            Name = postgresSkuName,
-            Tier = postgresSkuTier
+            Name = postgresSkuName.AsProvisioningParameter(infra, "postgresSkuName"),
+            Tier = new BicepValue<PostgreSqlFlexibleServerSkuTier>(
+                ((BicepValue<string>)postgresSkuTier.AsProvisioningParameter(infra, "postgresSkuTier")).Compile())
         };
 
         // Storage isn't part of the seasonal on/off toggle above, so it's pinned here rather
-        // than pulled from a repo var - it can't be scaled down once set, so there's no "dark
+        // than pulled from a parameter - it can't be scaled down once set, so there's no "dark
         // period" value to switch to/from. 32 GiB / P6 (240 IOPS) / no autogrow.
         server.Storage = new PostgreSqlFlexibleServerStorage
         {
@@ -149,13 +150,11 @@ if (builder.ExecutionContext.IsPublishMode)
     var keyVault = builder.AddAzureKeyVault("keyvault");
 
     // The CD pipeline's "Seed Key Vault secrets" step (cd.yml) writes secrets directly into this
-    // vault via `az keyvault secret set`, using the same service principal that runs `azd
-    // provision`/`azd deploy`. That principal only holds subscription-level Contributor/User
-    // Access Administrator, neither of which grants Key Vault data-plane access on an
-    // RBAC-authorized vault - so without an explicit data role here, the seed step fails with
-    // 403 Forbidden.
-    var deployPrincipalId = Environment.GetEnvironmentVariable("AZURE_PRINCIPAL_ID")
-        ?? throw new InvalidOperationException("AZURE_PRINCIPAL_ID environment variable is not set.");
+    // vault via `az keyvault secret set`, using the same service principal that runs the deploy.
+    // That principal only holds subscription-level Contributor/User Access Administrator,
+    // neither of which grants Key Vault data-plane access on an RBAC-authorized vault - so
+    // without an explicit data role here, the seed step fails with 403 Forbidden.
+    var deployPrincipalId = builder.AddParameter("deployPrincipalId");
 
     keyVault.ConfigureInfrastructure(infra =>
     {
@@ -163,7 +162,7 @@ if (builder.ExecutionContext.IsPublishMode)
         var roleAssignment = vault.CreateRoleAssignment(
             KeyVaultBuiltInRole.KeyVaultSecretsOfficer,
             RoleManagementPrincipalType.ServicePrincipal,
-            Guid.Parse(deployPrincipalId),
+            new BicepValue<Guid>(((BicepValue<string>)deployPrincipalId.AsProvisioningParameter(infra, "deployPrincipalId")).Compile()),
             "deploy_pipeline");
         infra.Add(roleAssignment);
     });
@@ -208,31 +207,22 @@ if (builder.ExecutionContext.IsPublishMode)
         .WithEnvironment("AzureMaps__AccountId", maps.GetOutput("mapsAccountUniqueId"))
         .WithEnvironment("DataProtection__KeyVaultKeyUri", dataProtectionKey.GetOutput("keyUri"));
 
-    // Replica scaling comes from the AZURE_CONTAINERAPP_* repo vars (currently 1/10/50) so
-    // adjusting capacity - e.g. scaling to zero during an off-season "dark" period - is a
-    // config change, not a code change. See .github/workflows/infrastructure_preview.yml and
-    // cd.yml for where these are supplied.
-    var minReplicas = int.Parse(
-        Environment.GetEnvironmentVariable("AZURE_CONTAINERAPP_MIN_REPLICAS")
-            ?? throw new InvalidOperationException("AZURE_CONTAINERAPP_MIN_REPLICAS environment variable is not set."),
-        CultureInfo.InvariantCulture);
-    var maxReplicas = int.Parse(
-        Environment.GetEnvironmentVariable("AZURE_CONTAINERAPP_MAX_REPLICAS")
-            ?? throw new InvalidOperationException("AZURE_CONTAINERAPP_MAX_REPLICAS environment variable is not set."),
-        CultureInfo.InvariantCulture);
-    var concurrentRequests = Environment.GetEnvironmentVariable("AZURE_CONTAINERAPP_CONCURRENT_REQUESTS")
-        ?? throw new InvalidOperationException("AZURE_CONTAINERAPP_CONCURRENT_REQUESTS environment variable is not set.");
+    // Replica scaling (currently 1/10/50) comes from parameters so adjusting capacity - e.g.
+    // scaling to zero during an off-season "dark" period - is a config change, not a code change.
+    var minReplicas = builder.AddParameter("minReplicas");
+    var maxReplicas = builder.AddParameter("maxReplicas");
+    var concurrentRequests = builder.AddParameter("concurrentRequests");
 
-    Action<AzureResourceInfrastructure, ContainerApp> configureScale = (_, app) =>
+    Action<AzureResourceInfrastructure, ContainerApp> configureScale = (infrastructure, app) =>
     {
-        app.Template.Scale.MinReplicas = minReplicas;
-        app.Template.Scale.MaxReplicas = maxReplicas;
+        app.Template.Scale.MinReplicas = ToBicepInt(minReplicas.AsProvisioningParameter(infrastructure, "minReplicas"));
+        app.Template.Scale.MaxReplicas = ToBicepInt(maxReplicas.AsProvisioningParameter(infrastructure, "maxReplicas"));
         app.Template.Scale.Rules.Add(new ContainerAppScaleRule
         {
             Name = "http-concurrency",
             Http = new ContainerAppHttpScaleRule
             {
-                Metadata = { ["concurrentRequests"] = concurrentRequests }
+                Metadata = { ["concurrentRequests"] = concurrentRequests.AsProvisioningParameter(infrastructure, "concurrentRequests") }
             }
         });
     };
@@ -243,42 +233,23 @@ if (builder.ExecutionContext.IsPublishMode)
     // the first deploy after adding a new domain binds the hostname only (BindingType
     // Disabled, no cert), which is enough for Azure to validate the DNS records. Once
     // validated, provision a free managed certificate for that hostname via the Portal and
-    // feed its name back in via the AZURE_*_CERTIFICATE_NAME repo var - that permanently
+    // feed its name back in via the certificate-name parameter (AZURE_*_CERTIFICATE_NAME repo var) - that permanently
     // binds it (BindingType SniEnabled) from then on. See
-    // .github/workflows/infrastructure_preview.yml and cd.yml for where these are supplied.
-    var webCustomDomain = builder.AddParameter(
-        "webCustomDomain",
-        Environment.GetEnvironmentVariable("AZURE_WEB_CUSTOM_DOMAIN")
-            ?? throw new InvalidOperationException("AZURE_WEB_CUSTOM_DOMAIN environment variable is not set."),
-        publishValueAsDefault: true);
-    var webCertificateName = builder.AddParameter(
-        "webCertificateName",
-        Environment.GetEnvironmentVariable("AZURE_WEB_CERTIFICATE_NAME") ?? string.Empty,
-        publishValueAsDefault: true);
-    var apiCustomDomain = builder.AddParameter(
-        "apiCustomDomain",
-        Environment.GetEnvironmentVariable("AZURE_API_CUSTOM_DOMAIN")
-            ?? throw new InvalidOperationException("AZURE_API_CUSTOM_DOMAIN environment variable is not set."),
-        publishValueAsDefault: true);
-    var apiCertificateName = builder.AddParameter(
-        "apiCertificateName",
-        Environment.GetEnvironmentVariable("AZURE_API_CERTIFICATE_NAME") ?? string.Empty,
-        publishValueAsDefault: true);
+    var webCustomDomain = builder.AddParameter("webCustomDomain");
+    var webCertificateName = builder.AddParameter("webCertificateName").AsOptional();
+    var apiCustomDomain = builder.AddParameter("apiCustomDomain");
+    var apiCertificateName = builder.AddParameter("apiCertificateName").AsOptional();
 
     // Optional second hostname on the web app (www.<apex>). The app redirects www to the apex,
     // so www must reach the container app over HTTPS, which needs its own binding and managed
-    // certificate. Same two-step flow as above; leave AZURE_WEB_WWW_CUSTOM_DOMAIN unset to skip.
-    var wwwCustomDomainValue = Environment.GetEnvironmentVariable("AZURE_WEB_WWW_CUSTOM_DOMAIN");
+    // certificate. Same two-step flow as above; leave Parameters__webWwwCustomDomain unset to skip.
     IResourceBuilder<ParameterResource>? webWwwCustomDomain = null;
     IResourceBuilder<ParameterResource>? webWwwCertificateName = null;
 
-    if (!string.IsNullOrWhiteSpace(wwwCustomDomainValue))
+    if (!string.IsNullOrWhiteSpace(builder.Configuration["Parameters:webWwwCustomDomain"]))
     {
-        webWwwCustomDomain = builder.AddParameter("webWwwCustomDomain", wwwCustomDomainValue, publishValueAsDefault: true);
-        webWwwCertificateName = builder.AddParameter(
-            "webWwwCertificateName",
-            Environment.GetEnvironmentVariable("AZURE_WEB_WWW_CERTIFICATE_NAME") ?? string.Empty,
-            publishValueAsDefault: true);
+        webWwwCustomDomain = builder.AddParameter("webWwwCustomDomain");
+        webWwwCertificateName = builder.AddParameter("webWwwCertificateName").AsOptional();
     }
 
 #pragma warning disable ASPIREACADOMAINS001
@@ -320,3 +291,7 @@ postgres.WithDisplayOrder(10);
 storage.WithDisplayOrder(10);
 
 await builder.Build().RunAsync();
+
+// Container App scale values are ints, but Aspire parameters are strings: convert in Bicep.
+static BicepValue<int> ToBicepInt(BicepValue<string> value)
+    => new(new FunctionCallExpression(new IdentifierExpression("int"), value.Compile()));
