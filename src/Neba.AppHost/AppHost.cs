@@ -1,8 +1,6 @@
 using Aspire.Hosting.Azure;
 using Aspire.Hosting.Pipelines;
 
-using Neba.AppHost;
-
 using Azure.Provisioning;
 using Azure.Provisioning.AppContainers;
 using Azure.Provisioning.Authorization;
@@ -10,6 +8,8 @@ using Azure.Provisioning.Expressions;
 using Azure.Provisioning.KeyVault;
 using Azure.Provisioning.PostgreSql;
 using Azure.Provisioning.Storage;
+
+using Neba.AppHost;
 
 // WithDisplayOrder is experimental in Aspire 17.
 #pragma warning disable ASPIRERESOURCETRAITS001
