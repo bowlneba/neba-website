@@ -14,6 +14,7 @@ using Neba.Api.Features.HallOfFame.Domain;
 using Neba.Api.Features.Memberships.Domain;
 using Neba.Api.Features.News.Domain;
 using Neba.Api.Features.Seasons.Domain;
+using Neba.Api.Features.Series.Domain;
 using Neba.Api.Features.Sponsors.Domain;
 using Neba.Api.Features.Stats.Domain;
 using Neba.Api.Features.Tournaments.Domain;
@@ -44,6 +45,9 @@ internal sealed class AppDbContext(
 
     public DbSet<Tournament> Tournaments
         => Set<Tournament>();
+
+    public DbSet<Series> Series
+        => Set<Series>();
 
     public DbSet<SideCut> SideCuts
         => Set<SideCut>();
@@ -94,6 +98,8 @@ internal sealed class AppDbContext(
         modelBuilder.ApplyConfiguration(new TournamentConfiguration());
         modelBuilder.ApplyConfiguration(new TournamentSponsorConfiguration());
         modelBuilder.ApplyConfiguration(new TournamentOilPatternConfiguration());
+        modelBuilder.ApplyConfiguration(new SeriesConfiguration());
+        modelBuilder.ApplyConfiguration(new SeriesStageConfiguration());
         modelBuilder.ApplyConfiguration(new SideCutConfiguration());
         modelBuilder.ApplyConfiguration(new SideCutCriteriaGroupConfiguration());
         modelBuilder.ApplyConfiguration(new SideCutCriteriaConfiguration());
@@ -136,6 +142,12 @@ internal sealed class AppDbContext(
 
         configurationBuilder.Properties<TournamentId>()
             .HaveConversion<UlidTypedIdConverter<TournamentId>>();
+
+        configurationBuilder.Properties<SeriesId>()
+            .HaveConversion<UlidTypedIdConverter<SeriesId>>();
+
+        configurationBuilder.Properties<SeriesStageId>()
+            .HaveConversion<UlidTypedIdConverter<SeriesStageId>>();
 
         configurationBuilder.Properties<SideCutId>()
             .HaveConversion<UlidTypedIdConverter<SideCutId>>();

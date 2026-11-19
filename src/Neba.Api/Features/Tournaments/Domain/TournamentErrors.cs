@@ -168,6 +168,16 @@ internal static class TournamentErrors
                 { "TournamentId", id.ToString() }
             });
 
+    public static Error IsSeriesStage(TournamentId id, string seriesName)
+        => Error.Conflict(
+            code: "Tournament.IsSeriesStage",
+            description: $"This tournament is a Stage in the {seriesName} Series. Remove it from the Series before deleting it.",
+            metadata: new Dictionary<string, object>
+            {
+                { "TournamentId", id.ToString() },
+                { "SeriesName", seriesName }
+            });
+
     public static Error SquadDateOutOfRange(DateTimeOffset bowlingDateTime, DateOnly startDate, DateOnly endDate)
         => Error.Validation(
             code: "Tournament.Squad.DateOutOfRange",

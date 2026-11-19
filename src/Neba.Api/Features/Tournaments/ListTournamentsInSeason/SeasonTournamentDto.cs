@@ -134,4 +134,7 @@ public sealed record SeasonTournamentDto
     /// tournament or it has no results.
     /// </summary>
     public IReadOnlyCollection<DefendingTeamDto> DefendingChampions { get; init; } = [];
+
+    /// <summary>The Series this tournament is a Stage of, or null.</summary>
+    public TournamentSeriesDto? Series { get; init; }
 }

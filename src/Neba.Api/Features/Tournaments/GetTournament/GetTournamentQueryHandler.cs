@@ -16,7 +16,8 @@ internal sealed class GetTournamentQueryHandler(
     AppDbContext appDbContext,
     IFileStorageService fileStorageService,
     TimeProvider timeProvider,
-    DefendingTeamsReader defendingTeamsReader)
+    DefendingTeamsReader defendingTeamsReader,
+    TournamentSeriesReader tournamentSeriesReader)
     : IQueryHandler<GetTournamentQuery, ErrorOr<TournamentDetailDto>>
 {
     private readonly IQueryable<Tournament> _tournaments
@@ -185,6 +186,7 @@ internal sealed class GetTournamentQueryHandler(
             .CountAsync(cancellationToken);
 
         var defendingByTournament = await defendingTeamsReader.LoadAsync([query.Id], cancellationToken);
+        var seriesByTournament = await tournamentSeriesReader.LoadAsync([query.Id], cancellationToken);
 
         var teamSize = TournamentType.FromValue(row.TournamentTypeValue).TeamSize;
         var recordedEntryCount = recordedEntryPairCount > 0
@@ -265,6 +267,7 @@ internal sealed class GetTournamentQueryHandler(
             Winners = winners,
             TeamSize = teamSize,
             DefendingChampions = [.. defendingByTournament.GetValueOrDefault(query.Id, []).Select(team => team.ToDto())],
+            Series = seriesByTournament.GetValueOrDefault(query.Id),
             Results = results,
             EntryCount = entryCount,
             Articles = row.Articles,

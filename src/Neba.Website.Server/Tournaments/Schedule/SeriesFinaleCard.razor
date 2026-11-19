@@ -1,0 +1,52 @@
+@namespace Neba.Website.Server.Tournaments.Schedule
+@using Neba.Website.Server.Series
+
+<div class="neba-card series-finale-card @(IsPast ? "series-finale-card--past" : null)" role="listitem" aria-label="@AriaLabel">
+    <div class="series-finale-card__grid">
+        <div class="series-finale-card__logo">
+            <SeriesLogoTile LogoUrl="@Finale.LogoUrl" Name="@Finale.SeriesName" Size="@SeriesLogoTile.Card" />
+        </div>
+
+        <div class="series-finale-card__content">
+            <div class="series-finale-card__eyebrow">
+                <time datetime="@Finale.Date.ToString("yyyy-MM-dd", System.Globalization.CultureInfo.InvariantCulture)">@SeriesDisplay.FinaleWhen(Finale.Date, Finale.StartTime)</time>
+                <span aria-hidden="true">·</span>
+                <span class="kind-chip kind-finale">Finale</span>
+            </div>
+
+            <h3 class="series-finale-card__title">
+                <a href="@Finale.Href">@Finale.Title</a>
+            </h3>
+
+            @if (Finale.Host is not null)
+            {
+                <p class="series-finale-card__host">
+                    <span class="material-symbols-outlined" aria-hidden="true">location_on</span>
+                    @Finale.Host
+                </p>
+            }
+            else
+            {
+                <p class="series-finale-card__host series-finale-card__host--tba">Host center to be announced</p>
+            }
+
+            <div class="series-finale-card__chips">
+                <span class="series-finale-card__chip">@("finalist".ToQuantity(Finale.FinalistCount, formatProvider: DisplayCulture.English))</span>
+            </div>
+        </div>
+
+        <div class="series-finale-card__actions">
+            <a href="@Finale.Href" class="neba-link">View Series →</a>
+        </div>
+    </div>
+</div>
+
+@code {
+    [Parameter, EditorRequired]
+    public SeriesFinaleItemViewModel Finale { get; set; } = default!;
+
+    [Parameter]
+    public bool IsPast { get; set; }
+
+    private string AriaLabel => Finale.Title + ", " + SeriesDisplay.FinaleWhen(Finale.Date, Finale.StartTime);
+}

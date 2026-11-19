@@ -1,0 +1,21 @@
+.tournament-series-tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.375rem;
+    padding: 0.125rem 0.625rem 0.125rem 0.1875rem;
+    border: 1px solid var(--neba-border);
+    border-radius: 999px;
+    background: var(--neba-surface, transparent);
+    color: inherit;
+    font-size: 0.8125rem;
+    text-decoration: none;
+}
+
+.tournament-series-tag:hover,
+.tournament-series-tag:focus-visible {
+    border-color: var(--neba-blue-brand);
+}
+
+.tournament-series-tag__name {
+    font-weight: 600;
+}

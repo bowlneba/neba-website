@@ -38,6 +38,36 @@ public sealed class GetTournamentEndpointTests
         await Verify(endpoint.Response);
     }
 
+    [Fact(DisplayName = "HandleAsync should map the Series a tournament is a Stage of, and leave it null otherwise")]
+    public async Task HandleAsync_ShouldMapSeries()
+    {
+        // Arrange
+        var cancellationToken = TestContext.Current.CancellationToken;
+        var series = TournamentSeriesDtoFactory.Create(name: "VH", kind: "Survivor", advancingCount: 20);
+        var withSeries = TournamentDetailDtoFactory.Create(series: series);
+        var without = TournamentDetailDtoFactory.Create();
+
+        var queryHandlerMock = new Mock<IQueryHandler<GetTournamentQuery, ErrorOr<TournamentDetailDto>>>(MockBehavior.Strict);
+        queryHandlerMock
+            .SetupSequence(h => h.HandleAsync(It.IsAny<GetTournamentQuery>(), cancellationToken))
+            .ReturnsAsync(withSeries)
+            .ReturnsAsync(without);
+        var first = Factory.Create<GetTournamentEndpoint>(queryHandlerMock.Object);
+        var second = Factory.Create<GetTournamentEndpoint>(queryHandlerMock.Object);
+
+        // Act
+        await first.HandleAsync(new GetTournamentRequest { TournamentId = withSeries.Id.Value.ToString() }, cancellationToken);
+        await second.HandleAsync(new GetTournamentRequest { TournamentId = without.Id.Value.ToString() }, cancellationToken);
+
+        // Assert
+        first.Response.Series.ShouldNotBeNull();
+        first.Response.Series.SeriesId.ShouldBe(series.SeriesId.Value.ToString());
+        first.Response.Series.Name.ShouldBe("VH");
+        first.Response.Series.Kind.ShouldBe("Survivor");
+        first.Response.Series.AdvancingCount.ShouldBe(20);
+        second.Response.Series.ShouldBeNull();
+    }
+
     [Fact(DisplayName = "HandleAsync should map team size, previous tournament and defending champions")]
     public async Task HandleAsync_ShouldMapTeamSizePreviousTournamentAndDefendingChampions()
     {

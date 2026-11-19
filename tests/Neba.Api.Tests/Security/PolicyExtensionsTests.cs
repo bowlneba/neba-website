@@ -127,6 +127,39 @@ public sealed class PolicyExtensionsTests
         result.Succeeded.ShouldBeFalse();
     }
 
+    [Theory(DisplayName = "AddNebaPolicies should succeed for CanUploadSeriesLogo when caller has CreateSeries, EditSeries, or EditSeriesLogo")]
+    [InlineData("Series.CreateSeries")]
+    [InlineData("Series.EditSeries")]
+    [InlineData("Series.EditSeriesLogo")]
+    public async Task AddNebaPolicies_ShouldSucceedForCanUploadSeriesLogo_WhenCallerHasUploadPermission(string permission)
+    {
+        // Arrange
+        var provider = BuildAuthorizationServiceProvider();
+        var authorizationService = provider.GetRequiredService<IAuthorizationService>();
+        var principal = new ClaimsPrincipal(new ClaimsIdentity([new Claim(Permissions.ClaimType, permission)]));
+
+        // Act
+        var result = await authorizationService.AuthorizeAsync(principal, Permissions.CanUploadSeriesLogoPolicyName);
+
+        // Assert
+        result.Succeeded.ShouldBeTrue();
+    }
+
+    [Fact(DisplayName = "AddNebaPolicies should fail for CanUploadSeriesLogo when caller has only DeleteSeries")]
+    public async Task AddNebaPolicies_ShouldFailForCanUploadSeriesLogo_WhenCallerHasNoLogoPermission()
+    {
+        // Arrange
+        var provider = BuildAuthorizationServiceProvider();
+        var authorizationService = provider.GetRequiredService<IAuthorizationService>();
+        var principal = new ClaimsPrincipal(new ClaimsIdentity([new Claim(Permissions.ClaimType, Permissions.DeleteSeries.Value)]));
+
+        // Act
+        var result = await authorizationService.AuthorizeAsync(principal, Permissions.CanUploadSeriesLogoPolicyName);
+
+        // Assert
+        result.Succeeded.ShouldBeFalse();
+    }
+
     private static ServiceProvider BuildAuthorizationServiceProvider()
     {
         var services = new ServiceCollection();

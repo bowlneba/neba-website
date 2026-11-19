@@ -1,4 +1,5 @@
 @namespace Neba.Website.Server.Tournaments.Schedule
+@using Neba.Api.Contracts.Security
 @using System.Globalization
 
 <div class="neba-card tournament-upcoming-card">
@@ -6,7 +7,7 @@
         <div class="tournament-upcoming-card__logo">
             <img src="@Tournament.DisplayLogoSrc"
                  alt="@Tournament.Name logo" class="tournament-upcoming-card__logo-img" />
-            <TournamentLogoEditButton TournamentName="@Tournament.Name"
+            <LogoEditButton Policy="@Permissions.EditTournamentLogo.PolicyName" OwnerName="@Tournament.Name"
                                       OnClick="@(() => OnEditLogo.InvokeAsync(Tournament))" />
         </div>
 
@@ -39,6 +40,11 @@
                         <span class="tournament-upcoming-card__urgency-dot" aria-hidden="true"></span>
                         @Tournament.UrgencyLabel
                     </span>
+                }
+                @if (Tournament.IsSeriesStage)
+                {
+                    <span aria-hidden="true">·</span>
+                    <TournamentSeriesTag Series="@(Tournament.Series!)" />
                 }
             </div>
 

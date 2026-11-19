@@ -24,8 +24,62 @@ internal sealed record UpcomingTimelineStrip(
     IReadOnlyList<SeasonTournamentViewModel> Tournaments,
     bool UpcomingOnly);
 
+/// <summary>
+/// A run of upcoming entries (tournaments and Finales) that belong to one season.
+/// </summary>
+/// <param name="Season">The season the entries belong to.</param>
+/// <param name="Entries">The entries, in date order.</param>
+/// <param name="ShowDivider">True when a season divider goes above the run.</param>
+internal sealed record UpcomingEntrySection(
+    SeasonViewModel Season,
+    IReadOnlyList<ScheduleEntry> Entries,
+    bool ShowDivider);
+
 internal static class UpcomingSchedule
 {
+    /// <summary>
+    /// Puts tournaments and Finales in one list, ordered by date (then Finale start time).
+    /// </summary>
+    /// <param name="tournaments">The tournaments to show.</param>
+    /// <param name="finales">The Finales to show.</param>
+    /// <param name="newestFirst">True to order the latest date first.</param>
+    public static List<ScheduleEntry> Merge(
+        IEnumerable<SeasonTournamentViewModel> tournaments,
+        IEnumerable<SeriesFinaleItemViewModel> finales,
+        bool newestFirst)
+    {
+        var entries = tournaments.Select(ScheduleEntry.ForTournament)
+            .Concat(finales.Select(ScheduleEntry.ForFinale));
+
+        return newestFirst
+            ? [.. entries.OrderByDescending(e => e.SortDate).ThenByDescending(e => e.SortTime)]
+            : [.. entries.OrderBy(e => e.SortDate).ThenBy(e => e.SortTime)];
+    }
+
+    /// <summary>
+    /// Groups merged entries by season; a Finale sits under the season of its Series. Dividers follow
+    /// the same rule as <see cref="GroupBySeason"/>.
+    /// </summary>
+    /// <param name="entries">The entries to show, in date order.</param>
+    /// <param name="seasons">All known seasons.</param>
+    /// <param name="leadingSeasonLabel">The season label the full upcoming list starts with.</param>
+    public static List<UpcomingEntrySection> GroupEntriesBySeason(
+        IReadOnlyList<ScheduleEntry> entries,
+        IReadOnlyCollection<SeasonViewModel> seasons,
+        string? leadingSeasonLabel)
+        => [.. entries
+            .GroupBy(e => SeasonLabelOf(e, seasons), StringComparer.Ordinal)
+            .Select(group => new UpcomingEntrySection(
+                seasons.FirstOrDefault(s => string.Equals(s.Label, group.Key, StringComparison.Ordinal))
+                    ?? FromDates(group.Key, group.Select(e => e.SortDate)),
+                [.. group],
+                ShowDivider: !string.Equals(group.Key, leadingSeasonLabel, StringComparison.Ordinal)))];
+
+    private static string SeasonLabelOf(ScheduleEntry entry, IReadOnlyCollection<SeasonViewModel> seasons)
+        => entry.Tournament?.Season
+           ?? seasons.FirstOrDefault(s => string.Equals(s.Id, entry.Finale!.SeasonId, StringComparison.Ordinal))?.Label
+           ?? ResolveSeasonLabel(entry.SortDate, seasons);
+
     /// <summary>
     /// Groups upcoming tournaments by season. A divider goes above every season except the one the
     /// full (unfiltered) upcoming list starts with, so a list that starts in next season has no divider.
@@ -86,7 +140,12 @@ internal static class UpcomingSchedule
         }
 
         // A tournament whose season is missing from the season list: describe it from its own dates.
-        var dates = tournaments.Select(t => t.StartDate).ToList();
+        return FromDates(label, tournaments.Select(t => t.StartDate));
+    }
+
+    private static SeasonViewModel FromDates(string label, IEnumerable<DateOnly> dateSequence)
+    {
+        var dates = dateSequence.ToList();
         return new SeasonViewModel
         {
             Id = string.Empty,

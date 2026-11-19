@@ -317,7 +317,7 @@ public sealed class CreateTournamentCommandHandlerTests(AppDbContextFixture fixt
             .SingleAsync(t => t.Name == "Tournament With Attached Oil Pattern", ct);
 
         var fileStorageMock = new Mock<IFileStorageService>(MockBehavior.Strict);
-        var getTournamentHandler = new GetTournamentQueryHandler(_dbContext, fileStorageMock.Object, TimeProvider.System, new DefendingTeamsReader(_dbContext));
+        var getTournamentHandler = new GetTournamentQueryHandler(_dbContext, fileStorageMock.Object, TimeProvider.System, new DefendingTeamsReader(_dbContext), new TournamentSeriesReader(_dbContext, fileStorageMock.Object));
         var getResult = await getTournamentHandler.HandleAsync(
             new GetTournamentQuery { Id = persisted.Id, CallerIsAuthenticated = true, CallerHasTournamentManagementPermission = true },
             ct);
@@ -345,7 +345,7 @@ public sealed class CreateTournamentCommandHandlerTests(AppDbContextFixture fixt
             .SingleAsync(t => t.Name == "Tournament Without Attached Oil Pattern", ct);
 
         var fileStorageMock = new Mock<IFileStorageService>(MockBehavior.Strict);
-        var getTournamentHandler = new GetTournamentQueryHandler(_dbContext, fileStorageMock.Object, TimeProvider.System, new DefendingTeamsReader(_dbContext));
+        var getTournamentHandler = new GetTournamentQueryHandler(_dbContext, fileStorageMock.Object, TimeProvider.System, new DefendingTeamsReader(_dbContext), new TournamentSeriesReader(_dbContext, fileStorageMock.Object));
         var getResult = await getTournamentHandler.HandleAsync(
             new GetTournamentQuery { Id = persisted.Id, CallerIsAuthenticated = true, CallerHasTournamentManagementPermission = true },
             ct);

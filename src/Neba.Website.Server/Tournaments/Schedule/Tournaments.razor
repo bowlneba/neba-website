@@ -3,8 +3,12 @@
 @implements IAsyncDisposable
 @inject ITournamentApiService DataService
 @inject NavigationManager Nav
+@inject ISeriesApi SeriesApi
+@inject ApiExecutor ApiExecutor
 @using ErrorOr
 @using Neba.Api.Contracts.Security
+@using Neba.Api.Contracts.Series
+@using Neba.Website.Server.Services
 
 @rendermode @(new InteractiveServerRenderMode(prerender: false))
 @preservewhitespace false
@@ -66,9 +70,9 @@
             }
             else
             {
-                var filtered = FilteredTournaments.ToList();
+                var filtered = FilteredEntries;
                 <div class="tournaments-page__list" id="tournament-list" role="list" aria-live="polite"
-                     aria-label="@($"{filtered.Count} tournaments")">
+                     aria-label="@("event".ToQuantity(filtered.Count, formatProvider: DisplayCulture.English))">
 
                     @if (_activeTab == TournamentTab.Upcoming)
                     {
@@ -79,17 +83,31 @@
                                 <SeasonDivider Season="@section.Season" />
                             }
 
-                            @foreach (var t in section.Tournaments)
+                            @foreach (var entry in section.Entries)
                             {
-                                <TournamentUpcomingCard Tournament="@t" OnEditLogo="OpenEditLogo" />
+                                @if (entry.Finale is not null)
+                                {
+                                    <SeriesFinaleCard Finale="@entry.Finale" />
+                                }
+                                else
+                                {
+                                    <TournamentUpcomingCard Tournament="@(entry.Tournament!)" OnEditLogo="OpenEditLogo" />
+                                }
                             }
                         }
                     }
                     else
                     {
-                        @foreach (var t in filtered)
+                        @foreach (var entry in filtered)
                         {
-                            <TournamentPastCard Tournament="@t" OnEditLogo="OpenEditLogo" />
+                            @if (entry.Finale is not null)
+                            {
+                                <SeriesFinaleCard Finale="@entry.Finale" IsPast="true" />
+                            }
+                            else
+                            {
+                                <TournamentPastCard Tournament="@(entry.Tournament!)" OnEditLogo="OpenEditLogo" />
+                            }
                         }
                     }
 
@@ -143,6 +161,7 @@
     private List<SeasonTournamentViewModel>? _allTournaments;
     private List<SeasonViewModel>? _availableSeasons;
     private List<SeasonTournamentViewModel> _upcomingTournaments = [];
+    private List<SeriesFinaleItemViewModel> _finales = [];
     private string? _pageNotice;
     private bool _isLoading = true;
 
@@ -193,8 +212,39 @@
         }
     }
 
-    private List<UpcomingSeasonSection> GroupUpcoming(IReadOnlyList<SeasonTournamentViewModel> filtered) =>
-        UpcomingSchedule.GroupBySeason(
+    // Finales: upcoming from today on (any season), past ones only for the season on show.
+    // A Finale has no format, so any format filter hides them.
+    private IEnumerable<SeriesFinaleItemViewModel> FilteredFinales
+    {
+        get
+        {
+            if (_typeFilter is not null)
+            {
+                return [];
+            }
+
+            var today = DateOnly.FromDateTime(DateTime.Today);
+            var query = _activeTab == TournamentTab.Upcoming
+                ? _finales.Where(f => f.Date >= today)
+                : _finales.Where(f => f.Date < today && f.SeasonId == _activeSeason?.Id);
+
+            if (!string.IsNullOrWhiteSpace(_searchTerm))
+            {
+                query = query.Where(f =>
+                    f.Title.Contains(_searchTerm, StringComparison.OrdinalIgnoreCase) ||
+                    f.SeriesName.Contains(_searchTerm, StringComparison.OrdinalIgnoreCase) ||
+                    (f.Host?.Contains(_searchTerm, StringComparison.OrdinalIgnoreCase) ?? false));
+            }
+
+            return query;
+        }
+    }
+
+    private List<ScheduleEntry> FilteredEntries =>
+        UpcomingSchedule.Merge(FilteredTournaments, FilteredFinales, newestFirst: false);
+
+    private List<UpcomingEntrySection> GroupUpcoming(IReadOnlyList<ScheduleEntry> filtered) =>
+        UpcomingSchedule.GroupEntriesBySeason(
             filtered,
             _availableSeasons ?? [],
             _upcomingTournaments.FirstOrDefault()?.Season);
@@ -312,7 +362,9 @@ SeasonViewModel? current)
     // Helper: Load tournaments for active season and hero
     private async Task LoadTournamentsAndHeroAsync(List<SeasonViewModel> availableSeasons, CancellationToken ct)
     {
+        var finalesTask = LoadFinalesAsync(ct);
         var (tournamentsResult, upcomingResult) = await FetchTournamentsAsync(availableSeasons, ct);
+        _finales = await finalesTask;
         if (tournamentsResult.IsError)
         {
             _allTournaments = [];
@@ -321,6 +373,17 @@ SeasonViewModel? current)
         }
 
         ApplyTournaments(tournamentsResult.Value, upcomingResult);
+    }
+
+    // A failed Finale call leaves the Finales out; the executor logs it and the tournaments still show.
+    private async Task<List<SeriesFinaleItemViewModel>> LoadFinalesAsync(CancellationToken ct)
+    {
+        var result = await ApiExecutor.ExecuteAsync(
+            "SeriesApi", "ListSeriesFinales", token => SeriesApi.ListSeriesFinalesAsync(token), ct);
+
+        return result.IsError
+            ? []
+            : [.. result.Value.Items.Select(f => f.ToFinaleItem())];
     }
 
     // Reload after a save. A failed reload keeps the list the user already sees; the save itself worked.

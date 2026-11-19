@@ -36,7 +36,7 @@ test.describe('Forgot Password page (anonymous)', () => {
   });
 
   test('shows a generic error and keeps the form when the request fails', async ({ page }) => {
-    await page.request.post('http://localhost:5151/__mock/fail?path=/security/password/forgot&status=500');
+    await page.request.post('http://localhost:5151/__mock/fail?path=/security/password/forgot&status=422');
 
     await page.goto('/account/forgot-password');
     await page.waitForSelector('form');

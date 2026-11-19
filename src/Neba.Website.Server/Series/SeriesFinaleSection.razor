@@ -1,0 +1,121 @@
+@using Neba.Api.Contracts.BowlingCenters.ListBowlingCenters
+
+<section class="series-finale-editor" aria-labelledby="series-finale-heading">
+    <span class="series-editor__label" id="series-finale-heading">Finale</span>
+
+    <label class="series-finale-editor__toggle">
+        <input type="checkbox" checked="@HasFinale" disabled="@IsLocked" @onchange="HandleToggleAsync" />
+        This Series has a Finale
+    </label>
+
+    <p class="series-editor__hint">The Finale is its own event, held after the Placement Round. It shows in the tournament list with the Series logo.</p>
+
+    @if (IsLocked)
+    {
+        <p class="series-editor__hint">Whether a Series has a Finale, and how many finalists go, is fixed once processing begins. The date, start time and center can still change.</p>
+    }
+
+    @if (Model.Finale is { } finale)
+    {
+        <div class="series-finale-editor__fields">
+            <div>
+                <FormLabel TargetId="finale-count" For="@(() => finale.FinalistCount)">Finalists</FormLabel>
+                <input id="finale-count" type="number" min="1" class="neba-input" value="@finale.FinalistCount" disabled="@IsLocked"
+                       @onchange="@(e => HandleCountChangedAsync(finale, e))" />
+                <p class="series-editor__hint">Top finishers of the Placement Round. No more than the last Survivor Round's count.</p>
+            </div>
+
+            <div>
+                <FormLabel TargetId="finale-date" For="@(() => finale.Date)">Date</FormLabel>
+                <NebaDateInput id="finale-date" Value="@finale.Date" ValueChanged="@((DateOnly? d) => HandleDateChangedAsync(finale, d))" ValueExpression="@(() => finale.Date)" />
+                <p class="series-editor__hint">After every Stage's tournament ends.</p>
+            </div>
+
+            <div>
+                <FormLabel TargetId="finale-time" For="@(() => finale.StartTime)">Start time</FormLabel>
+                <input id="finale-time" type="time" class="neba-input" value="@TimeValue(finale)" @onchange="@(e => HandleTimeChangedAsync(finale, e))" />
+            </div>
+
+            <div>
+                <label class="series-editor__label" for="finale-center">Host center</label>
+                <NebaAutocomplete Id="finale-center" TValue="string" TItem="BowlingCenterSummaryResponse"
+                                  Value="@finale.BowlingCenterId"
+                                  ValueChanged="@(id => HandleCenterChangedAsync(finale, id))"
+                                  Items="@BowlingCenters"
+                                  DisplayText="@(center => center.Name + " — " + center.City + ", " + center.State)"
+                                  ItemValue="@(center => center.CertificationNumber)"
+                                  Placeholder="Search bowling centers..."
+                                  EmptyLabel="To be announced" />
+                @if (CurrentHostNotListed)
+                {
+                    <p class="series-editor__hint">Current host (no longer listed): @CurrentHost</p>
+                }
+            </div>
+        </div>
+
+        @foreach (var error in finale.Errors)
+        {
+            <p class="series-editor__row-error" role="alert">@error</p>
+        }
+    }
+</section>
+
+@code {
+    [Parameter, EditorRequired]
+    public SeriesFormModel Model { get; set; } = default!;
+
+    [Parameter, EditorRequired]
+    public IReadOnlyCollection<BowlingCenterSummaryResponse> BowlingCenters { get; set; } = [];
+
+    [Parameter]
+    public bool IsLocked { get; set; }
+
+    /// <summary>The saved host's name, city and state (edit page), shown when that center is no longer in the Open list.</summary>
+    [Parameter]
+    public string? CurrentHost { get; set; }
+
+    [Parameter]
+    public EventCallback OnChanged { get; set; }
+
+    private bool HasFinale => Model.Finale is not null;
+
+    private bool CurrentHostNotListed
+        => CurrentHost is not null
+            && Model.Finale?.BowlingCenterId is { } id
+            && !BowlingCenters.Any(center => center.CertificationNumber == id);
+
+    private static string TimeValue(SeriesFinaleFormModel finale)
+        => finale.StartTime?.ToString("HH:mm", System.Globalization.CultureInfo.InvariantCulture) ?? string.Empty;
+
+    // Turning it off drops what was typed; turning it on starts empty. The toggle is disabled while locked.
+    private Task HandleToggleAsync(ChangeEventArgs e)
+    {
+        Model.Finale = e.Value is true ? new SeriesFinaleFormModel() : null;
+        return OnChanged.InvokeAsync();
+    }
+
+    // Empty input leaves the count empty; the server rejects it by name (Series.Finale.FinalistCount).
+    private Task HandleCountChangedAsync(SeriesFinaleFormModel finale, ChangeEventArgs e)
+    {
+        finale.FinalistCount = int.TryParse(e.Value?.ToString(), out var count) ? count : null;
+        return OnChanged.InvokeAsync();
+    }
+
+    private Task HandleDateChangedAsync(SeriesFinaleFormModel finale, DateOnly? date)
+    {
+        finale.Date = date;
+        return OnChanged.InvokeAsync();
+    }
+
+    private Task HandleTimeChangedAsync(SeriesFinaleFormModel finale, ChangeEventArgs e)
+    {
+        finale.StartTime = TimeOnly.TryParse(e.Value?.ToString(), System.Globalization.CultureInfo.InvariantCulture, out var time) ? time : null;
+        return OnChanged.InvokeAsync();
+    }
+
+    private Task HandleCenterChangedAsync(SeriesFinaleFormModel finale, string? certificationNumber)
+    {
+        finale.BowlingCenterId = string.IsNullOrWhiteSpace(certificationNumber) ? null : certificationNumber;
+        return OnChanged.InvokeAsync();
+    }
+}

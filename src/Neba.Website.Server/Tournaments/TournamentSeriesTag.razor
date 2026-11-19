@@ -1,0 +1,14 @@
+@using Neba.Website.Server.Series
+@namespace Neba.Website.Server.Tournaments
+
+<a class="tournament-series-tag" href="@Series.Href" title="View the Series">
+    <SeriesLogoTile LogoUrl="@Series.LogoUrl" Name="@Series.Name" Size="@SeriesLogoTile.Tag" />
+    <span class="tournament-series-tag__name">@Series.Name</span>
+    <span aria-hidden="true">·</span>
+    <span class="kind-chip @SeriesDisplay.KindClass(Series.Kind)">@SeriesDisplay.RoundLabel(Series.Kind)</span>
+</a>
+
+@code {
+    [Parameter, EditorRequired]
+    public TournamentSeriesViewModel Series { get; set; } = default!;
+}

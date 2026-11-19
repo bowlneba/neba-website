@@ -242,6 +242,262 @@ export const MOCK_TOURNAMENT_ID = '01JX0000000000000000000010';
 
 // ...existing code...
 
+
+// ── Series fixtures (Series.spec.ts) ─────────────────────────────────────────────────────────
+// The Series pages and the Series tag, callout and Finale card on the tournament pages.
+export const MOCK_SERIES_SEASON_ID = '01JX0000000000000000020002';
+export const MOCK_SERIES_PAST_SEASON_ID = '01JX0000000000000000020003';
+export const MOCK_SERIES_ID = '01JX0000000000000000000500'; // current Series with a Finale and a logo
+export const MOCK_SERIES_NO_FINALE_ID = '01JX0000000000000000000501'; // past Series, no Finale, locked
+export const MOCK_SERIES_LOGO_ID = '01JX0000000000000000000502'; // logo edit; one copy per project
+export const MOCK_SERIES_NAME = 'Vincent Hall Memorial Series';
+export const MOCK_SERIES_LOGO_URL = 'http://localhost:5151/mock-storage/series/logo/vincent-hall.png';
+export const MOCK_SERIES_FINALE_DATE = '2030-09-28'; // a Saturday
+export const MOCK_SERIES_QUALIFYING_STAGE_TOURNAMENT_ID = '01JX0000000000000000000300';
+export const MOCK_SERIES_PLACEMENT_STAGE_TOURNAMENT_ID = '01JX0000000000000000000304';
+export const MOCK_PLAIN_TOURNAMENT_NAME = 'NEBA Spring Classic';
+
+function isoDate(offsetDays: number): string {
+  const date = new Date();
+  date.setDate(date.getDate() + offsetDays);
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+}
+
+// Name, start date, kind, advancing count, team size, squad date.
+const SERIES_STAGE_ROWS: [string, string, string, number | null, number, string | null][] = [
+  ["Callahan's Bowl-O-Rama", '2025-01-24', 'Qualifying', 8, 1, null],
+  ['Trios Team Event', '2025-02-21', 'Qualifying', 2, 3, null],
+  ['NEBA Doubles, Baker Finals', '2025-02-22', 'Qualifying', 4, 2, null],
+  ['Sparetime', '2025-03-22', 'Qualifying', 8, 1, null],
+  ['BuddiesProShop.com Open', '2025-04-26', 'Qualifying', 8, 1, null],
+  ['Westgate Lanes', '2025-05-31', 'Qualifying', 8, 1, null],
+  ['Over 50 / Under Baker Doubles', '2025-06-13', 'Qualifying', 4, 2, null],
+  ['Singles, Cranston', '2025-06-14', 'Qualifying', 8, 1, null],
+  ["Callahan's Bowl-O-Rama Survivor", '2025-07-12', 'Survivor', 40, 1, '2025-07-12'],
+  ["Lang's Singles Open", '2025-08-23', 'Survivor', 20, 1, '2025-08-23'],
+  ['East Providence Singles', '2025-09-13', 'Placement', null, 1, null],
+];
+
+const TEAM_SIZE_TYPES: Record<number, string> = { 1: 'Singles', 2: 'Doubles' };
+
+function mockSeriesStages(rows = SERIES_STAGE_ROWS): object[] {
+  return rows.map(([name, start, kind, count, teamSize, squad], index) => ({
+    id: `01JX00000000000000000006${String(index).padStart(2, '0')}`,
+    order: index + 1,
+    kind,
+    status: 'Completed',
+    advancingCount: count,
+    squadDate: squad,
+    squadStartTime: squad ? '09:00:00' : null,
+    tournamentId: `01JX00000000000000000007${String(index).padStart(2, '0')}`,
+    tournamentName: name,
+    tournamentStartDate: start,
+    tournamentEndDate: start,
+    tournamentType: TEAM_SIZE_TYPES[teamSize] ?? 'Trios',
+    teamSize,
+  }));
+}
+
+const MOCK_SERIES_FINALE = {
+  finalistCount: 4,
+  date: MOCK_SERIES_FINALE_DATE,
+  startTime: '14:00:00',
+  bowlingCenterId: '12345',
+  bowlingCenterName: 'Lucky Strike Lanes',
+  bowlingCenterCity: 'Boston',
+  bowlingCenterState: 'MA',
+};
+
+// A Series' logo after a PUT /series/{id}/logo; a missing key means the fixture's own logo.
+const seriesLogos = new Map<string, string | null>();
+
+function mockSeriesDetail(id: string): Record<string, unknown> | null {
+  const year = new Date().getFullYear();
+  const logoFor = (own: string | null) => (seriesLogos.has(id) ? seriesLogos.get(id) : own);
+  const isLogoSeries = E2E_PROJECT_NAMES.some((projectName) => id === perProjectTournamentId(MOCK_SERIES_LOGO_ID, projectName));
+
+  if (id === MOCK_SERIES_ID) {
+    return {
+      id,
+      name: MOCK_SERIES_NAME,
+      seasonId: MOCK_SERIES_SEASON_ID,
+      seasonDescription: `${year} Season`,
+      seasonStartDate: `${year}-01-01`,
+      seasonEndDate: `${year + 1}-12-31`,
+      isLocked: false,
+      finale: MOCK_SERIES_FINALE,
+      logoUrl: logoFor(MOCK_SERIES_LOGO_URL),
+      stages: mockSeriesStages(),
+    };
+  }
+
+  if (isLogoSeries) {
+    return {
+      id,
+      name: 'Logo Edit Series',
+      seasonId: MOCK_SERIES_SEASON_ID,
+      seasonDescription: `${year} Season`,
+      seasonStartDate: `${year}-01-01`,
+      seasonEndDate: `${year + 1}-12-31`,
+      isLocked: false,
+      finale: null,
+      logoUrl: logoFor(null),
+      stages: mockSeriesStages(SERIES_STAGE_ROWS.slice(0, 3)),
+    };
+  }
+
+  if (id === MOCK_SERIES_NO_FINALE_ID) {
+    return {
+      id,
+      name: '2024 Vincent Hall Memorial Series',
+      seasonId: MOCK_SERIES_PAST_SEASON_ID,
+      seasonDescription: '2024 Season',
+      seasonStartDate: '2024-01-01',
+      seasonEndDate: '2024-12-31',
+      isLocked: true,
+      finale: null,
+      logoUrl: null,
+      stages: mockSeriesStages([SERIES_STAGE_ROWS[0], SERIES_STAGE_ROWS[5], SERIES_STAGE_ROWS[8], SERIES_STAGE_ROWS[10]]),
+    };
+  }
+
+  return null;
+}
+
+function mockSeriesSummary(detail: Record<string, unknown>): object {
+  const stages = detail.stages as { kind: string; tournamentId: string }[];
+  const count = (kind: string) => stages.filter((stage) => stage.kind === kind).length;
+  return {
+    id: detail.id,
+    name: detail.name,
+    seasonId: detail.seasonId,
+    seasonDescription: detail.seasonDescription,
+    seasonStartDate: detail.seasonStartDate,
+    seasonEndDate: detail.seasonEndDate,
+    qualifyingStageCount: count('Qualifying'),
+    survivorStageCount: count('Survivor'),
+    placementStageCount: count('Placement'),
+    isLocked: detail.isLocked,
+    logoUrl: detail.logoUrl,
+    stageTournamentIds: stages.map((stage) => stage.tournamentId),
+    nextStage:
+      detail.id === MOCK_SERIES_ID
+        ? { kind: 'Qualifying', tournamentId: '01JX0000000000000000000705', tournamentName: 'Westgate Lanes', tournamentStartDate: '2025-05-31', tournamentEndDate: '2025-05-31' }
+        : null,
+  };
+}
+
+function mockSeriesFinales(): object {
+  const finale = (date: string, withHost: boolean) => ({
+    finalistCount: 4,
+    date,
+    startTime: '14:00:00',
+    bowlingCenterId: withHost ? '12345' : null,
+    bowlingCenterName: withHost ? 'Lucky Strike Lanes' : null,
+    bowlingCenterCity: withHost ? 'Boston' : null,
+    bowlingCenterState: withHost ? 'MA' : null,
+  });
+
+  return {
+    items: [
+      // Dates are relative to today so these stay upcoming and past whenever the suite runs.
+      { seriesId: MOCK_SERIES_ID, seriesName: MOCK_SERIES_NAME, seasonId: MOCK_SEASON_ID, logoUrl: MOCK_SERIES_LOGO_URL, finale: finale(isoDate(30), true) },
+      { seriesId: '01JX0000000000000000000510', seriesName: 'Fall Challenge Series', seasonId: MOCK_SEASON_ID, logoUrl: null, finale: finale(isoDate(60), false) },
+      { seriesId: '01JX0000000000000000000511', seriesName: 'Winter Classic Series', seasonId: MOCK_SEASON_ID, logoUrl: null, finale: finale(isoDate(-10), true) },
+    ],
+    totalItems: 3,
+  };
+}
+
+// The tournaments the Series editor offers for the Series season: one per Stage of the reference Series.
+function mockSeriesSeasonTournaments(): object {
+  return {
+    items: SERIES_STAGE_ROWS.map(([name, start], index) =>
+      seriesStageSeasonItem(`01JX00000000000000000007${String(index).padStart(2, '0')}`, name, start, null)
+    ),
+  };
+}
+
+function resolveSeriesRoute(pathname: string): object | null {
+  if (pathname === '/series') {
+    const details = [MOCK_SERIES_ID, MOCK_SERIES_NO_FINALE_ID].map((id) => mockSeriesDetail(id) as Record<string, unknown>);
+    return { items: details.map(mockSeriesSummary), totalItems: details.length };
+  }
+  if (pathname === '/series/finales') return mockSeriesFinales();
+  if (pathname.startsWith('/series/')) return mockSeriesDetail(pathname.slice('/series/'.length));
+  return null;
+}
+
+const SERIES_TOURNAMENT_QUALIFYING = {
+  seriesId: MOCK_SERIES_ID,
+  name: MOCK_SERIES_NAME,
+  logoUrl: null,
+  kind: 'Qualifying',
+  advancingCount: 8,
+};
+
+const SERIES_TOURNAMENT_PLACEMENT = {
+  seriesId: MOCK_SERIES_ID,
+  name: MOCK_SERIES_NAME,
+  logoUrl: MOCK_SERIES_LOGO_URL,
+  kind: 'Placement',
+  finaleCount: 4,
+  finaleDate: MOCK_SERIES_FINALE_DATE,
+  finaleStartTime: '14:00:00',
+};
+
+function seriesStageSeasonItem(id: string, name: string, startDate: string, series: object | null): object {
+  return {
+    id,
+    name,
+    startDate,
+    endDate: startDate,
+    tournamentType: 'Singles',
+    status: 'Completed',
+    titleEligible: true,
+    entryFee: 75,
+    registrationUrl: null,
+    addedMoney: null,
+    reservations: null,
+    patternLengthCategory: 'Medium',
+    patternRatioCategory: null,
+    logoUrl: null,
+    winners: [],
+    bowlingCenter: { name: 'Lucky Strike Lanes', city: 'Boston', state: 'MA' },
+    sponsors: [],
+    oilPatterns: [],
+    ...(series ? { series } : {}),
+  };
+}
+
+function seriesStageDetail(id: string, name: string, startDate: string, series: object | null): object {
+  return {
+    id,
+    name,
+    season: '2025-2026 Season',
+    startDate,
+    endDate: startDate,
+    statsEligible: true,
+    status: 'Completed',
+    titleEligible: true,
+    tournamentType: 'Singles',
+    entryFee: 60,
+    registrationUrl: null,
+    addedMoney: null,
+    reservations: null,
+    entryCount: null,
+    patternLengthCategory: null,
+    patternRatioCategory: null,
+    logoUrl: null,
+    bowlingCenter: { name: 'Lucky Strike Lanes', city: 'Boston', state: 'MA' },
+    sponsors: [],
+    oilPatterns: [],
+    winners: [],
+    results: [],
+    ...(series ? { series } : {}),
+  };
+}
+
 export const MOCK_SEASON_TOURNAMENTS = {
   items: [
     {
@@ -264,6 +520,12 @@ export const MOCK_SEASON_TOURNAMENTS = {
       sponsors: [],
       oilPatterns: [],
     },
+    // Series Stage tournaments (tag on the schedule) and three plain ones the Series editor can pick.
+    seriesStageSeasonItem(MOCK_SERIES_QUALIFYING_STAGE_TOURNAMENT_ID, 'NEBA Series Qualifier', '2026-04-04', SERIES_TOURNAMENT_QUALIFYING),
+    seriesStageSeasonItem(MOCK_SERIES_PLACEMENT_STAGE_TOURNAMENT_ID, 'NEBA Series Placement', '2026-04-05', SERIES_TOURNAMENT_PLACEMENT),
+    seriesStageSeasonItem('01JX0000000000000000000301', 'Series Pick One', '2026-04-11', null),
+    seriesStageSeasonItem('01JX0000000000000000000302', 'Series Pick Two', '2026-04-18', null),
+    seriesStageSeasonItem('01JX0000000000000000000303', 'Series Pick Three', '2026-04-25', null),
   ],
 };
 
@@ -944,6 +1206,14 @@ const EXTRA_TOURNAMENT_DETAILS = new Map<string, object>([
   [MOCK_TOURNAMENT_INVITATIONAL_UPCOMING_ID, MOCK_TOURNAMENT_INVITATIONAL_UPCOMING],
   [MOCK_TOURNAMENT_INVITATIONAL_PAST_ID, MOCK_TOURNAMENT_INVITATIONAL_PAST],
   [MOCK_TOURNAMENT_TEAM_ID, MOCK_TOURNAMENT_TEAM],
+  [
+    MOCK_SERIES_QUALIFYING_STAGE_TOURNAMENT_ID,
+    seriesStageDetail(MOCK_SERIES_QUALIFYING_STAGE_TOURNAMENT_ID, 'NEBA Series Qualifier', '2026-04-04', SERIES_TOURNAMENT_QUALIFYING),
+  ],
+  [
+    MOCK_SERIES_PLACEMENT_STAGE_TOURNAMENT_ID,
+    seriesStageDetail(MOCK_SERIES_PLACEMENT_STAGE_TOURNAMENT_ID, 'NEBA Series Placement', '2026-04-05', SERIES_TOURNAMENT_PLACEMENT),
+  ],
   ...PER_PROJECT_STATUS_TOURNAMENTS,
   ...PER_PROJECT_TEAM_ERRORS_TOURNAMENTS,
 ]);
@@ -1451,6 +1721,7 @@ function resolveSeasonTournamentsRoute(pathname: string): object | null {
   if (!pathname.startsWith('/seasons/') || !pathname.endsWith('/tournaments')) return null;
 
   const seasonId = pathname.slice('/seasons/'.length, -'/tournaments'.length);
+  if (seasonId === MOCK_SERIES_SEASON_ID) return mockSeriesSeasonTournaments();
   return seasonId === MOCK_SEASON_ID ? MOCK_SEASON_TOURNAMENTS : null;
 }
 
@@ -1499,6 +1770,7 @@ function resolveGetRoute(pathname: string, searchParams: URLSearchParams): objec
     resolveTeamEligibilityRoute(pathname, searchParams) ??
     resolveBowlerSearchRoute(pathname, searchParams) ??
     resolveStaticGetRoute(pathname) ??
+    resolveSeriesRoute(pathname) ??
     resolveTournamentDetailRoute(pathname) ??
     resolveSponsorDetailRoute(pathname) ??
     resolveUserDetailRoute(pathname) ??
@@ -1991,6 +2263,12 @@ async function handleRequest(req: IncomingMessage, res: ServerResponse): Promise
     return;
   }
 
+  if (req.method === 'GET' && pathname.startsWith('/mock-storage/series/')) {
+    res.writeHead(200, { 'Content-Type': 'image/svg+xml' });
+    res.end(MOCK_HALL_OF_FAME_PHOTO_SVG);
+    return;
+  }
+
   if (req.method === 'GET' && pathname.startsWith('/mock-storage/hall-of-fame/')) {
     res.writeHead(200, { 'Content-Type': 'image/svg+xml' });
     res.end(MOCK_HALL_OF_FAME_PHOTO_SVG);
@@ -2070,6 +2348,89 @@ async function handleRequest(req: IncomingMessage, res: ServerResponse): Promise
 
     // Recorded so a test can assert on the submitted logo (null when the logo was removed).
     lastRequestBodies.set('PUT ' + pathname, await readRequestBody(req));
+
+    res.writeHead(204);
+    res.end();
+    return;
+  }
+
+  if (req.method === 'POST' && pathname === '/series/logo') {
+    if (sendMockOverrideErrorIfSet(res, pathname)) return;
+
+    await readRequestBody(req);
+
+    sendJsonResponse(res, {
+      container: 'bowlneba-public',
+      path: 'series/logo/e2e-test-logo.png',
+      fileName: 'e2e-test-logo.png',
+      contentType: 'image/png',
+      sizeInBytes: 4,
+      url: 'http://localhost:5151/mock-storage/series/logo/e2e-test-logo.png',
+    }, 200);
+    return;
+  }
+
+  if (req.method === 'POST' && pathname === '/series') {
+    if (sendMockOverrideErrorIfSet(res, pathname)) return;
+
+    const body = await readRequestBody(req);
+    const parsed = JSON.parse(body) as {
+      series?: { name?: string; finale?: { finalistCount?: number } | null };
+    };
+    const series = parsed.series ?? {};
+    // Recorded per Series name, so specs running in parallel on different projects do not overwrite each other.
+    lastRequestBodies.set('POST /series:' + (series.name ?? ''), body);
+
+    // The name "fail" stands in for a Stage the server rejects (a 4xx, so the page does not retry).
+    if (series.name === 'fail') {
+      sendJsonResponse(res, {
+        status: 422,
+        title: 'One or more validation errors occurred.',
+        errors: [{ name: 'Series.Stages[1]', reason: 'This Stage must follow the previous Stage by date.' }],
+      }, 422);
+      return;
+    }
+
+    if (series.finale && !series.finale.finalistCount) {
+      sendJsonResponse(res, {
+        status: 422,
+        title: 'One or more validation errors occurred.',
+        errors: [{ name: 'Series.Finale.FinalistCount', reason: 'The Finale needs at least one finalist.' }],
+      }, 422);
+      return;
+    }
+
+    sendJsonResponse(res, { seriesId: MOCK_SERIES_ID }, 201);
+    return;
+  }
+
+  if (req.method === 'PUT' && pathname.startsWith('/series/') && pathname.endsWith('/logo')) {
+    if (sendMockOverrideErrorIfSet(res, pathname)) return;
+
+    const body = await readRequestBody(req);
+    lastRequestBodies.set('PUT ' + pathname, body);
+
+    const seriesId = pathname.slice('/series/'.length, -'/logo'.length);
+    const logo = (JSON.parse(body) as { input?: { logo?: { path: string } | null } }).input?.logo;
+    seriesLogos.set(seriesId, logo ? `http://localhost:5151/mock-storage/${logo.path}` : null);
+
+    res.writeHead(204);
+    res.end();
+    return;
+  }
+
+  if (req.method === 'PUT' && pathname.startsWith('/series/')) {
+    if (sendMockOverrideErrorIfSet(res, pathname)) return;
+
+    lastRequestBodies.set('PUT ' + pathname, await readRequestBody(req));
+
+    res.writeHead(204);
+    res.end();
+    return;
+  }
+
+  if (req.method === 'DELETE' && pathname.startsWith('/series/')) {
+    if (sendMockOverrideErrorIfSet(res, pathname)) return;
 
     res.writeHead(204);
     res.end();

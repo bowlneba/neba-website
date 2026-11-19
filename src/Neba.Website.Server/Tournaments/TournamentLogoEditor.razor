@@ -10,13 +10,13 @@
 @inject ITournamentsApi TournamentsApi
 @inject ToastService ToastService
 
-<EditTournamentLogoModal IsOpen="@IsOpen"
-                         TournamentName="@TournamentName"
-                         CurrentLogoUrl="@CurrentLogoUrl"
-                         OnClose="OnClose"
-                         OnSaved="HandleSavedAsync"
-                         OnUploadRequestedAsync="UploadLogoAsync"
-                         OnSubmitRequestedAsync="SaveLogoAsync" />
+<EditLogoModal IsOpen="@IsOpen"
+               OwnerName="@TournamentName"
+               CurrentLogoUrl="@CurrentLogoUrl"
+               OnClose="OnClose"
+               OnSaved="HandleSavedAsync"
+               OnUploadRequestedAsync="UploadLogoAsync"
+               OnSubmitRequestedAsync="SaveLogoAsync" />
 
 @code {
     [Parameter, EditorRequired]
@@ -51,8 +51,18 @@
             c => TournamentsApi.UploadTournamentLogoAsync(new StreamPart(stream, fileName, contentType), c),
             ct);
 
-    private Task<ErrorOr<Success>> SaveLogoAsync(TournamentLogoInput? logo, CancellationToken ct)
+    private Task<ErrorOr<Success>> SaveLogoAsync(UploadedFileResponse? staged, CancellationToken ct)
     {
+        var logo = staged is null
+            ? null
+            : new TournamentLogoInput
+            {
+                Container = staged.Container,
+                Path = staged.Path,
+                ContentType = staged.ContentType,
+                SizeInBytes = staged.SizeInBytes
+            };
+
         var request = new EditTournamentLogoRequest
         {
             Id = TournamentId,

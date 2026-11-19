@@ -1,0 +1,82 @@
+.series-field {
+    padding: 1.5rem 1.5rem 1.25rem;
+}
+
+.series-field h2 {
+    font-family: var(--neba-font-display);
+    font-size: 1.125rem;
+    margin: 0 0 0.25rem;
+}
+
+.series-field > p {
+    margin: 0 0 1.125rem;
+    color: var(--neba-text-muted);
+    font-size: 0.875rem;
+}
+
+.series-field > p.series-field__caption {
+    margin: 0.875rem 0 0;
+}
+
+.series-field__rows {
+    display: grid;
+    gap: 0.5rem;
+}
+
+.series-field__row {
+    display: grid;
+    grid-template-columns: 170px 1fr;
+    gap: 0.875rem;
+    align-items: center;
+}
+
+.series-field__label {
+    font-size: 0.875rem;
+    font-weight: 600;
+}
+
+.series-field__label small {
+    display: block;
+    font-weight: 400;
+    color: var(--neba-text-muted);
+    font-size: 0.78rem;
+}
+
+.series-field__bar {
+    height: 34px;
+    border-radius: var(--neba-radius);
+    display: flex;
+    align-items: center;
+    padding: 0 0.75rem;
+    color: #fff;
+    font-family: var(--neba-font-display);
+    font-weight: 800;
+    font-size: 1.125rem;
+    min-width: 54px;
+}
+
+.series-field__bar.kind-qualifying {
+    background: var(--neba-blue-600);
+    color: #fff;
+}
+
+.series-field__bar.kind-survivor {
+    background: var(--neba-gold-deep);
+    color: #fff;
+}
+
+.series-field__bar.kind-placement {
+    background: var(--neba-blue-brand);
+    color: #fff;
+}
+
+:global(.dark) .series-field__bar.kind-placement {
+    background: var(--neba-blue-700);
+}
+
+@media (max-width: 767px) {
+    .series-field__row {
+        grid-template-columns: 1fr;
+        gap: 0.25rem;
+    }
+}

@@ -368,7 +368,10 @@ public static class CacheDescriptors
     /// </summary>
     public static class Tournaments
     {
-        private const string Tag = "neba:tournaments";
+        /// <summary>
+        /// The tag every cached tournament list and detail carries. Clearing it clears them all.
+        /// </summary>
+        public const string Tag = "neba:tournaments";
 
         private static string ResolveScope(bool callerIsAuthenticated, bool callerHasTournamentManagementPermission)
         {
@@ -448,6 +451,23 @@ public static class CacheDescriptors
             {
                 Key = $"{Tag}:types:list",
                 Tags = ["neba", Tag, $"{Tag}:types"]
+            };
+    }
+
+    /// <summary>
+    /// Cache descriptors for Series data.
+    /// </summary>
+    public static class Series
+    {
+        /// <summary>
+        /// Returns a cache descriptor for the list of Series Finales. It carries the tournaments tag, which
+        /// every Series command clears, and the bowling centers tag, because it embeds a center's name.
+        /// </summary>
+        public static CacheDescriptor ListFinales
+            => new()
+            {
+                Key = "neba:series:finales:list",
+                Tags = ["neba", Tournaments.Tag, "neba:bowling-centers", "neba:series"]
             };
     }
 

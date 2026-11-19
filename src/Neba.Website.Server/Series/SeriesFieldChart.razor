@@ -1,0 +1,38 @@
+<section class="neba-card series-field" aria-labelledby="series-field-title">
+    <h2 id="series-field-title">How the field narrows</h2>
+    <p>@Intro</p>
+    <div class="series-field__rows">
+        @foreach (var step in Steps)
+        {
+            <div class="series-field__row">
+                <div class="series-field__label">@step.Label<small>@step.Detail</small></div>
+                <div class="@BarClass(step)" style="@SeriesDisplay.BarWidthStyle(step.Count, Max)">@BarText(step)</div>
+            </div>
+        }
+    </div>
+    @if (HasPlacementStage && !HasFinale)
+    {
+        <p class="series-field__caption">No Finale: the Placement Round sets the final standings.</p>
+    }
+</section>
+
+@code {
+    [Parameter, EditorRequired]
+    public IReadOnlyList<FieldStep> Steps { get; set; } = default!;
+
+    [Parameter, EditorRequired]
+    public bool HasFinale { get; set; }
+
+    [Parameter, EditorRequired]
+    public bool HasPlacementStage { get; set; }
+
+    private string Intro => HasFinale
+        ? "Bowlers qualify at the early events, are cut by squad score, and the last round decides the Finale."
+        : "Bowlers qualify at the early events, are cut by squad score, and the last round decides the final standings.";
+
+    private int Max => Steps.Count == 0 ? 0 : Steps.Max(s => s.Count);
+
+    private static string BarClass(FieldStep step) => "series-field__bar " + SeriesDisplay.KindClass(step.Kind);
+
+    private static string BarText(FieldStep step) => step.IsCeiling ? "Up to " + step.Count.ToString(System.Globalization.CultureInfo.InvariantCulture) : step.Count.ToString(System.Globalization.CultureInfo.InvariantCulture);
+}

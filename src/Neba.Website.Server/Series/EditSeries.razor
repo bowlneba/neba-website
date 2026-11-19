@@ -1,0 +1,72 @@
+@page "/series/{Id}/edit"
+@using Neba.Api.Contracts.Security
+@using Neba.Api.Contracts.Series
+@using Neba.Website.Server.Services
+@rendermode @(new InteractiveServerRenderMode(prerender: false))
+
+@inject ApiExecutor ApiExecutor
+@inject ISeriesApi SeriesApi
+
+<PageTitle>Edit Series - BowlNEBA</PageTitle>
+
+<AuthorizeView Policy="@Permissions.EditSeries.PolicyName" Context="authContext">
+    <Authorized>
+        <div class="neba-space-y-6">
+            <div class="page-title-bar">
+                <div class="page-title-inner">
+                    <h1>Edit Series</h1>
+                    <p>Set the Stages in order. Each Stage is one tournament's role in the Series.</p>
+                </div>
+                <div class="page-title-help"><HelpButton DocName="edit-series" Light="true" /></div>
+            </div>
+
+            @if (_loadError is not null)
+            {
+                <NebaAlert Severity="NotifySeverity.Error" Title="Unable to load Series" Message="@_loadError" />
+            }
+            else if (_model is null || _detail is null)
+            {
+                <NebaSkeletonLoader Type="SkeletonType.Card" />
+            }
+            else
+            {
+                <SeriesEditor Model="@_model"
+                              SeriesId="@Id"
+                              SeasonLabel="@SeasonLabel"
+                              FinaleHost="@_detail.Finale?.Host"
+                              IsCreate="false"
+                              IsLocked="@_detail.IsLocked" />
+            }
+        </div>
+    </Authorized>
+    <NotAuthorized>
+        <p class="neba-content-wrapper">You don't have permission to edit this Series.</p>
+    </NotAuthorized>
+</AuthorizeView>
+
+@code {
+    [Parameter, EditorRequired]
+    public string Id { get; set; } = string.Empty;
+
+    private SeriesDetailViewModel? _detail;
+    private SeriesFormModel? _model;
+    private string? _loadError;
+
+    private string SeasonLabel => _detail is null ? string.Empty : _detail.SeasonDescription + " (" + _detail.SeasonDateRange + ")";
+
+    protected override async Task OnInitializedAsync()
+    {
+        var result = await ApiExecutor.ExecuteAsync("SeriesApi", "GetSeries", ct => SeriesApi.GetSeriesAsync(Id, ct));
+
+        if (result.IsError)
+        {
+            _loadError = result.FirstError.Type == ErrorOr.ErrorType.NotFound
+                ? "This Series doesn't exist. It may have been deleted."
+                : "Something went wrong while loading this Series. Try again later.";
+            return;
+        }
+
+        _detail = result.Value.ToViewModel();
+        _model = SeriesInputMapping.FromDetail(_detail);
+    }
+}
