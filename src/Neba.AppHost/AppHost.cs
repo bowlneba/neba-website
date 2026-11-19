@@ -8,6 +8,9 @@ using Azure.Provisioning.KeyVault;
 using Azure.Provisioning.PostgreSql;
 using Azure.Provisioning.Storage;
 
+// WithDisplayOrder is experimental in Aspire 17.
+#pragma warning disable ASPIRERESOURCETRAITS001
+
 var builder = DistributedApplication.CreateBuilder(new DistributedApplicationOptions
 {
     Args = args,
@@ -299,11 +302,21 @@ if (builder.ExecutionContext.IsPublishMode)
 }
 else
 {
-    var mailpit = builder.AddMailPit("mailpit");
+    var mailpit = builder.AddMailPit("mailpit")
+        .WithDisplayOrder(-10);
 
     api
         .WithReference(mailpit)
         .WaitFor(mailpit);
 }
+
+// Dashboard order, highest first: the apps you open, then migrations, then backing services.
+// Resources without a value (pgAdmin, blob and table children) sort after these by type and name.
+web.WithDisplayOrder(50);
+api.WithDisplayOrder(40);
+appMigrations.WithDisplayOrder(30);
+securityMigrations.WithDisplayOrder(20);
+postgres.WithDisplayOrder(10);
+storage.WithDisplayOrder(10);
 
 await builder.Build().RunAsync();
