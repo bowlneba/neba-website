@@ -25,14 +25,6 @@ internal static partial class MigrationPipelineStep
         var configuration = context.Services.GetRequiredService<IConfiguration>();
         var logger = context.Logger;
 
-        // Opt-in on purpose: any run that deploys api or web (a hotfix, a retry of one app)
-        // passes through this step, and only the full CD run may touch the schema.
-        if (!string.Equals(configuration["Migrations:Run"], "true", StringComparison.OrdinalIgnoreCase))
-        {
-            LogSkipped(logger);
-            return;
-        }
-
         var resourceGroup = configuration["Azure:ResourceGroup"];
         if (string.IsNullOrWhiteSpace(resourceGroup))
         {
@@ -141,9 +133,6 @@ internal static partial class MigrationPipelineStep
 
         return await output;
     }
-
-    [LoggerMessage(Level = LogLevel.Information, Message = "Skipping database migrations: set Migrations__Run=true to run them.")]
-    private static partial void LogSkipped(ILogger logger);
 
     [LoggerMessage(Level = LogLevel.Information, Message = "Starting job execution: {JobName}")]
     private static partial void LogStarting(ILogger logger, string jobName);

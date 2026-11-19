@@ -323,36 +323,21 @@ if (builder.ExecutionContext.IsPublishMode)
     securityMigrations.PublishAsAzureContainerAppJob();
 
     // Starts both jobs and waits for them, after their images are deployed and before api or
-    // web deploy, so the schema is migrated before new code takes traffic. It runs only when
-    // Migrations__Run=true (CD sets it; a hotfix deploy does not). The deploy steps are wired
-    // by resource and tag, because Aspire creates them late and --list-steps does not show them.
-    builder.Pipeline.AddStep(
-        MigrationPipelineStep.StepName,
-        context => MigrationPipelineStep.RunAsync(context, ["api-migrations", "api-security-migrations"]),
-        requiredBy: WellKnownPipelineSteps.Deploy);
-
-    builder.Pipeline.AddPipelineConfiguration(context =>
+    // web deploy, so the schema is migrated before new code takes traffic. The step exists only
+    // when Migrations__Run=true (CD sets it; publish, hotfix and one-app runs do not), because
+    // it depends on deploy steps that Aspire creates late and that a publish never has. Aspire
+    // checks these names before it runs anything, so a wrong name fails the deploy at the start.
+    if (string.Equals(builder.Configuration["Migrations:Run"], "true", StringComparison.OrdinalIgnoreCase))
     {
-        var migrate = context.Steps.Single(step => step.Name == MigrationPipelineStep.StepName);
+        string[] migrationJobDeploySteps = ["provision-api-migrations-containerapp", "provision-api-security-migrations-containerapp"];
+        string[] appAndDeploySteps = ["provision-api-containerapp", "provision-web-containerapp", WellKnownPipelineSteps.Deploy];
 
-        foreach (var job in new IResource[] { appMigrations.Resource, securityMigrations.Resource })
-        {
-            foreach (var deployStep in context.GetSteps(job, WellKnownPipelineTags.DeployCompute))
-            {
-                migrate.DependsOn(deployStep);
-            }
-        }
-
-        foreach (var app in new IResource[] { api.Resource, web.Resource })
-        {
-            foreach (var deployStep in context.GetSteps(app, WellKnownPipelineTags.DeployCompute))
-            {
-                deployStep.DependsOn(migrate);
-            }
-        }
-
-        return Task.CompletedTask;
-    });
+        builder.Pipeline.AddStep(
+            MigrationPipelineStep.StepName,
+            context => MigrationPipelineStep.RunAsync(context, ["api-migrations", "api-security-migrations"]),
+            dependsOn: migrationJobDeploySteps,
+            requiredBy: appAndDeploySteps);
+    }
 }
 else
 {
