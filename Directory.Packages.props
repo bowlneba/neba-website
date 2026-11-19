@@ -7,21 +7,23 @@
     <PackageVersion Include="Ardalis.SmartEnum" Version="8.2.0" />
     <PackageVersion Include="Ardalis.SmartEnum.EFCore" Version="8.2.0" />
     <PackageVersion Include="Ardalis.SmartEnum.SystemTextJson" Version="8.1.0" />
-    <PackageVersion Include="Aspire.Azure.Data.Tables" Version="13.6.5" />
-    <PackageVersion Include="Aspire.Azure.Npgsql" Version="13.6.5" />
+    <PackageVersion Include="Aspire.Azure.Data.Tables" Version="17.0.0" />
+    <PackageVersion Include="Aspire.Azure.Npgsql" Version="17.0.0" />
     <PackageVersion Include="Aspire.Azure.Npgsql.EntityFrameworkCore.PostgreSQL" Version="13.6.5" />
-    <PackageVersion Include="Aspire.Azure.Security.KeyVault" Version="13.6.5" />
-    <PackageVersion Include="Aspire.Azure.Storage.Blobs" Version="13.6.5" />
-    <PackageVersion Include="Aspire.Hosting.Azure.AppContainers" Version="13.6.5" />
-    <PackageVersion Include="Aspire.Hosting.Azure.ApplicationInsights" Version="13.6.5" />
-    <PackageVersion Include="Aspire.Hosting.Azure.KeyVault" Version="13.6.5" />
-    <PackageVersion Include="Aspire.Hosting.Azure.PostgreSQL" Version="13.6.5" />
-    <PackageVersion Include="Aspire.Hosting.Azure.Storage" Version="13.6.5" />
-    <PackageVersion Include="Aspire.Hosting.Browsers" Version="13.6.5-preview.1.26559.7" />
+    <PackageVersion Include="Aspire.Azure.Security.KeyVault" Version="17.0.0" />
+    <PackageVersion Include="Aspire.Azure.Storage.Blobs" Version="17.0.0" />
+    <PackageVersion Include="Aspire.Hosting.AppHost" Version="17.0.0" />
+    <PackageVersion Include="Aspire.Hosting.Azure.AppContainers" Version="17.0.0" />
+    <PackageVersion Include="Aspire.Hosting.Azure.ApplicationInsights" Version="17.0.0" />
+    <PackageVersion Include="Aspire.Hosting.Azure.KeyVault" Version="17.0.0" />
+    <PackageVersion Include="Aspire.Hosting.Azure.PostgreSQL" Version="17.0.0" />
+    <PackageVersion Include="Aspire.Hosting.Azure.Storage" Version="17.0.0" />
+    <PackageVersion Include="Aspire.Hosting.Browsers" Version="17.0.0-preview.1.26567.5" />
     <PackageVersion Include="AspNetCore.HealthChecks.Hangfire" Version="9.0.0" />
     <PackageVersion Include="AspNetCore.HealthChecks.SqlServer" Version="9.0.0" />
-    <PackageVersion Include="Aspire.Hosting.PostgreSQL" Version="13.6.5" />
-    <PackageVersion Include="Aspire.Hosting.Testing" Version="13.6.5" />
+    <PackageVersion Include="Aspire.Hosting.Dotnet" Version="17.0.0" />
+    <PackageVersion Include="Aspire.Hosting.PostgreSQL" Version="17.0.0" />
+    <PackageVersion Include="Aspire.Hosting.Testing" Version="17.0.0" />
     <!-- v33 reviewed against Verify.XunitV3's v33 paid-tier precedent: unlike Verify, Audit.NET's
          v33 stayed MIT-licensed with no pricing change. Its one breaking change (EfEntitySettings
          override callbacks gaining a PropertyOverrideContext argument) has no call site in this
@@ -39,7 +41,7 @@
     <PackageVersion Include="Bogus" Version="35.6.5" />
     <PackageVersion Include="bunit" Version="2.15.2" />
     <PackageVersion Include="Community.Microsoft.Extensions.Caching.PostgreSql" Version="6.0.2" />
-    <PackageVersion Include="CommunityToolkit.Aspire.Hosting.MailPit" Version="13.6.1" />
+    <PackageVersion Include="CommunityToolkit.Aspire.Hosting.MailPit" Version="17.0.0-beta.1078" />
     <PackageVersion Include="coverlet.collector" Version="10.1.0" />
     <PackageVersion Include="Dapper" Version="2.1.89" />
     <PackageVersion Include="EFCore.NamingConventions" Version="10.0.1" />

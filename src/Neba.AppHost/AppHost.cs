@@ -31,12 +31,12 @@ var database = postgres.AddDatabase("bowlneba");
 // process that exits after applying pending migrations, using the same managed-identity
 // Postgres auth as the api - so no DB credentials are needed here or in CD. See
 // .github/workflows/cd.yml for how these are triggered as Azure Container App Jobs.
-var appMigrations = builder.AddProject<Projects.Neba_MigrationService>("api-migrations")
+var appMigrations = builder.AddDotnetProject("api-migrations", "../Neba.MigrationService/Neba.MigrationService.csproj")
     .WithArgs("app")
     .WithReference(database)
     .WaitFor(database);
 
-var securityMigrations = builder.AddProject<Projects.Neba_MigrationService>("api-security-migrations")
+var securityMigrations = builder.AddDotnetProject("api-security-migrations", "../Neba.MigrationService/Neba.MigrationService.csproj")
     .WithArgs("security")
     .WithReference(database)
     .WaitFor(database);
@@ -53,7 +53,7 @@ var storage = builder.AddAzureStorage("storage")
 var blobs = storage.AddBlobs("blob");
 var tables = storage.AddTables("tables");
 
-var api = builder.AddProject<Projects.Neba_Api>("api")
+var api = builder.AddDotnetProject("api", "../Neba.Api/Neba.Api.csproj")
     .WithExternalHttpEndpoints()
     .WithHttpHealthCheck("/health")
     .WithReference(database)
@@ -89,7 +89,7 @@ var api = builder.AddProject<Projects.Neba_Api>("api")
     });
 
 #pragma warning disable ASPIREBROWSERLOGS001
-var web = builder.AddProject<Projects.Neba_Website_Server>("web")
+var web = builder.AddDotnetProject("web", "../Neba.Website.Server/Neba.Website.Server.csproj")
     .WithExternalHttpEndpoints()
     .WithHttpHealthCheck("/health")
     .WithReference(api)
