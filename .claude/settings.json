@@ -5,6 +5,12 @@
         "source": "github",
         "repo": "dotnet/skills"
       }
+    },
+    "aspire-skills": {
+      "source": {
+        "source": "github",
+        "repo": "microsoft/aspire-skills"
+      }
     }
   },
   "enabledPlugins": {
@@ -14,7 +20,8 @@
     "dotnet-data@dotnet-agent-skills": true,
     "dotnet-test@dotnet-agent-skills": true,
     "dotnet-upgrade@dotnet-agent-skills": true,
-    "dotnet11@dotnet-agent-skills": true
+    "dotnet11@dotnet-agent-skills": true,
+    "aspire@aspire-skills": true
   },
   "hooks": {
     "PreToolUse": [
