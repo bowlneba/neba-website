@@ -1,9 +1,10 @@
 #!/usr/bin/env bash
 # Prints the Aspire version: the Aspire.Hosting.AppHost PackageVersion in Directory.Packages.props.
 # CI installs the Aspire CLI at this version, so the CLI always matches the AppHost packages.
+# Usage: aspire-version.sh [path-to-Directory.Packages.props]
 set -euo pipefail
 
-props="$(dirname "${BASH_SOURCE[0]}")/../../Directory.Packages.props"
+props="${1:-$(dirname "${BASH_SOURCE[0]}")/../../Directory.Packages.props}"
 version="$(sed -n 's/.*Include="Aspire\.Hosting\.AppHost"[[:space:]]*Version="\([^"]*\)".*/\1/p' "$props")"
 
 if [ -z "$version" ]; then
