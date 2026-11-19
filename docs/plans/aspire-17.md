@@ -1,6 +1,6 @@
 # Aspire 17 upgrade and `aspire deploy` move
 
-Status: Part A done on branch `aspire17` (4 commits, not pushed as of writing). Part B not started.
+Status: Part A merged (#264). Part B in progress on branch `aspire-deploy`: B0 to B4 and the staging run are done (see the result sections). Production cutover not started.
 Audience: agents that pick up this work. Read the whole file before you start.
 
 Two parts, two branches:
@@ -276,6 +276,32 @@ Setup the user must do before the first run:
 3. Production's role for the deploy principal must allow creating a resource group and role assignments at subscription scope (it has Contributor and User Access Administrator today).
 
 Local note: `aspire publish` caches parameter values per environment in `~/.aspire/deployments`. To test a no-domain publish on a machine that has run production values, pass `--environment staging`. Fresh CI runners have no cache.
+
+### Staging run result (2026-11-19, run 44609141202, success)
+
+Third run, `westus2`, empty database: **18 min 14 s** from start to finish. The first two runs failed for fixable reasons:
+
+1. Azure login: the federated credential used the ID-based subject (`repo:bowlneba@<id>/neba-website@<id>:environment:Staging`). The workflow presents the name-based subject `repo:bowlneba/neba-website:environment:Staging`. Use the name-based form.
+2. `run-migrations` started at second zero, with no dependencies (the by-tag wiring found nothing). Fixed by explicit step names, registered only when `Migrations__Run=true`.
+3. Postgres B1ms returned `SkuNotAvailable` in `eastus2` for a new server, although the CLI lists it as available. Staging moved to `westus2`. Prod's server already exists in `eastus2`, so a deploy only updates it. A recreate of prod's Postgres in `eastus2` could hit the same limit.
+
+What the third run proved:
+
+- **Step names.** The names `provision-<name>-containerapp` are right for the two jobs and for api and web. Full order: provision infra, push images, `provision-env`, the two job `provision-*-containerapp` steps, `run-migrations` (2 min 3 s), then `provision-api-containerapp` and `provision-web-containerapp` in parallel.
+- **Migration step.** Both jobs ran to `Succeeded` before api and web deployed. The step needs only `az` and `Azure__ResourceGroup`.
+- **Secrets.** All ten secrets and `AzureMaps--SubscriptionKey` are in the vault (listed through ARM). Seeding through `AddSecret` works.
+- **Postgres.** `Standard_B1ms`, password auth disabled, state Ready.
+- **Login lifetime.** One `az` login covered an 18-minute run, with `az` calls 16 minutes in. No re-login steps are needed inside one `aspire deploy`.
+- **Parameters.** All parameters resolved from `Parameters__*` variables. Empty custom domains were skipped.
+- **Names.** Same resource types as prod. Staging has no managed certificates, no DNS zone, and no Smart Detection action group, which prod holds from manual or automatic setup.
+- **Timing.** Postgres took 9 min 49 s and the container environment 12 min 4 s, in parallel. These two set the run time.
+
+Open after staging:
+
+- A hotfix run (`aspire do provision-api-containerapp` and `provision-web-containerapp` with `Migrations__Run` unset): not run yet. Test it in staging before writing `hotfix.yml`.
+- A deploy with a required parameter missing: not tested.
+- The `deploy_pipeline` Key Vault role is not needed: secrets go in through ARM, not the data plane. Remove it, and the `deployPrincipalId` parameter, at cutover. Prod keeps its existing role assignment (Bicep does not delete it).
+- Staging still exists and costs a little. Keep it until the hotfix path is tested, then delete `rg-bowlneba-staging` and purge its Key Vault.
 
 ### B1. Staging deploy (do this before touching production)
 
