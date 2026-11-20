@@ -1,9 +1,9 @@
 ---
 name: feature-plan
-description: Produce a two-phase (API, then UI) implementation plan for a new feature as a markdown file the user can code from. Reviews the repo for existing related code, asks clarifying questions, then drafts a functional-level plan followed by a code-level plan per phase, pausing for confirmation at each stage. Usage: /feature-plan <feature description>
+description: Produce a two-phase (API, then UI) implementation plan for a new feature as a markdown file an agent can implement from in a fresh session with nothing else. Reviews the repo for existing related code, asks clarifying questions, then drafts a functional-level plan followed by a code-level plan per phase, pausing for confirmation at each stage, and ends with a commit plan and an implementation guide. Usage: /feature-plan <feature description>
 ---
 
-Turn a feature description into `docs/plans/{feature-name}.md` — a plan detailed enough to code from, built up in confirmed stages rather than dumped in one shot.
+Turn a feature description into `docs/plans/{feature-name}.md` — a plan detailed enough to code from, built up in confirmed stages rather than dumped in one shot. The finished file must work for an agent that starts a fresh session with only the file: it must not depend on this chat, on memory, on agent output files in temp folders, or on the order things were discussed.
 
 ## Arguments
 
@@ -21,13 +21,18 @@ Turn a feature description into `docs/plans/{feature-name}.md` — a plan detail
   6. Phase 2 functional draft
   7. Phase 2 UI mockups (HTML) — skipped only if Step 9 concluded there is genuinely no UI surface
   8. Phase 2 code draft
+  9. Commit plan (Step 12)
+  10. Implementation guide and handoff check (Step 13)
   Do not start a stage until the user has confirmed the previous one. "Confirmed" means an explicit yes/approval — proceeding on silence or an unrelated reply is not a confirmation.
 - **Permissions/roles are decided before any route is drafted, and UI flow is sketched before any route is drafted.** Phase 1's routes exist to serve real screens/actions and a settled authorization model — not the other way around. This does not relax the API/UI phase order below: the *plan document* still presents Phase 1 (API) before Phase 2 (UI); only the lightweight flow/permission discovery happens early, ahead of both phases' drafts.
 - **Pragmatism guardrail**: the UI flow sketch determines *which* endpoints exist and what each returns — never their shape. Every endpoint still has to stand on its own as a coherent REST resource per CLAUDE.md's API conventions. No UI-specific response DTOs, no one-endpoint-per-screen-widget. If a screen wants data from multiple resources, prefer multiple calls or reuse-and-project-down (per CLAUDE.md's "Lightweight Collection Projections" convention) over a bespoke aggregate endpoint built just for that screen. If screen convenience and REST cleanliness genuinely pull in different directions, flag the tension to the user rather than silently resolving it either way.
 - **A "functional" draft describes changes at the level of: what files get created/edited, what each does, and why** — no method bodies, no full class listings. Think PR-description depth, not diff depth.
 - **A "code" draft shows the actual code changes** — real class/method signatures, real field names, real routes, close enough to paste into the editor and adjust. It replaces the functional bullets for that phase in the markdown file, it doesn't just append below them.
 - **The plan file's full skeleton — both phase headings, all four stage placeholders — is written on first creation** (Step 5, before any content is drafted), not built up heading-by-heading as stages are confirmed. From then on the file is updated incrementally in place: each stage replaces its own section's placeholder/prior content, so `docs/plans/{feature-name}.md` always reflects the latest confirmed + in-progress state if the session is interrupted, and the reader can see the shape of the whole plan (including not-yet-drafted phases) from the first write onward.
-- This skill produces a plan. It does not write feature code, run `dotnet build`, or create branches — that happens afterward, driven by the user from the finished markdown file.
+- This skill produces a plan. It does not write feature code, run `dotnet build`, or create branches — that happens afterward, driven by the user from the finished markdown file. A docs change the user asks for during planning (the ubiquitous language, say) can go through the `docs` agent; list it in the commit plan as its own commit.
+- **The plan stands alone.** A future agent will not see this conversation. Anything it needs is in the file: decisions with their reasons, the rules that override older text, the order to work in, and what is still unverified. Never leave a path to a temp or tool-output file, an agent id, "as discussed" or "see above" in the plan. Write names, not pointers to the chat.
+- **Record departures from the source text.** When the confirmed design differs from the ticket, the ubiquitous-language doc or an earlier plan, write it under "Decisions locked in during scoping" with the date, a one-line reason and the word *supersedes* (for example "supersedes #259's flag"). The older text stays in the world, and an agent will find it.
+- **Patch the drafts when a decision changes.** If a decision changes after a draft exists (a renamed term, a changed type, a dropped feature), grep the plan for the old name and fix the code and prose where it appears. A note that says "this overrides the code below" is a last resort for conflicts too large to rewrite, and it must say which commit applies it. Step 13 checks this.
 - **Implementation lands as logical commits, never one large commit.** The plan carries a `## Commit plan` (Step 12), and each commit names the agent that implements it. When the user later asks to implement from the plan, the main session hands each commit to its agent in plan order, and commits as soon as that commit's changes are done and its build and tests pass, instead of saving everything for the end.
 
 ## Agent routing
@@ -50,6 +55,7 @@ Rules for every call:
 - **The main session merges.** Resolve overlap, check the drafts agree (an entity shape `backend-api` assumes must match what `efcore` returned), and show the user one draft, not one per agent.
 - **Open design choices come back as options.** If an agent returns a question instead of a draft (`backend-api` does this by design), put it to the user with `AskUserQuestion` before you go on. Do not pick for them.
 - For a small feature that touches one layer, one agent or none is fine. Do not call an agent for ceremony.
+- **Large drafts.** An agent's draft can exceed the inline limit and arrive as a saved file. Read its heading list and its notes first, then merge it into the plan with a script rather than by hand. Demote its headings so each layer has stable, unique labels (for example `### Database layer`, `### API layer`, `### Code draft`, with `####` sections inside). Keep the agent's own "plan versus code" and "not checked" notes, merged into the phase's notes. Never leave the temp path in the plan.
 
 ## Step 1 — Scope and clarify
 
@@ -126,6 +132,10 @@ Before drafting any content, create `docs/plans/{feature-name}.md` (kebab-case t
 
 {One- or two-sentence restatement of what the feature does.}
 
+## Implementing this plan
+
+*(Written in Step 13.)*
+
 ## Phase 1: API
 
 *(Not yet drafted.)*
@@ -139,7 +149,7 @@ Before drafting any content, create `docs/plans/{feature-name}.md` (kebab-case t
 *(Not yet drafted.)*
 ```
 
-If Step 1/Step 2 (if run)/Step 3/Step 4/Step 5 surfaced decisions, assumptions, or things the user explicitly ruled in/out while scoping — including the NFR targets from Step 2, the permission/role decision from Step 4, and the confirmed flow from Step 5 — capture them under a short `## Decisions locked in during scoping` section between the title and `## Phase 1` — this is where cross-phase context that isn't specific to either phase belongs, so it doesn't get lost or duplicated across both phase sections.
+If Step 1/Step 2 (if run)/Step 3/Step 4/Step 5 surfaced decisions, assumptions, or things the user explicitly ruled in/out while scoping — including the NFR targets from Step 2, the permission/role decision from Step 4, and the confirmed flow from Step 5 — capture them under a short `## Decisions locked in during scoping` section between the title and `## Phase 1` — this is where cross-phase context that isn't specific to either phase belongs, so it doesn't get lost or duplicated across both phase sections. Date each decision made after the first draft, and mark every departure from the source ticket or doc with *supersedes* (see the ground rules). Decisions that an agent's draft proposed and the user accepted by default belong here too, under a "defaults taken" bullet the user can correct.
 
 ## Step 7 — Phase 1 functional draft (API)
 
@@ -229,10 +239,39 @@ Replace the placeholder under `## Commit plan` with an ordered list of logical c
 - Order them so every commit builds and passes its own tests. A commit holds the code and the tests for it; do not put all tests in a final commit.
 - Each entry names the agent that implements it, as a prefix: `efcore: add Series table and migration`, `backend-api: add CreateSeries endpoint and handler`, `blazor-ui: add Series admin page`, `test-writer: add handler and endpoint tests`. A commit that holds code and its tests names the code's agent and notes that `test-writer` writes the tests. The prefix is for the plan; the commit subject itself keeps the repo's style (short, imperative, no prefix).
 - Each entry lists the files it touches (from the Phase 1 and Phase 2 drafts) and a one-line body explaining why, not what.
+- Order for safety, not only for building. Work that queues or calls something (events, jobs, a new GET the page makes) lands after the handler or endpoint it needs, so nothing runs against a missing piece. Shared test infrastructure that a later commit would break (an e2e mock, a factory, a strict-mock setup) is repaired or added first.
+- Split a big idea into commits a reviewer can read: schema alone, pure functions alone, the aggregate, readers, jobs, endpoints, then each UI behavior.
 - Put the plan file itself in the first commit, and list any unrelated edit (such as a skill or docs change) as its own commit.
 - Commit messages end with the attribution lines the session gives for commits.
 
-Show it in chat and report the plan is complete: **"The commit plan is in. The full plan is in `docs/plans/{feature-name}.md` — let me know if you want any adjustments, or you're ready to start implementing from it. I'll commit each step as it is done."**
+Show it in chat and ask: **"Does this commit plan look right? Once you confirm, I'll write the implementation guide and check the plan for a fresh session."** Do not proceed until confirmed.
+
+## Step 13 — Implementation guide and handoff check
+
+Once the commit plan is confirmed, make the plan usable by an agent in a fresh session.
+
+**1. Consistency pass.** Fix problems in the plan itself before writing the guide:
+- List every rename and every decision that changed after a draft existed. Grep the plan for each old name and fix the code and prose. Reconciliation notes may stay only for conflicts too big to rewrite, and each says which commit applies it.
+- Check the names the drafts assume against the repo, with one grep for each riskiest one: helpers, extension methods, namespaces, existing types. Agents guess these. (A guessed `Ulid` user id turned out to be right in one place and wrong in another, and only a grep showed which.)
+- Check each "not verified" item an agent listed is in the phase's notes, and say which commit will surface it.
+- Check the plan has no pointer to a temp file, an agent id, or the chat.
+- Check "Decisions locked in during scoping" covers every answer the user gave and every default taken.
+- Check every code-draft section is used by some commit, and every commit has code or text to work from.
+
+**2. Write `## Implementing this plan`.** Replace the Step 6 placeholder. It sits right after the intro, before the decisions. It holds:
+- **Read first**, in order: that section, the decisions and the confirmed UI flow, the reconciliation or phase notes, the commit plan, then only the sections the commit needs. Say plainly: do not read the whole file, and give its length.
+- **Precedence** when two parts disagree: decisions, notes, code drafts, then the source ticket and docs. The repo wins over the plan on a name that does not match; fix the plan when you find one.
+- **State of the drafts:** whether the code was compiled, what is assumed, and what cannot build until a named commit lands.
+- **Per-commit procedure:** read the entry and its sections; hand it to the agent it names, passing the plan path and the entry; run the build and the tests for that area (with the actual commands); fix failures; update the plan if the code drifted; stage files by name, commit with the subject and the attribution trailer; tick the box.
+- **Do not** list, from the decisions (things the user ruled out, such as a flag, a deferred pattern, a banned word).
+- **Before specific commits:** data checks, contract confirmations, secrets or licenses needed.
+- **Commit to section map:** a table from each commit number to the sections it needs, using heading names and layer labels, not line numbers (lines drift).
+- **Mockups:** where they are, which one is chosen, which commits use them.
+- **Progress:** a checkbox list that repeats each commit subject, so a fresh session resumes at the first unchecked box.
+
+**3. Tell the user how to start a fresh session.** Give a short paste-ready prompt, for example: "Implement `docs/plans/{feature-name}.md`. Start with its 'Implementing this plan' section. Do the next unchecked commit in the progress list: hand it to the agent the commit names, run the build and tests, update the plan if the code drifted, commit by file name, tick the box, then continue with the next commit. Ask me before anything the plan marks as a decision I still owe."
+
+**4.** Report the plan is complete: **"The plan is ready for a fresh session. The full plan is in `docs/plans/{feature-name}.md`. The prompt above starts the work. I'll commit each step as it is done."**
 
 ## Rules
 
@@ -241,4 +280,5 @@ Show it in chat and report the plan is complete: **"The commit plan is in. The f
 - If repo review in Step 3 surfaces an existing, reusable piece (a query, a component, a contract type) that the feature could extend instead of duplicating, propose reusing it in the functional draft rather than silently planning a duplicate — flag the choice to the user if it's not obvious which is better.
 - If the user requests changes at a confirmation gate, update that stage's section in the plan file and re-show it before moving on — don't silently fold unconfirmed changes into the next stage.
 - During implementation, follow the `## Commit plan`: hand each commit to the agent it names, in plan order, passing the plan file path and the commit entry. When an agent returns, check its build and test results, then stage only that commit's files by name (never `git add -A`) and commit before starting the next. Agents do not commit. If the work drifts from the plan, update the plan's commit list rather than merging commits. Commit only when the user has asked to implement (or to commit).
-- The plan file is the deliverable of this skill. Don't create additional scratch files for it — everything lives in the one `docs/plans/{feature-name}.md`, updated in place stage by stage.
+- The plan file is the deliverable of this skill. Don't create additional scratch files for it — everything lives in the one `docs/plans/{feature-name}.md` (plus `docs/plans/mockups/{feature-name}/` when there are mockups), updated in place stage by stage. Scripts and agent output you use to build it stay in the scratchpad and never appear in the plan.
+- Step 13 is not optional. A plan with no implementation guide is unfinished, however good the drafts are.
