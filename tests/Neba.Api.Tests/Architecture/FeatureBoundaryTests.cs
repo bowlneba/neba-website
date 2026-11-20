@@ -1,6 +1,7 @@
 using System.Text.RegularExpressions;
 
 using ArchUnitNET.Domain;
+using ArchUnitNET.Domain.Dependencies;
 using ArchUnitNET.Loader;
 
 using Neba.Api.Database;
@@ -114,5 +115,42 @@ public sealed partial class FeatureBoundaryTests
         // Assert
         validators.ShouldNotBeEmpty();
         violations.ShouldBeEmpty(string.Join(Environment.NewLine, violations));
+    }
+
+    [Fact(DisplayName = "Only DomainEventPublisher should enqueue a domain event job")]
+    public void OnlyDomainEventPublisher_ShouldEnqueueDomainEventJobs()
+    {
+        // Arrange
+        const string publisher = "Neba.Api.BackgroundJobs.DomainEventPublisher";
+        var types = Architecture.Types.ToList();
+
+        static bool DependsOn(IType type, Func<IType, bool> match)
+            => type.Dependencies.Any(d => match(d.Target));
+
+        static bool IsEventJob(IType t) => t.FullName.StartsWith("Neba.Api.BackgroundJobs.IDomainEventJob", StringComparison.Ordinal);
+        // A call that creates a job, not merely a reference to the client (registration code names both types).
+        static bool CallsClient(IType type)
+            => type.Members.SelectMany(m => m.MemberDependencies).OfType<MethodCallDependency>().Any(d =>
+                d.TargetMember.DeclaringType.FullName is "Hangfire.IBackgroundJobClient" or "Hangfire.BackgroundJob"
+                    or "Hangfire.BackgroundJobClient" or "Hangfire.BackgroundJobClientExtensions"
+                && (d.TargetMember.Name.StartsWith("Enqueue", StringComparison.Ordinal)
+                    || d.TargetMember.Name.StartsWith("Create", StringComparison.Ordinal)
+                    || d.TargetMember.Name.StartsWith("Schedule", StringComparison.Ordinal)));
+
+        // Act
+        var enqueuers = types
+            .Where(t => DependsOn(t, IsEventJob) && CallsClient(t))
+            .ToList();
+
+        var violations = enqueuers
+            .Where(t => !t.FullName.StartsWith(publisher, StringComparison.Ordinal))
+            .Select(t => t.FullName)
+            .Order()
+            .ToList();
+
+        // Assert
+        enqueuers.ShouldContain(t => t.FullName == publisher, "the publisher must be detected, or this test proves nothing");
+        violations.ShouldBeEmpty(
+            "Enqueue event jobs through IDomainEventPublisher:" + Environment.NewLine + string.Join(Environment.NewLine, violations));
     }
 }
