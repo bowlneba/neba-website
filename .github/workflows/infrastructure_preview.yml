@@ -29,7 +29,8 @@ jobs:
       contents: read
       id-token: write
     outputs:
-      artifact-name: ${{ steps.meta.outputs.artifact-name }}
+      # Set from the input, not by a step, so it exists when the what-if step fails.
+      artifact-name: ${{ inputs.artifact_name }}
 
     steps:
       - uses: actions/checkout@v7
@@ -75,12 +76,6 @@ jobs:
           Parameters__apiCustomDomain: ${{ vars.AZURE_API_CUSTOM_DOMAIN }}
           Parameters__apiCertificateName: ${{ vars.AZURE_API_CERTIFICATE_NAME }}
         run: .github/scripts/whatif-guard.sh
-
-      - name: Set artifact metadata
-        id: meta
-        env:
-          ARTIFACT_NAME: ${{ inputs.artifact_name }}
-        run: echo "artifact-name=$ARTIFACT_NAME" >> "$GITHUB_OUTPUT"
 
       - name: Upload what-if artifact
         if: always()

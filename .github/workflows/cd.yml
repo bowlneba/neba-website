@@ -18,6 +18,8 @@ jobs:
     name: Deploy to Azure
     runs-on: ubuntu-latest
     environment: Production
+    # A hung deploy would hold the prod-deploy queue for the six-hour default.
+    timeout-minutes: 60
     # Same group as hotfix.yml's deploy job, so a main deploy and a hotfix queue.
     concurrency:
       group: prod-deploy

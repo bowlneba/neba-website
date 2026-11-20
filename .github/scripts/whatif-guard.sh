@@ -36,14 +36,13 @@ echo "Generating Bicep..."
   --environment "$aspire_environment" --output-path "$output_dir/bicep" --non-interactive)
 
 main_bicep="$output_dir/bicep/main.bicep"
-[ -f "$main_bicep" ] || { echo "::error::aspire publish did not write main.bicep" >&2; exit 1; }
+[[ -f "$main_bicep" ]] || { echo "::error::aspire publish did not write main.bicep" >&2; exit 1; }
 
 # Build the --parameters list from main.bicep: each `param <name>` takes Parameters__<name>.
 # A secure parameter with no value gets a placeholder; what-if never writes it to Azure.
-params=()
-while IFS='=' read -r name value; do
-  params+=("$name=$value")
-done < <(python3 -I - "$main_bicep" <<'PY'
+# The list is captured first, not read through process substitution, so a missing value stops
+# the script here with the Python error.
+param_lines="$(python3 -I - "$main_bicep" <<'PY'
 import os, re, sys
 
 secure = False
@@ -52,10 +51,17 @@ for line in open(sys.argv[1], encoding="utf-8"):
     if line == "@secure()":
         secure = True
         continue
-    match = re.match(r"param (\w+) string", line)
+    match = re.match(r"param (\w+) (string|int|bool)(\s*=.*)?$", line)
     if not match:
         continue
     name = match.group(1)
+    if match.group(3):
+        # Bicep uses the default unless the deploy env sets a value, as aspire deploy would.
+        env_value = os.environ.get(f"Parameters__{name}", "")
+        if env_value:
+            print(f"{name}={env_value}")
+        secure = False
+        continue
     special = {
         "resourceGroupName": os.environ["AZURE_RESOURCE_GROUP"],
         "location": os.environ["AZURE_LOCATION"],
@@ -69,7 +75,12 @@ for line in open(sys.argv[1], encoding="utf-8"):
     print(f"{name}={value}")
     secure = False
 PY
-)
+)"
+
+params=()
+while IFS= read -r line; do
+  [[ -n "$line" ]] && params+=("$line")
+done <<< "$param_lines"
 
 echo "Running what-if against $AZURE_RESOURCE_GROUP..."
 az deployment sub what-if \

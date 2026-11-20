@@ -20,6 +20,13 @@ var builder = DistributedApplication.CreateBuilder(new DistributedApplicationOpt
     DashboardApplicationName = "NEBA Website",
 });
 
+bool HasValue(string parameterName)
+    => !string.IsNullOrWhiteSpace(builder.Configuration[$"Parameters:{parameterName}"]);
+
+// Container App scale values are ints, but Aspire parameters are strings: convert in Bicep.
+static BicepValue<int> ToBicepInt(BicepValue<string> value)
+    => new(new FunctionCallExpression(new IdentifierExpression("int"), value.Compile()));
+
 var postgres = builder.AddAzurePostgresFlexibleServer("postgres")
     .RunAsContainer(container => container
         .WithContainerName("bowlneba-postgres")
@@ -39,12 +46,12 @@ var database = postgres.AddDatabase("bowlneba");
 // .github/workflows/cd.yml for how these are triggered as Azure Container App Jobs.
 const string migrationServiceDirectory = "../Neba.MigrationService/";
 
-var appMigrations = builder.AddDotnetProject("api-migrations", migrationServiceDirectory)
+var appMigrations = builder.AddDotnetProject(MigrationPipelineStep.AppMigrationsJob, migrationServiceDirectory)
     .WithArgs("app")
     .WithReference(database)
     .WaitFor(database);
 
-var securityMigrations = builder.AddDotnetProject("api-security-migrations", migrationServiceDirectory)
+var securityMigrations = builder.AddDotnetProject(MigrationPipelineStep.SecurityMigrationsJob, migrationServiceDirectory)
     .WithArgs("security")
     .WithReference(database)
     .WaitFor(database);
@@ -175,6 +182,7 @@ if (builder.ExecutionContext.IsPublishMode)
     // parameter - CI maps the GitHub secret of the same purpose to Parameters__<name>. A required
     // parameter rejects an empty value, so a blank secret stops the deploy before it reaches
     // Azure (the API fails startup validation on a blank Discord webhook URL, for example).
+    // Every workflow that deploys (cd, staging, hotfix) must map all of these to Parameters__<name>.
     (string SecretName, string ParameterName)[] secrets =
     [
         ("Google--Credentials--PrivateKey", "googlePrivateKey"),
@@ -263,9 +271,12 @@ if (builder.ExecutionContext.IsPublishMode)
     // Disabled, no cert), which is enough for Azure to validate the DNS records. Once
     // validated, provision a free managed certificate for that hostname via the Portal and
     // feed its name back in via the certificate-name parameter (AZURE_*_CERTIFICATE_NAME repo var) - that permanently
-    // binds it (BindingType SniEnabled) from then on. See
+    // binds it (BindingType SniEnabled) from then on.
+    //
     // A custom domain is declared only when its parameter has a value, so an environment with
     // no DNS (staging) deploys without binding any hostname. Production always sets all of them.
+    // HasValue reads configuration (Parameters__<name> or user secrets) only, not a value that
+    // Aspire prompts for or keeps in deploy state.
     IResourceBuilder<ParameterResource>? webCustomDomain = null;
     IResourceBuilder<ParameterResource>? webCertificateName = null;
     IResourceBuilder<ParameterResource>? apiCustomDomain = null;
@@ -329,13 +340,14 @@ if (builder.ExecutionContext.IsPublishMode)
     // checks these names before it runs anything, so a wrong name fails the deploy at the start.
     if (string.Equals(builder.Configuration["Migrations:Run"], "true", StringComparison.OrdinalIgnoreCase))
     {
-        string[] migrationJobDeploySteps = ["provision-api-migrations-containerapp", "provision-api-security-migrations-containerapp"];
+        // Keep the step names in step with Aspire: re-check them whenever Aspire.Hosting.AppHost
+        // is upgraded.
         string[] appAndDeploySteps = ["provision-api-containerapp", "provision-web-containerapp", WellKnownPipelineSteps.Deploy];
 
         builder.Pipeline.AddStep(
             MigrationPipelineStep.StepName,
-            context => MigrationPipelineStep.RunAsync(context, ["api-migrations", "api-security-migrations"]),
-            dependsOn: migrationJobDeploySteps,
+            MigrationPipelineStep.RunAsync,
+            dependsOn: MigrationPipelineStep.JobDeployStepNames,
             requiredBy: appAndDeploySteps);
     }
 }
@@ -359,10 +371,3 @@ postgres.WithDisplayOrder(10);
 storage.WithDisplayOrder(10);
 
 await builder.Build().RunAsync();
-
-bool HasValue(string parameterName)
-    => !string.IsNullOrWhiteSpace(builder.Configuration[$"Parameters:{parameterName}"]);
-
-// Container App scale values are ints, but Aspire parameters are strings: convert in Bicep.
-static BicepValue<int> ToBicepInt(BicepValue<string> value)
-    => new(new FunctionCallExpression(new IdentifierExpression("int"), value.Compile()));

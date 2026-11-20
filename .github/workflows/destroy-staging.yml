@@ -2,7 +2,7 @@ name: Destroy Staging
 
 # Deletes the staging resource group and purges the staging Key Vault, so a later staging
 # deploy starts clean and its Key Vault name is free again. Manual only. It can only touch a
-# resource group with "staging" in its name, and you must type that name to confirm.
+# resource group named rg-<app>-staging, and you must type that name to confirm.
 # Production is never a target: this job runs in the Staging environment.
 
 on:
@@ -40,8 +40,10 @@ jobs:
           fi
 
           # Production lives in this subscription. Never delete a group that is not staging.
-          if [[ "$AZURE_RESOURCE_GROUP" != *staging* ]]; then
-            echo "::error::AZURE_RESOURCE_GROUP '$AZURE_RESOURCE_GROUP' must contain 'staging'"
+          # The name must be rg-<app>-staging, where <app> may hold hyphens. The name must end in
+          # -staging, so a name like rg-staging-prod fails.
+          if [[ ! "$AZURE_RESOURCE_GROUP" =~ ^rg-[a-z0-9-]+-staging$ ]]; then
+            echo "::error::AZURE_RESOURCE_GROUP '$AZURE_RESOURCE_GROUP' must look like rg-<app>-staging"
             exit 1
           fi
 

@@ -1,5 +1,3 @@
-using System.Diagnostics;
-
 using Aspire.Hosting.Pipelines;
 
 using Microsoft.Extensions.Configuration;
@@ -16,15 +14,53 @@ internal static partial class MigrationPipelineStep
 {
     internal const string StepName = "run-migrations";
 
-    // Matches the old shell loop: 60 polls, 10 seconds apart.
-    private const int MaxPolls = 60;
-    private static readonly TimeSpan s_pollInterval = TimeSpan.FromSeconds(10);
+    // The resource names of the two migration jobs. AppHost.cs uses the same constants for the
+    // resources, so a rename cannot leave the pipeline step pointing at a job that does not exist.
+    internal const string AppMigrationsJob = "api-migrations";
+    internal const string SecurityMigrationsJob = "api-security-migrations";
 
-    internal static async Task RunAsync(PipelineStepContext context, IReadOnlyList<string> jobNames)
+    internal static IReadOnlyList<string> JobNames { get; } = [AppMigrationsJob, SecurityMigrationsJob];
+
+    // Aspire names the deploy step of a job resource "provision-<resource>-containerapp".
+    internal static IReadOnlyList<string> JobDeployStepNames { get; } =
+        [.. JobNames.Select(name => $"provision-{name}-containerapp")];
+
+    // Matches the old shell loop: 60 polls, 10 seconds apart.
+    internal const int MaxPolls = 60;
+    internal static readonly TimeSpan PollInterval = TimeSpan.FromSeconds(10);
+
+    internal static Task RunAsync(PipelineStepContext context)
     {
         var configuration = context.Services.GetRequiredService<IConfiguration>();
-        var logger = context.Logger;
+        var (resourceGroup, subscriptionId) = ReadTarget(configuration);
 
+        return RunAsync(
+            new AzCli(subscriptionId),
+            resourceGroup,
+            JobNames,
+            context.Logger,
+            PollInterval,
+            context.CancellationToken);
+    }
+
+    internal static async Task RunAsync(
+        IAzCli az,
+        string resourceGroup,
+        IReadOnlyList<string> jobNames,
+        ILogger logger,
+        TimeSpan pollInterval,
+        CancellationToken cancellationToken)
+    {
+        foreach (var jobName in jobNames)
+        {
+            await RunJobAsync(az, jobName, resourceGroup, logger, pollInterval, cancellationToken);
+        }
+    }
+
+    // The subscription is required: without it az uses its default, which on a runner with more
+    // than one subscription can differ from the one the deploy targets.
+    internal static (string ResourceGroup, string SubscriptionId) ReadTarget(IConfiguration configuration)
+    {
         var resourceGroup = configuration["Azure:ResourceGroup"];
         if (string.IsNullOrWhiteSpace(resourceGroup))
         {
@@ -32,25 +68,26 @@ internal static partial class MigrationPipelineStep
         }
 
         var subscriptionId = configuration["Azure:SubscriptionId"];
-
-        foreach (var jobName in jobNames)
+        if (string.IsNullOrWhiteSpace(subscriptionId))
         {
-            await RunJobAsync(jobName, resourceGroup, subscriptionId, logger, context.CancellationToken);
+            throw new InvalidOperationException("Azure__SubscriptionId is not set; cannot pick the subscription for the migration jobs.");
         }
+
+        return (resourceGroup, subscriptionId);
     }
 
     private static async Task RunJobAsync(
+        IAzCli az,
         string jobName,
         string resourceGroup,
-        string? subscriptionId,
         ILogger logger,
+        TimeSpan pollInterval,
         CancellationToken cancellationToken)
     {
         LogStarting(logger, jobName);
 
-        var executionName = (await RunAzAsync(
+        var executionName = (await az.RunAsync(
             ["containerapp", "job", "start", "--name", jobName, "--resource-group", resourceGroup, "--query", "name", "-o", "tsv"],
-            subscriptionId,
             cancellationToken)).Trim();
 
         if (executionName.Length == 0)
@@ -69,9 +106,9 @@ internal static partial class MigrationPipelineStep
                 throw new TimeoutException($"Timed out waiting for job '{jobName}' execution '{executionName}' to complete.");
             }
 
-            await Task.Delay(s_pollInterval, cancellationToken);
+            await Task.Delay(pollInterval, cancellationToken);
 
-            status = (await RunAzAsync(
+            status = (await az.RunAsync(
                 [
                     "containerapp", "job", "execution", "show",
                     "--name", jobName,
@@ -79,7 +116,6 @@ internal static partial class MigrationPipelineStep
                     "--job-execution-name", executionName,
                     "--query", "properties.status", "-o", "tsv"
                 ],
-                subscriptionId,
                 cancellationToken)).Trim();
         }
 
@@ -89,49 +125,6 @@ internal static partial class MigrationPipelineStep
         }
 
         LogCompleted(logger, jobName);
-    }
-
-    private static async Task<string> RunAzAsync(
-        IReadOnlyList<string> arguments,
-        string? subscriptionId,
-        CancellationToken cancellationToken)
-    {
-        // az is found through PATH on purpose: its install location differs between a developer
-        // machine and the GitHub runner.
-#pragma warning disable S4036
-        var startInfo = new ProcessStartInfo("az")
-#pragma warning restore S4036
-        {
-            RedirectStandardOutput = true,
-            RedirectStandardError = true,
-        };
-
-        foreach (var argument in arguments)
-        {
-            startInfo.ArgumentList.Add(argument);
-        }
-
-        if (!string.IsNullOrWhiteSpace(subscriptionId))
-        {
-            startInfo.ArgumentList.Add("--subscription");
-            startInfo.ArgumentList.Add(subscriptionId);
-        }
-
-        using var process = Process.Start(startInfo)
-            ?? throw new InvalidOperationException("Could not start the Azure CLI (az).");
-
-        var output = process.StandardOutput.ReadToEndAsync(cancellationToken);
-        var error = process.StandardError.ReadToEndAsync(cancellationToken);
-
-        await process.WaitForExitAsync(cancellationToken);
-
-        if (process.ExitCode != 0)
-        {
-            throw new InvalidOperationException(
-                $"az {string.Join(' ', arguments.Take(4))} failed with exit code {process.ExitCode}: {await error}");
-        }
-
-        return await output;
     }
 
     [LoggerMessage(Level = LogLevel.Information, Message = "Starting job execution: {JobName}")]
