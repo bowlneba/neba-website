@@ -1,3 +1,5 @@
+using Microsoft.EntityFrameworkCore;
+
 using Neba.Api.Database;
 using Neba.Api.Features.Bowlers.Domain;
 using Neba.Api.Features.Series.Domain;
@@ -51,6 +53,15 @@ internal sealed class AdvancementFactsScript(AdvancementScenario scenario)
 
     public BackfillFacts? Backfill { get; set; }
 
+    /// <summary>False leaves the Survivor tournament with no squad, as when its squad was removed.</summary>
+    public bool SquadPresent { get; set; } = true;
+
+    /// <summary>False leaves the Survivor squad without score rows, as before the score sync.</summary>
+    public bool SquadHasScores { get; set; } = true;
+
+    /// <summary>The Eastern start time of the Survivor squad.</summary>
+    public TimeOnly SquadStartTime { get; set; } = NineAm;
+
     public AdvancementFacts Build()
         => AdvancementFactsFactory.Create(
             tournaments: new Dictionary<TournamentId, StageTournamentResults>
@@ -61,12 +72,7 @@ internal sealed class AdvancementFactsScript(AdvancementScenario scenario)
                 [scenario.Survivor.Id] = StageTournamentResultsFactory.Create(
                     scenario.Survivor.Id, SurvivorStatus, scenario.Survivor.StartDate, scenario.Survivor.EndDate,
                     results: Rows(SurvivorRanking),
-                    squads:
-                    [
-                        StageSquadFactFactory.Create(
-                            scenario.SquadId, scenario.Survivor.StartDate, NineAm,
-                            [.. SurvivorRanking.Select((bowler, rank) => SquadBowlerTotalFactory.Create(bowler, 1500 - (rank * 10), 6))]),
-                    ]),
+                    squads: Squads()),
                 [scenario.Placement.Id] = StageTournamentResultsFactory.Create(
                     scenario.Placement.Id, PlacementStatus, scenario.Placement.StartDate, scenario.Placement.EndDate,
                     results: Rows(PlacementPlaces)),
@@ -76,6 +82,20 @@ internal sealed class AdvancementFactsScript(AdvancementScenario scenario)
                 [scenario.Qualifier.EndDate] = Members,
             },
             backfill: Backfill);
+
+    private List<StageSquadFact> Squads()
+    {
+        if (!SquadPresent)
+        {
+            return [];
+        }
+
+        IReadOnlyList<SquadBowlerTotal> totals = SquadHasScores
+            ? [.. SurvivorRanking.Select((bowler, rank) => SquadBowlerTotalFactory.Create(bowler, 1500 - (rank * 10), 6))]
+            : [];
+
+        return [StageSquadFactFactory.Create(scenario.SquadId, scenario.Survivor.StartDate, SquadStartTime, totals)];
+    }
 
     private static List<StageResultRow> Rows(IEnumerable<BowlerId> places)
         => [.. places.Select((bowler, index) => StageResultRowFactory.Create(bowler, index + 1))];
@@ -99,6 +119,29 @@ internal static class AdvancementRunSeed
 
         var scenario = new AdvancementScenario(
             series, [.. bowlers.Select(bowler => bowler.Id)], qualifier, survivor, placement, SquadId.New());
+
+        dbContext.ChangeTracker.Clear();
+
+        return scenario;
+    }
+
+    /// <summary>A second Series in the same season as <paramref name="existing"/>, over three new tournaments, with the same bowlers.</summary>
+    public static async Task<AdvancementScenario> SeedAnotherSeriesAsync(
+        AppDbContext dbContext, AdvancementScenario existing, string name, CancellationToken ct)
+    {
+        var season = await dbContext.Seasons.AsNoTracking().SingleAsync(s => s.Id == existing.Series.SeasonId, ct);
+        var year = season.StartDate.Year;
+
+        var qualifier = await AdvancementReaderSeed.AddTournamentAsync(
+            dbContext, season, $"{name} Qualifier", new DateOnly(year, 5, 1), null, ct);
+        var survivor = await AdvancementReaderSeed.AddTournamentAsync(
+            dbContext, season, $"{name} Survivor", new DateOnly(year, 6, 3), null, ct);
+        var placement = await AdvancementReaderSeed.AddTournamentAsync(
+            dbContext, season, $"{name} Placement", new DateOnly(year, 7, 5), null, ct);
+
+        var series = await AdvancementReaderSeed.AddSeriesAsync(dbContext, season, qualifier, survivor, placement, ct, name);
+
+        var scenario = new AdvancementScenario(series, existing.Bowlers, qualifier, survivor, placement, SquadId.New());
 
         dbContext.ChangeTracker.Clear();
 

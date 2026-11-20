@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Diagnostics;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Time.Testing;
 
@@ -29,10 +30,11 @@ internal sealed class AdvancementRunHarness(AppDbContextFixture fixture) : IAsyn
         Mock<ISeriesAdvancementFactsReader> reader,
         Mock<IKeyedLockProvider>? locks = null,
         Mock<IFusionCache>? cache = null,
-        DateTimeOffset? now = null)
+        DateTimeOffset? now = null,
+        IInterceptor? extraInterceptor = null)
     {
         var saves = new SaveCounter();
-        var db = fixture.CreateDbContext(saves);
+        var db = extraInterceptor is null ? fixture.CreateDbContext(saves) : fixture.CreateDbContext(saves, extraInterceptor);
         _contexts.Add(db);
 
         var run = new SeriesAdvancement(

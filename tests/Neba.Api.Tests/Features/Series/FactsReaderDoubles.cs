@@ -18,6 +18,16 @@ internal static class FactsReaderDoubles
         return reader;
     }
 
+    /// <summary>Returns the facts the function builds for the Series being read. The function may throw to model a failed read.</summary>
+    public static Mock<ISeriesAdvancementFactsReader> ReadingFor(Func<SeriesAggregate, AdvancementFacts> facts)
+    {
+        var reader = new Mock<ISeriesAdvancementFactsReader>(MockBehavior.Strict);
+        reader.Setup(r => r.ReadAsync(It.IsAny<SeriesAggregate>(), It.IsAny<CancellationToken>()))
+            .Returns((SeriesAggregate series, CancellationToken _) => Task.FromResult(facts(series)));
+
+        return reader;
+    }
+
     /// <summary>Has no setup, so any read fails the test.</summary>
     public static Mock<ISeriesAdvancementFactsReader> Untouched()
         => new(MockBehavior.Strict);
