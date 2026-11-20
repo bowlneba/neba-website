@@ -153,4 +153,36 @@ public sealed partial class FeatureBoundaryTests
         violations.ShouldBeEmpty(
             "Enqueue event jobs through IDomainEventPublisher:" + Environment.NewLine + string.Join(Environment.NewLine, violations));
     }
+
+    [Fact(DisplayName = "Every domain event type should have exactly one handler")]
+    public void EveryDomainEvent_ShouldHaveExactlyOneHandler()
+    {
+        // Arrange
+        var concreteTypes = typeof(AppDbContext).Assembly.GetTypes()
+            .Where(t => t is { IsClass: true, IsAbstract: false })
+            .ToList();
+
+        var eventTypes = concreteTypes
+            .Where(t => typeof(Neba.Api.Domain.IDomainEvent).IsAssignableFrom(t))
+            .ToList();
+
+        // Act
+        var handlerCountByEvent = concreteTypes
+            .SelectMany(t => t.GetInterfaces())
+            .Where(i => i.IsGenericType && i.GetGenericTypeDefinition() == typeof(Neba.Api.BackgroundJobs.IDomainEventJob<>))
+            .GroupBy(i => i.GetGenericArguments()[0])
+            .ToDictionary(g => g.Key, g => g.Count());
+
+        var violations = eventTypes
+            .Select(e => (Event: e, Handlers: handlerCountByEvent.GetValueOrDefault(e)))
+            .Where(x => x.Handlers != 1)
+            .Select(x => $"{x.Event.FullName}: {x.Handlers} handlers")
+            .Order()
+            .ToList();
+
+        // Assert
+        eventTypes.ShouldNotBeEmpty("events must be detected, or this test proves nothing");
+        violations.ShouldBeEmpty(
+            "Each domain event needs exactly one IDomainEventJob<T>:" + Environment.NewLine + string.Join(Environment.NewLine, violations));
+    }
 }

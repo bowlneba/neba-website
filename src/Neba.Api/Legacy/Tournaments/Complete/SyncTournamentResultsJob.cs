@@ -5,6 +5,7 @@ using Dapper;
 
 using Microsoft.EntityFrameworkCore;
 
+using Neba.Api.BackgroundJobs;
 using Neba.Api.Caching;
 using Neba.Api.Database;
 using Neba.Api.Discord;
@@ -23,6 +24,7 @@ internal sealed class SyncTournamentResultsJob(
     AppDbContext db,
     IDbConnection legacyConnection,
     IFusionCache cache,
+    IDomainEventPublisher domainEventPublisher,
     IManualInterventionNotifier manualInterventionNotifier,
     ILogger<SyncTournamentResultsJob> logger)
 {
@@ -63,7 +65,18 @@ internal sealed class SyncTournamentResultsJob(
         var unmappedLegacyBowlerIds = AddResults(
             tournament, singleResultRows, bowlerIdsByLegacyId, placeByLegacyBowlerId, legacyTournamentId);
 
+        // Raised on every sync, even one that adds nothing: the re-sync is the Series' redelivery path.
+        var recorded = tournament.MarkResultsRecorded();
+        if (recorded.IsError)
+        {
+            logger.LogLegacyResultsNotMarkedRecorded(legacyTournamentId, recorded.FirstError.Description);
+        }
+
         await db.SaveChangesAsync(ct);
+
+        // The interceptor publishes on SavedChanges, which EF also calls on a save with no rows. This explicit call
+        // is a safety net: the interceptor clears the events first, so nothing publishes twice.
+        domainEventPublisher.PublishAndClear(tournament);
 
         // Place == 1 results feed the champions list (ListChampionsQueryHandler) directly, in
         // addition to the tournament's own detail view.

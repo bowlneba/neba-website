@@ -211,6 +211,7 @@ public sealed class Tournament
         }
 
         _squads.Add(squad.Value);
+        RaiseSquadsChanged();
 
         return Result.Success;
     }
@@ -233,9 +234,18 @@ public sealed class Tournament
             return rangeCheck.Errors;
         }
 
-        return _squads.Any(s => s.Id != squadId && s.BowlingDateTimeUtc == bowlingDateTime)
-            ? TournamentErrors.SquadBowlingDateTimeAlreadyUsed(bowlingDateTime)
-            : squad.UpdateDetails(bowlingDateTime, maxEntries);
+        if (_squads.Any(s => s.Id != squadId && s.BowlingDateTimeUtc == bowlingDateTime))
+        {
+            return TournamentErrors.SquadBowlingDateTimeAlreadyUsed(bowlingDateTime);
+        }
+
+        var updated = squad.UpdateDetails(bowlingDateTime, maxEntries);
+        if (!updated.IsError)
+        {
+            RaiseSquadsChanged();
+        }
+
+        return updated;
     }
 
     /// <summary>
@@ -250,8 +260,18 @@ public sealed class Tournament
         }
 
         _squads.Remove(squad);
+        RaiseSquadsChanged();
 
         return Result.Deleted;
+    }
+
+    // One pending event per save, so a batch of squad changes makes one job.
+    private void RaiseSquadsChanged()
+    {
+        if (!DomainEvents.OfType<TournamentSquadsChanged>().Any())
+        {
+            AddDomainEvent(new TournamentSquadsChanged { TournamentId = Id });
+        }
     }
 
     private ErrorOr<Success> ValidateSquadDateInRange(DateTimeOffset bowlingDateTime)
@@ -632,6 +652,23 @@ public sealed class Tournament
         }
 
         _results.Add(result.Value);
+
+        return Result.Success;
+    }
+
+    /// <summary>
+    /// Signals that a sync finished writing this tournament's results. Call it after the <see cref="AddResult"/> loop on
+    /// every sync, including one that adds nothing, so a re-sync redelivers the event. Complete, Truncate and Cancel raise
+    /// nothing: in the legacy chain the results arrive after the status flips.
+    /// </summary>
+    public ErrorOr<Success> MarkResultsRecorded()
+    {
+        if (Status == TournamentStatus.Scheduled || Status == TournamentStatus.Cancelled)
+        {
+            return TournamentErrors.TournamentNotFinalized;
+        }
+
+        AddDomainEvent(new TournamentResultsRecorded { TournamentId = Id });
 
         return Result.Success;
     }

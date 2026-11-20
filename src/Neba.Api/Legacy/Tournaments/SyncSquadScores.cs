@@ -11,6 +11,7 @@ using Hangfire;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
+using Neba.Api.BackgroundJobs;
 using Neba.Api.Database;
 using Neba.Api.Discord;
 using Neba.Api.Features.Bowlers.Domain;
@@ -61,6 +62,7 @@ internal sealed class SyncSquadScoresSyncJob(
     AppDbContext db,
     IDbConnection legacyConnection,
     IFusionCache cache,
+    IDomainEventPublisher domainEventPublisher,
     IManualInterventionNotifier manualInterventionNotifier,
     ILogger<SyncSquadScoresSyncJob> logger)
 {
@@ -95,6 +97,9 @@ internal sealed class SyncSquadScoresSyncJob(
             squad, legacySquadId, rows, bowlerIdsByLegacyId, ct));
 
         await cache.RemoveByTagAsync($"neba:tournaments:{tournamentId}", token: ct);
+
+        // The scores belong to no aggregate, so the job publishes the event itself.
+        domainEventPublisher.Publish(new SquadScoresReplaced { TournamentId = tournamentId, SquadId = squad.Id });
 
         if (unmappedRowsByLegacyBowlerId.Count == 0)
         {

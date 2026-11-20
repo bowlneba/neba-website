@@ -18,8 +18,10 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Testing;
 using Microsoft.Extensions.Options;
 
+using Neba.Api.BackgroundJobs;
 using Neba.Api.Database;
 using Neba.Api.Discord;
+using Neba.Api.Domain;
 using Neba.Api.Features.Bowlers.Domain;
 using Neba.Api.Features.Seasons.Domain;
 using Neba.Api.Features.Tournaments.Domain;
@@ -312,11 +314,25 @@ public sealed class SyncSquadScoresSyncJobTests(AppDbContextFixture fixture, Leg
         return bowler;
     }
 
-    private SyncSquadScoresSyncJob CreateJob(Mock<IManualInterventionNotifier>? manualInterventionNotifier = null, FakeLogger<SyncSquadScoresSyncJob>? logger = null) =>
+    // The publisher is a seam here; the event tests assert what it receives.
+    private static IDomainEventPublisher CreatePublisher()
+    {
+        var publisher = new Mock<IDomainEventPublisher>(MockBehavior.Strict);
+        publisher.Setup(p => p.Publish(It.IsAny<IDomainEvent>()));
+        publisher.Setup(p => p.PublishAndClear(It.IsAny<IAggregateRoot>()));
+
+        return publisher.Object;
+    }
+
+    private SyncSquadScoresSyncJob CreateJob(
+        Mock<IManualInterventionNotifier>? manualInterventionNotifier = null,
+        FakeLogger<SyncSquadScoresSyncJob>? logger = null,
+        IDomainEventPublisher? publisher = null) =>
         new(
             _dbContext,
             _legacyConnection,
             _serviceProvider.GetRequiredService<IFusionCache>(),
+            publisher ?? CreatePublisher(),
             (manualInterventionNotifier ?? new Mock<IManualInterventionNotifier>(MockBehavior.Strict)).Object,
             logger ?? new FakeLogger<SyncSquadScoresSyncJob>());
 
@@ -662,6 +678,113 @@ public sealed class SyncSquadScoresSyncJobTests(AppDbContextFixture fixture, Leg
         var scores = await _dbContext.SquadScores.Where(s => s.SquadId == squad.Id).ToListAsync(ct);
         scores.ShouldHaveSingleItem().Score.ShouldBe(200);
         postedAlerts.ShouldHaveSingleItem();
+    }
+
+    // ── SquadScoresReplaced ───────────────────────────────────────────────────
+
+    private async Task<TournamentId> GetTournamentIdAsync(Squad squad, CancellationToken ct) =>
+        await _dbContext.Tournaments
+            .Where(t => t.Squads.Any(s => s.Id == squad.Id))
+            .Select(t => t.Id)
+            .SingleAsync(ct);
+
+    [Fact(DisplayName = "SyncAsync should publish one SquadScoresReplaced with the tournament and squad ids after the transaction commits")]
+    public async Task SyncAsync_ShouldPublishSquadScoresReplaced_AfterTransactionCommits()
+    {
+        // Arrange
+        var ct = TestContext.Current.CancellationToken;
+        var squad = await CreateSquadAsync(legacySquadId: 1, ct);
+        var tournamentId = await GetTournamentIdAsync(squad, ct);
+        await CreateBowlerAsync(legacyBowlerId: 100, ct);
+        await InsertLegacyScoreAsync(legacyBowlerId: 100, legacySquadId: 1, game: 1, score: 200);
+
+        var published = new List<IDomainEvent>();
+        var transactionOpenAtPublish = new List<bool>();
+        var publisher = new Mock<IDomainEventPublisher>(MockBehavior.Strict);
+        publisher
+            .Setup(p => p.Publish(It.IsAny<IDomainEvent>()))
+            .Callback<IDomainEvent>(domainEvent =>
+            {
+                published.Add(domainEvent);
+                transactionOpenAtPublish.Add(_dbContext.Database.CurrentTransaction is not null);
+            });
+        var job = CreateJob(publisher: publisher.Object);
+
+        // Act
+        await job.SyncAsync(1, ct);
+
+        // Assert
+        var domainEvent = published.ShouldHaveSingleItem().ShouldBeOfType<SquadScoresReplaced>();
+        domainEvent.TournamentId.ShouldBe(tournamentId);
+        domainEvent.SquadId.ShouldBe(squad.Id);
+        transactionOpenAtPublish.ShouldHaveSingleItem().ShouldBeFalse();
+        (await _dbContext.SquadScores.Where(s => s.SquadId == squad.Id).ToListAsync(ct)).ShouldHaveSingleItem();
+    }
+
+    [Fact(DisplayName = "SyncAsync should not publish SquadScoresReplaced when the legacy squad is not synced")]
+    public async Task SyncAsync_ShouldNotPublish_WhenSquadNotSynced()
+    {
+        // Arrange
+        var ct = TestContext.Current.CancellationToken;
+        var publisher = new Mock<IDomainEventPublisher>(MockBehavior.Strict);
+        var job = CreateJob(publisher: publisher.Object);
+
+        // Act
+        await job.SyncAsync(999, ct);
+
+        // Assert
+        publisher.VerifyNoOtherCalls();
+    }
+
+    [Fact(DisplayName = "SyncAsync should not publish SquadScoresReplaced when replacing the scores throws")]
+    public async Task SyncAsync_ShouldNotPublish_WhenReplaceThrows()
+    {
+        // Arrange
+        var ct = TestContext.Current.CancellationToken;
+        await CreateSquadAsync(legacySquadId: 1, ct);
+        await CreateBowlerAsync(legacyBowlerId: 100, ct);
+        await InsertLegacyScoreAsync(legacyBowlerId: 100, legacySquadId: 1, game: 1, score: 200);
+        var publisher = new Mock<IDomainEventPublisher>(MockBehavior.Strict);
+        var job = CreateJob(publisher: publisher.Object);
+        _saveInterceptor.FailOnCall(1, new InvalidOperationException("boom"));
+
+        // Act
+        await Should.ThrowAsync<InvalidOperationException>(() => job.SyncAsync(1, ct));
+
+        // Assert
+        _saveInterceptor.Disarm();
+        publisher.VerifyNoOtherCalls();
+    }
+
+    [Fact(DisplayName = "SyncAsync should still publish SquadScoresReplaced once when some rows are unmapped")]
+    public async Task SyncAsync_ShouldStillPublish_WhenSomeRowsAreUnmapped()
+    {
+        // Arrange
+        var ct = TestContext.Current.CancellationToken;
+        var squad = await CreateSquadAsync(legacySquadId: 1, ct);
+        var tournamentId = await GetTournamentIdAsync(squad, ct);
+        await CreateBowlerAsync(legacyBowlerId: 100, ct);
+        await InsertLegacyScoreAsync(legacyBowlerId: 100, legacySquadId: 1, game: 1, score: 200);
+        await InsertLegacyScoreAsync(legacyBowlerId: 999, legacySquadId: 1, game: 1, score: 150);
+
+        var manualInterventionNotifier = new Mock<IManualInterventionNotifier>(MockBehavior.Strict);
+        manualInterventionNotifier
+            .Setup(n => n.NotifyAsync(It.IsAny<DiscordAlert>(), It.IsAny<CancellationToken>()))
+            .Returns(Task.CompletedTask);
+        var published = new List<IDomainEvent>();
+        var publisher = new Mock<IDomainEventPublisher>(MockBehavior.Strict);
+        publisher
+            .Setup(p => p.Publish(It.IsAny<IDomainEvent>()))
+            .Callback<IDomainEvent>(published.Add);
+        var job = CreateJob(manualInterventionNotifier, publisher: publisher.Object);
+
+        // Act
+        await job.SyncAsync(1, ct);
+
+        // Assert
+        var domainEvent = published.ShouldHaveSingleItem().ShouldBeOfType<SquadScoresReplaced>();
+        domainEvent.TournamentId.ShouldBe(tournamentId);
+        domainEvent.SquadId.ShouldBe(squad.Id);
     }
 }
 
