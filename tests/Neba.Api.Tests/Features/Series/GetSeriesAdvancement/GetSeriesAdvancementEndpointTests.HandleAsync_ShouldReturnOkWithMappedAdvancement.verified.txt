@@ -1,0 +1,119 @@
+﻿{
+  Version: 25,
+  BackfillAsOf: Date_1,
+  TargetField: 15,
+  Stages: [
+    {
+      StageId: 01FQDAQH2PTAPJ5QCM1HA9NZDN,
+      Order: 1,
+      Kind: Qualifying,
+      Status: Computed,
+      IsStale: true,
+      NeedsSquad: false,
+      ComputedAt: DateTimeOffset_1,
+      OfficialDueAt: DateTimeOffset_2,
+      SlotCount: 17,
+      VacantSlotCount: 1,
+      TournamentId: 01JB1WD6ATQDZQ599RZC6AP1XZ,
+      TournamentStatus: Completed,
+      Entries: [
+        {
+          BowlerId: 01F860EFMDCG9R9ST3BYQ7DV84,
+          BowlerName: Myrtis Price,
+          SourceStageId: 01K81VZ7260VY9S8949VGRN6QP,
+          Place: 21,
+          ViaOverride: true
+        },
+        {
+          BowlerId: 01FATP25S0EVBDBSC7DJW52QZV,
+          BowlerName: Wendy Breitenberg,
+          BackfillPoints: 190,
+          ViaOverride: false
+        },
+        {
+          BowlerId: 01G3W2WP81J5QFJ8MD0TQ6P7G3,
+          BowlerName: Roselyn Brakus,
+          BackfillPoints: 23,
+          ViaOverride: false
+        }
+      ],
+      Overrides: [
+        {
+          OverrideId: 01GF5F4Q354M36SFHRM0C1W959,
+          BowlerId: 01F4MBVZGCPJET2FB31NZ4C2C7,
+          BowlerName: Maegan Lehner,
+          Kind: Add,
+          Reason: Autem est consequatur est natus dignissimos inventore temporibus.,
+          CreatedBy: 01FWW9QC0WTNEN70HAMDW4ZNBS,
+          CreatedAt: DateTimeOffset_3,
+          Applied: false
+        },
+        {
+          OverrideId: 01G4H76RQTSBG9YWEDEF09BGA7,
+          BowlerId: 01F4Y6SQRM4DR3CR9V3E4BEB2V,
+          BowlerName: Lisette Monahan,
+          Kind: Add,
+          Reason: Id ad suscipit dolore magni eveniet.,
+          CreatedBy: 01H0S1GKWG92VA1NA3JX9RNHXC,
+          CreatedAt: DateTimeOffset_4,
+          Applied: false
+        }
+      ]
+    },
+    {
+      StageId: 01G4MHZWXGQ9PHC4XSY0FJBDQY,
+      Order: 2,
+      Kind: Survivor,
+      Status: Computed,
+      IsStale: true,
+      NeedsSquad: false,
+      ComputedAt: DateTimeOffset_5,
+      OfficialDueAt: DateTimeOffset_6,
+      TournamentId: 01GHWJBPEK61EK20NHVAX9B37R,
+      TournamentStatus: Completed,
+      ResolvedSquadId: 01HGPSV8225NJTZDY9VWP9MD3S,
+      SurvivorOutcomes: [
+        {
+          BowlerId: 01HPV2MZQ7AD8J7ZX1TJTB3PNR,
+          BowlerName: Mathew Lakin,
+          BlockTotal: 1268,
+          Advanced: false
+        },
+        {
+          BowlerId: 01H2DN2FFHGKZXH2GV6PXZ5FR6,
+          BowlerName: Frances Morissette,
+          BlockTotal: 1711,
+          Advanced: false
+        }
+      ]
+    },
+    {
+      StageId: 01JTEDG4S4PRWNSBJZPTXF7DT3,
+      Order: 3,
+      Kind: Placement,
+      Status: Official,
+      IsStale: false,
+      NeedsSquad: false,
+      ComputedAt: DateTimeOffset_7,
+      OfficialDueAt: DateTimeOffset_8,
+      OfficialAt: DateTimeOffset_9,
+      TournamentId: 01F6YFKQQ6C3ABCQX8K9EEW2CZ,
+      TournamentStatus: Completed
+    }
+  ],
+  Positions: [
+    {
+      BowlerId: 01J4ZDZPAFZ1D9R17RZGDXY5C5,
+      BowlerName: Amelia Quigley,
+      Position: 1,
+      Bowled: true,
+      IsFinalist: false
+    },
+    {
+      BowlerId: 01J1TJTRR6TXH60ZFGMSS80M0G,
+      BowlerName: Cordell Strosin,
+      Position: 2,
+      Bowled: true
+    }
+  ]
+}

@@ -165,12 +165,36 @@ public sealed class SeriesAdvancementReaderTests(AppDbContextFixture fixture)
         rows.Stages.Select(stage => stage.AdvancingCount).ShouldBe([8, 20, null]);
         rows.Stages.Select(stage => stage.TournamentId).ShouldBe([scenario.Qualifier.Id, scenario.Survivor.Id, scenario.Placement.Id]);
         rows.Stages.Select(stage => stage.TournamentName).ShouldBe(["The Qualifier", "The Survivor", "The Placement"]);
+        rows.Stages.ShouldAllBe(stage => stage.TournamentType == TournamentFactory.ValidTournamentType);
         rows.Stages.ShouldAllBe(stage => stage.TournamentStatus == TournamentStatus.Completed);
         rows.Stages.ShouldAllBe(stage => stage.Status == StageStatus.Computed);
         rows.Stages.Select(stage => stage.ComputedAt).ShouldBe([Now.AddHours(1), Now.AddHours(1), Now.AddHours(1)]);
         rows.Stages.ShouldAllBe(stage => stage.OfficialAt == null);
         rows.Stages.ShouldAllBe(stage => !stage.IsStale);
         rows.Stages[0].SlotCount.ShouldBe(8);
+    }
+
+    [Fact(DisplayName = "ReadAsync should return each Stage's tournament type")]
+    public async Task ReadAsync_ShouldReturnTheTournamentTypeOfEachStage()
+    {
+        // Arrange
+        var ct = TestContext.Current.CancellationToken;
+        var season = await SeriesSeed.AddSeasonAsync(_dbContext, 2025, ct);
+        var qualifier = await AdvancementReaderSeed.AddTournamentAsync(
+            _dbContext, season, "Doubles Qualifier", new DateOnly(2025, 2, 1), null, ct, type: TournamentType.Doubles);
+        var survivor = await AdvancementReaderSeed.AddTournamentAsync(
+            _dbContext, season, "Trios Survivor", new DateOnly(2025, 3, 1), null, ct, type: TournamentType.Trios);
+        var placement = await AdvancementReaderSeed.AddTournamentAsync(
+            _dbContext, season, "Baker Placement", new DateOnly(2025, 4, 1), null, ct, type: TournamentType.Baker);
+        var series = await AdvancementReaderSeed.AddSeriesAsync(_dbContext, season, qualifier, survivor, placement, ct);
+
+        // Act
+        var rows = await SeriesAdvancementReader.ReadAsync(_readContext, series.Id, ct);
+
+        // Assert
+        rows.ShouldNotBeNull();
+        rows.Stages.Select(stage => stage.TournamentType).ShouldBe([TournamentType.Doubles, TournamentType.Trios, TournamentType.Baker]);
+        rows.Stages.Select(stage => stage.TournamentType.TeamSize).ShouldBe([2, 3, 5]);
     }
 
     [Fact(DisplayName = "ReadAsync should return the resolved squad designation with the squad-exists flag true when the squad has a row")]

@@ -1,0 +1,26 @@
+﻿{
+  Items: [
+    {
+      SquadId: 01K81Z58PJWWNE05NCQ6NPAG1N,
+      Date: Date_1,
+      StartTime: Time_1,
+      HasScores: true,
+      IsSelected: true
+    },
+    {
+      SquadId: 01K26SBY7WDHNESEWJS600ZEDB,
+      Date: Date_2,
+      StartTime: Time_2,
+      HasScores: true,
+      IsSelected: false
+    },
+    {
+      SquadId: 01H3AFED0TRFBQCKBHE5TTGKV3,
+      Date: Date_3,
+      StartTime: Time_3,
+      HasScores: true,
+      IsSelected: false
+    }
+  ],
+  TotalItems: 3
+}

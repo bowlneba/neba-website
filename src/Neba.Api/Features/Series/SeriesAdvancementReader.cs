@@ -25,7 +25,8 @@ internal sealed record AdvancementStageRow(
     int? SlotCount,
     TournamentId TournamentId,
     string TournamentName,
-    TournamentStatus TournamentStatus);
+    TournamentStatus TournamentStatus,
+    TournamentType TournamentType);
 
 internal sealed record AdvancementFieldEntryRow(
     SeriesFieldEntryId EntryId, BowlerId BowlerId, Name BowlerName,
@@ -120,7 +121,8 @@ internal static class SeriesAdvancementReader
                 x.stage.SlotCount,
                 x.tournament.Id,
                 x.tournament.Name,
-                x.tournament.Status))
+                x.tournament.Status,
+                x.tournament.TournamentType))
             .ToListAsync(cancellationToken);
 
     private static async Task<IReadOnlyList<AdvancementFieldEntryRow>> ReadFieldEntriesAsync(
