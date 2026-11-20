@@ -1,6 +1,6 @@
 # Aspire 17 upgrade and `aspire deploy` move
 
-Status: Part A done on branch `aspire17` (4 commits, not pushed as of writing). Part B not started.
+Status: Part A merged (#264). Part B in progress on branch `aspire-deploy`: B0 to B4 and the staging run are done (see the result sections). Production cutover not started.
 Audience: agents that pick up this work. Read the whole file before you start.
 
 Two parts, two branches:
@@ -170,7 +170,148 @@ Goal: deploy with the Aspire CLI, as natively as possible. `azd` is still suppor
 On the Part B branch, before design work, run in the AppHost folder (with publish-mode env vars set):
 `aspire deploy --list-steps` and `aspire do <step> --list-steps`. Record the real step names in this file. Everything below that mentions steps depends on them.
 
+### B0 result (done, 2026-11-19)
+
+`aspire deploy` has no preview or dry-run flag. Use `aspire publish` plus `az deployment group what-if` instead (see B1a).
+
+Deploy steps (`aspire deploy --list-steps`, 22 in all): `process-parameters`, `build-prereq`, `validate-build-only-container-references`, `deploy-prereq`, `build-api`, `build-api-migrations`, `build-api-security-migrations`, `build-web`, `validate-azure-login`, `create-provisioning-context`, `provision-logs`, `provision-appinsights`, `provision-keyvault`, `provision-dataprotectionkey`, `provision-env-acr`, `provision-env`, `provision-maps`, `provision-postgres`, `provision-storage`, `provision-azure-bicep-resources`, `print-dashboard-url-env`, `deploy`.
+
+`provision-<resource>` steps exist per resource, so a single resource can be provisioned alone. The `deploy` step depends on all builds and on `provision-azure-bicep-resources`. Container pushes and app updates happen inside `deploy`. Open: the per-app deploy step names (for hotfix) and whether the migration jobs can be hooked between provision and deploy.
+
+### B1a. What-if against production (done for storage and Postgres)
+
+Prod is in subscription `bowlneba`, resource group `rg-bowlneba-prod`. Method: `aspire publish -o <dir>` with the repo's GitHub variables as env vars, then `az deployment group what-if -g rg-bowlneba-prod -f <module>.bicep`. Read-only.
+
+- Resource names already match prod (`storagej7jlg5nmk67ym`, `postgres-j7jlg5nmk67ym`). Both use `uniqueString(resourceGroup().id)`, so `WithAzdResourceNaming()` is likely not needed. Confirm on the env module before dropping it from B2.
+- Storage: **NoChange**.
+- Postgres: same server, modified in place. Only real change: `authConfig.passwordAuth` is `Enabled` live and `Disabled` in the template. The other "Delete" lines are what-if noise (server-set defaults absent from the template). Data is not at risk (no recreate), but the live setting differs from the template, and the current azd flow would apply the same change. Find out who enabled it before any prod deploy.
+- User decision: the Postgres `passwordAuth` was enabled by hand for LINQPad scripts. A deploy turning it off is fine. The user re-enables it by hand when needed.
+
+Full-stack result (`az deployment sub what-if` on the generated `main.bicep`, all infra modules): **no resource is created or deleted.** Every resource keeps its prod name (Postgres, storage, Key Vault, registry, environment, identities, Maps, Log Analytics, App Insights). Changes found:
+
+- Postgres `passwordAuth` `Enabled` to `Disabled` (accepted above).
+- App Insights gains `Flow_Type` and `Request_Source` (harmless).
+- Resource group loses the `azd-env-name` tag (the template declares the group with no tags). Matters only while the azd workflows still look the group up by that tag. Part B uses an explicit group name.
+- Everything else is what-if noise: server-set defaults (retention, isolation scope, mTLS, encryption flags) and role assignments that what-if cannot evaluate. Role assignment names are fixed GUIDs, so they update in place.
+- Not checked: the api, web and migration job modules (they need image names). Their resource names are fixed (`api`, `web`, `api-migrations`, `api-security-migrations`) and match prod.
+
+Why the names match: the template names use `uniqueString(resourceGroup().id)`. `aspire deploy` deploys into the group named by `Azure__ResourceGroup`. With `rg-bowlneba-prod` the hash is the same.
+
+**Go/no-go (2026-11-19):** GO to implement B4 steps 1 to 5 on the Part B branch (parameters, secrets, migration step, staging). NO-GO to run `aspire deploy` against prod until staging proves the pipeline. The data resources are safe. What-if cannot test the deploy pipeline itself, the migration step, secret seeding, or the OIDC login window.
+
+### B4 steps 1 and 2 result (done, uncommitted on branch `aspire-deploy`)
+
+`AppHost.cs` no longer reads `AZURE_*` environment variables. Publish mode now uses `AddParameter`, fed by `Parameters__<name>` variables:
+
+| Parameter | Old variable | Notes |
+| --- | --- | --- |
+| `postgresSkuName`, `postgresSkuTier` | `AZURE_POSTGRES_SKU_NAME`, `_TIER` | Bicep params, no longer baked into the template |
+| `deployPrincipalId` | `AZURE_PRINCIPAL_ID` | Keeps the Key Vault Secrets Officer role for the deploy principal |
+| `minReplicas`, `maxReplicas`, `concurrentRequests` | `AZURE_CONTAINERAPP_*` | Strings in Aspire; Bicep converts with `int()` |
+| `webCustomDomain`, `apiCustomDomain` | `AZURE_WEB_CUSTOM_DOMAIN`, `AZURE_API_CUSTOM_DOMAIN` | Required |
+| `webCertificateName`, `apiCertificateName` | `AZURE_*_CERTIFICATE_NAME` | Optional |
+| `webWwwCustomDomain`, `webWwwCertificateName` | `AZURE_WEB_WWW_*` | Declared only if `Parameters__webWwwCustomDomain` is set; certificate optional |
+
+Checks: `aspire publish` with the new variables gives the same Bicep as before, except that the values are now Bicep parameters. The role assignment name hashes to the same value. With the optional values unset, publish succeeds and the certificate binding falls back to `Disabled`.
+
+Not tested: a deploy with a required value missing. `aspire publish` does not fail on a missing value (Bicep takes it at deploy time), so check `aspire deploy --non-interactive` in staging.
+
+GitHub changes: none now. The old `AZURE_*` repo variables stay as they are (release/v1.3.0 still uses them). The new workflows map each old variable to its `Parameters__<name>` on the deploy step (step 7). Staging will need its own values (domains, SKU, certificate names), so it needs its own GitHub environment.
+
+### B4 step 3 result (done)
+
+The ten secrets from the `cd.yml` seed step are now `keyVault.AddSecret(...)` calls in `AppHost.cs`, each fed by a `secret: true` parameter. Secret names are unchanged. Aspire resource names forbid `--`, so the code uses the `AddSecret(name, secretName, parameter)` overload.
+
+| Key Vault secret | Parameter | GitHub secret |
+| --- | --- | --- |
+| `Google--Credentials--PrivateKey` | `googlePrivateKey` | `GOOGLE_PRIVATE_KEY` |
+| `Google--Credentials--PrivateKeyId` | `googlePrivateKeyId` | `GOOGLE_PRIVATE_KEY_ID` |
+| `Google--Credentials--ClientEmail` | `googleClientEmail` | `GOOGLE_CLIENT_EMAIL` |
+| `EmailSettings--AppPassword` | `emailAppPassword` | `GOOGLE_PASSWORD` |
+| `JwtSettings--SigningKey` | `jwtSigningKey` | `JWT_SIGNING_KEY` |
+| `Legacy--ApiKey` | `legacyApiKey` | `LEGACY_API_KEY` |
+| `Legacy--ConnectionString` | `legacyConnectionString` | `LEGACY_DB_CONNECTION_STRING` |
+| `Discord--ApiLogsWebhookUrl` | `discordApiLogsWebhookUrl` | `DISCORD_API_LOGS_WEBHOOK_URL` |
+| `Discord--ManualInterventionWebhookUrl` | `discordManualInterventionWebhookUrl` | `DISCORD_MANUAL_INTERVENTION_WEBHOOK_URL` |
+| `Discord--NewsWebhookUrl` | `discordNewsWebhookUrl` | `DISCORD_NEWS_WEBHOOK_URL` |
+
+Checks: the generated `keyvault.bicep` takes each value as a `@secure()` parameter and holds no secret value. A what-if with dummy values against prod found all ten names already in the vault, so a deploy writes a new version of each in place. The required-parameter rule replaces the shell check for blank Discord URLs.
+
+Notes:
+
+- No GitHub secret changes. The new workflow maps each GitHub secret to `Parameters__<parameter>` on the deploy step. The `cd.yml` seed step stays until release/v1.3.0 reaches main.
+- Staging needs a value for all ten (dummy values work), because every one is required.
+- The vault also holds `Discord--WebhookUrl` and `AzureMaps--SubscriptionKey`. The first is stale and unmanaged (delete by hand when convenient). The second comes from `maps.bicep` and is untouched.
+- The `deploy_pipeline` Key Vault role stays for now. Remove it only after staging shows `aspire deploy` needs no data-plane access (the old azd flow does).
+
+### B4 step 4 result (code done, not yet run)
+
+New file `src/Neba.AppHost/MigrationPipelineStep.cs` and a `run-migrations` step in `AppHost.cs`. It is a port of the shell loop in `cd.yml`: it runs `az containerapp job start` for `api-migrations` and `api-security-migrations`, polls every 10 seconds for up to 10 minutes, and fails the deploy unless each ends `Succeeded`.
+
+- **Order:** a pipeline configuration callback makes `run-migrations` depend on the two jobs' `deploy-compute` steps, and makes the api and web `deploy-compute` steps depend on it. Wiring is by resource and tag, not by step name, because those steps are created late and `--list-steps` does not show them. The same step also feeds `deploy` (it shows in `aspire deploy --list-steps`).
+- **Opt-in:** the step does nothing unless `Migrations__Run=true`. Any run that deploys api or web passes through it (hotfix, a retry of one app), and only the full CD run may touch the schema. The new CD workflow sets the flag. The hotfix workflow never does.
+- **Needs from CI:** `Azure__ResourceGroup` (required, the step fails without it), optional `Azure__SubscriptionId`, an `az` login that stays valid for the run, and `az` on the PATH.
+- **Verified:** it builds, `aspire publish` still works, the step is in the deploy list.
+- **Not verified:** the by-tag wiring and the job runs. List mode skips the configuration callback. First real check is the staging run: confirm in its output that `run-migrations` ran after the job deploys and before api and web.
+- **Open:** whether the OIDC login lasts through a full `aspire deploy` plus up to 10 minutes of polling.
+
+### B1 staging setup (workflow written, not run)
+
+Workflow: `.github/workflows/staging.yml` (manual dispatch, GitHub environment `Staging`, job group `staging-deploy`). It checks settings, logs in, installs the CLI, runs `aspire deploy --environment staging --non-interactive`, then lists the resources it created.
+
+Defaults:
+
+- Resource group `rg-bowlneba-staging`, same subscription as production, created by the deploy. The workflow refuses any group name without `staging` in it.
+- No custom domains. The AppHost now declares a domain only when its parameter has a value, so staging binds no hostnames. With all domain parameters set (production) the generated Bicep is byte-identical to before.
+- Replicas 0 to 1, concurrency 50. Postgres `Standard_B1ms` / `Burstable` (same as prod).
+- Test secrets in the Staging environment (done by the user, all 11 present).
+
+Setup the user must do before the first run:
+
+1. **OIDC.** Add a federated credential on the deploy app registration (`AZURE_CLIENT_ID`) with subject `repo:bowlneba/neba-website:environment:Staging`. Without it `azure/login` fails.
+2. **Staging environment variables** (the Staging environment has none today):
+   - New: `AZURE_RESOURCE_GROUP` = `rg-bowlneba-staging`.
+   - Needed because a missing one falls back to the repo-level or Production value, or fails the check step: `AZURE_PRINCIPAL_ID` (same value as production), `AZURE_CONTAINERAPP_MIN_REPLICAS` = `0`, `AZURE_CONTAINERAPP_MAX_REPLICAS` = `1`.
+   - Inherited from repo level if set there (confirm each resolves): `AZURE_CLIENT_ID`, `AZURE_TENANT_ID`, `AZURE_SUBSCRIPTION_ID`, `AZURE_LOCATION`, `AZURE_POSTGRES_SKU_NAME`, `AZURE_POSTGRES_SKU_TIER`, `AZURE_CONTAINERAPP_CONCURRENT_REQUESTS`.
+3. Production's role for the deploy principal must allow creating a resource group and role assignments at subscription scope (it has Contributor and User Access Administrator today).
+
+Local note: `aspire publish` caches parameter values per environment in `~/.aspire/deployments`. To test a no-domain publish on a machine that has run production values, pass `--environment staging`. Fresh CI runners have no cache.
+
+### Staging run result (2026-11-19, run 44609141202, success)
+
+Third run, `westus2`, empty database: **18 min 14 s** from start to finish. The first two runs failed for fixable reasons:
+
+1. Azure login: the federated credential used the ID-based subject (`repo:bowlneba@<id>/neba-website@<id>:environment:Staging`). The workflow presents the name-based subject `repo:bowlneba/neba-website:environment:Staging`. Use the name-based form.
+2. `run-migrations` started at second zero, with no dependencies (the by-tag wiring found nothing). Fixed by explicit step names, registered only when `Migrations__Run=true`.
+3. Postgres B1ms returned `SkuNotAvailable` in `eastus2` for a new server, although the CLI lists it as available. Staging moved to `westus2`. Prod's server already exists in `eastus2`, so a deploy only updates it. A recreate of prod's Postgres in `eastus2` could hit the same limit.
+
+What the third run proved:
+
+- **Step names.** The names `provision-<name>-containerapp` are right for the two jobs and for api and web. Full order: provision infra, push images, `provision-env`, the two job `provision-*-containerapp` steps, `run-migrations` (2 min 3 s), then `provision-api-containerapp` and `provision-web-containerapp` in parallel.
+- **Migration step.** Both jobs ran to `Succeeded` before api and web deployed. The step needs only `az` and `Azure__ResourceGroup`.
+- **Secrets.** All ten secrets and `AzureMaps--SubscriptionKey` are in the vault (listed through ARM). Seeding through `AddSecret` works.
+- **Postgres.** `Standard_B1ms`, password auth disabled, state Ready.
+- **Login lifetime.** One `az` login covered an 18-minute run, with `az` calls 16 minutes in. No re-login steps are needed inside one `aspire deploy`.
+- **Parameters.** All parameters resolved from `Parameters__*` variables. Empty custom domains were skipped.
+- **Names.** Same resource types as prod. Staging has no managed certificates, no DNS zone, and no Smart Detection action group, which prod holds from manual or automatic setup.
+- **Timing.** Postgres took 9 min 49 s and the container environment 12 min 4 s, in parallel. These two set the run time.
+
+Hotfix test (run 44613719760, success, 5 min 53 s): `aspire do provision-api-containerapp`, then `aspire do provision-web-containerapp`, `Migrations__Run` empty, on top of the existing staging deploy.
+
+- No `run-migrations` step and no migration job step or image appeared. The workflow checks the log for this.
+- Both apps updated in place. Api took 4 min 37 s (it also ran its build and push, and the dependency steps), web about 1 min 20 s.
+- Each `aspire do` pulls in the infra provisioning steps the app depends on (storage, Key Vault, Postgres, environment, role assignments) and applies their Bicep again. They are idempotent and quick when nothing changed, but a hotfix therefore re-applies the infra template on its branch, which azd's per-service deploy did not. Safe, because a hotfix branch is cut from the release tag and carries that release's Bicep.
+- `aspire do` takes one step per call, so a hotfix runs it twice (api, then web).
+
+Open after staging:
+
+- A deploy with a required parameter missing: not tested.
+- The `deploy_pipeline` Key Vault role is not needed: secrets go in through ARM, not the data plane. Remove it, and the `deployPrincipalId` parameter, at cutover. Prod keeps its existing role assignment (Bicep does not delete it).
+- Staging still exists and costs a little. Keep it until the hotfix path is tested, then delete `rg-bowlneba-staging` and purge its Key Vault.
+
 ### B1. Staging deploy (do this before touching production)
+
+Lower priority now. Production's data (Postgres, storage) is covered by B1a. Staging is for the pipeline, migration step, and Key Vault secrets, which what-if cannot show.
 
 - Add a **staging** Aspire environment and a workflow (or a manual-dispatch job) that deploys to the **same subscription**, in its own resource group, doing everything production does: provision, Key Vault, migration jobs, api, web.
 - Use `aspire deploy --environment staging`. Resource group via `Azure__ResourceGroup`; also set `Azure__SubscriptionId`, `Azure__TenantId`, `Azure__Location`.

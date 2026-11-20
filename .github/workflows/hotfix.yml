@@ -4,11 +4,15 @@ name: Hotfix Workflow
 # `hotfix/*` branch cut from the latest release tag (the commit production runs;
 # tags are added by hand after each deploy).
 #
-# It skips infra preview, provision, Key Vault seeding, and migrations. Open the
-# PR from the hotfix branch to `main` right after you start this run so the full
-# pipeline checks the same change in parallel. See docs/learnings/hotfix.md.
+# It deploys api and web only and never runs migrations (Migrations__Run is left unset, so the
+# migration step is not registered). `aspire do` also re-applies the infrastructure the two apps
+# depend on, from the hotfix branch's own Bicep, and rewrites the Key Vault secrets with the same
+# GitHub secret values. A read-only what-if runs first and stops the deploy if it would create or
+# delete Postgres or the storage account. Open the PR from the hotfix branch to `main` right
+# after you start this run so the full pipeline checks the same change in parallel.
+# See docs/learnings/hotfix.md.
 #
-# Keep the deploy steps in step with cd.yml.
+# Keep the deploy settings in step with cd.yml and staging.yml.
 
 on:
   workflow_dispatch:
@@ -172,28 +176,13 @@ jobs:
       contents: read
       id-token: write
 
-    env:
-      AZURE_ENV_NAME: ${{ vars.AZURE_ENV_NAME }}
-      AZURE_LOCATION: ${{ vars.AZURE_LOCATION }}
-      AZURE_TENANT_ID: ${{ vars.AZURE_TENANT_ID }}
-      AZURE_SUBSCRIPTION_ID: ${{ vars.AZURE_SUBSCRIPTION_ID }}
-      AZURE_CLIENT_ID: ${{ vars.AZURE_CLIENT_ID }}
-      AZURE_PRINCIPAL_ID: ${{ vars.AZURE_PRINCIPAL_ID }}
-      AZURE_CONTAINERAPP_MIN_REPLICAS: ${{ vars.AZURE_CONTAINERAPP_MIN_REPLICAS }}
-      AZURE_CONTAINERAPP_MAX_REPLICAS: ${{ vars.AZURE_CONTAINERAPP_MAX_REPLICAS }}
-      AZURE_CONTAINERAPP_CONCURRENT_REQUESTS: ${{ vars.AZURE_CONTAINERAPP_CONCURRENT_REQUESTS }}
-      AZURE_POSTGRES_SKU_NAME: ${{ vars.AZURE_POSTGRES_SKU_NAME }}
-      AZURE_POSTGRES_SKU_TIER: ${{ vars.AZURE_POSTGRES_SKU_TIER }}
-      AZURE_WEB_CUSTOM_DOMAIN: ${{ vars.AZURE_WEB_CUSTOM_DOMAIN }}
-      AZURE_WEB_CERTIFICATE_NAME: ${{ vars.AZURE_WEB_CERTIFICATE_NAME }}
-      AZURE_WEB_WWW_CUSTOM_DOMAIN: ${{ vars.AZURE_WEB_WWW_CUSTOM_DOMAIN }}
-      AZURE_WEB_WWW_CERTIFICATE_NAME: ${{ vars.AZURE_WEB_WWW_CERTIFICATE_NAME }}
-      AZURE_API_CUSTOM_DOMAIN: ${{ vars.AZURE_API_CUSTOM_DOMAIN }}
-      AZURE_API_CERTIFICATE_NAME: ${{ vars.AZURE_API_CERTIFICATE_NAME }}
-      AZD_AUTH_USE_AZURE_CLI: "true"
-
     steps:
       - uses: actions/checkout@v7
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v6
+        with:
+          dotnet-version: 10.0.x
 
       - name: Login to Azure
         uses: azure/login@93381592711f247e165c389ebb30b596c84cdc48 # v3
@@ -201,9 +190,6 @@ jobs:
           tenant-id: ${{ vars.AZURE_TENANT_ID }}
           subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
           client-id: ${{ vars.AZURE_CLIENT_ID }}
-
-      - name: Setup azd
-        uses: Azure/setup-azd@80591774c092d5d640d43663766a76728d66e07d # v2.3.0
 
       - name: Install Aspire CLI
         run: |
@@ -215,30 +201,79 @@ jobs:
           rm -f install-aspire.sh
           echo "$HOME/.aspire/bin" >> "$GITHUB_PATH"
 
-      # azd finds the AppHost through MSBuild properties that the Aspire package sets only after restore.
-      - name: Restore AppHost
-        run: dotnet restore src/Neba.AppHost
+      - name: What-if guard
+        env:
+          AZURE_SUBSCRIPTION_ID: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+          AZURE_RESOURCE_GROUP: ${{ vars.AZURE_RESOURCE_GROUP }}
+          AZURE_LOCATION: ${{ vars.AZURE_LOCATION }}
+          Parameters__postgresSkuName: ${{ vars.AZURE_POSTGRES_SKU_NAME }}
+          Parameters__postgresSkuTier: ${{ vars.AZURE_POSTGRES_SKU_TIER }}
+          Parameters__deployPrincipalId: ${{ vars.AZURE_PRINCIPAL_ID }}
+          Parameters__minReplicas: ${{ vars.AZURE_CONTAINERAPP_MIN_REPLICAS }}
+          Parameters__maxReplicas: ${{ vars.AZURE_CONTAINERAPP_MAX_REPLICAS }}
+          Parameters__concurrentRequests: ${{ vars.AZURE_CONTAINERAPP_CONCURRENT_REQUESTS }}
+          Parameters__webCustomDomain: ${{ vars.AZURE_WEB_CUSTOM_DOMAIN }}
+          Parameters__webCertificateName: ${{ vars.AZURE_WEB_CERTIFICATE_NAME }}
+          Parameters__webWwwCustomDomain: ${{ vars.AZURE_WEB_WWW_CUSTOM_DOMAIN }}
+          Parameters__webWwwCertificateName: ${{ vars.AZURE_WEB_WWW_CERTIFICATE_NAME }}
+          Parameters__apiCustomDomain: ${{ vars.AZURE_API_CUSTOM_DOMAIN }}
+          Parameters__apiCertificateName: ${{ vars.AZURE_API_CERTIFICATE_NAME }}
+        run: .github/scripts/whatif-guard.sh
 
-      - name: Configure azd authentication
-        run: azd config set auth.useAzCliAuth true
-
-      # cd.yml gets its azd environment values from `azd provision`. This path skips
-      # provision, so pull the outputs of the last deployment into a fresh env instead.
-      - name: Load azd environment from last deployment
+      # `aspire do` runs one step per call. Migrations__Run is deliberately not set, so the
+      # run-migrations step does not exist. The log check fails the run if that ever changes.
+      - name: Deploy api and web
+        env:
+          Azure__SubscriptionId: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+          Azure__TenantId: ${{ vars.AZURE_TENANT_ID }}
+          Azure__Location: ${{ vars.AZURE_LOCATION }}
+          Azure__ResourceGroup: ${{ vars.AZURE_RESOURCE_GROUP }}
+          Azure__AllowResourceGroupCreation: "false"
+          Parameters__postgresSkuName: ${{ vars.AZURE_POSTGRES_SKU_NAME }}
+          Parameters__postgresSkuTier: ${{ vars.AZURE_POSTGRES_SKU_TIER }}
+          Parameters__deployPrincipalId: ${{ vars.AZURE_PRINCIPAL_ID }}
+          Parameters__minReplicas: ${{ vars.AZURE_CONTAINERAPP_MIN_REPLICAS }}
+          Parameters__maxReplicas: ${{ vars.AZURE_CONTAINERAPP_MAX_REPLICAS }}
+          Parameters__concurrentRequests: ${{ vars.AZURE_CONTAINERAPP_CONCURRENT_REQUESTS }}
+          Parameters__webCustomDomain: ${{ vars.AZURE_WEB_CUSTOM_DOMAIN }}
+          Parameters__webCertificateName: ${{ vars.AZURE_WEB_CERTIFICATE_NAME }}
+          Parameters__webWwwCustomDomain: ${{ vars.AZURE_WEB_WWW_CUSTOM_DOMAIN }}
+          Parameters__webWwwCertificateName: ${{ vars.AZURE_WEB_WWW_CERTIFICATE_NAME }}
+          Parameters__apiCustomDomain: ${{ vars.AZURE_API_CUSTOM_DOMAIN }}
+          Parameters__apiCertificateName: ${{ vars.AZURE_API_CERTIFICATE_NAME }}
+          Parameters__googlePrivateKey: ${{ secrets.GOOGLE_PRIVATE_KEY }}
+          Parameters__googlePrivateKeyId: ${{ secrets.GOOGLE_PRIVATE_KEY_ID }}
+          Parameters__googleClientEmail: ${{ secrets.GOOGLE_CLIENT_EMAIL }}
+          Parameters__emailAppPassword: ${{ secrets.GOOGLE_PASSWORD }}
+          Parameters__jwtSigningKey: ${{ secrets.JWT_SIGNING_KEY }}
+          Parameters__legacyApiKey: ${{ secrets.LEGACY_API_KEY }}
+          Parameters__legacyConnectionString: ${{ secrets.LEGACY_DB_CONNECTION_STRING }}
+          Parameters__discordApiLogsWebhookUrl: ${{ secrets.DISCORD_API_LOGS_WEBHOOK_URL }}
+          Parameters__discordManualInterventionWebhookUrl: ${{ secrets.DISCORD_MANUAL_INTERVENTION_WEBHOOK_URL }}
+          Parameters__discordNewsWebhookUrl: ${{ secrets.DISCORD_NEWS_WEBHOOK_URL }}
         run: |
           set -euo pipefail
-          azd env new "$AZURE_ENV_NAME" --location "$AZURE_LOCATION" --subscription "$AZURE_SUBSCRIPTION_ID"
-          azd env refresh --no-prompt
+          for step in provision-api-containerapp provision-web-containerapp; do
+            aspire do "$step" --environment production --non-interactive --include-exception-details 2>&1 | tee -a hotfix-deploy.log
+          done
 
-      - name: Deploy api
-        run: azd deploy api --no-prompt
-
-      - name: Deploy web
-        run: azd deploy web --no-prompt
+          if grep -q "run-migrations" hotfix-deploy.log; then
+            echo "::error::A hotfix run reached the migration step"
+            exit 1
+          fi
+          for step in provision-api-containerapp provision-web-containerapp; do
+            if ! grep -q "$step completed successfully" hotfix-deploy.log; then
+              echo "::error::$step did not complete"
+              exit 1
+            fi
+          done
 
       # Container Apps run in single-revision mode, so a new revision takes traffic only
       # once it passes its readiness probe. This step confirms the live site afterward.
       - name: Smoke test
+        env:
+          AZURE_API_CUSTOM_DOMAIN: ${{ vars.AZURE_API_CUSTOM_DOMAIN }}
+          AZURE_WEB_CUSTOM_DOMAIN: ${{ vars.AZURE_WEB_CUSTOM_DOMAIN }}
         run: |
           set -euo pipefail
           check() {

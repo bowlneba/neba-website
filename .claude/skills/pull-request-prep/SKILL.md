@@ -46,6 +46,15 @@ A plan that spans several PRs (such as `docs/plans/claude-agents.md`) is a concr
 
 Skip this step entirely when base-branch is not `main` (e.g. merging into a long-lived feature/integration branch, where plans may still be useful to the next PR in the chain).
 
+### 3b. Post-merge actions
+
+If `docs/learnings/aspire-deploy-cutover.md` exists on the branch (`git ls-files docs/learnings/aspire-deploy-cutover.md`) and base-branch is `main`, this PR carries the move from `azd` to `aspire deploy`. Some of its steps happen in GitHub and Azure settings, outside the diff, so the review and the PR description must show them.
+
+- Read the file. Copy its three checklists ("Before the merge", "First production deploy", "After the merge") and its "Variable cleanup" table into the review as a **📋 Post-merge Actions** section, every box unticked, in the file's order. The table says which repository variables must stay and which Production-environment copies to delete, so keep it whole.
+- Check what you can without changing anything, and say which items you checked: for example `git diff <base-branch>...HEAD -- .github/workflows/staging.yml` still holds a `push:` trigger (an open "Before the merge" item), and `<Version>` is above `main`'s.
+- Say plainly what you could not check (GitHub variables, Azure credentials). Do not tick those.
+- If the file is deleted on the branch, skip this step.
+
 ### 4. Run the reviewers in parallel
 
 Read `.github/instructions/pull-request-review.instructions.md` only as far as you need to judge a disputed finding. The agents read it for their own layer. Every flag in the final review must trace to a rule in that file, CLAUDE.md, or `docs/learnings/`.
@@ -60,6 +69,7 @@ Pick agents from the step 1 file list and start them **in one message** so they 
 | `backend-api` | anything under `src/Neba.Api/Features/` or `src/Neba.Api.Contracts/` |
 | `blazor-ui` | a `.razor`, `.razor.js`, or `Neba.Website.Server` change |
 | `aspire` | anything under `src/Neba.AppHost/` or `aspire.config.json` |
+| `devops` | anything under `.github/workflows/` or `.github/scripts/` |
 
 Give each agent the same brief: "Review mode. Review only the changes in `git diff <base-branch>...HEAD`. Change no files. Report findings only, one per line: `path:line | rule | Blocker, Should Fix or Suggestion | one-line fix`. End with `Not checked:`." If the branch is checked out, say so; the agents run their greps against the working tree.
 
@@ -113,6 +123,9 @@ Structure the review as:
 
 ### 📐 Plans & Mockups
 [Only present when base-branch is `main`. List each file/folder under `docs/plans/` deleted in step 3, and each one kept along with its stated reason. If step 3 found nothing under `docs/plans/`, omit this section entirely.]
+
+### 📋 Post-merge Actions
+[Only present when step 3b applies. The unticked checklists from `docs/learnings/aspire-deploy-cutover.md`, with a note on which items you checked and which need the user. Otherwise omit this section.]
 
 ### 📄 README Updates
 [List each stale/missing spot in README.md found via the **README** checklist above, with the proposed change. If none: "None — README is current."]
@@ -170,6 +183,7 @@ After the user confirms (or asks to proceed), infer the PR description format fr
 ```
 
 Rules for the description:
+- When step 3b applies, end the description with a **Post-merge actions** section that holds the same unticked checklists and the variable table, so the person who merges sees them
 - Keep **Summary** bullets tight — what it does, not how
 - **What Changed** should be detailed enough that a reviewer can map each section to the diff; include entity names, table names, query key, route, and page path where relevant
 - **Test Plan** should be actionable checkboxes — include the `dotnet test --filter` command for the component, specific test classes worth calling out, and a manual smoke-test step
