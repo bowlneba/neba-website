@@ -66,10 +66,10 @@ public sealed class AzCliTests : IDisposable
         cts.CancelAfter(TimeSpan.FromMilliseconds(300));
 
         // Act
-        var act = () => az.RunAsync(["group", "list"], cts.Token);
+        Task<string> Act() => az.RunAsync(["group", "list"], cts.Token);
 
         // Assert
-        await Should.ThrowAsync<OperationCanceledException>(act);
+        await Should.ThrowAsync<OperationCanceledException>(Act);
     }
 
     [Fact(DisplayName = "RunAsync should throw when the executable cannot be started")]
@@ -79,9 +79,9 @@ public sealed class AzCliTests : IDisposable
         var az = new AzCli(SubscriptionId, Path.Combine(_directory, "does-not-exist"));
 
         // Act
-        var act = () => az.RunAsync(["group", "list"], TestContext.Current.CancellationToken);
+        Task<string> Act() => az.RunAsync(["group", "list"], TestContext.Current.CancellationToken);
 
         // Assert
-        await Should.ThrowAsync<System.ComponentModel.Win32Exception>(act);
+        await Should.ThrowAsync<System.ComponentModel.Win32Exception>(Act);
     }
 }

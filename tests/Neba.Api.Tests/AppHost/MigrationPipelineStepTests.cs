@@ -121,10 +121,10 @@ public sealed class MigrationPipelineStepTests
             .ReturnsAsync(Execution);
 
         // Act
-        var act = () => MigrationPipelineStep.RunAsync(az.Object, ResourceGroup, s_jobs, NullLogger.Instance, TimeSpan.FromSeconds(1), cts.Token);
+        Task Act() => MigrationPipelineStep.RunAsync(az.Object, ResourceGroup, s_jobs, NullLogger.Instance, TimeSpan.FromSeconds(1), cts.Token);
 
         // Assert
-        await Should.ThrowAsync<OperationCanceledException>(act);
+        await Should.ThrowAsync<OperationCanceledException>(Act);
     }
 
     [Fact(DisplayName = "ReadTarget should return the resource group and subscription from configuration")]
@@ -152,10 +152,10 @@ public sealed class MigrationPipelineStepTests
         var configuration = Configuration(("Azure:ResourceGroup", resourceGroup), ("Azure:SubscriptionId", subscriptionId));
 
         // Act
-        var act = () => { _ = MigrationPipelineStep.ReadTarget(configuration); };
+        void Act() => _ = MigrationPipelineStep.ReadTarget(configuration);
 
         // Assert
-        act.ShouldThrow<InvalidOperationException>().Message.ShouldContain(expected);
+        Should.Throw<InvalidOperationException>(Act).Message.ShouldContain(expected);
     }
 
     [Fact(DisplayName = "JobDeployStepNames should name the Aspire deploy step of each migration job")]

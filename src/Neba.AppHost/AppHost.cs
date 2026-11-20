@@ -20,9 +20,6 @@ var builder = DistributedApplication.CreateBuilder(new DistributedApplicationOpt
     DashboardApplicationName = "NEBA Website",
 });
 
-bool HasValue(string parameterName)
-    => !string.IsNullOrWhiteSpace(builder.Configuration[$"Parameters:{parameterName}"]);
-
 // Container App scale values are ints, but Aspire parameters are strings: convert in Bicep.
 static BicepValue<int> ToBicepInt(BicepValue<string> value)
     => new(new FunctionCallExpression(new IdentifierExpression("int"), value.Compile()));
@@ -275,58 +272,22 @@ if (builder.ExecutionContext.IsPublishMode)
     //
     // A custom domain is declared only when its parameter has a value, so an environment with
     // no DNS (staging) deploys without binding any hostname. Production always sets all of them.
-    // HasValue reads configuration (Parameters__<name> or user secrets) only, not a value that
-    // Aspire prompts for or keeps in deploy state.
-    IResourceBuilder<ParameterResource>? webCustomDomain = null;
-    IResourceBuilder<ParameterResource>? webCertificateName = null;
-    IResourceBuilder<ParameterResource>? apiCustomDomain = null;
-    IResourceBuilder<ParameterResource>? apiCertificateName = null;
-
-    if (HasValue("webCustomDomain"))
-    {
-        webCustomDomain = builder.AddParameter("webCustomDomain");
-        webCertificateName = builder.AddParameter("webCertificateName").AsOptional();
-    }
-
-    if (HasValue("apiCustomDomain"))
-    {
-        apiCustomDomain = builder.AddParameter("apiCustomDomain");
-        apiCertificateName = builder.AddParameter("apiCertificateName").AsOptional();
-    }
+    // CustomDomainBinding reads configuration (Parameters__<name> or user secrets) only, not a
+    // value that Aspire prompts for or keeps in deploy state.
+    var webDomain = CustomDomainBinding.AddIfConfigured(builder, "webCustomDomain", "webCertificateName");
+    var apiDomain = CustomDomainBinding.AddIfConfigured(builder, "apiCustomDomain", "apiCertificateName");
 
     // Optional second hostname on the web app (www.<apex>). The app redirects www to the apex,
     // so www must reach the container app over HTTPS, which needs its own binding and managed
     // certificate. Same two-step flow as above; leave Parameters__webWwwCustomDomain unset to skip.
-    IResourceBuilder<ParameterResource>? webWwwCustomDomain = null;
-    IResourceBuilder<ParameterResource>? webWwwCertificateName = null;
+    var webWwwDomain = CustomDomainBinding.AddIfConfigured(builder, "webWwwCustomDomain", "webWwwCertificateName");
 
-    if (HasValue("webWwwCustomDomain"))
-    {
-        webWwwCustomDomain = builder.AddParameter("webWwwCustomDomain");
-        webWwwCertificateName = builder.AddParameter("webWwwCertificateName").AsOptional();
-    }
-
-#pragma warning disable ASPIREACADOMAINS001
-    api.PublishAsAzureContainerApp(configureScale + ((_, app) =>
-    {
-        if (apiCustomDomain is not null && apiCertificateName is not null)
-        {
-            app.ConfigureCustomDomain(apiCustomDomain, apiCertificateName);
-        }
-    }));
+    api.PublishAsAzureContainerApp(configureScale + ((_, app) => apiDomain?.ApplyTo(app)));
     web.PublishAsAzureContainerApp(configureScale + ((_, app) =>
     {
-        if (webCustomDomain is not null && webCertificateName is not null)
-        {
-            app.ConfigureCustomDomain(webCustomDomain, webCertificateName);
-        }
-
-        if (webWwwCustomDomain is not null && webWwwCertificateName is not null)
-        {
-            app.ConfigureCustomDomain(webWwwCustomDomain, webWwwCertificateName);
-        }
+        webDomain?.ApplyTo(app);
+        webWwwDomain?.ApplyTo(app);
     }));
-#pragma warning restore ASPIREACADOMAINS001
 
     // Manually-triggered jobs, not started by the deploy itself - the run-migrations step below
     // starts them.

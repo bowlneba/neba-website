@@ -61,19 +61,19 @@ internal static partial class MigrationPipelineStep
     // than one subscription can differ from the one the deploy targets.
     internal static (string ResourceGroup, string SubscriptionId) ReadTarget(IConfiguration configuration)
     {
-        var resourceGroup = configuration["Azure:ResourceGroup"];
-        if (string.IsNullOrWhiteSpace(resourceGroup))
-        {
-            throw new InvalidOperationException("Azure__ResourceGroup is not set; cannot find the migration jobs.");
-        }
-
-        var subscriptionId = configuration["Azure:SubscriptionId"];
-        if (string.IsNullOrWhiteSpace(subscriptionId))
-        {
-            throw new InvalidOperationException("Azure__SubscriptionId is not set; cannot pick the subscription for the migration jobs.");
-        }
+        var resourceGroup = Require(configuration, "Azure:ResourceGroup", "Azure__ResourceGroup is not set; cannot find the migration jobs.");
+        var subscriptionId = Require(configuration, "Azure:SubscriptionId", "Azure__SubscriptionId is not set; cannot pick the subscription for the migration jobs.");
 
         return (resourceGroup, subscriptionId);
+    }
+
+    private static string Require(IConfiguration configuration, string key, string message)
+    {
+        var value = configuration[key];
+
+        return string.IsNullOrWhiteSpace(value)
+            ? throw new InvalidOperationException(message)
+            : value;
     }
 
     private static async Task RunJobAsync(

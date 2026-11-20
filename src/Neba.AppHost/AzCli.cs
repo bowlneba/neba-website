@@ -63,12 +63,9 @@ internal sealed class AzCli(string subscriptionId, string executable = "az") : I
             throw;
         }
 
-        if (process.ExitCode != 0)
-        {
-            throw new InvalidOperationException(
+        return process.ExitCode == 0
+            ? await output
+            : throw new InvalidOperationException(
                 $"az {string.Join(' ', arguments)} failed with exit code {process.ExitCode}: {await error}");
-        }
-
-        return await output;
     }
 }
