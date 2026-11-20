@@ -83,17 +83,17 @@ internal sealed class AdvancementFactsScript(AdvancementScenario scenario)
 
 internal static class AdvancementRunSeed
 {
-    public static async Task<AdvancementScenario> SeedAsync(AppDbContext dbContext, CancellationToken ct)
+    public static async Task<AdvancementScenario> SeedAsync(AppDbContext dbContext, CancellationToken ct, int year = 2025)
     {
-        var season = await SeriesSeed.AddSeasonAsync(dbContext, 2025, ct);
+        var season = await SeriesSeed.AddSeasonAsync(dbContext, year, ct);
         var bowlers = await AdvancementReaderSeed.AddBowlersAsync(dbContext, 12, ct);
 
         var qualifier = await AdvancementReaderSeed.AddTournamentAsync(
-            dbContext, season, "Run Qualifier", new DateOnly(2025, 2, 1), null, ct);
+            dbContext, season, "Run Qualifier", new DateOnly(year, 2, 1), null, ct);
         var survivor = await AdvancementReaderSeed.AddTournamentAsync(
-            dbContext, season, "Run Survivor", new DateOnly(2025, 3, 3), null, ct);
+            dbContext, season, "Run Survivor", new DateOnly(year, 3, 3), null, ct);
         var placement = await AdvancementReaderSeed.AddTournamentAsync(
-            dbContext, season, "Run Placement", new DateOnly(2025, 4, 5), null, ct);
+            dbContext, season, "Run Placement", new DateOnly(year, 4, 5), null, ct);
 
         var series = await AdvancementReaderSeed.AddSeriesAsync(dbContext, season, qualifier, survivor, placement, ct);
 

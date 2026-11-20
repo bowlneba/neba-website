@@ -57,7 +57,7 @@ public static class InfrastructureConfiguration
             builder.Services.AddGoogleDrive(builder.Configuration);
             builder.Services.AddNews(builder.Configuration);
             builder.Services.AddTournaments(builder.Configuration);
-            builder.Services.AddSeries();
+            builder.Services.AddSeries(builder.Configuration);
 
             builder.Services.AddSingleton(TimeProvider.System);
             builder.Services.AddSingleton<IStopwatchProvider, StopwatchProvider>();
@@ -94,6 +94,7 @@ public static class InfrastructureConfiguration
             app.UseDocumentSyncJobs();
             app.UseUploadCleanupJob();
             app.UseSeasonRolloverJob();
+            app.UseSeriesMakeOfficialJob();
             app.UseLegacyWeeklySync();
             app.UseApiAuditMiddleware();
 
