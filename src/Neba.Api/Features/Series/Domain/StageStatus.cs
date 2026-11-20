@@ -6,14 +6,14 @@ namespace Neba.Api.Features.Series.Domain;
 public sealed class StageStatus
     : SmartEnum<StageStatus>
 {
-    /// <summary>Not yet processed. Every Stage is pending until phase 2.</summary>
+    /// <summary>Not yet processed. Every Stage starts pending.</summary>
     public static readonly StageStatus Pending = new(nameof(Pending), 0);
 
-    /// <summary>Advancement has been computed but not announced.</summary>
+    /// <summary>Advancement has been computed. It can still change until it becomes Official.</summary>
     public static readonly StageStatus Computed = new(nameof(Computed), 1);
 
-    /// <summary>Advancement has been confirmed and announced to bowlers.</summary>
-    public static readonly StageStatus Announced = new(nameof(Announced), 2);
+    /// <summary>The output is settled and no longer changes on its own. Only a confirmed Recompute resets it.</summary>
+    public static readonly StageStatus Official = new(nameof(Official), 2);
 
     private StageStatus(string name, int value)
         : base(name, value)

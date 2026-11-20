@@ -83,14 +83,14 @@ public sealed class GetSeriesQueryHandlerTests(AppDbContextFixture fixture)
         // Arrange
         var ct = TestContext.Current.CancellationToken;
         var season = await SeriesSeed.AddSeasonAsync(_dbContext, 2025, ct);
-        var series = await SeriesSeed.AddSeriesAsync(_dbContext, season, new DateOnly(2025, 2, 1), ct, status: StageStatus.Announced);
+        var series = await SeriesSeed.AddSeriesAsync(_dbContext, season, new DateOnly(2025, 2, 1), ct, status: StageStatus.Official);
 
         // Act
         var result = await CreateHandler().HandleAsync(new GetSeriesQuery { Id = series.Id }, ct);
 
         // Assert
         result.Value.IsLocked.ShouldBeTrue();
-        result.Value.Stages.First().Status.ShouldBe("Announced");
+        result.Value.Stages.First().Status.ShouldBe("Official");
     }
 
     [Fact(DisplayName = "HandleAsync should return the Finale with its host center details")]
