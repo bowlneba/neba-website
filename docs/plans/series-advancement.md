@@ -4,6 +4,93 @@ GitHub issue: [#259](https://github.com/bowlneba/neba-website/issues/259) (paren
 
 When a tournament linked to a Stage completes, the website works out who advances: it assigns qualifiers, fills vacant slots from Bowler of the Year points (the Backfill), picks Survivor Round advancers from the designated squad, and ranks the Placement Round. It stores each Stage's output, makes computed Stages official automatically after a grace period, and lets admins repair mistakes. No payouts and no Finale results (phase 3).
 
+## Implementing this plan
+
+For a fresh session. The file is about 7,500 lines because it holds both code drafts. **Do not read it all.** Read the parts below, then only the sections your commit needs.
+
+**Read first, in this order**
+1. This section.
+2. `## Decisions locked in during scoping` and `### Confirmed UI flow`.
+3. `### Reconciliation notes` (Phase 1) and `#### Notes` under `### Code draft (blazor-ui)` (Phase 2).
+4. `## Commit plan`. Pick the next unchecked commit in the progress list below.
+5. The sections the map below names for that commit.
+
+**Precedence when two parts disagree:** Decisions, then the reconciliation notes and UI notes, then the code drafts, then the text of issues #259 and #260 and `vincent-hall-series-ul.md` (those are older; the plan and `docs/ubiquitous-language.md` win). The repo wins over the plan on a name that does not match; fix the plan when you find one.
+
+**State of the drafts.** The code is paste-ready but was never compiled or run. Expect small fixes at each first build; the unverified items are in each phase's notes. Phase 2 cannot build until commit 13 lands the Contracts. The Contract namespaces in the UI draft are guesses until then.
+
+**For each commit**
+1. Read its entry in `## Commit plan` and the sections in the map.
+2. Hand it to the agent the entry names (`efcore`, `backend-api`, `blazor-ui`, `e2e`, `docs`, `test-writer`; `test-writer` writes the tests for code another agent wrote). Give the agent the plan path and the commit entry.
+3. Run the build and the tests for that area (`dotnet build`; `dotnet test --filter-trait "Component=Series"` and any other component named; `npm run test:e2e` for e2e commits). Fix failures before committing.
+4. If the code drifted from the plan, update the plan (the code draft, not only a note) in the same commit.
+5. Stage only that commit's files by name (never `git add -A`), commit with the subject from the entry and the trailer `Co-Authored-By: Claude Sonnet 5.5 <noreply@anthropic.com>`, and tick the box below.
+
+**Do not:** add a feature flag, add outbox or inbox code (issue #56 is deferred; events go only through `IDomainEventPublisher`), add a Survivor override, call the status "Announced" (it is "Official"), or start a commit before the one it depends on.
+
+**Before specific commits:** before 4, check staging and production for `series_stages.status = 0` on every row (the check constraints fail otherwise). Before 21, confirm the Contract names from commit 13 against the UI draft. Commit 16 uses a synthetic scenario, not 2025 data.
+
+**Commit to section map.** Labels: *DB* is `### Database layer`, *API* is `### API layer`, *UI* is `### Code draft (blazor-ui)`. Numbers and letters are the `####` headings inside each.
+
+| Commit | Read |
+|---|---|
+| 1, 2 | nothing (docs already written) |
+| 3 | Decisions (the Official bullet); API §C (`StageStatus`) |
+| 4 | Reconciliation notes 3 to 7; DB §0 to §7 |
+| 5 | API §0, §C (`AdvancementFacts`, `StageComputation`), §D |
+| 6 | Reconciliation notes 1, 2, 6, 8, 9; DB §1; API §C, §E |
+| 7 | Reconciliation note 1; DB §8; API §F (`EasternTime`), §G |
+| 8 | API §A (keyed lock), §F (`SeriesAdvancement`, `SeriesConcurrency`, handler edits), §G |
+| 9 | API §F (make-official job, settings, registration) |
+| 10 | Reconciliation note 10a; API §A (events, publisher, interceptor) |
+| 11 | API §F (event jobs) |
+| 12 | API §B; Phase 1 `### Tests` |
+| 13 | API §H (shared validator rule and result sender), §I |
+| 14 | API §G, §H uses 1, 6 and 7 |
+| 15 | API §H uses 2 to 5 |
+| 16 | Phase 1 `### Tests` (group 16); Decisions (synthetic scenario) |
+| 17 | API §A and §I (Docs); Decisions (#56) |
+| 18 | Phase 2 `### Tests` (Factories); API §I (Contracts types) |
+| 19 | Phase 2 `### Tests` (Mock changes) |
+| 20 | UI Notes; UI §1 to §5 |
+| 21 | Phase 2 `### Decisions taken in this phase`; UI Notes; UI §6 to §10, §13 |
+| 22 | UI §7 (write methods), §12 |
+| 23 | UI §11 |
+| 24 | UI §14 to §17 |
+| 25 | Phase 2 `### Tests` (Playwright); `### Mockups` |
+| 26 | Phase 2 `### Docs and hand-offs` |
+
+**Mockups** (`docs/plans/mockups/series-advancement/`, open in a browser) are the visual source for commits 21 to 23: `series-advancement-option-2.html` (chosen), `override-modal.html`, `squad-picker-modal.html`. Options 1 and 3 were not chosen.
+
+**Progress** (tick as each commit lands; a fresh session resumes at the first unchecked box)
+
+- [ ] 1 Add the Series advancement plan and mockups
+- [ ] 2 Update the Series language for advancement
+- [ ] 3 Rename the Stage status Announced to Official
+- [ ] 4 Add the Series advancement tables and the Version token
+- [ ] 5 Add the four advancement computations
+- [ ] 6 Add advancement to the Series aggregate
+- [ ] 7 Add the advancement readers
+- [ ] 8 Add the per-Series lock and the advancement run
+- [ ] 9 Make computed Stages Official after a grace period
+- [ ] 10 Add the domain event publisher
+- [ ] 11 Advance Series from tournament, squad and stats events
+- [ ] 12 Raise the tournament and stats events
+- [ ] 13 Add the advancement contracts and the Manage advancement permission
+- [ ] 14 Add the advancement read endpoints
+- [ ] 15 Add the advancement write endpoints
+- [ ] 16 Add the synthetic 2025 replay test
+- [ ] 17 Record the domain event decisions
+- [ ] 18 Add the advancement response factories
+- [ ] 19 Mock the advancement API for e2e
+- [ ] 20 Add the advancement view models, mapping and display text
+- [ ] 21 Show the season rail on the Series page
+- [ ] 22 Add Recompute and Pick squad to the Series page
+- [ ] 23 Add the override controls to the Series page
+- [ ] 24 Let admins remove a cancelled Stage from a locked Series
+- [ ] 25 Add Playwright specs for Series advancement
+- [ ] 26 Add the Series advancement help doc
+
 ## Decisions locked in during scoping
 
 - **Source of truth.** `vincent-hall-series-ul.md` (attached to #257) and `docs/ubiquitous-language.md` (`## Series`) win over #259 where they differ. Code names match them.
@@ -56,7 +143,7 @@ Code draft, not compiled. Two agents wrote it (`efcore` for the database layer, 
 ### Reconciliation notes (these win over the drafts below)
 
 1. **Member date for Qualifying slots is the tournament end date (confirmed).** The draft's choice A is taken as recommended: `facts.MembersOn(tournament.EndDate)`, the same date family as `BackfillAsOf`. This differs from #259 and the UL ("start date"), so both need the change.
-2. **`StageOverride.CreatedBy` is a string, not a `Ulid`.** `ICurrentUserService.ActorId` is a string (it can be the ambient actor or "anonymous"). Use the `efcore` configuration (`HasMaxLength(64)`, required, no FK) and change the domain type and the Contracts to string.
+2. **`StageOverride.CreatedBy` is a string in the domain and the database.** The `efcore` column is `HasMaxLength(64)`, required, no foreign key. The endpoint and command keep `Ulid CallerUserId` from the existing `User.CallerUserId` extension (`UpdateUserCommand` does the same), and the handler passes `command.CallerUserId.ToString()` to the domain. `ICurrentUserService.ActorId` is not used here: it can be the ambient actor or "anonymous", and these endpoints are admin-only.
 3. **Bowler foreign keys are Restrict on all four new tables** (`efcore`), not Cascade on the derived ones. No bowler delete path exists, and a bowler in official output must not vanish. `source_stage_id` is NoAction.
 4. **Timestamp columns carry the repo's `_utc` suffix:** `computed_at_utc`, `official_at_utc`, `created_at_utc`. Property names stay `ComputedAt`, `OfficialAt`, `CreatedAt`. Domain code writes offset 0 through `TimeProvider.GetUtcNow()`.
 5. **Rebuild uses in-place updates** (`backend-api`) for `series_survivor_outcomes` and `series_positions` (composite keys cannot delete and re-add the same key in one save). Field entries update in place within a Stage and delete or insert otherwise. Test group 8 must prove a Backfill entry becoming a Qualifying entry for the same bowler in one save. Fallback: a two-save transaction inside `CreateExecutionStrategy().ExecuteAsync`.
@@ -1866,7 +1953,7 @@ public sealed class StageOverride
     public string Reason { get; private set; } = string.Empty;
 
     /// <summary>The user who made the change.</summary>
-    public Ulid CreatedBy { get; private set; }
+    public string CreatedBy { get; private set; } = string.Empty;
 
     /// <summary>When the change was made.</summary>
     public DateTimeOffset CreatedAt { get; private set; }
@@ -1875,7 +1962,7 @@ public sealed class StageOverride
     public bool Applied { get; internal set; }
 
     internal static ErrorOr<StageOverride> Create(
-        OverrideKind kind, BowlerId bowlerId, string reason, Ulid createdBy, DateTimeOffset createdAt)
+        OverrideKind kind, BowlerId bowlerId, string reason, string createdBy, DateTimeOffset createdAt)
     {
         if (string.IsNullOrWhiteSpace(reason))
         {
@@ -2648,7 +2735,7 @@ public sealed partial class Series
 
     /// <summary>Adds a bowler who has a result row in the Stage's tournament, then recomputes inline.</summary>
     public ErrorOr<AdvanceResult> AddOverride(
-        SeriesStageId stageId, BowlerId bowlerId, string reason, Ulid createdBy,
+        SeriesStageId stageId, BowlerId bowlerId, string reason, string createdBy,
         int expectedVersion, AdvancementFacts facts, DateTimeOffset now)
     {
         ArgumentNullException.ThrowIfNull(facts);
@@ -2682,7 +2769,7 @@ public sealed partial class Series
 
     /// <summary>Vacates the slot a bowler holds in the Stage and bars the bowler from the Backfill, then recomputes inline.</summary>
     public ErrorOr<AdvanceResult> ClearSlot(
-        SeriesStageId stageId, BowlerId bowlerId, string reason, Ulid createdBy,
+        SeriesStageId stageId, BowlerId bowlerId, string reason, string createdBy,
         int expectedVersion, AdvancementFacts facts, DateTimeOffset now)
     {
         ArgumentNullException.ThrowIfNull(facts);
@@ -2744,7 +2831,7 @@ public sealed partial class Series
     }
 
     private ErrorOr<AdvanceResult> ApplyOverride(
-        SeriesStage stage, OverrideKind kind, BowlerId bowlerId, string reason, Ulid createdBy,
+        SeriesStage stage, OverrideKind kind, BowlerId bowlerId, string reason, string createdBy,
         AdvancementFacts facts, DateTimeOffset now)
     {
         var created = StageOverride.Create(kind, bowlerId, reason, createdBy, now);
@@ -3618,7 +3705,7 @@ All live in the Series namespace, use `AppDbContext`, `AsNoTracking`, flat proje
 | `SeriesFieldEntry` | `Id` is `SeriesFieldEntryId` (ULID alternate key; shadow int PK per the repo pattern). Columns `BowlerId`, `SourceStageId` (nullable typed id, so `HasColumnName`/`HasMaxLength`/`IsFixedLength` rather than `IsUlid`), `Place`, `BackfillPoints`, `ViaOverride`. Unique `(series, BowlerId)`. |
 | `SurvivorOutcome` | key `(stage, BowlerId)`; `BlockTotal` (`int?`), `Advanced`. |
 | `SeriesPosition` | key `(series, BowlerId)`; `Position`, `Bowled`, `IsFinalist` (`bool?`). The `(series, position)` index must be **non-unique**: an in-place swap of two positions would otherwise cycle. |
-| `StageOverride` | `Id` is `StageOverrideId` (ULID alternate key); `BowlerId`, `Kind` (SmartEnum, store the value), `Reason` (max 500), `CreatedBy` (`Ulid`), `CreatedAt`, `Applied`. Unique `(stage, BowlerId)`; `BowlerId` FK Restrict. |
+| `StageOverride` | `Id` is `StageOverrideId` (ULID alternate key); `BowlerId`, `Kind` (SmartEnum, store the value), `Reason` (max 500), `CreatedBy` (string, max 64, the actor ID), `CreatedAt`, `Applied`. Unique `(stage, BowlerId)`; `BowlerId` FK Restrict. |
 | `SquadDesignation` | the nullable complex type keeps `SquadId` (nullable typed id); no FK. |
 
 Each bowler-keyed type has `internal Bowler Bowler { get; init; } = null!;` for the real FK, like `TournamentResult.Bowler`.
@@ -3685,7 +3772,7 @@ internal sealed record AdvancementOutcomeRow(SeriesStageId StageId, BowlerId Bow
 
 internal sealed record AdvancementOverrideRow(
     SeriesStageId StageId, StageOverrideId OverrideId, BowlerId BowlerId, string BowlerName, OverrideKind Kind,
-    string Reason, Ulid CreatedBy, DateTimeOffset CreatedAt, bool Applied);
+    string Reason, string CreatedBy, DateTimeOffset CreatedAt, bool Applied);
 
 internal sealed record AdvancementPositionRow(BowlerId BowlerId, string BowlerName, int Position, bool Bowled, bool? IsFinalist);
 ```
@@ -3810,7 +3897,7 @@ internal sealed record StageAdvancementDto(
 internal sealed record FieldEntryDto(BowlerId BowlerId, string BowlerName, SeriesStageId? SourceStageId, int? Place, int? BackfillPoints, bool ViaOverride);
 
 internal sealed record StageOverrideDto(
-    StageOverrideId OverrideId, BowlerId BowlerId, string BowlerName, string Kind, string Reason, Ulid CreatedBy, DateTimeOffset CreatedAt, bool Applied);
+    StageOverrideId OverrideId, BowlerId BowlerId, string BowlerName, string Kind, string Reason, string CreatedBy, DateTimeOffset CreatedAt, bool Applied);
 
 internal sealed record SurvivorOutcomeDto(BowlerId BowlerId, string BowlerName, int? BlockTotal, bool Advanced);
 
@@ -3978,7 +4065,7 @@ internal sealed class GetSeriesAdvancementEndpoint(
                     BowlerName = o.BowlerName,
                     Kind = o.Kind,
                     Reason = o.Reason,
-                    CreatedBy = o.CreatedBy.ToString(),
+                    CreatedBy = o.CreatedBy,
                     CreatedAt = o.CreatedAt,
                     Applied = o.Applied,
                 })],
@@ -4214,8 +4301,8 @@ internal sealed class CreateStageOverrideCommandHandler(SeriesAdvancement advanc
         var result = await advancement.RunAsync(
             command.SeriesId,
             (series, facts, now) => command.Kind == OverrideKind.Add
-                ? series.AddOverride(command.StageId, command.BowlerId, command.Reason, command.CallerUserId, command.Version, facts, now)
-                : series.ClearSlot(command.StageId, command.BowlerId, command.Reason, command.CallerUserId, command.Version, facts, now),
+                ? series.AddOverride(command.StageId, command.BowlerId, command.Reason, command.CallerUserId.ToString(), command.Version, facts, now)
+                : series.ClearSlot(command.StageId, command.BowlerId, command.Reason, command.CallerUserId.ToString(), command.Version, facts, now),
             SeriesAdvancement.AdminLockWait, needsFacts: true, cancellationToken);
 
         return result.IsError
