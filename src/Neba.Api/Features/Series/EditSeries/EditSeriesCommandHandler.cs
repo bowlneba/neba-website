@@ -54,8 +54,12 @@ internal sealed class EditSeriesCommandHandler(
             return finaleCenter.Errors;
         }
 
+        // Submitted and stored Stages: a removed Stage's tournament decides the cancelled-removal rule on a locked Series.
         var tournaments = await StageTournamentFactsReader.ReadAsync(
-            appDbContext, [.. command.Stages.Select(s => s.TournamentId).Distinct()], command.SeriesId, cancellationToken);
+            appDbContext,
+            [.. command.Stages.Select(s => s.TournamentId).Concat(series.Stages.Select(s => s.TournamentId)).Distinct()],
+            command.SeriesId,
+            cancellationToken);
 
         var renamed = series.Rename(command.Name);
         var replaced = series.ReplaceConfiguration(command.Stages, command.Finale, tournaments);
@@ -72,7 +76,12 @@ internal sealed class EditSeriesCommandHandler(
         series.ChangeLogo(logo); // allowed while locked
 
         await PendingUploadCleaner.RemoveClaimedAsync(appDbContext, logo, cancellationToken);
-        await appDbContext.SaveChangesAsync(cancellationToken);
+        var saved = await SeriesConcurrency.SaveOrConflictAsync(appDbContext, cancellationToken);
+        if (saved.IsError)
+        {
+            return saved.Errors;
+        }
+
         await cache.RemoveByTagAsync(CacheDescriptors.Tournaments.Tag, token: cancellationToken);
 
         StoredFileCleanup.ScheduleDeleteOfReplaced(backgroundJobScheduler, previousLogo, logo);
