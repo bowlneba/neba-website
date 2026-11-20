@@ -13,12 +13,6 @@ on:
         type: choice
         options: [full, hotfix]
         default: full
-  # Temporary: GitHub cannot dispatch a workflow that exists only on a feature branch, so a push
-  # to this branch that changes this file starts a run. A push run has no inputs, so it uses
-  # MODE below (set to the run you want next). Remove with the Part B cutover.
-  push:
-    branches: [aspire-deploy]
-    paths: [.github/workflows/staging.yml]
 
 concurrency:
   group: staging-deploy
@@ -27,8 +21,7 @@ concurrency:
 # ImageSharp needs a Six Labors license in Release builds (see Directory.Build.props).
 env:
   SIXLABORS_LICENSE_KEY: ${{ secrets.SIXLABORS_LICENSE_KEY }}
-  # Mode for push runs (no inputs). The first full run passed, so the next test is the hotfix path.
-  MODE: ${{ inputs.mode || 'hotfix' }}
+  MODE: ${{ inputs.mode }}
 
 jobs:
   deploy:
