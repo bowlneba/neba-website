@@ -70,12 +70,28 @@ internal static class SeriesSeed
             series.ChangeLogo(logo);
         }
 
+        dbContext.Series.Add(series);
+
         if (status is not null)
         {
-            series.Stages.First().Status = status;
+            // The status check constraint ties the timestamps to the status, so set them through EF with it.
+            var stage = series.Stages.First();
+            stage.Status = status;
+
+            var entry = dbContext.Entry(stage);
+            var now = new DateTimeOffset(2025, 3, 1, 12, 0, 0, TimeSpan.Zero);
+
+            if (status != StageStatus.Pending)
+            {
+                entry.Property(s => s.ComputedAt).CurrentValue = now;
+            }
+
+            if (status == StageStatus.Official)
+            {
+                entry.Property(s => s.OfficialAt).CurrentValue = now;
+            }
         }
 
-        dbContext.Series.Add(series);
         await dbContext.SaveChangesAsync(ct);
 
         return series;

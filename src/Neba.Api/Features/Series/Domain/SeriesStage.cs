@@ -31,6 +31,30 @@ public sealed class SeriesStage
     /// <summary>Set for a Survivor Stage, otherwise null.</summary>
     public SquadDesignation? SquadDesignation { get; private set; }
 
+    /// <summary>True when the Stage's inputs may have changed since it was computed.</summary>
+    public bool IsStale { get; private set; }
+
+    /// <summary>When the Stage was computed (offset 0). Null while pending.</summary>
+    public DateTimeOffset? ComputedAt { get; private set; }
+
+    /// <summary>When the Stage became Official (offset 0). Null unless Official.</summary>
+    public DateTimeOffset? OfficialAt { get; private set; }
+
+    /// <summary>Number of slots the Stage filled or must fill. Null until computed.</summary>
+    public int? SlotCount { get; private set; }
+
+    private readonly List<SurvivorOutcome> _survivorOutcomes = [];
+
+    /// <summary>The Survivor Round results. Empty on other Stage kinds.</summary>
+    public IReadOnlyCollection<SurvivorOutcome> SurvivorOutcomes
+        => _survivorOutcomes.AsReadOnly();
+
+    private readonly List<StageOverride> _overrides = [];
+
+    /// <summary>The admin overrides on this Stage.</summary>
+    public IReadOnlyCollection<StageOverride> Overrides
+        => _overrides.AsReadOnly();
+
     private SeriesStage()
     { }
 

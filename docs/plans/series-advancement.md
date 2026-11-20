@@ -67,7 +67,7 @@ For a fresh session. The file is about 7,500 lines because it holds both code dr
 - [x] 1 Add the Series advancement plan and mockups
 - [x] 2 Update the Series language for advancement
 - [x] 3 Rename the Stage status Announced to Official
-- [ ] 4 Add the Series advancement tables and the Version token
+- [x] 4 Add the Series advancement tables and the Version token
 - [ ] 5 Add the four advancement computations
 - [ ] 6 Add advancement to the Series aggregate
 - [ ] 7 Add the advancement readers
@@ -154,6 +154,8 @@ Code draft, not compiled. Two agents wrote it (`efcore` for the database layer, 
 10a. **Publisher is the only enqueue path (#56 constraint).** Add an architecture test that no class outside `DomainEventPublisher` calls `IBackgroundJobClient` to enqueue an `IDomainEventJob<T>` (and that there is one handler per event type). Do not add outbox or inbox code in this plan.
 10. **Group 16 is the synthetic scenario** (see Decisions). Any "blocked on 2025 data" wording in the drafts is out of date.
 11. **Not verified (nothing was compiled or run):** whether C# 14 `extension<T>` generic receivers compile as written in `SeriesRequestRules`; whether `Send.NotFoundAsync` converts as a method group; the `SquadExists` correlated `Any` and the optional complex property projection in `SeriesAdvancementReader` (fallback in the draft); EF's unique-index ordering for cross-source field entry moves; whether the generated migration matches `AddSeries` in style (stop if `dotnet ef` warns about tool skew); the `series_stages` check constraints need every existing row at `status = 0` (check staging and production first); the `CollectionResponse` item property name; `StatsEligible` as the mapping of legacy `YearlyStatEligible`.
+
+12. **Drift found building commit 4 (the code wins over the drafts below).** (a) `Series` stays `sealed`; the commit that adds `Series.Advancement.cs` (6) makes it `sealed partial`. (b) `SeriesFieldEntry`, `SurvivorOutcome`, `SeriesPosition` and `StageOverride` carry a `[SuppressMessage]` for Sonar S3453 (private constructor, no `Create` yet); commit 6 removes each one when it adds `Create`. (c) `ck_series_stages_status_timestamps` rejects a persisted non-Pending Stage without matching `ComputedAt` and `OfficialAt`. `SeriesSeed.AddSeriesAsync` now saves the Series first and sets the timestamps through `dbContext.Entry(stage).Property(...)`; any later test that persists a Computed or Official Stage must do the same. (d) The migration test seeds through EF on the latest schema, migrates down to `AddSeries`, then up, and asserts the defaults. The new configuration tests insert child rows with SQL (`SeriesAdvancementTestData`) until commit 6 adds factories, and assert SQLSTATE (23514 check, 23505 unique, 23503 foreign key, 22001 length). (e) `BowlerForeignKeyInventoryTests` skips owned types, lists every FK property, and appends the entity name (`tournament_results.bowler_id` appears for two entities). (f) The migration is `20261120185102_AddSeriesAdvancement`; it needs the migration service and cannot ship through `hotfix.yml`. The staging and production `status = 0` check is moot: nothing has shipped.
 
 ### Database layer (`efcore` draft)
 

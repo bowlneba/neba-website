@@ -39,6 +39,24 @@ public sealed class Series
     public IReadOnlyCollection<SeriesStage> Stages
         => _stages.AsReadOnly();
 
+    /// <summary>The as-of date for the Backfill (the last Qualifying tournament's end date). Null until that Stage computes.</summary>
+    public DateOnly? BackfillAsOf { get; private set; }
+
+    /// <summary>Optimistic concurrency token. Advancement writes bump it, including writes that touch only child rows.</summary>
+    public int Version { get; private set; }
+
+    private readonly List<SeriesFieldEntry> _fieldEntries = [];
+
+    /// <summary>The Series Field: bowlers who qualified, and from where.</summary>
+    public IReadOnlyCollection<SeriesFieldEntry> FieldEntries
+        => _fieldEntries.AsReadOnly();
+
+    private readonly List<SeriesPosition> _positions = [];
+
+    /// <summary>The Placement Round positions.</summary>
+    public IReadOnlyCollection<SeriesPosition> Positions
+        => _positions.AsReadOnly();
+
     /// <summary>
     /// True once any Stage has left pending. While locked only <see cref="Name"/>, <see cref="Logo"/> and the
     /// Finale's date, start time and center can change.

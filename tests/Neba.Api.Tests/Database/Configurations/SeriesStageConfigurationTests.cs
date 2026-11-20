@@ -13,8 +13,14 @@ namespace Neba.Api.Tests.Database.Configurations;
 [Component("Series")]
 [Collection<AppDbContextFixture>]
 public sealed class SeriesStageConfigurationTests(AppDbContextFixture fixture)
-    : IClassFixture<AppDbContextFixture>
+    : IClassFixture<AppDbContextFixture>, IAsyncLifetime
 {
+    public async ValueTask InitializeAsync()
+        => await fixture.ResetAsync();
+
+    public ValueTask DisposeAsync()
+        => ValueTask.CompletedTask;
+
     private IEntityType StageEntity()
     {
         using var context = fixture.CreateDbContext();
@@ -89,5 +95,128 @@ public sealed class SeriesStageConfigurationTests(AppDbContextFixture fixture)
         squadId.GetColumnName().ShouldBe("squad_id");
         squadId.GetMaxLength().ShouldBe(26);
         squadId.IsFixedLength().ShouldBe(true);
+    }
+
+    [Fact(DisplayName = "SeriesStage should map the advancement columns as configured")]
+    public void SeriesStage_ShouldMapAdvancementColumns()
+    {
+        // Arrange
+        var entity = StageEntity();
+
+        // Act
+        var isStale = entity.FindProperty(nameof(SeriesStage.IsStale))!;
+        var computedAt = entity.FindProperty(nameof(SeriesStage.ComputedAt))!;
+        var officialAt = entity.FindProperty(nameof(SeriesStage.OfficialAt))!;
+        var slotCount = entity.FindProperty(nameof(SeriesStage.SlotCount))!;
+
+        // Assert
+        isStale.IsNullable.ShouldBeFalse();
+        isStale.GetColumnName().ShouldBe("is_stale");
+        isStale.GetDefaultValue().ShouldBe(false);
+        computedAt.GetColumnName().ShouldBe("computed_at_utc");
+        computedAt.IsNullable.ShouldBeTrue();
+        officialAt.GetColumnName().ShouldBe("official_at_utc");
+        officialAt.IsNullable.ShouldBeTrue();
+        slotCount.GetColumnName().ShouldBe("slot_count");
+        slotCount.IsNullable.ShouldBeTrue();
+    }
+
+    [Fact(DisplayName = "SeriesStage survivor outcomes and overrides should cascade from the Stage")]
+    public void SeriesStage_ShouldCascadeOutcomesAndOverrides()
+    {
+        // Arrange
+        var entity = StageEntity();
+
+        // Act
+        var outcomes = entity.FindNavigation(nameof(SeriesStage.SurvivorOutcomes))!.ForeignKey;
+        var overrides = entity.FindNavigation(nameof(SeriesStage.Overrides))!.ForeignKey;
+
+        // Assert
+        outcomes.DeleteBehavior.ShouldBe(DeleteBehavior.Cascade);
+        overrides.DeleteBehavior.ShouldBe(DeleteBehavior.Cascade);
+    }
+
+    [Fact(DisplayName = "A new Stage should save as not stale with no timestamps or slot count")]
+    public async Task Save_ShouldDefaultAdvancementColumns()
+    {
+        // Arrange
+        var seeded = await SeriesAdvancementTestData.SeedAsync(fixture);
+
+        // Act
+        await using var read = fixture.CreateDbContext();
+        var stage = await read.Set<SeriesStage>().AsNoTracking().SingleAsync(s => s.Id == seeded.QualifyingStage.Id, TestContext.Current.CancellationToken);
+
+        // Assert
+        stage.Status.ShouldBe(StageStatus.Pending);
+        stage.IsStale.ShouldBeFalse();
+        stage.ComputedAt.ShouldBeNull();
+        stage.OfficialAt.ShouldBeNull();
+        stage.SlotCount.ShouldBeNull();
+    }
+
+    [Fact(DisplayName = "A Computed and an Official Qualifying Stage with the right timestamps should be accepted")]
+    public async Task StatusCheck_ShouldAccept_WhenTimestampsMatchStatus()
+    {
+        // Arrange
+        var seeded = await SeriesAdvancementTestData.SeedAsync(fixture);
+
+        // Act
+        await SeriesAdvancementTestData.ExecuteSqlAsync(fixture, "UPDATE app.series_stages SET status = 1, computed_at_utc = now() WHERE kind = 1");
+        await SeriesAdvancementTestData.ExecuteSqlAsync(fixture, "UPDATE app.series_stages SET status = 2, official_at_utc = now() WHERE kind = 1");
+
+        // Assert
+        await using var read = fixture.CreateDbContext();
+        var stage = await read.Set<SeriesStage>().AsNoTracking().SingleAsync(s => s.Id == seeded.QualifyingStage.Id, TestContext.Current.CancellationToken);
+        stage.Status.ShouldBe(StageStatus.Official);
+        stage.ComputedAt.ShouldNotBeNull();
+        stage.OfficialAt.ShouldNotBeNull();
+    }
+
+    [Theory(DisplayName = "The status check should reject a Stage whose timestamps do not match its status")]
+    [InlineData("status = 1")] // Computed without computed_at_utc
+    [InlineData("status = 2, computed_at_utc = now()")] // Official without official_at_utc
+    [InlineData("status = 1, computed_at_utc = now(), official_at_utc = now()")] // Computed with official_at_utc
+    [InlineData("status = 0, computed_at_utc = now()")] // Pending with computed_at_utc
+    public async Task StatusCheck_ShouldReject_WhenTimestampsDoNotMatchStatus(string assignments)
+    {
+        // Arrange
+        await SeriesAdvancementTestData.SeedAsync(fixture);
+
+        // Act
+        var sqlState = await SeriesAdvancementTestData.SqlStateOfAsync(
+            () => SeriesAdvancementTestData.ExecuteSqlAsync(fixture, $"UPDATE app.series_stages SET {assignments} WHERE kind = 1"));
+
+        // Assert
+        sqlState.ShouldBe("23514");
+    }
+
+    [Fact(DisplayName = "The check constraint should reject an Official Placement Stage")]
+    public async Task PlacementCheck_ShouldReject_WhenPlacementStageIsOfficial()
+    {
+        // Arrange
+        await SeriesAdvancementTestData.SeedAsync(fixture);
+
+        // Act
+        var sqlState = await SeriesAdvancementTestData.SqlStateOfAsync(
+            () => SeriesAdvancementTestData.ExecuteSqlAsync(
+                fixture,
+                "UPDATE app.series_stages SET status = 2, computed_at_utc = now(), official_at_utc = now() WHERE kind = 3"));
+
+        // Assert
+        sqlState.ShouldBe("23514");
+    }
+
+    [Fact(DisplayName = "The check constraint should reject a negative slot count")]
+    public async Task SlotCountCheck_ShouldReject_WhenSlotCountIsNegative()
+    {
+        // Arrange
+        await SeriesAdvancementTestData.SeedAsync(fixture);
+
+        // Act
+        var sqlState = await SeriesAdvancementTestData.SqlStateOfAsync(
+            () => SeriesAdvancementTestData.ExecuteSqlAsync(fixture, "UPDATE app.series_stages SET slot_count = -1"));
+
+        // Assert
+        sqlState.ShouldBe("23514");
     }
 }

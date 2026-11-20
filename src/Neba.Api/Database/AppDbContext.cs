@@ -100,6 +100,10 @@ internal sealed class AppDbContext(
         modelBuilder.ApplyConfiguration(new TournamentOilPatternConfiguration());
         modelBuilder.ApplyConfiguration(new SeriesConfiguration());
         modelBuilder.ApplyConfiguration(new SeriesStageConfiguration());
+        modelBuilder.ApplyConfiguration(new SeriesFieldEntryConfiguration());
+        modelBuilder.ApplyConfiguration(new SeriesSurvivorOutcomeConfiguration());
+        modelBuilder.ApplyConfiguration(new SeriesPositionConfiguration());
+        modelBuilder.ApplyConfiguration(new StageOverrideConfiguration());
         modelBuilder.ApplyConfiguration(new SideCutConfiguration());
         modelBuilder.ApplyConfiguration(new SideCutCriteriaGroupConfiguration());
         modelBuilder.ApplyConfiguration(new SideCutCriteriaConfiguration());
@@ -148,6 +152,12 @@ internal sealed class AppDbContext(
 
         configurationBuilder.Properties<SeriesStageId>()
             .HaveConversion<UlidTypedIdConverter<SeriesStageId>>();
+
+        configurationBuilder.Properties<SeriesFieldEntryId>()
+            .HaveConversion<UlidTypedIdConverter<SeriesFieldEntryId>>();
+
+        configurationBuilder.Properties<StageOverrideId>()
+            .HaveConversion<UlidTypedIdConverter<StageOverrideId>>();
 
         configurationBuilder.Properties<SideCutId>()
             .HaveConversion<UlidTypedIdConverter<SideCutId>>();

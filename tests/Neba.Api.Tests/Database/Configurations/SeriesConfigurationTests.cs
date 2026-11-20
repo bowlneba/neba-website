@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Metadata;
 
 using Neba.Api.Database;
 using Neba.Api.Features.Seasons.Domain;
@@ -257,5 +258,108 @@ public sealed class SeriesConfigurationTests(AppDbContextFixture fixture)
         // Assert
         await using var read = fixture.CreateDbContext();
         (await read.Database.SqlQueryRaw<int>("SELECT count(*)::int AS \"Value\" FROM app.series_stages").SingleAsync(TestContext.Current.CancellationToken)).ShouldBe(0);
+    }
+
+    [Fact(DisplayName = "Series Version should be a required concurrency token with default 0, and BackfillAsOf an optional date")]
+    public void Series_ShouldConfigureVersionAndBackfillAsOf()
+    {
+        // Arrange
+        using var context = fixture.CreateDbContext();
+        var entity = context.Model.FindEntityType(typeof(SeriesAggregate))!;
+
+        // Act
+        var version = entity.FindProperty(nameof(SeriesAggregate.Version))!;
+        var backfillAsOf = entity.FindProperty(nameof(SeriesAggregate.BackfillAsOf))!;
+
+        // Assert
+        version.IsConcurrencyToken.ShouldBeTrue();
+        version.IsNullable.ShouldBeFalse();
+        version.GetDefaultValue().ShouldBe(0);
+        version.GetColumnName().ShouldBe("version");
+        backfillAsOf.IsNullable.ShouldBeTrue();
+        backfillAsOf.GetColumnName().ShouldBe("backfill_as_of");
+        backfillAsOf.GetColumnType().ShouldBe("date");
+    }
+
+    [Fact(DisplayName = "Series field entries and positions should cascade from the Series")]
+    public void Series_ShouldCascadeFieldEntriesAndPositions()
+    {
+        // Arrange
+        using var context = fixture.CreateDbContext();
+        var entity = context.Model.FindEntityType(typeof(SeriesAggregate))!;
+
+        // Act
+        var fieldEntries = entity.FindNavigation(nameof(SeriesAggregate.FieldEntries))!.ForeignKey;
+        var positions = entity.FindNavigation(nameof(SeriesAggregate.Positions))!.ForeignKey;
+
+        // Assert
+        fieldEntries.DeleteBehavior.ShouldBe(DeleteBehavior.Cascade);
+        positions.DeleteBehavior.ShouldBe(DeleteBehavior.Cascade);
+    }
+
+    [Fact(DisplayName = "A new Series should save with Version 0 and no Backfill date")]
+    public async Task Save_ShouldDefaultVersionToZero()
+    {
+        // Arrange
+        var (season, tournaments) = await SeedAsync(3);
+        await using (var write = fixture.CreateDbContext())
+        {
+            write.Series.Add(Build(season, tournaments));
+            await write.SaveChangesAsync(TestContext.Current.CancellationToken);
+        }
+
+        // Act
+        await using var read = fixture.CreateDbContext();
+        var loaded = await read.Series.AsNoTracking().SingleAsync(TestContext.Current.CancellationToken);
+
+        // Assert
+        loaded.Version.ShouldBe(0);
+        loaded.BackfillAsOf.ShouldBeNull();
+    }
+
+    [Fact(DisplayName = "A stale Version should make the second save fail with a concurrency exception")]
+    public async Task Save_ShouldThrowConcurrencyException_WhenVersionIsStale()
+    {
+        // Arrange
+        var ct = TestContext.Current.CancellationToken;
+        var (season, tournaments) = await SeedAsync(3);
+        await using (var write = fixture.CreateDbContext())
+        {
+            write.Series.Add(Build(season, tournaments));
+            await write.SaveChangesAsync(ct);
+        }
+
+        await using var first = fixture.CreateDbContext();
+        await using var second = fixture.CreateDbContext();
+        var firstSeries = await first.Series.SingleAsync(ct);
+        var secondSeries = await second.Series.SingleAsync(ct);
+
+        first.Entry(firstSeries).Property(s => s.Version).CurrentValue = 1;
+        await first.SaveChangesAsync(ct);
+
+        second.Entry(secondSeries).Property(s => s.Version).CurrentValue = 1;
+
+        // Act & Assert
+        await Should.ThrowAsync<DbUpdateConcurrencyException>(() => second.SaveChangesAsync(ct));
+    }
+
+    [Fact(DisplayName = "Deleting a Series should delete its field entries, positions, survivor outcomes and overrides")]
+    public async Task Delete_ShouldCascadeToAllAdvancementTables()
+    {
+        // Arrange
+        var seeded = await SeriesAdvancementTestData.SeedAsync(fixture);
+        await SeriesAdvancementTestData.InsertFieldEntryAsync(fixture, seeded);
+        await SeriesAdvancementTestData.InsertPositionAsync(fixture, seeded);
+        await SeriesAdvancementTestData.InsertSurvivorOutcomeAsync(fixture, seeded);
+        await SeriesAdvancementTestData.InsertOverrideAsync(fixture, seeded);
+
+        // Act
+        await SeriesAdvancementTestData.ExecuteSqlAsync(fixture, "DELETE FROM app.series");
+
+        // Assert
+        (await SeriesAdvancementTestData.CountAsync(fixture, "series_field_entries")).ShouldBe(0);
+        (await SeriesAdvancementTestData.CountAsync(fixture, "series_positions")).ShouldBe(0);
+        (await SeriesAdvancementTestData.CountAsync(fixture, "series_survivor_outcomes")).ShouldBe(0);
+        (await SeriesAdvancementTestData.CountAsync(fixture, "series_stage_overrides")).ShouldBe(0);
     }
 }

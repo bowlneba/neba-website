@@ -1,0 +1,16 @@
+﻿[
+  bowler_memberships.bowler_id (BowlerMembership),
+  bowler_of_the_year_awards.bowler_id (BowlerOfTheYearAward),
+  bowler_season_stats.bowler_id (BowlerSeasonStats),
+  hall_of_fame_inductions.bowler_id (HallOfFameInduction),
+  high_average_awards.bowler_id (HighAverageAward),
+  high_block_awards.bowler_id (HighBlockAward),
+  series_field_entries.bowler_id (SeriesFieldEntry),
+  series_positions.bowler_id (SeriesPosition),
+  series_stage_overrides.bowler_id (StageOverride),
+  series_survivor_outcomes.bowler_id (SurvivorOutcome),
+  squad_scores.bowler_id (SquadScore),
+  tournament_champions.bowler_id (HistoricalTournamentChampion),
+  tournament_results.bowler_id (HistoricalTournamentResult),
+  tournament_results.bowler_id (TournamentResult)
+]
