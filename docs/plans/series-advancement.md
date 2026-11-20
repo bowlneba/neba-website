@@ -111,11 +111,12 @@ For a fresh session. The file is about 7,500 lines because it holds both code dr
 
   | What | Gate | Held today by |
   |---|---|---|
-  | See Stage status, output, markers, Backfill date | `Series.EditSeries` | Admin, Manager |
-  | Pick squad | `Series.EditSeries` | Admin, Manager |
-  | Recompute from a Stage | `Series.EditSeries` | Admin, Manager |
-  | Add bowler to a Qualifying Stage, clear a slot, remove an override | `Series.ManageAdvancement` (new) | Admin only (via `Permissions.List`; Manager not seeded) |
+  | See Stage status, output, markers, Backfill date | `Series.EditSeries` | Admin, Webmaster, Manager |
+  | Pick squad | `Series.EditSeries` | Admin, Webmaster, Manager |
+  | Recompute from a Stage | `Series.EditSeries` | Admin, Webmaster, Manager |
+  | Add bowler to a Qualifying Stage, clear a slot, remove an override | `Series.ManageAdvancement` (new) | Admin (via `Permissions.List`) and Webmaster (added to its list in `SecurityRoleSeeder`); Manager not seeded |
 - **No feature flag (decided 2026-11-20; supersedes #259's `series-advancement` flag).** This ships in the 1.3.0 release and is live from day one, so nothing is gated. Advancement runs as soon as the release deploys. A tournament completed before the deploy is not caught up automatically: an admin runs Recompute from the first Stage. The issue's flag acceptance criterion drops out.
+- **Webmaster holds what Admin holds unless we agree otherwise (decided 2026-11-20).** Webmaster is a seeded role that carries nearly every permission Admin does, so each new permission goes to both. Make a permission Admin-only only after discussing it. Series.ManageAdvancement therefore goes to Webmaster too (commit 13 edits `SecurityRoleSeeder`).
 - **Locked Series.** The phase 1 lock (any Stage not pending) applies.
 
 - **Trigger event (confirmed, supersedes #259's "completion signal").** One event, `TournamentResultsRecorded(TournamentId)`, raised by a new `Tournament.MarkResultsRecorded()` that `SyncTournamentResultsJob` calls after its `AddResult` loop. Complete, Truncate and Cancel raise nothing, because in the legacy chain results arrive after the status flips. It fires on every re-sync, which gives the redelivery behavior. A Stage may compute when its tournament is Completed or Truncated, it has at least one result row, and the previous Stage is Computed or Official.
@@ -1252,7 +1253,7 @@ Tests under `/Users/kippermand/Projects/bowlneba/neba-website/tests/Neba.Api.Tes
 5. **`EditSeriesCommandHandler` reads facts only for submitted Stages.** The removed Stage's tournament is not submitted, so the handler must also read the stored Stages' tournaments (edit in section F).
 6. **The plan's DB section gives `series_field_entries` a ULID alternate key, but the Domain type list has no ID type for it.** I add `SeriesFieldEntryId` (ulid-full). Section G lists the `efcore` shape.
 7. **Name clash:** `SeriesConfiguration` already exists as the EF configuration class (`new SeriesConfiguration()` in `AppDbContext`). The feature registration class is `SeriesFeatureConfiguration`, not the plan's `SeriesConfiguration.AddSeries`. The method is still `AddSeries`.
-8. **`SecurityRoleSeeder` needs no edit.** `Roles.Admin` is `Permissions.List`, which collects every static `Permissions` field. Adding the field gives Admin the permission, and Manager is not listed. Only the seeder test changes.
+8. **`SecurityRoleSeeder` gets one edit (changed 2026-11-20).** `Roles.Admin` is `Permissions.List`, which collects every static `Permissions` field, so Admin gets the permission by adding the field. Add `Permissions.ManageSeriesAdvancement` (use the field's real name) to the `Roles.Webmaster` list too: Webmaster holds nearly everything Admin does, and an Admin-only permission needs a discussion first. Manager is not listed. The seeder test asserts Admin and Webmaster hold it and Manager does not.
 9. **`ResolveSquad` stays private on `Series`.** The plan makes it public, but `Advance` and `PickSquad` reach it and no outside caller needs it. `RunBackfill` is not a method. The stats-event job calls `Advance(lastQualifying.TournamentId)` and the fold does the Backfill.
 10. **Pre-existing quirk, not fixed here:** `Tournament.ValidateSquadDateInRange` compares the UTC date to `StartDate` and `EndDate`. `SquadDesignation.Date` is an Eastern date. An evening squad on the last tournament day can fail the range check. Plan decision 74 covers the read side only.
 11. **Possible gap in "fires on every re-sync".** A re-sync that adds no new rows leaves nothing tracked as changed. I could not confirm whether EF calls the `SavedChanges` interceptor when `SaveChanges` has nothing to write. `SyncTournamentResultsJob` therefore also calls `PublishAndClear(tournament)` after the save. It publishes nothing twice, because the interceptor clears the events first when it does fire.
@@ -4479,11 +4480,11 @@ Reuse check: the plan states existing tournament reads cannot serve these (`GetT
 ##### `src/Neba.Api.Contracts/Security/Permission.cs` (in `#region Series`, after `EditSeriesLogo`)
 ```csharp
     /// <summary>
-    /// Permission to add a bowler to a Qualifying Stage, clear a slot, or remove such an override. Admin only.
+    /// Permission to add a bowler to a Qualifying Stage, clear a slot, or remove such an override. Held by Admin and Webmaster.
     /// </summary>
     public static readonly Permissions ManageAdvancement = new("Series.ManageAdvancement", "Manage Series Advancement");
 ```
-`SecurityRoleSeeder.cs` needs no edit (see section 0, item 8). Add a seeder test: Admin has it and Manager does not.
+Add the permission to the `Roles.Webmaster` list in `SecurityRoleSeeder.cs` (see section 0, item 8). Add a seeder test: Admin and Webmaster have it and Manager does not.
 
 ##### `src/Neba.Api.Contracts/Series/ISeriesApi.cs` (add usings for the new request folders)
 ```csharp
@@ -4604,9 +4605,9 @@ public sealed record CreatedStageOverrideResponse { string OverrideId; int Versi
 (The records written as `{ string Id; ... }` are shorthand; each property is `required ... { get; init; }` with an XML summary.)
 
 ##### Docs
-- **`docs/architecture/permission-based-security.md`** (before the policies row): add `Series.ManageAdvancement | Add a bowler to a Qualifying Stage, clear a slot, remove an override | Admin only`.
+- **`docs/architecture/permission-based-security.md`** (before the policies row): add `Series.ManageAdvancement | Add a bowler to a Qualifying Stage, clear a slot, remove an override | Admin, Webmaster`.
 - **`docs/policies/README.md`** row:
-  `| Permission:Series.ManageAdvancement | Dynamic (single permission) | Caller holds Series.ManageAdvancement; Admin only (through Permissions.List; Manager is not seeded) | CreateStageOverrideEndpoint, RemoveStageOverrideEndpoint, ListStageResultsEndpoint; the Series page shows the override actions only to holders | (help doc with the UI phase) |`
+  `| Permission:Series.ManageAdvancement | Dynamic (single permission) | Caller holds Series.ManageAdvancement; Admin (through Permissions.List) and Webmaster (seeded); Manager is not seeded | CreateStageOverrideEndpoint, RemoveStageOverrideEndpoint, ListStageResultsEndpoint; the Series page shows the override actions only to holders | (help doc with the UI phase) |`
 - **`docs/learnings/backend.md`**, new section "Domain events":
   - One `IDomainEventJob<T>` per event type, because the DI activator returns a single implementation. An architecture test enforces it.
   - Each event needs a serialization round-trip test (Hangfire serializes typed IDs through their `TypeConverter`).
@@ -7531,7 +7532,7 @@ Static HTML in `docs/plans/mockups/series-advancement/`, built on the phase 1 st
 - `series-advancement-option-1.html`: **expanding rows.** The phase 1 grouped lists with a status pill, flags, actions and a chevron on each row. The output opens under its row. Not chosen. Closest to phase 1 and the smallest change.
 - `series-advancement-option-2.html`: **season rail.** Every Stage in season order on one rail, with a strip of 11 segments up top showing pending, computed and official. Each card shows "7 of 8 slots filled". **Chosen (2026-11-20), for `Series.EditSeries` holders only.** Reads the season as a path.
 - `series-advancement-option-3.html`: **list and detail.** A compact Stage list beside one Stage's full output, so a Stage opens without moving the list. Not chosen. Stacks on a phone.
-- `override-modal.html`: **Add bowler and Clear slot** (single design, Admin only). Bowler picker, required reason with a 500-character count, a discard guard when you press Escape with text typed, and the 422 error.
+- `override-modal.html`: **Add bowler and Clear slot** (single design, Admin and Webmaster). Bowler picker, required reason with a 500-character count, a discard guard when you press Escape with text typed, and the 422 error.
 - `squad-picker-modal.html`: **Pick squad** (single design). Radio list of squads with "Has scores", "Current" and the empty state. The recompute confirm (it lists official Stages that reset) is in all three page options through the Recompute from here action.
 
 ## Commit plan
@@ -7561,7 +7562,7 @@ Orchestration and jobs
 
 API surface
 
-13. **Add the advancement contracts and the Manage advancement permission.** Agent: `backend-api`; `test-writer` for the seeder test. Files: `Neba.Api.Contracts/Series/*` request and response types, `OverrideKindValues`, `ISeriesApi` methods, `Permission.cs`, `docs/architecture/permission-based-security.md`, the `docs/policies/README.md` row (`policy-documentation` skill). Why: the contract and the permission are reviewed before any endpoint uses them, and the UI needs the Refit methods.
+13. **Add the advancement contracts and the Manage advancement permission.** Agent: `backend-api`; `test-writer` for the seeder test. Files: `Neba.Api.Contracts/Series/*` request and response types, `OverrideKindValues`, `ISeriesApi` methods, `Permission.cs`, `SecurityRoleSeeder.cs` (add the permission to Webmaster), `docs/architecture/permission-based-security.md`, the `docs/policies/README.md` row (`policy-documentation` skill). Why: the contract and the permission are reviewed before any endpoint uses them, and the UI needs the Refit methods.
 14. **Add the advancement read endpoints.** Agent: `backend-api`; `test-writer` for the GET parts of group 14. Files: `GetSeriesAdvancement`, `ListStageResults`, `ListStageSquads` (endpoint, summary, query, handler, validator, DTO each), Verify snapshots, the 401, 403 and 404 tests. Why: reads carry no write risk and unblock the UI.
 15. **Add the advancement write endpoints.** Agent: `backend-api`; `test-writer` for groups 12 (Pick squad), 13 and the write parts of 14. Files: `RecomputeSeriesAdvancement`, `PickStageSquad`, `CreateStageOverride`, `RemoveStageOverride`, `SeriesRequestRules`, the result sender changes. Why: the writes carry the `Version` and confirmation rules and are reviewed together.
 16. **Add the synthetic 2025 replay test.** Agent: `test-writer`. Files: `Series2025ReferenceFactory.CreateWithResults`, the expected-output fixture, the replay integration test through Recompute from the first Stage, with and without a Finale. Why: it proves the whole chain once the API is complete.
@@ -7574,7 +7575,7 @@ UI
 20. **Add the advancement view models, mapping and display text.** Agent: `blazor-ui`; `test-writer` for groups 1 and 17. Files: `StageStatuses`, `SeriesAdvancementViewModel`, `StageOverrideFormModel`, `SeriesMappingExtensions`, `SeriesDisplay`, the ViewModel factories. Why: pure code with no markup, tested alone.
 21. **Show the season rail on the Series page.** Agent: `blazor-ui`; `test-writer` for groups 2 to 7 and the `SeriesDetailTests` repair. Files: `SeriesDetail.razor`, `.razor.cs` and `.razor.css` (load, permission check, read-only), `SeriesProgressStrip`, `SeriesStageCard`, `SeriesStageOutput` and their CSS. Why: holders see status and output with the actions hidden, so the rail is reviewed before any write. Trim the draft's action buttons out of this commit and add them in 22 and 23.
 22. **Add Recompute and Pick squad to the Series page.** Agent: `blazor-ui`; `test-writer` for groups 11 to 14. Files: `StageSquadModal`, the recompute confirm wiring, the page write lifecycle (`Version`, 409, 422, `_isWriting`). Why: both are `Series.EditSeries` actions and share the write lifecycle.
-23. **Add the override controls to the Series page.** Agent: `blazor-ui`; `test-writer` for groups 8 to 10. Files: `StageOverrideModal`, Add bowler, Clear slot, Remove override with its confirm, the dirty guard. Why: the Admin-only controls are the riskiest UI and get their own review.
+23. **Add the override controls to the Series page.** Agent: `blazor-ui`; `test-writer` for groups 8 to 10. Files: `StageOverrideModal`, Add bowler, Clear slot, Remove override with its confirm, the dirty guard. Why: the controls for holders of `Series.ManageAdvancement` are the riskiest UI and get their own review.
 24. **Let admins remove a cancelled Stage from a locked Series.** Agent: `blazor-ui`; `test-writer` for group 16. Files: `EditSeries.razor`, `SeriesEditor.razor`, `SeriesStageGrid.razor`, `SeriesStageRowModel.cs`. Why: it completes the cancelled-tournament path from phase 1's lock rule.
 25. **Add Playwright specs for Series advancement.** Agent: `e2e`. Files: `tests/e2e/Series.spec.ts` (Manager, Admin, recompute confirm, Pick squad, failures, anonymous). Why: it checks the real browser plus HTTP flows once the UI is complete.
 26. **Add the Series advancement help doc.** Agent: `docs`, with `aspire` for a running stack. Files: `docs/help/series-advancement.md` and screenshots. Why: it needs the finished UI. It uses the `help-documentation` skill.

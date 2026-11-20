@@ -103,6 +103,7 @@ Before scoping any routes, settle who can do this. Check `docs/policies/README.m
 
 - Does an existing authorization policy already cover this action? If so, which role(s) hold it — reuse it, don't create a near-duplicate.
 - If no existing policy fits, does the action belong on an **existing role**, or does its scope call for a **new role**? Don't default to bolting a new permission onto the nearest existing role just because it's convenient — check whether the people who should get this permission are actually the same set of people who hold any existing role. The `Journalist` role (introduced for article-authoring permissions) is the precedent: a new role was warranted because "can write articles" wasn't a good fit for any existing role's scope, not because a new table was easy to add.
+- **Webmaster holds nearly everything Admin does.** Grant each new permission to Webmaster as well as Admin (Admin gets all of them through `Permissions.List`; Webmaster needs an explicit entry in `SecurityRoleSeeder`). List Webmaster in every permission table. Propose Admin-only only as a question for the user, never as a default.
 - If it's genuinely ambiguous, ask via `AskUserQuestion` rather than deciding silently — this is exactly the kind of call that's the user's to make, not a repo convention to infer.
 
 Record the decision (policy name — new or existing; role(s) it's granted to; whether a new role was introduced and why) so it can be captured under "Decisions locked in during scoping" in Step 6.
