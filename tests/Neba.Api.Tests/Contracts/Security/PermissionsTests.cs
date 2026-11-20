@@ -109,4 +109,38 @@ public sealed class PermissionsTests
         // Assert
         policyName.ShouldBe("CanManageSponsors");
     }
+
+    [Fact(DisplayName = "ManageAdvancement should have the value Series.ManageAdvancement")]
+    public void ManageAdvancement_ShouldHaveSeriesManageAdvancementValue()
+    {
+        // Arrange & Act
+        var value = Permissions.ManageAdvancement.Value;
+
+        // Assert
+        value.ShouldBe("Series.ManageAdvancement");
+    }
+
+    [Fact(DisplayName = "FromValue should return ManageAdvancement for the value Series.ManageAdvancement")]
+    public void FromValue_ShouldReturnManageAdvancement_WhenValueIsSeriesManageAdvancement()
+    {
+        // Arrange
+        const string value = "Series.ManageAdvancement";
+
+        // Act
+        var permission = Permissions.FromValue(value);
+
+        // Assert
+        permission.ShouldBe(Permissions.ManageAdvancement);
+    }
+
+    [Fact(DisplayName = "List should contain ManageAdvancement once and give every permission a distinct value")]
+    public void List_ShouldContainManageAdvancementOnceAndHaveDistinctValues()
+    {
+        // Arrange & Act
+        var values = Permissions.List.Select(p => p.Value).ToList();
+
+        // Assert
+        values.Count(v => v == Permissions.ManageAdvancement.Value).ShouldBe(1);
+        values.Distinct(StringComparer.Ordinal).Count().ShouldBe(values.Count);
+    }
 }

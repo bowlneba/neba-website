@@ -209,6 +209,11 @@ public sealed class Permissions
     public static readonly Permissions EditSeriesLogo = new("Series.EditSeriesLogo", "Edit Series Logo");
 
     /// <summary>
+    /// Permission to add a bowler to a Qualifying Stage, clear a slot, or remove such an override. Held by Admin and Webmaster.
+    /// </summary>
+    public static readonly Permissions ManageAdvancement = new("Series.ManageAdvancement", "Manage Series Advancement");
+
+    /// <summary>
     /// Permissions that let a caller upload a Series logo to staging.
     /// </summary>
     public static readonly IReadOnlyCollection<Permissions> SeriesLogoUploadPermissions =

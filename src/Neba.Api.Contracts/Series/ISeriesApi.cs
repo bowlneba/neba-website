@@ -1,9 +1,15 @@
 using Neba.Api.Contracts.Series.CreateSeries;
+using Neba.Api.Contracts.Series.CreateStageOverride;
 using Neba.Api.Contracts.Series.EditSeries;
 using Neba.Api.Contracts.Series.EditSeriesLogo;
 using Neba.Api.Contracts.Series.GetSeries;
+using Neba.Api.Contracts.Series.GetSeriesAdvancement;
 using Neba.Api.Contracts.Series.ListSeries;
 using Neba.Api.Contracts.Series.ListSeriesFinales;
+using Neba.Api.Contracts.Series.ListStageResults;
+using Neba.Api.Contracts.Series.ListStageSquads;
+using Neba.Api.Contracts.Series.PickStageSquad;
+using Neba.Api.Contracts.Series.RecomputeSeriesAdvancement;
 using Neba.Api.Contracts.Uploads;
 
 using Refit;
@@ -47,4 +53,32 @@ public interface ISeriesApi
     /// <summary>Replaces or removes the logo only. Requires Series.EditSeriesLogo. Works while locked.</summary>
     [Put("/series/{seriesId}/logo")]
     Task<IApiResponse> EditSeriesLogoAsync(string seriesId, EditSeriesLogoRequest request, CancellationToken cancellationToken = default);
+
+    /// <summary>Gets each Stage's status, output and markers, and the Version writes must send. Requires Series.EditSeries.</summary>
+    [Get("/series/{seriesId}/advancement")]
+    Task<IApiResponse<SeriesAdvancementResponse>> GetSeriesAdvancementAsync(string seriesId, CancellationToken cancellationToken = default);
+
+    /// <summary>Recomputes from a Stage to the end. Requires Series.EditSeries.</summary>
+    [Post("/series/{seriesId}/stages/{stageId}/recomputations")]
+    Task<IApiResponse> RecomputeSeriesAdvancementAsync(string seriesId, string stageId, RecomputeSeriesAdvancementRequest request, CancellationToken cancellationToken = default);
+
+    /// <summary>Picks a Survivor Stage's squad. Requires Series.EditSeries.</summary>
+    [Put("/series/{seriesId}/stages/{stageId}/squad")]
+    Task<IApiResponse> PickStageSquadAsync(string seriesId, string stageId, PickStageSquadRequest request, CancellationToken cancellationToken = default);
+
+    /// <summary>Adds a bowler to a Qualifying Stage or clears a slot. Requires Series.ManageAdvancement.</summary>
+    [Post("/series/{seriesId}/stages/{stageId}/overrides")]
+    Task<IApiResponse<CreatedStageOverrideResponse>> CreateStageOverrideAsync(string seriesId, string stageId, CreateStageOverrideRequest request, CancellationToken cancellationToken = default);
+
+    /// <summary>Removes an override. Requires Series.ManageAdvancement.</summary>
+    [Delete("/series/{seriesId}/stages/{stageId}/overrides/{overrideId}")]
+    Task<IApiResponse> RemoveStageOverrideAsync(string seriesId, string stageId, string overrideId, [Query] int version, CancellationToken cancellationToken = default);
+
+    /// <summary>Lists the result rows of a Stage's tournament, for the add-bowler picker. Requires Series.ManageAdvancement.</summary>
+    [Get("/series/{seriesId}/stages/{stageId}/results")]
+    Task<IApiResponse<CollectionResponse<StageResultSummaryResponse>>> ListStageResultsAsync(string seriesId, string stageId, CancellationToken cancellationToken = default);
+
+    /// <summary>Lists the squads of a Stage's tournament, for the squad picker. Requires Series.EditSeries.</summary>
+    [Get("/series/{seriesId}/stages/{stageId}/squads")]
+    Task<IApiResponse<CollectionResponse<StageSquadSummaryResponse>>> ListStageSquadsAsync(string seriesId, string stageId, CancellationToken cancellationToken = default);
 }

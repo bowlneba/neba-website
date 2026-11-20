@@ -41,6 +41,7 @@ internal static class SecurityRoleSeeder
             Permissions.EditSeries,
             Permissions.DeleteSeries,
             Permissions.EditSeriesLogo,
+            Permissions.ManageAdvancement,
 
             Permissions.ViewBackgroundJobsDashboard,
 
