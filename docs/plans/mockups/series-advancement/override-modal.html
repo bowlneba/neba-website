@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>2025 Vincent Hall Memorial Series - BowlNEBA (Override modal)</title>
+<link rel="stylesheet" href="../series-management/mockup.css">
+<link rel="stylesheet" href="advancement.css">
+<style>
+
+  .stub { margin-top: 8px; padding: 16px 20px; }
+  .stub h2 { font: 700 18px var(--font-display); margin: 0 0 4px; }
+
+</style>
+</head>
+<body class="is-admin">
+<div class="mock-switcher">
+  <strong>Override modal</strong>
+  <a href="series-advancement-option-1.html">Option 1</a> <a href="series-advancement-option-2.html">Option 2</a> <a href="series-advancement-option-3.html">Option 3</a>  <a href="squad-picker-modal.html">Squad picker</a>
+  <label>Signed in as
+    <select id="role"><option value="admin">Admin (Series.EditSeries + Series.ManageAdvancement)</option><option value="manager">Manager (Series.EditSeries only)</option></select></label>
+  <label>Scenario
+    <select id="scenario"><option value="mid">Season under way</option><option value="squad">Survivor round needs a squad</option><option value="end">All Stages computed</option></select></label>
+  <label><input type="checkbox" id="toggle-loading"> Loading</label>
+  <label><input type="checkbox" id="toggle-fail"> Next save fails (422)</label>
+</div>
+<nav class="site-nav"><div class="site-nav-inner">
+  <a class="site-logo" href="#">NEBA</a>
+  <div class="site-links"><span class="is-active">Tournaments <small>(Schedule &middot; Series &middot; Rules)</small></span><span>Stats</span><span>About</span><span>News</span><span>History</span></div>
+</div></nav>
+<header class="title-bar"><div class="title-bar-inner">
+  <div style="display:flex;gap:18px;align-items:center">
+    <span class="logo-tile" style="width:72px;height:72px"><img src="../series-management/vincent-hall-logo.png" alt="2025 Vincent Hall Memorial Series logo"></span>
+    <div><h1>2025 Vincent Hall Memorial Series</h1><p>1/1/2025 to 12/31/2025</p></div>
+  </div>
+  <div class="hero-actions" style="display:flex;gap:8px"><a class="btn btn-on-blue" href="../series-management/series-editor.html">Edit</a></div>
+</div></header>
+
+<main class="page">
+<p class="note-unchanged">The Add bowler and Clear slot modal, over Stage 4 (Computed, with an Add and a Clear override already stored). It opens on load. Use Add bowler, Clear slot or the picker behind it to reopen it. Admin only. Type a reason and press Escape to see the discard guard. Tick &ldquo;Next save fails (422)&rdquo; to see the error.</p>
+<section class="panel stub" id="stub"></section>
+</main>
+<script src="../series-management/series-data.js"></script>
+<script src="advancement-data.js"></script>
+<script src="advancement-ui.js"></script>
+<script>
+
+const U = window.ADV_UI;
+function render() {
+  const st = U.state.data.stages[3];
+  document.getElementById('stub').innerHTML = `<h2>Stage ${st.order}: ${st.tournament} ${U.pill(st)}</h2>${U.flags(st)}<div style="margin-top:12px">${U.output(st)}</div>`;
+}
+U.init({ render });
+document.body.classList.add('is-admin');
+U.overrideModal({ kind: 'Add', order: 4 });
+
+</script>
+</body>
+</html>

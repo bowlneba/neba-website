@@ -1,0 +1,94 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>2025 Vincent Hall Memorial Series - BowlNEBA (Option 1: expanding rows)</title>
+<link rel="stylesheet" href="../series-management/mockup.css">
+<link rel="stylesheet" href="advancement.css">
+<style>
+
+  .section-title { font-family: var(--font-display); font-size: 18px; margin: 32px 0 12px; display: flex; gap: 10px; align-items: baseline; }
+  .section-title span { font-family: var(--font-base); font-weight: 400; font-size: 14px; color: var(--muted); }
+  .stage-list { list-style: none; margin: 0; padding: 0; }
+  .stage-row { display: grid; grid-template-columns: 36px 1fr 150px 118px 36px; gap: 8px 14px; align-items: center; padding: 14px 20px; }
+  .stage-row + .stage-row { border-top: 1px solid var(--border); }
+  .order { font-family: var(--font-display); font-weight: 700; color: var(--muted); }
+  .tname a { font-weight: 600; text-decoration: none; color: var(--text); }
+  .tname small { display: block; color: var(--muted); font-size: 13px; }
+  .adv { font-weight: 600; }
+  .row-sub { grid-column: 2 / -1; display: flex; flex-wrap: wrap; gap: 8px 18px; align-items: center; justify-content: space-between; }
+  .row-panel { grid-column: 2 / -1; border-top: 1px dashed var(--border); padding-top: 12px; margin-top: 4px; }
+  @media (max-width: 767px) {
+    .stage-row { grid-template-columns: 28px 1fr auto; padding: 14px 14px; }
+    .stage-row .adv { grid-column: 2; }
+    .stage-row .state { grid-column: 3; grid-row: 1; }
+    .stage-row .chev { grid-column: 3; grid-row: 2; justify-self: end; }
+    .row-sub, .row-panel { grid-column: 1 / -1; }
+  }
+
+</style>
+</head>
+<body class="is-admin">
+<div class="mock-switcher">
+  <strong>Option 1: expanding rows</strong>
+  <a href="series-advancement-option-2.html">Option 2</a> <a href="series-advancement-option-3.html">Option 3</a> <a href="override-modal.html">Override modal</a> <a href="squad-picker-modal.html">Squad picker</a>
+  <label>Signed in as
+    <select id="role"><option value="admin">Admin (Series.EditSeries + Series.ManageAdvancement)</option><option value="manager">Manager (Series.EditSeries only)</option></select></label>
+  <label>Scenario
+    <select id="scenario"><option value="mid">Season under way</option><option value="squad">Survivor round needs a squad</option><option value="end">All Stages computed</option></select></label>
+  <label><input type="checkbox" id="toggle-loading"> Loading</label>
+  <label><input type="checkbox" id="toggle-fail"> Next save fails (422)</label>
+</div>
+<nav class="site-nav"><div class="site-nav-inner">
+  <a class="site-logo" href="#">NEBA</a>
+  <div class="site-links"><span class="is-active">Tournaments <small>(Schedule &middot; Series &middot; Rules)</small></span><span>Stats</span><span>About</span><span>News</span><span>History</span></div>
+</div></nav>
+<header class="title-bar"><div class="title-bar-inner">
+  <div style="display:flex;gap:18px;align-items:center">
+    <span class="logo-tile" style="width:72px;height:72px"><img src="../series-management/vincent-hall-logo.png" alt="2025 Vincent Hall Memorial Series logo"></span>
+    <div><h1>2025 Vincent Hall Memorial Series</h1><p>1/1/2025 to 12/31/2025</p></div>
+  </div>
+  <div class="hero-actions" style="display:flex;gap:8px"><a class="btn btn-on-blue" href="../series-management/series-editor.html">Edit</a></div>
+</div></header>
+
+<main class="page">
+<p class="note-unchanged">The funnel chart and Finale block from phase 1 stay as they are and are left out here. Rows keep the phase 1 layout and gain a status, flags, actions and an expanding output panel.</p>
+<div class="series-head"><h2>Stages</h2></div>
+<p class="progress-line" id="progress"></p>
+<div id="stages"></div>
+</main>
+<script src="../series-management/series-data.js"></script>
+<script src="advancement-data.js"></script>
+<script src="advancement-ui.js"></script>
+<script>
+
+const U = window.ADV_UI;
+function row(st) {
+  const sd = window.SERIES.stages[st.order - 1];
+  const open = U.state.expanded.has(st.order);
+  return `<li class="stage-row">
+    <span class="order">${st.order}</span>
+    <span class="tname"><a href="#">${st.tournament}</a><small>${st.dates}${st.teamSize > 1 ? ` &middot; ${st.teamSize}-bowler teams` : ''}</small></span>
+    <span class="adv">${window.advancingLabel(sd)}</span>
+    <span class="state">${U.pill(st)}</span>
+    <span class="chev">${U.expander(st)}</span>
+    <div class="row-sub">${U.flags(st) || '<span></span>'}${U.actions(st)}</div>
+    ${open ? `<div class="row-panel">${U.output(st)}</div>` : ''}
+  </li>`;
+}
+function render() {
+  const stages = U.state.data ? U.state.data.stages : [];
+  const root = document.getElementById('stages');
+  if (U.state.loading) { root.innerHTML = U.skeleton(6); document.getElementById('progress').textContent = ''; return; }
+  document.getElementById('progress').innerHTML = U.progress();
+  const groups = [['Qualifying', 'Qualifying events', 'Top finishers enter the Series'], ['Survivor', 'Survivor rounds', 'Cut by the designated squad score'], ['Placement', 'Placement round', 'Ranked by tournament position']];
+  root.innerHTML = groups.map(([kind, title, note]) => `
+    <h2 class="section-title">${title} <span>${note}</span></h2>
+    <ol class="panel stage-list">${stages.filter(s => s.kind === kind).map(row).join('')}</ol>`).join('');
+}
+U.init({ render });
+
+</script>
+</body>
+</html>
