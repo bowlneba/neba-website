@@ -38,7 +38,8 @@ public static class TournamentFactory
         decimal? nebaAddedMoney = null,
         TournamentStatus? status = null,
         int? entryCountForTitleEligibility = null,
-        PreviousTournamentFacts? previousTournament = null)
+        PreviousTournamentFacts? previousTournament = null,
+        IReadOnlyCollection<TournamentResult>? results = null)
     {
         var result = Tournament.Create(
             name: name ?? ValidName,
@@ -104,6 +105,16 @@ public static class TournamentFactory
             if (statusResult.IsError)
             {
                 throw new InvalidOperationException($"Failed to set tournament status to {status.Name}: {statusResult.Errors[0].Description}");
+            }
+        }
+
+        foreach (var tournamentResult in results ?? [])
+        {
+            var addResult = tournament.AddResult(tournamentResult.BowlerId, tournamentResult.Place, tournamentResult.PrizeMoney, tournamentResult.Points);
+
+            if (addResult.IsError)
+            {
+                throw new InvalidOperationException($"Failed to add result for bowler {tournamentResult.BowlerId} to tournament: {addResult.Errors[0].Description}");
             }
         }
 
