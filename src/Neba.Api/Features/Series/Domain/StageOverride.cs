@@ -1,14 +1,14 @@
-using System.Diagnostics.CodeAnalysis;
+using ErrorOr;
 
 using Neba.Api.Features.Bowlers.Domain;
 
 namespace Neba.Api.Features.Series.Domain;
 
 /// <summary>An admin change to a Qualifying Stage's advancers. Survives every recompute until removed.</summary>
-[SuppressMessage("Major Code Smell", "S3453:Classes should not have only \"private\" constructors",
-    Justification = "EF materializes it through the private constructor. The internal Create factory arrives with the advancement domain logic.")]
 public sealed class StageOverride
 {
+    internal const int ReasonMaxLength = 500;
+
     /// <summary>Unique ID.</summary>
     public required StageOverrideId Id { get; init; }
 
@@ -30,8 +30,36 @@ public sealed class StageOverride
     public DateTimeOffset CreatedAt { get; private set; }
 
     /// <summary>False when the override's target changed and it no longer takes effect.</summary>
-    public bool Applied { get; private set; }
+    public bool Applied { get; internal set; }
 
     private StageOverride()
     { }
+
+    internal static ErrorOr<StageOverride> Create(
+        OverrideKind kind, BowlerId bowlerId, string reason, string createdBy, DateTimeOffset createdAt)
+    {
+        ArgumentNullException.ThrowIfNull(kind);
+
+        if (string.IsNullOrWhiteSpace(reason))
+        {
+            return SeriesAdvancementErrors.OverrideReasonRequired;
+        }
+
+        var trimmed = reason.Trim();
+        if (trimmed.Length > ReasonMaxLength)
+        {
+            return SeriesAdvancementErrors.OverrideReasonTooLong(ReasonMaxLength);
+        }
+
+        return new StageOverride
+        {
+            Id = StageOverrideId.New(),
+            BowlerId = bowlerId,
+            Kind = kind,
+            Reason = trimmed,
+            CreatedBy = createdBy,
+            CreatedAt = createdAt,
+            Applied = true,
+        };
+    }
 }

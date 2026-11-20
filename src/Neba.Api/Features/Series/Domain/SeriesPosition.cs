@@ -1,12 +1,10 @@
-using System.Diagnostics.CodeAnalysis;
+using ErrorOr;
 
 using Neba.Api.Features.Bowlers.Domain;
 
 namespace Neba.Api.Features.Series.Domain;
 
 /// <summary>One bowler's Placement Round position. Owned by the Series.</summary>
-[SuppressMessage("Major Code Smell", "S3453:Classes should not have only \"private\" constructors",
-    Justification = "EF materializes it through the private constructor. The internal Create factory arrives with the advancement domain logic.")]
 public sealed class SeriesPosition
 {
     /// <summary>The bowler.</summary>
@@ -25,4 +23,29 @@ public sealed class SeriesPosition
 
     private SeriesPosition()
     { }
+
+    internal static ErrorOr<SeriesPosition> Create(BowlerId bowlerId, int position, bool bowled, bool? isFinalist)
+    {
+        var created = new SeriesPosition { BowlerId = bowlerId };
+        var result = created.Update(position, bowled, isFinalist);
+
+        return result.IsError ? result.Errors : created;
+    }
+
+    internal ErrorOr<Updated> Update(int position, bool bowled, bool? isFinalist)
+    {
+        if (position <= 0)
+        {
+            return SeriesAdvancementErrors.PositionInvalid;
+        }
+
+        Position = position;
+        Bowled = bowled;
+        IsFinalist = isFinalist;
+
+        return Result.Updated;
+    }
+
+    internal PositionDraft ToDraft()
+        => new(BowlerId, Position, Bowled, IsFinalist);
 }

@@ -1,12 +1,10 @@
-using System.Diagnostics.CodeAnalysis;
+using ErrorOr;
 
 using Neba.Api.Features.Bowlers.Domain;
 
 namespace Neba.Api.Features.Series.Domain;
 
 /// <summary>One bowler's Survivor Round result. Owned by a Survivor Stage.</summary>
-[SuppressMessage("Major Code Smell", "S3453:Classes should not have only \"private\" constructors",
-    Justification = "EF materializes it through the private constructor. The internal Create factory arrives with the advancement domain logic.")]
 public sealed class SurvivorOutcome
 {
     /// <summary>The bowler.</summary>
@@ -22,4 +20,28 @@ public sealed class SurvivorOutcome
 
     private SurvivorOutcome()
     { }
+
+    internal static ErrorOr<SurvivorOutcome> Create(BowlerId bowlerId, int? blockTotal, bool advanced)
+    {
+        var created = new SurvivorOutcome { BowlerId = bowlerId };
+        var result = created.Update(blockTotal, advanced);
+
+        return result.IsError ? result.Errors : created;
+    }
+
+    internal ErrorOr<Updated> Update(int? blockTotal, bool advanced)
+    {
+        if (blockTotal is < 0 || (advanced && blockTotal is null))
+        {
+            return SeriesAdvancementErrors.OutcomeInvalid;
+        }
+
+        BlockTotal = blockTotal;
+        Advanced = advanced;
+
+        return Result.Updated;
+    }
+
+    internal SurvivorOutcomeDraft ToDraft()
+        => new(BowlerId, BlockTotal, Advanced);
 }

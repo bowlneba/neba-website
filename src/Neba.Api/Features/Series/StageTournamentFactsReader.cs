@@ -34,6 +34,7 @@ internal static class StageTournamentFactsReader
                 TournamentId = tournament.Id,
                 TournamentName = tournament.Name,
                 SeasonId = tournament.SeasonId,
+                Status = tournament.Status,
                 StartDate = tournament.StartDate,
                 EndDate = tournament.EndDate,
             })

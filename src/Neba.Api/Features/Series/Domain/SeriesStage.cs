@@ -25,7 +25,10 @@ public sealed class SeriesStage
     /// </summary>
     public int? AdvancingCount { get; private set; }
 
-    /// <summary>Always <see cref="StageStatus.Pending"/> in phase 1. Internal setter is the phase 2 and test seam.</summary>
+    /// <summary>
+    /// Processing state. Advancement sets it through <see cref="MarkComputed"/> and <see cref="MarkOfficial"/>. The setter
+    /// stays internal as a test seam.
+    /// </summary>
     public StageStatus Status { get; internal set; } = StageStatus.Pending;
 
     /// <summary>Set for a Survivor Stage, otherwise null.</summary>
@@ -85,11 +88,74 @@ public sealed class SeriesStage
         Kind = definition.Kind;
         TournamentId = definition.TournamentId;
         AdvancingCount = definition.AdvancingCount;
-        SquadDesignation = hasSquad
-            ? SquadDesignation.Describe(definition.SquadDate!.Value, definition.SquadStartTime!.Value)
-            : null;
+        SquadDesignation = hasSquad ? DescribeKeepingSquad(definition) : null;
 
         return Result.Updated;
+    }
+
+    // A resolved squad survives an update that leaves the date and start time alone.
+    private SquadDesignation DescribeKeepingSquad(SeriesStageDefinition definition)
+        => SquadDesignation is { } current
+            && current.Date == definition.SquadDate
+            && current.StartTime == definition.SquadStartTime
+            ? current
+            : SquadDesignation.Describe(definition.SquadDate!.Value, definition.SquadStartTime!.Value);
+
+    internal void MarkComputed(DateTimeOffset now)
+    {
+        Status = StageStatus.Computed;
+        ComputedAt = now;
+        OfficialAt = null;
+        IsStale = false;
+    }
+
+    internal void MarkOfficial(DateTimeOffset now)
+    {
+        Status = StageStatus.Official;
+        OfficialAt = now;
+    }
+
+    internal void MarkStale()
+        => IsStale = true;
+
+    internal void ClearStale()
+        => IsStale = false;
+
+    internal void SetSlotCount(int? slotCount)
+        => SlotCount = slotCount;
+
+    internal void ResolveSquad(SquadId squadId)
+        => SquadDesignation = SquadDesignation?.Resolve(squadId);
+
+    internal void UnresolveSquad()
+        => SquadDesignation = SquadDesignation?.Unresolve();
+
+    internal void AddOverride(StageOverride stageOverride)
+        => _overrides.Add(stageOverride);
+
+    internal void RemoveOverride(StageOverride stageOverride)
+        => _overrides.Remove(stageOverride);
+
+    internal void SetOverrideApplied(StageOverrideId id, bool applied)
+        => _overrides.Single(o => o.Id == id).Applied = applied;
+
+    // Updates in place by bowler (the key is composite), removes the rest, adds new ones.
+    internal void ReplaceOutcomes(IReadOnlyList<SurvivorOutcomeDraft> target)
+    {
+        _survivorOutcomes.RemoveAll(o => target.All(t => t.BowlerId != o.BowlerId));
+
+        foreach (var draft in target)
+        {
+            var existing = _survivorOutcomes.Find(o => o.BowlerId == draft.BowlerId);
+            if (existing is null)
+            {
+                _survivorOutcomes.Add(SurvivorOutcome.Create(draft.BowlerId, draft.BlockTotal, draft.Advanced).Value);
+            }
+            else
+            {
+                _ = existing.Update(draft.BlockTotal, draft.Advanced).Value; // computed data is valid; an error here is a bug
+            }
+        }
     }
 
     // #8: required and above zero on Qualifying and Survivor; a Placement Stage has none (the Finale carries its own count).
@@ -134,8 +200,10 @@ public sealed class SeriesStage
     }
 
     internal bool Matches(int order, SeriesStageDefinition definition)
-        => Order == order
-            && Kind == definition.Kind
+        => Order == order && MatchesIgnoringOrder(definition);
+
+    internal bool MatchesIgnoringOrder(SeriesStageDefinition definition)
+        => Kind == definition.Kind
             && TournamentId == definition.TournamentId
             && AdvancingCount == definition.AdvancingCount
             && SquadDesignation?.Date == definition.SquadDate

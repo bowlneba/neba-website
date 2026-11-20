@@ -72,23 +72,17 @@ internal static class SeriesSeed
 
         dbContext.Series.Add(series);
 
-        if (status is not null)
+        if (status is not null && status != StageStatus.Pending)
         {
-            // The status check constraint ties the timestamps to the status, so set them through EF with it.
+            // The domain mutators set the timestamps the status check constraint requires.
             var stage = series.Stages.First();
-            stage.Status = status;
-
-            var entry = dbContext.Entry(stage);
             var now = new DateTimeOffset(2025, 3, 1, 12, 0, 0, TimeSpan.Zero);
 
-            if (status != StageStatus.Pending)
-            {
-                entry.Property(s => s.ComputedAt).CurrentValue = now;
-            }
+            stage.MarkComputed(now);
 
             if (status == StageStatus.Official)
             {
-                entry.Property(s => s.OfficialAt).CurrentValue = now;
+                stage.MarkOfficial(now);
             }
         }
 

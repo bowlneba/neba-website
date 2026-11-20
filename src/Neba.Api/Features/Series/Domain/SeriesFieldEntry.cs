@@ -1,12 +1,10 @@
-using System.Diagnostics.CodeAnalysis;
+using ErrorOr;
 
 using Neba.Api.Features.Bowlers.Domain;
 
 namespace Neba.Api.Features.Series.Domain;
 
 /// <summary>A bowler in the Series Field, and where the bowler came from.</summary>
-[SuppressMessage("Major Code Smell", "S3453:Classes should not have only \"private\" constructors",
-    Justification = "EF materializes it through the private constructor. The internal Create factory arrives with the advancement domain logic.")]
 public sealed class SeriesFieldEntry
 {
     /// <summary>Unique ID.</summary>
@@ -30,6 +28,44 @@ public sealed class SeriesFieldEntry
     /// <summary>True when an Add override put the bowler in the field.</summary>
     public bool ViaOverride { get; private set; }
 
+    /// <summary>True for a Backfill entry.</summary>
+    public bool IsBackfill
+        => SourceStageId is null;
+
     private SeriesFieldEntry()
     { }
+
+    internal static ErrorOr<SeriesFieldEntry> Create(
+        BowlerId bowlerId, SeriesStageId? sourceStageId, int? place, int? backfillPoints, bool viaOverride)
+    {
+        var entry = new SeriesFieldEntry { Id = SeriesFieldEntryId.New(), BowlerId = bowlerId };
+        var result = entry.Set(sourceStageId, place, backfillPoints, viaOverride);
+
+        return result.IsError ? result.Errors : entry;
+    }
+
+    internal ErrorOr<Updated> Update(int? place, int? backfillPoints, bool viaOverride)
+        => Set(SourceStageId, place, backfillPoints, viaOverride);
+
+    internal FieldEntryDraft ToDraft()
+        => new(BowlerId, SourceStageId, Place, BackfillPoints, ViaOverride);
+
+    private ErrorOr<Updated> Set(SeriesStageId? sourceStageId, int? place, int? backfillPoints, bool viaOverride)
+    {
+        var valid = sourceStageId is null
+            ? backfillPoints is > 0 && place is null && !viaOverride
+            : place is > 0 && backfillPoints is null;
+
+        if (!valid)
+        {
+            return SeriesAdvancementErrors.EntryInvalid;
+        }
+
+        SourceStageId = sourceStageId;
+        Place = place;
+        BackfillPoints = backfillPoints;
+        ViaOverride = viaOverride;
+
+        return Result.Updated;
+    }
 }
