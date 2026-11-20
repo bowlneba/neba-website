@@ -29,6 +29,7 @@
     <PackageReference Include="Microsoft.FeatureManagement.AspNetCore" />
     <PackageReference Include="Newtonsoft.Json" />
     <PackageReference Include="Refit.HttpClientFactory" />
+    <PackageReference Include="Refit.Reflection" />
     <PackageReference Include="UnitsNet" />
   </ItemGroup>
 
