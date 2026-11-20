@@ -54,6 +54,7 @@ public sealed class SecurityRoleSeederTests
                 Permissions.CreateSponsor, Permissions.EditSponsor,
                 Permissions.EditHallOfFamePhoto,
                 Permissions.CreateTournament, Permissions.EditTournament, Permissions.ManageTournamentSponsors, Permissions.EditTournamentLogo, Permissions.DeleteTournament, Permissions.ManageTournamentStatus,
+                Permissions.CreateSeries, Permissions.EditSeries, Permissions.DeleteSeries, Permissions.EditSeriesLogo,
                 Permissions.ViewBackgroundJobsDashboard, Permissions.RefreshDocument]);
         }
 
@@ -227,7 +228,7 @@ public sealed class SecurityRoleSeederTests
         roleManagerMock.VerifyAll();
     }
 
-    [Fact(DisplayName = "SeedAsync should create the Webmaster role and add exactly the CreateArticle, EditArticle, DeleteArticle, CreateSponsor, EditSponsor, EditHallOfFamePhoto, CreateTournament, EditTournament, EditTournamentLogo, ManageTournamentSponsors, DeleteTournament, ManageTournamentStatus, CreateUser, EditUser, ResetUserPassword, GetUsers, ViewBackgroundJobsDashboard, and RefreshDocument permission claims when the role does not exist")]
+    [Fact(DisplayName = "SeedAsync should create the Webmaster role and add exactly the CreateArticle, EditArticle, DeleteArticle, CreateSponsor, EditSponsor, EditHallOfFamePhoto, CreateTournament, EditTournament, EditTournamentLogo, ManageTournamentSponsors, DeleteTournament, ManageTournamentStatus, CreateSeries, EditSeries, DeleteSeries, EditSeriesLogo, CreateUser, EditUser, ResetUserPassword, GetUsers, ViewBackgroundJobsDashboard, and RefreshDocument permission claims when the role does not exist")]
     public async Task SeedAsync_ShouldCreateWebmasterRoleAndAddExpectedClaims_WhenRoleDoesNotExist()
     {
         // Arrange
@@ -245,6 +246,10 @@ public sealed class SecurityRoleSeederTests
             Permissions.ManageTournamentSponsors,
             Permissions.DeleteTournament,
             Permissions.ManageTournamentStatus,
+            Permissions.CreateSeries,
+            Permissions.EditSeries,
+            Permissions.DeleteSeries,
+            Permissions.EditSeriesLogo,
             Permissions.CreateUser,
             Permissions.EditUser,
             Permissions.ResetUserPassword,
