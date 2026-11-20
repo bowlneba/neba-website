@@ -16,14 +16,14 @@ internal interface IAzCli
 /// <summary>
 /// Runs the <c>az</c> executable against one subscription.
 /// </summary>
-internal sealed class AzCli(string subscriptionId) : IAzCli
+internal sealed class AzCli(string subscriptionId, string executable = "az") : IAzCli
 {
     public async Task<string> RunAsync(IReadOnlyList<string> arguments, CancellationToken cancellationToken)
     {
         // az is found through PATH on purpose: its install location differs between a developer
         // machine and the GitHub runner.
 #pragma warning disable S4036
-        var startInfo = new ProcessStartInfo("az")
+        var startInfo = new ProcessStartInfo(executable)
 #pragma warning restore S4036
         {
             RedirectStandardOutput = true,
