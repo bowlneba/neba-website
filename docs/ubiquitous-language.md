@@ -1357,7 +1357,7 @@ Phase 1 stores the configuration. Phase 2 computes the field and each Stage's ou
 - A job writes a Stage's output only while the Stage is not Official. A result event for an Official Stage re-runs the computation in memory and only marks the Stage Stale if the output differs
 - A Stale Stage does not become Official on its own
 
-**In Code**: `StageStatus` (SmartEnum: `Pending`, `Computed`, `Official`), `SeriesStage.Status`, `ComputedAt`, `OfficialAt`. The make-official job (`MakeDueStagesOfficial`) runs on a schedule; `OfficialDueAt` is when a Computed Stage will become Official. The phase 1 code still names the third value `Announced`; phase 2 renames it.
+**In Code**: `StageStatus` (SmartEnum: `Pending`, `Computed`, `Official`), `SeriesStage.Status`, `ComputedAt`, `OfficialAt`. The make-official job (`MakeDueStagesOfficial`) runs on a schedule; `OfficialDueAt` is when a Computed Stage will become Official.
 
 ---
 

@@ -64,9 +64,9 @@ For a fresh session. The file is about 7,500 lines because it holds both code dr
 
 **Progress** (tick as each commit lands; a fresh session resumes at the first unchecked box)
 
-- [ ] 1 Add the Series advancement plan and mockups
-- [ ] 2 Update the Series language for advancement
-- [ ] 3 Rename the Stage status Announced to Official
+- [x] 1 Add the Series advancement plan and mockups
+- [x] 2 Update the Series language for advancement
+- [x] 3 Rename the Stage status Announced to Official
 - [ ] 4 Add the Series advancement tables and the Version token
 - [ ] 5 Add the four advancement computations
 - [ ] 6 Add advancement to the Series aggregate
