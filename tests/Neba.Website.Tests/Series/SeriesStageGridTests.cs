@@ -1,3 +1,5 @@
+using System.Reflection;
+
 using Bunit;
 
 using Microsoft.AspNetCore.Components;
@@ -281,5 +283,113 @@ public sealed class SeriesStageGridTests : IDisposable
 
         // Assert
         _changes.ShouldBe(3);
+    }
+
+    // ── Locked: a cancelled Stage may go ──────────────────────────────────
+
+    [Fact(DisplayName = "A read-only row that is removable should show the remove button and the cancelled note")]
+    public void ReadOnly_ShouldShowRemoveButtonAndNote_ForRemovableRow()
+    {
+        // Arrange
+        List<SeriesStageRowModel> rows =
+        [
+            new() { TournamentId = "t1" },
+            new() { TournamentId = "t2", RemovableWhileLocked = true },
+        ];
+
+        // Act
+        var cut = Render(rows, readOnly: true);
+
+        // Assert
+        var items = cut.FindAll("li.series-grid__row");
+        items[0].QuerySelector("[data-testid='stage-remove-cancelled']").ShouldBeNull();
+        items[0].QuerySelector("[data-testid='stage-cancelled-note']").ShouldBeNull();
+        var button = items[1].QuerySelector("button[data-testid='stage-remove-cancelled']");
+        button.ShouldNotBeNull();
+        button.GetAttribute("aria-label").ShouldBe("Stage 2 remove");
+        items[1].QuerySelector("[data-testid='stage-cancelled-note']")!.TextContent.ShouldBe("Tournament cancelled: remove this Stage");
+        cut.FindAll("button").Count.ShouldBe(1);
+    }
+
+    [Fact(DisplayName = "Removing a removable read-only row should drop it, clear the other rows' errors and raise OnChanged")]
+    public async Task ReadOnly_Remove_ShouldDropRowClearErrorsAndRaiseOnChanged()
+    {
+        // Arrange
+        var first = new SeriesStageRowModel { TournamentId = "t1" };
+        first.Errors.Add("An old error.");
+        var second = new SeriesStageRowModel { TournamentId = "t2", RemovableWhileLocked = true };
+        var third = new SeriesStageRowModel { TournamentId = "t3" };
+        third.Errors.Add("Another old error.");
+        List<SeriesStageRowModel> rows = [first, second, third];
+        var cut = Render(rows, readOnly: true);
+
+        // Act
+        await cut.Find("button[aria-label='Stage 2 remove']").ClickAsync();
+
+        // Assert
+        rows.Select(r => r.TournamentId).ShouldBe(["t1", "t3"]);
+        first.Errors.ShouldBeEmpty();
+        third.Errors.ShouldBeEmpty();
+        _changes.ShouldBe(1);
+        cut.FindAll("li.series-grid__row").Count.ShouldBe(2);
+        cut.FindAll("[data-testid='stage-cancelled-note']").ShouldBeEmpty();
+    }
+
+    [Fact(DisplayName = "A read-only row that is not removable should render no remove button and no note")]
+    public void ReadOnly_ShouldRenderNoButton_ForNonRemovableRow()
+    {
+        // Arrange
+        List<SeriesStageRowModel> rows = [new() { TournamentId = "t1" }, new() { TournamentId = "t2" }];
+
+        // Act
+        var cut = Render(rows, readOnly: true);
+
+        // Assert
+        cut.FindAll("button").ShouldBeEmpty();
+        cut.FindAll("[data-testid='stage-remove-cancelled']").ShouldBeEmpty();
+        cut.FindAll("[data-testid='stage-cancelled-note']").ShouldBeEmpty();
+    }
+
+    [Fact(DisplayName = "Remove should change nothing for a non-removable row while read-only")]
+    public async Task ReadOnly_Remove_ShouldChangeNothing_ForNonRemovableRow()
+    {
+        // Arrange
+        var first = new SeriesStageRowModel { TournamentId = "t1" };
+        first.Errors.Add("Keep this error.");
+        var second = new SeriesStageRowModel { TournamentId = "t2", RemovableWhileLocked = true };
+        List<SeriesStageRowModel> rows = [first, second];
+        var cut = Render(rows, readOnly: true);
+        var remove = typeof(SeriesStageGrid).GetMethod("Remove", BindingFlags.Instance | BindingFlags.NonPublic)!;
+
+        // Act
+        await cut.InvokeAsync(() => (Task)remove.Invoke(cut.Instance, [0])!);
+
+        // Assert
+        rows.ShouldBe([first, second]);
+        first.Errors.ShouldBe(["Keep this error."]);
+        _changes.ShouldBe(0);
+    }
+
+    [Fact(DisplayName = "An editable grid should keep the existing remove behavior and show no cancelled note")]
+    public async Task Editable_ShouldRemoveAsBefore_AndShowNoNote_WhenFlagSet()
+    {
+        // Arrange
+        List<SeriesStageRowModel> rows =
+        [
+            new() { TournamentId = "t1", RemovableWhileLocked = true },
+            new() { TournamentId = "t2" },
+        ];
+        var cut = Render(rows);
+
+        // Assert (before)
+        cut.FindAll("[data-testid='stage-cancelled-note']").ShouldBeEmpty();
+        cut.FindAll("[data-testid='stage-remove-cancelled']").ShouldBeEmpty();
+
+        // Act
+        await cut.Find("button[aria-label='Stage 2 remove']").ClickAsync();
+
+        // Assert
+        rows.Select(r => r.TournamentId).ShouldBe(["t1"]);
+        _changes.ShouldBe(1);
     }
 }

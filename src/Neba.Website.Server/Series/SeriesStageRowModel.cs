@@ -9,6 +9,9 @@ public sealed class SeriesStageRowModel
     /// <summary>Existing Stage ID on edit; null for a new row.</summary>
     public string? StageId { get; init; }
 
+    /// <summary>A locked Series' Pending Stage whose tournament was cancelled: the grid still lets the admin remove it. Never sent to the API.</summary>
+    public bool RemovableWhileLocked { get; set; }
+
     /// <summary>Qualifying, Survivor or Placement.</summary>
     public string Kind { get; set; } = StageKinds.Qualifying;
     /// <summary>The tournament this Stage uses, or null until chosen.</summary>

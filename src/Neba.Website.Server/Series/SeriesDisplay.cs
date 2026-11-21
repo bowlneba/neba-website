@@ -201,6 +201,8 @@ internal static class SeriesDisplay
 
     public const string DefaultConflictMessage = "This Series changed after you loaded it. Your change was not saved. Review the Stage and try again.";
     public const string AdvancementReloadFailed = "The Stage status could not refresh. Reload the page to see the latest.";
+    public const string CancelledStageNote = "Tournament cancelled: remove this Stage";
+    public const string CancelledCheckFailed = "A Stage whose tournament was cancelled can't be removed until this check works. Reload the page to try again.";
     public const string StaleNote = "An earlier Stage changed after this Stage was official. Its output has not changed. Recompute from here to refresh it.";
     public const string StaleHint = "An earlier Stage changed after this Stage was official.";
     public const string NoFieldEntries = "No bowlers in the field from this Stage.";

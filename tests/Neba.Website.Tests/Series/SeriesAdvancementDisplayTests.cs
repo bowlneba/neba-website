@@ -870,6 +870,14 @@ public sealed class SeriesAdvancementDisplayTests
         SeriesDisplay.SlotClearedMessage.ShouldBe("Slot cleared. The Backfill will refill it.");
     }
 
+    [Fact(DisplayName = "The cancelled Stage messages should read as written")]
+    public void CancelledMessages_ShouldReadAsWritten()
+    {
+        // Arrange & Act & Assert
+        SeriesDisplay.CancelledStageNote.ShouldBe("Tournament cancelled: remove this Stage");
+        SeriesDisplay.CancelledCheckFailed.ShouldBe("A Stage whose tournament was cancelled can't be removed until this check works. Reload the page to try again.");
+    }
+
     // ---- Culture ----
 
     [Fact(DisplayName = "Advancement text should stay in English and US format under another current culture")]
