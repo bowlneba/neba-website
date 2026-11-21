@@ -258,10 +258,10 @@ public sealed class SeriesAdvancementOutputTests : IDisposable
         Output(cut, "q1").QuerySelector("[data-testid='stage-overrides']").ShouldBeNull();
     }
 
-    [Theory(DisplayName = "Should render no Add bowler, Clear slot or Remove override control for a Manager or an Admin")]
-    [InlineData(false)]
-    [InlineData(true)]
-    public async Task Qualifying_ShouldRenderNoOverrideControls(bool admin)
+    [Theory(DisplayName = "Should render Add bowler, Clear slot and Remove override for an Admin and none of them for a Manager")]
+    [InlineData(false, 0)]
+    [InlineData(true, 1)]
+    public async Task Qualifying_ShouldRenderOverrideControls_OnlyForAdmin(bool admin, int expectedEach)
     {
         // Arrange
         var stage = StageAdvancementResponseFactory.Create(stageId: "q1", status: "Computed", overrides: [StageOverrideResponseFactory.Create()], entries:
@@ -274,10 +274,10 @@ public sealed class SeriesAdvancementOutputTests : IDisposable
 
         // Assert
         var buttonTexts = cut.FindAll("button").Select(b => b.TextContent).ToList();
-        buttonTexts.ShouldNotContain(t => t.Contains("Add bowler", StringComparison.Ordinal));
-        buttonTexts.ShouldNotContain(t => t.Contains("Clear slot", StringComparison.Ordinal));
-        buttonTexts.ShouldNotContain(t => t.Contains("Remove override", StringComparison.Ordinal));
-        Output(cut, "q1").QuerySelectorAll("button").ShouldBeEmpty();
+        buttonTexts.Count(t => t.Contains("Add bowler", StringComparison.Ordinal)).ShouldBe(expectedEach);
+        buttonTexts.Count(t => t.Contains("Clear slot", StringComparison.Ordinal)).ShouldBe(expectedEach);
+        buttonTexts.Count(t => t.Contains("Remove override", StringComparison.Ordinal)).ShouldBe(expectedEach);
+        Output(cut, "q1").QuerySelectorAll("button").Length.ShouldBe(expectedEach * 3);
     }
 
     // ---- Group 5: Survivor output ----

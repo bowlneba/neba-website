@@ -16,8 +16,13 @@ else
         {
             <p class="series-output__summary" data-testid="stage-slots"><strong>@SeriesDisplay.SlotsLead(Stage.SlotCount ?? 0)</strong>@SeriesDisplay.VacantLabel(Stage.VacantSlotCount ?? 0)</p>
             <div class="series-output__tools">
-                @* Commit 23 adds the Add bowler button here. *@
                 <span class="series-output__hint">@SeriesDisplay.EntriesHeading(Stage.IsLastQualifying)</span>
+                @if (Stage.CanAddOverride)
+                {
+                    <button type="button" class="neba-btn neba-btn-secondary neba-btn-sm" data-testid="stage-add-bowler"
+                            aria-label="@SeriesDisplay.AddBowlerLabel(Stage.Order)"
+                            disabled="@IsBusy" @onclick="OnAddBowler">Add bowler</button>
+                }
             </div>
 
             @if (Stage.Entries.Count == 0)
@@ -34,7 +39,10 @@ else
                                 <th scope="col">Bowler</th>
                                 <th scope="col">Source</th>
                                 <th scope="col">Backfill points</th>
-                                @* Commit 23 adds the Actions column (Clear slot) for Series.ManageAdvancement holders. *@
+                                @if (CanManage)
+                                {
+                                    <th scope="col">Actions</th>
+                                }
                             </tr>
                         </thead>
                         <tbody>
@@ -45,6 +53,17 @@ else
                                     <td>@entry.BowlerName</td>
                                     <td class="@SeriesDisplay.SourceClass(entry)">@SeriesDisplay.EntrySource(entry)</td>
                                     <td class="series-output__num">@SeriesDisplay.Points(entry.BackfillPoints)</td>
+                                    @if (CanManage)
+                                    {
+                                        <td>
+                                            @if (entry.CanClear)
+                                            {
+                                                <button type="button" class="series-act" data-testid="entry-clear" data-bowler-id="@entry.BowlerId"
+                                                        aria-label="@SeriesDisplay.ClearSlotLabel(entry.BowlerName)"
+                                                        disabled="@IsBusy" @onclick="@(() => OnClearSlot.InvokeAsync(entry))">Clear slot</button>
+                                            }
+                                        </td>
+                                    }
                                 </tr>
                             }
                         </tbody>
@@ -64,7 +83,10 @@ else
                                 <th scope="col">Reason</th>
                                 <th scope="col">Added</th>
                                 <th scope="col">Status</th>
-                                @* Commit 23 adds the Actions column (Remove override) for Series.ManageAdvancement holders. *@
+                                @if (CanManage)
+                                {
+                                    <th scope="col">Actions</th>
+                                }
                             </tr>
                         </thead>
                         <tbody>
@@ -85,6 +107,17 @@ else
                                             <span class="series-output__inactive">@SeriesDisplay.OverrideStatus(false)</span>
                                         }
                                     </td>
+                                    @if (CanManage)
+                                    {
+                                        <td>
+                                            @if (Stage.CanRemoveOverride)
+                                            {
+                                                <button type="button" class="series-act" data-testid="override-remove" data-override-id="@item.OverrideId"
+                                                        aria-label="@SeriesDisplay.RemoveOverrideLabel(item.BowlerName)"
+                                                        disabled="@IsBusy" @onclick="@(() => OnRemoveOverride.InvokeAsync(item))">Remove override</button>
+                                            }
+                                        </td>
+                                    }
                                 </tr>
                             }
                         </tbody>
@@ -178,4 +211,24 @@ else
     /// <summary>The Series' Placement positions (only the Placement Stage shows them).</summary>
     [Parameter, EditorRequired]
     public IReadOnlyList<PositionViewModel> Positions { get; set; } = [];
+
+    /// <summary>Holds Series.ManageAdvancement: show the Actions columns.</summary>
+    [Parameter, EditorRequired]
+    public bool CanManage { get; set; }
+
+    /// <summary>True while a write runs; the action buttons disable.</summary>
+    [Parameter, EditorRequired]
+    public bool IsBusy { get; set; }
+
+    /// <summary>Raised when the user asks to add a bowler.</summary>
+    [Parameter, EditorRequired]
+    public EventCallback OnAddBowler { get; set; }
+
+    /// <summary>Raised with the entry whose slot the user asks to clear.</summary>
+    [Parameter, EditorRequired]
+    public EventCallback<FieldEntryViewModel> OnClearSlot { get; set; }
+
+    /// <summary>Raised with the override the user asks to remove.</summary>
+    [Parameter, EditorRequired]
+    public EventCallback<StageOverrideViewModel> OnRemoveOverride { get; set; }
 }

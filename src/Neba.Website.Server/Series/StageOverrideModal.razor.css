@@ -1,0 +1,34 @@
+.stage-override__lead { margin: 0 0 1rem; color: var(--neba-text-muted); font-size: 0.875rem; }
+.stage-override__field { margin-bottom: 0.875rem; }
+.stage-override__label { display: block; font-weight: 600; font-size: 0.875rem; margin-bottom: 0.375rem; }
+.stage-override__required { margin-left: 0.25rem; font-size: 0.75rem; font-weight: 400; color: var(--neba-gray-500); }
+
+.stage-override__readonly {
+    background: var(--neba-surface-high);
+    border-radius: var(--neba-radius);
+    padding: 0.625rem 0.75rem;
+    font-size: 0.875rem;
+}
+
+.stage-override__reason { min-height: 5.5rem; resize: vertical; }
+
+.stage-override__hint {
+    display: flex;
+    justify-content: space-between;
+    gap: 0.75rem;
+    font-size: 0.8125rem;
+    color: var(--neba-text-muted);
+    margin-top: 0.25rem;
+}
+
+.stage-override__count--over { color: var(--neba-accent-red); font-weight: 600; }
+.stage-override__error { display: block; font-size: 0.875rem; color: var(--neba-accent-red); margin-top: 0.25rem; }
+.stage-override__actions { display: flex; justify-content: flex-end; gap: 0.5rem; flex-wrap: wrap; }
+
+/* The list opens inline so the modal body never clips it (matters on a phone). The panel belongs to
+   NebaAutocomplete, so ::deep reaches it from the .stage-override wrapper, which carries this component's scope. */
+.stage-override ::deep .neba-autocomplete-panel {
+    position: static;
+    margin-top: 0.375rem;
+    max-height: 12.5rem;
+}

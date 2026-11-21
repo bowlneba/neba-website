@@ -536,12 +536,12 @@ public sealed class SeriesWriteLifecycleTests : IDisposable
         requests.Select(r => r.Recomputation.Version).ShouldBe([7, 7]);
     }
 
-    // ---- Commit 23 adds the override controls ----
+    // ---- Override controls by permission ----
 
-    [Theory(DisplayName = "Should render no Add bowler, Clear slot or Remove override control for a Manager or an Admin")]
-    [InlineData(false)]
-    [InlineData(true)]
-    public async Task Overrides_ShouldHaveNoControls_ForManagerOrAdmin(bool admin)
+    [Theory(DisplayName = "Should render Add bowler and Remove override on the Qualifying Stage for an Admin and no override control for a Manager")]
+    [InlineData(false, 0, 0)]
+    [InlineData(true, 1, 2)]
+    public async Task Overrides_ShouldGateControls_ByPermission(bool admin, int expectedAddButtons, int expectedRemoveButtons)
     {
         // Arrange
         var advancement = SeriesAdvancementResponseFactory.Create(
@@ -576,9 +576,10 @@ public sealed class SeriesWriteLifecycleTests : IDisposable
         var labels = cut.FindAll("button")
             .Select(b => (b.TextContent + " " + b.GetAttribute("aria-label")).ToUpperInvariant())
             .ToList();
-        labels.ShouldNotContain(l => l.Contains("ADD BOWLER", StringComparison.Ordinal));
+        labels.Count(l => l.Contains("ADD BOWLER", StringComparison.Ordinal)).ShouldBe(expectedAddButtons);
+        labels.Count(l => l.Contains("REMOVE OVERRIDE", StringComparison.Ordinal)).ShouldBe(expectedRemoveButtons);
         labels.ShouldNotContain(l => l.Contains("CLEAR SLOT", StringComparison.Ordinal));
-        labels.ShouldNotContain(l => l.Contains("REMOVE OVERRIDE", StringComparison.Ordinal));
+        SeriesDetailHost.Card(cut, "s1").QuerySelectorAll("[data-testid='stage-output'] button").ShouldBeEmpty();
         cut.FindAll("[data-testid='stage-overrides']").Count.ShouldBe(1);
     }
 }

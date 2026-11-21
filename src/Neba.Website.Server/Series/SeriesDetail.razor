@@ -100,7 +100,6 @@ else
                             }
 
                             <li @key="stage.Id" class="@SeriesDisplay.NodeClass(stage.Status, stage.IsTournamentCancelled)">
-                                @* Commit 23 attaches the Add bowler, Clear slot and Remove override callbacks here. *@
                                 <SeriesStageCard Stage="@stage"
                                                  TournamentName="@detail.TournamentName"
                                                  TournamentHref="@TournamentHref(detail)"
@@ -113,7 +112,13 @@ else
                                                  OnToggle="@(() => ToggleStage(stage.Id))"
                                                  OnRecompute="@(() => StartRecomputeAsync(stage))"
                                                  OnPickSquad="@(() => OpenSquadPickerAsync(stage))">
-                                    <SeriesStageOutput Stage="@stage" Positions="@_advancement.Positions" />
+                                    <SeriesStageOutput Stage="@stage"
+                                                       Positions="@_advancement.Positions"
+                                                       CanManage="@_canManage"
+                                                       IsBusy="@_isWriting"
+                                                       OnAddBowler="@(() => OpenAddOverrideAsync(stage))"
+                                                       OnClearSlot="@(entry => OpenClearOverride(stage, entry))"
+                                                       OnRemoveOverride="@(item => OpenRemoveOverride(stage, item))" />
                                 </SeriesStageCard>
                             </li>
                         }
@@ -198,7 +203,30 @@ else
                          OnClose="CloseSquadPicker"
                          OnSubmitRequestedAsync="SubmitSquadAsync" />
 
-        @* Commit 23 adds the StageOverrideModal and the remove-override confirm here. *@
+        @if (_canManage)
+        {
+            <StageOverrideModal IsOpen="@(_overrideTarget is not null)"
+                                Kind="@(_overrideTarget?.Kind ?? OverrideKinds.Add)"
+                                StageOrder="@(OverrideStage?.Order ?? 0)"
+                                TournamentName="@(OverrideDetail?.TournamentName ?? string.Empty)"
+                                BowlerId="@_overrideTarget?.Entry?.BowlerId"
+                                BowlerName="@(_overrideTarget?.Entry?.BowlerName ?? string.Empty)"
+                                Place="@_overrideTarget?.Entry?.Place"
+                                Choices="@_addChoices"
+                                IsLoadingChoices="@_isResultsLoading"
+                                ChoicesError="@_resultsError"
+                                OnClose="CloseOverrideModal"
+                                OnSubmitRequestedAsync="SubmitOverrideAsync" />
+
+            <ConfirmActionModal IsOpen="@(_removeTarget is not null)"
+                                Title="Remove this override?"
+                                Message="@RemoveMessage"
+                                ConfirmLabel="Remove override"
+                                BusyLabel="Removing..."
+                                IsBusy="@_isWriting"
+                                OnConfirm="ConfirmRemoveAsync"
+                                OnCancel="CancelRemove" />
+        }
 
         <ConfirmActionModal IsOpen="@(_recomputeTarget is not null)"
                             Title="@RecomputeTitle"

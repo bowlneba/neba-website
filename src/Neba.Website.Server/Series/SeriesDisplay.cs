@@ -205,6 +205,7 @@ internal static class SeriesDisplay
     public const string StaleHint = "An earlier Stage changed after this Stage was official.";
     public const string NoFieldEntries = "No bowlers in the field from this Stage.";
     public const string NoSquads = "No squads yet. They arrive when the desktop software sends this tournament's squads.";
+    public const string OverrideRemovedMessage = "Override removed.";
     public const string SlotClearedMessage = "Slot cleared. The Backfill will refill it.";
 
     private static string Num(int n) => n.ToString(Culture);
@@ -307,6 +308,15 @@ internal static class SeriesDisplay
 
     /// <summary>"Pick squad for Stage 3".</summary>
     public static string PickSquadLabel(int order) => "Pick squad for Stage " + Num(order);
+
+    /// <summary>"Add bowler to Stage 2".</summary>
+    public static string AddBowlerLabel(int order) => "Add bowler to Stage " + Num(order);
+
+    /// <summary>"Clear slot for Marcus Alvarez".</summary>
+    public static string ClearSlotLabel(string bowlerName) => "Clear slot for " + bowlerName;
+
+    /// <summary>"Remove override for Marcus Alvarez".</summary>
+    public static string RemoveOverrideLabel(string bowlerName) => "Remove override for " + bowlerName;
 
     /// <summary>"Recompute from Stage 3".</summary>
     public static string RecomputeLabel(int order) => "Recompute from Stage " + Num(order);

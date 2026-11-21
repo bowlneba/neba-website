@@ -10,8 +10,10 @@ using Microsoft.Extensions.Logging.Abstractions;
 using Neba.Api.Contracts;
 using Neba.Api.Contracts.Security;
 using Neba.Api.Contracts.Series;
+using Neba.Api.Contracts.Series.CreateStageOverride;
 using Neba.Api.Contracts.Series.GetSeries;
 using Neba.Api.Contracts.Series.GetSeriesAdvancement;
+using Neba.Api.Contracts.Series.ListStageResults;
 using Neba.Api.Contracts.Series.ListStageSquads;
 using Neba.Api.Contracts.Series.PickStageSquad;
 using Neba.Api.Contracts.Series.RecomputeSeriesAdvancement;
@@ -181,14 +183,28 @@ internal sealed class SeriesDetailHost : IDisposable
 
     /// <summary>A failed write whose problem details carry <paramref name="message"/> (409 gives Conflict, 422 gives Validation).</summary>
     public async Task<IApiResponse> RejectedWriteAsync(HttpStatusCode status, string message)
+        => Track(new StubApiResponse<object> { IsSuccessStatusCode = false, StatusCode = status, Error = await RejectionAsync(status, message) });
+
+    /// <summary>The same rejection for a write that returns a body (Create override).</summary>
+    public async Task<IApiResponse<CreatedStageOverrideResponse>> RejectedCreateAsync(HttpStatusCode status, string message)
+        => Track(new StubApiResponse<CreatedStageOverrideResponse> { IsSuccessStatusCode = false, StatusCode = status, Error = await RejectionAsync(status, message) });
+
+    /// <summary>A failed Create override with no body (ApiExecutor gives a 404 NotFound, anything else a Failure).</summary>
+    public IApiResponse<CreatedStageOverrideResponse> FailedCreate(HttpStatusCode status)
+        => Track(new StubApiResponse<CreatedStageOverrideResponse> { IsSuccessStatusCode = false, StatusCode = status });
+
+    /// <summary>A 201 for Create override.</summary>
+    public IApiResponse<CreatedStageOverrideResponse> Created(string overrideId = "ov-new", int version = 99)
+        => Track(Stub(HttpStatusCode.Created, new CreatedStageOverrideResponse { OverrideId = overrideId, Version = version }));
+
+    private static async Task<ApiException> RejectionAsync(HttpStatusCode status, string message)
     {
         using var request = new HttpRequestMessage(HttpMethod.Post, "https://api.example.com/series");
         using var body = new HttpResponseMessage(status)
         {
             Content = new StringContent("{\"status\":" + (int)status + ",\"title\":\"Error\",\"errors\":[{\"name\":\"generalErrors\",\"reason\":\"" + message + "\"}]}"),
         };
-        var exception = await ApiException.Create(request, HttpMethod.Post, body, new RefitSettings());
-        return Track(new StubApiResponse<object> { IsSuccessStatusCode = false, StatusCode = status, Error = exception });
+        return await ApiException.Create(request, HttpMethod.Post, body, new RefitSettings());
     }
 
     /// <summary>Sets up the recompute write for <paramref name="stageId"/>; returns the requests it receives.</summary>
@@ -248,6 +264,89 @@ internal sealed class SeriesDetailHost : IDisposable
 
     public void SetupSquadsPending(string stageId, TaskCompletionSource<IApiResponse<CollectionResponse<StageSquadSummaryResponse>>> completion)
         => Api.Setup(x => x.ListStageSquadsAsync(SeriesId, stageId, It.IsAny<CancellationToken>())).Returns(completion.Task);
+
+    /// <summary>A completed OK stage-results response.</summary>
+    public IApiResponse<CollectionResponse<StageResultSummaryResponse>> ResultsResponse(params StageResultSummaryResponse[] rows)
+        => Track(Stub(HttpStatusCode.OK, new CollectionResponse<StageResultSummaryResponse> { Items = rows }));
+
+    /// <summary>A failed stage-results response with no body.</summary>
+    public IApiResponse<CollectionResponse<StageResultSummaryResponse>> FailedResultsResponse(HttpStatusCode status)
+        => Track(Stub<CollectionResponse<StageResultSummaryResponse>>(status, null));
+
+    public void SetupResults(string stageId, params StageResultSummaryResponse[] rows)
+        => SetupResults(stageId, ResultsResponse(rows));
+
+    public void SetupResults(string stageId, IApiResponse<CollectionResponse<StageResultSummaryResponse>> response)
+        => Api.Setup(x => x.ListStageResultsAsync(SeriesId, stageId, It.IsAny<CancellationToken>())).ReturnsAsync(response);
+
+    /// <summary>The results calls for <paramref name="stageId"/> return <paramref name="responses"/> in order.</summary>
+    public void SetupResultsSequence(string stageId, params IApiResponse<CollectionResponse<StageResultSummaryResponse>>[] responses)
+    {
+        var sequence = Api.SetupSequence(x => x.ListStageResultsAsync(SeriesId, stageId, It.IsAny<CancellationToken>()));
+        foreach (var response in responses)
+        {
+            sequence.ReturnsAsync(response);
+        }
+    }
+
+    public void SetupResultsPending(string stageId, TaskCompletionSource<IApiResponse<CollectionResponse<StageResultSummaryResponse>>> completion)
+        => Api.Setup(x => x.ListStageResultsAsync(SeriesId, stageId, It.IsAny<CancellationToken>())).Returns(completion.Task);
+
+    public void VerifyResultsCalls(string stageId, Times times)
+        => Api.Verify(x => x.ListStageResultsAsync(SeriesId, stageId, It.IsAny<CancellationToken>()), times);
+
+    public void VerifyAnyResultsCalls(Times times)
+        => Api.Verify(x => x.ListStageResultsAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()), times);
+
+    /// <summary>Sets up Create override for <paramref name="stageId"/>; returns the requests it receives.</summary>
+    public List<CreateStageOverrideRequest> SetupCreateOverride(string stageId, Func<Task<IApiResponse<CreatedStageOverrideResponse>>> respond)
+    {
+        var requests = new List<CreateStageOverrideRequest>();
+        Api.Setup(x => x.CreateStageOverrideAsync(SeriesId, stageId, It.IsAny<CreateStageOverrideRequest>(), It.IsAny<CancellationToken>()))
+            .Returns((string _, string _, CreateStageOverrideRequest request, CancellationToken _) =>
+            {
+                requests.Add(request);
+                return respond();
+            });
+        return requests;
+    }
+
+    public List<CreateStageOverrideRequest> SetupCreateOverride(string stageId, IApiResponse<CreatedStageOverrideResponse> response)
+        => SetupCreateOverride(stageId, () => Task.FromResult(response));
+
+#pragma warning disable VSTHRD003 // The test owns the completion source and completes it itself.
+    /// <summary>The Create override write stays pending until the test completes <paramref name="completion"/>.</summary>
+    public List<CreateStageOverrideRequest> SetupCreateOverride(string stageId, TaskCompletionSource<IApiResponse<CreatedStageOverrideResponse>> completion)
+        => SetupCreateOverride(stageId, () => completion.Task);
+#pragma warning restore VSTHRD003
+
+    public void VerifyAnyCreateCalls(Times times)
+        => Api.Verify(x => x.CreateStageOverrideAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CreateStageOverrideRequest>(), It.IsAny<CancellationToken>()), times);
+
+    /// <summary>Sets up Remove override for <paramref name="stageId"/>; returns the (override id, version) pairs it receives.</summary>
+    public List<(string OverrideId, int Version)> SetupRemoveOverride(string stageId, Func<Task<IApiResponse>> respond)
+    {
+        var requests = new List<(string OverrideId, int Version)>();
+        Api.Setup(x => x.RemoveStageOverrideAsync(SeriesId, stageId, It.IsAny<string>(), It.IsAny<int>(), It.IsAny<CancellationToken>()))
+            .Returns((string _, string _, string overrideId, int version, CancellationToken _) =>
+            {
+                requests.Add((overrideId, version));
+                return respond();
+            });
+        return requests;
+    }
+
+    public List<(string OverrideId, int Version)> SetupRemoveOverride(string stageId, IApiResponse response)
+        => SetupRemoveOverride(stageId, () => Task.FromResult(response));
+
+#pragma warning disable VSTHRD003 // The test owns the completion source and completes it itself.
+    /// <summary>The Remove override write stays pending until the test completes <paramref name="completion"/>.</summary>
+    public List<(string OverrideId, int Version)> SetupRemoveOverride(string stageId, TaskCompletionSource<IApiResponse> completion)
+        => SetupRemoveOverride(stageId, () => completion.Task);
+#pragma warning restore VSTHRD003
+
+    public void VerifyAnyRemoveCalls(Times times)
+        => Api.Verify(x => x.RemoveStageOverrideAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<int>(), It.IsAny<CancellationToken>()), times);
 
     public void VerifySquadCalls(string stageId, Times times)
         => Api.Verify(x => x.ListStageSquadsAsync(SeriesId, stageId, It.IsAny<CancellationToken>()), times);
