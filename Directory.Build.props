@@ -24,7 +24,7 @@
     <!-- Single source of the release version: AssemblyVersion, FileVersion and InformationalVersion
          (which the log enricher reports as BuildVersion). Bump it on every change that deploys;
          CI checks it is greater than the latest v* tag. -->
-    <Version>1.2.1</Version>
+    <Version>1.2.2</Version>
 
     <!-- Six Labors license for ImageSharp; a build without one fails. In CI the SIXLABORS_LICENSE_KEY secret is
          the key. Locally, put sixlabors.lic in the repo root (git-ignored); the build only looks inside each
