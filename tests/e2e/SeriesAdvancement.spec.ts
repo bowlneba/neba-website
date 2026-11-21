@@ -82,8 +82,8 @@ async function dialogHasFocus(page: Page) {
   await expect(page.locator('[role="dialog"]:focus-within').first()).toBeVisible();
 }
 
-// Closing the dialog while the autocomplete is still starting its script throws in NebaAutocomplete and ends the
-// circuit (a site bug the report names). A search that returns options proves the script ran, so wait for one first.
+// NebaAutocomplete now survives a close during its script import. A search that returns options still proves the
+// script ran, so wait for one first to keep these tests from racing the import.
 async function waitForAutocomplete(page: Page) {
   await page.locator('#override-bowler').fill('a');
   await expect(page.locator('.neba-autocomplete-option').first()).toBeVisible();

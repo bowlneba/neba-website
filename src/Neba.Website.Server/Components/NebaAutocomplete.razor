@@ -60,6 +60,7 @@
     private IJSObjectReference? _jsModule;
     private DotNetObjectReference<NebaAutocomplete<TValue, TItem>>? _dotNetHelper;
 
+    private bool _disposed;
     private bool _isOpen;
     private string _filterText = string.Empty;
     private int _highlightedIndex;
@@ -152,9 +153,27 @@
         }
 
         _dotNetHelper = DotNetObjectReference.Create(this);
-        _jsModule = await JsRuntime.InvokeAsync<IJSObjectReference>(
-            "import", "./Components/NebaAutocomplete.razor.js");
-        await _jsModule.InvokeVoidAsync("initialize", _containerId, _dotNetHelper);
+
+        try
+        {
+            var module = await JsRuntime.InvokeAsync<IJSObjectReference>(
+                "import", "./Components/NebaAutocomplete.razor.js");
+
+            // The modal can close while the import runs. DisposeAsync has then already run and
+            // released the helper, so passing it to JS would throw and end the circuit.
+            if (_disposed)
+            {
+                await module.DisposeAsync();
+                return;
+            }
+
+            _jsModule = module;
+            await module.InvokeVoidAsync("initialize", _containerId, _dotNetHelper);
+        }
+        catch (Exception ex) when (ex is JSDisconnectedException or ObjectDisposedException or TaskCanceledException)
+        {
+            // The circuit or component went away mid-import; nothing to set up.
+        }
     }
 
     private string GetDisplayText(TItem item) => DisplayText(item);
@@ -258,6 +277,8 @@
 
     public async ValueTask DisposeAsync()
     {
+        _disposed = true;
+
         if (_jsModule is not null)
         {
             try
