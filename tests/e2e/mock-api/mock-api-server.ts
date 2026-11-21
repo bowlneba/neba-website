@@ -827,7 +827,7 @@ function mockAdvancementSeriesDetail(id: string, baseId: string): Record<string,
         id: stage.stageId,
         order: stage.order,
         kind,
-        status: stage.tournamentStatus,
+        status: stage.status, // the Stage's own advancement status, as the real GetSeries sends it
         advancingCount: count,
         squadDate: squad,
         squadStartTime: squad ? '09:30:00' : null,
@@ -1052,6 +1052,23 @@ async function handleAdvancementWrite(req: IncomingMessage, res: ServerResponse,
 }
 
 const OVERRIDE_KIND_CLEAR = 2;
+
+// An edit of an advancement fixture drops the Stages the request no longer lists (the cancelled-Stage removal).
+// Orders keep their numbers here: the fixture's tournament names are looked up by order.
+function removeAdvancementStagesNotSubmitted(seriesId: string, body: string): void {
+  const state = advFixtureBaseId(seriesId) ? advanceStates.get(seriesId) : undefined;
+  if (!state) return;
+
+  const submitted = (JSON.parse(body || '{}') as { series?: { stages?: { id?: string | null }[] } }).series?.stages;
+  if (!submitted) return;
+
+  const keep = new Set(submitted.map((stage) => stage.id));
+  const kept = state.stages.filter((stage) => keep.has(stage.stageId));
+  if (kept.length !== state.stages.length) {
+    state.stages = kept;
+    state.version++;
+  }
+}
 
 
 const SERIES_TOURNAMENT_QUALIFYING = {
@@ -3063,7 +3080,9 @@ async function handleRequest(req: IncomingMessage, res: ServerResponse): Promise
   if (req.method === 'PUT' && pathname.startsWith('/series/')) {
     if (sendMockOverrideErrorIfSet(res, pathname)) return;
 
-    lastRequestBodies.set('PUT ' + pathname, await readRequestBody(req));
+    const editBody = await readRequestBody(req);
+    lastRequestBodies.set('PUT ' + pathname, editBody);
+    removeAdvancementStagesNotSubmitted(pathname.slice('/series/'.length), editBody);
 
     res.writeHead(204);
     res.end();
