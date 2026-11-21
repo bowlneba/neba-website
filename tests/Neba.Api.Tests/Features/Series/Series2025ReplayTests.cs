@@ -101,11 +101,10 @@ public sealed class Series2025ReplayTests(AppDbContextFixture fixture)
     {
         await using var db = fixture.CreateDbContext();
 
-        return await CreateAdvancement(db).RunAsync(
+        return await CreateAdvancement(db).RunWithoutFactsAsync(
             replay.Series.Id,
             (series, _, now) => series.MakeDueOfficial(now.AddDays(3), Grace),
             SeriesAdvancement.AdminLockWait,
-            needsFacts: false,
             Ct);
     }
 

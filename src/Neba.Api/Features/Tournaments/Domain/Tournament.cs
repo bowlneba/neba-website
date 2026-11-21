@@ -658,7 +658,7 @@ public sealed class Tournament
 
     /// <summary>
     /// Signals that a sync finished writing this tournament's results. Call it after the <see cref="AddResult"/> loop on
-    /// every sync, including one that adds nothing, so a re-sync redelivers the event. Complete, Truncate and Cancel raise
+    /// every sync, including one that adds nothing, so a re-sync redelivers the event. Calls before one save raise one event. Complete, Truncate and Cancel raise
     /// nothing: in the legacy chain the results arrive after the status flips.
     /// </summary>
     public ErrorOr<Success> MarkResultsRecorded()
@@ -668,7 +668,11 @@ public sealed class Tournament
             return TournamentErrors.TournamentNotFinalized;
         }
 
-        AddDomainEvent(new TournamentResultsRecorded { TournamentId = Id });
+        // One pending event per save, so a second call before the save makes no second job.
+        if (!DomainEvents.OfType<TournamentResultsRecorded>().Any())
+        {
+            AddDomainEvent(new TournamentResultsRecorded { TournamentId = Id });
+        }
 
         return Result.Success;
     }

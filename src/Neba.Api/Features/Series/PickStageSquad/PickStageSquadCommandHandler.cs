@@ -15,7 +15,6 @@ internal sealed class PickStageSquadCommandHandler(SeriesAdvancement advancement
             command.SeriesId,
             (series, facts, now) => series.PickSquad(command.StageId, command.SquadId, command.Version, facts, now),
             SeriesAdvancement.AdminLockWait,
-            needsFacts: true,
             cancellationToken);
 
         return result.IsError ? result.Errors : Result.Updated;

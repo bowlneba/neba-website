@@ -58,7 +58,7 @@ internal sealed class AdvancementWriteContext(AppDbContextFixture fixture) : IAs
         var run = Harness.CreateRun(Reader());
 
         var result = await run.Run.RunAsync(
-            SeriesId, (series, facts, now) => series.Advance(Scenario.Qualifier.Id, facts, now), AdvancementRunHarness.Wait, true, ct);
+            SeriesId, (series, facts, now) => series.Advance(Scenario.Qualifier.Id, facts, now), AdvancementRunHarness.Wait, ct);
 
         result.IsError.ShouldBeFalse();
     }
@@ -68,8 +68,8 @@ internal sealed class AdvancementWriteContext(AppDbContextFixture fixture) : IAs
     {
         var run = Harness.CreateRun(FactsReaderDoubles.Untouched());
 
-        var result = await run.Run.RunAsync(
-            SeriesId, (series, _, now) => series.MakeDueOfficial(now.AddDays(3), Grace), AdvancementRunHarness.Wait, false, ct);
+        var result = await run.Run.RunWithoutFactsAsync(
+            SeriesId, (series, _, now) => series.MakeDueOfficial(now.AddDays(3), Grace), AdvancementRunHarness.Wait, ct);
 
         result.IsError.ShouldBeFalse();
         result.Value.OfficialStageIds.ShouldBe([Scenario.Stage(1).Id, Scenario.Stage(2).Id]);
@@ -85,7 +85,6 @@ internal sealed class AdvancementWriteContext(AppDbContextFixture fixture) : IAs
             SeriesId,
             (series, facts, now) => series.AddOverride(Scenario.Stage(1).Id, bowlerId, "Seeded.", "seed", version, facts, now),
             AdvancementRunHarness.Wait,
-            true,
             ct);
 
         result.IsError.ShouldBeFalse();

@@ -74,8 +74,9 @@ internal sealed class SyncTournamentResultsJob(
 
         await db.SaveChangesAsync(ct);
 
-        // The interceptor publishes on SavedChanges, which EF also calls on a save with no rows. This explicit call
-        // is a safety net: the interceptor clears the events first, so nothing publishes twice.
+        // EF skips SavedChanges on a save with no rows, so a re-sync that adds nothing would not reach the interceptor
+        // (SyncTournamentResultsJobTests pins this). When rows were saved, the interceptor has already cleared the
+        // events, so nothing publishes twice.
         domainEventPublisher.PublishAndClear(tournament);
 
         // Place == 1 results feed the champions list (ListChampionsQueryHandler) directly, in

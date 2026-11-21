@@ -34,8 +34,22 @@ internal sealed class SeriesAdvancement(
     /// <summary>The key every writer of a Series' advancement state locks on.</summary>
     internal static string LockKey(SeriesId seriesId) => $"series-advancement:{seriesId}";
 
-    public async Task<ErrorOr<AdvanceResult>> RunAsync(
-        SeriesId seriesId, AdvancementOperation operation, TimeSpan lockWait, bool needsFacts, CancellationToken cancellationToken)
+    /// <summary>Runs the operation with the facts read for the Series.</summary>
+    public Task<ErrorOr<AdvanceResult>> RunAsync(
+        SeriesId seriesId, AdvancementOperation operation, TimeSpan lockWait, CancellationToken cancellationToken)
+        => RunCoreAsync(seriesId, operation, lockWait, factsReader.ReadAsync, cancellationToken);
+
+    /// <summary>Runs an operation that reads no facts. It gets <see cref="AdvancementFacts.Empty"/>, and the reader is never called.</summary>
+    public Task<ErrorOr<AdvanceResult>> RunWithoutFactsAsync(
+        SeriesId seriesId, AdvancementOperation operation, TimeSpan lockWait, CancellationToken cancellationToken)
+        => RunCoreAsync(seriesId, operation, lockWait, (_, _) => Task.FromResult(AdvancementFacts.Empty), cancellationToken);
+
+    private async Task<ErrorOr<AdvanceResult>> RunCoreAsync(
+        SeriesId seriesId,
+        AdvancementOperation operation,
+        TimeSpan lockWait,
+        Func<SeriesAggregate, CancellationToken, Task<AdvancementFacts>> loadFacts,
+        CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(operation);
 
@@ -59,7 +73,7 @@ internal sealed class SeriesAdvancement(
             return SeriesErrors.NotFound(seriesId);
         }
 
-        var facts = needsFacts ? await factsReader.ReadAsync(series, cancellationToken) : AdvancementFacts.Empty;
+        var facts = await loadFacts(series, cancellationToken);
 
         var outcome = operation(series, facts, timeProvider.GetUtcNow());
         if (outcome.IsError || !outcome.Value.Changed)
@@ -95,7 +109,7 @@ internal sealed class SeriesAdvancement(
 
         if (seriesId is { } id)
         {
-            EnsureJobSucceeded(await RunAsync(id, operation, JobLockWait, needsFacts: true, cancellationToken));
+            EnsureJobSucceeded(await RunAsync(id, operation, JobLockWait, cancellationToken));
         }
     }
 

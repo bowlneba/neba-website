@@ -36,7 +36,7 @@ public sealed class SeriesAdvancementLockTests(AppDbContextFixture fixture)
 
     private static Task<ErrorOr<AdvanceResult>> RunAsync(
         AdvancementRun run, AdvancementScenario scenario, AdvancementOperation operation, TimeSpan? wait = null)
-        => run.Run.RunAsync(scenario.SeriesId, operation, wait ?? AdvancementRunHarness.Wait, needsFacts: false, TestContext.Current.CancellationToken);
+        => run.Run.RunWithoutFactsAsync(scenario.SeriesId, operation, wait ?? AdvancementRunHarness.Wait, TestContext.Current.CancellationToken);
 
     private static readonly AdvancementOperation NoChange = (_, _, _) => AdvanceResult.None;
 
@@ -204,12 +204,12 @@ public sealed class SeriesAdvancementLockTests(AppDbContextFixture fixture)
         string? seenName = null;
 
         // Act
-        var result = await queued.RunAsync(scenario.SeriesId, (series, _, _) =>
+        var result = await queued.RunWithoutFactsAsync(scenario.SeriesId, (series, _, _) =>
         {
             seenName = series.Name;
 
             return AdvanceResult.None;
-        }, AdvancementRunHarness.Wait, needsFacts: false, ct);
+        }, AdvancementRunHarness.Wait, ct);
 
         // Assert
         result.IsError.ShouldBeFalse();

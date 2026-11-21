@@ -15,11 +15,11 @@ public sealed class HangfireKeyedLockProviderTests : IDisposable
     private static readonly TimeSpan Wait = TimeSpan.FromMilliseconds(100);
 
     private readonly InMemoryStorage _jobStorage = new();
-    private readonly HangfireKeyedLockProvider _provider = new();
+    private readonly HangfireKeyedLockProvider _provider;
 
     public HangfireKeyedLockProviderTests()
     {
-        JobStorage.Current = _jobStorage;
+        _provider = new HangfireKeyedLockProvider(_jobStorage);
     }
 
     public void Dispose() => _jobStorage.Dispose();

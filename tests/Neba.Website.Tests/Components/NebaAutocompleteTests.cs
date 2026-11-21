@@ -1,6 +1,9 @@
 using Bunit;
 
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.JSInterop;
+
+using Moq;
 
 using Neba.TestFactory.Attributes;
 using Neba.Website.Server.Components;
@@ -202,6 +205,39 @@ public sealed class NebaAutocompleteTests : IDisposable
 
         // Assert
         cut.FindAll(".extra").ShouldBeEmpty();
+    }
+
+    [Fact(DisplayName = "Should dispose the JS module and never initialize it when the component is disposed while the import is pending")]
+    public async Task Render_ShouldDisposeModuleWithoutInitializing_WhenDisposedDuringImport()
+    {
+        // Arrange
+        var import = new TaskCompletionSource<IJSObjectReference>();
+        var module = new Mock<IJSObjectReference>(MockBehavior.Strict);
+        module.Setup(m => m.DisposeAsync()).Returns(ValueTask.CompletedTask);
+
+        var jsRuntime = new Mock<IJSRuntime>(MockBehavior.Strict);
+        jsRuntime
+            .Setup(js => js.InvokeAsync<IJSObjectReference>("import", It.IsAny<object?[]?>()))
+            .Returns(() => new ValueTask<IJSObjectReference>(import.Task));
+
+        using var ctx = new BunitContext();
+        ctx.Services.AddSingleton(jsRuntime.Object);
+
+        var cut = ctx.Render<NebaAutocomplete<string, Item>>(p =>
+        {
+            p.Add(x => x.Id, "test-autocomplete");
+            p.Add(x => x.Items, _items);
+            p.Add(x => x.DisplayText, (Item i) => i.Name);
+            p.Add(x => x.ItemValue, (Item i) => i.Id);
+        });
+
+        // Act
+        await cut.Instance.DisposeAsync();
+        import.SetResult(module.Object);
+
+        // Assert
+        await cut.WaitForAssertionAsync(() => module.Verify(m => m.DisposeAsync(), Times.Once));
+        module.VerifyNoOtherCalls();
     }
 
     private IRenderedComponent<NebaAutocomplete<string, Item>> RenderAutocomplete(

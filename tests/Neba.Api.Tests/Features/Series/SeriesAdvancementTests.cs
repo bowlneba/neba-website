@@ -42,8 +42,12 @@ public sealed class SeriesAdvancementTests(AppDbContextFixture fixture)
         => (series, _, now) => series.MakeDueOfficial(now.AddDays(3), Grace);
 
     private static Task<ErrorOr<AdvanceResult>> RunAsync(
-        AdvancementRun run, AdvancementScenario scenario, AdvancementOperation operation, bool needsFacts = true)
-        => run.Run.RunAsync(scenario.SeriesId, operation, AdvancementRunHarness.Wait, needsFacts, TestContext.Current.CancellationToken);
+        AdvancementRun run, AdvancementScenario scenario, AdvancementOperation operation)
+        => run.Run.RunAsync(scenario.SeriesId, operation, AdvancementRunHarness.Wait, TestContext.Current.CancellationToken);
+
+    private static Task<ErrorOr<AdvanceResult>> RunWithoutFactsAsync(
+        AdvancementRun run, AdvancementScenario scenario, AdvancementOperation operation)
+        => run.Run.RunWithoutFactsAsync(scenario.SeriesId, operation, AdvancementRunHarness.Wait, TestContext.Current.CancellationToken);
 
     private async Task<(AdvancementScenario Scenario, AdvancementFactsScript Script)> SeedAsync()
     {
@@ -235,7 +239,7 @@ public sealed class SeriesAdvancementTests(AppDbContextFixture fixture)
         var (scenario, script) = await SeedAsync();
         (await AdvanceQualifierAsync(scenario, script)).IsError.ShouldBeFalse();
         var official = _harness.CreateRun(FactsReaderDoubles.Untouched());
-        (await RunAsync(official, scenario, MakeOfficial(), needsFacts: false)).Value.OfficialStageIds
+        (await RunWithoutFactsAsync(official, scenario, MakeOfficial())).Value.OfficialStageIds
             .ShouldBe([scenario.Stage(1).Id, scenario.Stage(2).Id]);
         var versionBefore = (await StoredAsync(scenario)).Version;
         var firstTwo = script.QualifierPlaces.Take(2).ToList();
@@ -268,7 +272,7 @@ public sealed class SeriesAdvancementTests(AppDbContextFixture fixture)
         var (scenario, script) = await SeedAsync();
         (await AdvanceQualifierAsync(scenario, script)).IsError.ShouldBeFalse();
         var official = _harness.CreateRun(FactsReaderDoubles.Untouched());
-        (await RunAsync(official, scenario, MakeOfficial(), needsFacts: false)).IsError.ShouldBeFalse();
+        (await RunWithoutFactsAsync(official, scenario, MakeOfficial())).IsError.ShouldBeFalse();
         var versionBefore = (await StoredAsync(scenario)).Version;
         var run = _harness.CreateRun(FactsReaderDoubles.Reading(script.Build), cache: SeriesCache.Untouched());
 
@@ -450,7 +454,6 @@ public sealed class SeriesAdvancementTests(AppDbContextFixture fixture)
                 return AdvanceResult.None;
             },
             AdvancementRunHarness.Wait,
-            needsFacts: true,
             TestContext.Current.CancellationToken);
 
         // Assert
@@ -460,8 +463,8 @@ public sealed class SeriesAdvancementTests(AppDbContextFixture fixture)
         handle.Verify(h => h.Dispose(), Times.Once);
     }
 
-    [Fact(DisplayName = "RunAsync should pass empty facts and never call the facts reader when needsFacts is false")]
-    public async Task RunAsync_ShouldNotReadFacts_WhenNeedsFactsIsFalse()
+    [Fact(DisplayName = "RunWithoutFactsAsync should pass empty facts and never call the facts reader")]
+    public async Task RunWithoutFactsAsync_ShouldNotReadFacts()
     {
         // Arrange
         var (scenario, _) = await SeedAsync();
@@ -470,12 +473,12 @@ public sealed class SeriesAdvancementTests(AppDbContextFixture fixture)
         AdvancementFacts? received = null;
 
         // Act
-        var result = await RunAsync(run, scenario, (_, facts, _) =>
+        var result = await RunWithoutFactsAsync(run, scenario, (_, facts, _) =>
         {
             received = facts;
 
             return AdvanceResult.None;
-        }, needsFacts: false);
+        });
 
         // Assert
         result.IsError.ShouldBeFalse();
@@ -483,8 +486,8 @@ public sealed class SeriesAdvancementTests(AppDbContextFixture fixture)
         FactsReaderDoubles.VerifyReadTimes(reader, Times.Never);
     }
 
-    [Fact(DisplayName = "RunAsync should read the facts once and pass them to the operation when needsFacts is true")]
-    public async Task RunAsync_ShouldReadFactsOnce_WhenNeedsFactsIsTrue()
+    [Fact(DisplayName = "RunAsync should read the facts once and pass them to the operation")]
+    public async Task RunAsync_ShouldReadFactsOnce()
     {
         // Arrange
         var (scenario, script) = await SeedAsync();

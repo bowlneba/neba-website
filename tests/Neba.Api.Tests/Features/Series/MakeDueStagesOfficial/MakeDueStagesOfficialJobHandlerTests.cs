@@ -163,7 +163,6 @@ public sealed class MakeDueStagesOfficialJobHandlerTests(AppDbContextFixture fix
             scenario.SeriesId,
             (series, facts, now) => series.Advance(from.Id, facts, now),
             AdvancementRunHarness.Wait,
-            needsFacts: true,
             TestContext.Current.CancellationToken);
 
         result.IsError.ShouldBeFalse();

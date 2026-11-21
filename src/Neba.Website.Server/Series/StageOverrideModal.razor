@@ -35,7 +35,7 @@
                 <div class="stage-override__field">
                     @if (Kind == OverrideKinds.Add)
                     {
-                        <label for="override-bowler" class="stage-override__label">Bowler <span class="stage-override__required">(required)</span></label>
+                        <FormLabel TValue="string" TargetId="override-bowler" Required="true">Bowler</FormLabel>
                         @if (IsLoadingChoices)
                         {
                             <div aria-busy="true" data-testid="stage-override-loading">
@@ -71,6 +71,8 @@
                 </div>
 
                 <div class="stage-override__field">
+                    @* @oninput on purpose: the character count and the Save button follow every keystroke, which a blur-bound box cannot do.
+                       The count and Save state are display only; the text itself is never filtered or advanced per key. *@
                     <FormLabel TargetId="override-reason" For="@(() => _model.Reason)">Reason</FormLabel>
                     <textarea id="override-reason" class="neba-textarea stage-override__reason" maxlength="@ReasonInputLimit"
                               data-testid="stage-override-reason"

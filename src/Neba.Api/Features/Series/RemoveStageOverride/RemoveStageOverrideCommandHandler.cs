@@ -15,7 +15,6 @@ internal sealed class RemoveStageOverrideCommandHandler(SeriesAdvancement advanc
             command.SeriesId,
             (series, facts, now) => series.RemoveOverride(command.StageId, command.OverrideId, command.Version, facts, now),
             SeriesAdvancement.AdminLockWait,
-            needsFacts: true,
             cancellationToken);
 
         return result.IsError ? result.Errors : Result.Deleted;

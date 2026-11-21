@@ -33,11 +33,10 @@ internal sealed class MakeDueStagesOfficialJobHandler(
         {
             try
             {
-                var result = await advancement.RunAsync(
+                var result = await advancement.RunWithoutFactsAsync(
                     seriesId,
                     (series, _, now) => series.MakeDueOfficial(now, grace),
                     SeriesAdvancement.JobLockWait,
-                    needsFacts: false,
                     cancellationToken);
 
                 if (result.IsError)

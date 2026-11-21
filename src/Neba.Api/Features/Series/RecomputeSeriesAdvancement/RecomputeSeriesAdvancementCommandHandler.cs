@@ -15,7 +15,6 @@ internal sealed class RecomputeSeriesAdvancementCommandHandler(SeriesAdvancement
             command.SeriesId,
             (series, facts, now) => series.Recompute(command.StageId, command.ConfirmResetOfficial, command.Version, facts, now),
             SeriesAdvancement.AdminLockWait,
-            needsFacts: true,
             cancellationToken);
 
         return result.IsError ? result.Errors : Result.Updated;

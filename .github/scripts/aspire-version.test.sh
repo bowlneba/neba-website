@@ -34,6 +34,17 @@ if "$script" "$tmp/missing.props" > /dev/null 2>&1; then
   fail "missing entry: expected non-zero exit"
 fi
 
+# aspire.config.json next to the props file must pin the same version.
+printf '{ "sdk": { "version": "17.2.3" } }\n' > "$tmp/aspire.config.json"
+actual="$("$script" "$tmp/mixed.props")"
+[[ "$actual" = "17.2.3" ]] || fail "matching config: expected 17.2.3, got '$actual'"
+
+printf '{ "sdk": { "version": "17.0.0" } }\n' > "$tmp/aspire.config.json"
+if "$script" "$tmp/mixed.props" > /dev/null 2>&1; then
+  fail "stale config: expected non-zero exit"
+fi
+rm "$tmp/aspire.config.json"
+
 # The real props file yields the version CI will install.
 actual="$("$script" "$repo_props")"
 [[ "$actual" =~ ^[0-9]+\.[0-9]+\.[0-9]+ ]] || fail "repo props: '$actual' is not a version"

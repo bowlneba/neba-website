@@ -22,12 +22,20 @@ internal sealed class ListStageSquadsQueryHandler(AppDbContext appDbContext)
         }
 
         // The reader returns the Stage's squads; the squad the Stage uses is on the Stage's designation.
-        var selectedSquadId = await appDbContext.Series.AsNoTracking()
+        var designation = await appDbContext.Series.AsNoTracking()
             .Where(series => series.Id == query.SeriesId)
             .SelectMany(series => series.Stages)
             .Where(stage => stage.Id == query.StageId)
-            .Select(stage => stage.SquadDesignation == null ? null : stage.SquadDesignation.SquadId)
-            .SingleAsync(cancellationToken);
+            .Select(stage => new { SquadId = stage.SquadDesignation == null ? null : stage.SquadDesignation.SquadId })
+            .SingleOrDefaultAsync(cancellationToken);
+
+        // The Stage can go between the two reads.
+        if (designation is null)
+        {
+            return SeriesAdvancementErrors.StageNotFound(query.StageId);
+        }
+
+        var selectedSquadId = designation.SquadId;
 
         return squads
             .Select(squad =>

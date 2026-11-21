@@ -39,7 +39,6 @@ internal sealed class BackfillOnSeasonStatsGenerated(
                         ? series.Advance(last.TournamentId, facts, now)
                         : AdvanceResult.None,
                     SeriesAdvancement.JobLockWait,
-                    needsFacts: true,
                     ct);
 
                 SeriesAdvancement.EnsureJobSucceeded(result);

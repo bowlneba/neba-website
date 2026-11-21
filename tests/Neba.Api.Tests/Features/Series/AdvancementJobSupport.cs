@@ -23,7 +23,6 @@ internal static class AdvancementJobSupport
             scenario.SeriesId,
             (series, facts, now) => series.Advance(from.Id, facts, now),
             AdvancementRunHarness.Wait,
-            needsFacts: true,
             cancellationToken);
 
         result.IsError.ShouldBeFalse();
@@ -35,11 +34,10 @@ internal static class AdvancementJobSupport
     {
         var run = harness.CreateRun(FactsReaderDoubles.Untouched());
 
-        var result = await run.Run.RunAsync(
+        var result = await run.Run.RunWithoutFactsAsync(
             scenario.SeriesId,
             (series, _, now) => series.MakeDueOfficial(now.AddDays(3), TimeSpan.FromHours(24)),
             AdvancementRunHarness.Wait,
-            needsFacts: false,
             cancellationToken);
 
         result.IsError.ShouldBeFalse();

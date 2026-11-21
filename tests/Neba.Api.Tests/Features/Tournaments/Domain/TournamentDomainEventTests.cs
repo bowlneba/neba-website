@@ -55,8 +55,8 @@ public sealed class TournamentDomainEventTests
         tournament.DomainEvents.ShouldBeEmpty();
     }
 
-    [Fact(DisplayName = "MarkResultsRecorded raises a second event on a second call so a re-sync redelivers")]
-    public void MarkResultsRecorded_ShouldRaiseSecondEvent_WhenCalledTwice()
+    [Fact(DisplayName = "MarkResultsRecorded raises one event when called twice before the save")]
+    public void MarkResultsRecorded_ShouldRaiseOneEvent_WhenCalledTwiceBeforeSave()
     {
         // Arrange
         var tournament = TournamentFactory.Create(status: TournamentStatus.Completed);
@@ -67,8 +67,23 @@ public sealed class TournamentDomainEventTests
 
         // Assert
         result.IsError.ShouldBeFalse();
-        tournament.DomainEvents.Count.ShouldBe(2);
-        tournament.DomainEvents.ShouldAllBe(e => e is TournamentResultsRecorded);
+        tournament.DomainEvents.ShouldHaveSingleItem().ShouldBeOfType<TournamentResultsRecorded>();
+    }
+
+    [Fact(DisplayName = "MarkResultsRecorded raises an event again after the events are cleared so a re-sync redelivers")]
+    public void MarkResultsRecorded_ShouldRaiseEventAgain_WhenCalledAfterEventsCleared()
+    {
+        // Arrange
+        var tournament = TournamentFactory.Create(status: TournamentStatus.Completed);
+        tournament.MarkResultsRecorded();
+        tournament.ClearDomainEvents();
+
+        // Act
+        var result = tournament.MarkResultsRecorded();
+
+        // Assert
+        result.IsError.ShouldBeFalse();
+        tournament.DomainEvents.ShouldHaveSingleItem().ShouldBeOfType<TournamentResultsRecorded>();
     }
 
     [Fact(DisplayName = "CompleteTournament, TruncateTournament and CancelTournament raise no domain events")]

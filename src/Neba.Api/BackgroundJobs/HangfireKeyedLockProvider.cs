@@ -5,7 +5,7 @@ namespace Neba.Api.BackgroundJobs;
 
 // The same mechanism HangfireBackgroundJobScheduler.EnqueueOnce uses. The Postgres lock blocks its thread while
 // it polls, so acquisition runs on the thread pool.
-internal sealed class HangfireKeyedLockProvider
+internal sealed class HangfireKeyedLockProvider(JobStorage jobStorage)
     : IKeyedLockProvider
 {
     public Task<IDisposable?> TryAcquireAsync(string key, TimeSpan timeout, CancellationToken cancellationToken)
@@ -13,7 +13,7 @@ internal sealed class HangfireKeyedLockProvider
         {
             cancellationToken.ThrowIfCancellationRequested();
 
-            var connection = JobStorage.Current.GetConnection();
+            var connection = jobStorage.GetConnection();
             try
             {
                 return new Handle(connection, connection.AcquireDistributedLock(key, timeout));

@@ -12,6 +12,7 @@ using Neba.Api.Contracts.Memberships;
 using Neba.Api.Contracts.Security;
 using Neba.Api.Contracts.Series;
 using Neba.Api.Contracts.Series.CreateStageOverride;
+using Neba.Api.Database;
 using Neba.Api.Features.Bowlers.Domain;
 using Neba.Api.Features.Series;
 using Neba.Api.Features.Series.Domain;
@@ -119,7 +120,7 @@ public sealed class SeriesAdvancementWriteEndpointsTests(AppDbContextFixture fix
         var matching = survivor.Squads.Single(squad => squad.BowlingDateTimeUtc.Hour == 14).Id;
         var other = survivor.Squads.Single(squad => squad.BowlingDateTimeUtc.Hour == 23).Id;
 
-        (await RunAsync(series.Id, (aggregate, facts, now) => aggregate.Advance(qualifier.Id, facts, now), needsFacts: true)).IsError.ShouldBeFalse();
+        (await RunAsync(series.Id, (aggregate, facts, now) => aggregate.Advance(qualifier.Id, facts, now))).IsError.ShouldBeFalse();
 
         StageOverrideId? overrideId = null;
         if (withOverride)
@@ -130,8 +131,7 @@ public sealed class SeriesAdvancementWriteEndpointsTests(AppDbContextFixture fix
 
             (await RunAsync(
                 series.Id,
-                (aggregate, facts, now) => aggregate.AddOverride(stageId, tenth, "Seeded.", "seed", version, facts, now),
-                needsFacts: true)).IsError.ShouldBeFalse();
+                (aggregate, facts, now) => aggregate.AddOverride(stageId, tenth, "Seeded.", "seed", version, facts, now))).IsError.ShouldBeFalse();
 
             overrideId = (await StoredAsync(series.Id)).Stages.Single(stage => stage.Order == 1).Overrides.Single().Id;
         }
@@ -139,11 +139,22 @@ public sealed class SeriesAdvancementWriteEndpointsTests(AppDbContextFixture fix
         return new WriteScenario(series, bowlers, matching, other, overrideId);
     }
 
-    private async Task<ErrorOr<AdvanceResult>> RunAsync(SeriesId seriesId, AdvancementOperation operation, bool needsFacts)
+    private async Task<ErrorOr<AdvanceResult>> RunAsync(SeriesId seriesId, AdvancementOperation operation)
     {
         await using var db = fixture.CreateDbContext();
 
-        var advancement = new SeriesAdvancement(
+        return await CreateAdvancement(db).RunAsync(seriesId, operation, AdvancementRunHarness.Wait, TestContext.Current.CancellationToken);
+    }
+
+    private async Task<ErrorOr<AdvanceResult>> RunWithoutFactsAsync(SeriesId seriesId, AdvancementOperation operation)
+    {
+        await using var db = fixture.CreateDbContext();
+
+        return await CreateAdvancement(db).RunWithoutFactsAsync(seriesId, operation, AdvancementRunHarness.Wait, TestContext.Current.CancellationToken);
+    }
+
+    private static SeriesAdvancement CreateAdvancement(AppDbContext db)
+        => new(
             db,
             new SeriesAdvancementFactsReader(db),
             KeyedLockDoubles.GrantingAny().Provider.Object,
@@ -151,14 +162,11 @@ public sealed class SeriesAdvancementWriteEndpointsTests(AppDbContextFixture fix
             new FakeTimeProvider(AdvancementRunHarness.Now),
             NullLogger<SeriesAdvancement>.Instance);
 
-        return await advancement.RunAsync(seriesId, operation, AdvancementRunHarness.Wait, needsFacts, TestContext.Current.CancellationToken);
-    }
-
     // Makes the Qualifying Stage Official, as the make-official job does once the grace period has passed.
     private async Task MakeQualifyingStageOfficialAsync(WriteScenario scenario)
     {
-        var result = await RunAsync(
-            scenario.Series.Id, (series, _, now) => series.MakeDueOfficial(now.AddDays(3), Grace), needsFacts: false);
+        var result = await RunWithoutFactsAsync(
+            scenario.Series.Id, (series, _, now) => series.MakeDueOfficial(now.AddDays(3), Grace));
 
         result.IsError.ShouldBeFalse();
         result.Value.OfficialStageIds.ShouldBe([scenario.Stage(1).Id]);

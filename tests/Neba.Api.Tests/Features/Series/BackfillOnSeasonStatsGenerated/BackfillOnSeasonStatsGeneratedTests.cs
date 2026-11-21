@@ -129,7 +129,6 @@ public sealed class BackfillOnSeasonStatsGeneratedTests(AppDbContextFixture fixt
             scenario.SeriesId,
             (series, facts, now) => series.Advance(scenario.Qualifier.Id, facts, now),
             AdvancementRunHarness.Wait,
-            needsFacts: true,
             TestContext.Current.CancellationToken);
 
         result.IsError.ShouldBeFalse();
@@ -185,11 +184,10 @@ public sealed class BackfillOnSeasonStatsGeneratedTests(AppDbContextFixture fixt
         await AdvanceAsync(scenario, script);
 
         var official = _harness.CreateRun(FactsReaderDoubles.Untouched());
-        var result = await official.Run.RunAsync(
+        var result = await official.Run.RunWithoutFactsAsync(
             scenario.SeriesId,
             (series, _, now) => series.MakeDueOfficial(now.AddDays(3), Grace),
             AdvancementRunHarness.Wait,
-            needsFacts: false,
             TestContext.Current.CancellationToken);
 
         result.IsError.ShouldBeFalse();

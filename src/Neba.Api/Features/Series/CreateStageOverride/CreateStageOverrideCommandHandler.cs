@@ -20,7 +20,6 @@ internal sealed class CreateStageOverrideCommandHandler(SeriesAdvancement advanc
                 ? series.AddOverride(command.StageId, command.BowlerId, command.Reason, createdBy, command.Version, facts, now)
                 : series.ClearSlot(command.StageId, command.BowlerId, command.Reason, createdBy, command.Version, facts, now),
             SeriesAdvancement.AdminLockWait,
-            needsFacts: true,
             cancellationToken);
 
         return result.IsError
