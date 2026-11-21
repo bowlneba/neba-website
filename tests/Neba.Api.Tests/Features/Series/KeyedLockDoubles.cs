@@ -43,6 +43,16 @@ internal static class KeyedLockDoubles
         return (provider, handle);
     }
 
+    /// <summary>Times out on every key, for tests of a host whose lock is always held.</summary>
+    public static Mock<IKeyedLockProvider> RefusingAny()
+    {
+        var provider = new Mock<IKeyedLockProvider>(MockBehavior.Strict);
+        provider.Setup(p => p.TryAcquireAsync(It.IsAny<string>(), It.IsAny<TimeSpan>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((IDisposable?)null);
+
+        return provider;
+    }
+
     /// <summary>Has no setup, so any lock request fails the test.</summary>
     public static Mock<IKeyedLockProvider> Untouched()
         => new(MockBehavior.Strict);

@@ -1,0 +1,6 @@
+﻿{
+  SeriesId: 01G21J2EZAC958BWGEEPG2AP8T,
+  StageId: 01HMDCZPDRS9EZE8AXS7V0M3GW,
+  Version: 49,
+  ConfirmResetOfficial: true
+}

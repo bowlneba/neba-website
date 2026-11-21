@@ -72,6 +72,7 @@ internal static class AuditingConfiguration
             .Include<Tournament>()
             .Include<Series>()
             .Include<SeriesStage>()
+            .Include<StageOverride>()
             .Include<OilPattern>()
             .Include<HallOfFameInduction>()
             .Include<HighAverageAward>()
