@@ -12,7 +12,7 @@
     <PackageVersion Include="Aspire.Azure.Npgsql.EntityFrameworkCore.PostgreSQL" Version="13.6.5" />
     <PackageVersion Include="Aspire.Azure.Security.KeyVault" Version="13.6.5" />
     <PackageVersion Include="Aspire.Azure.Storage.Blobs" Version="13.6.5" />
-    <PackageVersion Include="Aspire.Hosting.Azure.AppContainers" Version="13.6.5" />
+    <PackageVersion Include="Aspire.Hosting.Azure.AppContainers" Version="17.0.0" />
     <PackageVersion Include="Aspire.Hosting.Azure.ApplicationInsights" Version="13.6.5" />
     <PackageVersion Include="Aspire.Hosting.Azure.KeyVault" Version="13.6.5" />
     <PackageVersion Include="Aspire.Hosting.Azure.PostgreSQL" Version="13.6.5" />
