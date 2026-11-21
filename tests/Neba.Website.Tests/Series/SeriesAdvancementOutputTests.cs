@@ -219,7 +219,7 @@ public sealed class SeriesAdvancementOutputTests : IDisposable
         output.QuerySelector("[data-testid='stage-entries']").ShouldBeNull();
     }
 
-    [Fact(DisplayName = "Should list overrides with change, bowler, reason, date and status, and mark one that no longer applies")]
+    [Fact(DisplayName = "Should list overrides with change, bowler, status, reason and date, and mark one that no longer applies")]
     public async Task Qualifying_ShouldListOverrides()
     {
         // Arrange
@@ -239,8 +239,8 @@ public sealed class SeriesAdvancementOutputTests : IDisposable
         table.ClassList.ShouldContain("neba-data-table");
         table.QuerySelectorAll("thead th").Length.ShouldBe(5);
         var rows = table.QuerySelectorAll("tbody tr").ToList();
-        Cells(rows[0]).ShouldBe(["Add bowler", "Bea Brown", "Late entry approved.", "3/25/2025", "Applied"]);
-        Cells(rows[1]).ShouldBe(["Clear slot", "Zed Zane", "Withdrew.", "3/25/2025", "No longer applies"]);
+        Cells(rows[0]).ShouldBe(["Add bowler", "Bea Brown", "Applied", "Late entry approved.", "3/25/2025"]);
+        Cells(rows[1]).ShouldBe(["Clear slot", "Zed Zane", "No longer applies", "Withdrew.", "3/25/2025"]);
         rows[0].QuerySelector(".series-output__inactive").ShouldBeNull();
         rows[1].QuerySelector(".series-output__inactive")!.TextContent.ShouldBe("No longer applies");
     }

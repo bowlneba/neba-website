@@ -629,8 +629,8 @@ test.describe('Series advancement: overrides', () => {
       await expect(overrideRow).toHaveAttribute('aria-expanded', 'false'); // the table is compacted
       await overrideRow.click({ position: { x: 5, y: 5 } });
       await expect(overrideRow).toHaveAttribute('aria-expanded', 'true');
-      // The override table's phone layout is cramped (labels overlap and Playwright counts the button hidden), so
-      // this attaches a screenshot to review by eye and asserts only that the row opens and the control is there.
+      // Status is the third column, so the long Reason sits with the secondary cells. The screenshot is for review
+      // by eye; Playwright can count the Remove button hidden inside the open row, so this asserts only that it is there.
       await expect(overrideRow.getByTestId('override-remove')).toBeAttached();
       await testInfo.attach('override-table-phone', { body: await panel.getByTestId('stage-overrides').screenshot(), contentType: 'image/png' });
       await expect.poll(hasHorizontalScroll).toBe(false);

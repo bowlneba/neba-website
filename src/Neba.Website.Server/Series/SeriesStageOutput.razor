@@ -80,9 +80,9 @@ else
                             <tr>
                                 <th scope="col">Change</th>
                                 <th scope="col">Bowler</th>
+                                <th scope="col">Status</th>
                                 <th scope="col">Reason</th>
                                 <th scope="col">Added</th>
-                                <th scope="col">Status</th>
                                 @if (CanManage)
                                 {
                                     <th scope="col">Actions</th>
@@ -95,8 +95,6 @@ else
                                 <tr @key="item.OverrideId">
                                     <td>@SeriesDisplay.OverrideChange(item.Kind)</td>
                                     <td>@item.BowlerName</td>
-                                    <td class="series-output__reason">@item.Reason</td>
-                                    <td>@SeriesDisplay.AddedDate(item.CreatedAt)</td>
                                     <td>
                                         @if (item.Applied)
                                         {
@@ -107,6 +105,8 @@ else
                                             <span class="series-output__inactive">@SeriesDisplay.OverrideStatus(false)</span>
                                         }
                                     </td>
+                                    <td class="series-output__reason">@item.Reason</td>
+                                    <td>@SeriesDisplay.AddedDate(item.CreatedAt)</td>
                                     @if (CanManage)
                                     {
                                         <td>
