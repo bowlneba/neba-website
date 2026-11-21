@@ -7,7 +7,7 @@
     <PackageVersion Include="Ardalis.SmartEnum" Version="8.2.0" />
     <PackageVersion Include="Ardalis.SmartEnum.EFCore" Version="8.2.0" />
     <PackageVersion Include="Ardalis.SmartEnum.SystemTextJson" Version="8.1.0" />
-    <PackageVersion Include="Aspire.Azure.Data.Tables" Version="13.6.5" />
+    <PackageVersion Include="Aspire.Azure.Data.Tables" Version="17.0.0" />
     <PackageVersion Include="Aspire.Azure.Npgsql" Version="13.6.5" />
     <PackageVersion Include="Aspire.Azure.Npgsql.EntityFrameworkCore.PostgreSQL" Version="13.6.5" />
     <PackageVersion Include="Aspire.Azure.Security.KeyVault" Version="13.6.5" />
