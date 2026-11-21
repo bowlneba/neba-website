@@ -4,7 +4,7 @@ Lets staff change a Series' name, logo, Stages and Finale.
 
 ## Prerequisites
 
-You need the `Series.EditSeries` permission, enforced through the dynamic `Permission:Series.EditSeries` policy. See the `Permission:{value}` row in [`docs/policies/README.md`](../policies/README.md). The Admin and Manager roles hold it. If you don't have it, no **Edit** button appears on the Series page.
+You need the `Series.EditSeries` permission, enforced through the dynamic `Permission:Series.EditSeries` policy. See the `Permission:{value}` row in [`docs/policies/README.md`](../policies/README.md). The Admin, Webmaster and Manager roles hold it. If you don't have it, no **Edit** button appears on the Series page.
 
 Changing the logo through this form also needs the logo permission to be intact. If an admin has denied `Series.EditSeriesLogo` to your account, the form shows the logo read only, other changes still save, and the server refuses a logo change. A role that simply lacks the permission is not a denial: you can still change the logo here, because the logo is part of the Series.
 
