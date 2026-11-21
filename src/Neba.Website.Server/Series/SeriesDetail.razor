@@ -40,6 +40,10 @@ else
                 <p>@_model.SeasonDateRange</p>
             </div>
             <div class="series-detail__actions">
+                @if (_canView)
+                {
+                    <HelpButton DocName="series-advancement" Light="true" />
+                }
                 <AuthorizeView Policy="@Permissions.EditSeries.PolicyName">
                     <a href="@EditHref" class="neba-btn neba-btn-secondary">Edit</a>
                 </AuthorizeView>
