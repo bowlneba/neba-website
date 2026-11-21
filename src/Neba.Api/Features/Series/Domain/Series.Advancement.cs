@@ -7,6 +7,13 @@ namespace Neba.Api.Features.Series.Domain;
 
 public sealed partial class Series
 {
+    // Whether a Fold leaves Official Stages alone or recomputes them.
+    private enum FoldMode
+    {
+        KeepOfficial,
+        ResetOfficial,
+    }
+
     private sealed class FoldTrace
     {
         public bool Changed { get; set; }
@@ -43,7 +50,7 @@ public sealed partial class Series
         }
 
         var trace = new FoldTrace();
-        Fold(stage.Order, force: false, facts, now, trace);
+        Fold(stage.Order, FoldMode.KeepOfficial, facts, now, trace);
 
         return Finish(trace);
     }
@@ -79,7 +86,7 @@ public sealed partial class Series
         }
 
         var trace = new FoldTrace();
-        Fold(stage.Order, force: true, facts, now, trace);
+        Fold(stage.Order, FoldMode.ResetOfficial, facts, now, trace);
 
         return Finish(trace);
     }
@@ -166,7 +173,7 @@ public sealed partial class Series
         stage.ResolveSquad(squadId);
 
         var trace = new FoldTrace { Changed = true };
-        Fold(stage.Order, force: false, facts, now, trace);
+        Fold(stage.Order, FoldMode.KeepOfficial, facts, now, trace);
 
         return Finish(trace);
     }
@@ -265,7 +272,7 @@ public sealed partial class Series
         stage.RemoveOverride(existing);
 
         var trace = new FoldTrace { Changed = true };
-        Fold(stage.Order, force: false, facts, now, trace);
+        Fold(stage.Order, FoldMode.KeepOfficial, facts, now, trace);
 
         return Finish(trace);
     }
@@ -283,7 +290,7 @@ public sealed partial class Series
         stage.AddOverride(created.Value);
 
         var trace = new FoldTrace { Changed = true, OverrideId = created.Value.Id };
-        Fold(stage.Order, force: false, facts, now, trace);
+        Fold(stage.Order, FoldMode.KeepOfficial, facts, now, trace);
 
         return Finish(trace);
     }
@@ -337,14 +344,14 @@ public sealed partial class Series
 
     // Walks the Stages from fromOrder in order. Each Stage reads the stored output of the Stages before it, which this
     // walk keeps current, so the result is a function of earlier output, results, overrides and facts.
-    private void Fold(int fromOrder, bool force, AdvancementFacts facts, DateTimeOffset now, FoldTrace trace)
+    private void Fold(int fromOrder, FoldMode mode, AdvancementFacts facts, DateTimeOffset now, FoldTrace trace)
     {
         var ordered = Ordered();
         var previous = ordered.LastOrDefault(stage => stage.Order < fromOrder);
 
         foreach (var stage in ordered.Where(stage => stage.Order >= fromOrder))
         {
-            if (!EvaluateStage(stage, previous, force, facts, now, trace))
+            if (!EvaluateStage(stage, previous, mode, facts, now, trace))
             {
                 return; // a Pending Stage that cannot compute leaves every later Stage Pending
             }
@@ -355,7 +362,7 @@ public sealed partial class Series
 
     // Returns false when the walk must stop.
     private bool EvaluateStage(
-        SeriesStage stage, SeriesStage? previous, bool force, AdvancementFacts facts, DateTimeOffset now, FoldTrace trace)
+        SeriesStage stage, SeriesStage? previous, FoldMode mode, AdvancementFacts facts, DateTimeOffset now, FoldTrace trace)
     {
         facts.Tournaments.TryGetValue(stage.TournamentId, out var tournament);
 
@@ -378,7 +385,7 @@ public sealed partial class Series
         var computation = ComputeStage(stage, facts, tournament!);
         var same = SameOutput(stage, computation);
 
-        if (stage.Status == StageStatus.Official && !force)
+        if (stage.Status == StageStatus.Official && mode == FoldMode.KeepOfficial)
         {
             if (!same)
             {
@@ -388,7 +395,7 @@ public sealed partial class Series
             return true;
         }
 
-        if (stage.Status == StageStatus.Pending || !same || (force && stage.Status == StageStatus.Official))
+        if (stage.Status == StageStatus.Pending || !same || (mode == FoldMode.ResetOfficial && stage.Status == StageStatus.Official))
         {
             var statusBefore = stage.Status;
 
@@ -399,7 +406,7 @@ public sealed partial class Series
             trace.StatusChanged |= statusBefore != StageStatus.Computed;
             trace.Computed.Add(stage.Id);
         }
-        else if (force && stage.IsStale)
+        else if (mode == FoldMode.ResetOfficial && stage.IsStale)
         {
             stage.ClearStale();
             trace.Changed = true;

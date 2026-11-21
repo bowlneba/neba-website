@@ -386,7 +386,7 @@ public partial class SeriesDetail
         var official = _advancement.OfficialOrdersFrom(stage.Order);
         if (official.Count == 0)
         {
-            await RecomputeAsync(stage.Id, stage.Order, confirmed: false);
+            await RecomputeAsync(stage.Id, stage.Order, RecomputeMode.Run);
             return;
         }
 
@@ -395,7 +395,7 @@ public partial class SeriesDetail
 
     private Task ConfirmRecomputeAsync()
         => _recomputeTarget is { } target
-            ? RecomputeAsync(target.StageId, target.Order, confirmed: true)
+            ? RecomputeAsync(target.StageId, target.Order, RecomputeMode.ConfirmResetOfficial)
             : Task.CompletedTask;
 
     private void CancelRecompute()
@@ -406,7 +406,13 @@ public partial class SeriesDetail
         }
     }
 
-    private async Task RecomputeAsync(string stageId, int order, bool confirmed)
+    private enum RecomputeMode
+    {
+        Run,
+        ConfirmResetOfficial,
+    }
+
+    private async Task RecomputeAsync(string stageId, int order, RecomputeMode mode)
     {
         if (_isWriting)
         {
@@ -420,7 +426,7 @@ public partial class SeriesDetail
             {
                 Id = Id,
                 StageId = stageId,
-                Recomputation = new RecomputeSeriesAdvancementInput { Version = _version, ConfirmResetOfficial = confirmed },
+                Recomputation = new RecomputeSeriesAdvancementInput { Version = _version, ConfirmResetOfficial = mode == RecomputeMode.ConfirmResetOfficial },
             };
 
             var result = await ApiExecutor.ExecuteAsync("SeriesApi", "RecomputeSeriesAdvancement",
