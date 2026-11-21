@@ -714,29 +714,6 @@ public sealed class SeriesAdvancementDisplayTests
         message.ShouldBe("Dave Smith added to Stage 2.");
     }
 
-    [Theory(DisplayName = "ConflictMessage should use the default for a null or blank description")]
-    [InlineData(null)]
-    [InlineData("")]
-    [InlineData("   ")]
-    public void ConflictMessage_ShouldUseDefault_WhenBlank(string? description)
-    {
-        // Arrange & Act
-        var message = SeriesDisplay.ConflictMessage(description);
-
-        // Assert
-        message.ShouldBe(SeriesDisplay.DefaultConflictMessage);
-    }
-
-    [Fact(DisplayName = "ConflictMessage should use the API text when it has some")]
-    public void ConflictMessage_ShouldUseApiText()
-    {
-        // Arrange & Act
-        var message = SeriesDisplay.ConflictMessage("Stage 2 is Official.");
-
-        // Assert
-        message.ShouldBe("Stage 2 is Official.");
-    }
-
     [Theory(DisplayName = "OverrideTitle should name the dialog for each kind")]
     [InlineData("Add", "Add bowler")]
     [InlineData("Clear", "Clear slot")]
@@ -861,7 +838,6 @@ public sealed class SeriesAdvancementDisplayTests
     public void Constants_ShouldReadAsWritten()
     {
         // Arrange & Act & Assert
-        SeriesDisplay.DefaultConflictMessage.ShouldBe("This Series changed after you loaded it. Your change was not saved. Review the Stage and try again.");
         SeriesDisplay.AdvancementReloadFailed.ShouldBe("The Stage status could not refresh. Reload the page to see the latest.");
         SeriesDisplay.StaleNote.ShouldBe("An earlier Stage changed after this Stage was official. Its output has not changed. Recompute from here to refresh it.");
         SeriesDisplay.StaleHint.ShouldBe("An earlier Stage changed after this Stage was official.");

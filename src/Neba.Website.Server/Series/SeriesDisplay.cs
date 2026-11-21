@@ -199,7 +199,6 @@ internal static class SeriesDisplay
 
     // ---- Advancement section (Series.EditSeries holders) ----
 
-    public const string DefaultConflictMessage = "This Series changed after you loaded it. Your change was not saved. Review the Stage and try again.";
     public const string AdvancementReloadFailed = "The Stage status could not refresh. Reload the page to see the latest.";
     public const string CancelledStageNote = "Tournament cancelled: remove this Stage";
     public const string CancelledCheckFailed = "A Stage whose tournament was cancelled can't be removed until this check works. Reload the page to try again.";
@@ -438,10 +437,6 @@ internal static class SeriesDisplay
             : item.BowlerName + " takes the slot back, and the Backfill no longer refills it.";
 
     public static string OverrideAddedMessage(string bowlerName, int order) => bowlerName + " added to Stage " + Num(order) + ".";
-
-    /// <summary>The API's own text when it has some (it names the cause), else the default.</summary>
-    public static string ConflictMessage(string? description)
-        => string.IsNullOrWhiteSpace(description) ? DefaultConflictMessage : description;
 
     public static string OverrideTitle(string kind) => kind == OverrideKinds.Add ? "Add bowler" : "Clear slot";
 

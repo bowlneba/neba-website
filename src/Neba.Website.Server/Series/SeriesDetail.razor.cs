@@ -205,7 +205,7 @@ public partial class SeriesDetail
 
         if (result.FirstError.Type == ErrorType.Conflict)
         {
-            ToastService.Show("Series Changed", SeriesDisplay.ConflictMessage(result.FirstError.Description), NotifySeverity.Warning);
+            ToastService.Show("Series Changed", result.FirstError.Description, NotifySeverity.Warning);
             await LoadAdvancementAsync();
             return WriteOutcome.Conflict;
         }
