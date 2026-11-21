@@ -21,10 +21,9 @@
         </div>
     </div>
 
-    @* Commits 22 and 23 add the Recompute and Pick squad buttons beside the flags here, so this row then renders always. *@
-    @if (HasFlags)
-    {
-        <div class="series-card__sub">
+    <div class="series-card__sub">
+        @if (HasFlags)
+        {
             <div class="series-flags">
                 @if (Stage.IsTournamentCancelled)
                 {
@@ -47,8 +46,27 @@
                     <span class="series-flag" data-testid="stage-flag-backfill">@BackfillLabel</span>
                 }
             </div>
+        }
+        else
+        {
+            <span></span>
+        }
+
+        <div class="series-acts">
+            @if (Stage.CanPickSquad)
+            {
+                <button type="button" class="series-act" data-testid="stage-pick-squad"
+                        aria-label="@SeriesDisplay.PickSquadLabel(Stage.Order)"
+                        disabled="@IsBusy" @onclick="OnPickSquad">Pick squad</button>
+            }
+            @if (Stage.CanRecompute)
+            {
+                <button type="button" class="series-act" data-testid="stage-recompute"
+                        aria-label="@SeriesDisplay.RecomputeLabel(Stage.Order)"
+                        disabled="@IsBusy" @onclick="OnRecompute">Recompute from here</button>
+            }
         </div>
-    }
+    </div>
 
     @if (IsExpanded)
     {
@@ -91,9 +109,21 @@
     [Parameter, EditorRequired]
     public bool IsExpanded { get; set; }
 
+    /// <summary>True while a write runs; the action buttons disable.</summary>
+    [Parameter]
+    public bool IsBusy { get; set; }
+
     /// <summary>Raised when the expander is pressed.</summary>
     [Parameter, EditorRequired]
     public EventCallback OnToggle { get; set; }
+
+    /// <summary>Raised when Recompute from here is pressed.</summary>
+    [Parameter, EditorRequired]
+    public EventCallback OnRecompute { get; set; }
+
+    /// <summary>Raised when Pick squad is pressed.</summary>
+    [Parameter, EditorRequired]
+    public EventCallback OnPickSquad { get; set; }
 
     /// <summary>The output panel, shown when expanded.</summary>
     [Parameter]

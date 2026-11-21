@@ -1,0 +1,23 @@
+.stage-squad__lead { margin: 0 0 1rem; color: var(--neba-text-muted); font-size: 0.875rem; }
+.stage-squad__empty { margin: 0.25rem 0; color: var(--neba-text-muted); font-size: 0.875rem; max-width: 62ch; }
+.stage-squad__list { display: grid; gap: 0.5rem; margin: 0; padding: 0; border: 0; }
+
+.stage-squad__row {
+    display: flex;
+    gap: 0.75rem;
+    align-items: flex-start;
+    border: 1px solid var(--neba-border);
+    border-radius: var(--neba-radius-lg);
+    padding: 0.75rem 0.875rem;
+    cursor: pointer;
+}
+
+.stage-squad__row:has(input:checked) {
+    border-color: var(--neba-blue-600);
+    background: color-mix(in srgb, var(--neba-blue-600) 12%, transparent);
+}
+
+.stage-squad__row input { margin-top: 0.25rem; }
+.stage-squad__row b { display: block; font-weight: 600; }
+.stage-squad__row small { color: var(--neba-text-muted); font-size: 0.8125rem; }
+.stage-squad__actions { display: flex; justify-content: flex-end; gap: 0.5rem; flex-wrap: wrap; }

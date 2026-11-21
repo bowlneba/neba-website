@@ -100,7 +100,7 @@ else
                             }
 
                             <li @key="stage.Id" class="@SeriesDisplay.NodeClass(stage.Status, stage.IsTournamentCancelled)">
-                                @* Commits 22 and 23 attach the Recompute, Pick squad, Add bowler, Clear slot and Remove override callbacks here. *@
+                                @* Commit 23 attaches the Add bowler, Clear slot and Remove override callbacks here. *@
                                 <SeriesStageCard Stage="@stage"
                                                  TournamentName="@detail.TournamentName"
                                                  TournamentHref="@TournamentHref(detail)"
@@ -109,7 +109,10 @@ else
                                                  BackfillLabel="@(stage.IsLastQualifying ? SeriesDisplay.BackfillLabel(_advancement.BackfillAsOf) : null)"
                                                  EditHref="@EditHref"
                                                  IsExpanded="@_expandedStageIds.Contains(stage.Id)"
-                                                 OnToggle="@(() => ToggleStage(stage.Id))">
+                                                 IsBusy="@_isWriting"
+                                                 OnToggle="@(() => ToggleStage(stage.Id))"
+                                                 OnRecompute="@(() => StartRecomputeAsync(stage))"
+                                                 OnPickSquad="@(() => OpenSquadPickerAsync(stage))">
                                     <SeriesStageOutput Stage="@stage" Positions="@_advancement.Positions" />
                                 </SeriesStageCard>
                             </li>
@@ -181,6 +184,31 @@ else
                         IsBusy="@_isDeleteBusy"
                         OnConfirm="ConfirmDeleteAsync"
                         OnCancel="@(() => _isDeleteConfirmOpen = false)" />
+
+    @if (_canView)
+    {
+        <StageSquadModal IsOpen="@(_squadStageId is not null)"
+                         StageOrder="@(SquadStage?.Order ?? 0)"
+                         TournamentName="@(SquadDetail?.TournamentName ?? string.Empty)"
+                         ExpectedSquad="@SeriesDisplay.Squad(SquadDetail?.SquadDate, SquadDetail?.SquadStartTime)"
+                         NeedsSquad="@(SquadStage?.NeedsSquad ?? false)"
+                         Squads="@_squads"
+                         IsLoading="@_isSquadsLoading"
+                         LoadError="@_squadsError"
+                         OnClose="CloseSquadPicker"
+                         OnSubmitRequestedAsync="SubmitSquadAsync" />
+
+        @* Commit 23 adds the StageOverrideModal and the remove-override confirm here. *@
+
+        <ConfirmActionModal IsOpen="@(_recomputeTarget is not null)"
+                            Title="@RecomputeTitle"
+                            Message="@RecomputeMessage"
+                            ConfirmLabel="Recompute"
+                            BusyLabel="Recomputing..."
+                            IsBusy="@_isWriting"
+                            OnConfirm="ConfirmRecomputeAsync"
+                            OnCancel="CancelRecompute" />
+    }
 }
 
 @code {

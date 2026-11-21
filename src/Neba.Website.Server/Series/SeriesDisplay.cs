@@ -305,6 +305,12 @@ internal static class SeriesDisplay
     public static string ExpandLabel(bool isExpanded, int order)
         => (isExpanded ? "Hide" : "Show") + " output for Stage " + Num(order);
 
+    /// <summary>"Pick squad for Stage 3".</summary>
+    public static string PickSquadLabel(int order) => "Pick squad for Stage " + Num(order);
+
+    /// <summary>"Recompute from Stage 3".</summary>
+    public static string RecomputeLabel(int order) => "Recompute from Stage " + Num(order);
+
     /// <summary>Why a Pending Stage shows no output.</summary>
     public static string PendingReason(StageAdvancementViewModel stage)
     {
@@ -408,6 +414,9 @@ internal static class SeriesDisplay
         return "Stage".ToQuantity(orders.Count, ShowQuantityAs.None)
             + " " + StageWordList(orders) + (one ? " is" : " are") + " official. Recomputing resets " + (one ? "it" : "them") + " to Computed.";
     }
+
+    /// <summary>The toast after Pick squad (the Stage may stay Pending, so it says only that the squad is saved).</summary>
+    public const string SquadSavedMessage = "Squad saved.";
 
     public static string RecomputedMessage(int order) => "Recomputed from Stage " + Num(order) + ".";
 

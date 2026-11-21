@@ -7,10 +7,14 @@ using Microsoft.AspNetCore.Components;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging.Abstractions;
 
+using Neba.Api.Contracts;
 using Neba.Api.Contracts.Security;
 using Neba.Api.Contracts.Series;
 using Neba.Api.Contracts.Series.GetSeries;
 using Neba.Api.Contracts.Series.GetSeriesAdvancement;
+using Neba.Api.Contracts.Series.ListStageSquads;
+using Neba.Api.Contracts.Series.PickStageSquad;
+using Neba.Api.Contracts.Series.RecomputeSeriesAdvancement;
 using Neba.TestFactory.Series;
 using Neba.Website.Server.Clock;
 using Neba.Website.Server.Help;
@@ -148,6 +152,108 @@ internal sealed class SeriesDetailHost : IDisposable
     /// <summary>A completed OK response for a <see cref="TaskCompletionSource{TResult}"/>.</summary>
     public IApiResponse<SeriesAdvancementResponse> OkResponse(SeriesAdvancementResponse advancement)
         => Track(Stub(HttpStatusCode.OK, advancement));
+
+    /// <summary>The advancement calls return <paramref name="advancements"/> in order: the load, then each reload.</summary>
+    public void SetupAdvancementSequence(params SeriesAdvancementResponse[] advancements)
+        => SetupAdvancementSequence([.. advancements.Select(OkResponse)]);
+
+    /// <summary>The advancement calls return <paramref name="responses"/> in order; use <see cref="FailedAdvancementResponse"/> for a failed reload.</summary>
+    public void SetupAdvancementSequence(params IApiResponse<SeriesAdvancementResponse>[] responses)
+    {
+        var sequence = Api.SetupSequence(x => x.GetSeriesAdvancementAsync(SeriesId, It.IsAny<CancellationToken>()));
+        foreach (var response in responses)
+        {
+            sequence.ReturnsAsync(response);
+        }
+    }
+
+    /// <summary>A failed advancement response with no body.</summary>
+    public IApiResponse<SeriesAdvancementResponse> FailedAdvancementResponse(HttpStatusCode status)
+        => Track(Stub<SeriesAdvancementResponse>(status, null));
+
+    /// <summary>A 204 for a write.</summary>
+    public IApiResponse NoContent()
+        => Track(new StubApiResponse<object> { IsSuccessStatusCode = true, StatusCode = HttpStatusCode.NoContent });
+
+    /// <summary>A failed write with no body (ApiExecutor gives a 404 NotFound, anything else a Failure).</summary>
+    public IApiResponse FailedWrite(HttpStatusCode status)
+        => Track(new StubApiResponse<object> { IsSuccessStatusCode = false, StatusCode = status });
+
+    /// <summary>A failed write whose problem details carry <paramref name="message"/> (409 gives Conflict, 422 gives Validation).</summary>
+    public async Task<IApiResponse> RejectedWriteAsync(HttpStatusCode status, string message)
+    {
+        using var request = new HttpRequestMessage(HttpMethod.Post, "https://api.example.com/series");
+        using var body = new HttpResponseMessage(status)
+        {
+            Content = new StringContent("{\"status\":" + (int)status + ",\"title\":\"Error\",\"errors\":[{\"name\":\"generalErrors\",\"reason\":\"" + message + "\"}]}"),
+        };
+        var exception = await ApiException.Create(request, HttpMethod.Post, body, new RefitSettings());
+        return Track(new StubApiResponse<object> { IsSuccessStatusCode = false, StatusCode = status, Error = exception });
+    }
+
+    /// <summary>Sets up the recompute write for <paramref name="stageId"/>; returns the requests it receives.</summary>
+    public List<RecomputeSeriesAdvancementRequest> SetupRecompute(string stageId, Func<Task<IApiResponse>> respond)
+    {
+        var requests = new List<RecomputeSeriesAdvancementRequest>();
+        Api.Setup(x => x.RecomputeSeriesAdvancementAsync(SeriesId, stageId, It.IsAny<RecomputeSeriesAdvancementRequest>(), It.IsAny<CancellationToken>()))
+            .Returns((string _, string _, RecomputeSeriesAdvancementRequest request, CancellationToken _) =>
+            {
+                requests.Add(request);
+                return respond();
+            });
+        return requests;
+    }
+
+    public List<RecomputeSeriesAdvancementRequest> SetupRecompute(string stageId, IApiResponse response)
+        => SetupRecompute(stageId, () => Task.FromResult(response));
+
+#pragma warning disable VSTHRD003 // The test owns the completion source and completes it itself.
+    /// <summary>The recompute write stays pending until the test completes <paramref name="completion"/>.</summary>
+    public List<RecomputeSeriesAdvancementRequest> SetupRecompute(string stageId, TaskCompletionSource<IApiResponse> completion)
+        => SetupRecompute(stageId, () => completion.Task);
+
+    /// <summary>The Pick squad write stays pending until the test completes <paramref name="completion"/>.</summary>
+    public List<PickStageSquadRequest> SetupPickSquad(string stageId, TaskCompletionSource<IApiResponse> completion)
+        => SetupPickSquad(stageId, () => completion.Task);
+#pragma warning restore VSTHRD003
+
+    /// <summary>Sets up the Pick squad write for <paramref name="stageId"/>; returns the requests it receives.</summary>
+    public List<PickStageSquadRequest> SetupPickSquad(string stageId, Func<Task<IApiResponse>> respond)
+    {
+        var requests = new List<PickStageSquadRequest>();
+        Api.Setup(x => x.PickStageSquadAsync(SeriesId, stageId, It.IsAny<PickStageSquadRequest>(), It.IsAny<CancellationToken>()))
+            .Returns((string _, string _, PickStageSquadRequest request, CancellationToken _) =>
+            {
+                requests.Add(request);
+                return respond();
+            });
+        return requests;
+    }
+
+    public List<PickStageSquadRequest> SetupPickSquad(string stageId, IApiResponse response)
+        => SetupPickSquad(stageId, () => Task.FromResult(response));
+
+    /// <summary>A completed OK squads response.</summary>
+    public IApiResponse<CollectionResponse<StageSquadSummaryResponse>> SquadsResponse(params StageSquadSummaryResponse[] squads)
+        => Track(Stub(HttpStatusCode.OK, new CollectionResponse<StageSquadSummaryResponse> { Items = squads }));
+
+    public void SetupSquads(string stageId, params StageSquadSummaryResponse[] squads)
+        => SetupSquads(stageId, SquadsResponse(squads));
+
+    public void SetupSquads(string stageId, IApiResponse<CollectionResponse<StageSquadSummaryResponse>> response)
+        => Api.Setup(x => x.ListStageSquadsAsync(SeriesId, stageId, It.IsAny<CancellationToken>())).ReturnsAsync(response);
+
+    public void SetupSquadsFailure(string stageId, HttpStatusCode status)
+        => SetupSquads(stageId, Track(Stub<CollectionResponse<StageSquadSummaryResponse>>(status, null)));
+
+    public void SetupSquadsPending(string stageId, TaskCompletionSource<IApiResponse<CollectionResponse<StageSquadSummaryResponse>>> completion)
+        => Api.Setup(x => x.ListStageSquadsAsync(SeriesId, stageId, It.IsAny<CancellationToken>())).Returns(completion.Task);
+
+    public void VerifySquadCalls(string stageId, Times times)
+        => Api.Verify(x => x.ListStageSquadsAsync(SeriesId, stageId, It.IsAny<CancellationToken>()), times);
+
+    public void VerifySeriesCalls(Times times)
+        => Api.Verify(x => x.GetSeriesAsync(SeriesId, It.IsAny<CancellationToken>()), times);
 
     public void VerifyAdvancementCalls(Times times)
         => Api.Verify(x => x.GetSeriesAdvancementAsync(SeriesId, It.IsAny<CancellationToken>()), times);

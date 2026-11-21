@@ -114,7 +114,24 @@
 .series-flag--info { background: var(--series-computed-bg); color: var(--series-computed-fg); }
 .series-flag a { color: inherit; font-weight: 600; }
 
-.dark .series-expander {
+.series-acts { display: flex; flex-wrap: wrap; gap: 0.25rem 0.875rem; align-items: center; }
+
+.series-act {
+    background: none;
+    border: 0;
+    padding: 0.375rem 0;
+    min-height: 2rem;
+    font: 600 0.84375rem/1.2 var(--neba-font-base);
+    color: var(--neba-blue-600);
+    cursor: pointer;
+}
+
+.dark .series-act { color: var(--neba-blue-300); }
+.series-act:hover { text-decoration: underline; }
+.series-act:focus-visible { outline: 2px solid var(--neba-blue-500); outline-offset: 2px; border-radius: 2px; }
+.series-act:disabled { color: var(--neba-text-muted); cursor: not-allowed; text-decoration: none; }
+
+.series-expander {
     width: 2rem;
     height: 2rem;
     border-radius: var(--neba-radius);
@@ -132,5 +149,6 @@
 .series-expander:focus-visible { outline: 2px solid var(--neba-blue-500); outline-offset: 2px; }
 
 @media (max-width: 767px) {
+    .series-act { min-height: 2.75rem; }
     .series-expander { width: 2.75rem; height: 2.75rem; }
 }
