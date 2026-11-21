@@ -6,6 +6,9 @@ namespace Neba.Website.Server.Series;
 
 internal sealed record AdvancingLabel(string Primary, string? Secondary);
 
+/// <summary>A bold lead and the plain text after it, for summary lines.</summary>
+internal sealed record SummaryLine(string Lead, string Detail);
+
 /// <summary>The Series squad a Survivor Stage names.</summary>
 internal sealed record SquadSlot(DateOnly? Date, TimeOnly? StartTime);
 
@@ -193,4 +196,267 @@ internal static class SeriesDisplay
     /// <summary>"Sat 7/12 · Callahan's Bowl-O-Rama" for the tournament picker.</summary>
     public static string TournamentOption(DateOnly start, string name)
         => start.ToString("ddd M/d", Culture) + " · " + name;
+
+    // ---- Advancement section (Series.EditSeries holders) ----
+
+    public const string DefaultConflictMessage = "This Series changed after you loaded it. Your change was not saved. Review the Stage and try again.";
+    public const string AdvancementReloadFailed = "The Stage status could not refresh. Reload the page to see the latest.";
+    public const string StaleNote = "An earlier Stage changed after this Stage was official. Its output has not changed. Recompute from here to refresh it.";
+    public const string StaleHint = "An earlier Stage changed after this Stage was official.";
+    public const string NoFieldEntries = "No bowlers in the field from this Stage.";
+    public const string NoSquads = "No squads yet. They arrive when the desktop software sends this tournament's squads.";
+    public const string SlotClearedMessage = "Slot cleared. The Backfill will refill it.";
+
+    private static string Num(int n) => n.ToString(Culture);
+
+    /// <summary>"series-pill series-pill--computed". A Placement Stage never reaches Official.</summary>
+    public static string StatusPillClass(string status)
+        => status switch
+        {
+            StageStatuses.Official => "series-pill series-pill--official",
+            StageStatuses.Computed => "series-pill series-pill--computed",
+            _ => "series-pill series-pill--pending",
+        };
+
+    public static string SegmentClass(string status)
+        => status switch
+        {
+            StageStatuses.Official => "series-strip__seg series-strip__seg--official",
+            StageStatuses.Computed => "series-strip__seg series-strip__seg--computed",
+            _ => "series-strip__seg",
+        };
+
+    /// <summary>"Stage 3: Official".</summary>
+    public static string SegmentTitle(int order, string status) => "Stage " + Num(order) + ": " + status;
+
+    /// <summary>The rail node's class: its status, plus cancelled when the tournament was.</summary>
+    public static string NodeClass(string status, bool isCancelled)
+    {
+        var statusClass = status switch
+        {
+            StageStatuses.Official => "series-node--official",
+            StageStatuses.Computed => "series-node--computed",
+            _ => "series-node--pending",
+        };
+
+        return "series-node " + statusClass + (isCancelled ? " series-node--cancelled" : string.Empty);
+    }
+
+    /// <summary>"Qualifying · Stage 3".</summary>
+    public static string StageChip(string kind, int order) => kind + " · Stage " + Num(order);
+
+    /// <summary>"7/12 · 3-bowler teams · Top 2 teams (6 bowlers)".</summary>
+    public static string RailMeta(SeriesStageViewModel stage, int? finaleCount)
+    {
+        var advancing = Advancing(stage.Kind, stage.AdvancingCount, stage.TeamSize, finaleCount);
+        var parts = new List<string> { TournamentDates(stage.TournamentStartDate, stage.TournamentEndDate) };
+        if (stage.TeamSize > 1)
+        {
+            parts.Add(Num(stage.TeamSize) + "-bowler teams");
+        }
+
+        parts.Add(advancing.Secondary is null ? advancing.Primary : advancing.Primary + " " + advancing.Secondary);
+        return string.Join(" · ", parts);
+    }
+
+    /// <summary>"7 of 8 slots filled", "40 advance", "20 ranked"; null while Pending.</summary>
+    public static string? Headline(StageAdvancementViewModel stage, int positionCount)
+    {
+        if (stage.Status == StageStatuses.Pending)
+        {
+            return null;
+        }
+
+        if (stage.Kind == StageKinds.Qualifying)
+        {
+            var slots = stage.SlotCount ?? 0;
+            var filled = slots - (stage.VacantSlotCount ?? 0);
+            return Num(filled) + " of " + "slot".ToQuantity(slots, formatProvider: DisplayCulture.English) + " filled";
+        }
+
+        return stage.Kind == StageKinds.Survivor
+            ? Num(stage.Outcomes.Count(o => o.Advanced)) + " advance"
+            : Num(positionCount) + " ranked";
+    }
+
+    /// <summary>"Becomes official about 3:15 PM on 7/12". The sweep runs every 15 minutes, so it says "about".</summary>
+    public static string? OfficialDueLabel(DateTimeOffset? local)
+        => local is { } at ? "Becomes official about " + at.ToString("h:mm tt", Culture) + " on " + at.ToString("M/d", Culture) : null;
+
+    /// <summary>"Backfill as of 6/14/2025"; null until the Backfill ran.</summary>
+    public static string? BackfillLabel(DateOnly? asOf)
+        => asOf is { } date ? "Backfill as of " + date.ToString("M/d/yyyy", Culture) : null;
+
+    /// <summary>"4 of 11 Stages" + " computed or official (3 official). Backfill has not run."</summary>
+    public static SummaryLine Progress(IReadOnlyList<StageAdvancementViewModel> stages, DateOnly? backfillAsOf)
+    {
+        var done = stages.Count(s => s.Status != StageStatuses.Pending);
+        var official = stages.Count(s => s.Status == StageStatuses.Official);
+        var backfill = backfillAsOf is { } date
+            ? "Backfill ran as of " + date.ToString("M/d/yyyy", Culture) + "."
+            : "Backfill has not run.";
+
+        return new SummaryLine(
+            Num(done) + " of " + "Stage".ToQuantity(stages.Count, formatProvider: DisplayCulture.English),
+            " computed or official (" + Num(official) + " official). " + backfill);
+    }
+
+    /// <summary>"Hide output for Stage 3".</summary>
+    public static string ExpandLabel(bool isExpanded, int order)
+        => (isExpanded ? "Hide" : "Show") + " output for Stage " + Num(order);
+
+    /// <summary>Why a Pending Stage shows no output.</summary>
+    public static string PendingReason(StageAdvancementViewModel stage)
+    {
+        if (stage.IsTournamentCancelled)
+        {
+            return "This tournament was cancelled. Remove this Stage on the Edit page, then recompute from the Stage before it.";
+        }
+
+        if (stage.NeedsSquad)
+        {
+            return "Waiting for a squad. Pick the squad this round uses and the Stage computes.";
+        }
+
+        return stage.Kind == StageKinds.Placement
+            ? "Positions appear when the Placement Round computes."
+            : "Not computed yet. This Stage computes when its tournament completes.";
+    }
+
+    /// <summary>"8 slots" (the bold lead of the Qualifying summary).</summary>
+    public static string SlotsLead(int slots) => "slot".ToQuantity(slots, formatProvider: DisplayCulture.English);
+
+    /// <summary>", 2 vacant slots. Vacant slots go to the Backfill." or ", none vacant."</summary>
+    public static string VacantLabel(int vacant)
+        => vacant > 0
+            ? ", " + "vacant slot".ToQuantity(vacant, formatProvider: DisplayCulture.English) + ". Vacant slots go to the Backfill."
+            : ", none vacant.";
+
+    /// <summary>"Field entries from this Stage, then the Backfill".</summary>
+    public static string EntriesHeading(bool isLastQualifying)
+        => "Field entries from this Stage" + (isLastQualifying ? ", then the Backfill" : string.Empty);
+
+    /// <summary>"3rd", or a dash for a Backfill entry.</summary>
+    public static string OrdinalPlace(int? place) => place is { } p ? p.ToOrdinal() : "—";
+
+    public static string EntrySource(FieldEntryViewModel entry)
+    {
+        if (entry.ViaOverride)
+        {
+            return "Added by admin";
+        }
+
+        return entry.IsBackfill ? "Backfill" : "Qualifier";
+    }
+
+    public static string SourceClass(FieldEntryViewModel entry)
+    {
+        if (entry.ViaOverride)
+        {
+            return "series-src--admin";
+        }
+
+        return entry.IsBackfill ? "series-src--backfill" : string.Empty;
+    }
+
+    public static string Points(int? points) => points is { } p ? Num(p) : "—";
+
+    public static string BlockTotal(int? total) => total is { } t ? Num(t) : "No full block";
+
+    public static string OverrideChange(string kind) => kind == OverrideKinds.Add ? "Add bowler" : "Clear slot";
+
+    public static string OverrideStatus(bool applied) => applied ? "Applied" : "No longer applies";
+
+    /// <summary>"3/23/2025".</summary>
+    public static string AddedDate(DateTimeOffset local) => local.ToString("M/d/yyyy", Culture);
+
+    /// <summary>"12 advance" + " of 40 in the field. 38 bowled; 2 did not."</summary>
+    public static SummaryLine SurvivorSummary(IReadOnlyList<SurvivorOutcomeViewModel> outcomes)
+    {
+        var bowled = outcomes.Count(o => o.BlockTotal is not null);
+        return new SummaryLine(
+            Num(outcomes.Count(o => o.Advanced)) + " advance",
+            " of " + Num(outcomes.Count) + " in the field. " + Num(bowled) + " bowled; " + Num(outcomes.Count - bowled) + " did not.");
+    }
+
+    /// <summary>"20 bowlers ranked." + the Finale note.</summary>
+    public static SummaryLine PlacementSummary(int ranked, bool hasFinalists)
+        => new("bowler".ToQuantity(ranked, formatProvider: DisplayCulture.English) + " ranked.",
+            hasFinalists ? " Finalist positions are provisional until the Finale is recorded." : " These positions are final.");
+
+    /// <summary>"Recompute from Stage 3?"</summary>
+    public static string RecomputeTitle(int order) => "Recompute from Stage " + Num(order) + "?";
+
+    /// <summary>"1, 2 and 3".</summary>
+    public static string StageWordList(IReadOnlyList<int> orders)
+    {
+        if (orders.Count == 0)
+        {
+            return string.Empty;
+        }
+
+        var words = orders.Select(Num).ToList();
+        return words.Count == 1
+            ? words[0]
+            : string.Join(", ", words.Take(words.Count - 1)) + " and " + words[^1];
+    }
+
+    /// <summary>"Stages 3 and 4 are official. Recomputing resets them to Computed."</summary>
+    public static string OfficialResetMessage(IReadOnlyList<int> orders)
+    {
+        var one = orders.Count == 1;
+        return "Stage".ToQuantity(orders.Count, ShowQuantityAs.None)
+            + " " + StageWordList(orders) + (one ? " is" : " are") + " official. Recomputing resets " + (one ? "it" : "them") + " to Computed.";
+    }
+
+    public static string RecomputedMessage(int order) => "Recomputed from Stage " + Num(order) + ".";
+
+    public static string RemoveOverrideMessage(StageOverrideViewModel item, int order)
+        => item.Kind == OverrideKinds.Add
+            ? item.BowlerName + " leaves the field for Stage " + Num(order) + "."
+            : item.BowlerName + " takes the slot back, and the Backfill no longer refills it.";
+
+    public static string OverrideAddedMessage(string bowlerName, int order) => bowlerName + " added to Stage " + Num(order) + ".";
+
+    /// <summary>The API's own text when it has some (it names the cause), else the default.</summary>
+    public static string ConflictMessage(string? description)
+        => string.IsNullOrWhiteSpace(description) ? DefaultConflictMessage : description;
+
+    public static string OverrideTitle(string kind) => kind == OverrideKinds.Add ? "Add bowler" : "Clear slot";
+
+    public static string OverrideLead(string kind, int order, string tournamentName)
+        => "Stage " + Num(order) + ", " + tournamentName + ". "
+            + (kind == OverrideKinds.Add
+                ? "Pick any bowler with a result in this tournament, whatever the place or membership. The field can then be larger than the target."
+                : "The slot goes vacant and the Backfill fills it. This bowler can't come back through the Backfill.");
+
+    /// <summary>"Marcus Alvarez (12th)".</summary>
+    public static string ResultOption(string name, int place) => name + " (" + place.ToOrdinal() + ")";
+
+    /// <summary>"7th place".</summary>
+    public static string ClearPlace(int? place) => place is { } p ? p.ToOrdinal() + " place" : "Backfill";
+
+    /// <summary>"120 / 500".</summary>
+    public static string ReasonCount(int length) => Num(length) + " / " + Num(StageOverrideFormModel.ReasonMaxLength);
+
+    /// <summary>"9:30 AM on 7/12" (the API already sends Eastern time).</summary>
+    public static string SquadOption(DateOnly date, TimeOnly startTime)
+        => startTime.ToString("h:mm tt", Culture) + " on " + date.ToString("M/d", Culture);
+
+    /// <summary>"Has scores · Current".</summary>
+    public static string SquadDetail(bool hasScores, bool isSelected)
+        => (hasScores ? "Has scores" : "No scores yet") + (isSelected ? " · Current" : string.Empty);
+
+    /// <summary>The Pick squad lead. <paramref name="expected"/> is the Series squad, such as "9:00 AM squad on 7/12".</summary>
+    public static string SquadLead(int order, string tournamentName, string? expected, bool needsSquad)
+        => "Stage " + Num(order) + ", " + tournamentName + ". The Series expects "
+            + (expected is null ? "a squad" : "a " + expected) + "."
+            + (needsSquad ? " No squad matches it exactly, so pick the one this round uses." : " Choose the squad this round uses.");
+
+    /// <summary>The locked editor's banner. A cancelled Stage can still go.</summary>
+    public static string LockedMessage(bool hasRemovableStage)
+        => "Processing has begun for this Series. Its Stages and whether it has a Finale are fixed. The name, the logo, and the Finale's date, time and center can still change."
+            + (hasRemovableStage
+                ? " A Stage whose tournament was cancelled can still be removed. After you save, run Recompute from the Stage before it on the Series page."
+                : string.Empty);
 }
