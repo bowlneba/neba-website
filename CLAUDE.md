@@ -151,6 +151,7 @@ Detailed write-ups live in `docs/learnings/`. Read the matching file before work
 - `[LogProperties]` tags are `<param>.<Property>` and skip the formatted message; log enrichers also need `Logging.EnableEnrichment()`; resource monitoring is Linux/Windows only (`docs/learnings/backend.md`).
 - Emails: inline styles, `<table>` layout, hosted logo URL, `WebUtility.HtmlEncode` on user values.
 - A class a use case needs from another feature (a reader, a mapper) goes in the using feature's namespace: `FeatureBoundaryTests` treats a feature's root namespace as use-case code. Pass an explicit escape character to `EF.Functions.ILike` (`docs/learnings/backend.md`).
+- Enqueue every domain event through `IDomainEventPublisher`, one `IDomainEventJob<T>` per event, events carry typed IDs only; the outbox (#56) is deferred; lock Series advancement with the keyed lock (`docs/learnings/backend.md`).
 - ImageSharp needs a license in Release builds: local `sixlabors.lic` in the repo root (git-ignored, never commit), CI `SIXLABORS_LICENSE_KEY` secret. Resize uploads through `IImageResizer`.
 
 ### Hangfire PostgreSql — `docs/learnings/hangfire-postgres.md`
