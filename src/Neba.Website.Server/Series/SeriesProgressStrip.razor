@@ -1,0 +1,24 @@
+<div class="series-strip" aria-hidden="true" data-testid="series-strip">
+    @foreach (var stage in Stages)
+    {
+        <span @key="stage.Id" class="@SeriesDisplay.SegmentClass(stage.Status)" title="@SeriesDisplay.SegmentTitle(stage.Order, stage.Status)"></span>
+    }
+</div>
+<div class="series-strip-legend">
+    <span>Open circle: pending</span>
+    <span class="series-strip-legend__computed">Blue: computed</span>
+    <span class="series-strip-legend__official">Green: official</span>
+</div>
+<p class="series-progress" data-testid="series-progress-line"><strong>@Progress.Lead</strong>@Progress.Detail</p>
+
+@code {
+    /// <summary>The Series' Stages in season order.</summary>
+    [Parameter, EditorRequired]
+    public IReadOnlyList<StageAdvancementViewModel> Stages { get; set; } = [];
+
+    /// <summary>The Backfill as-of date; null until the Backfill ran.</summary>
+    [Parameter]
+    public DateOnly? BackfillAsOf { get; set; }
+
+    private SummaryLine Progress => SeriesDisplay.Progress(Stages, BackfillAsOf);
+}

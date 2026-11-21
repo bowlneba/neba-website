@@ -1,0 +1,109 @@
+<div class="neba-card series-card" data-testid="series-stage-card" data-stage-id="@Stage.Id">
+    <div class="series-card__top">
+        <div>
+            <span class="series-card__kind @SeriesDisplay.KindClass(Stage.Kind)">@SeriesDisplay.StageChip(Stage.Kind, Stage.Order)</span>
+            <h3 class="series-card__title"><a href="@TournamentHref">@TournamentName</a></h3>
+            <p class="series-card__meta">@Meta</p>
+        </div>
+        <div class="series-card__right">
+            @if (Headline is not null)
+            {
+                <span class="series-card__fill" data-testid="stage-headline">@Headline</span>
+            }
+            <span class="@SeriesDisplay.StatusPillClass(Stage.Status)" data-testid="stage-status">@Stage.Status</span>
+            <button type="button" class="series-expander"
+                    aria-expanded="@(IsExpanded ? "true" : "false")"
+                    aria-controls="@PanelId"
+                    aria-label="@SeriesDisplay.ExpandLabel(IsExpanded, Stage.Order)"
+                    @onclick="OnToggle">
+                <svg width="12" height="12" viewBox="0 0 12 12" aria-hidden="true"><path d="M4 2l4 4-4 4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" /></svg>
+            </button>
+        </div>
+    </div>
+
+    @* Commits 22 and 23 add the Recompute and Pick squad buttons beside the flags here, so this row then renders always. *@
+    @if (HasFlags)
+    {
+        <div class="series-card__sub">
+            <div class="series-flags">
+                @if (Stage.IsTournamentCancelled)
+                {
+                    <span class="series-flag series-flag--error" data-testid="stage-flag-cancelled">Tournament cancelled: <a href="@EditHref">remove this Stage</a></span>
+                }
+                @if (Stage.NeedsSquad)
+                {
+                    <span class="series-flag series-flag--warn" data-testid="stage-flag-needs-squad">Needs squad</span>
+                }
+                @if (Stage.IsStale)
+                {
+                    <span class="series-flag series-flag--warn" data-testid="stage-flag-stale" title="@SeriesDisplay.StaleHint">Stale</span>
+                }
+                @if (DueLabel is not null)
+                {
+                    <span class="series-flag series-flag--info" data-testid="stage-flag-due">@DueLabel</span>
+                }
+                @if (BackfillLabel is not null)
+                {
+                    <span class="series-flag" data-testid="stage-flag-backfill">@BackfillLabel</span>
+                }
+            </div>
+        </div>
+    }
+
+    @if (IsExpanded)
+    {
+        <div class="series-card__panel" id="@PanelId" data-testid="stage-output">
+            @ChildContent
+        </div>
+    }
+</div>
+
+@code {
+    /// <summary>The Stage's advancement state.</summary>
+    [Parameter, EditorRequired]
+    public StageAdvancementViewModel Stage { get; set; } = default!;
+
+    /// <summary>The Stage's tournament name.</summary>
+    [Parameter, EditorRequired]
+    public string TournamentName { get; set; } = string.Empty;
+
+    /// <summary>Link to the tournament page.</summary>
+    [Parameter, EditorRequired]
+    public string TournamentHref { get; set; } = string.Empty;
+
+    /// <summary>"7/12 · 3-bowler teams · Top 2 teams (6 bowlers)".</summary>
+    [Parameter, EditorRequired]
+    public string Meta { get; set; } = string.Empty;
+
+    /// <summary>For the Placement headline ("20 ranked").</summary>
+    [Parameter]
+    public int PositionCount { get; set; }
+
+    /// <summary>Set on the last Qualifying Stage once the Backfill ran.</summary>
+    [Parameter]
+    public string? BackfillLabel { get; set; }
+
+    /// <summary>The Series edit page, where a cancelled Stage is removed.</summary>
+    [Parameter, EditorRequired]
+    public string EditHref { get; set; } = string.Empty;
+
+    /// <summary>True when the output panel is open.</summary>
+    [Parameter, EditorRequired]
+    public bool IsExpanded { get; set; }
+
+    /// <summary>Raised when the expander is pressed.</summary>
+    [Parameter, EditorRequired]
+    public EventCallback OnToggle { get; set; }
+
+    /// <summary>The output panel, shown when expanded.</summary>
+    [Parameter]
+    public RenderFragment? ChildContent { get; set; }
+
+    private string? Headline => SeriesDisplay.Headline(Stage, PositionCount);
+
+    private string? DueLabel => Stage.Status == StageStatuses.Computed ? SeriesDisplay.OfficialDueLabel(Stage.OfficialDueAt) : null;
+
+    private string PanelId => "series-output-" + Stage.Id;
+
+    private bool HasFlags => Stage.IsTournamentCancelled || Stage.NeedsSquad || Stage.IsStale || DueLabel is not null || BackfillLabel is not null;
+}

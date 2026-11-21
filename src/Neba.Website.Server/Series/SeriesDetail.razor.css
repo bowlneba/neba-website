@@ -136,3 +136,84 @@
         grid-column: 2;
     }
 }
+
+.series-detail__retry {
+    margin-top: 0.75rem;
+}
+
+/* Advancement section. The mockup's local tokens map onto the theme. Child components read these through inheritance.
+   Pending is neutral, Computed primary, Official success, Stale and Needs squad warning, cancelled error.
+   The foreground mixes keep text readable on the tinted background in both modes. */
+.series-detail {
+    --series-pending-bg: var(--neba-surface-high);
+    --series-pending-fg: var(--neba-text-muted);
+    --series-computed-bg: color-mix(in srgb, var(--neba-blue-600) 12%, transparent);
+    --series-computed-fg: var(--neba-blue-600);
+    --series-official-bg: color-mix(in srgb, var(--neba-success) 12%, transparent);
+    --series-official-fg: color-mix(in srgb, var(--neba-success) 75%, black);
+    --series-warn-bg: color-mix(in srgb, var(--neba-warning) 12%, transparent);
+    --series-warn-fg: color-mix(in srgb, var(--neba-warning) 75%, black);
+    --series-error-bg: color-mix(in srgb, var(--neba-accent-red) 10%, transparent);
+    --series-error-fg: color-mix(in srgb, var(--neba-accent-red) 85%, black);
+}
+
+.dark .series-detail {
+    --series-computed-fg: var(--neba-blue-300);
+    --series-official-fg: color-mix(in srgb, var(--neba-success) 55%, white);
+    --series-warn-fg: color-mix(in srgb, var(--neba-warning) 55%, white);
+    --series-error-fg: color-mix(in srgb, var(--neba-accent-red) 45%, white);
+}
+
+.series-rail-loading {
+    display: grid;
+    gap: 0.875rem;
+}
+
+.series-rail {
+    list-style: none;
+    margin: 0;
+    padding: 0 0 0 2.125rem;
+    position: relative;
+}
+
+.series-rail::before {
+    content: "";
+    position: absolute;
+    left: 0.6875rem;
+    top: 0.875rem;
+    bottom: 0.875rem;
+    width: 2px;
+    background: var(--neba-border);
+}
+
+.series-node {
+    position: relative;
+    margin-bottom: 0.875rem;
+}
+
+.series-node::before {
+    content: "";
+    position: absolute;
+    left: -1.8125rem;
+    top: 1.25rem;
+    width: 0.875rem;
+    height: 0.875rem;
+    border-radius: 50%;
+    background: var(--neba-bg-panel);
+    border: 2px solid var(--neba-border);
+}
+
+.series-node--computed::before {
+    background: var(--series-computed-fg);
+    border-color: var(--series-computed-fg);
+}
+
+.series-node--official::before {
+    background: var(--series-official-fg);
+    border-color: var(--series-official-fg);
+}
+
+.series-node--cancelled::before {
+    background: var(--series-error-fg);
+    border-color: var(--series-error-fg);
+}

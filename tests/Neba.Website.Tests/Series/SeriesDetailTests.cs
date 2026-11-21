@@ -8,6 +8,7 @@ using Microsoft.Extensions.Logging.Abstractions;
 using Neba.Api.Contracts.Security;
 using Neba.Api.Contracts.Series;
 using Neba.Api.Contracts.Series.GetSeries;
+using Neba.Api.Contracts.Series.GetSeriesAdvancement;
 using Neba.TestFactory.Attributes;
 using Neba.TestFactory.Series;
 using Neba.Website.Server.Clock;
@@ -15,6 +16,7 @@ using Neba.Website.Server.Help;
 using Neba.Website.Server.Notifications;
 using Neba.Website.Server.Series;
 using Neba.Website.Server.Services;
+using Neba.Website.Server.Time;
 
 using Refit.Testing;
 
@@ -44,7 +46,11 @@ public sealed class SeriesDetailTests : IDisposable
         stopwatch.Setup(x => x.GetTimestamp()).Returns(0L);
         stopwatch.Setup(x => x.GetElapsedTime(It.IsAny<long>())).Returns(TimeSpan.Zero);
 
+        var timeZone = new Mock<IClientTimeZoneService>(MockBehavior.Strict);
+        timeZone.Setup(x => x.ToLocalAsync(It.IsAny<DateTimeOffset>())).ReturnsAsync((DateTimeOffset utc) => utc);
+
         _ctx.Services.AddSingleton(_seriesApi.Object);
+        _ctx.Services.AddSingleton(timeZone.Object);
         _ctx.Services.AddSingleton(sp => new ApiExecutor(stopwatch.Object, sp.GetRequiredService<NavigationManager>(), NullLogger<ApiExecutor>.Instance));
         _ctx.Services.AddSingleton(_toastService);
         _ctx.Services.AddSingleton<HelpDocumentService>();
@@ -70,6 +76,18 @@ public sealed class SeriesDetailTests : IDisposable
         };
         _disposables.Add(response);
         _seriesApi.Setup(x => x.GetSeriesAsync(SeriesId, It.IsAny<CancellationToken>())).ReturnsAsync(response);
+    }
+
+    private void SetupAdvancement(SeriesAdvancementResponse advancement)
+    {
+        var response = new StubApiResponse<SeriesAdvancementResponse>
+        {
+            IsSuccessStatusCode = true,
+            StatusCode = System.Net.HttpStatusCode.OK,
+            Content = advancement,
+        };
+        _disposables.Add(response);
+        _seriesApi.Setup(x => x.GetSeriesAdvancementAsync(SeriesId, It.IsAny<CancellationToken>())).ReturnsAsync(response);
     }
 
     private static SeriesDetailResponse Config(bool withFinale = true, bool locked = false, Uri? logo = null)
@@ -251,6 +269,7 @@ public sealed class SeriesDetailTests : IDisposable
     {
         // Arrange
         SetupDetail(Config());
+        SetupAdvancement(SeriesAdvancementResponseFactory.Create());
 
         // Act
         var anonymous = _ctx.Render<SeriesDetail>(p => p.Add(x => x.Id, SeriesId));
