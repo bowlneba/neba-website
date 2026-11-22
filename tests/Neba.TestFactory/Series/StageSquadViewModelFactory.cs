@@ -33,7 +33,7 @@ public static class StageSquadViewModelFactory
         var date = faker.Date.FutureDateOnly(1);
         return [.. Enumerable.Range(0, count).Select(index => Create(
             squadId: Ulid.BogusString(faker),
-            label: SeriesDisplay.SquadOption(date, new TimeOnly(9, 0).AddMinutes(index * 30)),
+            label: SeriesDisplay.SquadOption(date, new TimeOnly(9, 0).AddMinutes((double)index * 30)),
             hasScores: index % 2 == 0,
             isSelected: index == 0))];
     }
