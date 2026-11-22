@@ -63,11 +63,13 @@ internal static class TournamentSuccessorCacheEviction
         ArgumentNullException.ThrowIfNull(cache);
         ArgumentNullException.ThrowIfNull(successors);
 
-        foreach (var successor in successors)
-        {
-            await cache.RemoveByTagAsync($"neba:tournaments:{successor.Id}", token: cancellationToken);
-            await cache.RemoveByTagAsync($"neba:tournaments:{successor.SeasonId}", token: cancellationToken);
-        }
+        // Successors in one season share the season tag, so each tag is removed once, and the removals run together.
+        var tags = successors
+            .SelectMany(successor => new[] { $"neba:tournaments:{successor.Id}", $"neba:tournaments:{successor.SeasonId}" })
+            .Distinct(StringComparer.Ordinal)
+            .ToList();
+
+        await Task.WhenAll(tags.Select(tag => cache.RemoveByTagAsync(tag, token: cancellationToken).AsTask()));
     }
 
     /// <summary>Finds the successors of <paramref name="tournamentId"/> and evicts them.</summary>
@@ -100,9 +102,7 @@ internal static class TournamentSuccessorCacheEviction
             .Distinct()
             .ToListAsync(cancellationToken);
 
-        foreach (var seasonId in seasonIds)
-        {
-            await cache.RemoveByTagAsync($"neba:tournaments:{seasonId}", token: cancellationToken);
-        }
+        await Task.WhenAll(seasonIds.Select(seasonId =>
+            cache.RemoveByTagAsync($"neba:tournaments:{seasonId}", token: cancellationToken).AsTask()));
     }
 }
