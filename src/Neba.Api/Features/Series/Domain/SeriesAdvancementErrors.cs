@@ -14,6 +14,10 @@ internal static class SeriesAdvancementErrors
         code: "Series.ConcurrentChange",
         description: "Another change to this Series was saved first. Reload and try again.");
 
+    public static readonly Error SaveConflict = Error.Conflict(
+        code: "Series.Save.Conflict",
+        description: "Another save took one of this Series' Stage tournaments, orders or field bowlers first. Reload and try again.");
+
     public static readonly Error Busy = Error.Conflict(
         code: "Series.Advancement.Busy",
         description: "Advancement for this Series is running. Try again in a moment.");

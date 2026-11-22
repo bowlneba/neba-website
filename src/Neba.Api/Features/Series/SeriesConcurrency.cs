@@ -1,3 +1,5 @@
+using EntityFramework.Exceptions.Common;
+
 using ErrorOr;
 
 using Microsoft.EntityFrameworkCore;
@@ -9,7 +11,10 @@ namespace Neba.Api.Features.Series;
 
 internal static class SeriesConcurrency
 {
-    /// <summary>Saves, turning a race with an advancement job (the Version token) into a 409 instead of a 500.</summary>
+    /// <summary>
+    /// Saves, turning a race with an advancement job (the Version token) or with another save that took the same
+    /// Stage tournament, order or field bowler (a unique index) into a 409 instead of a 500.
+    /// </summary>
     public static async Task<ErrorOr<Success>> SaveOrConflictAsync(AppDbContext appDbContext, CancellationToken cancellationToken)
     {
         try
@@ -20,6 +25,10 @@ internal static class SeriesConcurrency
         catch (DbUpdateConcurrencyException)
         {
             return SeriesAdvancementErrors.ConcurrentChange;
+        }
+        catch (UniqueConstraintException)
+        {
+            return SeriesAdvancementErrors.SaveConflict;
         }
     }
 }

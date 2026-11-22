@@ -46,7 +46,13 @@ internal sealed class CreateSeriesCommandHandler(AppDbContext appDbContext, IFus
 
         await appDbContext.Series.AddAsync(series.Value, cancellationToken);
         await PendingUploadCleaner.RemoveClaimedAsync(appDbContext, command.Logo, cancellationToken);
-        await appDbContext.SaveChangesAsync(cancellationToken);
+
+        var saved = await SeriesConcurrency.SaveOrConflictAsync(appDbContext, cancellationToken);
+        if (saved.IsError)
+        {
+            return saved.Errors;
+        }
+
         await cache.RemoveByTagAsync(CacheDescriptors.Tournaments.Tag, token: cancellationToken);
 
         return series.Value.Id;

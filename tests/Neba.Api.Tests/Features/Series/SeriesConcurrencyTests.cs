@@ -4,6 +4,7 @@ using Neba.Api.Database;
 using Neba.Api.Features.Series;
 using Neba.Api.Features.Series.Domain;
 using Neba.TestFactory.Attributes;
+using Neba.TestFactory.Series;
 using Neba.TestFactory.Infrastructure;
 
 namespace Neba.Api.Tests.Features.Series;
@@ -81,5 +82,34 @@ public sealed class SeriesConcurrencyTests(AppDbContextFixture fixture)
         var stored = await read.Series.AsNoTracking().SingleAsync(s => s.Id == seriesId, ct);
         stored.Name.ShouldBe("VH");
         stored.Version.ShouldBe(1);
+    }
+
+    [Fact(DisplayName = "SaveOrConflictAsync should return SaveConflict when a Stage tournament already belongs to another Series")]
+    public async Task SaveOrConflictAsync_ShouldReturnSaveConflict_WhenTournamentIsInAnotherSeries()
+    {
+        // Arrange
+        var ct = TestContext.Current.CancellationToken;
+        var seriesId = await SeedAsync();
+        var season = await _dbContext.Seasons.SingleAsync(ct);
+        var taken = await _dbContext.Tournaments.OrderBy(t => t.StartDate).Take(3).ToListAsync(ct);
+        var duplicate = SeriesFactory.CreateFor(
+            season,
+            [
+                (taken[0], StageKind.Qualifying, 8, null, null),
+                (taken[1], StageKind.Survivor, 20, taken[1].StartDate, new TimeOnly(9, 0)),
+                (taken[2], StageKind.Placement, null, null, null),
+            ],
+            name: "Race");
+        _dbContext.Series.Add(duplicate);
+
+        // Act
+        var result = await SeriesConcurrency.SaveOrConflictAsync(_dbContext, ct);
+
+        // Assert
+        result.IsError.ShouldBeTrue();
+        result.FirstError.ShouldBe(SeriesAdvancementErrors.SaveConflict);
+        await using var read = fixture.CreateDbContext();
+        (await read.Series.AsNoTracking().CountAsync(ct)).ShouldBe(1);
+        (await read.Series.AsNoTracking().SingleAsync(ct)).Id.ShouldBe(seriesId);
     }
 }
