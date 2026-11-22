@@ -313,9 +313,9 @@ public sealed record TournamentDetailViewModel
     public bool IsMultiDay => EndDate > StartDate;
 
     /// <summary>
-    /// True when the start date is today or in the future.
+    /// True until the tournament is completed or its end date passes.
     /// </summary>
-    public bool IsUpcoming => StartDate >= DateOnly.FromDateTime(DateTime.Today);
+    public bool IsUpcoming => !IsCompleted && EndDate >= DateOnly.FromDateTime(DateTime.Today);
 
     /// <summary>
     /// Results where the bowler competed in the main cut (no side cut).
