@@ -1,6 +1,7 @@
 
 using Neba.Api.Features.Bowlers.Domain;
 using Neba.Api.Features.Seasons.Domain;
+using Neba.Api.Features.Series.Domain;
 using Neba.Api.Features.Tournaments.Domain;
 
 namespace Neba.Api.Caching;
@@ -459,6 +460,29 @@ public static class CacheDescriptors
     /// </summary>
     public static class Series
     {
+        /// <summary>
+        /// Returns a cache descriptor for the list of every Series. It carries the tournaments tag, which
+        /// every Series command clears.
+        /// </summary>
+        public static CacheDescriptor List
+            => new()
+            {
+                Key = "neba:series:list",
+                Tags = ["neba", Tournaments.Tag, "neba:series"]
+            };
+
+        /// <summary>
+        /// Returns a cache descriptor for the detail of one Series. It carries the tournaments tag, which
+        /// every Series command clears, and the bowling centers tag, because it embeds a center's name.
+        /// </summary>
+        /// <param name="id">The Series identifier.</param>
+        public static CacheDescriptor Detail(SeriesId id)
+            => new()
+            {
+                Key = $"neba:series:{id}",
+                Tags = ["neba", Tournaments.Tag, "neba:bowling-centers", "neba:series", $"neba:series:{id}"]
+            };
+
         /// <summary>
         /// Returns a cache descriptor for the list of Series Finales. It carries the tournaments tag, which
         /// every Series command clears, and the bowling centers tag, because it embeds a center's name.
