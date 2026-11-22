@@ -605,7 +605,7 @@ public sealed partial class Series
 
             foreach (var effect in computed.OverrideEffects)
             {
-                stage.SetOverrideApplied(effect.OverrideId, effect.Applied);
+                stage.ApplyOverrideEffect(effect);
             }
 
             if (LastQualifyingStage?.Id == stage.Id)
@@ -632,12 +632,11 @@ public sealed partial class Series
             var existing = scope.Find(e => e.BowlerId == draft.BowlerId);
             if (existing is null)
             {
-                _fieldEntries.Add(SeriesFieldEntry.Create(
-                    draft.BowlerId, draft.SourceStageId, draft.Place, draft.BackfillPoints, draft.ViaOverride).Value);
+                _fieldEntries.Add(SeriesFieldEntry.Create(draft).Value);
             }
             else
             {
-                _ = existing.Update(draft.Place, draft.BackfillPoints, draft.ViaOverride).Value;
+                _ = existing.Update(draft).Value;
             }
         }
     }

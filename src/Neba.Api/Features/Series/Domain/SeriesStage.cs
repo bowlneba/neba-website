@@ -136,8 +136,8 @@ public sealed class SeriesStage
     internal void RemoveOverride(StageOverride stageOverride)
         => _overrides.Remove(stageOverride);
 
-    internal void SetOverrideApplied(StageOverrideId id, bool applied)
-        => _overrides.Single(o => o.Id == id).Applied = applied;
+    internal void ApplyOverrideEffect(OverrideEffect effect)
+        => _overrides.Single(o => o.Id == effect.OverrideId).Applied = effect.Applied;
 
     // Updates in place by bowler (the key is composite), removes the rest, adds new ones.
     internal void ReplaceOutcomes(IReadOnlyList<SurvivorOutcomeDraft> target)

@@ -35,36 +35,36 @@ public sealed class SeriesFieldEntry
     private SeriesFieldEntry()
     { }
 
-    internal static ErrorOr<SeriesFieldEntry> Create(
-        BowlerId bowlerId, SeriesStageId? sourceStageId, int? place, int? backfillPoints, bool viaOverride)
+    internal static ErrorOr<SeriesFieldEntry> Create(FieldEntryDraft draft)
     {
-        var entry = new SeriesFieldEntry { Id = SeriesFieldEntryId.New(), BowlerId = bowlerId };
-        var result = entry.Set(sourceStageId, place, backfillPoints, viaOverride);
+        var entry = new SeriesFieldEntry { Id = SeriesFieldEntryId.New(), BowlerId = draft.BowlerId };
+        var result = entry.Set(draft);
 
         return result.IsError ? result.Errors : entry;
     }
 
-    internal ErrorOr<Updated> Update(int? place, int? backfillPoints, bool viaOverride)
-        => Set(SourceStageId, place, backfillPoints, viaOverride);
+    // The source Stage never changes: only the place, points and origin of the entry do.
+    internal ErrorOr<Updated> Update(FieldEntryDraft draft)
+        => Set(draft with { SourceStageId = SourceStageId });
 
     internal FieldEntryDraft ToDraft()
         => new(BowlerId, SourceStageId, Place, BackfillPoints, ViaOverride);
 
-    private ErrorOr<Updated> Set(SeriesStageId? sourceStageId, int? place, int? backfillPoints, bool viaOverride)
+    private ErrorOr<Updated> Set(FieldEntryDraft draft)
     {
-        var valid = sourceStageId is null
-            ? backfillPoints is > 0 && place is null && !viaOverride
-            : place is > 0 && backfillPoints is null;
+        var valid = draft.SourceStageId is null
+            ? draft.BackfillPoints is > 0 && draft.Place is null && !draft.ViaOverride
+            : draft.Place is > 0 && draft.BackfillPoints is null;
 
         if (!valid)
         {
             return SeriesAdvancementErrors.EntryInvalid;
         }
 
-        SourceStageId = sourceStageId;
-        Place = place;
-        BackfillPoints = backfillPoints;
-        ViaOverride = viaOverride;
+        SourceStageId = draft.SourceStageId;
+        Place = draft.Place;
+        BackfillPoints = draft.BackfillPoints;
+        ViaOverride = draft.ViaOverride;
 
         return Result.Updated;
     }

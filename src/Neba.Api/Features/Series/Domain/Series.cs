@@ -325,9 +325,13 @@ public sealed partial class Series
 
             if (definition.Kind == StageKind.Placement)
             {
-                if (CheckPlacement(order, facts, placementSeen, isLast: i == stages.Count - 1) is { } placementError)
+                if (placementSeen)
                 {
-                    yield return placementError;
+                    yield return SeriesErrors.MultiplePlacementStages(order, facts.TournamentName);
+                }
+                else if (i != stages.Count - 1)
+                {
+                    yield return SeriesErrors.PlacementNotLast(order, facts.TournamentName);
                 }
 
                 placementSeen = true;
@@ -355,16 +359,6 @@ public sealed partial class Series
         {
             yield return SeriesErrors.DateNotAfterPrevious(order, facts.TournamentName, facts.StartDate, previousFacts.StartDate);
         }
-    }
-
-    private static Error? CheckPlacement(int order, StageTournamentFacts facts, bool placementSeen, bool isLast)
-    {
-        if (placementSeen)
-        {
-            return SeriesErrors.MultiplePlacementStages(order, facts.TournamentName);
-        }
-
-        return isLast ? null : SeriesErrors.PlacementNotLast(order, facts.TournamentName);
     }
 
     // #6: the Finale's count is above zero and no larger than the last Survivor count (no check without a Survivor Stage).

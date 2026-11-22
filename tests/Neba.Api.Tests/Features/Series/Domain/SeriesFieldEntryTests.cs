@@ -19,7 +19,7 @@ public sealed class SeriesFieldEntryTests
         var stageId = SeriesStageId.New();
 
         // Act
-        var result = SeriesFieldEntry.Create(bowlerId, stageId, 3, null, false);
+        var result = SeriesFieldEntry.Create(new FieldEntryDraft(bowlerId, stageId, 3, null, false));
 
         // Assert
         result.IsError.ShouldBeFalse();
@@ -35,7 +35,7 @@ public sealed class SeriesFieldEntryTests
     public void Create_ShouldReturnOverrideEntry_WhenViaOverride()
     {
         // Arrange & Act
-        var result = SeriesFieldEntry.Create(BowlerId.New(), SeriesStageId.New(), 9, null, true);
+        var result = SeriesFieldEntry.Create(new FieldEntryDraft(BowlerId.New(), SeriesStageId.New(), 9, null, true));
 
         // Assert
         result.IsError.ShouldBeFalse();
@@ -46,7 +46,7 @@ public sealed class SeriesFieldEntryTests
     public void Create_ShouldReturnBackfillEntry_WhenPointsAreGiven()
     {
         // Arrange & Act
-        var result = SeriesFieldEntry.Create(BowlerId.New(), null, null, 120, false);
+        var result = SeriesFieldEntry.Create(new FieldEntryDraft(BowlerId.New(), null, null, 120, false));
 
         // Assert
         result.IsError.ShouldBeFalse();
@@ -75,7 +75,7 @@ public sealed class SeriesFieldEntryTests
     public void Create_ShouldReturnEntryInvalid_WhenStageEntryIsMalformed(int? place, int? points)
     {
         // Arrange & Act
-        var result = SeriesFieldEntry.Create(BowlerId.New(), SeriesStageId.New(), place, points, false);
+        var result = SeriesFieldEntry.Create(new FieldEntryDraft(BowlerId.New(), SeriesStageId.New(), place, points, false));
 
         // Assert
         result.IsError.ShouldBeTrue();
@@ -92,7 +92,7 @@ public sealed class SeriesFieldEntryTests
     public void Create_ShouldReturnEntryInvalid_WhenBackfillEntryIsMalformed(int? points, int? place, bool viaOverride)
     {
         // Arrange & Act
-        var result = SeriesFieldEntry.Create(BowlerId.New(), null, place, points, viaOverride);
+        var result = SeriesFieldEntry.Create(new FieldEntryDraft(BowlerId.New(), null, place, points, viaOverride));
 
         // Assert
         result.IsError.ShouldBeTrue();
@@ -107,7 +107,7 @@ public sealed class SeriesFieldEntryTests
         var entry = SeriesFieldEntryFactory.Create(sourceStageId: stageId, place: 1);
 
         // Act
-        var result = entry.Update(4, null, false);
+        var result = entry.Update(new FieldEntryDraft(entry.BowlerId, null, 4, null, false));
 
         // Assert
         result.IsError.ShouldBeFalse();
@@ -122,7 +122,7 @@ public sealed class SeriesFieldEntryTests
         var entry = SeriesFieldEntryFactory.Create(sourceStageId: SeriesStageId.New(), place: 2);
 
         // Act
-        var result = entry.Update(0, null, true);
+        var result = entry.Update(new FieldEntryDraft(entry.BowlerId, null, 0, null, true));
 
         // Assert
         result.FirstError.Code.ShouldBe("Series.FieldEntry.Invalid");

@@ -21,12 +21,12 @@ public static class SeriesFieldEntryFactory
     {
         var isBackfill = sourceStageId is null;
 
-        var result = SeriesFieldEntry.Create(
+        var result = SeriesFieldEntry.Create(new FieldEntryDraft(
             bowlerId ?? BowlerId.New(),
             sourceStageId,
             place ?? (isBackfill ? null : ValidPlace),
             backfillPoints ?? (isBackfill ? ValidBackfillPoints : null),
-            viaOverride);
+            viaOverride));
 
         return result.IsError
             ? throw new InvalidOperationException($"Failed to create field entry: {result.Errors[0].Description}")
