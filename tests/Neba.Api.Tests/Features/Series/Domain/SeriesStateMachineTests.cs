@@ -326,6 +326,28 @@ public sealed class SeriesStateMachineTests
         harness.Series.Version.ShouldBe(version + 1);
     }
 
+    [Fact(DisplayName = "Recompute with confirmation should reset an Official Stage that can no longer compute to a Stale Computed Stage")]
+    public void Recompute_ShouldResetOfficialStage_WhenItCanNoLongerCompute()
+    {
+        // Arrange
+        var harness = AdvancementHarness.Create(StageKind.Qualifying).Advanced();
+        _ = harness.MakeDueOfficial();
+        harness.SetResults(1, []);
+        var later = Now.AddDays(5);
+
+        // Act
+        var result = harness.Recompute(1, confirm: true, now: later);
+
+        // Assert
+        var stage = harness.Stage(1);
+        result.IsError.ShouldBeFalse();
+        result.Value.StatusChanged.ShouldBeTrue();
+        stage.Status.ShouldBe(StageStatus.Computed);
+        stage.OfficialAt.ShouldBeNull();
+        stage.IsStale.ShouldBeTrue();
+        result.Value.StaleStageIds.ShouldBe([stage.Id]);
+    }
+
     [Fact(DisplayName = "Recompute should clear Stale on a Computed Stage whose output matches again")]
     public void Recompute_ShouldClearStale_WhenComputedOutputMatchesAgain()
     {

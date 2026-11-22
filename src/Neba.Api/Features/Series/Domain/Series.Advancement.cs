@@ -57,7 +57,7 @@ public sealed partial class Series
 
     /// <summary>
     /// Forced fold from a Stage to the end. Official Stages in the range need <paramref name="confirmResetOfficial"/>; they
-    /// reset to Computed and lose Stale. A recompute that changes nothing writes nothing.
+    /// reset to Computed and lose Stale. An Official Stage that can no longer compute resets to Computed and stays Stale. A recompute that changes nothing writes nothing.
     /// </summary>
     public ErrorOr<AdvanceResult> Recompute(
         SeriesStageId fromStageId, bool confirmResetOfficial, int expectedVersion, AdvancementFacts facts, DateTimeOffset now)
@@ -364,6 +364,15 @@ public sealed partial class Series
             if (stage.Status == StageStatus.Pending)
             {
                 return false;
+            }
+
+            if (mode == FoldMode.ResetOfficial && stage.Status == StageStatus.Official)
+            {
+                // The admin confirmed the reset, so the Stage stops being Official. With nothing to recompute from, its
+                // stored output stays and the Stage is Stale.
+                stage.MarkComputed(now);
+                trace.Changed = true;
+                trace.StatusChanged = true;
             }
 
             MarkStale(stage, trace); // stored output can no longer be reproduced; it stays as it is
