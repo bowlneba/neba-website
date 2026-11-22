@@ -73,14 +73,13 @@ public sealed class TournamentSuccessorCacheEvictionTests(AppDbContextFixture fi
         successors.ShouldBeEmpty();
     }
 
-    [Fact(DisplayName = "FindAsync returns the tournament that follows this one and stops when it is not truncated")]
-    public async Task FindAsync_ShouldStop_WhenSuccessorIsNotTruncated()
+    [Fact(DisplayName = "FindAsync returns the tournament that follows this one")]
+    public async Task FindAsync_ShouldReturnSuccessor_WhenOneFollows()
     {
         // Arrange
         var ct = TestContext.Current.CancellationToken;
         var first = await SeedAsync(2025, null, null, ct);
         var second = await SeedAsync(2026, first, TournamentStatus.Completed, ct);
-        await SeedAsync(2027, second, null, ct);
 
         // Act
         var successors = await TournamentSuccessorCacheEviction.FindAsync(_dbContext, first.Id, ct);
@@ -91,8 +90,8 @@ public sealed class TournamentSuccessorCacheEvictionTests(AppDbContextFixture fi
         successor.SeasonId.ShouldBe(_season.Id);
     }
 
-    [Fact(DisplayName = "FindAsync keeps walking through successors that are truncated")]
-    public async Task FindAsync_ShouldContinue_WhenSuccessorIsTruncated()
+    [Fact(DisplayName = "FindAsync keeps walking through every successor, truncated or not, because a run of titles counts back through them")]
+    public async Task FindAsync_ShouldContinue_ThroughEverySuccessor()
     {
         // Arrange
         var ct = TestContext.Current.CancellationToken;
@@ -100,13 +99,13 @@ public sealed class TournamentSuccessorCacheEvictionTests(AppDbContextFixture fi
         var second = await SeedAsync(2026, first, TournamentStatus.Truncated, ct);
         var third = await SeedAsync(2027, second, TournamentStatus.Truncated, ct);
         var fourth = await SeedAsync(2028, third, null, ct);
-        await SeedAsync(2029, fourth, null, ct);
+        var fifth = await SeedAsync(2029, fourth, null, ct);
 
         // Act
         var successors = await TournamentSuccessorCacheEviction.FindAsync(_dbContext, first.Id, ct);
 
         // Assert
-        successors.Select(successor => successor.Id).ShouldBe([second.Id, third.Id, fourth.Id], ignoreOrder: true);
+        successors.Select(successor => successor.Id).ShouldBe([second.Id, third.Id, fourth.Id, fifth.Id], ignoreOrder: true);
     }
 
     [Fact(DisplayName = "EvictAsync removes the cached detail and season list of each successor and leaves other entries")]

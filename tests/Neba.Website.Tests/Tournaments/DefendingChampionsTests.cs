@@ -25,6 +25,19 @@ public sealed class DefendingChampionsTests : IDisposable
             }
         });
 
+    [Fact(DisplayName = "Should show the count of titles in a row after the season in the strip")]
+    public void Render_ShouldShowTitleCount_WhenTeamWonMoreThanOnce()
+    {
+        // Arrange
+        var team = DefendingTeamViewModelFactory.Create(champions: ["Dave Smith", "Dana Jones"], consecutiveTitles: 2);
+
+        // Act
+        var cut = Render([team], DefendingChampionsLayout.Strip);
+
+        // Assert
+        cut.Find(".defending__tag").TextContent.Trim().ShouldBe("2025 Season winners, 2x champions");
+    }
+
     [Theory(DisplayName = "Should render nothing when there are no defending teams")]
     [InlineData(DefendingChampionsLayout.Strip, TestDisplayName = "Strip")]
     [InlineData(DefendingChampionsLayout.Panel, TestDisplayName = "Panel")]

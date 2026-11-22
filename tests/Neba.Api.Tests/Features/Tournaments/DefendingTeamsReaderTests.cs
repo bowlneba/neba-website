@@ -249,4 +249,56 @@ public sealed class DefendingTeamsReaderTests(AppDbContextFixture fixture)
         result[current2027.Id].ShouldHaveSingleItem().SourceTournamentId.ShouldBe(previous2026.Id);
         result.ShouldNotContainKey(noPrevious.Id);
     }
+
+    [Fact(DisplayName = "LoadAsync counts two titles when the same bowlers won the previous tournament and the one before it")]
+    public async Task LoadAsync_ShouldCountTwoTitles_WhenSameBowlersWonTwiceInARow()
+    {
+        // Arrange
+        var ct = TestContext.Current.CancellationToken;
+        var winners = await SeedPairAsync(ct);
+        var first = await SeedTournamentAsync(2025, null, TournamentStatus.Completed, winners, ct);
+        var second = await SeedTournamentAsync(2026, first, TournamentStatus.Completed, winners, ct);
+        var current = await SeedTournamentAsync(2027, second, TournamentStatus.Scheduled, null, ct);
+
+        // Act
+        var result = await CreateReader().LoadAsync([current.Id], ct);
+
+        // Assert
+        result[current.Id].ShouldHaveSingleItem().ConsecutiveTitles.ShouldBe(2);
+    }
+
+    [Fact(DisplayName = "LoadAsync counts the run through a skipped year, because a previous tournament is the one a tournament follows")]
+    public async Task LoadAsync_ShouldCountTwoTitles_WhenAYearWasSkipped()
+    {
+        // Arrange
+        var ct = TestContext.Current.CancellationToken;
+        var winners = await SeedPairAsync(ct);
+        var first = await SeedTournamentAsync(2024, null, TournamentStatus.Completed, winners, ct);
+        var second = await SeedTournamentAsync(2026, first, TournamentStatus.Completed, winners, ct);
+        var current = await SeedTournamentAsync(2027, second, TournamentStatus.Scheduled, null, ct);
+
+        // Act
+        var result = await CreateReader().LoadAsync([current.Id], ct);
+
+        // Assert
+        result[current.Id].ShouldHaveSingleItem().ConsecutiveTitles.ShouldBe(2);
+    }
+
+    [Fact(DisplayName = "LoadAsync counts one title when the earlier tournament had other winners")]
+    public async Task LoadAsync_ShouldCountOneTitle_WhenEarlierWinnersDiffer()
+    {
+        // Arrange
+        var ct = TestContext.Current.CancellationToken;
+        var firstWinners = await SeedPairAsync(ct);
+        var secondWinners = await SeedPairAsync(ct);
+        var first = await SeedTournamentAsync(2025, null, TournamentStatus.Completed, firstWinners, ct);
+        var second = await SeedTournamentAsync(2026, first, TournamentStatus.Completed, secondWinners, ct);
+        var current = await SeedTournamentAsync(2027, second, TournamentStatus.Scheduled, null, ct);
+
+        // Act
+        var result = await CreateReader().LoadAsync([current.Id], ct);
+
+        // Assert
+        result[current.Id].ShouldHaveSingleItem().ConsecutiveTitles.ShouldBe(1);
+    }
 }

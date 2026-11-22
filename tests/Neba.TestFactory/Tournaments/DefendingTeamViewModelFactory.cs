@@ -12,11 +12,13 @@ public static class DefendingTeamViewModelFactory
         string? seasonDescription = null,
         bool? sourceTruncated = null,
         bool? undefended = null,
-        IReadOnlyList<string>? champions = null)
+        IReadOnlyList<string>? champions = null,
+        int? consecutiveTitles = null)
         => new(
             tournamentName ?? ValidTournamentName,
             seasonDescription ?? ValidSeasonDescription,
             sourceTruncated ?? false,
             undefended ?? false,
-            champions ?? ["Dave Smith"]);
+            champions ?? ["Dave Smith"],
+            consecutiveTitles ?? 1);
 }
