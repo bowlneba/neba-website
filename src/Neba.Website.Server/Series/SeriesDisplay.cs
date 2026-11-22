@@ -54,7 +54,7 @@ internal static class SeriesDisplay
                 : new AdvancingLabel("Final standings", "(no Finale)"),
             (StageKinds.Qualifying, { } n) when teamSize > 1 => new AdvancingLabel(
                 "Top " + "team".ToQuantity(n, formatProvider: DisplayCulture.English),
-                "(" + Bowler.ToQuantity((long)n * teamSize, formatProvider: DisplayCulture.English) + ")"),
+                "(" + Bowler.ToQuantity((double)n * teamSize, formatProvider: DisplayCulture.English) + ")"),
             (StageKinds.Qualifying, { } n) => new AdvancingLabel("Top " + n.ToString(Culture), null),
             (StageKinds.Survivor, { } n) => new AdvancingLabel(n.ToString(Culture) + " advance", null),
             _ => new AdvancingLabel("—", null), // a saved Qualifying/Survivor Stage always has a count
@@ -77,7 +77,7 @@ internal static class SeriesDisplay
         string? bowlers = null;
         if (count is { } n)
         {
-            bowlers = "(" + Bowler.ToQuantity((long)n * teamSize, formatProvider: DisplayCulture.English) + ")";
+            bowlers = "(" + Bowler.ToQuantity((double)n * teamSize, formatProvider: DisplayCulture.English) + ")";
         }
 
         return new AdvancingLabel("Teams of " + teamSize.ToString(Culture), bowlers);
@@ -151,7 +151,7 @@ internal static class SeriesDisplay
                 finale.Date is { } fd && finale.StartTime is { } ft ? "Finale: " + FinaleWhen(fd, ft) + "." : null),
             (StageKinds.Qualifying, { } n) when teamSize > 1 => new AdvancingLabel(
                 "Top " + "team".ToQuantity(n, formatProvider: DisplayCulture.English) + " enter the Series field.",
-                "(" + Bowler.ToQuantity((long)n * teamSize, formatProvider: DisplayCulture.English) + ")"),
+                "(" + Bowler.ToQuantity((double)n * teamSize, formatProvider: DisplayCulture.English) + ")"),
             (StageKinds.Qualifying, { } n) => new AdvancingLabel("Top " + n.ToString(Culture) + " finishers enter the Series field.", null),
             (StageKinds.Survivor, { } n) => new AdvancingLabel(
                 n.ToString(Culture) + " bowlers advance.",
