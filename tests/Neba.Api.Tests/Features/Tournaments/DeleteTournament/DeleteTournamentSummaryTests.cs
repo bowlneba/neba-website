@@ -33,4 +33,15 @@ public sealed class DeleteTournamentSummaryTests
         summary.Responses.ShouldContainKey(403);
         summary.Responses.ShouldContainKey(409);
     }
+
+    [Fact(DisplayName = "Constructor should say a Series Stage cannot be deleted in the description and the 409 response")]
+    public void Constructor_ShouldMentionSeriesStage_WhenDescribingTheConflict()
+    {
+        // Arrange & Act
+        var summary = new DeleteTournamentSummary();
+
+        // Assert
+        summary.Description.ShouldContain("Stage in a Series");
+        summary.Responses[409].ShouldContain("Stage in a Series");
+    }
 }

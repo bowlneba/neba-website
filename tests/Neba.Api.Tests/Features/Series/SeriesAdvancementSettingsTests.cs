@@ -43,8 +43,11 @@ public sealed class SeriesAdvancementSettingsTests
     [Fact(DisplayName = "SectionName should be SeriesAdvancement")]
     public void SectionName_ShouldBeSeriesAdvancement()
     {
+        // Arrange & Act
+        var sectionName = SeriesAdvancementSettings.SectionName;
+
         // Assert
-        SeriesAdvancementSettings.SectionName.ShouldBe("SeriesAdvancement");
+        sectionName.ShouldBe("SeriesAdvancement");
     }
 
     [Theory(DisplayName = "OfficialGraceHours within 1 to 168 passes validation")]
