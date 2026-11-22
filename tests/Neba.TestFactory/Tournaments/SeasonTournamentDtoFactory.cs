@@ -35,7 +35,8 @@ public static class SeasonTournamentDtoFactory
         IReadOnlyCollection<Name>? winners = null,
         int? teamSize = null,
         IReadOnlyCollection<DefendingTeamDto>? defendingChampions = null,
-        TournamentSeriesDto? series = null)
+        TournamentSeriesDto? series = null,
+        TournamentId? nextTournamentId = null)
             => new()
             {
                 Id = id ?? TournamentId.New(),
@@ -62,7 +63,8 @@ public static class SeasonTournamentDtoFactory
                 Winners = winners ?? [],
                 TeamSize = teamSize ?? 1,
                 DefendingChampions = defendingChampions ?? [],
-                Series = series
+                Series = series,
+                NextTournamentId = nextTournamentId
             };
 
     public static IReadOnlyCollection<SeasonTournamentDto> Bogus(int count, int? seed = null)

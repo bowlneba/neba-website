@@ -301,4 +301,96 @@ public sealed class DefendingTeamsReaderTests(AppDbContextFixture fixture)
         // Assert
         result[current.Id].ShouldHaveSingleItem().ConsecutiveTitles.ShouldBe(1);
     }
+
+    [Fact(DisplayName = "LoadAsync counts three titles when the same bowlers won three tournaments in a row")]
+    public async Task LoadAsync_ShouldCountThreeTitles_WhenSameBowlersWonThreeInARow()
+    {
+        // Arrange
+        var ct = TestContext.Current.CancellationToken;
+        var winners = await SeedPairAsync(ct);
+        var first = await SeedTournamentAsync(2024, null, TournamentStatus.Completed, winners, ct);
+        var second = await SeedTournamentAsync(2025, first, TournamentStatus.Completed, winners, ct);
+        var third = await SeedTournamentAsync(2026, second, TournamentStatus.Completed, winners, ct);
+        var current = await SeedTournamentAsync(2027, third, TournamentStatus.Scheduled, null, ct);
+
+        // Act
+        var result = await CreateReader().LoadAsync([current.Id], ct);
+
+        // Assert
+        result[current.Id].ShouldHaveSingleItem().ConsecutiveTitles.ShouldBe(3);
+    }
+
+    [Fact(DisplayName = "LoadAsync counts one title when only one of the two bowlers won the earlier tournament")]
+    public async Task LoadAsync_ShouldCountOneTitle_WhenEarlierWinnersOverlapOnlyPartly()
+    {
+        // Arrange
+        var ct = TestContext.Current.CancellationToken;
+        var (shared, firstPartner) = await SeedPairAsync(ct);
+        var (_, secondPartner) = await SeedPairAsync(ct);
+        var first = await SeedTournamentAsync(2025, null, TournamentStatus.Completed, (shared, firstPartner), ct);
+        var second = await SeedTournamentAsync(2026, first, TournamentStatus.Completed, (shared, secondPartner), ct);
+        var current = await SeedTournamentAsync(2027, second, TournamentStatus.Scheduled, null, ct);
+
+        // Act
+        var result = await CreateReader().LoadAsync([current.Id], ct);
+
+        // Assert
+        result[current.Id].ShouldHaveSingleItem().ConsecutiveTitles.ShouldBe(1);
+    }
+
+    [Fact(DisplayName = "LoadAsync counts one title when the earlier tournament has no results")]
+    public async Task LoadAsync_ShouldCountOneTitle_WhenEarlierTournamentHasNoResults()
+    {
+        // Arrange
+        var ct = TestContext.Current.CancellationToken;
+        var winners = await SeedPairAsync(ct);
+        var first = await SeedTournamentAsync(2025, null, TournamentStatus.Completed, null, ct);
+        var second = await SeedTournamentAsync(2026, first, TournamentStatus.Completed, winners, ct);
+        var current = await SeedTournamentAsync(2027, second, TournamentStatus.Scheduled, null, ct);
+
+        // Act
+        var result = await CreateReader().LoadAsync([current.Id], ct);
+
+        // Assert
+        result[current.Id].ShouldHaveSingleItem().ConsecutiveTitles.ShouldBe(1);
+    }
+
+    [Fact(DisplayName = "LoadAsync counts one title when the winning tournament has no previous tournament")]
+    public async Task LoadAsync_ShouldCountOneTitle_WhenWinningTournamentHasNoPrevious()
+    {
+        // Arrange
+        var ct = TestContext.Current.CancellationToken;
+        var winners = await SeedPairAsync(ct);
+        var first = await SeedTournamentAsync(2026, null, TournamentStatus.Completed, winners, ct);
+        var current = await SeedTournamentAsync(2027, first, TournamentStatus.Scheduled, null, ct);
+
+        // Act
+        var result = await CreateReader().LoadAsync([current.Id], ct);
+
+        // Assert
+        result[current.Id].ShouldHaveSingleItem().ConsecutiveTitles.ShouldBe(1);
+    }
+
+    [Fact(DisplayName = "LoadAsync stops counting titles at the chain length cap")]
+    public async Task LoadAsync_ShouldStopCounting_AtTheChainLengthCap()
+    {
+        // Arrange
+        var ct = TestContext.Current.CancellationToken;
+        var winners = await SeedPairAsync(ct);
+        Tournament? previous = null;
+
+        for (var year = 2010; year <= 2024; year++)
+        {
+            previous = await SeedTournamentAsync(year, previous, TournamentStatus.Completed, winners, ct);
+        }
+
+        var current = await SeedTournamentAsync(2025, previous, TournamentStatus.Scheduled, null, ct);
+
+        // Act
+        var result = await CreateReader().LoadAsync([current.Id], ct);
+
+        // Assert
+        // The walk reads at most ten earlier tournaments, so a run of fifteen counts as eleven.
+        result[current.Id].ShouldHaveSingleItem().ConsecutiveTitles.ShouldBe(11);
+    }
 }
