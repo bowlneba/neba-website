@@ -4,8 +4,8 @@ using Neba.Api.Database;
 using Neba.Api.Features.Series;
 using Neba.Api.Features.Series.Domain;
 using Neba.TestFactory.Attributes;
-using Neba.TestFactory.Series;
 using Neba.TestFactory.Infrastructure;
+using Neba.TestFactory.Series;
 
 namespace Neba.Api.Tests.Features.Series;
 
