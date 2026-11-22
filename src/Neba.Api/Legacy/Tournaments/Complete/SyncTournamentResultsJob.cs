@@ -85,6 +85,12 @@ internal sealed class SyncTournamentResultsJob(
         await cache.RemoveByTagAsync("neba:tournaments:champions", token: ct);
         await cache.RemoveByTagAsync(CacheDescriptors.HallOfFame.PointsTag, token: ct);
 
+        // Each winner's cached title list (GetBowlerTitlesQuery) lasts days and nothing else clears it.
+        foreach (var winnerId in tournament.Results.Where(result => result.Place == 1).Select(result => result.BowlerId).Distinct())
+        {
+            await cache.RemoveAsync(CacheDescriptors.Bowlers.Titles(winnerId).Key, token: ct);
+        }
+
         // The winners are the next tournament's defending champions, which its cached list and detail show.
         await TournamentSuccessorCacheEviction.EvictAsync(db, cache, tournament.Id, ct);
 

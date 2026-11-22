@@ -11,6 +11,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Testing;
 
 using Neba.Api.BackgroundJobs;
+using Neba.Api.Caching;
 using Neba.Api.Database;
 using Neba.Api.Database.Interceptors;
 using Neba.Api.Discord;
@@ -352,6 +353,36 @@ public sealed class SyncTournamentResultsJobTests(AppDbContextFixture fixture, L
         championsValueAfterSync.ShouldBe("fresh-value");
         var pointsValueAfterSync = await cache.GetOrSetAsync(pointsCacheKey, _ => Task.FromResult("fresh-value"), token: ct);
         pointsValueAfterSync.ShouldBe("fresh-value");
+    }
+
+    [Fact(DisplayName = "SyncAsync should evict the cached titles of each winner, and only the winners")]
+    public async Task SyncAsync_ShouldEvictWinnersTitlesCache_AndNotOtherBowlers()
+    {
+        // Arrange
+        var ct = TestContext.Current.CancellationToken;
+        await CreateTournamentAsync(42, TournamentType.Singles, complete: true, ct);
+        var winner = await CreateBowlerAsync(100, ct);
+        var runnerUp = await CreateBowlerAsync(200, ct);
+
+        var winnerStatsId = await InsertStatsAsync(100, 42);
+        await InsertResultsStatsAsync(winnerStatsId, place: 1, payout: 500m, points: 100);
+        var runnerUpStatsId = await InsertStatsAsync(200, 42);
+        await InsertResultsStatsAsync(runnerUpStatsId, place: 2, payout: 300m, points: 80);
+
+        var cache = _serviceProvider.GetRequiredService<IFusionCache>();
+        var winnerTitles = CacheDescriptors.Bowlers.Titles(winner.Id);
+        var runnerUpTitles = CacheDescriptors.Bowlers.Titles(runnerUp.Id);
+        await cache.GetOrSetAsync(winnerTitles.Key, _ => Task.FromResult("stale-cached-value"), tags: winnerTitles.Tags, token: ct);
+        await cache.GetOrSetAsync(runnerUpTitles.Key, _ => Task.FromResult("stale-cached-value"), tags: runnerUpTitles.Tags, token: ct);
+
+        var job = CreateJob();
+
+        // Act
+        await job.SyncAsync(42, ct);
+
+        // Assert
+        (await cache.GetOrSetAsync(winnerTitles.Key, _ => Task.FromResult("fresh-value"), token: ct)).ShouldBe("fresh-value");
+        (await cache.GetOrSetAsync(runnerUpTitles.Key, _ => Task.FromResult("fresh-value"), token: ct)).ShouldBe("stale-cached-value");
     }
 
     [Fact(DisplayName = "SyncAsync should evict the cached reads of the next tournament, which show these winners as defenders")]
