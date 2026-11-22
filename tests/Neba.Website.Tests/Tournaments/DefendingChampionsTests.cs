@@ -25,8 +25,8 @@ public sealed class DefendingChampionsTests : IDisposable
             }
         });
 
-    [Fact(DisplayName = "Should show the count of titles in a row after the season in the strip")]
-    public void Render_ShouldShowTitleCount_WhenTeamWonMoreThanOnce()
+    [Fact(DisplayName = "Should show a medallion with the title count for a team that won more than once in a row")]
+    public void Render_ShouldShowMedallion_WhenTeamWonMoreThanOnce()
     {
         // Arrange
         var team = DefendingTeamViewModelFactory.Create(champions: ["Dave Smith", "Dana Jones"], consecutiveTitles: 2);
@@ -35,7 +35,36 @@ public sealed class DefendingChampionsTests : IDisposable
         var cut = Render([team], DefendingChampionsLayout.Strip);
 
         // Assert
-        cut.Find(".defending__tag").TextContent.Trim().ShouldBe("2025 Season winners, 2x champions");
+        var medal = cut.Find(".defending__medal");
+        medal.TextContent.Trim().ShouldBe("2x");
+        medal.GetAttribute("aria-label").ShouldBe("2 titles in a row");
+        cut.Find(".defending__tag").TextContent.Trim().ShouldBe("2025 Season winners");
+    }
+
+    [Fact(DisplayName = "Should show the medallion in the panel too")]
+    public void Render_ShouldShowMedallion_InPanel()
+    {
+        // Arrange
+        var team = DefendingTeamViewModelFactory.Create(consecutiveTitles: 3);
+
+        // Act
+        var cut = Render([team], DefendingChampionsLayout.Panel);
+
+        // Assert
+        cut.Find(".defending__medal").TextContent.Trim().ShouldBe("3x");
+    }
+
+    [Fact(DisplayName = "Should show no medallion for a team that won once")]
+    public void Render_ShouldShowNoMedallion_WhenTeamWonOnce()
+    {
+        // Arrange
+        var team = DefendingTeamViewModelFactory.Create();
+
+        // Act
+        var cut = Render([team], DefendingChampionsLayout.Strip);
+
+        // Assert
+        cut.FindAll(".defending__medal").ShouldBeEmpty();
     }
 
     [Theory(DisplayName = "Should render nothing when there are no defending teams")]

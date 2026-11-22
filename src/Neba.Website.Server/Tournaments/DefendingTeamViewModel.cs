@@ -13,30 +13,22 @@ public sealed record DefendingTeamViewModel(
     IReadOnlyList<string> Champions,
     int ConsecutiveTitles = 1)
 {
-    /// <summary>Short note under the season, or null for a normal defending team that won once.</summary>
-    public string? Note
+    /// <summary>Short note under the season, or null for a normal defending team.</summary>
+    public string? Note => (SourceTruncated, Undefended) switch
     {
-        get
-        {
-            var titles = ConsecutiveTitles > 1
-                ? $"{ConsecutiveTitles}x " + "champion".ToQuantity(Math.Max(1, Champions.Count), ShowQuantityAs.None)
-                : null;
+        (true, _) => "tournament truncated",
+        (_, true) => "could not defend",
+        _ => null
+    };
 
-            var status = (SourceTruncated, Undefended) switch
-            {
-                (true, _) => "tournament truncated",
-                (_, true) => "could not defend",
-                _ => null
-            };
+    /// <summary>True when the same bowlers won more than one tournament in a row.</summary>
+    public bool IsRepeatChampion => ConsecutiveTitles > 1;
 
-            return (titles, status) switch
-            {
-                (not null, not null) => titles + ", " + status,
-                (not null, null) => titles,
-                _ => status
-            };
-        }
-    }
+    /// <summary>Text of the medallion, such as "2x".</summary>
+    public string TitleCountLabel => ConsecutiveTitles + "x";
+
+    /// <summary>Spoken text for the medallion.</summary>
+    public string TitleCountDescription => "title".ToQuantity(ConsecutiveTitles) + " in a row";
 }
 
 internal static class DefendingTeamMappingExtensions
