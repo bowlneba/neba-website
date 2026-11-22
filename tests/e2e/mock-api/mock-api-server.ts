@@ -2389,7 +2389,13 @@ function resolveTournamentDetailRoute(pathname: string): object | null {
   const tournamentId = pathname.slice('/tournaments/'.length);
   if (tournamentId === MOCK_TOURNAMENT_ID) return MOCK_TOURNAMENT_DETAIL;
   if (EXTRA_TOURNAMENT_DETAILS.has(tournamentId)) return EXTRA_TOURNAMENT_DETAILS.get(tournamentId) ?? null;
-  return createdTournaments.get(tournamentId) ?? null;
+  const created = createdTournaments.get(tournamentId);
+  if (created) return created;
+  // Generated Series Stage tournaments (see mockSeriesStages) link to a detail page that must resolve.
+  const stage = mockSeriesStages().find((candidate) => (candidate as { tournamentId: string }).tournamentId === tournamentId) as
+    | { tournamentName: string; tournamentStartDate: string }
+    | undefined;
+  return stage ? seriesStageDetail(tournamentId, stage.tournamentName, stage.tournamentStartDate, null) : null;
 }
 
 function resolveSponsorDetailRoute(pathname: string): object | null {
