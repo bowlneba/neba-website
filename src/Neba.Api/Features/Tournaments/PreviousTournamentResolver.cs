@@ -1,3 +1,5 @@
+using EntityFramework.Exceptions.Common;
+
 using ErrorOr;
 
 using Microsoft.EntityFrameworkCore;
@@ -9,15 +11,29 @@ namespace Neba.Api.Features.Tournaments;
 
 /// <summary>
 /// Loads the facts about a tournament's previous tournament, or confirms there is none to load.
-/// Rejects a tournament another tournament already follows. Shared by the create and edit command handlers, like <see cref="TournamentSeasonAndPatternResolver"/>.
+/// Rejects a tournament another tournament already follows; <c>selfId</c> is the tournament being edited (or <c>null</c> on create), which may keep its own previous tournament. Shared by the create and edit command handlers, like <see cref="TournamentSeasonAndPatternResolver"/>.
 /// </summary>
 internal static class PreviousTournamentResolver
 {
+    /// <summary>
+    /// True when a save failed on the unique index over previous tournament: two requests picked the same
+    /// previous tournament and both passed the check in <see cref="ResolveAsync"/>.
+    /// </summary>
+    public static bool IsPreviousTournamentViolation(UniqueConstraintException exception)
+    {
+        ArgumentNullException.ThrowIfNull(exception);
+
+        // The property list is null when the database reports a violation without naming the columns.
+        IReadOnlyList<string>? properties = exception.ConstraintProperties;
+
+        return properties?.Contains(nameof(Tournament.PreviousTournamentId)) == true;
+    }
+
     public static async Task<ErrorOr<PreviousTournamentFacts?>> ResolveAsync(
         AppDbContext appDbContext,
         TournamentId? previousTournamentId,
-        CancellationToken cancellationToken,
-        TournamentId? selfId = null)
+        TournamentId? selfId,
+        CancellationToken cancellationToken)
     {
         if (previousTournamentId is not { } id)
         {

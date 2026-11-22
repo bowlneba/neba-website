@@ -2,6 +2,7 @@ using ErrorOr;
 
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
 using Microsoft.Extensions.Time.Testing;
 
@@ -58,12 +59,13 @@ public sealed class CreateTournamentCommandHandlerTests(AppDbContextFixture fixt
 
     private CreateTournamentCommandHandler CreateHandler(
         IBackgroundJobScheduler? backgroundJobScheduler = null,
-        TimeProvider? timeProvider = null)
+        TimeProvider? timeProvider = null,
+        AppDbContext? dbContext = null)
     {
         var cache = _serviceProvider.GetRequiredService<IFusionCache>();
         var scheduler = backgroundJobScheduler ?? new Mock<IBackgroundJobScheduler>(MockBehavior.Strict).Object;
-        return new CreateTournamentCommandHandler(_dbContext, cache, scheduler, timeProvider ?? new FakeTimeProvider(Now),
-            Options.Create(new OilPatternAnnouncementSettings()));
+        return new CreateTournamentCommandHandler(dbContext ?? _dbContext, cache, scheduler, timeProvider ?? new FakeTimeProvider(Now),
+            Options.Create(new OilPatternAnnouncementSettings()), NullLogger<CreateTournamentCommandHandler>.Instance);
     }
 
     private async Task<Season> SeedSeasonAsync(CancellationToken ct)
@@ -222,6 +224,104 @@ public sealed class CreateTournamentCommandHandlerTests(AppDbContextFixture fixt
         result.IsError.ShouldBeFalse();
         var created = await _dbContext.Tournaments.AsNoTracking().SingleAsync(t => t.Id == result.Value, ct);
         created.PreviousTournamentId.ShouldBe(previous.Id);
+    }
+
+    [Fact(DisplayName = "HandleAsync evicts the cached season list of the previous tournament's season, which shows its next tournament")]
+    public async Task HandleAsync_ShouldEvictPreviousTournamentSeasonList_WhenCreatedWithPreviousTournament()
+    {
+        // Arrange
+        var ct = TestContext.Current.CancellationToken;
+        await SeedSeasonAsync(ct);
+        var earlierSeason = SeasonFactory.Create(startDate: new DateOnly(2024, 1, 1), endDate: new DateOnly(2024, 12, 31));
+        await _dbContext.Seasons.AddAsync(earlierSeason, ct);
+        var previous = TournamentFactory.Create(
+            tournamentType: TournamentType.Doubles,
+            startDate: TournamentFactory.ValidStartDate.AddYears(-1),
+            endDate: TournamentFactory.ValidEndDate.AddYears(-1),
+            seasonId: earlierSeason.Id);
+        await _dbContext.Tournaments.AddAsync(previous, ct);
+        await _dbContext.SaveChangesAsync(ct);
+
+        var cache = _serviceProvider.GetRequiredService<IFusionCache>();
+        await cache.GetOrSetAsync("previous-season-list", _ => Task.FromResult("stale"), tags: [$"neba:tournaments:{earlierSeason.Id}"], token: ct);
+        var command = ValidCommand(tournamentType: TournamentType.Doubles, previousTournamentId: previous.Id);
+
+        // Act
+        var result = await CreateHandler().HandleAsync(command, ct);
+
+        // Assert
+        result.IsError.ShouldBeFalse();
+        (await cache.GetOrSetAsync("previous-season-list", _ => Task.FromResult("fresh"), token: ct)).ShouldBe("fresh");
+    }
+
+    [Fact(DisplayName = "HandleAsync returns a conflict error when another tournament already follows the previous tournament")]
+    public async Task HandleAsync_ShouldReturnConflictError_WhenPreviousTournamentAlreadyUsed()
+    {
+        // Arrange
+        var ct = TestContext.Current.CancellationToken;
+        var season = await SeedSeasonAsync(ct);
+        var previous = TournamentFactory.Create(
+            tournamentType: TournamentType.Doubles,
+            startDate: TournamentFactory.ValidStartDate.AddYears(-2),
+            endDate: TournamentFactory.ValidEndDate.AddYears(-2),
+            seasonId: season.Id);
+        var follower = TournamentFactory.Create(
+            tournamentType: TournamentType.Doubles,
+            startDate: TournamentFactory.ValidStartDate.AddYears(-1),
+            endDate: TournamentFactory.ValidEndDate.AddYears(-1),
+            seasonId: season.Id,
+            previousTournament: PreviousTournamentFactsFactory.Create(previous.Id, TournamentType.Doubles, previous.EndDate));
+        await _dbContext.Tournaments.AddRangeAsync([previous, follower], ct);
+        await _dbContext.SaveChangesAsync(ct);
+        var command = ValidCommand(tournamentType: TournamentType.Doubles, previousTournamentId: previous.Id);
+
+        // Act
+        var result = await CreateHandler().HandleAsync(command, ct);
+
+        // Assert
+        result.IsError.ShouldBeTrue();
+        result.FirstError.Type.ShouldBe(ErrorType.Conflict);
+        result.FirstError.Code.ShouldBe("Tournament.PreviousTournament.AlreadyUsed");
+    }
+
+    [Fact(DisplayName = "HandleAsync returns a conflict error when another request takes the previous tournament before the save")]
+    public async Task HandleAsync_ShouldReturnConflictError_WhenPreviousTournamentTakenDuringSave()
+    {
+        // Arrange
+        var ct = TestContext.Current.CancellationToken;
+        var season = await SeedSeasonAsync(ct);
+        var previous = TournamentFactory.Create(
+            tournamentType: TournamentType.Doubles,
+            startDate: TournamentFactory.ValidStartDate.AddYears(-2),
+            endDate: TournamentFactory.ValidEndDate.AddYears(-2),
+            seasonId: season.Id);
+        await _dbContext.Tournaments.AddAsync(previous, ct);
+        await _dbContext.SaveChangesAsync(ct);
+
+        // The competing request lands after the handler's check passes and before its save.
+        var competing = new BeforeSaveInterceptor(async () =>
+        {
+            await using var other = fixture.CreateDbContext();
+            await other.Tournaments.AddAsync(
+                TournamentFactory.Create(
+                    tournamentType: TournamentType.Doubles,
+                    startDate: TournamentFactory.ValidStartDate.AddYears(-1),
+                    endDate: TournamentFactory.ValidEndDate.AddYears(-1),
+                    seasonId: season.Id,
+                    previousTournament: PreviousTournamentFactsFactory.Create(previous.Id, TournamentType.Doubles, previous.EndDate)),
+                ct);
+            await other.SaveChangesAsync(ct);
+        });
+        await using var racingContext = fixture.CreateDbContext(competing);
+        var command = ValidCommand(tournamentType: TournamentType.Doubles, previousTournamentId: previous.Id);
+
+        // Act
+        var result = await CreateHandler(dbContext: racingContext).HandleAsync(command, ct);
+
+        // Assert
+        result.IsError.ShouldBeTrue();
+        result.FirstError.Type.ShouldBe(ErrorType.Conflict);
+        result.FirstError.Code.ShouldBe("Tournament.PreviousTournament.AlreadyUsed");
     }
 
     [Fact(DisplayName = "HandleAsync returns a type mismatch error when the previous tournament is a different type")]
