@@ -70,12 +70,22 @@ internal static class SeriesSeed
             series.ChangeLogo(logo);
         }
 
-        if (status is not null)
+        dbContext.Series.Add(series);
+
+        if (status is not null && status != StageStatus.Pending)
         {
-            series.Stages.First().Status = status;
+            // The domain mutators set the timestamps the status check constraint requires.
+            var stage = series.Stages.First();
+            var now = new DateTimeOffset(2025, 3, 1, 12, 0, 0, TimeSpan.Zero);
+
+            stage.MarkComputed(now);
+
+            if (status == StageStatus.Official)
+            {
+                stage.MarkOfficial(now);
+            }
         }
 
-        dbContext.Series.Add(series);
         await dbContext.SaveChangesAsync(ct);
 
         return series;

@@ -187,4 +187,32 @@ public sealed class EditSeriesLogoCommandHandlerTests(AppDbContextFixture fixtur
         saved.ContentType.ShouldBe("image/png");
         saved.SizeInBytes.ShouldBe(50);
     }
+
+    [Fact(DisplayName = "HandleAsync should return ConcurrentChange and keep the old logo when a job moves Version between the load and the save")]
+    public async Task HandleAsync_ShouldReturnConcurrentChange_WhenVersionMovesBeforeSave()
+    {
+        // Arrange
+        var ct = TestContext.Current.CancellationToken;
+        var series = await SeedAsync(StoredFileFactory.Create(container: "series", path: "old.png"));
+        await StageAsync("new.png");
+        var job = new BeforeSaveInterceptor(async token =>
+        {
+            await using var jobContext = fixture.CreateDbContext();
+            await jobContext.Series.ExecuteUpdateAsync(set => set.SetProperty(s => s.Version, s => s.Version + 1), token);
+        });
+        await using var db = fixture.CreateDbContext(job);
+        var command = new EditSeriesLogoCommand { SeriesId = series.Id, Logo = StoredFileFactory.Create(container: "series", path: "new.png") };
+
+        // Act (a strict scheduler and cache with no setup fail if the handler goes on after the conflict)
+        var result = await CreateHandler(db, cache: SeriesCache.Untouched()).HandleAsync(command, ct);
+
+        // Assert
+        result.IsError.ShouldBeTrue();
+        result.FirstError.ShouldBe(SeriesAdvancementErrors.ConcurrentChange);
+        await using var read = fixture.CreateDbContext();
+        var stored = await read.Series.AsNoTracking().SingleAsync(ct);
+        stored.Logo!.Path.ShouldBe("old.png");
+        stored.Version.ShouldBe(1);
+        (await read.PendingUploads.CountAsync(ct)).ShouldBe(1);
+    }
 }

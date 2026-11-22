@@ -35,7 +35,13 @@ internal sealed class DeleteSeriesCommandHandler(AppDbContext appDbContext, IBac
         var logo = series.Logo;
 
         appDbContext.Series.Remove(series);
-        await appDbContext.SaveChangesAsync(cancellationToken);
+
+        var saved = await SeriesConcurrency.SaveOrConflictAsync(appDbContext, cancellationToken);
+        if (saved.IsError)
+        {
+            return saved.Errors;
+        }
+
         await cache.RemoveByTagAsync(CacheDescriptors.Tournaments.Tag, token: cancellationToken);
 
         StoredFileCleanup.ScheduleDeleteOfReplaced(backgroundJobScheduler, logo, current: null);

@@ -163,3 +163,11 @@ A photo shown in a shape (round avatar, later news headers) is framed by three w
 
 - Blazor scoped CSS adds the scope attribute only to elements your own markup renders. If the component's root is a child component (for example `NebaModal`), none of the elements it renders carry your scope, so a bare `::deep .x` rule matches nothing.
 - Wrap the child in a `<div class="ip-root">` and write the rules as `.ip-root ::deep .x`. `HallOfFameInducteeModal.razor` is the reference.
+
+### Refit 17 reflection support
+
+- Refit 17 no longer falls back to reflection JSON. `AddApiServices` calls `ReflectionSupport.EnsureRegistered()` (package `Refit.Reflection`) once at startup because `RefitSettings` uses serializer options with no source-generated context. Remove either and every Refit call in the Website fails at run time; the bUnit Series tests catch it. No unit test targets the call itself.
+
+### Free-text boxes that count keystrokes
+
+- A textarea whose Save button and character count follow every keystroke may use `@oninput` with a `value=` binding, as long as the C# handler only stores the text and updates display state (no filtering, no auto-advance; those belong in a `.razor.js` module). `StageOverrideModal` is the reference. A blur-bound `InputTextArea` cannot show a live count.

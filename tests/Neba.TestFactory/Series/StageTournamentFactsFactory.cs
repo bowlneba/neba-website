@@ -16,7 +16,8 @@ public static class StageTournamentFactsFactory
         SeasonId? seasonId = null,
         DateOnly? startDate = null,
         DateOnly? endDate = null,
-        string? otherSeriesName = null)
+        string? otherSeriesName = null,
+        TournamentStatus? status = null)
     {
         var start = startDate ?? ValidStartDate;
 
@@ -25,6 +26,7 @@ public static class StageTournamentFactsFactory
             TournamentId = tournamentId ?? TournamentId.New(),
             TournamentName = tournamentName ?? ValidTournamentName,
             SeasonId = seasonId ?? SeasonId.New(),
+            Status = status ?? TournamentStatus.Scheduled,
             StartDate = start,
             EndDate = endDate ?? (startDate is null ? ValidEndDate : start),
             OtherSeriesName = otherSeriesName,

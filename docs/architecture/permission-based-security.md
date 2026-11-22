@@ -69,6 +69,12 @@ public sealed class Permission : SmartEnum<Permission, string>
 }
 ```
 
+Permissions added since this sketch (the real catalog is `Permission.cs`):
+
+| Permission | Allows | Held by |
+| --- | --- | --- |
+| `Series.ManageAdvancement` | Add a bowler to a Qualifying Stage, clear a slot, remove an override | Admin, Webmaster |
+
 `Permission.Key` is what gets stored as the claim value in `AspNetRoleClaims` and embedded in the
 JWT/cookie claims; it's also what forms the policy-name suffix (`"Permission:" + Permission.ArticlesCreate.Key`).
 `Permission.List` (built into `SmartEnum`, no extra code) is the full catalog — this is what lets

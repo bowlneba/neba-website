@@ -30,6 +30,13 @@
             }
             else
             {
+                @if (_cancelledCheckWarning is not null)
+                {
+                    <div data-testid="series-cancelled-check-warning">
+                        <NebaAlert Severity="NotifySeverity.Warning" Title="Cancelled tournaments not checked" Message="@_cancelledCheckWarning" />
+                    </div>
+                }
+
                 <SeriesEditor Model="@_model"
                               SeriesId="@Id"
                               SeasonLabel="@SeasonLabel"
@@ -51,6 +58,7 @@
     private SeriesDetailViewModel? _detail;
     private SeriesFormModel? _model;
     private string? _loadError;
+    private string? _cancelledCheckWarning;
 
     private string SeasonLabel => _detail is null ? string.Empty : _detail.SeasonDescription + " (" + _detail.SeasonDateRange + ")";
 
@@ -68,5 +76,36 @@
 
         _detail = result.Value.ToViewModel();
         _model = SeriesInputMapping.FromDetail(_detail);
+
+        if (_detail.IsLocked)
+        {
+            await MarkRemovableStagesAsync();
+        }
+    }
+
+    /// <summary>
+    /// A locked Series fixes its Stages, except a Pending Stage whose tournament was cancelled. GetSeries carries the
+    /// Stage's own status but no tournament status, so the advancement read (same permission as this page) says which rows may go.
+    /// The API decides on save; this only shows the remove button.
+    /// </summary>
+    private async Task MarkRemovableStagesAsync()
+    {
+        var result = await ApiExecutor.ExecuteAsync("SeriesApi", "GetSeriesAdvancement", ct => SeriesApi.GetSeriesAdvancementAsync(Id, ct));
+
+        if (result.IsError)
+        {
+            _cancelledCheckWarning = SeriesDisplay.CancelledCheckFailed;
+            return;
+        }
+
+        var removable = result.Value.Stages
+            .Where(stage => stage.Status == StageStatuses.Pending && stage.TournamentStatus == TournamentStatuses.Cancelled)
+            .Select(stage => stage.StageId)
+            .ToHashSet(StringComparer.Ordinal);
+
+        foreach (var row in _model!.Stages)
+        {
+            row.RemovableWhileLocked = row.StageId is { } stageId && removable.Contains(stageId);
+        }
     }
 }

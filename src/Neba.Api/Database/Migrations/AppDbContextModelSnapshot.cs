@@ -726,6 +726,10 @@ namespace Neba.Api.Database.Migrations
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityAlwaysColumn(b.Property<int>("db_id"));
 
+                    b.Property<DateOnly?>("BackfillAsOf")
+                        .HasColumnType("date")
+                        .HasColumnName("backfill_as_of");
+
                     b.Property<string>("Id")
                         .IsRequired()
                         .HasMaxLength(26)
@@ -745,6 +749,13 @@ namespace Neba.Api.Database.Migrations
                         .HasColumnType("character(26)")
                         .HasColumnName("season_id")
                         .IsFixedLength();
+
+                    b.Property<int>("Version")
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasDefaultValue(0)
+                        .HasColumnName("version");
 
                     b.ComplexProperty(typeof(Dictionary<string, object>), "Logo", "Neba.Api.Features.Series.Domain.Series.Logo#StoredFile", b1 =>
                         {
@@ -786,6 +797,116 @@ namespace Neba.Api.Database.Migrations
                         });
                 });
 
+            modelBuilder.Entity("Neba.Api.Features.Series.Domain.SeriesFieldEntry", b =>
+                {
+                    b.Property<int>("db_id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasColumnName("id");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityAlwaysColumn(b.Property<int>("db_id"));
+
+                    b.Property<int?>("BackfillPoints")
+                        .HasColumnType("integer")
+                        .HasColumnName("backfill_points");
+
+                    b.Property<string>("BowlerId")
+                        .IsRequired()
+                        .HasMaxLength(26)
+                        .HasColumnType("character(26)")
+                        .HasColumnName("bowler_id")
+                        .IsFixedLength();
+
+                    b.Property<string>("Id")
+                        .IsRequired()
+                        .HasMaxLength(26)
+                        .HasColumnType("character(26)")
+                        .HasColumnName("domain_id")
+                        .IsFixedLength();
+
+                    b.Property<int?>("Place")
+                        .HasColumnType("integer")
+                        .HasColumnName("place");
+
+                    b.Property<string>("SourceStageId")
+                        .HasMaxLength(26)
+                        .HasColumnType("character(26)")
+                        .HasColumnName("source_stage_id")
+                        .IsFixedLength();
+
+                    b.Property<bool>("ViaOverride")
+                        .HasColumnType("boolean")
+                        .HasColumnName("via_override");
+
+                    b.Property<int>("series_id")
+                        .HasColumnType("integer")
+                        .HasColumnName("series_id");
+
+                    b.HasKey("db_id")
+                        .HasName("pk_series_field_entries");
+
+                    b.HasAlternateKey("Id")
+                        .HasName("ak_series_field_entries_domain_id");
+
+                    b.HasIndex("BowlerId")
+                        .HasDatabaseName("ix_series_field_entries_bowler_id");
+
+                    b.HasIndex("SourceStageId")
+                        .HasDatabaseName("ix_series_field_entries_source_stage_id");
+
+                    b.HasIndex("series_id", "BowlerId")
+                        .IsUnique()
+                        .HasDatabaseName("ix_series_field_entries_series_id_bowler_id");
+
+                    b.ToTable("series_field_entries", "app", t =>
+                        {
+                            t.HasCheckConstraint("ck_series_field_entries_backfill_points_not_negative", "backfill_points IS NULL OR backfill_points >= 0");
+
+                            t.HasCheckConstraint("ck_series_field_entries_place_positive", "place IS NULL OR place > 0");
+
+                            t.HasCheckConstraint("ck_series_field_entries_source_shape", "(source_stage_id IS NOT NULL AND place IS NOT NULL AND backfill_points IS NULL) OR (source_stage_id IS NULL AND place IS NULL AND backfill_points IS NOT NULL AND via_override = FALSE)");
+                        });
+                });
+
+            modelBuilder.Entity("Neba.Api.Features.Series.Domain.SeriesPosition", b =>
+                {
+                    b.Property<int>("series_id")
+                        .HasColumnType("integer")
+                        .HasColumnName("series_id");
+
+                    b.Property<string>("BowlerId")
+                        .HasMaxLength(26)
+                        .HasColumnType("character(26)")
+                        .HasColumnName("bowler_id")
+                        .IsFixedLength();
+
+                    b.Property<bool>("Bowled")
+                        .HasColumnType("boolean")
+                        .HasColumnName("bowled");
+
+                    b.Property<bool?>("IsFinalist")
+                        .HasColumnType("boolean")
+                        .HasColumnName("is_finalist");
+
+                    b.Property<int>("Position")
+                        .HasColumnType("integer")
+                        .HasColumnName("position");
+
+                    b.HasKey("series_id", "BowlerId")
+                        .HasName("pk_series_positions");
+
+                    b.HasIndex("BowlerId")
+                        .HasDatabaseName("ix_series_positions_bowler_id");
+
+                    b.HasIndex("series_id", "Position")
+                        .HasDatabaseName("ix_series_positions_series_id_position");
+
+                    b.ToTable("series_positions", "app", t =>
+                        {
+                            t.HasCheckConstraint("ck_series_positions_position_positive", "position > 0");
+                        });
+                });
+
             modelBuilder.Entity("Neba.Api.Features.Series.Domain.SeriesStage", b =>
                 {
                     b.Property<int>("db_id")
@@ -799,6 +920,10 @@ namespace Neba.Api.Database.Migrations
                         .HasColumnType("integer")
                         .HasColumnName("advancing_count");
 
+                    b.Property<DateTimeOffset?>("ComputedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("computed_at_utc");
+
                     b.Property<string>("Id")
                         .IsRequired()
                         .HasMaxLength(26)
@@ -806,13 +931,27 @@ namespace Neba.Api.Database.Migrations
                         .HasColumnName("domain_id")
                         .IsFixedLength();
 
+                    b.Property<bool>("IsStale")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(false)
+                        .HasColumnName("is_stale");
+
                     b.Property<int>("Kind")
                         .HasColumnType("integer")
                         .HasColumnName("kind");
 
+                    b.Property<DateTimeOffset?>("OfficialAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("official_at_utc");
+
                     b.Property<int>("Order")
                         .HasColumnType("integer")
                         .HasColumnName("stage_order");
+
+                    b.Property<int?>("SlotCount")
+                        .HasColumnType("integer")
+                        .HasColumnName("slot_count");
 
                     b.Property<int>("Status")
                         .HasColumnType("integer")
@@ -860,7 +999,113 @@ namespace Neba.Api.Database.Migrations
                         .IsUnique()
                         .HasDatabaseName("ix_series_stages_series_id_stage_order");
 
-                    b.ToTable("series_stages", "app");
+                    b.ToTable("series_stages", "app", t =>
+                        {
+                            t.HasCheckConstraint("ck_series_stages_placement_never_official", "NOT (kind = 3 AND status = 2)");
+
+                            t.HasCheckConstraint("ck_series_stages_slot_count_not_negative", "slot_count IS NULL OR slot_count >= 0");
+
+                            t.HasCheckConstraint("ck_series_stages_status_timestamps", "(status = 0 AND computed_at_utc IS NULL AND official_at_utc IS NULL) OR (status = 1 AND computed_at_utc IS NOT NULL AND official_at_utc IS NULL) OR (status = 2 AND computed_at_utc IS NOT NULL AND official_at_utc IS NOT NULL)");
+                        });
+                });
+
+            modelBuilder.Entity("Neba.Api.Features.Series.Domain.StageOverride", b =>
+                {
+                    b.Property<int>("db_id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasColumnName("id");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityAlwaysColumn(b.Property<int>("db_id"));
+
+                    b.Property<bool>("Applied")
+                        .HasColumnType("boolean")
+                        .HasColumnName("applied");
+
+                    b.Property<string>("BowlerId")
+                        .IsRequired()
+                        .HasMaxLength(26)
+                        .HasColumnType("character(26)")
+                        .HasColumnName("bowler_id")
+                        .IsFixedLength();
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at_utc");
+
+                    b.Property<string>("CreatedBy")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)")
+                        .HasColumnName("created_by");
+
+                    b.Property<string>("Id")
+                        .IsRequired()
+                        .HasMaxLength(26)
+                        .HasColumnType("character(26)")
+                        .HasColumnName("domain_id")
+                        .IsFixedLength();
+
+                    b.Property<int>("Kind")
+                        .HasColumnType("integer")
+                        .HasColumnName("kind");
+
+                    b.Property<string>("Reason")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)")
+                        .HasColumnName("reason");
+
+                    b.Property<int>("series_stage_id")
+                        .HasColumnType("integer")
+                        .HasColumnName("series_stage_id");
+
+                    b.HasKey("db_id")
+                        .HasName("pk_series_stage_overrides");
+
+                    b.HasAlternateKey("Id")
+                        .HasName("ak_series_stage_overrides_domain_id");
+
+                    b.HasIndex("BowlerId")
+                        .HasDatabaseName("ix_series_stage_overrides_bowler_id");
+
+                    b.HasIndex("series_stage_id", "BowlerId")
+                        .IsUnique()
+                        .HasDatabaseName("ix_series_stage_overrides_series_stage_id_bowler_id");
+
+                    b.ToTable("series_stage_overrides", "app");
+                });
+
+            modelBuilder.Entity("Neba.Api.Features.Series.Domain.SurvivorOutcome", b =>
+                {
+                    b.Property<int>("series_stage_id")
+                        .HasColumnType("integer")
+                        .HasColumnName("series_stage_id");
+
+                    b.Property<string>("BowlerId")
+                        .HasMaxLength(26)
+                        .HasColumnType("character(26)")
+                        .HasColumnName("bowler_id")
+                        .IsFixedLength();
+
+                    b.Property<bool>("Advanced")
+                        .HasColumnType("boolean")
+                        .HasColumnName("advanced");
+
+                    b.Property<int?>("BlockTotal")
+                        .HasColumnType("integer")
+                        .HasColumnName("block_total");
+
+                    b.HasKey("series_stage_id", "BowlerId")
+                        .HasName("pk_series_survivor_outcomes");
+
+                    b.HasIndex("BowlerId")
+                        .HasDatabaseName("ix_series_survivor_outcomes_bowler_id");
+
+                    b.ToTable("series_survivor_outcomes", "app", t =>
+                        {
+                            t.HasCheckConstraint("ck_series_survivor_outcomes_block_total_not_negative", "block_total IS NULL OR block_total >= 0");
+                        });
                 });
 
             modelBuilder.Entity("Neba.Api.Features.Sponsors.Domain.Sponsor", b =>
@@ -2210,6 +2455,53 @@ namespace Neba.Api.Database.Migrations
                     b.Navigation("Finale");
                 });
 
+            modelBuilder.Entity("Neba.Api.Features.Series.Domain.SeriesFieldEntry", b =>
+                {
+                    b.HasOne("Neba.Api.Features.Bowlers.Domain.Bowler", "Bowler")
+                        .WithMany()
+                        .HasForeignKey("BowlerId")
+                        .HasPrincipalKey("Id")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_series_field_entries_bowlers_bowler_id");
+
+                    b.HasOne("Neba.Api.Features.Series.Domain.SeriesStage", null)
+                        .WithMany()
+                        .HasForeignKey("SourceStageId")
+                        .HasPrincipalKey("Id")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .HasConstraintName("fk_series_field_entries_series_stages_source_stage_id");
+
+                    b.HasOne("Neba.Api.Features.Series.Domain.Series", null)
+                        .WithMany("FieldEntries")
+                        .HasForeignKey("series_id")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_series_field_entries_series_series_id");
+
+                    b.Navigation("Bowler");
+                });
+
+            modelBuilder.Entity("Neba.Api.Features.Series.Domain.SeriesPosition", b =>
+                {
+                    b.HasOne("Neba.Api.Features.Bowlers.Domain.Bowler", "Bowler")
+                        .WithMany()
+                        .HasForeignKey("BowlerId")
+                        .HasPrincipalKey("Id")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_series_positions_bowlers_bowler_id");
+
+                    b.HasOne("Neba.Api.Features.Series.Domain.Series", null)
+                        .WithMany("Positions")
+                        .HasForeignKey("series_id")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_series_positions_series_series_id");
+
+                    b.Navigation("Bowler");
+                });
+
             modelBuilder.Entity("Neba.Api.Features.Series.Domain.SeriesStage", b =>
                 {
                     b.HasOne("Neba.Api.Features.Tournaments.Domain.Tournament", null)
@@ -2226,6 +2518,46 @@ namespace Neba.Api.Database.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired()
                         .HasConstraintName("fk_series_stages_series_series_id");
+                });
+
+            modelBuilder.Entity("Neba.Api.Features.Series.Domain.StageOverride", b =>
+                {
+                    b.HasOne("Neba.Api.Features.Bowlers.Domain.Bowler", "Bowler")
+                        .WithMany()
+                        .HasForeignKey("BowlerId")
+                        .HasPrincipalKey("Id")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_series_stage_overrides_bowlers_bowler_id");
+
+                    b.HasOne("Neba.Api.Features.Series.Domain.SeriesStage", null)
+                        .WithMany("Overrides")
+                        .HasForeignKey("series_stage_id")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_series_stage_overrides_series_stages_series_stage_id");
+
+                    b.Navigation("Bowler");
+                });
+
+            modelBuilder.Entity("Neba.Api.Features.Series.Domain.SurvivorOutcome", b =>
+                {
+                    b.HasOne("Neba.Api.Features.Bowlers.Domain.Bowler", "Bowler")
+                        .WithMany()
+                        .HasForeignKey("BowlerId")
+                        .HasPrincipalKey("Id")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_series_survivor_outcomes_bowlers_bowler_id");
+
+                    b.HasOne("Neba.Api.Features.Series.Domain.SeriesStage", null)
+                        .WithMany("SurvivorOutcomes")
+                        .HasForeignKey("series_stage_id")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_series_survivor_outcomes_series_stages_series_stage_id");
+
+                    b.Navigation("Bowler");
                 });
 
             modelBuilder.Entity("Neba.Api.Features.Sponsors.Domain.Sponsor", b =>
@@ -2556,7 +2888,18 @@ namespace Neba.Api.Database.Migrations
 
             modelBuilder.Entity("Neba.Api.Features.Series.Domain.Series", b =>
                 {
+                    b.Navigation("FieldEntries");
+
+                    b.Navigation("Positions");
+
                     b.Navigation("Stages");
+                });
+
+            modelBuilder.Entity("Neba.Api.Features.Series.Domain.SeriesStage", b =>
+                {
+                    b.Navigation("Overrides");
+
+                    b.Navigation("SurvivorOutcomes");
                 });
 
             modelBuilder.Entity("Neba.Api.Features.Sponsors.Domain.Sponsor", b =>

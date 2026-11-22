@@ -316,6 +316,9 @@ function mockSeriesDetail(id: string): Record<string, unknown> | null {
   const logoFor = (own: string | null) => (seriesLogos.has(id) ? seriesLogos.get(id) : own);
   const isLogoSeries = E2E_PROJECT_NAMES.some((projectName) => id === perProjectTournamentId(MOCK_SERIES_LOGO_ID, projectName));
 
+  const advancementBaseId = advFixtureBaseId(id);
+  if (advancementBaseId) return mockAdvancementSeriesDetail(id, advancementBaseId);
+
   if (id === MOCK_SERIES_ID) {
     return {
       id,
@@ -427,6 +430,647 @@ function resolveSeriesRoute(pathname: string): object | null {
   if (pathname.startsWith('/series/')) return mockSeriesDetail(pathname.slice('/series/'.length));
   return null;
 }
+
+// ── Series advancement fixtures (GET /series/{id}/advancement and its writes) ────────────────
+// Six fixture Series show the states the advancement UI has. The three Playwright projects share one
+// mock server and the writes change the fixture, so each project uses its own copy of an id
+// (perProjectAdvancementSeriesId); the base id works too. State is built on first use and POST
+// /__mock/series-advancement/reset?seriesId= (no seriesId: every Series) restores the fixtures.
+// None of these ids is in the /series list.
+export const MOCK_ADVANCEMENT_PENDING_ID = '01JX0000000000000000000520'; // every Stage Pending
+export const MOCK_ADVANCEMENT_MID_SEASON_ID = '01JX0000000000000000000521'; // Computed Stale Qualifying, Survivor needs a squad, Placement Pending
+export const MOCK_ADVANCEMENT_COMPLETE_ID = '01JX0000000000000000000522'; // Official Stages, Backfill ran, Placement Computed
+export const MOCK_ADVANCEMENT_OVERRIDES_ID = '01JX0000000000000000000523'; // Official Qualifying, then Computed with an Add and a Clear
+export const MOCK_ADVANCEMENT_SQUAD_ID = '01JX0000000000000000000524'; // Survivor Stage with two squads to pick
+export const MOCK_ADVANCEMENT_CANCELLED_ID = '01JX0000000000000000000525'; // locked, one Pending Stage with a Cancelled tournament
+export const MOCK_ADVANCEMENT_ADMIN_ID = '01JX0000000000000000000001'; // the createdBy of the fixture overrides
+
+// perProjectTournamentId keeps only the last digit of the base id, so 502 and 522 would collide: this one keeps all three.
+export function perProjectAdvancementSeriesId(baseId: string, projectName: string): string {
+  const index = E2E_PROJECT_NAMES.indexOf(projectName as (typeof E2E_PROJECT_NAMES)[number]);
+  if (index < 0) {
+    throw new Error(`Unknown Playwright project "${projectName}"; add it to E2E_PROJECT_NAMES.`);
+  }
+
+  return `${baseId.slice(0, -5)}Q${index}${baseId.slice(-3)}`;
+}
+
+interface AdvFieldEntry {
+  bowlerId: string;
+  bowlerName: string;
+  sourceStageId?: string;
+  place?: number;
+  backfillPoints?: number;
+  viaOverride: boolean;
+}
+
+interface AdvOverride {
+  overrideId: string;
+  bowlerId: string;
+  bowlerName: string;
+  kind: 'Add' | 'Clear';
+  reason: string;
+  createdBy: string;
+  createdAt: string;
+  applied: boolean;
+}
+
+interface AdvOutcome {
+  bowlerId: string;
+  bowlerName: string;
+  blockTotal?: number;
+  advanced: boolean;
+}
+
+interface AdvStage {
+  stageId: string;
+  order: number;
+  kind: 'Qualifying' | 'Survivor' | 'Placement';
+  status: 'Pending' | 'Computed' | 'Official';
+  isStale: boolean;
+  needsSquad: boolean;
+  computedAt?: string;
+  officialDueAt?: string;
+  officialAt?: string;
+  slotCount?: number;
+  vacantSlotCount?: number;
+  tournamentId: string;
+  tournamentStatus: 'Scheduled' | 'Completed' | 'Cancelled';
+  resolvedSquadId?: string;
+  entries: AdvFieldEntry[];
+  overrides: AdvOverride[];
+  survivorOutcomes: AdvOutcome[];
+}
+
+interface AdvPosition {
+  bowlerId: string;
+  bowlerName: string;
+  position: number;
+  bowled: boolean;
+  isFinalist?: boolean;
+}
+
+interface AdvResultRow {
+  bowlerId: string;
+  bowlerName: string;
+  place: number;
+}
+
+interface AdvSquad {
+  squadId: string;
+  date: string;
+  startTime: string;
+  hasScores: boolean;
+}
+
+interface AdvState {
+  series3: string;
+  version: number;
+  backfillAsOf: string | null;
+  stages: AdvStage[];
+  positions: AdvPosition[];
+  results: Record<string, AdvResultRow[]>;
+  squads: Record<string, AdvSquad[]>;
+  nextOverride: number;
+}
+
+const ADV_FIXTURE_NAMES: Record<string, string> = {
+  [MOCK_ADVANCEMENT_PENDING_ID]: 'Advancement Pending Series',
+  [MOCK_ADVANCEMENT_MID_SEASON_ID]: 'Advancement Mid-Season Series',
+  [MOCK_ADVANCEMENT_COMPLETE_ID]: 'Advancement Complete Series',
+  [MOCK_ADVANCEMENT_OVERRIDES_ID]: 'Advancement Overrides Series',
+  [MOCK_ADVANCEMENT_SQUAD_ID]: 'Advancement Squad Series',
+  [MOCK_ADVANCEMENT_CANCELLED_ID]: 'Advancement Cancelled Series',
+};
+
+// Name, start date, kind, advancing count, squad date. Every Stage is singles; a Qualifying Stage has 4 slots.
+const ADV_STAGE_ROWS: [string, string, AdvStage['kind'], number | null, string | null][] = [
+  ['Series Qualifier One', '2026-03-21', 'Qualifying', 4, null],
+  ['Series Qualifier Two', '2026-04-18', 'Qualifying', 4, null],
+  ['Series Survivor Round', '2026-07-12', 'Survivor', 4, '2026-07-12'],
+  ['Series Placement Round', '2026-08-23', 'Placement', null, null],
+];
+
+const ADV_SLOTS = 4;
+const ADV_COMPUTED_AT = '2026-03-23T18:00:00+00:00';
+const ADV_OFFICIAL_AT = '2026-03-24T18:15:00+00:00';
+const ADV_OFFICIAL_DUE_AT = '2030-03-24T18:15:00+00:00'; // a fixed future time, so the Stage never comes due
+const ADV_BACKFILL_AS_OF = '2026-04-18';
+
+const ADV_BOWLER_NAMES = [
+  'Marcus Alvarez', 'Dana Brennan', 'Priya Castellano', 'Tom Doyle', 'Elena Ferreira', 'Jorge Gallagher', 'Ruth Hartwell',
+  'Kenji Iverson', 'Sam Jankowski', 'Alicia Kowalczyk', 'Nate Lombardi', 'Maria Mercer', 'Owen Nakamura', 'Leah Okafor',
+  'Victor Pelletier', 'Hannah Quinlan', 'Ray Rowe', 'Tessa Sorensen', 'Ian Tran', 'Carla Underhill',
+];
+
+function advId(tail: string): string {
+  return `01JX${tail.padStart(22, '0')}`;
+}
+
+function advBowler(index: number): { bowlerId: string; bowlerName: string } {
+  return { bowlerId: advId(`4${String(index).padStart(4, '0')}`), bowlerName: ADV_BOWLER_NAMES[index % ADV_BOWLER_NAMES.length] };
+}
+
+function advSquadId(series3: string, order: number, letter: 'A' | 'B'): string {
+  return advId(`7${series3}${String(order).padStart(2, '0')}${letter === 'A' ? 1 : 2}`);
+}
+
+function advPendingState(series3: string): AdvState {
+  const stages: AdvStage[] = ADV_STAGE_ROWS.map(([, , kind], index) => ({
+    stageId: advId(`8${series3}${String(index + 1).padStart(2, '0')}`),
+    order: index + 1,
+    kind,
+    status: 'Pending',
+    isStale: false,
+    needsSquad: false,
+    tournamentId: advId(`9${series3}${String(index + 1).padStart(2, '0')}`),
+    tournamentStatus: 'Scheduled',
+    entries: [],
+    overrides: [],
+    survivorOutcomes: [],
+  }));
+
+  // The tournament's result rows: the slot finishers (places 1 to 4), then six more the Add bowler picker offers.
+  const resultRows = (first: number): AdvResultRow[] => [
+    ...[0, 1, 2, 3].map((k) => ({ ...advBowler(first + k), place: k + 1 })),
+    ...[10, 11, 12, 13, 14, 15].map((b, k) => ({ ...advBowler(b), place: ADV_SLOTS + k + 1 })),
+  ];
+
+  const results: Record<string, AdvResultRow[]> = {
+    [stages[0].stageId]: resultRows(0),
+    [stages[1].stageId]: resultRows(4),
+    [stages[2].stageId]: [0, 1, 2, 3, 4, 5, 6, 7].map((b, k) => ({ ...advBowler(b), place: k + 1 })),
+    [stages[3].stageId]: [],
+  };
+
+  const squads: Record<string, AdvSquad[]> = {
+    [stages[2].stageId]: [
+      { squadId: advSquadId(series3, 3, 'A'), date: '2026-07-12', startTime: '09:30:00', hasScores: true },
+      { squadId: advSquadId(series3, 3, 'B'), date: '2026-07-12', startTime: '13:00:00', hasScores: false },
+    ],
+  };
+
+  return { series3, version: 0, backfillAsOf: null, stages, positions: [], results, squads, nextOverride: 1 };
+}
+
+// An all-Pending state built from a Series detail's own Stages (the fallback for every other Series).
+function advFallbackState(detail: Record<string, unknown>): AdvState {
+  const state = advPendingState('000');
+  const detailStages = detail.stages as { id: string; order: number; kind: string; tournamentId: string }[];
+  state.stages = detailStages.map((stage) => ({
+    stageId: stage.id,
+    order: stage.order,
+    kind: stage.kind as AdvStage['kind'],
+    status: 'Pending',
+    isStale: false,
+    needsSquad: false,
+    tournamentId: stage.tournamentId,
+    tournamentStatus: 'Scheduled',
+    entries: [],
+    overrides: [],
+    survivorOutcomes: [],
+  }));
+  state.results = {};
+  state.squads = {};
+  return state;
+}
+
+function advStageDue(state: AdvState, stage: AdvStage): string | undefined {
+  const lastQualifying = state.stages.findLast((s) => s.kind === 'Qualifying');
+  const awaitsBackfill = stage === lastQualifying && state.backfillAsOf === null;
+  return stage.kind === 'Placement' || awaitsBackfill ? undefined : ADV_OFFICIAL_DUE_AT;
+}
+
+function advSetComputed(state: AdvState, stage: AdvStage, official: boolean): void {
+  stage.status = official ? 'Official' : 'Computed';
+  stage.tournamentStatus = 'Completed';
+  stage.computedAt = ADV_COMPUTED_AT;
+  stage.officialAt = official ? ADV_OFFICIAL_AT : undefined;
+  stage.officialDueAt = official ? undefined : advStageDue(state, stage);
+}
+
+function advFillQualifying(state: AdvState, order: number, official: boolean, vacant = 0): void {
+  const stage = state.stages[order - 1];
+  const slotRows = state.results[stage.stageId].filter((row) => row.place <= ADV_SLOTS).slice(0, ADV_SLOTS - vacant);
+  stage.entries = slotRows.map((row) => ({ ...row, sourceStageId: stage.stageId, viaOverride: false }));
+  stage.slotCount = ADV_SLOTS;
+  stage.vacantSlotCount = vacant;
+  advSetComputed(state, stage, official);
+}
+
+function advAddBackfill(state: AdvState, bowlerIndex: number, points: number): void {
+  const lastQualifying = state.stages.findLast((s) => s.kind === 'Qualifying') as AdvStage;
+  lastQualifying.entries.push({ ...advBowler(bowlerIndex), backfillPoints: points, viaOverride: false });
+  state.backfillAsOf = ADV_BACKFILL_AS_OF;
+}
+
+function advComputeSurvivor(state: AdvState, stage: AdvStage, official: boolean, squadId?: string): void {
+  const field = state.stages.filter((s) => s.kind === 'Qualifying').flatMap((s) => s.entries);
+  // Invented block totals; the last bowler bowled no full block.
+  stage.survivorOutcomes = field.map((entry, k) => {
+    const blockTotal = k === field.length - 1 ? undefined : 1480 - k * 11;
+    return { bowlerId: entry.bowlerId, bowlerName: entry.bowlerName, blockTotal, advanced: blockTotal !== undefined && k < ADV_SLOTS };
+  });
+  stage.needsSquad = false;
+  stage.resolvedSquadId = squadId ?? state.squads[stage.stageId]?.[0]?.squadId;
+  advSetComputed(state, stage, official);
+}
+
+function advComputePlacement(state: AdvState, stage: AdvStage): void {
+  const survivor = state.stages.find((s) => s.kind === 'Survivor') as AdvStage;
+  state.positions = survivor.survivorOutcomes
+    .filter((outcome) => outcome.advanced)
+    .map((outcome, k) => ({ bowlerId: outcome.bowlerId, bowlerName: outcome.bowlerName, position: k + 1, bowled: k < 3, isFinalist: k < 2 }));
+  stage.status = 'Computed';
+  stage.tournamentStatus = 'Completed';
+  stage.computedAt = ADV_COMPUTED_AT;
+}
+
+function advBuildFixture(baseId: string): AdvState {
+  const state = advPendingState(baseId.slice(-3));
+  const [q1, q2, survivor, placement] = state.stages;
+
+  switch (baseId) {
+    case MOCK_ADVANCEMENT_MID_SEASON_ID:
+      advFillQualifying(state, 1, false);
+      q1.isStale = true;
+      survivor.needsSquad = true;
+      state.version = 7;
+      break;
+    case MOCK_ADVANCEMENT_COMPLETE_ID:
+      advFillQualifying(state, 1, true);
+      advFillQualifying(state, 2, true, 1);
+      advAddBackfill(state, 8, 520);
+      advComputeSurvivor(state, survivor, true);
+      advComputePlacement(state, placement);
+      state.version = 31;
+      break;
+    case MOCK_ADVANCEMENT_OVERRIDES_ID: {
+      advFillQualifying(state, 1, true);
+      advFillQualifying(state, 2, false);
+      // An Add (a result-row bowler outside the slots) and a Clear (a slot finisher).
+      advApplyOverride(state, q2, 'Add', advBowler(10).bowlerId, 'Walk-in registration confirmed by the tournament director.');
+      advApplyOverride(state, q2, 'Clear', advBowler(7).bowlerId, 'Membership lapsed before the event.');
+      state.version = 12;
+      break;
+    }
+    case MOCK_ADVANCEMENT_SQUAD_ID:
+      advFillQualifying(state, 1, true);
+      advFillQualifying(state, 2, true, 1);
+      advAddBackfill(state, 8, 520);
+      survivor.tournamentStatus = 'Completed';
+      survivor.needsSquad = true;
+      state.version = 20;
+      break;
+    case MOCK_ADVANCEMENT_CANCELLED_ID:
+      advFillQualifying(state, 1, true);
+      q2.tournamentStatus = 'Cancelled';
+      state.version = 5;
+      break;
+    default:
+      break;
+  }
+
+  return state;
+}
+
+// Applies an Add or a Clear to a Computed Qualifying Stage. Returns an error to send, or the new override.
+function advApplyOverride(
+  state: AdvState,
+  stage: AdvStage,
+  kind: 'Add' | 'Clear',
+  bowlerId: string,
+  reason: string
+): AdvOverride | { status: number; name: string; reason: string } {
+  const result = state.results[stage.stageId]?.find((row) => row.bowlerId === bowlerId);
+
+  if (stage.overrides.some((o) => o.bowlerId === bowlerId)) {
+    return { status: 409, name: 'Series.Override', reason: 'This bowler already has an override on this Stage.' };
+  }
+
+  if (kind === 'Add') {
+    if (!result) return { status: 422, name: 'Series.Override', reason: 'This bowler has no result row in the Stage tournament.' };
+    if (state.stages.some((s) => s.entries.some((e) => e.bowlerId === bowlerId))) {
+      return { status: 409, name: 'Series.Override', reason: 'This bowler is already in the field.' };
+    }
+    stage.entries.push({ ...result, sourceStageId: stage.stageId, viaOverride: true });
+  } else {
+    const index = stage.entries.findIndex((e) => e.bowlerId === bowlerId && !e.viaOverride && e.sourceStageId === stage.stageId);
+    if (index < 0) return { status: 422, name: 'Series.Override', reason: 'This bowler is not in a filled slot of this Stage.' };
+    stage.entries.splice(index, 1);
+    stage.vacantSlotCount = (stage.vacantSlotCount ?? 0) + 1;
+  }
+
+  const created: AdvOverride = {
+    overrideId: advId(`6${state.series3}${String(state.nextOverride++).padStart(4, '0')}`),
+    bowlerId,
+    bowlerName: result?.bowlerName ?? advBowlerName(bowlerId),
+    kind,
+    reason,
+    createdBy: MOCK_ADVANCEMENT_ADMIN_ID,
+    createdAt: '2026-03-23T15:00:00+00:00',
+    applied: true,
+  };
+  stage.overrides.push(created);
+  state.version++;
+  return created;
+}
+
+function advBowlerName(bowlerId: string): string {
+  const index = Number.parseInt(bowlerId.slice(-4), 10);
+  return ADV_BOWLER_NAMES[index % ADV_BOWLER_NAMES.length];
+}
+
+const advanceStates = new Map<string, AdvState>();
+
+function advFixtureBaseId(id: string): string | null {
+  for (const baseId of Object.keys(ADV_FIXTURE_NAMES)) {
+    if (id === baseId || E2E_PROJECT_NAMES.some((projectName) => id === perProjectAdvancementSeriesId(baseId, projectName))) return baseId;
+  }
+  return null;
+}
+
+function getAdvancementState(id: string): AdvState | null {
+  const existing = advanceStates.get(id);
+  if (existing) return existing;
+
+  const baseId = advFixtureBaseId(id);
+  let state: AdvState | null = null;
+  if (baseId) {
+    state = advBuildFixture(baseId);
+  } else {
+    const detail = mockSeriesDetail(id);
+    state = detail ? advFallbackState(detail) : null;
+  }
+
+  if (state) advanceStates.set(id, state);
+  return state;
+}
+
+// The Series detail of a fixture. A Series is locked once any Stage leaves Pending.
+function mockAdvancementSeriesDetail(id: string, baseId: string): Record<string, unknown> {
+  const state = getAdvancementState(id) as AdvState;
+  const year = new Date().getFullYear();
+  return {
+    id,
+    name: ADV_FIXTURE_NAMES[baseId],
+    seasonId: MOCK_SERIES_SEASON_ID,
+    seasonDescription: `${year} Season`,
+    seasonStartDate: `${year}-01-01`,
+    seasonEndDate: `${year + 1}-12-31`,
+    isLocked: state.stages.some((stage) => stage.status !== 'Pending'),
+    finale: { ...MOCK_SERIES_FINALE, finalistCount: 2 },
+    logoUrl: null,
+    stages: state.stages.map((stage) => {
+      const [name, start, kind, count, squad] = ADV_STAGE_ROWS[stage.order - 1];
+      return {
+        id: stage.stageId,
+        order: stage.order,
+        kind,
+        status: stage.status, // the Stage's own advancement status, as the real GetSeries sends it
+        advancingCount: count,
+        squadDate: squad,
+        squadStartTime: squad ? '09:30:00' : null,
+        tournamentId: stage.tournamentId,
+        tournamentName: name,
+        tournamentStartDate: start,
+        tournamentEndDate: start,
+        tournamentType: 'Singles',
+        teamSize: 1,
+      };
+    }),
+  };
+}
+
+function mockAdvancementResponse(state: AdvState): object {
+  const targetField = state.stages.reduce((sum, s) => sum + (s.kind === 'Qualifying' ? s.slotCount ?? ADV_SLOTS : 0), 0);
+
+  return {
+    version: state.version,
+    backfillAsOf: state.backfillAsOf,
+    targetField,
+    stages: state.stages,
+    positions: state.positions,
+  };
+}
+
+const ADV_PATH = /^\/series\/([^/]+)\/(advancement|stages\/([^/]+)\/(results|squads|recomputations|squad|overrides)(?:\/([^/]+))?)$/;
+
+function resolveAdvancementRoute(pathname: string): object | null {
+  const match = ADV_PATH.exec(pathname);
+  if (!match) return null;
+
+  const state = getAdvancementState(match[1]);
+  if (!state) return null;
+
+  if (match[2] === 'advancement') return mockAdvancementResponse(state);
+
+  const stage = state.stages.find((s) => s.stageId === match[3]);
+  if (!stage) return null;
+
+  if (match[4] === 'results') {
+    const items = state.results[stage.stageId] ?? [];
+    return { items, totalItems: items.length };
+  }
+
+  if (match[4] === 'squads') {
+    const items = (state.squads[stage.stageId] ?? []).map((squad) => ({ ...squad, isSelected: squad.squadId === stage.resolvedSquadId }));
+    return { items, totalItems: items.length };
+  }
+
+  return null;
+}
+
+function sendAdvancementError(res: ServerResponse, status: number, name: string, reason: string): void {
+  sendJsonResponse(res, { status, title: 'One or more validation errors occurred.', errors: [{ name, reason }] }, status);
+}
+
+// Reads a request body property by its camelCase or PascalCase name.
+function advBodyProp<T>(body: string, name: string): T | undefined {
+  const parsed = JSON.parse(body || '{}') as Record<string, unknown>;
+  const pascal = name.charAt(0).toUpperCase() + name.slice(1);
+  return (parsed[name] ?? parsed[pascal]) as T | undefined;
+}
+
+function advField<T>(wrapper: Record<string, unknown> | undefined, name: string): T | undefined {
+  if (!wrapper) return undefined;
+  const pascal = name.charAt(0).toUpperCase() + name.slice(1);
+  return (wrapper[name] ?? wrapper[pascal]) as T | undefined;
+}
+
+// The advancement write routes. Mirrors the real endpoints' codes: a stale Version is 409, a refused
+// Recompute is 409 with one failure per Official Stage, a bad request is 422. Returns true when it handled the request.
+async function handleAdvancementWrite(req: IncomingMessage, res: ServerResponse, pathname: string, requestUrl: URL): Promise<boolean> {
+  const match = ADV_PATH.exec(pathname);
+  if (!match || match[2] === 'advancement') return false;
+
+  const action = match[4];
+  const overrideId = match[5];
+  if (!isAdvancementWriteRoute(req.method, action, !!overrideId)) return false;
+
+  if (sendMockOverrideErrorIfSet(res, pathname)) return true;
+
+  const state = getAdvancementState(match[1]);
+  const stage = state?.stages.find((s) => s.stageId === match[3]);
+  if (!state || !stage) {
+    sendJsonResponse(res, { error: 'Not Found' }, 404);
+    return true;
+  }
+
+  if (req.method === 'DELETE') {
+    lastRequestBodies.set('DELETE ' + pathname, JSON.stringify({ version: Number(requestUrl.searchParams.get('version')) }));
+    handleOverrideDelete(res, state, stage, overrideId, Number(requestUrl.searchParams.get('version')));
+    return true;
+  }
+
+  const body = await readRequestBody(req);
+  lastRequestBodies.set(req.method + ' ' + pathname, body);
+
+  if (action === 'overrides') handleOverrideCreate(res, state, stage, body);
+  else if (action === 'squad') handleSquadReplace(res, state, stage, body);
+  else handleRecompute(res, state, stage, body);
+  return true;
+}
+
+function isAdvancementWriteRoute(method: string | undefined, action: string, hasOverrideId: boolean): boolean {
+  if (method === 'POST') return (action === 'recomputations' || action === 'overrides') && !hasOverrideId;
+  if (method === 'PUT') return action === 'squad' && !hasOverrideId;
+  return method === 'DELETE' && action === 'overrides' && hasOverrideId;
+}
+
+function sendAdvancementStale(res: ServerResponse): void {
+  sendAdvancementError(res, 409, 'Series.Version', 'The Series changed since you loaded it. Reload and try again.');
+}
+
+function sendNoContent(res: ServerResponse): void {
+  res.writeHead(204);
+  res.end();
+}
+
+function handleOverrideDelete(res: ServerResponse, state: AdvState, stage: AdvStage, overrideId: string, version: number): void {
+  const index = stage.overrides.findIndex((o) => o.overrideId === overrideId);
+  // A missing override is 204 before the Version check (delete is idempotent).
+  if (index < 0) return sendNoContent(res);
+  if (version !== state.version) return sendAdvancementStale(res);
+  if (stage.status !== 'Computed') {
+    return sendAdvancementError(res, 409, 'Series.Stage', 'The Stage is not Computed, so its overrides cannot change.');
+  }
+
+  const [removed] = stage.overrides.splice(index, 1);
+  if (removed.kind === 'Add') {
+    stage.entries = stage.entries.filter((e) => !(e.bowlerId === removed.bowlerId && e.viaOverride));
+  } else {
+    const row = state.results[stage.stageId]?.find((r) => r.bowlerId === removed.bowlerId);
+    stage.entries.push({ bowlerId: removed.bowlerId, bowlerName: removed.bowlerName, sourceStageId: stage.stageId, place: row?.place, viaOverride: false });
+    stage.entries.sort((a, b) => (a.place ?? 999) - (b.place ?? 999));
+    stage.vacantSlotCount = Math.max(0, (stage.vacantSlotCount ?? 0) - 1);
+  }
+  state.version++;
+  sendNoContent(res);
+}
+
+// The first rule an override request breaks, or null when it is valid.
+function overrideRequestError(stage: AdvStage, reason: string): { status: number; name: string; reason: string } | null {
+  if (!reason) return { status: 422, name: 'StageOverride.Reason', reason: 'A reason is required.' };
+  if (reason.length > 500) return { status: 422, name: 'StageOverride.Reason', reason: 'The reason must be 500 characters or fewer.' };
+  if (stage.kind !== 'Qualifying') return { status: 422, name: 'Series.Stage', reason: 'Only a Qualifying Stage takes an override.' };
+  if (stage.status !== 'Computed') return { status: 409, name: 'Series.Stage', reason: 'The Stage is not Computed, so it cannot take an override.' };
+  return null;
+}
+
+function handleOverrideCreate(res: ServerResponse, state: AdvState, stage: AdvStage, body: string): void {
+  const input = advBodyProp<Record<string, unknown>>(body, 'stageOverride');
+  const kind = advField<number>(input, 'kind');
+  const bowlerId = advField<string>(input, 'bowlerId') ?? '';
+  const reason = (advField<string>(input, 'reason') ?? '').trim();
+
+  if (advField<number>(input, 'version') !== state.version) return sendAdvancementStale(res);
+
+  const invalid = overrideRequestError(stage, reason);
+  if (invalid) return sendAdvancementError(res, invalid.status, invalid.name, invalid.reason);
+
+  const created = advApplyOverride(state, stage, kind === OVERRIDE_KIND_CLEAR ? 'Clear' : 'Add', bowlerId, reason);
+  if ('status' in created) return sendAdvancementError(res, created.status, created.name, created.reason);
+
+  sendJsonResponse(res, { overrideId: created.overrideId, version: state.version }, 201);
+}
+
+function handleSquadReplace(res: ServerResponse, state: AdvState, stage: AdvStage, body: string): void {
+  const input = advBodyProp<Record<string, unknown>>(body, 'squad');
+  const squadId = advField<string>(input, 'squadId');
+
+  if (advField<number>(input, 'version') !== state.version) return sendAdvancementStale(res);
+  if (stage.kind !== 'Survivor') {
+    return sendAdvancementError(res, 422, 'Series.Stage', 'Only a Survivor Stage takes a squad.');
+  }
+  if (!state.squads[stage.stageId]?.some((s) => s.squadId === squadId)) {
+    return sendAdvancementError(res, 422, 'Squad.SquadId', 'The tournament has no such squad.');
+  }
+
+  const previous = state.stages[stage.order - 2];
+  if (stage.tournamentStatus === 'Completed' && previous && previous.status !== 'Pending') {
+    advComputeSurvivor(state, stage, false, squadId);
+  } else {
+    // The Stage cannot compute yet: only the squad is chosen.
+    stage.resolvedSquadId = squadId;
+    stage.needsSquad = false;
+  }
+  stage.isStale = false;
+  state.version++;
+  sendNoContent(res);
+}
+
+function handleRecompute(res: ServerResponse, state: AdvState, stage: AdvStage, body: string): void {
+  const input = advBodyProp<Record<string, unknown>>(body, 'recomputation');
+  if (advField<number>(input, 'version') !== state.version) return sendAdvancementStale(res);
+
+  const inRange = state.stages.filter((s) => s.order >= stage.order);
+  const official = inRange.filter((s) => s.status === 'Official');
+  if (official.length > 0 && advField<boolean>(input, 'confirmResetOfficial') !== true) {
+    return sendJsonResponse(res, {
+      status: 409,
+      title: 'One or more validation errors occurred.',
+      errors: official.map((s) => ({ name: `Series.Stages[${s.order - 1}]`, reason: 'Recomputing resets this Official Stage to Computed.' })),
+    }, 409);
+  }
+
+  let changed = false;
+  for (const target of inRange) {
+    if (target.status === 'Official') {
+      target.status = 'Computed';
+      target.officialAt = undefined;
+      target.officialDueAt = advStageDue(state, target);
+      changed = true;
+    }
+    if (target.isStale) {
+      target.isStale = false;
+      changed = true;
+    }
+  }
+  // A no-op recompute writes nothing, so Version stays.
+  if (changed) state.version++;
+  sendNoContent(res);
+}
+
+const OVERRIDE_KIND_CLEAR = 2;
+
+// An edit of an advancement fixture drops the Stages the request no longer lists (the cancelled-Stage removal).
+// Orders keep their numbers here: the fixture's tournament names are looked up by order.
+function removeAdvancementStagesNotSubmitted(seriesId: string, body: string): void {
+  const state = advFixtureBaseId(seriesId) ? advanceStates.get(seriesId) : undefined;
+  if (!state) return;
+
+  const submitted = (JSON.parse(body || '{}') as { series?: { stages?: { id?: string | null }[] } }).series?.stages;
+  if (!submitted) return;
+
+  const keep = new Set(submitted.map((stage) => stage.id));
+  const kept = state.stages.filter((stage) => keep.has(stage.stageId));
+  if (kept.length !== state.stages.length) {
+    state.stages = kept;
+    state.version++;
+  }
+}
+
 
 const SERIES_TOURNAMENT_QUALIFYING = {
   seriesId: MOCK_SERIES_ID,
@@ -1770,6 +2414,7 @@ function resolveGetRoute(pathname: string, searchParams: URLSearchParams): objec
     resolveTeamEligibilityRoute(pathname, searchParams) ??
     resolveBowlerSearchRoute(pathname, searchParams) ??
     resolveStaticGetRoute(pathname) ??
+    resolveAdvancementRoute(pathname) ??
     resolveSeriesRoute(pathname) ??
     resolveTournamentDetailRoute(pathname) ??
     resolveSponsorDetailRoute(pathname) ??
@@ -2243,6 +2888,18 @@ async function handleRequest(req: IncomingMessage, res: ServerResponse): Promise
     }
   }
 
+  if (req.method === 'POST' && pathname === '/__mock/series-advancement/reset') {
+    const seriesId = requestUrl.searchParams.get('seriesId');
+    if (seriesId) {
+      advanceStates.delete(seriesId);
+    } else {
+      advanceStates.clear();
+    }
+    res.writeHead(204);
+    res.end();
+    return;
+  }
+
   if (req.method === 'POST' && pathname === '/__mock/hall-of-fame/reset') {
     MOCK_HALL_OF_FAME.items = structuredClone(INITIAL_HALL_OF_FAME_ITEMS);
     res.writeHead(204);
@@ -2354,6 +3011,8 @@ async function handleRequest(req: IncomingMessage, res: ServerResponse): Promise
     return;
   }
 
+  if (await handleAdvancementWrite(req, res, pathname, requestUrl)) return;
+
   if (req.method === 'POST' && pathname === '/series/logo') {
     if (sendMockOverrideErrorIfSet(res, pathname)) return;
 
@@ -2422,7 +3081,9 @@ async function handleRequest(req: IncomingMessage, res: ServerResponse): Promise
   if (req.method === 'PUT' && pathname.startsWith('/series/')) {
     if (sendMockOverrideErrorIfSet(res, pathname)) return;
 
-    lastRequestBodies.set('PUT ' + pathname, await readRequestBody(req));
+    const editBody = await readRequestBody(req);
+    lastRequestBodies.set('PUT ' + pathname, editBody);
+    removeAdvancementStagesNotSubmitted(pathname.slice('/series/'.length), editBody);
 
     res.writeHead(204);
     res.end();

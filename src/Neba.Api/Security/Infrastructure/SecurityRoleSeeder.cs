@@ -37,6 +37,12 @@ internal static class SecurityRoleSeeder
             Permissions.DeleteTournament,
             Permissions.ManageTournamentStatus,
 
+            Permissions.CreateSeries,
+            Permissions.EditSeries,
+            Permissions.DeleteSeries,
+            Permissions.EditSeriesLogo,
+            Permissions.ManageAdvancement,
+
             Permissions.ViewBackgroundJobsDashboard,
 
             Permissions.RefreshDocument

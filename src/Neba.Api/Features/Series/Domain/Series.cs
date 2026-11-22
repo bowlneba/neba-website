@@ -14,7 +14,7 @@ namespace Neba.Api.Features.Series.Domain;
 /// </summary>
 [SuppressMessage("Naming", "CA1724:Type names should not match namespaces",
     Justification = "Series is the established domain term and the feature folder is named after it.")]
-public sealed class Series
+public sealed partial class Series
 {
     internal const int NameMaxLength = 127;
 
@@ -38,6 +38,28 @@ public sealed class Series
     /// <summary>The Stages, in order.</summary>
     public IReadOnlyCollection<SeriesStage> Stages
         => _stages.AsReadOnly();
+
+    /// <summary>The as-of date for the Backfill (the last Qualifying tournament's end date). Null until that Stage computes.</summary>
+    public DateOnly? BackfillAsOf { get; private set; }
+
+    /// <summary>Optimistic concurrency token. Advancement writes bump it, including writes that touch only child rows.</summary>
+    public int Version { get; private set; }
+
+    private readonly List<SeriesFieldEntry> _fieldEntries = [];
+
+    /// <summary>The Series Field: bowlers who qualified, and from where.</summary>
+    public IReadOnlyCollection<SeriesFieldEntry> FieldEntries
+        => _fieldEntries.AsReadOnly();
+
+    private readonly List<SeriesPosition> _positions = [];
+
+    /// <summary>The Placement Round positions.</summary>
+    public IReadOnlyCollection<SeriesPosition> Positions
+        => _positions.AsReadOnly();
+
+    /// <summary>Refuses a write made from a stale screen.</summary>
+    public ErrorOr<Success> EnsureVersion(int expected)
+        => Version == expected ? Result.Success : SeriesAdvancementErrors.VersionConflict;
 
     /// <summary>
     /// True once any Stage has left pending. While locked only <see cref="Name"/>, <see cref="Logo"/> and the
@@ -71,8 +93,14 @@ public sealed class Series
         }
 
         var applied = series.ReplaceConfiguration(stages, finale, tournaments);
+        if (applied.IsError)
+        {
+            return applied.Errors;
+        }
 
-        return applied.IsError ? applied.Errors : series;
+        series.Version = 0; // the first Stage list is not a change to a stored Series
+
+        return series;
     }
 
     /// <summary>Replaces or removes the logo. Allowed while locked. The handler has already checked the file was staged.</summary>
@@ -114,7 +142,9 @@ public sealed class Series
         var stagesUnchanged = StagesMatch(stages);
         var finaleShapeUnchanged = (Finale is null) == (finale is null) && Finale?.FinalistCount == finale?.FinalistCount;
 
-        if (IsLocked && !(stagesUnchanged && finaleShapeUnchanged))
+        var cancelledRemoval = !stagesUnchanged && IsOnlyCancelledPendingRemoval(stages, tournaments);
+
+        if (IsLocked && !((stagesUnchanged || cancelledRemoval) && finaleShapeUnchanged))
         {
             return SeriesErrors.Locked;
         }
@@ -148,6 +178,7 @@ public sealed class Series
         if (!stagesUnchanged)
         {
             ApplyStages(stages, candidates);
+            Version++;
         }
 
         Finale = finale is null ? null : SeriesFinale.Describe(finale);
@@ -162,6 +193,32 @@ public sealed class Series
     private bool StagesMatch(IReadOnlyList<SeriesStageDefinition> stages)
         => stages.Count == _stages.Count && stages.Select((d, i) => (d, i)).All(x =>
             _stages.Exists(s => s.Id == x.d.StageId && s.Matches(x.i + 1, x.d)));
+
+    // Locked Series: the submitted list is the stored list minus Pending Stages whose tournament is Cancelled.
+    private bool IsOnlyCancelledPendingRemoval(
+        IReadOnlyList<SeriesStageDefinition> stages,
+        IReadOnlyDictionary<TournamentId, StageTournamentFacts> tournaments)
+    {
+        if (stages.Any(definition => definition.StageId is null))
+        {
+            return false;
+        }
+
+        var keptIds = stages.Select(definition => definition.StageId!.Value).ToHashSet();
+        var removed = _stages.Where(stage => !keptIds.Contains(stage.Id)).ToList();
+
+        if (removed.Count == 0 || !removed.TrueForAll(stage => stage.Status == StageStatus.Pending
+                && tournaments.TryGetValue(stage.TournamentId, out var facts)
+                && facts.Status == TournamentStatus.Cancelled))
+        {
+            return false;
+        }
+
+        var kept = _stages.Where(stage => keptIds.Contains(stage.Id)).OrderBy(stage => stage.Order).ToList();
+
+        return kept.Count == stages.Count
+            && stages.Select((definition, index) => kept[index].Id == definition.StageId && kept[index].MatchesIgnoringOrder(definition)).All(same => same);
+    }
 
     // Per-Stage checks: existence, duplicates, other Series (#1), season (#2), Stage's own invariants (#7, #8).
     private List<(int Order, SeriesStageDefinition Definition, StageTournamentFacts Facts)> CheckStages(

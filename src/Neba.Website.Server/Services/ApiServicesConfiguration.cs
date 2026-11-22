@@ -58,6 +58,10 @@ internal static class ApiServicesConfiguration
     {
         public IServiceCollection AddApiServices(IConfiguration configuration)
         {
+            // Refit 17 no longer falls back to reflection JSON on its own; RefitSettings uses options with no
+            // source-generated context, so register the reflection support once at startup.
+            ReflectionSupport.EnsureRegistered();
+
             services.AddOptions<NebaApiConfiguration>()
                 .Bind(configuration.GetSection("NebaApi"))
                 .Validate(config => config.BaseUrl?.IsAbsoluteUri ?? false, "BaseUrl must be a valid absolute URI")

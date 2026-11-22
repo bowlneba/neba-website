@@ -143,6 +143,38 @@ Unmeasured, sized by reading the code (about 1k members, a few hundred bowlers p
 - `GenerateSeasonStatsJob` loads every membership for the season's bowlers (all years), and rewrites the whole season on each tournament completion.
 - Before optimizing, time the Software queries, `Compute` and `SaveChangesAsync` separately; the job has no per-phase timing yet.
 
+## Domain events
+
+Four events exist: `TournamentResultsRecorded`, `TournamentSquadsChanged`, `SquadScoresReplaced` (all in `Features/Tournaments/Domain`) and `SeasonStatsGenerated` (`Features/Stats/Domain`). The Series feature handles all four.
+
+### Publishing
+
+- Enqueue every event through `IDomainEventPublisher`. The save interceptor and the legacy jobs (`SyncTournamentResultsJob`, the score sync, the stats job) use it too. Never call `IBackgroundJobClient` for an event job. `FeatureBoundaryTests` (`OnlyDomainEventPublisher_ShouldEnqueueDomainEventJobs`) fails if any other class does. So an outbox can replace `DomainEventPublisher` and nothing else.
+- `DomainEventDispatcherInterceptor` publishes in `SavedChanges` and clears each aggregate's events first. A save that throws never publishes.
+- EF calls `SavedChanges` even when a save writes no rows. The explicit `PublishAndClear` in `SyncTournamentResultsJob` is a safety net. It is safe to call twice, because the interceptor already cleared the events.
+- If publishing fails partway, an earlier event can be enqueued twice on the retry. That is fine because handlers are idempotent.
+
+### Handlers
+
+- Each event type has exactly one `IDomainEventJob<T>`, because the Hangfire activator resolves one implementation. `EveryDomainEvent_ShouldHaveExactlyOneHandler` enforces it.
+- The event lives in the publishing feature's `Domain` namespace. The handler lives in the consuming feature (`Features/Series/AdvanceOnResultsRecorded`, `AdvanceOnSquadsChanged`, `AdvanceOnSquadScoresReplaced`, `BackfillOnSeasonStatsGenerated`).
+- Handlers must be idempotent. Redelivery recomputes the same result.
+- An event carries only typed IDs. No collections, no SmartEnum instances. Hangfire serializes the typed IDs through their `TypeConverter`. `DomainEventSerializationTests` round-trips each event; add one for every new event.
+
+### No outbox (#56)
+
+The transactional outbox is deferred, not rejected. A crash between commit and enqueue loses the event. The affected Stage then shows "Not computed yet" until the next event or an admin Recompute. Handlers are idempotent, so we build no outbox or inbox yet.
+
+Revisit with each new domain event: build the outbox or close #56. Option C (a custom outbox table) fits the publisher seam, because the legacy jobs publish outside any aggregate.
+
+### Series advancement lock
+
+- Every writer of a Series' advancement state takes the keyed lock `SeriesAdvancement.LockKey(seriesId)` through `IKeyedLockProvider`. Admin requests wait `AdminLockWait` (10 s) and jobs wait `JobLockWait` (60 s). On timeout the call returns the `Busy` error.
+- `[DisableConcurrentExecution]` locks on the job's type and method, not its arguments, so it cannot lock one Series at a time. The keyed lock is Hangfire's `AcquireDistributedLock`, the same call `EnqueueOnce` uses.
+- Load the Series after you take the lock, so a run that queued behind another sees what that run saved.
+- `Series.Version` is the stale-write guard (an EF concurrency token). A write that skips the lock, or an edit based on an old page, fails on it. `SeriesConcurrency.SaveOrConflictAsync` turns the `DbUpdateConcurrencyException` into a 409.
+- `HangfireKeyedLockProvider` reads the static `JobStorage.Current`, so it has no test yet.
+
 ## Team eligibility feature
 
 - `EF.Functions.ILike(match, pattern)` with no escape argument did not honor a backslash-escaped `%`, `_` or `\` against Npgsql (a name with a literal `%` never matched). Pass the escape character: `ILike(match, pattern, "\\")`. The bowler search handler does, and its tests cover each wildcard.

@@ -56,6 +56,40 @@ public sealed class FormLabelTests : IDisposable
         cut.FindAll("span.form-label-required-tag").ShouldBeEmpty();
     }
 
+    [Fact(DisplayName = "Should render the required tag when there is no For expression and Required is true")]
+    public void Render_ShouldShowRequiredTag_WhenForIsOmittedAndRequiredIsTrue()
+    {
+        // Arrange & Act
+        var cut = RenderFormLabel(p => p.Add(x => x.Required, true));
+
+        // Assert
+        cut.Find("span.form-label-required-tag").TextContent.ShouldBe("(required)");
+    }
+
+    [Fact(DisplayName = "Should not render the required tag when there is no For expression and Required is false")]
+    public void Render_ShouldNotShowRequiredTag_WhenForIsOmittedAndRequiredIsFalse()
+    {
+        // Arrange & Act
+        var cut = RenderFormLabel(_ => { });
+
+        // Assert
+        cut.FindAll("span.form-label-required-tag").ShouldBeEmpty();
+    }
+
+    [Fact(DisplayName = "Should take the required tag from the bound property, not Required, when For is set")]
+    public void Render_ShouldIgnoreRequired_WhenForIsSet()
+    {
+        // Arrange & Act
+        var cut = RenderFormLabel(p =>
+        {
+            p.Add(x => x.For, () => _model.OptionalField);
+            p.Add(x => x.Required, true);
+        });
+
+        // Assert
+        cut.FindAll("span.form-label-required-tag").ShouldBeEmpty();
+    }
+
     private IRenderedComponent<FormLabel<string>> RenderFormLabel(
         Action<ComponentParameterCollectionBuilder<FormLabel<string>>> configureFor)
         => _ctx.Render<FormLabel<string>>(parameters =>

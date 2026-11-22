@@ -12,6 +12,8 @@ public sealed record StageTournamentFacts
     public required string TournamentName { get; init; }
     /// <summary>The tournament's season.</summary>
     public required SeasonId SeasonId { get; init; }
+    /// <summary>The tournament's status. A Cancelled tournament lets a Pending Stage be removed from a locked Series.</summary>
+    public required TournamentStatus Status { get; init; }
     /// <summary>First day of the tournament.</summary>
     public required DateOnly StartDate { get; init; }
     /// <summary>Last day of the tournament.</summary>

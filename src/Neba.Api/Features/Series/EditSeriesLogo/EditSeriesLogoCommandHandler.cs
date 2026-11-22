@@ -37,7 +37,12 @@ internal sealed class EditSeriesLogoCommandHandler(AppDbContext appDbContext, IB
         series.ChangeLogo(logo); // allowed while locked
 
         await PendingUploadCleaner.RemoveClaimedAsync(appDbContext, logo, cancellationToken);
-        await appDbContext.SaveChangesAsync(cancellationToken);
+        var saved = await SeriesConcurrency.SaveOrConflictAsync(appDbContext, cancellationToken);
+        if (saved.IsError)
+        {
+            return saved.Errors;
+        }
+
         await cache.RemoveByTagAsync(CacheDescriptors.Tournaments.Tag, token: cancellationToken);
 
         StoredFileCleanup.ScheduleDeleteOfReplaced(backgroundJobScheduler, previousLogo, logo);

@@ -1,0 +1,25 @@
+﻿{
+  Items: [
+    {
+      BowlerId: 01KBVBM6CVVJM1FZFMNKPW9Z56,
+      BowlerName: Barbara Romaguera,
+      Place: 1
+    },
+    {
+      BowlerId: 01GZ5C3G5Q9NQZ976ZK3PHTHRN,
+      BowlerName: Maurine Christiansen,
+      Place: 2
+    },
+    {
+      BowlerId: 01GH92G9QQAMVYY6NT3Z7XT1NH,
+      BowlerName: Skyla Schroeder,
+      Place: 3
+    },
+    {
+      BowlerId: 01FDH0FQRXQ3SXCQQMW9Z7PG87,
+      BowlerName: Devante Pollich,
+      Place: 4
+    }
+  ],
+  TotalItems: 4
+}

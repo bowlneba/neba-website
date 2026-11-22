@@ -12,4 +12,14 @@ if [[ -z "$version" ]]; then
   exit 1
 fi
 
+# aspire.config.json pins the SDK too. It must match, so a bump in Directory.Packages.props cannot leave it stale.
+config="$(dirname "$props")/aspire.config.json"
+if [[ -f "$config" ]]; then
+  pinned="$(sed -n 's/.*"version"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p' "$config")"
+  if [[ -n "$pinned" && "$pinned" != "$version" ]]; then
+    echo "aspire.config.json sdk.version ($pinned) differs from Aspire.Hosting.AppHost in Directory.Packages.props ($version)" >&2
+    exit 1
+  fi
+fi
+
 echo "$version"

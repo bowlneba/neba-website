@@ -70,6 +70,34 @@ internal sealed class SeriesConfiguration
             .HasField("_stages")
             .UsePropertyAccessMode(PropertyAccessMode.Field);
 
+        // Date, null until the last Qualifying Stage computes.
+        builder.Property(series => series.BackfillAsOf);
+
+        // Optimistic concurrency token. An int, not xmin, because xmin does not change when only child rows change.
+        // Every advancement mutator bumps it in the domain. The default fills the existing rows.
+        builder.Property(series => series.Version)
+            .HasDefaultValue(0)
+            .IsRequired()
+            .IsConcurrencyToken();
+
+        builder.HasMany(series => series.FieldEntries)
+            .WithOne()
+            .HasForeignKey(ForeignKeyName)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        builder.Navigation(series => series.FieldEntries)
+            .HasField("_fieldEntries")
+            .UsePropertyAccessMode(PropertyAccessMode.Field);
+
+        builder.HasMany(series => series.Positions)
+            .WithOne()
+            .HasForeignKey(ForeignKeyName)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        builder.Navigation(series => series.Positions)
+            .HasField("_positions")
+            .UsePropertyAccessMode(PropertyAccessMode.Field);
+
         builder.Ignore(series => series.IsLocked);
         builder.Ignore(series => series.HasFinale);
     }

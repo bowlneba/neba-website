@@ -431,4 +431,110 @@ public sealed class EditSeriesCommandHandlerTests(AppDbContextFixture fixture)
         (await _dbContext.Series.AsNoTracking().SingleAsync(ct)).Logo!.Path.ShouldBe("new.png");
         (await _dbContext.PendingUploads.CountAsync(ct)).ShouldBe(0);
     }
+
+    private async Task CancelTournamentAsync(Neba.Api.Features.Tournaments.Domain.TournamentId tournamentId)
+    {
+        var ct = TestContext.Current.CancellationToken;
+        var tournament = await _dbContext.Tournaments.SingleAsync(t => t.Id == tournamentId, ct);
+        tournament.CancelTournament().IsError.ShouldBeFalse();
+        await _dbContext.SaveChangesAsync(ct);
+        _dbContext.ChangeTracker.Clear();
+    }
+
+    [Fact(DisplayName = "HandleAsync should remove a Pending Stage whose tournament is cancelled from a locked Series")]
+    public async Task HandleAsync_ShouldRemoveCancelledPendingStage_WhenSeriesIsLocked()
+    {
+        // Arrange
+        var ct = TestContext.Current.CancellationToken;
+        var series = await SeedAsync(status: StageStatus.Computed);
+        var placement = series.Stages.Single(s => s.Kind == StageKind.Placement);
+        await CancelTournamentAsync(placement.TournamentId);
+        var remaining = Current(series).Where(d => d.Kind != StageKind.Placement).ToList();
+
+        // Act
+        var result = await CreateHandler().HandleAsync(Command(series, remaining), ct);
+
+        // Assert
+        result.IsError.ShouldBeFalse();
+        _dbContext.ChangeTracker.Clear();
+        var stored = await _dbContext.Series.AsNoTracking().Include(s => s.Stages).SingleAsync(ct);
+        stored.Stages.Select(s => s.Kind).ShouldBe([StageKind.Qualifying, StageKind.Survivor], ignoreOrder: true);
+        stored.Stages.Single(s => s.Kind == StageKind.Qualifying).Status.ShouldBe(StageStatus.Computed);
+    }
+
+    [Fact(DisplayName = "HandleAsync should return Locked when a locked Series loses a Pending Stage whose tournament is not cancelled")]
+    public async Task HandleAsync_ShouldReturnLocked_WhenRemovedPendingStageIsNotCancelled()
+    {
+        // Arrange
+        var series = await SeedAsync(status: StageStatus.Computed);
+        var remaining = Current(series).Where(d => d.Kind != StageKind.Placement).ToList();
+
+        // Act
+        var result = await CreateHandler().HandleAsync(Command(series, remaining), TestContext.Current.CancellationToken);
+
+        // Assert
+        result.FirstError.Code.ShouldBe("Series.Locked");
+    }
+
+    [Fact(DisplayName = "HandleAsync should return Locked when a locked Series loses a cancelled Stage that is not Pending")]
+    public async Task HandleAsync_ShouldReturnLocked_WhenRemovedCancelledStageIsNotPending()
+    {
+        // Arrange
+        var series = await SeedAsync(status: StageStatus.Computed);
+        var computed = series.Stages.Single(s => s.Kind == StageKind.Qualifying);
+        await CancelTournamentAsync(computed.TournamentId);
+        var remaining = Current(series).Where(d => d.Kind != StageKind.Qualifying).ToList();
+
+        // Act
+        var result = await CreateHandler().HandleAsync(Command(series, remaining), TestContext.Current.CancellationToken);
+
+        // Assert
+        result.FirstError.Code.ShouldBe("Series.Locked");
+    }
+
+    [Fact(DisplayName = "HandleAsync should return Locked when a cancelled Stage is removed together with a Stage that is not cancelled")]
+    public async Task HandleAsync_ShouldReturnLocked_WhenCancelledRemovalComesWithAnotherRemoval()
+    {
+        // Arrange
+        var series = await SeedAsync(status: StageStatus.Computed);
+        var placement = series.Stages.Single(s => s.Kind == StageKind.Placement);
+        await CancelTournamentAsync(placement.TournamentId);
+        var remaining = Current(series).Where(d => d.Kind == StageKind.Qualifying).ToList();
+
+        // Act
+        var result = await CreateHandler().HandleAsync(Command(series, remaining), TestContext.Current.CancellationToken);
+
+        // Assert
+        result.FirstError.Code.ShouldBe("Series.Locked");
+    }
+
+    [Fact(DisplayName = "HandleAsync should return ConcurrentChange and save nothing when a job moves Version between the load and the save")]
+    public async Task HandleAsync_ShouldReturnConcurrentChange_WhenVersionMovesBeforeSave()
+    {
+        // Arrange
+        var ct = TestContext.Current.CancellationToken;
+        var series = await SeedAsync();
+        var job = new BeforeSaveInterceptor(async token =>
+        {
+            await using var jobContext = fixture.CreateDbContext();
+            await jobContext.Series.ExecuteUpdateAsync(set => set.SetProperty(s => s.Version, s => s.Version + 1), token);
+        });
+        await using var db = fixture.CreateDbContext(job);
+        var handler = new EditSeriesCommandHandler(
+            db,
+            Denial(denied: false, expectLookup: false),
+            new Mock<IBackgroundJobScheduler>(MockBehavior.Strict).Object,
+            SeriesCache.Untouched().Object);
+
+        // Act
+        var result = await handler.HandleAsync(Command(series, name: "Renamed"), ct);
+
+        // Assert
+        result.IsError.ShouldBeTrue();
+        result.FirstError.ShouldBe(SeriesAdvancementErrors.ConcurrentChange);
+        await using var read = fixture.CreateDbContext();
+        var stored = await read.Series.AsNoTracking().SingleAsync(ct);
+        stored.Name.ShouldBe("VH");
+        stored.Version.ShouldBe(1);
+    }
 }

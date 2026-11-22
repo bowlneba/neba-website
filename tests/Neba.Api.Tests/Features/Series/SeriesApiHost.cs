@@ -59,7 +59,8 @@ internal sealed class SeriesApiHost : IAsyncDisposable
     public static string MemberToken()
         => TestAccessTokenFactory.Create(roles: [SecurityRoles.Member]);
 
-    public static async Task<SeriesApiHost> StartAsync(AppDbContextFixture appFixture, SecurityDbContextFixture securityFixture)
+    public static async Task<SeriesApiHost> StartAsync(
+        AppDbContextFixture appFixture, SecurityDbContextFixture securityFixture, Mock<IKeyedLockProvider>? keyedLocks = null)
     {
         var builder = WebApplication.CreateBuilder();
         builder.WebHost.UseSetting(WebHostDefaults.ServerUrlsKey, "http://127.0.0.1:0");
@@ -97,6 +98,12 @@ internal sealed class SeriesApiHost : IAsyncDisposable
         var scheduler = new Mock<IBackgroundJobScheduler>(MockBehavior.Strict);
         scheduler.Setup(s => s.Enqueue(It.IsAny<DeleteStoredFilesJob>())).Returns("job-id");
         builder.Services.AddSingleton(scheduler.Object);
+
+        // The advancement write endpoints run through SeriesAdvancement. The lock is a grant-anything double unless a test
+        // passes its own: the real provider needs Hangfire storage, which has no Postgres test pattern here.
+        builder.Services.AddSingleton((keyedLocks ?? KeyedLockDoubles.GrantingAny().Provider).Object);
+        builder.Services.AddScoped<SeriesAdvancement>();
+        builder.Services.AddScoped<ISeriesAdvancementFactsReader, SeriesAdvancementFactsReader>();
 
         MessagingConfiguration.AddMessaging(builder.Services);
 

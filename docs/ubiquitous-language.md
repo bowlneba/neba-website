@@ -1193,7 +1193,7 @@ The **Vincent Hall Memorial Series** (formerly the Paul Forry Memorial Cup) is a
 
 **Worked example (2025, with a Finale)**: eight Qualifying Events (62 bowlers at most; team events count teams, so a Trios slot is three bowlers), then two Survivor Rounds (62 cut to 40, then 40 cut to 20, each on the 9 AM squad), then a Placement Round that ranks the 20 by tournament position. The top 4 go to the Finale on Saturday 9/27/2025 at 2:00 PM, and positions 5 to 20 are paid in order. **Without a Finale**, the same Stages run, and the Placement Round positions 1 to 20 are the final standings and are paid directly. A Series may also run Qualifying Events straight into a Finale with no Survivor Round, or have no Placement Round yet while it is being set up.
 
-The phase 1 stored model holds the configuration only. Computing fields and paying positions arrive in phases 2 and 3.
+Phase 1 stores the configuration. Phase 2 computes the field and each Stage's output. Paying positions arrives in phase 3.
 
 ---
 
@@ -1203,7 +1203,7 @@ The phase 1 stored model holds the configuration only. Computing fields and payi
 
 **Rules**:
 
-- Open to NEBA members, judged on the date of the qualifying event; a bowler who joins later does not qualify retroactively
+- Open to NEBA members, judged on the end date of the qualifying tournament; a bowler who joins after that date does not qualify retroactively
 - No entry fee; Series results do not award Bowler of the Year points
 - The payout for each Series Position is set per Series by the special tournament committee with the sponsor, and may be zero
 - A Series may be created incomplete (for example with no Placement Stage yet); the rules below apply to the Stages it has
@@ -1214,6 +1214,7 @@ The phase 1 stored model holds the configuration only. Computing fields and payi
 
 - `Series`, `SeriesId` (`Neba.Api.Features.Series.Domain`), `series` table
 - `Series.Logo` (`StoredFile?`, presentation only), `Series.Finale`, `Series.HasFinale`, `Series.IsLocked`
+- `Series.BackfillAsOf`, `Series.Version`, `Series.FieldEntries`, `Series.Positions` (phase 2)
 - Inside `Neba.Api.Features.Series.*` the simple name `Series` resolves to the namespace, so use `Domain.Series`
 
 ---
@@ -1232,12 +1233,14 @@ The phase 1 stored model holds the configuration only. Computing fields and payi
 - The Series is **locked** once any Stage leaves Pending: Stages and the Finale's existence and count cannot change, and the Series cannot be deleted. Name, logo and the Finale's date, start time and center stay editable
 - A tournament that is a Stage cannot be deleted until it is removed from its Series
 - A cancelled tournament keeps its Stage and its Series tag until an admin removes the Stage
+- A Pending Stage whose tournament is Cancelled can be removed even while the Series is locked. The admin then runs Recompute from the Stage before it, and the Target Field shrinks
 
 **In Code**:
 
 - `SeriesStage`, `SeriesStageId`, `SeriesStageDefinition` (the submitted Stage), `StageTournamentFacts` (tournament data the handler reads for the checks)
 - `Series.ReplaceConfiguration` saves the whole Stage list and the Finale in one pass; each error names its Stage
 - `series_stages` table; a unique index on `tournament_id` backs up the one-Series rule
+- Stored output (phase 2): `SeriesStage.IsStale`, `ComputedAt`, `OfficialAt`, `SlotCount`, `SurvivorOutcomes`, `Overrides`
 
 ---
 
@@ -1258,14 +1261,16 @@ The phase 1 stored model holds the configuration only. Computing fields and payi
 
 **Definition**: A Stage where a bowler's finishing position in the tournament's final standings puts them in the Series field.
 
-**Rules** (proposed):
+**Rules**:
 
-1. Each Qualifying Event takes the top N finishers by final position. In team events N counts teams, so the slots are N times the team size
-2. A slot that would go to a non-member, or to a bowler who has already qualified, is not passed down the finish list; it stays vacant for the Backfill
-3. After the last Qualifying Event is complete, vacant slots go to the non-qualified bowlers with the most open-category Bowler of the Year points, as of that event. Ties at the cutoff all advance
-4. The Series Field is the sum of all Qualifying slots; Backfill ties can make it larger
+1. Each Qualifying Event takes every Slot: the rows with Place at or below the Stage's advancing count. In team events the count is teams, so the slots are N times the team size
+2. A slot that would go to a non-member, to a bowler already in the field, or that an admin cleared is a Vacant Slot. It is not passed down the finish list; it stays vacant for the Backfill
+3. Membership is judged on the tournament's end date, so a bowler who joins during the event still takes the slot
+4. After the last Qualifying Event is computed, the Backfill fills the vacant slots
+5. The Target Field is the sum of all Qualifying slots. The field can exceed it (Backfill ties, an override Add)
+6. A Qualifying Stage computes only when its tournament is Completed or Truncated with results recorded, and the previous Stage is Computed or Official
 
-**In Code**: `StageKind.Qualifying`. Phase 1 stores the count; rules 2 to 4 are computed in phase 2.
+**In Code**: `StageKind.Qualifying`, `SeriesStage.SlotCount` (slots at last compute). The rules run in `Series.Recompute` and the Advance methods; the Stage's output is its `SeriesFieldEntry` rows.
 
 ---
 
@@ -1273,16 +1278,18 @@ The phase 1 stored model holds the configuration only. Computing fields and payi
 
 **Definition**: A Stage whose tournament has a designated squad. Bowlers advance by their total score over the squad's block of games.
 
-**Rules** (proposed):
+**Rules**:
 
-1. Only bowlers in the Series Field may advance, and they advance on total score over the designated squad
+1. Only bowlers in the Series Field may advance, and they advance on Block Total over the designated squad
 2. All ties at the cut advance. If fewer bowlers bowl than the number advancing, everyone who bowled advances
 3. A bowler who does not bowl is eliminated and no alternate takes the spot. A bowler cannot re-enter the designated squad, and the squad score is the score
 4. A bowler who starts the squad and does not finish is scored on the games bowled
 5. No payout is made at a Survivor Round
-6. Announce applies (see Stage Status)
+6. The Stage becomes Official automatically after the Grace Period (see Stage Status)
+7. A Survivor Stage computes only when its tournament is Completed or Truncated with results recorded, the previous Stage is Computed or Official, its squad is resolved, and the squad has at least one score row. Until then it is Pending
+8. An admin cannot override a Survivor Stage
 
-**In Code**: `StageKind.Survivor`. Phase 1 stores the count and the squad designation; advancement is computed in phase 2.
+**In Code**: `StageKind.Survivor`, `SurvivorOutcome`, `SeriesStage.SurvivorOutcomes`.
 
 ---
 
@@ -1297,9 +1304,10 @@ The phase 1 stored model holds the configuration only. Computing fields and payi
 3. With a Finale, the top N Series bowlers go to it and the rest are paid by Series Position in that order; without one, every Series bowler is paid by Series Position
 4. Everyone who advanced to the Placement Round receives a Series Position and its payout, which may be zero
 5. A Placement Stage has no advancing count; the Finale's finalist count belongs to the Finale
-6. Announce does not apply; the round has no Announce step
+6. A Placement Stage is never Official: its output is final once computed
+7. Ties in place break by bowler ID
 
-**In Code**: `StageKind.Placement`. Ranking is computed in phase 2.
+**In Code**: `StageKind.Placement`, `SeriesPosition` (`Position`, `Bowled`, `IsFinalist`), `Series.Positions`.
 
 ---
 
@@ -1326,24 +1334,30 @@ The phase 1 stored model holds the configuration only. Computing fields and payi
 - Required on a Survivor Stage and not allowed on any other kind; date and start time go together
 - The squad date must fall within the tournament's dates; a second day of a multi-day tournament is allowed
 - It is described when the Stage is configured, because squads only exist once the desktop software sends the tournament's squads
-- It resolves automatically when exactly one squad matches; if none or several match, an admin picks. A Survivor Round with an unresolved designation is never processed
+- It resolves automatically when exactly one squad of the tournament matches by Eastern date and start time, to the minute. If none or several match, the Stage Needs Squad and an admin can pick one. A Survivor Round with an unresolved designation is never processed
+- If a resolved squad later vanishes (the squads changed), the designation reverts to Described, the Stage becomes Stale, and its stored output stays
 
-**In Code**: `SquadDesignation` (value, `Date`, `StartTime`, `SquadId?`). Phase 1 stores it described, with `SquadId` always null; resolution is phase 2.
+**In Code**: `SquadDesignation` (value, `Date`, `StartTime`, `SquadId?`, `IsResolved`). `SquadId` is null while Described.
 
 ---
 
 ### Stage Status
 
-**Definition**: Where a Stage is in processing: **Pending**, **Computed** or **Announced**.
+**Definition**: Where a Stage is in processing: **Pending**, **Computed** or **Official**.
 
 **Rules**:
 
-- Every Stage is Pending in phase 1
+- A Stage starts Pending. It becomes Computed when its output is first worked out
 - Any non-Pending Stage locks the Series
-- A job writes a Stage's output only while it is not Announced. An announced field changes only through an explicit admin recompute
-- **Announce applies to Qualifying and Survivor Stages only**: their results are told to bowlers and the next Stage depends on them. The Placement Round has no Announce step; its output is final once computed, and its commit points are, with a Finale, a replacement or the Finale result, and, without a Finale, recorded payouts. A recompute that reaches the Placement Stage after those needs confirmation and clears them
+- **Official** means the output is settled and no longer changes on its own. Only a confirmed Recompute resets it to Computed
+- A Computed Qualifying or Survivor Stage becomes Official automatically after the Grace Period if its output did not change. There is no admin action to make a Stage Official
+- The last Qualifying Stage becomes Official only after the Backfill ran, and that makes the Backfill official too
+- A Stage becomes Official only after every earlier Qualifying and Survivor Stage is Official
+- A Placement Stage is never Official. Its output is final once computed. Its later commit points are, with a Finale, a replacement or the Finale result, and, without a Finale, recorded payouts (phase 3). A Recompute that reaches the Placement Stage after those needs confirmation and clears them
+- A job writes a Stage's output only while the Stage is not Official. A result event for an Official Stage re-runs the computation in memory and only marks the Stage Stale if the output differs
+- A Stale Stage does not become Official on its own
 
-**In Code**: `StageStatus` (SmartEnum), `SeriesStage.Status`. Transitions arrive in phase 2.
+**In Code**: `StageStatus` (SmartEnum: `Pending`, `Computed`, `Official`), `SeriesStage.Status`, `ComputedAt`, `OfficialAt`. The make-official job (`MakeDueStagesOfficial`) runs on a schedule; `OfficialDueAt` is when a Computed Stage will become Official.
 
 ---
 
@@ -1355,8 +1369,9 @@ The phase 1 stored model holds the configuration only. Computing fields and payi
 
 - Stored at each Stage boundary, so a bowler who was told they advanced is not moved by a later correction; a correction goes through an explicit admin recompute, like `BowlerSeasonStats`
 - A bowler cannot hold two slots at the same Qualifying Event or in the Backfill
+- Each member of the field is a Series Field Entry
 
-**In Code**: phase 2, no code yet.
+**In Code**: `Series.FieldEntries`, `series_field_entries` table. The field after a Survivor Round is the bowlers whose `SurvivorOutcome.Advanced` is true.
 
 ---
 
@@ -1366,11 +1381,182 @@ The phase 1 stored model holds the configuration only. Computing fields and payi
 
 **Rules**:
 
-- Uses Bowler of the Year as of the date of the last completed qualifier; that date is stored with the field so a later recompute does not use "now". Only one tournament is held on the day of a Series event, so the date is clear
+- The as-of date is the last Qualifying tournament's end date. It is stored as `BackfillAsOf` and reused by every recompute, never "now"
+- A candidate has more than zero open Bowler of the Year points as of that date, is a member on that date, is not already in the field, and was not Cleared by a Stage Override
 - Ties at the cutoff all advance
-- Triggers: (1) the Stats context publishes an event when season stats are generated and Series subscribes (Stats does not call Series); (2) it runs when all Qualifying Stages are computed and stats exist through the last qualifier; (3) it reads BOTY as of that stored date; (4) a re-sent stats event must not change an announced field
+- Open points come from website results of Completed and Truncated stats-eligible tournaments through the as-of date, with the Tournament of Champions double-dip exclusion. The legacy side-cut bonus is not reproduced (see Rules Gaps)
+- Triggers: (1) the Stats context publishes an event when season stats are generated and Series subscribes (Stats does not call Series); (2) it runs when all Qualifying Stages are computed and stats exist through the last qualifier; (3) it reads points as of the stored date; (4) a re-sent stats event must not change an Official field
+- An override Add does not fill a vacant slot
 
-**In Code**: phase 2, no code yet.
+**In Code**: `Series.BackfillAsOf`; Backfill entries are `SeriesFieldEntry` rows with no source Stage, no place, and `BackfillPoints` set.
+
+---
+
+### Slot
+
+**Definition**: One place in the Series Field that a Qualifying Stage gives out.
+
+**Rules**:
+
+- A Slot is a result row with Place at or below the Stage's advancing count. Ties at the count all count
+- In a team event the Stage gives N teams times the team size
+- A Slot that cannot be filled is a Vacant Slot
+
+**In Code**: `SeriesStage.SlotCount` (slots when last computed).
+
+---
+
+### Vacant Slot
+
+**Definition**: A Slot whose bowler is not a member on the tournament's end date, or is already in the field, or was cleared by a Stage Override.
+
+**Rules**:
+
+- It is not passed down the finish list
+- It is a count only; nothing is stored per vacant slot. The Backfill fills it
+- A Series Field Entry added by an override does not fill it
+
+**In Code**: `VacantSlotCount` in the advancement read: `SlotCount` minus the entries with `ViaOverride` false.
+
+---
+
+### Series Field Entry
+
+**Definition**: A bowler's place in the Series Field, and where it came from.
+
+**Rules**:
+
+- The source is a Qualifying Stage or the Backfill
+- A Stage entry holds the bowler's place. A Backfill entry holds the Backfill points
+- An entry added by an override is marked
+
+**In Code**: `SeriesFieldEntry` (`BowlerId`, `SourceStageId` (null for the Backfill), `Place`, `BackfillPoints`, `ViaOverride`), `SeriesFieldEntryId`, `series_field_entries` table.
+
+---
+
+### Target Field
+
+**Definition**: The total number of Slots across the Qualifying Stages.
+
+**Rules**:
+
+- The field can exceed it (Backfill ties, an override Add)
+
+**In Code**: `TargetField` in the advancement read; the sum of the Qualifying Stages' `SlotCount`.
+
+---
+
+### Stage Override
+
+**Definition**: An admin change to a Qualifying Stage's advancers: **Add bowler** or **Clear slot**.
+
+**Rules**:
+
+- **Add bowler**: any bowler with a result row in the Stage's tournament, at any place, member or not. It adds an entry, and the field may exceed the target
+- **Clear slot**: vacates the slot and bars that bowler from the Backfill for the whole Series
+- Qualifying Stages only, and only while the Stage is Computed. An Official Stage rejects them
+- Only an admin with `Series.ManageAdvancement` can make or remove one. Manager does not hold it today
+- Each override is stored with a reason, who made it and when
+- It survives every recompute until an admin removes it
+- If its target changed (for example the bowler no longer has a result row), it becomes ineffective and is skipped. It is not an error
+- There is no override on a Survivor Stage
+
+**In Code**: `StageOverride` (`BowlerId`, `Kind`, `Reason`, `CreatedBy`, `CreatedAt`, `Applied`), `StageOverrideId`, `OverrideKind` (SmartEnum: `Add`, `Clear`), `SeriesStage.Overrides`, `series_stage_overrides` table. `CreatedBy` is the user ID string, not a name.
+
+---
+
+### Survivor Outcome
+
+**Definition**: A field bowler's Block Total and advanced flag at a Survivor Stage.
+
+**Rules**:
+
+- One per bowler who entered the Stage
+- A bowler with no scores on the squad did not bowl: no Block Total, and eliminated
+
+**In Code**: `SurvivorOutcome` (`BowlerId`, `BlockTotal`, `Advanced`), `series_survivor_outcomes` table.
+
+---
+
+### Block Total
+
+**Definition**: The sum of a bowler's games on the Survivor Stage's designated squad.
+
+**Rules**:
+
+- A partial squad counts as bowled
+- No games means the bowler did not bowl
+
+**In Code**: `SurvivorOutcome.BlockTotal` (`int?`, null when the bowler did not bowl).
+
+---
+
+### Needs Squad
+
+**Definition**: A Survivor Stage whose Squad Designation is unresolved, or whose resolved squad no longer exists.
+
+**Rules**:
+
+- The Stage cannot compute until an admin picks a squad or one matches automatically
+- A Stage with no match is not an error; it stays Pending
+
+**In Code**: `NeedsSquad` in the advancement read.
+
+---
+
+### Stale
+
+**Definition**: A Stage whose stored output may differ from a fresh computation, so an admin should review it. Three things set it: an earlier Stage changed after this Stage became Official, a re-sent result event gives a different output for an Official Stage, or a resolved squad vanished.
+
+**Rules**:
+
+- Sticky: cleared only by a forced Recompute, or by a recompute that changes the output
+- Stored output stays as it is until an admin recomputes
+
+**In Code**: `SeriesStage.IsStale`, `MarkStale`, `ClearStale`.
+
+---
+
+### Grace Period
+
+**Definition**: The time a Computed Qualifying or Survivor Stage waits, with unchanged output, before it becomes Official.
+
+**Rules**:
+
+- A setting, default 24 hours
+- It counts from when the output last changed (`ComputedAt`)
+- The job runs every 15 minutes, so the change can land up to 15 minutes late
+
+**In Code**: `SeriesAdvancement:OfficialGraceHours` setting.
+
+---
+
+### Recompute
+
+**Definition**: An admin action that works a Stage and every later Stage out again from the stored results and overrides.
+
+**Rules**:
+
+- Starts from the chosen Stage; a catch-up after the 1.3.0 deploy is Recompute from the first Stage
+- Asks for confirmation when Official Stages in the range would reset to Computed
+- A Recompute of an Official Stage resets it and clears its Stale mark
+- Needs `Series.EditSeries`
+
+**In Code**: `Series.Recompute`; the endpoint is `POST /series/{id}/stages/{stageId}/recomputations`.
+
+---
+
+### Version
+
+**Definition**: The concurrency token on the Series.
+
+**Rules**:
+
+- Admin writes carry the Version they read. A mismatch is a conflict (409) and the admin reloads
+- It changes on every advancement write and every Stage-list change, not on rename, logo or Finale reschedule
+- A recompute that changes nothing writes nothing
+
+**In Code**: `Series.Version`, `Series.EnsureVersion`.
 
 ---
 
@@ -1383,7 +1569,7 @@ The phase 1 stored model holds the configuration only. Computing fields and payi
 - Series Positions are unique
 - With a Finale, finalists' positions are provisional until the Finale result is recorded; without one, positions are final once the Placement Stage is computed
 
-**In Code**: phases 2 and 3, no code yet.
+**In Code**: `SeriesPosition` (`BowlerId`, `Position`, `Bowled`, `IsFinalist`), `series_positions` table. Phase 2 stores the Placement Round positions; the Finale result is phase 3.
 
 ---
 
@@ -1440,14 +1626,16 @@ The phase 1 stored model holds the configuration only. Computing fields and payi
 
 **Rules**:
 
-- **Replayable**: the field at each Stage is a function of the Stages before it and the results through it. A qualifying slot depends on earlier qualifiers (the overlap rule), so the work folds over the Stages in order. A completion event, an admin recompute and a catch-up after a flag is switched on all call the same function
-- **Automatic**: runs on tournament completion, and an admin recompute remains for corrections
-- Qualifying Stages need result places alone; no stats
+- **Replayable**: the field at each Stage is a function of the Stages before it, the results through it, and the Stage Overrides. A qualifying slot depends on earlier qualifiers (the overlap rule), so the work folds over the Stages in order. A result event, a Recompute and the catch-up after the 1.3.0 deploy all call the same function
+- **Automatic**: runs when results are recorded for a Stage's tournament, when squads change, when squad scores are replaced, and when season stats are generated. A Recompute remains for corrections
+- A Stage computes only when its tournament is Completed or Truncated with results recorded, the previous Stage is Computed or Official, and, for a Survivor Stage, its squad is resolved and has scores. A Stage that cannot compute is Pending
+- Qualifying Stages need result places alone; no stats. The Backfill needs stats
 - Placement ranking is `TournamentResult.Place`, filtered to the Series field, with bowlers who did not bowl ranked last alphabetically
 - Survivor scoring takes whatever games a bowler has bowled on the designated squad, so a partial squad counts
 - Team bowlers share a result place; bowlers with place N or better qualify. This assumes unique places per team and is revisited when `Entry` is modeled
+- A tournament completed before the 1.3.0 deploy is not caught up automatically: an admin runs Recompute from the first Stage. No feature flag gates this
 
-**In Code**: none yet.
+**In Code**: `Series.Recompute` and the Advance methods in `Series.Advancement.cs`; one pure computation per Stage kind (`QualifyingComputation`, `BackfillComputation`, `SurvivorComputation`, `PlacementComputation`). Events: `TournamentResultsRecorded`, `TournamentSquadsChanged`, `SquadScoresReplaced`, `SeasonStatsGenerated`.
 
 ---
 
@@ -1462,9 +1650,18 @@ These are decisions the posted rules do not state. They are recorded here until 
 5. **Partial squads**: not posted. NEBA practice: games bowled up to that point count as the score
 6. **Placement Round no-shows**: not posted. NEBA practice: ranked after all who bowled, alphabetically by last name then first name, and they still receive a Series Position
 7. **Payout schedule**: not in the rules. Set per Series by the special tournament committee with the sponsor, and a payout may be zero
-8. **Membership**: open to members, judged on the qualifying event date, with no retroactive membership
+8. **Membership**: open to members, judged on the qualifying tournament's end date, with no retroactive membership. This replaces the earlier "start date"
 9. **The Finale is optional**: the 2025 posted rules have one; earlier Series had none. Without a Finale, the Placement Round positions are the final standings and every bowler is paid by Series Position
 10. **The Finale is its own event** with a date, start time and host center, and can be rescheduled after processing begins
+11. **Official was called Announced**: earlier drafts used "Announced" with an admin Announce action. The word was dropped because it clashes with Discord announcements, with a tournament being "completed", with the Locked badge, and with how the public reads it. A Stage now becomes Official on its own after the Grace Period
+12. **Placement ties** break by bowler ID
+13. **A Survivor Stage waits for at least one score row** on its squad before it computes
+14. **A re-sent result event on an Official Stage** re-runs the computation in memory and only marks the Stage Stale. It writes no output
+15. **An override Add does not fill a vacant slot**; the field may exceed the target
+16. **Bowler of the Year side-cut bonus**: the legacy total adds a side-cut bonus that website results cannot reproduce. The Backfill uses website points without it, and a parity test compares the result with the official total at season end
+17. **No Survivor override**: a future permission can add it
+18. **No bowler merge flow exists yet**. When it does, it must move the `BowlerId` columns of `series_field_entries`, `series_survivor_outcomes`, `series_positions` and `series_stage_overrides`
+19. **Finale replacement, payouts and earnings** are phase 3
 
 ---
 

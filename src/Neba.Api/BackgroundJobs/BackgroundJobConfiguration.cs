@@ -84,6 +84,8 @@ internal static class BackgroundJobsConfiguration
                 tags: tags);
 
             services.AddScoped<IBackgroundJobScheduler, HangfireBackgroundJobScheduler>();
+            services.AddSingleton<IDomainEventPublisher, DomainEventPublisher>();
+            services.AddScoped<IKeyedLockProvider, HangfireKeyedLockProvider>();
 
             services.Scan(scan => scan
                 .FromAssemblies(typeof(BackgroundJobsConfiguration).Assembly)

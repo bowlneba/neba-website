@@ -22,7 +22,16 @@
                     <span class="series-grid__ro series-grid__tournament">@(option?.Label ?? "—")</span>
                     <span class="series-grid__ro">@ReadOnlyCount(row, option)</span>
                     <span class="series-grid__ro series-grid__squad">@(SeriesDisplay.Squad(row.SquadDate, row.SquadStartTime) ?? "—")</span>
-                    <span></span>
+                    @if (row.RemovableWhileLocked)
+                    {
+                        <div class="series-grid__actions">
+                            <button type="button" class="neba-btn-icon" data-testid="stage-remove-cancelled" @onclick="@(() => Remove(i))" aria-label="@AriaLabel("remove", order)">✕</button>
+                        </div>
+                    }
+                    else
+                    {
+                        <span></span>
+                    }
                 }
                 else
                 {
@@ -85,6 +94,11 @@
                         <button type="button" class="neba-btn-icon" disabled="@IsLast(i)" @onclick="@(() => Move(i, 1))" aria-label="@AriaLabel("move down", order)">↓</button>
                         <button type="button" class="neba-btn-icon" @onclick="@(() => Remove(i))" aria-label="@AriaLabel("remove", order)">✕</button>
                     </div>
+                }
+
+                @if (ReadOnly && row.RemovableWhileLocked)
+                {
+                    <p class="series-grid__note" data-testid="stage-cancelled-note">@SeriesDisplay.CancelledStageNote</p>
                 }
 
                 @foreach (var error in row.Errors)
@@ -212,6 +226,12 @@
 
     private Task Remove(int index)
     {
+        // A locked Series fixes its Stages; only a cancelled Pending Stage may go. The API checks again on save.
+        if (ReadOnly && !Rows[index].RemovableWhileLocked)
+        {
+            return Task.CompletedTask;
+        }
+
         Rows.RemoveAt(index);
         ClearErrors();
         return OnChanged.InvokeAsync();

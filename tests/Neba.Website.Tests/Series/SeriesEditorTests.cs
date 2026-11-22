@@ -475,4 +475,166 @@ public sealed class SeriesEditorTests : IDisposable
         captured.Series.Logo.ShouldNotBeNull();
         captured.Series.Logo.Path.ShouldBe("series/logo/locked.png");
     }
+
+    // ── Locked: removing a cancelled Stage ────────────────────────────────
+
+    private static SeriesFormModel LockedModel()
+        => Model(
+            new SeriesStageRowModel { StageId = "stage-1", TournamentId = "t1", AdvancingCount = 8 },
+            new SeriesStageRowModel { StageId = "stage-2", TournamentId = "t2", AdvancingCount = 4, RemovableWhileLocked = true },
+            new SeriesStageRowModel { StageId = "stage-3", Kind = StageKinds.Placement, TournamentId = "t3", AdvancingCount = null });
+
+    private void SetupEditCapture(Action<EditSeriesRequest> capture)
+    {
+        var response = Own(new StubApiResponse<object> { IsSuccessStatusCode = true, StatusCode = System.Net.HttpStatusCode.NoContent });
+        _seriesApi
+            .Setup(x => x.EditSeriesAsync(SeriesId, It.IsAny<EditSeriesRequest>(), It.IsAny<CancellationToken>()))
+            .Callback<string, EditSeriesRequest, CancellationToken>((_, r, _) => capture(r))
+            .ReturnsAsync(response);
+    }
+
+    [Fact(DisplayName = "A locked Series with a removable Stage should add the removable-Stage sentence to the banner")]
+    public void Locked_ShouldShowRemovableSentence_WhenAStageIsRemovable()
+    {
+        // Arrange & Act
+        var cut = RenderEdit(LockedModel(), isLocked: true);
+
+        // Assert
+        cut.Markup.ShouldContain("This Series is locked");
+        cut.Markup.ShouldContain("Processing has begun for this Series.");
+        cut.Markup.ShouldContain("A Stage whose tournament was cancelled can still be removed. After you save, run Recompute from the Stage before it on the Series page.");
+    }
+
+    [Fact(DisplayName = "A locked Series with no removable Stage should show the plain banner")]
+    public void Locked_ShouldShowPlainBanner_WhenNoStageIsRemovable()
+    {
+        // Arrange
+        var model = Model(new SeriesStageRowModel { StageId = "stage-1", TournamentId = "t1" });
+
+        // Act
+        var cut = RenderEdit(model, isLocked: true);
+
+        // Assert
+        cut.Markup.ShouldContain("This Series is locked");
+        cut.Markup.ShouldContain("Processing has begun for this Series.");
+        cut.Markup.ShouldNotContain("can still be removed");
+    }
+
+    [Fact(DisplayName = "Removing a cancelled Stage should mark the form dirty")]
+    public async Task Locked_Remove_ShouldMarkFormDirty()
+    {
+        // Arrange
+        var cut = RenderEdit(LockedModel(), isLocked: true);
+        IsDirty(cut).ShouldBeFalse();
+
+        // Act
+        await cut.Find("button[data-testid='stage-remove-cancelled']").ClickAsync();
+
+        // Assert
+        IsDirty(cut).ShouldBeTrue();
+        cut.FindAll("li.series-grid__row").Count.ShouldBe(2);
+    }
+
+    [Fact(DisplayName = "Removing a cancelled Stage should drop the removable-Stage sentence from the banner")]
+    public async Task Locked_Remove_ShouldDropRemovableSentence()
+    {
+        // Arrange
+        var cut = RenderEdit(LockedModel(), isLocked: true);
+
+        // Act
+        await cut.Find("button[data-testid='stage-remove-cancelled']").ClickAsync();
+
+        // Assert
+        cut.Markup.ShouldContain("Processing has begun for this Series.");
+        cut.Markup.ShouldNotContain("can still be removed");
+    }
+
+    [Fact(DisplayName = "Saving after a removal should send the remaining Stages with their ids in order")]
+    public async Task Locked_Save_ShouldSendRemainingStages()
+    {
+        // Arrange
+        EditSeriesRequest? captured = null;
+        SetupEditCapture(r => captured = r);
+        var cut = RenderEdit(LockedModel(), isLocked: true);
+        await cut.Find("button[data-testid='stage-remove-cancelled']").ClickAsync();
+
+        // Act
+        await cut.Find("form").SubmitAsync();
+
+        // Assert
+        captured.ShouldNotBeNull();
+        captured.Id.ShouldBe(SeriesId);
+        captured.Series.Stages.Select(s => s.Id).ShouldBe(["stage-1", "stage-3"]);
+        captured.Series.Stages.Select(s => s.TournamentId).ShouldBe(["t1", "t3"]);
+        await cut.WaitForAssertionAsync(() => CurrentUri.ShouldEndWith("/series/" + SeriesId));
+    }
+
+    [Fact(DisplayName = "A locked editor should keep every other Stage and the Finale fixed and the name editable")]
+    public void Locked_ShouldKeepOtherEditsDisabled()
+    {
+        // Arrange
+        var model = LockedModel();
+        model.Finale = new SeriesFinaleFormModel { FinalistCount = 5 };
+
+        // Act
+        var cut = RenderEdit(model, isLocked: true);
+
+        // Assert
+        cut.FindAll(".series-grid input, .series-grid select").ShouldBeEmpty();
+        cut.FindAll(".series-grid button").Count.ShouldBe(1);
+        cut.FindAll("li.series-grid__row")[0].QuerySelector("button").ShouldBeNull();
+        cut.FindAll("li.series-grid__row")[2].QuerySelector("button").ShouldBeNull();
+        cut.FindAll(".series-grid__foot").ShouldBeEmpty();
+        cut.Find(".series-finale-editor input[type=checkbox]").HasAttribute("disabled").ShouldBeTrue();
+        cut.Find("#finale-count").HasAttribute("disabled").ShouldBeTrue();
+        cut.Find("#series-name").HasAttribute("disabled").ShouldBeFalse();
+    }
+
+    [Fact(DisplayName = "A 422 field error on a Stage after a removal should show on that row")]
+    public async Task Locked_Save_ShouldShowRowError_When422WithStageFieldError()
+    {
+        // Arrange
+        var response = Own(await ErrorResponseAsync<object>(
+            System.Net.HttpStatusCode.UnprocessableEntity,
+            "{\"status\":422,\"title\":\"Bad Request\",\"errors\":[{\"name\":\"Series.Stages[1]\",\"reason\":\"This Stage can't be removed.\"}]}"));
+        _seriesApi
+            .Setup(x => x.EditSeriesAsync(SeriesId, It.IsAny<EditSeriesRequest>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(response);
+        var cut = RenderEdit(LockedModel(), isLocked: true);
+        await cut.Find("button[data-testid='stage-remove-cancelled']").ClickAsync();
+
+        // Act
+        await cut.Find("form").SubmitAsync();
+
+        // Assert
+        var rows = cut.FindAll("li.series-grid__row");
+        rows[0].QuerySelectorAll(".series-grid__error").ShouldBeEmpty();
+        rows[1].QuerySelector(".series-grid__error")!.TextContent.ShouldBe("This Stage can't be removed.");
+        cut.Markup.ShouldContain("1 Stage needs changes before this Series can be saved.");
+        IsDirty(cut).ShouldBeTrue();
+    }
+
+    [Theory(DisplayName = "A general 422 or 409 after a removal should show in the Unable to save the Series alert")]
+    [InlineData(System.Net.HttpStatusCode.UnprocessableEntity)]
+    [InlineData(System.Net.HttpStatusCode.Conflict)]
+    public async Task Locked_Save_ShouldShowAlert_WhenGeneralError(System.Net.HttpStatusCode status)
+    {
+        // Arrange
+        var response = Own(await ErrorResponseAsync<object>(
+            status,
+            "{\"status\":" + (int)status + ",\"title\":\"Error\",\"errors\":[{\"name\":\"generalErrors\",\"reason\":\"A Stage with results cannot be removed.\"}]}"));
+        _seriesApi
+            .Setup(x => x.EditSeriesAsync(SeriesId, It.IsAny<EditSeriesRequest>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(response);
+        var cut = RenderEdit(LockedModel(), isLocked: true);
+        await cut.Find("button[data-testid='stage-remove-cancelled']").ClickAsync();
+
+        // Act
+        await cut.Find("form").SubmitAsync();
+
+        // Assert
+        cut.Markup.ShouldContain("Unable to save the Series");
+        cut.Markup.ShouldContain("A Stage with results cannot be removed.");
+        cut.FindAll(".series-grid__error").ShouldBeEmpty();
+    }
 }

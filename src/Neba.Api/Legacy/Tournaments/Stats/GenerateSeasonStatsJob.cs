@@ -5,6 +5,7 @@ using Dapper;
 
 using Microsoft.EntityFrameworkCore;
 
+using Neba.Api.BackgroundJobs;
 using Neba.Api.Caching;
 using Neba.Api.Database;
 using Neba.Api.Discord;
@@ -27,6 +28,7 @@ internal sealed class GenerateSeasonStatsJob(
     AppDbContext db,
     IDbConnection legacyConnection,
     IFusionCache cache,
+    IDomainEventPublisher domainEventPublisher,
     IManualInterventionNotifier manualInterventionNotifier,
     ILogger<GenerateSeasonStatsJob> logger)
 {
@@ -127,6 +129,9 @@ internal sealed class GenerateSeasonStatsJob(
         await db.SaveChangesAsync(ct);
 
         await cache.RemoveByTagAsync(CacheDescriptors.Stats.SeasonTag(season.Id), token: ct);
+
+        // Series subscribes (Stats never references Series). Fires on every regeneration.
+        domainEventPublisher.Publish(new SeasonStatsGenerated { SeasonId = season.Id });
 
         if (unmappedLegacyBowlerIds.Count > 0)
         {

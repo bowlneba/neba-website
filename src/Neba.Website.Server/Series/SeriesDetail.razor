@@ -1,13 +1,18 @@
 @page "/series/{Id}"
+@using Microsoft.AspNetCore.Authorization
 @using Neba.Api.Contracts.Security
 @using Neba.Api.Contracts.Series
 @using Neba.Website.Server.Services
+@using Neba.Website.Server.Time
 @rendermode @(new InteractiveServerRenderMode(prerender: false))
 
 @inject ApiExecutor ApiExecutor
 @inject ISeriesApi SeriesApi
 @inject NavigationManager Navigation
 @inject ToastService ToastService
+@inject AuthenticationStateProvider AuthenticationStateProvider
+@inject IAuthorizationService AuthorizationService
+@inject IClientTimeZoneService ClientTimeZoneService
 
 <PageTitle>@PageTitleText - BowlNEBA</PageTitle>
 
@@ -35,6 +40,10 @@ else
                 <p>@_model.SeasonDateRange</p>
             </div>
             <div class="series-detail__actions">
+                @if (_canView)
+                {
+                    <HelpButton DocName="series-advancement" Light="true" />
+                }
                 <AuthorizeView Policy="@Permissions.EditSeries.PolicyName">
                     <a href="@EditHref" class="neba-btn neba-btn-secondary">Edit</a>
                 </AuthorizeView>
@@ -54,38 +63,109 @@ else
             <SeriesFieldChart Steps="@_steps" HasFinale="@_model.HasFinale" HasPlacementStage="@HasPlacementStage" />
         }
 
-        @foreach (var kind in StageKinds.All)
+        @if (_canView && _advancementState == AdvancementState.Failed)
         {
-            var stages = StagesOf(kind);
-            if (stages.Count == 0)
+            <section aria-labelledby="series-progress-failed-title" data-testid="series-progress-failed">
+                <h2 class="series-group-title" id="series-progress-failed-title">Season progress</h2>
+                <NebaAlert Severity="NotifySeverity.Error" Title="Stage status could not load" Message="@SeriesDisplay.AdvancementReloadFailed" />
+                <button type="button" class="neba-btn neba-btn-secondary series-detail__retry" @onclick="RetryAdvancementAsync">Retry</button>
+            </section>
+        }
+
+        @if (ShowRail)
+        {
+            <section aria-labelledby="series-progress-title" data-testid="series-progress">
+                <h2 class="series-group-title" id="series-progress-title">Season progress</h2>
+
+                @if (_advancement is null)
+                {
+                    <div class="series-rail-loading" aria-busy="true" data-testid="series-progress-loading">
+                        @for (var row = 0; row < SkeletonRowCount; row++)
+                        {
+                            <NebaSkeletonLoader Type="SkeletonType.Card" />
+                        }
+                    </div>
+                }
+                else if (_advancement.Stages.Count == 0)
+                {
+                    <p class="series-detail__message">This Series has no Stages yet.</p>
+                }
+                else
+                {
+                    <SeriesProgressStrip Stages="@_advancement.Stages" BackfillAsOf="@_advancement.BackfillAsOf" />
+
+                    <ol class="series-rail">
+                        @foreach (var stage in _advancement.Stages)
+                        {
+                            var detail = _model.Stages.FirstOrDefault(s => s.Id == stage.Id);
+                            if (detail is null)
+                            {
+                                continue; // no matching Stage in GetSeries (a stale read): no card
+                            }
+
+                            <li @key="stage.Id" class="@SeriesDisplay.NodeClass(stage.Status, stage.IsTournamentCancelled)">
+                                <SeriesStageCard Stage="@stage"
+                                                 TournamentName="@detail.TournamentName"
+                                                 TournamentHref="@TournamentHref(detail)"
+                                                 Meta="@SeriesDisplay.RailMeta(detail, _model.Finale?.FinalistCount)"
+                                                 PositionCount="@_advancement.Positions.Count"
+                                                 BackfillLabel="@(stage.IsLastQualifying ? SeriesDisplay.BackfillLabel(_advancement.BackfillAsOf) : null)"
+                                                 EditHref="@EditHref"
+                                                 IsExpanded="@_expandedStageIds.Contains(stage.Id)"
+                                                 IsBusy="@_isWriting"
+                                                 OnToggle="@(() => ToggleStage(stage.Id))"
+                                                 OnRecompute="@(() => StartRecomputeAsync(stage))"
+                                                 OnPickSquad="@(() => OpenSquadPickerAsync(stage))">
+                                    <SeriesStageOutput Stage="@stage"
+                                                       Positions="@_advancement.Positions"
+                                                       CanManage="@_canManage"
+                                                       IsBusy="@_isWriting"
+                                                       OnAddBowler="@(() => OpenAddOverrideAsync(stage))"
+                                                       OnClearSlot="@(entry => OpenClearOverride(stage, entry))"
+                                                       OnRemoveOverride="@(item => OpenRemoveOverride(stage, item))" />
+                                </SeriesStageCard>
+                            </li>
+                        }
+                    </ol>
+                }
+            </section>
+        }
+        else
+        {
+            @foreach (var kind in StageKinds.All)
             {
-                continue;
+                var stages = StagesOf(kind);
+                if (stages.Count == 0)
+                {
+                    continue;
+                }
+
+                <section aria-labelledby="@GroupId(kind)">
+                    <h2 class="series-group-title" id="@GroupId(kind)">@SeriesDisplay.GroupHeading(kind) <span>@SeriesDisplay.GroupNote(kind)</span></h2>
+                    <ol class="neba-card series-stage-list">
+                        @foreach (var stage in stages)
+                        {
+                            var advancing = SeriesDisplay.Advancing(stage.Kind, stage.AdvancingCount, stage.TeamSize, _model.Finale?.FinalistCount);
+                            <li @key="stage.Id">
+                                <span class="series-stage__order">@stage.Order</span>
+                                <span class="series-stage__tournament">
+                                    <a href="@TournamentHref(stage)">@stage.TournamentName</a>
+                                    <small>@TournamentMeta(stage)</small>
+                                </span>
+                                <span class="series-stage__advancing">
+                                    @advancing.Primary
+                                    @if (advancing.Secondary is not null)
+                                    {
+                                        <small class="series-stage__advancing-sub">@advancing.Secondary</small>
+                                    }
+                                </span>
+                                <span class="series-stage__squad">@SeriesDisplay.Squad(stage.SquadDate, stage.SquadStartTime)</span>
+                            </li>
+                        }
+                    </ol>
+                </section>
             }
 
-            <section aria-labelledby="@GroupId(kind)">
-                <h2 class="series-group-title" id="@GroupId(kind)">@SeriesDisplay.GroupHeading(kind) <span>@SeriesDisplay.GroupNote(kind)</span></h2>
-                <ol class="neba-card series-stage-list">
-                    @foreach (var stage in stages)
-                    {
-                        var advancing = SeriesDisplay.Advancing(stage.Kind, stage.AdvancingCount, stage.TeamSize, _model.Finale?.FinalistCount);
-                        <li @key="stage.Id">
-                            <span class="series-stage__order">@stage.Order</span>
-                            <span class="series-stage__tournament">
-                                <a href="@TournamentHref(stage)">@stage.TournamentName</a>
-                                <small>@TournamentMeta(stage)</small>
-                            </span>
-                            <span class="series-stage__advancing">
-                                @advancing.Primary
-                                @if (advancing.Secondary is not null)
-                                {
-                                    <small class="series-stage__advancing-sub">@advancing.Secondary</small>
-                                }
-                            </span>
-                            <span class="series-stage__squad">@SeriesDisplay.Squad(stage.SquadDate, stage.SquadStartTime)</span>
-                        </li>
-                    }
-                </ol>
-            </section>
         }
 
         @if (_model.Finale is { } finale)
@@ -113,6 +193,54 @@ else
                         IsBusy="@_isDeleteBusy"
                         OnConfirm="ConfirmDeleteAsync"
                         OnCancel="@(() => _isDeleteConfirmOpen = false)" />
+
+    @if (_canView)
+    {
+        <StageSquadModal IsOpen="@(_squadStageId is not null)"
+                         StageOrder="@(SquadStage?.Order ?? 0)"
+                         TournamentName="@(SquadDetail?.TournamentName ?? string.Empty)"
+                         ExpectedSquad="@SeriesDisplay.Squad(SquadDetail?.SquadDate, SquadDetail?.SquadStartTime)"
+                         NeedsSquad="@(SquadStage?.NeedsSquad ?? false)"
+                         Squads="@_squads"
+                         IsLoading="@_isSquadsLoading"
+                         LoadError="@_squadsError"
+                         OnClose="CloseSquadPicker"
+                         OnSubmitRequestedAsync="SubmitSquadAsync" />
+
+        @if (_canManage)
+        {
+            <StageOverrideModal IsOpen="@(_overrideTarget is not null)"
+                                Kind="@(_overrideTarget?.Kind ?? OverrideKinds.Add)"
+                                StageOrder="@(OverrideStage?.Order ?? 0)"
+                                TournamentName="@(OverrideDetail?.TournamentName ?? string.Empty)"
+                                BowlerId="@_overrideTarget?.Entry?.BowlerId"
+                                BowlerName="@(_overrideTarget?.Entry?.BowlerName ?? string.Empty)"
+                                Place="@_overrideTarget?.Entry?.Place"
+                                Choices="@_addChoices"
+                                IsLoadingChoices="@_isResultsLoading"
+                                ChoicesError="@_resultsError"
+                                OnClose="CloseOverrideModal"
+                                OnSubmitRequestedAsync="SubmitOverrideAsync" />
+
+            <ConfirmActionModal IsOpen="@(_removeTarget is not null)"
+                                Title="Remove this override?"
+                                Message="@RemoveMessage"
+                                ConfirmLabel="Remove override"
+                                BusyLabel="Removing..."
+                                IsBusy="@_isWriting"
+                                OnConfirm="ConfirmRemoveAsync"
+                                OnCancel="CancelRemove" />
+        }
+
+        <ConfirmActionModal IsOpen="@(_recomputeTarget is not null)"
+                            Title="@RecomputeTitle"
+                            Message="@RecomputeMessage"
+                            ConfirmLabel="Recompute"
+                            BusyLabel="Recomputing..."
+                            IsBusy="@_isWriting"
+                            OnConfirm="ConfirmRecomputeAsync"
+                            OnCancel="CancelRecompute" />
+    }
 }
 
 @code {
@@ -126,6 +254,8 @@ else
     private bool _isDeleteConfirmOpen;
     private bool _isDeleteBusy;
     private bool _isLogoEditorOpen;
+
+    private const int SkeletonRowCount = 4;
 
     private bool HasPlacementStage => _model!.Stages.Any(s => s.Kind == StageKinds.Placement);
 
@@ -141,9 +271,11 @@ else
 
     protected override async Task OnParametersSetAsync()
     {
+        ResetAdvancementFor(Id);
         _isLoading = true;
         await LoadAsync();
         _isLoading = false;
+        await LoadAdvancementForViewerAsync(); // after the page shows: holders see skeleton rows meanwhile
     }
 
     private async Task LoadAsync()

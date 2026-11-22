@@ -24,7 +24,7 @@
 
             @if (IsLocked)
             {
-                <NebaAlert Severity="NotifySeverity.Warning" Title="This Series is locked" Message="Processing has begun for this Series. Its Stages and whether it has a Finale are fixed. The name, the logo, and the Finale's date, time and center can still change." />
+                <NebaAlert Severity="NotifySeverity.Warning" Title="This Series is locked" Message="@SeriesDisplay.LockedMessage(HasRemovableStage)" />
             }
 
             @if (_optionsError is not null || _bowlingCentersError is not null)
@@ -179,6 +179,8 @@
         Model.LogoUrl = null;
         MarkDirty();
     }
+
+    private bool HasRemovableStage => Model.Stages.Any(row => row.RemovableWhileLocked);
 
     private string SaveLabel => IsCreate ? "Create Series" : "Save changes";
 
