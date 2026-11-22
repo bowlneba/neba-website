@@ -82,8 +82,6 @@ jobs:
         uses: actions/upload-artifact@v7
         with:
           name: ${{ inputs.artifact_name }}
-          path: |
-            whatif-output/whatif-summary.md
-            whatif-output/whatif.json
+          path: whatif-output/whatif-summary.md
           if-no-files-found: ignore
           retention-days: 7

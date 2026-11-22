@@ -3,6 +3,9 @@
 # or the storage account. It generates the Bicep with `aspire publish`, then runs
 # `az deployment sub what-if` on it. The what-if only reads Azure; it changes nothing.
 #
+# The what-if is incremental, so Azure reports Create or Modify for this deploy and never Delete.
+# The Delete check stays as a guard in case a deploy ever runs in complete mode.
+#
 # Why: resource names come from the resource group, so a wrong group or a renamed resource would
 # make the deploy create a new, empty Postgres server or storage account next to the real one.
 #
@@ -115,6 +118,7 @@ def label(resource_id):
 
 changes = result.get("changes", [])
 problems = []
+warnings = []
 lines = []
 counts = {}
 for change in changes:
@@ -128,6 +132,8 @@ for change in changes:
     if kind(change["resourceId"]) in protected:
         if change_type == "Delete" or (change_type == "Create" and not allow_create):
             problems.append(f"{change_type} {label(change['resourceId'])}")
+        elif change_type == "Modify":
+            warnings.append(label(change["resourceId"]))
 
 report = ["## Infrastructure what-if", ""]
 report.append("Counts: " + ", ".join(f"{k} {v}" for k, v in sorted(counts.items())))
@@ -138,6 +144,10 @@ report.append(
     "Property changes marked Modify include values Azure sets itself, so a count above zero is normal. "
     "Only a Create or Delete of Postgres or storage fails this check."
 )
+if warnings:
+    report += ["", "**Check:** this deploy modifies " + "; ".join(warnings) + ". Read the what-if output to confirm it is intended (a SKU change, for example)."]
+if result.get("status") not in (None, "Succeeded"):
+    report += ["", f"**What-if did not succeed:** {result.get('status')} {result.get('error')}"]
 if problems:
     report += ["", "**Blocked:** this deploy would " + "; ".join(problems) + "."]
 

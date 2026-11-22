@@ -156,6 +156,7 @@ jobs:
     needs: format-check
     permissions:
       contents: read
+      pull-requests: read
     outputs:
       apphost_changed: ${{ steps.changes.outputs.apphost }}
 

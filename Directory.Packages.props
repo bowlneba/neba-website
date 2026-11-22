@@ -9,6 +9,7 @@
     <PackageVersion Include="Ardalis.SmartEnum.SystemTextJson" Version="8.1.0" />
     <PackageVersion Include="Aspire.Azure.Data.Tables" Version="17.0.0" />
     <PackageVersion Include="Aspire.Azure.Npgsql" Version="17.0.0" />
+    <!-- No stable 17.0.0 yet: NuGet has only 17.0.0-preview.1.26567.5 (checked 2026-11-22). Move to 17.0.0 when it ships. -->
     <PackageVersion Include="Aspire.Azure.Npgsql.EntityFrameworkCore.PostgreSQL" Version="13.6.5" />
     <PackageVersion Include="Aspire.Azure.Security.KeyVault" Version="17.0.0" />
     <PackageVersion Include="Aspire.Azure.Storage.Blobs" Version="17.0.0" />
@@ -18,6 +19,7 @@
     <PackageVersion Include="Aspire.Hosting.Azure.KeyVault" Version="17.0.0" />
     <PackageVersion Include="Aspire.Hosting.Azure.PostgreSQL" Version="17.0.0" />
     <PackageVersion Include="Aspire.Hosting.Azure.Storage" Version="17.0.0" />
+    <!-- Preview only: the package has never had a stable release, and this is the newest build (checked 2026-11-22). -->
     <PackageVersion Include="Aspire.Hosting.Browsers" Version="17.0.0-preview.1.26567.5" />
     <PackageVersion Include="AspNetCore.HealthChecks.Hangfire" Version="9.0.0" />
     <PackageVersion Include="AspNetCore.HealthChecks.SqlServer" Version="9.0.0" />
