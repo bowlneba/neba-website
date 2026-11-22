@@ -793,7 +793,7 @@ public sealed class SeriesAdvancementMappingTests
     public void ReasonMaxLength_ShouldBe500()
     {
         // Arrange & Act
-        var max = StageOverrideFormModel.ReasonMaxLength;
+        const int max = StageOverrideFormModel.ReasonMaxLength;
 
         // Assert
         max.ShouldBe(500);

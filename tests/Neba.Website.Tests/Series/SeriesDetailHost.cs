@@ -362,8 +362,8 @@ internal sealed class SeriesDetailHost : IDisposable
         => cut.Find($"[data-testid='series-stage-card'][data-stage-id='{stageId}']");
 
     /// <summary>Presses the expander on a Stage card, so its output panel renders.</summary>
-    public static async Task ExpandAsync(IRenderedComponent<SeriesDetail> cut, string stageId)
-        => await Card(cut, stageId).QuerySelector("button.series-expander")!.ClickAsync();
+    public static Task ExpandAsync(IRenderedComponent<SeriesDetail> cut, string stageId)
+        => Card(cut, stageId).QuerySelector("button.series-expander")!.ClickAsync();
 
     private static StubApiResponse<T> Stub<T>(HttpStatusCode status, T? content)
         where T : class

@@ -18,25 +18,18 @@ internal static class SurvivorComputation
             .OrderByDescending(x => x.Total).ThenBy(x => x.BowlerId)
             .ToList();
 
-        int cutoff;
-        if (count <= 0)
+        var cutoff = count switch
         {
-            cutoff = int.MaxValue;
-        }
-        else if (bowled.Count <= count)
-        {
-            cutoff = int.MinValue;
-        }
-        else
-        {
-            cutoff = bowled[count - 1].Total;
-        }
+            <= 0 => int.MaxValue,
+            _ when bowled.Count <= count => int.MinValue,
+            _ => bowled[count - 1].Total,
+        };
 
         var advanced = bowled.FindAll(x => x.Total >= cutoff).Select(x => x.BowlerId).ToHashSet();
 
         return new StageComputation
         {
-            Outcomes = [.. field.OrderBy(bowler => bowler).Select(bowler => new SurvivorOutcomeDraft(
+            Outcomes = [.. field.Order().Select(bowler => new SurvivorOutcomeDraft(
                 bowler, totals.TryGetValue(bowler, out var t) ? t.Total : null, advanced.Contains(bowler)))],
         };
     }

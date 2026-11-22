@@ -56,15 +56,15 @@ public sealed class SeriesAdvancementTests(AppDbContextFixture fixture)
         return (scenario, new AdvancementFactsScript(scenario));
     }
 
-    private async Task<ErrorOr<AdvanceResult>> AdvanceQualifierAsync(AdvancementScenario scenario, AdvancementFactsScript script)
+    private Task<ErrorOr<AdvanceResult>> AdvanceQualifierAsync(AdvancementScenario scenario, AdvancementFactsScript script)
     {
         var run = _harness.CreateRun(FactsReaderDoubles.Reading(script.Build));
 
-        return await RunAsync(run, scenario, AdvanceFrom(scenario.Qualifier));
+        return RunAsync(run, scenario, AdvanceFrom(scenario.Qualifier));
     }
 
-    private async Task<SeriesAggregate> StoredAsync(AdvancementScenario scenario)
-        => await _harness.StoredAsync(scenario.SeriesId, TestContext.Current.CancellationToken);
+    private Task<SeriesAggregate> StoredAsync(AdvancementScenario scenario)
+        => _harness.StoredAsync(scenario.SeriesId, TestContext.Current.CancellationToken);
 
     [Fact(DisplayName = "RunAsync should leave a Stage Pending and save nothing when its predecessor is not Computed or Official")]
     public async Task RunAsync_ShouldLeaveStagePending_WhenPredecessorIsNotComputed()
@@ -398,10 +398,10 @@ public sealed class SeriesAdvancementTests(AppDbContextFixture fixture)
         var run = _harness.CreateRun(FactsReaderDoubles.Reading(script.Build), locks, SeriesCache.Untouched());
 
         // Act
-        var act = () => RunAsync(run, scenario, AdvanceFrom(scenario.Qualifier));
+        Task Act() => RunAsync(run, scenario, AdvanceFrom(scenario.Qualifier));
 
         // Assert
-        await Should.ThrowAsync<DbUpdateException>(act);
+        await Should.ThrowAsync<DbUpdateException>(Act);
         handle.Verify(h => h.Dispose(), Times.Once);
         var stored = await StoredAsync(scenario);
         stored.Version.ShouldBe(0);
@@ -447,7 +447,7 @@ public sealed class SeriesAdvancementTests(AppDbContextFixture fixture)
         // Act
         var result = await run.Run.RunAsync(
             missing,
-            (series, facts, now) =>
+            (_, _, _) =>
             {
                 operationCalls++;
 
@@ -578,11 +578,11 @@ public sealed class SeriesAdvancementTests(AppDbContextFixture fixture)
             SeriesCache.Untouched());
 
         // Act
-        var act = () => run.Run.RunForTournamentAsync(
+        Task Act() => run.Run.RunForTournamentAsync(
             scenario.Qualifier.Id, (_, _, _) => AdvanceResult.None, TestContext.Current.CancellationToken);
 
         // Assert
-        var exception = await Should.ThrowAsync<InvalidOperationException>(act);
+        var exception = await Should.ThrowAsync<InvalidOperationException>(Act);
         exception.Message.ShouldContain("Series.Advancement.Busy");
     }
 
@@ -602,10 +602,10 @@ public sealed class SeriesAdvancementTests(AppDbContextFixture fixture)
         ErrorOr<AdvanceResult> result = error;
 
         // Act
-        var act = () => SeriesAdvancement.EnsureJobSucceeded(result);
+        void Act() => SeriesAdvancement.EnsureJobSucceeded(result);
 
         // Assert
-        var exception = Should.Throw<InvalidOperationException>(act);
+        var exception = Should.Throw<InvalidOperationException>(Act);
         exception.Message.ShouldContain(error.Code);
     }
 
@@ -616,10 +616,10 @@ public sealed class SeriesAdvancementTests(AppDbContextFixture fixture)
         ErrorOr<AdvanceResult> result = SeriesErrors.NotFound(SeriesId.New());
 
         // Act
-        var act = () => SeriesAdvancement.EnsureJobSucceeded(result);
+        void Act() => SeriesAdvancement.EnsureJobSucceeded(result);
 
         // Assert
-        Should.NotThrow(act);
+        Should.NotThrow(Act);
     }
 
     [Fact(DisplayName = "EnsureJobSucceeded should accept a successful result, changed or not")]
@@ -630,14 +630,14 @@ public sealed class SeriesAdvancementTests(AppDbContextFixture fixture)
         ErrorOr<AdvanceResult> changed = new AdvanceResult { Changed = true, Version = 3 };
 
         // Act
-        var act = () =>
+        void Act()
         {
             SeriesAdvancement.EnsureJobSucceeded(unchanged);
             SeriesAdvancement.EnsureJobSucceeded(changed);
-        };
+        }
 
         // Assert
-        Should.NotThrow(act);
+        Should.NotThrow(Act);
     }
 
     private static BackfillFacts BackfillFor(AdvancementScenario scenario, params (BowlerId Bowler, int Points)[] points)

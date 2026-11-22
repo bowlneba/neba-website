@@ -84,11 +84,11 @@ public sealed class StageOverrideTests
     public void Create_ShouldThrow_WhenKindIsNull()
     {
         // Arrange & Act
-        Action act = () => _ = StageOverride.Create(
+        static void Act() => _ = StageOverride.Create(
             null, BowlerId.New(), StageOverrideFactory.ValidReason, StageOverrideFactory.ValidCreatedBy, StageOverrideFactory.ValidCreatedAt);
 
         // Assert
-        Should.Throw<ArgumentNullException>(act);
+        Should.Throw<ArgumentNullException>(Act);
     }
 #nullable enable
 

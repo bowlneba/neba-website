@@ -37,10 +37,11 @@ public sealed class CreateStageOverrideCommandHandlerTests(AppDbContextFixture f
 
     private BowlerId NoResult => _context.Scenario.Bowlers[9];
 
-    private async Task AdvanceAsync(CancellationToken ct)
+    private Task AdvanceAsync(CancellationToken ct)
     {
         _context.Script.QualifierPlaces = [.. _context.Scenario.Bowlers.Take(9)];
-        await _context.AdvanceAllAsync(ct);
+
+        return _context.AdvanceAllAsync(ct);
     }
 
     private CreateStageOverrideCommand Command(

@@ -126,10 +126,10 @@ public sealed class SeriesAdvancementSettingsTests
         using var serviceProvider = builder.Services.BuildServiceProvider();
 
         // Act
-        var act = () => serviceProvider.GetRequiredService<IStartupValidator>().Validate();
+        void Act() => serviceProvider.GetRequiredService<IStartupValidator>().Validate();
 
         // Assert
-        Should.NotThrow(act);
+        Should.NotThrow(Act);
     }
 
     [Theory(DisplayName = "AddSeries should fail start-up validation for a grace period outside 1 to 168")]
@@ -148,10 +148,10 @@ public sealed class SeriesAdvancementSettingsTests
         using var serviceProvider = builder.Services.BuildServiceProvider();
 
         // Act
-        var act = () => serviceProvider.GetRequiredService<IStartupValidator>().Validate();
+        void Act() => serviceProvider.GetRequiredService<IStartupValidator>().Validate();
 
         // Assert
-        Should.Throw<OptionsValidationException>(act);
+        Should.Throw<OptionsValidationException>(Act);
     }
 
     private static bool TryValidate(SeriesAdvancementSettings settings)

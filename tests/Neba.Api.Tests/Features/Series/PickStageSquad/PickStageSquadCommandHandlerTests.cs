@@ -33,10 +33,11 @@ public sealed class PickStageSquadCommandHandlerTests(AppDbContextFixture fixtur
     }
 
     // The squad starts at 10:00 while the Stage designates 9:00, so the Stage has no squad and stays Pending until a squad is picked.
-    private async Task AdvanceWithUnmatchedSquadAsync(CancellationToken ct)
+    private Task AdvanceWithUnmatchedSquadAsync(CancellationToken ct)
     {
         _context.Script.SquadStartTime = TenAm;
-        await _context.AdvanceAllAsync(ct);
+
+        return _context.AdvanceAllAsync(ct);
     }
 
     private PickStageSquadCommand Command(int stageOrder, int version, SquadId? squadId = null, SeriesId? seriesId = null)
@@ -232,10 +233,10 @@ public sealed class PickStageSquadCommandHandlerTests(AppDbContextFixture fixtur
         var handler = new PickStageSquadCommandHandler(_context.Run().Run);
 
         // Act
-        var act = async () => await handler.HandleAsync(null, TestContext.Current.CancellationToken);
+        Task Act() => handler.HandleAsync(null, TestContext.Current.CancellationToken);
 
         // Assert
-        await Should.ThrowAsync<ArgumentNullException>(act);
+        await Should.ThrowAsync<ArgumentNullException>(Act);
     }
 #nullable enable
 }

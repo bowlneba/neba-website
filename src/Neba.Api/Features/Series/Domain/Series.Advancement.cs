@@ -201,14 +201,12 @@ public sealed partial class Series
             return SeriesAdvancementErrors.NoResultRow;
         }
 
-        if (_fieldEntries.Exists(e => e.BowlerId == bowlerId))
+        return (_fieldEntries.Exists(e => e.BowlerId == bowlerId), stage.Overrides.Any(o => o.BowlerId == bowlerId)) switch
         {
-            return SeriesAdvancementErrors.BowlerAlreadyInField;
-        }
-
-        return stage.Overrides.Any(o => o.BowlerId == bowlerId)
-            ? SeriesAdvancementErrors.OverrideExists
-            : ApplyOverride(stage, OverrideKind.Add, bowlerId, reason, createdBy, facts, now);
+            (true, _) => SeriesAdvancementErrors.BowlerAlreadyInField,
+            (_, true) => SeriesAdvancementErrors.OverrideExists,
+            _ => ApplyOverride(stage, OverrideKind.Add, bowlerId, reason, createdBy, facts, now),
+        };
     }
 
     /// <summary>Vacates the slot a bowler holds in the Stage and bars the bowler from the Backfill, then recomputes inline.</summary>
@@ -226,14 +224,14 @@ public sealed partial class Series
 
         var stage = target.Value;
 
-        if (stage.Overrides.Any(o => o.BowlerId == bowlerId))
-        {
-            return SeriesAdvancementErrors.OverrideExists;
-        }
+        var holdsSlot = _fieldEntries.Exists(e => e.SourceStageId == stage.Id && !e.ViaOverride && e.BowlerId == bowlerId);
 
-        return _fieldEntries.Exists(e => e.SourceStageId == stage.Id && !e.ViaOverride && e.BowlerId == bowlerId)
-            ? ApplyOverride(stage, OverrideKind.Clear, bowlerId, reason, createdBy, facts, now)
-            : SeriesAdvancementErrors.BowlerNotInSlot;
+        return (stage.Overrides.Any(o => o.BowlerId == bowlerId), holdsSlot) switch
+        {
+            (true, _) => SeriesAdvancementErrors.OverrideExists,
+            (_, false) => SeriesAdvancementErrors.BowlerNotInSlot,
+            _ => ApplyOverride(stage, OverrideKind.Clear, bowlerId, reason, createdBy, facts, now),
+        };
     }
 
     /// <summary>
@@ -299,17 +297,15 @@ public sealed partial class Series
         }
 
         var version = EnsureVersion(expectedVersion);
-        if (version.IsError)
-        {
-            return version.Errors;
-        }
 
-        return stage switch
-        {
-            _ when stage.Kind != StageKind.Qualifying => SeriesAdvancementErrors.NotQualifyingStage,
-            _ when stage.Status != StageStatus.Computed => SeriesAdvancementErrors.StageNotComputed(stage.Status),
-            _ => stage,
-        };
+        return version.IsError
+            ? version.Errors
+            : stage switch
+            {
+                _ when stage.Kind != StageKind.Qualifying => SeriesAdvancementErrors.NotQualifyingStage,
+                _ when stage.Status != StageStatus.Computed => SeriesAdvancementErrors.StageNotComputed(stage.Status),
+                _ => stage,
+            };
     }
 
     // ---------- the fold ----------
@@ -421,15 +417,11 @@ public sealed partial class Series
             return false;
         }
 
-        if ((previous is not null && previous.Status == StageStatus.Pending)
-            || (stage.Kind != StageKind.Qualifying && BackfillAsOf is null))
-        {
-            return false;
-        }
-
-        return stage.Kind != StageKind.Survivor
-            || (stage.SquadDesignation?.SquadId is { } squadId
-                && tournament.Squads.FirstOrDefault(s => s.SquadId == squadId) is { Totals.Count: > 0 });
+        return (previous is null || previous.Status != StageStatus.Pending)
+            && (stage.Kind == StageKind.Qualifying || BackfillAsOf is not null)
+            && (stage.Kind != StageKind.Survivor
+                || (stage.SquadDesignation?.SquadId is { } squadId
+                    && tournament.Squads.FirstOrDefault(s => s.SquadId == squadId) is { Totals.Count: > 0 }));
     }
 
     private static void ResolveSquad(SeriesStage stage, StageTournamentResults? tournament, FoldTrace trace)

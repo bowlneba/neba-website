@@ -136,7 +136,7 @@ public sealed class EditSeriesPageTests : IDisposable
 
     private static StageAdvancementResponse Advancement(string stageId, int order, string status, string tournamentStatus)
         => StageAdvancementResponseFactory.Create(
-            stageId: stageId, order: order, status: status, tournamentStatus: tournamentStatus, tournamentId: "t" + order);
+            stageId: stageId, order: order, status: status, tournamentId: "t" + order, tournamentStatus: tournamentStatus);
 
     private async Task<IRenderedComponent<EditSeries>> RenderAsync()
     {

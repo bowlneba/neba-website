@@ -43,7 +43,7 @@ public sealed class SeriesOverrideDisplayTests
     public void OverrideRemovedMessage_ShouldSayRemoved()
     {
         // Arrange & Act
-        var message = SeriesDisplay.OverrideRemovedMessage;
+        const string message = SeriesDisplay.OverrideRemovedMessage;
 
         // Assert
         message.ShouldBe("Override removed.");

@@ -763,10 +763,10 @@ public sealed class SyncTournamentResultsJobTests(AppDbContextFixture fixture, L
         await job.SyncAsync(42, ct);
 
         // Assert
-        var call = calls.ShouldHaveSingleItem();
-        var published = call.Aggregate.ShouldBeOfType<Tournament>();
+        var (aggregate, events) = calls.ShouldHaveSingleItem();
+        var published = aggregate.ShouldBeOfType<Tournament>();
         published.LegacyId.ShouldBe(42);
-        var domainEvent = call.Events.ShouldHaveSingleItem().ShouldBeOfType<TournamentResultsRecorded>();
+        var domainEvent = events.ShouldHaveSingleItem().ShouldBeOfType<TournamentResultsRecorded>();
         domainEvent.TournamentId.ShouldBe(published.Id);
     }
 
@@ -790,10 +790,10 @@ public sealed class SyncTournamentResultsJobTests(AppDbContextFixture fixture, L
         await job.SyncAsync(42, ct);
 
         // Assert
-        var call = calls.ShouldHaveSingleItem();
-        var published = call.Aggregate.ShouldBeOfType<Tournament>();
+        var (aggregate, events) = calls.ShouldHaveSingleItem();
+        var published = aggregate.ShouldBeOfType<Tournament>();
         published.Results.ShouldHaveSingleItem();
-        call.Events.ShouldHaveSingleItem().ShouldBeOfType<TournamentResultsRecorded>().TournamentId.ShouldBe(published.Id);
+        events.ShouldHaveSingleItem().ShouldBeOfType<TournamentResultsRecorded>().TournamentId.ShouldBe(published.Id);
     }
 
     [Theory(DisplayName = "SyncAsync should log LogLegacyResultsNotMarkedRecorded with ids only and publish no results event when the tournament is Scheduled or Cancelled")]

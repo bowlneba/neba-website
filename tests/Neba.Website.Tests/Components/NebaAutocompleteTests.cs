@@ -220,7 +220,7 @@ public sealed class NebaAutocompleteTests : IDisposable
             .Setup(js => js.InvokeAsync<IJSObjectReference>("import", It.IsAny<object?[]?>()))
             .Returns(() => new ValueTask<IJSObjectReference>(import.Task));
 
-        using var ctx = new BunitContext();
+        await using var ctx = new BunitContext();
         ctx.Services.AddSingleton(jsRuntime.Object);
 
         var cut = ctx.Render<NebaAutocomplete<string, Item>>(p =>

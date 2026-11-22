@@ -682,8 +682,8 @@ public sealed class SyncSquadScoresSyncJobTests(AppDbContextFixture fixture, Leg
 
     // ── SquadScoresReplaced ───────────────────────────────────────────────────
 
-    private async Task<TournamentId> GetTournamentIdAsync(Squad squad, CancellationToken ct) =>
-        await _dbContext.Tournaments
+    private Task<TournamentId> GetTournamentIdAsync(Squad squad, CancellationToken ct) =>
+        _dbContext.Tournaments
             .Where(t => t.Squads.Any(s => s.Id == squad.Id))
             .Select(t => t.Id)
             .SingleAsync(ct);

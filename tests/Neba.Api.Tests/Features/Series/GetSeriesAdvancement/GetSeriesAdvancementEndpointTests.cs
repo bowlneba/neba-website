@@ -78,7 +78,7 @@ public sealed class GetSeriesAdvancementEndpointTests
         // Arrange
         var ct = TestContext.Current.CancellationToken;
         var stageId = SeriesStageId.New();
-        var entry = FieldEntryDtoFactory.Create(sourceStageId: stageId, place: 3, backfillPoints: 12, viaOverride: true, bowlerName: "Entry Name");
+        var entry = FieldEntryDtoFactory.Create(bowlerName: "Entry Name", sourceStageId: stageId, place: 3, backfillPoints: 12, viaOverride: true);
         var backfill = FieldEntryDtoFactory.Create(bowlerName: "Backfill Name");
         var stageOverride = StageOverrideDtoFactory.Create(
             bowlerName: "Override Name", kind: "Clear", reason: "Moved.", createdBy: "admin-1",

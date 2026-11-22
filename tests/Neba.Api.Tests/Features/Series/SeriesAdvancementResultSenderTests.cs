@@ -170,14 +170,14 @@ public sealed class SeriesAdvancementResultSenderTests
         var ct = TestContext.Current.CancellationToken;
 
         // Act
-        var noAddError = () => SeriesAdvancementResultSender.SendAsync(errors, null, (_, _) => Task.CompletedTask, _ => Task.CompletedTask, ct);
-        var noSendErrors = () => SeriesAdvancementResultSender.SendAsync(errors, _ => { }, null, _ => Task.CompletedTask, ct);
-        var noSendNotFound = () => SeriesAdvancementResultSender.SendAsync(errors, _ => { }, (_, _) => Task.CompletedTask, null, ct);
+        Task NoAddError() => SeriesAdvancementResultSender.SendAsync(errors, null, (_, _) => Task.CompletedTask, _ => Task.CompletedTask, ct);
+        Task NoSendErrors() => SeriesAdvancementResultSender.SendAsync(errors, _ => { }, null, _ => Task.CompletedTask, ct);
+        Task NoSendNotFound() => SeriesAdvancementResultSender.SendAsync(errors, _ => { }, (_, _) => Task.CompletedTask, null, ct);
 
         // Assert
-        Should.Throw<ArgumentNullException>(noAddError);
-        Should.Throw<ArgumentNullException>(noSendErrors);
-        Should.Throw<ArgumentNullException>(noSendNotFound);
+        Should.Throw<ArgumentNullException>(NoAddError);
+        Should.Throw<ArgumentNullException>(NoSendErrors);
+        Should.Throw<ArgumentNullException>(NoSendNotFound);
     }
 #nullable enable
 }

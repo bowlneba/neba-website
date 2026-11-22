@@ -84,8 +84,8 @@ public sealed class SeriesAdvancementDisplayTests
     {
         // Arrange
         var stage = SeriesStageViewModelFactory.Create(
-            kind: "Qualifying", advancingCount: 2, teamSize: 3,
-            tournamentStartDate: new DateOnly(2025, 7, 12), tournamentEndDate: new DateOnly(2025, 7, 13));
+            kind: "Qualifying", advancingCount: 2,
+            tournamentStartDate: new DateOnly(2025, 7, 12), tournamentEndDate: new DateOnly(2025, 7, 13), teamSize: 3);
 
         // Act
         var meta = SeriesDisplay.RailMeta(stage, null);
@@ -99,8 +99,8 @@ public sealed class SeriesAdvancementDisplayTests
     {
         // Arrange
         var stage = SeriesStageViewModelFactory.Create(
-            kind: "Qualifying", advancingCount: 8, teamSize: 1,
-            tournamentStartDate: new DateOnly(2025, 7, 12), tournamentEndDate: new DateOnly(2025, 7, 12));
+            kind: "Qualifying", advancingCount: 8,
+            tournamentStartDate: new DateOnly(2025, 7, 12), tournamentEndDate: new DateOnly(2025, 7, 12), teamSize: 1);
 
         // Act
         var meta = SeriesDisplay.RailMeta(stage, null);
@@ -114,8 +114,8 @@ public sealed class SeriesAdvancementDisplayTests
     {
         // Arrange
         var stage = SeriesStageViewModelFactory.Create(
-            kind: "Placement", advancingCount: null, teamSize: 1,
-            tournamentStartDate: new DateOnly(2025, 7, 12), tournamentEndDate: new DateOnly(2025, 7, 12));
+            kind: "Placement", advancingCount: null,
+            tournamentStartDate: new DateOnly(2025, 7, 12), tournamentEndDate: new DateOnly(2025, 7, 12), teamSize: 1);
 
         // Act
         var meta = SeriesDisplay.RailMeta(stage, 4);
@@ -308,7 +308,7 @@ public sealed class SeriesAdvancementDisplayTests
     public void PendingReason_ShouldExplainCancelled_First()
     {
         // Arrange
-        var stage = StageAdvancementViewModelFactory.Create(kind: "Survivor", tournamentStatus: "Cancelled", needsSquad: true);
+        var stage = StageAdvancementViewModelFactory.Create(kind: "Survivor", needsSquad: true, tournamentStatus: "Cancelled");
 
         // Act
         var reason = SeriesDisplay.PendingReason(stage);

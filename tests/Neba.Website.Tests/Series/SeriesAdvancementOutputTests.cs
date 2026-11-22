@@ -264,10 +264,9 @@ public sealed class SeriesAdvancementOutputTests : IDisposable
     public async Task Qualifying_ShouldRenderOverrideControls_OnlyForAdmin(bool admin, int expectedEach)
     {
         // Arrange
-        var stage = StageAdvancementResponseFactory.Create(stageId: "q1", status: "Computed", overrides: [StageOverrideResponseFactory.Create()], entries:
-        [
-            FieldEntryResponseFactory.Create(bowlerId: "b1", sourceStageId: "q1", place: 1),
-        ]);
+        var stage = StageAdvancementResponseFactory.Create(stageId: "q1", status: "Computed",
+            entries: [FieldEntryResponseFactory.Create(bowlerId: "b1", sourceStageId: "q1", place: 1)],
+            overrides: [StageOverrideResponseFactory.Create()]);
 
         // Act
         var cut = await RenderExpandedAsync("q1", [stage], admin: admin);

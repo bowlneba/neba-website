@@ -31,8 +31,8 @@ public sealed class SeriesAdvancementLockTests(AppDbContextFixture fixture)
         await _dbContext.DisposeAsync();
     }
 
-    private async Task<AdvancementScenario> SeedAsync()
-        => await AdvancementRunSeed.SeedAsync(_dbContext, TestContext.Current.CancellationToken);
+    private Task<AdvancementScenario> SeedAsync()
+        => AdvancementRunSeed.SeedAsync(_dbContext, TestContext.Current.CancellationToken);
 
     private static Task<ErrorOr<AdvanceResult>> RunAsync(
         AdvancementRun run, AdvancementScenario scenario, AdvancementOperation operation, TimeSpan? wait = null)
@@ -142,10 +142,10 @@ public sealed class SeriesAdvancementLockTests(AppDbContextFixture fixture)
         var run = _harness.CreateRun(FactsReaderDoubles.Untouched(), locks, SeriesCache.Untouched());
 
         // Act
-        var act = () => RunAsync(run, scenario, (_, _, _) => throw new InvalidOperationException("The operation failed."));
+        Task Act() => RunAsync(run, scenario, (_, _, _) => throw new InvalidOperationException("The operation failed."));
 
         // Assert
-        await Should.ThrowAsync<InvalidOperationException>(act);
+        await Should.ThrowAsync<InvalidOperationException>(Act);
         handle.Verify(h => h.Dispose(), Times.Once);
     }
 

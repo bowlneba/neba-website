@@ -509,10 +509,10 @@ public sealed class MakeDueStagesOfficialJobHandlerTests(AppDbContextFixture fix
         var sweep = CreateSweep(ComputedAt + Grace, locks: locks);
 
         // Act
-        var act = () => ExecuteAsync(sweep);
+        Task Act() => ExecuteAsync(sweep);
 
         // Assert
-        var exception = await Should.ThrowAsync<InvalidOperationException>(act);
+        var exception = await Should.ThrowAsync<InvalidOperationException>(Act);
         exception.Message.ShouldBe("Making Stages Official failed for 1 Series.");
         StageOf(await StoredAsync(other), 1).Status.ShouldBe(StageStatus.Official);
         StageOf(await StoredAsync(busy), 1).Status.ShouldBe(StageStatus.Computed);
@@ -536,10 +536,10 @@ public sealed class MakeDueStagesOfficialJobHandlerTests(AppDbContextFixture fix
         var sweep = CreateSweep(ComputedAt + Grace, locks: locks);
 
         // Act
-        var act = () => ExecuteAsync(sweep);
+        Task Act() => ExecuteAsync(sweep);
 
         // Assert
-        var exception = await Should.ThrowAsync<InvalidOperationException>(act);
+        var exception = await Should.ThrowAsync<InvalidOperationException>(Act);
         exception.Message.ShouldBe("Making Stages Official failed for 1 Series.");
         StageOf(await StoredAsync(other), 1).Status.ShouldBe(StageStatus.Official);
         StageOf(await StoredAsync(broken), 1).Status.ShouldBe(StageStatus.Computed);
@@ -566,10 +566,10 @@ public sealed class MakeDueStagesOfficialJobHandlerTests(AppDbContextFixture fix
         var sweep = CreateSweep(ComputedAt + Grace, cache: SeriesCache.Untouched(), extraInterceptor: otherWriter);
 
         // Act
-        var act = () => ExecuteAsync(sweep);
+        Task Act() => ExecuteAsync(sweep);
 
         // Assert
-        await Should.ThrowAsync<InvalidOperationException>(act);
+        await Should.ThrowAsync<InvalidOperationException>(Act);
         var stored = await StoredAsync(scenario);
         StageOf(stored, 1).Status.ShouldBe(StageStatus.Computed);
         stored.Version.ShouldBe(versionBefore + 1);
@@ -614,10 +614,10 @@ public sealed class MakeDueStagesOfficialJobHandlerTests(AppDbContextFixture fix
         var sweep = CreateSweep(ComputedAt + Grace, locks: locks, cache: SeriesCache.Untouched());
 
         // Act
-        var act = () => ExecuteAsync(sweep);
+        Task Act() => ExecuteAsync(sweep);
 
         // Assert
-        await Should.ThrowAsync<OperationCanceledException>(act);
+        await Should.ThrowAsync<OperationCanceledException>(Act);
         sweep.Log.Collector.GetSnapshot().ShouldBeEmpty();
         sweep.Db.ChangeTracker.Entries().ShouldBeEmpty();
         StageOf(await StoredAsync(scenario), 1).Status.ShouldBe(StageStatus.Computed);

@@ -636,7 +636,7 @@ function advFallbackState(detail: Record<string, unknown>): AdvState {
 }
 
 function advStageDue(state: AdvState, stage: AdvStage): string | undefined {
-  const lastQualifying = state.stages.filter((s) => s.kind === 'Qualifying').at(-1);
+  const lastQualifying = state.stages.findLast((s) => s.kind === 'Qualifying');
   const awaitsBackfill = stage === lastQualifying && state.backfillAsOf === null;
   return stage.kind === 'Placement' || awaitsBackfill ? undefined : ADV_OFFICIAL_DUE_AT;
 }
@@ -659,7 +659,7 @@ function advFillQualifying(state: AdvState, order: number, official: boolean, va
 }
 
 function advAddBackfill(state: AdvState, bowlerIndex: number, points: number): void {
-  const lastQualifying = state.stages.filter((s) => s.kind === 'Qualifying').at(-1) as AdvStage;
+  const lastQualifying = state.stages.findLast((s) => s.kind === 'Qualifying') as AdvStage;
   lastQualifying.entries.push({ ...advBowler(bowlerIndex), backfillPoints: points, viaOverride: false });
   state.backfillAsOf = ADV_BACKFILL_AS_OF;
 }
