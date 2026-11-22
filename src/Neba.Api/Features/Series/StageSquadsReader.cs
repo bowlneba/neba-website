@@ -24,6 +24,25 @@ internal static class StageSquadsReader
                 appDbContext.SquadScores.Any(score => score.SquadId == squad.Id)))
             .ToListAsync(cancellationToken);
 
+    /// <summary>The squads of every tournament in one query, each tournament's squads ordered by time.</summary>
+    public static async Task<ILookup<TournamentId, StageSquadRow>> ReadForTournamentsAsync(
+        AppDbContext appDbContext, IReadOnlyCollection<TournamentId> tournamentIds, CancellationToken cancellationToken)
+    {
+        var rows = await appDbContext.Tournaments.AsNoTracking()
+            .Where(tournament => tournamentIds.Contains(tournament.Id))
+            .SelectMany(tournament => tournament.Squads, (tournament, squad) => new
+            {
+                TournamentId = tournament.Id,
+                SquadId = squad.Id,
+                squad.BowlingDateTimeUtc,
+                HasScores = appDbContext.SquadScores.Any(score => score.SquadId == squad.Id),
+            })
+            .OrderBy(x => x.BowlingDateTimeUtc)
+            .ToListAsync(cancellationToken);
+
+        return rows.ToLookup(x => x.TournamentId, x => new StageSquadRow(x.SquadId, x.BowlingDateTimeUtc, x.HasScores));
+    }
+
     /// <summary>Null when the Series or Stage does not exist.</summary>
     public static async Task<IReadOnlyList<StageSquadRow>?> ReadForStageAsync(
         AppDbContext appDbContext, SeriesId seriesId, SeriesStageId stageId, CancellationToken cancellationToken)

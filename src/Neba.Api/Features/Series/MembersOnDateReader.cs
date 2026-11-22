@@ -21,4 +21,31 @@ internal static class MembersOnDateReader
 
         return bowlerIds.ToHashSet();
     }
+
+    /// <summary>
+    /// The same read for several dates in one query. It fetches the memberships that overlap the
+    /// earliest-to-latest range, then checks each date here.
+    /// </summary>
+    public static async Task<IReadOnlyDictionary<DateOnly, IReadOnlySet<BowlerId>>> ReadForDatesAsync(
+        AppDbContext appDbContext, IReadOnlyCollection<DateOnly> dates, CancellationToken cancellationToken)
+    {
+        if (dates.Count == 0)
+        {
+            return new Dictionary<DateOnly, IReadOnlySet<BowlerId>>();
+        }
+
+        var earliest = dates.Min();
+        var latest = dates.Max();
+
+        var memberships = await appDbContext.Bowlers.AsNoTracking()
+            .SelectMany(bowler => bowler.Memberships, (bowler, membership) => new { bowler.Id, membership.StartDate, membership.EndDate })
+            .Where(row => row.StartDate <= latest && earliest <= row.EndDate)
+            .ToListAsync(cancellationToken);
+        return dates.Distinct().ToDictionary(
+            date => date,
+            date => (IReadOnlySet<BowlerId>)memberships
+                .Where(row => row.StartDate <= date && date <= row.EndDate)
+                .Select(row => row.Id)
+                .ToHashSet());
+    }
 }

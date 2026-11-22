@@ -120,4 +120,42 @@ public sealed class MembersOnDateReaderTests(AppDbContextFixture fixture)
         // Assert
         members.ShouldBeEmpty();
     }
+
+    [Fact(DisplayName = "ReadForDatesAsync should return each date's own members from one read")]
+    public async Task ReadForDatesAsync_ShouldReturnMembersPerDate()
+    {
+        // Arrange
+        var ct = TestContext.Current.CancellationToken;
+        var early = BowlerFactory.Create();
+        var late = BowlerFactory.Create();
+        var both = BowlerFactory.Create();
+        early.AddLegacyMembership(1, MembershipType.New, 25m, Start, new DateOnly(2025, 3, 31)).IsError.ShouldBeFalse();
+        late.AddLegacyMembership(2, MembershipType.New, 25m, new DateOnly(2025, 9, 1), End).IsError.ShouldBeFalse();
+        both.AddLegacyMembership(3, MembershipType.New, 25m, Start, End).IsError.ShouldBeFalse();
+        _dbContext.Bowlers.AddRange(early, late, both);
+        await _dbContext.SaveChangesAsync(ct);
+        var march = new DateOnly(2025, 3, 1);
+        var october = new DateOnly(2025, 10, 1);
+
+        // Act
+        var members = await MembersOnDateReader.ReadForDatesAsync(_dbContext, [march, october, march], ct);
+
+        // Assert
+        members.Count.ShouldBe(2);
+        members[march].ShouldBe([early.Id, both.Id], ignoreOrder: true);
+        members[october].ShouldBe([late.Id, both.Id], ignoreOrder: true);
+    }
+
+    [Fact(DisplayName = "ReadForDatesAsync should return an empty map for no dates")]
+    public async Task ReadForDatesAsync_ShouldReturnEmptyMap_WhenNoDates()
+    {
+        // Arrange
+        var ct = TestContext.Current.CancellationToken;
+
+        // Act
+        var members = await MembersOnDateReader.ReadForDatesAsync(_dbContext, [], ct);
+
+        // Assert
+        members.ShouldBeEmpty();
+    }
 }

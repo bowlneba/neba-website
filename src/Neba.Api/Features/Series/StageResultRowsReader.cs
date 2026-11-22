@@ -3,6 +3,7 @@ using Microsoft.EntityFrameworkCore;
 using Neba.Api.Database;
 using Neba.Api.Features.Bowlers.Domain;
 using Neba.Api.Features.Series.Domain;
+using Neba.Api.Features.Tournaments.Domain;
 
 namespace Neba.Api.Features.Series;
 
@@ -34,5 +35,18 @@ internal static class StageResultRowsReader
             .ThenBy(result => result.Bowler.Name.FirstName)
             .Select(result => new StageResultPickRow(result.BowlerId, result.Bowler.Name, result.Place))
             .ToListAsync(cancellationToken);
+    }
+
+    /// <summary>The place of every bowler in each of the tournaments, in one query. A tournament with no results has no entry.</summary>
+    public static async Task<ILookup<TournamentId, StageResultRow>> ReadForTournamentsAsync(
+        AppDbContext appDbContext, IReadOnlyCollection<TournamentId> tournamentIds, CancellationToken cancellationToken)
+    {
+        var rows = await appDbContext.Tournaments.AsNoTracking()
+            .Where(tournament => tournamentIds.Contains(tournament.Id))
+            .SelectMany(tournament => tournament.Results, (tournament, result) => new { TournamentId = tournament.Id, result.BowlerId, result.Place })
+            .OrderBy(row => row.Place)
+            .ToListAsync(cancellationToken);
+
+        return rows.ToLookup(row => row.TournamentId, row => new StageResultRow(row.BowlerId, row.Place));
     }
 }

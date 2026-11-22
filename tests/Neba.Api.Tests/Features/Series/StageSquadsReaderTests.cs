@@ -162,4 +162,25 @@ public sealed class StageSquadsReaderTests(AppDbContextFixture fixture)
         rows.ShouldNotBeNull();
         rows.ShouldBeEmpty();
     }
+
+    [Fact(DisplayName = "ReadForTournamentsAsync should group squads by tournament in time order and skip tournaments not asked for")]
+    public async Task ReadForTournamentsAsync_ShouldGroupSquadsByTournament()
+    {
+        // Arrange
+        var ct = TestContext.Current.CancellationToken;
+        var season = await SeriesSeed.AddSeasonAsync(_dbContext, 2025, ct);
+        var asked = await AdvancementReaderSeed.AddTournamentAsync(
+            _dbContext, season, "Asked", new DateOnly(2025, 10, 4), new DateOnly(2025, 10, 5), ct,
+            squads: Squads(Day2Morning, Day1Morning));
+        var other = await AdvancementReaderSeed.AddTournamentAsync(
+            _dbContext, season, "Other", new DateOnly(2025, 10, 4), new DateOnly(2025, 10, 5), ct,
+            squads: Squads(Day1Evening));
+
+        // Act
+        var rows = await StageSquadsReader.ReadForTournamentsAsync(_dbContext, [asked.Id], ct);
+
+        // Assert
+        rows[asked.Id].Select(row => row.BowlingDateTimeUtc).ShouldBe([Day1Morning, Day2Morning]);
+        rows[other.Id].ShouldBeEmpty();
+    }
 }

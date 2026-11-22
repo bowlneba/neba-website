@@ -24,6 +24,21 @@ internal sealed class SeriesAdvancementFactsReader(AppDbContext appDbContext)
             .Select(tournament => new { tournament.Id, tournament.Status, tournament.StartDate, tournament.EndDate })
             .ToDictionaryAsync(tournament => tournament.Id, cancellationToken);
 
+        var finalizedIds = tournamentRows.Values
+            .Where(row => row.Status == TournamentStatus.Completed || row.Status == TournamentStatus.Truncated)
+            .Select(row => row.Id)
+            .ToList();
+
+        var survivorTournamentIds = stages
+            .Where(stage => stage.Kind == StageKind.Survivor && tournamentRows.ContainsKey(stage.TournamentId))
+            .Select(stage => stage.TournamentId)
+            .Distinct()
+            .ToList();
+
+        // One query each for results, squads and scores, however many Stages the Series has.
+        var resultsByTournament = await StageResultRowsReader.ReadForTournamentsAsync(appDbContext, finalizedIds, cancellationToken);
+        var squadsByTournament = await ReadSquadsAsync(survivorTournamentIds, cancellationToken);
+
         var tournaments = new Dictionary<TournamentId, StageTournamentResults>();
         foreach (var stage in stages)
         {
@@ -32,17 +47,15 @@ internal sealed class SeriesAdvancementFactsReader(AppDbContext appDbContext)
                 continue;
             }
 
-            var finalized = row.Status == TournamentStatus.Completed || row.Status == TournamentStatus.Truncated;
-
             tournaments[stage.TournamentId] = new StageTournamentResults
             {
                 TournamentId = stage.TournamentId,
                 Status = row.Status,
                 StartDate = row.StartDate,
                 EndDate = row.EndDate,
-                Results = finalized ? await ReadResultsAsync(series.Id, stage.Id, cancellationToken) : [],
+                Results = [.. resultsByTournament[stage.TournamentId]],
                 Squads = stage.Kind == StageKind.Survivor
-                    ? await ReadSquadsAsync(stage.TournamentId, cancellationToken)
+                    ? squadsByTournament.GetValueOrDefault(stage.TournamentId) ?? []
                     : [],
             };
         }
@@ -55,11 +68,7 @@ internal sealed class SeriesAdvancementFactsReader(AppDbContext appDbContext)
             .Distinct()
             .ToList();
 
-        var membersOnDate = new Dictionary<DateOnly, IReadOnlySet<BowlerId>>();
-        foreach (var date in qualifyingDates)
-        {
-            membersOnDate[date] = await MembersOnDateReader.ReadAsync(appDbContext, date, cancellationToken);
-        }
+        var membersOnDate = await MembersOnDateReader.ReadForDatesAsync(appDbContext, qualifyingDates, cancellationToken);
 
         var backfill = await ReadBackfillAsync(series, tournaments, cancellationToken);
 
@@ -74,43 +83,37 @@ internal sealed class SeriesAdvancementFactsReader(AppDbContext appDbContext)
         };
     }
 
-    private async Task<IReadOnlyList<StageResultRow>> ReadResultsAsync(
-        SeriesId seriesId, SeriesStageId stageId, CancellationToken cancellationToken)
+    private async Task<Dictionary<TournamentId, IReadOnlyList<StageSquadFact>>> ReadSquadsAsync(
+        IReadOnlyCollection<TournamentId> tournamentIds, CancellationToken cancellationToken)
     {
-        var rows = await StageResultRowsReader.ReadAsync(appDbContext, seriesId, stageId, cancellationToken);
+        var squadsByTournament = await StageSquadsReader.ReadForTournamentsAsync(appDbContext, tournamentIds, cancellationToken);
 
-        return rows is null ? [] : [.. rows.Select(row => new StageResultRow(row.BowlerId, row.Place))];
-    }
-
-    private async Task<IReadOnlyList<StageSquadFact>> ReadSquadsAsync(TournamentId tournamentId, CancellationToken cancellationToken)
-    {
-        var squads = await StageSquadsReader.ReadForTournamentAsync(appDbContext, tournamentId, cancellationToken);
-        if (squads.Count == 0)
+        var squadIds = tournamentIds.SelectMany(id => squadsByTournament[id]).Select(squad => squad.SquadId).ToList();
+        if (squadIds.Count == 0)
         {
             return [];
         }
 
-        var squadIds = squads.Select(squad => squad.SquadId).ToList();
-
-        var totals = await appDbContext.SquadScores.AsNoTracking()
+        var totals = (await appDbContext.SquadScores.AsNoTracking()
             .Where(score => squadIds.Contains(score.SquadId))
             .GroupBy(score => new { score.SquadId, score.BowlerId })
             .Select(group => new { group.Key.SquadId, group.Key.BowlerId, Total = group.Sum(score => score.Score), Games = group.Count() })
-            .ToListAsync(cancellationToken);
+            .ToListAsync(cancellationToken))
+            .ToLookup(total => total.SquadId);
 
-        return [.. squads.Select(squad =>
-        {
-            // Squad times are stored in UTC; the Series designation compares Eastern wall-clock time.
-            var (date, time) = EasternTime.ToLocal(squad.BowlingDateTimeUtc);
+        return tournamentIds.ToDictionary(
+            id => id,
+            id => (IReadOnlyList<StageSquadFact>)[.. squadsByTournament[id].Select(squad =>
+            {
+                // Squad times are stored in UTC; the Series designation compares Eastern wall-clock time.
+                var (date, time) = EasternTime.ToLocal(squad.BowlingDateTimeUtc);
 
-            return new StageSquadFact(
-                squad.SquadId,
-                date,
-                time,
-                [.. totals
-                    .Where(total => total.SquadId == squad.SquadId)
-                    .Select(total => new SquadBowlerTotal(total.BowlerId, total.Total, total.Games))]);
-        })];
+                return new StageSquadFact(
+                    squad.SquadId,
+                    date,
+                    time,
+                    [.. totals[squad.SquadId].Select(total => new SquadBowlerTotal(total.BowlerId, total.Total, total.Games))]);
+            })]);
     }
 
     private async Task<BackfillFacts?> ReadBackfillAsync(

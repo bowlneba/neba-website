@@ -132,4 +132,33 @@ public sealed class StageResultRowsReaderTests(AppDbContextFixture fixture)
         unknownStage.ShouldBeNull();
         otherSeriesStage.ShouldBeNull();
     }
+
+    [Fact(DisplayName = "ReadForTournamentsAsync should group places by tournament in place order and skip tournaments not asked for")]
+    public async Task ReadForTournamentsAsync_ShouldGroupPlacesByTournament()
+    {
+        // Arrange
+        var ct = TestContext.Current.CancellationToken;
+        var season = await SeriesSeed.AddSeasonAsync(_dbContext, 2025, ct);
+        var first = BowlerFactory.Create();
+        var second = BowlerFactory.Create();
+        _dbContext.Bowlers.AddRange(first, second);
+        await _dbContext.SaveChangesAsync(ct);
+        var asked = await AdvancementReaderSeed.AddTournamentAsync(
+            _dbContext, season, "Asked", new DateOnly(2025, 2, 1), null, ct,
+            status: TournamentStatus.Completed,
+            results: [AdvancementReaderSeed.Result(second, 2), AdvancementReaderSeed.Result(first, 1)]);
+        var other = await AdvancementReaderSeed.AddTournamentAsync(
+            _dbContext, season, "Other", new DateOnly(2025, 3, 1), null, ct,
+            status: TournamentStatus.Completed,
+            results: [AdvancementReaderSeed.Result(first, 1)]);
+        var empty = await AdvancementReaderSeed.AddTournamentAsync(_dbContext, season, "Empty", new DateOnly(2025, 4, 1), null, ct);
+
+        // Act
+        var rows = await StageResultRowsReader.ReadForTournamentsAsync(_dbContext, [asked.Id, empty.Id], ct);
+
+        // Assert
+        rows[asked.Id].Select(row => (row.BowlerId, row.Place)).ShouldBe([(first.Id, 1), (second.Id, 2)]);
+        rows[empty.Id].ShouldBeEmpty();
+        rows[other.Id].ShouldBeEmpty();
+    }
 }

@@ -28,31 +28,37 @@ internal static class OpenBowlerOfTheYearPointsReader
                 && tournament.StatsEligible
                 && tournament.EndDate <= asOf);
 
-        var stillOpen = await eligibleToDate
-            .AnyAsync(tournament => tournament.Status == TournamentStatus.Scheduled, cancellationToken);
+        // About a dozen rows: one query tells both whether a tournament is still Scheduled and whether a finalized one has no results.
+        var eligibleRows = await eligibleToDate
+            .Select(tournament => new { tournament.Status, HasResults = tournament.Results.Any() })
+            .ToListAsync(cancellationToken);
 
-        var finalizedWithoutResults = await eligibleToDate
-            .AnyAsync(tournament => (tournament.Status == TournamentStatus.Completed || tournament.Status == TournamentStatus.Truncated)
-                && !tournament.Results.Any(), cancellationToken);
+        var stillOpen = eligibleRows.Any(row => row.Status == TournamentStatus.Scheduled);
+
+        var finalizedWithoutResults = eligibleRows.Any(row =>
+            (row.Status == TournamentStatus.Completed || row.Status == TournamentStatus.Truncated) && !row.HasResults);
 
         // Tournament of Champions double-dip: the Non-Champions single-day winner's forced berth in the
         // Tournament of Champions earns no Bowler of the Year points. Identify both from every finalized
         // tournament in the season up to the date, not only stats-eligible ones, as the legacy code does.
-        var finalizedToDate = appDbContext.Tournaments.AsNoTracking()
+        var doubleDipCandidates = await appDbContext.Tournaments.AsNoTracking()
             .Where(tournament => tournament.SeasonId == seasonId
                 && tournament.EndDate <= asOf
-                && (tournament.Status == TournamentStatus.Completed || tournament.Status == TournamentStatus.Truncated));
-
-        var nonChampionsIds = await finalizedToDate
-            .Where(tournament => tournament.TournamentType == TournamentType.NonChampions
-                && tournament.StartDate == tournament.EndDate)
-            .Select(tournament => tournament.Id)
+                && (tournament.Status == TournamentStatus.Completed || tournament.Status == TournamentStatus.Truncated)
+                && ((tournament.TournamentType == TournamentType.NonChampions && tournament.StartDate == tournament.EndDate)
+                    || tournament.TournamentType == TournamentType.TournamentOfChampions))
+            .Select(tournament => new { tournament.Id, tournament.TournamentType })
             .ToListAsync(cancellationToken);
 
-        var championsIds = await finalizedToDate
+        var nonChampionsIds = doubleDipCandidates
+            .Where(tournament => tournament.TournamentType == TournamentType.NonChampions)
+            .Select(tournament => tournament.Id)
+            .ToList();
+
+        var championsIds = doubleDipCandidates
             .Where(tournament => tournament.TournamentType == TournamentType.TournamentOfChampions)
             .Select(tournament => tournament.Id)
-            .ToListAsync(cancellationToken);
+            .ToList();
 
         var excludedTournamentId = default(TournamentId);
         List<BowlerId> excludedBowlerIds = [];
