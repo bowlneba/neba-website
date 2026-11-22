@@ -1,0 +1,37 @@
+﻿{
+  Items: [
+    {
+      Id: <ulid>,
+      Name: 2028 Ruecker, Hettinger and Prosacco Series,
+      SeasonId: <ulid>,
+      SeasonDescription: 2028 Season,
+      SeasonStartDate: Date_1,
+      SeasonEndDate: Date_2,
+      QualifyingStageCount: 7,
+      IsLocked: false
+    },
+    {
+      Id: <ulid>,
+      Name: 2025 Haley - Yundt Series,
+      SeasonId: <ulid>,
+      SeasonDescription: 2025 Season,
+      SeasonStartDate: Date_3,
+      SeasonEndDate: Date_4,
+      QualifyingStageCount: 5,
+      SurvivorStageCount: 1,
+      IsLocked: false
+    },
+    {
+      Id: <ulid>,
+      Name: 2022 Witting - Feeney Series,
+      SeasonId: <ulid>,
+      SeasonDescription: 2022 Season,
+      SeasonStartDate: Date_5,
+      SeasonEndDate: Date_6,
+      QualifyingStageCount: 4,
+      SurvivorStageCount: 3,
+      IsLocked: true
+    }
+  ],
+  TotalItems: 3
+}

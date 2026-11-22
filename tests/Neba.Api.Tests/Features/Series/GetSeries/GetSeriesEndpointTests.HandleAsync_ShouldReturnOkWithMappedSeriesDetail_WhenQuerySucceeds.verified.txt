@@ -1,0 +1,102 @@
+﻿{
+  Id: <ulid>,
+  Name: 2022 Berge - Cormier Series,
+  SeasonId: <ulid>,
+  SeasonDescription: 2022 Season,
+  SeasonStartDate: Date_1,
+  SeasonEndDate: Date_2,
+  IsLocked: true,
+  Stages: [
+    {
+      Id: <ulid>,
+      Order: 1,
+      Kind: Qualifying,
+      Status: Pending,
+      AdvancingCount: 37,
+      TournamentId: <ulid>,
+      TournamentName: VonRueden, Witting and Gislason,
+      TournamentStartDate: Date_3,
+      TournamentEndDate: Date_4,
+      TournamentType: Singles,
+      TeamSize: 2
+    },
+    {
+      Id: <ulid>,
+      Order: 2,
+      Kind: Qualifying,
+      Status: Pending,
+      AdvancingCount: 10,
+      TournamentId: <ulid>,
+      TournamentName: Carter Group,
+      TournamentStartDate: Date_5,
+      TournamentEndDate: Date_5,
+      TournamentType: Singles,
+      TeamSize: 3
+    },
+    {
+      Id: <ulid>,
+      Order: 3,
+      Kind: Qualifying,
+      Status: Pending,
+      AdvancingCount: 39,
+      TournamentId: <ulid>,
+      TournamentName: Bernhard - Armstrong,
+      TournamentStartDate: Date_6,
+      TournamentEndDate: Date_6,
+      TournamentType: Singles,
+      TeamSize: 1
+    },
+    {
+      Id: <ulid>,
+      Order: 4,
+      Kind: Qualifying,
+      Status: Pending,
+      AdvancingCount: 4,
+      TournamentId: <ulid>,
+      TournamentName: Johns, Reinger and Crist,
+      TournamentStartDate: Date_7,
+      TournamentEndDate: Date_7,
+      TournamentType: Singles,
+      TeamSize: 2
+    },
+    {
+      Id: <ulid>,
+      Order: 5,
+      Kind: Qualifying,
+      Status: Pending,
+      AdvancingCount: 4,
+      TournamentId: <ulid>,
+      TournamentName: Glover and Sons,
+      TournamentStartDate: Date_8,
+      TournamentEndDate: Date_8,
+      TournamentType: Singles,
+      TeamSize: 3
+    },
+    {
+      Id: <ulid>,
+      Order: 6,
+      Kind: Qualifying,
+      Status: Pending,
+      AdvancingCount: 4,
+      TournamentId: <ulid>,
+      TournamentName: Fritsch, Pfannerstill and Schinner,
+      TournamentStartDate: Date_9,
+      TournamentEndDate: Date_10,
+      TournamentType: Singles,
+      TeamSize: 1
+    },
+    {
+      Id: <ulid>,
+      Order: 7,
+      Kind: Qualifying,
+      Status: Pending,
+      AdvancingCount: 7,
+      TournamentId: <ulid>,
+      TournamentName: Schmeler, Farrell and Auer,
+      TournamentStartDate: Date_11,
+      TournamentEndDate: Date_11,
+      TournamentType: Singles,
+      TeamSize: 2
+    }
+  ]
+}

@@ -1,0 +1,47 @@
+﻿{
+  Items: [
+    {
+      SeriesId: <ulid>,
+      SeriesName: Bergnaum and Sons Series,
+      SeasonId: <ulid>,
+      Finale: {
+        FinalistCount: 9,
+        Date: Date_1,
+        StartTime: Time_1,
+        BowlingCenterId: 54838,
+        BowlingCenterName: Lueilwitz and Sons,
+        BowlingCenterCity: East Sean,
+        BowlingCenterState: IL
+      }
+    },
+    {
+      SeriesId: <ulid>,
+      SeriesName: Kozey, Mraz and Smith Series,
+      SeasonId: <ulid>,
+      Finale: {
+        FinalistCount: 10,
+        Date: Date_2,
+        StartTime: Time_2,
+        BowlingCenterId: 11350,
+        BowlingCenterName: Mitchell, Bednar and Sauer,
+        BowlingCenterCity: Ratkehaven,
+        BowlingCenterState: HI
+      }
+    },
+    {
+      SeriesId: <ulid>,
+      SeriesName: Padberg Inc Series,
+      SeasonId: <ulid>,
+      Finale: {
+        FinalistCount: 8,
+        Date: Date_3,
+        StartTime: Time_3,
+        BowlingCenterId: 50124,
+        BowlingCenterName: Aufderhar - Fadel,
+        BowlingCenterCity: North Shanashire,
+        BowlingCenterState: WV
+      }
+    }
+  ],
+  TotalItems: 3
+}

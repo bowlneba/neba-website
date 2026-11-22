@@ -111,4 +111,22 @@ public sealed class GetSeriesEndpointTests
         // Assert
         endpoint.HttpContext.Response.StatusCode.ShouldBe(500);
     }
+
+    [Fact(DisplayName = "HandleAsync should return OK with the Series detail mapped (snapshot)")]
+    public async Task HandleAsync_ShouldReturnOkWithMappedSeriesDetail_WhenQuerySucceeds()
+    {
+        // Arrange
+        var ct = TestContext.Current.CancellationToken;
+        var dto = SeriesDetailDtoFactory.Bogus(1, 401).Single();
+        var handler = Handler();
+        handler.Setup(h => h.HandleAsync(It.IsAny<GetSeriesQuery>(), ct)).ReturnsAsync(dto);
+        var endpoint = Factory.Create<GetSeriesEndpoint>(handler.Object);
+
+        // Act
+        await endpoint.HandleAsync(new GetSeriesRequest { SeriesId = ValidId }, ct);
+
+        // Assert
+        endpoint.HttpContext.Response.StatusCode.ShouldBe(200);
+        await Verify(endpoint.Response).ScrubUlids();
+    }
 }

@@ -57,4 +57,22 @@ public sealed class ListSeriesFinalesEndpointTests
         first.Finale.BowlingCenterState.ShouldBe("MA");
         endpoint.Response.Items.Last().Finale.BowlingCenterId.ShouldBeNull();
     }
+
+    [Fact(DisplayName = "HandleAsync should return OK with the Finales mapped (snapshot)")]
+    public async Task HandleAsync_ShouldReturnOkWithMappedFinales_WhenQuerySucceeds()
+    {
+        // Arrange
+        var ct = TestContext.Current.CancellationToken;
+        var finales = SeriesFinaleSummaryDtoFactory.Bogus(3, 403);
+        var handler = new Mock<IQueryHandler<ListSeriesFinalesQuery, IReadOnlyCollection<SeriesFinaleSummaryDto>>>(MockBehavior.Strict);
+        handler.Setup(h => h.HandleAsync(It.IsAny<ListSeriesFinalesQuery>(), ct)).ReturnsAsync(finales);
+        var endpoint = Factory.Create<ListSeriesFinalesEndpoint>(handler.Object);
+
+        // Act
+        await endpoint.HandleAsync(ct);
+
+        // Assert
+        endpoint.HttpContext.Response.StatusCode.ShouldBe(200);
+        await Verify(endpoint.Response).ScrubUlids();
+    }
 }

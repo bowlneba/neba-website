@@ -76,4 +76,22 @@ public sealed class ListSeriesEndpointTests
         endpoint.HttpContext.Response.StatusCode.ShouldBe(200);
         endpoint.Response.Items.ShouldBeEmpty();
     }
+
+    [Fact(DisplayName = "HandleAsync should return OK with the Series mapped (snapshot)")]
+    public async Task HandleAsync_ShouldReturnOkWithMappedSeries_WhenQuerySucceeds()
+    {
+        // Arrange
+        var ct = TestContext.Current.CancellationToken;
+        var series = SeriesSummaryDtoFactory.Bogus(3, 402);
+        var handler = new Mock<IQueryHandler<ListSeriesQuery, IReadOnlyCollection<SeriesSummaryDto>>>(MockBehavior.Strict);
+        handler.Setup(h => h.HandleAsync(It.IsAny<ListSeriesQuery>(), ct)).ReturnsAsync(series);
+        var endpoint = Factory.Create<ListSeriesEndpoint>(handler.Object);
+
+        // Act
+        await endpoint.HandleAsync(ct);
+
+        // Assert
+        endpoint.HttpContext.Response.StatusCode.ShouldBe(200);
+        await Verify(endpoint.Response).ScrubUlids();
+    }
 }
