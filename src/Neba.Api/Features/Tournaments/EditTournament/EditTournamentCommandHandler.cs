@@ -1,3 +1,5 @@
+using EntityFramework.Exceptions.Common;
+
 using ErrorOr;
 
 using Microsoft.EntityFrameworkCore;
@@ -24,7 +26,8 @@ internal sealed class EditTournamentCommandHandler(
         IBackgroundJobScheduler backgroundJobScheduler,
         TimeProvider timeProvider,
         IPermissionDenialReader permissionDenialReader,
-        IOptions<OilPatternAnnouncementSettings> announcementSettings)
+        IOptions<OilPatternAnnouncementSettings> announcementSettings,
+        ILogger<EditTournamentCommandHandler> logger)
     : ICommandHandler<EditTournamentCommand, Updated>
 {
     public async Task<ErrorOr<Updated>> HandleAsync(EditTournamentCommand command, CancellationToken cancellationToken)
@@ -70,7 +73,7 @@ internal sealed class EditTournamentCommandHandler(
         }
 
         var previousTournament = await PreviousTournamentResolver.ResolveAsync(
-            appDbContext, command.PreviousTournamentId, cancellationToken);
+            appDbContext, command.PreviousTournamentId, tournament.Id, cancellationToken);
 
         if (previousTournament.IsError)
         {
@@ -79,6 +82,7 @@ internal sealed class EditTournamentCommandHandler(
 
         (Season season, PatternLengthCategory? patternLengthCategory, PatternRatioCategory? patternRatioCategory) = resolveResult.Value;
 
+        var oldPreviousTournamentId = tournament.PreviousTournamentId;
         var previousSeasonId = tournament.SeasonId;
         var previousStatsEligible = tournament.StatsEligible;
         var previousChampionDetails = (tournament.Name, tournament.EndDate, tournament.TournamentType);
@@ -128,14 +132,26 @@ internal sealed class EditTournamentCommandHandler(
 
         await TournamentPendingUploadCleaner.RemoveClaimedAsync(appDbContext, command.Logo, cancellationToken);
 
-        await appDbContext.SaveChangesAsync(cancellationToken);
+        try
+        {
+            await appDbContext.SaveChangesAsync(cancellationToken);
+        }
+        catch (UniqueConstraintException ex) when (PreviousTournamentResolver.IsPreviousTournamentViolation(ex))
+        {
+            // Another request took the same previous tournament between the resolver's check and this save.
+            logger.LogPreviousTournamentAlreadyUsed(ex, command.PreviousTournamentId!.Value);
+            return TournamentErrors.PreviousTournamentAlreadyUsed(command.PreviousTournamentId.Value);
+        }
 
         await EvictCachesAsync(
-            tournament.Id,
-            previousSeasonId,
-            season.Id,
-            previousStatsEligible != tournament.StatsEligible,
-            previousChampionDetails != (tournament.Name, tournament.EndDate, tournament.TournamentType),
+            new TournamentEdit(
+                tournament.Id,
+                previousSeasonId,
+                season.Id,
+                oldPreviousTournamentId,
+                tournament.PreviousTournamentId,
+                previousStatsEligible != tournament.StatsEligible,
+                previousChampionDetails != (tournament.Name, tournament.EndDate, tournament.TournamentType)),
             cancellationToken);
 
         ScheduleBackgroundJobs(command, previousLogo, previousRevealDateTime, tournament, season.Id);
@@ -143,20 +159,34 @@ internal sealed class EditTournamentCommandHandler(
         return Result.Updated;
     }
 
-    private async Task EvictCachesAsync(
-        TournamentId tournamentId,
-        SeasonId previousSeasonId,
-        SeasonId currentSeasonId,
-        bool statsEligibleChanged,
-        bool championDetailsChanged,
-        CancellationToken cancellationToken)
+    private sealed record TournamentEdit(
+        TournamentId TournamentId,
+        SeasonId PreviousSeasonId,
+        SeasonId CurrentSeasonId,
+        TournamentId? OldPreviousTournamentId,
+        TournamentId? NewPreviousTournamentId,
+        bool StatsEligibleChanged,
+        bool ChampionDetailsChanged);
+
+    private async Task EvictCachesAsync(TournamentEdit edit, CancellationToken cancellationToken)
     {
+        var (tournamentId, previousSeasonId, currentSeasonId, oldPreviousTournamentId, newPreviousTournamentId,
+            statsEligibleChanged, championDetailsChanged) = edit;
+
         await cache.RemoveByTagAsync($"neba:tournaments:{tournamentId}", token: cancellationToken);
         await cache.RemoveByTagAsync($"neba:tournaments:{previousSeasonId}", token: cancellationToken);
 
         // The next tournament shows this one's name, season and winners as its defending champions, and a
         // truncated tournament passes its own previous winners on, so any edit can change what they show.
         await TournamentSuccessorCacheEviction.EvictAsync(appDbContext, cache, tournamentId, cancellationToken);
+
+        // A season list tells which tournaments already have a next tournament, so a moved link stales the
+        // season lists of both the old and the new previous tournament.
+        if (oldPreviousTournamentId != newPreviousTournamentId)
+        {
+            await TournamentSuccessorCacheEviction.EvictPredecessorSeasonsAsync(
+                appDbContext, cache, [oldPreviousTournamentId, newPreviousTournamentId], cancellationToken);
+        }
 
         if (currentSeasonId != previousSeasonId)
         {
@@ -200,4 +230,10 @@ internal sealed class EditTournamentCommandHandler(
         backgroundJobScheduler.ScheduleOilPatternAnnouncement(
             tournament, now, announcementSettings.Value.Delay, previousRevealDateTime);
     }
+}
+
+internal static partial class EditTournamentCommandHandlerLogMessages
+{
+    [LoggerMessage(Level = LogLevel.Information, Message = "Tournament not edited: another tournament already follows previous tournament {PreviousTournamentId}.")]
+    public static partial void LogPreviousTournamentAlreadyUsed(this ILogger<EditTournamentCommandHandler> logger, Exception exception, TournamentId previousTournamentId);
 }

@@ -29,4 +29,9 @@ public sealed record DefendingTeamResponse
     /// Display names of the bowlers on the team.
     /// </summary>
     public IReadOnlyCollection<string> Champions { get; init; } = [];
+
+    /// <summary>
+    /// How many tournaments in a row the same bowlers won, ending with the one they won last; 1 for a single title.
+    /// </summary>
+    public int ConsecutiveTitles { get; init; } = 1;
 }

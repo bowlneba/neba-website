@@ -23,6 +23,8 @@ internal sealed class CancelTournamentCommandHandler(AppDbContext appDbContext, 
             return TournamentErrors.TournamentNotFound(command.TournamentId);
         }
 
+        var previousTournamentId = tournament.PreviousTournamentId;
+
         var cancelResult = tournament.CancelTournament();
         if (cancelResult.IsError)
         {
@@ -33,6 +35,10 @@ internal sealed class CancelTournamentCommandHandler(AppDbContext appDbContext, 
 
         await cache.RemoveByTagAsync($"neba:tournaments:{tournament.Id}", token: cancellationToken);
         await cache.RemoveByTagAsync($"neba:tournaments:{tournament.SeasonId}", token: cancellationToken);
+
+        // The previous tournament has no next tournament now; its season list shows that.
+        await TournamentSuccessorCacheEviction.EvictPredecessorSeasonsAsync(
+            appDbContext, cache, [previousTournamentId], cancellationToken);
 
         return Result.Success;
     }

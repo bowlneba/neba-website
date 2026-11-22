@@ -110,6 +110,7 @@ internal sealed class TournamentApiService(
             Winners = response.Winners,
             TeamSize = response.TeamSize,
             Series = response.Series?.ToViewModel(),
+            NextTournamentId = response.NextTournamentId,
             DefendingChampions = [.. response.DefendingChampions.Select(team => team.ToViewModel())],
             PatternName = firstOilPattern?.Name,
             PatternLength = firstOilPattern?.Length,

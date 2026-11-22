@@ -65,6 +65,37 @@ public sealed class DeleteTournamentCommandHandlerTests(AppDbContextFixture fixt
         return tournament;
     }
 
+    [Fact(DisplayName = "HandleAsync evicts the cached season list of the deleted tournament's previous tournament")]
+    public async Task HandleAsync_ShouldEvictPreviousTournamentSeasonList_WhenTournamentHasPreviousTournament()
+    {
+        // Arrange
+        var ct = TestContext.Current.CancellationToken;
+        var earlierSeason = SeasonFactory.Create(startDate: new DateOnly(2024, 1, 1), endDate: new DateOnly(2024, 12, 31));
+        var season = SeasonFactory.Create(startDate: new DateOnly(2025, 1, 1), endDate: new DateOnly(2025, 12, 31));
+        await _dbContext.Seasons.AddRangeAsync([earlierSeason, season], ct);
+        var previous = TournamentFactory.Create(
+            startDate: new DateOnly(2024, 3, 1), endDate: new DateOnly(2024, 3, 2), seasonId: earlierSeason.Id);
+        await _dbContext.Tournaments.AddAsync(previous, ct);
+        var tournament = TournamentFactory.Create(
+            startDate: new DateOnly(2025, 3, 1),
+            endDate: new DateOnly(2025, 3, 2),
+            seasonId: season.Id,
+            previousTournament: PreviousTournamentFactsFactory.Create(previous.Id, previous.TournamentType, previous.EndDate));
+        await _dbContext.Tournaments.AddAsync(tournament, ct);
+        await _dbContext.SaveChangesAsync(ct);
+
+        var cache = _serviceProvider.GetRequiredService<IFusionCache>();
+        await cache.GetOrSetAsync("previous-season-list", _ => Task.FromResult("stale"), tags: [$"neba:tournaments:{earlierSeason.Id}"], token: ct);
+        var handler = CreateHandler();
+
+        // Act
+        var result = await handler.HandleAsync(new DeleteTournamentCommand { TournamentId = tournament.Id }, ct);
+
+        // Assert
+        result.IsError.ShouldBeFalse();
+        (await cache.GetOrSetAsync("previous-season-list", _ => Task.FromResult("fresh"), token: ct)).ShouldBe("fresh");
+    }
+
     [Fact(DisplayName = "HandleAsync returns Deleted when tournament does not exist")]
     public async Task HandleAsync_ShouldReturnDeleted_WhenTournamentDoesNotExist()
     {

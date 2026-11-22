@@ -1200,6 +1200,22 @@ public sealed class TournamentTests
         tournament.TitleEligible.ShouldBeFalse();
     }
 
+    [Fact(DisplayName = "CancelTournament clears the previous tournament so a replacement can use it")]
+    public void CancelTournament_ShouldClearPreviousTournament_WhenCancelled()
+    {
+        // Arrange
+        var tournament = TournamentFactory.Create(
+            previousTournament: PreviousTournamentFactsFactory.Create(
+                TournamentId.New(), TournamentType.Singles, new DateOnly(2000, 1, 1)));
+        tournament.PreviousTournamentId.ShouldNotBeNull();
+
+        // Act
+        tournament.CancelTournament();
+
+        // Assert
+        tournament.PreviousTournamentId.ShouldBeNull();
+    }
+
     [Theory(DisplayName = "CancelTournament returns Tournament.AlreadyFinalized when the tournament is already finalized")]
     [InlineData(nameof(TournamentStatus.Completed))]
     [InlineData(nameof(TournamentStatus.Truncated))]

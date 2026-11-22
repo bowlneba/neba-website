@@ -480,6 +480,15 @@ test.describe('Tournament Detail page — team eligibility and defending champio
     await expect(panel).toContainText('Dana Defender / Dave Defender');
   });
 
+  test('a team that won two tournaments in a row shows the 2x medallion in the hero', async ({ page }) => {
+    await page.goto(`/tournaments/${MOCK_TOURNAMENT_TEAM_ID}`);
+    await page.waitForSelector('.td-hero');
+
+    const medal = page.locator('.td-hero .defending--panel .defending__medal');
+    await expect(medal).toHaveText('2x');
+    await expect(medal).toHaveAttribute('aria-label', '2 titles in a row');
+  });
+
   test('a completed tournament shows neither the eligibility link nor defending champions', async ({ page }) => {
     await page.goto(`/tournaments/${MOCK_TOURNAMENT_ID}`);
     await page.waitForSelector('.td-hero');

@@ -937,8 +937,10 @@ Titles are the authoritative source for:
 
 - A previous tournament must be a different tournament of the same Tournament Type that ends before this one starts
 - A Non-Champions tournament cannot have one
+- A tournament can be the previous tournament of one other tournament only (a unique index enforces it); a second tournament naming it gets a Conflict
 - The link is optional; with none, the tournament has no defending champions
 - If the previous tournament is deleted, the link is cleared
+- Cancelling a tournament clears its own link, so a replacement tournament can use that previous tournament
 
 **In Code**:
 
@@ -953,11 +955,14 @@ Titles are the authoritative source for:
 
 Each defending **team** is listed with the tournament it won. When the previous tournament was **Truncated**, the winners of that tournament and the winners of the tournament before it may each bowl together as a defending team. The earlier winners are marked **Undefended**: they never got to defend because a later tournament was truncated. The chain continues while each tournament reached is also truncated. A winner is a first-place result whether or not the tournament was Title Eligible.
 
+A team that won more than one tournament in a row shows a gold medallion with its count of **consecutive titles**, such as "2x". The run counts the same bowlers winning each tournament along the chain of previous tournaments, so a skipped year does not break it; it ends at the first earlier tournament with other winners, no winners, or no previous tournament. The run counts at most 10 earlier tournaments, so the count stops at "11x" however long the run; no real run is that long.
+
 Shown on the tournament list and detail pages for scheduled tournaments only; once a tournament finishes, its winners show instead.
 
 **In Code**:
 
 - `DefendingTeamsReader` / `DefendingTeam` (`Neba.Api.Features.Tournaments`), returned as `DefendingChampions` on the season list and tournament detail
+- `DefendingTeam.ConsecutiveTitles` (`DefendingTeamResponse.ConsecutiveTitles`); medallion in the `DefendingChampions` component
 
 ---
 

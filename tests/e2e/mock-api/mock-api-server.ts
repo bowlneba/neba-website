@@ -1588,6 +1588,7 @@ const MOCK_DEFENDING_CHAMPIONS = [
     sourceTruncated: false,
     undefended: false,
     champions: ['Dana Defender', 'Dave Defender'],
+    consecutiveTitles: 2,
   },
 ];
 

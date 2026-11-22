@@ -89,6 +89,11 @@ public sealed class ListTournamentsInSeasonQueryHandlerTests(AppDbContextFixture
         var singles = result.Single(dto => dto.Name == "Singles 2027");
         singles.TeamSize.ShouldBe(1);
         singles.DefendingChampions.ShouldBeEmpty();
+
+        result.Single(dto => dto.Name == "Doubles 2025").NextTournamentId.ShouldBe(truncated.Id);
+        result.Single(dto => dto.Name == "Doubles 2026").NextTournamentId.ShouldBe(current.Id);
+        currentDto.NextTournamentId.ShouldBeNull();
+        singles.NextTournamentId.ShouldBeNull();
     }
 
     [Fact(DisplayName = "HandleAsync sets Series for a tournament that is a Series Stage and leaves it null for the others")]

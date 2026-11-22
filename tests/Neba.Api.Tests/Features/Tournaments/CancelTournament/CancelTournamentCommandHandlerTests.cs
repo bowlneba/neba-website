@@ -145,6 +145,46 @@ public sealed class CancelTournamentCommandHandlerTests(AppDbContextFixture fixt
         seasonCacheAfterCancel.ShouldBe("fresh-season-tournaments");
     }
 
+    [Fact(DisplayName = "HandleAsync clears the previous tournament and evicts its season list when the tournament is cancelled")]
+    public async Task HandleAsync_ShouldClearPreviousTournamentAndEvictItsSeason_WhenCancelled()
+    {
+        // Arrange
+        var ct = TestContext.Current.CancellationToken;
+        var previous = await SeedTournamentAsync(ct);
+        var tournament = TournamentFactory.Create(
+            tournamentType: previous.TournamentType,
+            startDate: previous.EndDate.AddDays(30),
+            endDate: previous.EndDate.AddDays(31),
+            seasonId: previous.SeasonId,
+            previousTournament: PreviousTournamentFactsFactory.Create(previous.Id, previous.TournamentType, previous.EndDate));
+        await _dbContext.Tournaments.AddAsync(tournament, ct);
+        await _dbContext.SaveChangesAsync(ct);
+
+        var cache = _serviceProvider.GetRequiredService<IFusionCache>();
+        var seasonCacheKey = $"neba:tournaments:{previous.SeasonId}:list";
+        await cache.GetOrSetAsync(
+            seasonCacheKey,
+            _ => Task.FromResult("cached-season-tournaments"),
+            tags: [$"neba:tournaments:{previous.SeasonId}"],
+            token: ct);
+
+        var handler = CreateHandler();
+
+        // Act
+        var result = await handler.HandleAsync(new CancelTournamentCommand { TournamentId = tournament.Id }, ct);
+
+        // Assert
+        result.IsError.ShouldBeFalse();
+        var reloaded = await _dbContext.Tournaments.AsNoTracking().SingleAsync(t => t.Id == tournament.Id, ct);
+        reloaded.PreviousTournamentId.ShouldBeNull();
+
+        var seasonCacheAfterCancel = await cache.GetOrSetAsync(
+            seasonCacheKey,
+            _ => Task.FromResult("fresh-season-tournaments"),
+            token: ct);
+        seasonCacheAfterCancel.ShouldBe("fresh-season-tournaments");
+    }
+
     [Fact(DisplayName = "HandleAsync does not invalidate the cache when the tournament is already finalized")]
     public async Task HandleAsync_ShouldNotInvalidateCache_WhenTournamentIsAlreadyFinalized()
     {

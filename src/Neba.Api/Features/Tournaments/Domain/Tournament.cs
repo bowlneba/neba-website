@@ -606,6 +606,9 @@ public sealed class Tournament
 
         Status = TournamentStatus.Cancelled;
 
+        // A cancelled tournament never followed its previous tournament, so it frees the link for a replacement.
+        PreviousTournamentId = null;
+
         return Result.Success;
     }
 

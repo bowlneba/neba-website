@@ -1,3 +1,5 @@
+using EntityFramework.Exceptions.Common;
+
 using ErrorOr;
 
 using Microsoft.EntityFrameworkCore;
@@ -19,7 +21,8 @@ internal sealed class CreateTournamentCommandHandler(
     IFusionCache cache,
     IBackgroundJobScheduler jobScheduler,
     TimeProvider timeProvider,
-    IOptions<OilPatternAnnouncementSettings> announcementSettings)
+    IOptions<OilPatternAnnouncementSettings> announcementSettings,
+    ILogger<CreateTournamentCommandHandler> logger)
     : ICommandHandler<CreateTournamentCommand, TournamentId>
 {
     public async Task<ErrorOr<TournamentId>> HandleAsync(CreateTournamentCommand command, CancellationToken cancellationToken)
@@ -42,7 +45,7 @@ internal sealed class CreateTournamentCommandHandler(
         var (season, patternLengthCategory, patternRatioCategory) = resolveResult.Value;
 
         var previousTournament = await PreviousTournamentResolver.ResolveAsync(
-            appDbContext, command.PreviousTournamentId, cancellationToken);
+            appDbContext, command.PreviousTournamentId, null, cancellationToken);
 
         if (previousTournament.IsError)
         {
@@ -99,9 +102,21 @@ internal sealed class CreateTournamentCommandHandler(
 
         await TournamentPendingUploadCleaner.RemoveClaimedAsync(appDbContext, tournament.Logo, cancellationToken);
 
-        await appDbContext.SaveChangesAsync(cancellationToken);
+        try
+        {
+            await appDbContext.SaveChangesAsync(cancellationToken);
+        }
+        catch (UniqueConstraintException ex) when (PreviousTournamentResolver.IsPreviousTournamentViolation(ex))
+        {
+            // Another request took the same previous tournament between the resolver's check and this save.
+            logger.LogPreviousTournamentAlreadyUsed(ex, command.PreviousTournamentId!.Value);
+            return TournamentErrors.PreviousTournamentAlreadyUsed(command.PreviousTournamentId.Value);
+        }
 
         await cache.RemoveByTagAsync($"neba:tournaments:{season.Id}", token: cancellationToken);
+
+        await TournamentSuccessorCacheEviction.EvictPredecessorSeasonsAsync(
+            appDbContext, cache, [tournament.PreviousTournamentId], cancellationToken);
 
         var now = timeProvider.GetUtcNow();
 
@@ -117,4 +132,10 @@ internal sealed class CreateTournamentCommandHandler(
 
         return tournament.Id;
     }
+}
+
+internal static partial class CreateTournamentCommandHandlerLogMessages
+{
+    [LoggerMessage(Level = LogLevel.Information, Message = "Tournament not created: another tournament already follows previous tournament {PreviousTournamentId}.")]
+    public static partial void LogPreviousTournamentAlreadyUsed(this ILogger<CreateTournamentCommandHandler> logger, Exception exception, TournamentId previousTournamentId);
 }

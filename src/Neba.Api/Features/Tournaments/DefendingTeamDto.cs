@@ -23,6 +23,9 @@ public sealed record DefendingTeamDto
 
     /// <summary>The names of the bowlers on the team.</summary>
     public required IReadOnlyCollection<Name> Champions { get; init; }
+
+    /// <summary>How many tournaments in a row the same bowlers won, ending with the one they won last; 1 for a single title.</summary>
+    public int ConsecutiveTitles { get; init; } = 1;
 }
 
 internal static class DefendingTeamMapping
@@ -36,7 +39,8 @@ internal static class DefendingTeamMapping
                 SeasonDescription = team.SeasonDescription,
                 SourceTruncated = team.SourceTruncated,
                 Undefended = team.Undefended,
-                Champions = [.. team.Champions.Select(champion => champion.Name)]
+                Champions = [.. team.Champions.Select(champion => champion.Name)],
+                ConsecutiveTitles = team.ConsecutiveTitles
             };
     }
 
@@ -49,7 +53,8 @@ internal static class DefendingTeamMapping
                 SeasonDescription = team.SeasonDescription,
                 SourceTruncated = team.SourceTruncated,
                 Undefended = team.Undefended,
-                Champions = [.. team.Champions.Select(champion => champion.ToDisplayName())]
+                Champions = [.. team.Champions.Select(champion => champion.ToDisplayName())],
+                ConsecutiveTitles = team.ConsecutiveTitles
             };
     }
 }

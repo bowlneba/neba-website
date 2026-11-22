@@ -34,7 +34,7 @@ None. The page is public: you do not need to sign in. It works for scheduled tea
 
 | Answer | What it means |
 | --- | --- |
-| **These are the defending champions.** | The team is the previous tournament's winners (or, after a truncated tournament, the winners before it), so the champion limits do not apply. The answer names the tournament they won. |
+| **These are the defending champions.** | The team is the previous tournament's winners (or, after a truncated tournament, the winners before it), so the champion limits do not apply. The answer names the tournament they won. A team that won more than one tournament in a row shows a gold medallion with its count, such as "2x", in the banner and on the tournament card. |
 | **This team is eligible to bowl.** | The team passes the champion, Hall of Fame and age rules on every date of the tournament. |
 | **This team is not eligible to bowl.** | The team breaks a rule. Each reason is listed. |
 | **The answer depends on the squad date.** | The team passes on some days of the tournament and not others (for example, a bowler turns 50 during the event). Each date shows its own verdict. |

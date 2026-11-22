@@ -25,6 +25,96 @@ public sealed class DefendingChampionsTests : IDisposable
             }
         });
 
+    [Fact(DisplayName = "Should show a medallion with the title count for a team that won more than once in a row")]
+    public void Render_ShouldShowMedallion_WhenTeamWonMoreThanOnce()
+    {
+        // Arrange
+        var team = DefendingTeamViewModelFactory.Create(champions: ["Dave Smith", "Dana Jones"], consecutiveTitles: 2);
+
+        // Act
+        var cut = Render([team], DefendingChampionsLayout.Strip);
+
+        // Assert
+        var medal = cut.Find(".defending--strip > .defending__medal--lead");
+        medal.TextContent.Trim().ShouldBe("2x");
+        medal.GetAttribute("aria-label").ShouldBe("2 titles in a row");
+        cut.Find(".defending__tag").TextContent.Trim().ShouldBe("2025 Season winners");
+    }
+
+    [Fact(DisplayName = "Should keep the medallion on the team that repeated when the strip shows several teams")]
+    public void Render_ShouldKeepMedallionOnTeam_WhenSeveralTeams()
+    {
+        // Arrange
+        var repeated = DefendingTeamViewModelFactory.Create(consecutiveTitles: 2);
+        var other = DefendingTeamViewModelFactory.Create(undefended: true, champions: ["Dana Jones"]);
+
+        // Act
+        var cut = Render([repeated, other], DefendingChampionsLayout.Strip);
+
+        // Assert
+        cut.FindAll(".defending__medal--lead").ShouldBeEmpty();
+        cut.FindAll(".defending__group .defending__medal").Count.ShouldBe(1);
+    }
+
+    [Fact(DisplayName = "Should show the medallion in the panel too")]
+    public void Render_ShouldShowMedallion_InPanel()
+    {
+        // Arrange
+        var team = DefendingTeamViewModelFactory.Create(consecutiveTitles: 3);
+
+        // Act
+        var cut = Render([team], DefendingChampionsLayout.Panel);
+
+        // Assert
+        cut.Find(".defending__medal").TextContent.Trim().ShouldBe("3x");
+    }
+
+    [Fact(DisplayName = "Should show no medallion for a team that won once")]
+    public void Render_ShouldShowNoMedallion_WhenTeamWonOnce()
+    {
+        // Arrange
+        var team = DefendingTeamViewModelFactory.Create();
+
+        // Act
+        var cut = Render([team], DefendingChampionsLayout.Strip);
+
+        // Assert
+        cut.FindAll(".defending__medal").ShouldBeEmpty();
+    }
+
+    [Fact(DisplayName = "Should show no medallion in the strip when several teams are shown and none repeated")]
+    public void Render_ShouldShowNoMedallion_WhenSeveralTeamsAndNoneRepeated()
+    {
+        // Arrange
+        var first = DefendingTeamViewModelFactory.Create();
+        var second = DefendingTeamViewModelFactory.Create(undefended: true, champions: ["Dana Jones"]);
+
+        // Act
+        var cut = Render([first, second], DefendingChampionsLayout.Strip);
+
+        // Assert
+        cut.FindAll(".defending__medal").ShouldBeEmpty();
+    }
+
+    [Fact(DisplayName = "Panel should show a medallion on each row whose team repeated and none on the others")]
+    public void Render_ShouldShowMedallionPerRow_InPanelWithSeveralTeams()
+    {
+        // Arrange
+        var repeated = DefendingTeamViewModelFactory.Create(consecutiveTitles: 2);
+        var single = DefendingTeamViewModelFactory.Create(seasonDescription: "2024 Season", undefended: true);
+        var repeatedAgain = DefendingTeamViewModelFactory.Create(seasonDescription: "2023 Season", consecutiveTitles: 4);
+
+        // Act
+        var cut = Render([repeated, single, repeatedAgain], DefendingChampionsLayout.Panel);
+
+        // Assert
+        var rows = cut.FindAll(".defending__row");
+        rows.Count.ShouldBe(3);
+        rows[0].QuerySelector(".defending__medal")!.TextContent.Trim().ShouldBe("2x");
+        rows[1].QuerySelector(".defending__medal").ShouldBeNull();
+        rows[2].QuerySelector(".defending__medal")!.TextContent.Trim().ShouldBe("4x");
+    }
+
     [Theory(DisplayName = "Should render nothing when there are no defending teams")]
     [InlineData(DefendingChampionsLayout.Strip, TestDisplayName = "Strip")]
     [InlineData(DefendingChampionsLayout.Panel, TestDisplayName = "Panel")]
