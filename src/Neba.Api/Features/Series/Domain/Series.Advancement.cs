@@ -406,7 +406,7 @@ public sealed partial class Series
             trace.StatusChanged |= statusBefore != StageStatus.Computed;
             trace.Computed.Add(stage.Id);
         }
-        else if (mode == FoldMode.ResetOfficial && stage.IsStale)
+        else if (stage.IsStale)
         {
             stage.ClearStale();
             trace.Changed = true;

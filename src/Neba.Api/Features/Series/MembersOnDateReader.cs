@@ -41,6 +41,7 @@ internal static class MembersOnDateReader
             .SelectMany(bowler => bowler.Memberships, (bowler, membership) => new { bowler.Id, membership.StartDate, membership.EndDate })
             .Where(row => row.StartDate <= latest && earliest <= row.EndDate)
             .ToListAsync(cancellationToken);
+
         return dates.Distinct().ToDictionary(
             date => date,
             date => (IReadOnlySet<BowlerId>)memberships

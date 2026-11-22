@@ -43,7 +43,7 @@ internal sealed class BackfillOnSeasonStatsGenerated(
 
                 SeriesAdvancement.EnsureJobSucceeded(result);
             }
-            catch (InvalidOperationException exception)
+            catch (Exception exception) when (exception is not OperationCanceledException)
             {
                 // One Series must not block the others.
                 failed++;

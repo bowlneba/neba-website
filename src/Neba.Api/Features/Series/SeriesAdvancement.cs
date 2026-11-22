@@ -17,7 +17,7 @@ namespace Neba.Api.Features.Series;
 internal delegate ErrorOr<AdvanceResult> AdvancementOperation(SeriesAggregate series, AdvancementFacts facts, DateTimeOffset now);
 
 /// <summary>
-/// The single entry point for advancement. Every event job and every admin write runs through <see cref="RunAsync"/>.
+/// The single entry point for advancement. Every event job and every admin write runs through <c>RunAsync</c>.
 /// It must be the first load of the Series in its DbContext scope.
 /// </summary>
 internal sealed class SeriesAdvancement(
@@ -37,18 +37,31 @@ internal sealed class SeriesAdvancement(
     /// <summary>Runs the operation with the facts read for the Series.</summary>
     public Task<ErrorOr<AdvanceResult>> RunAsync(
         SeriesId seriesId, AdvancementOperation operation, TimeSpan lockWait, CancellationToken cancellationToken)
-        => RunCoreAsync(seriesId, operation, lockWait, factsReader.ReadAsync, cancellationToken);
+        => RunAsync(seriesId, operation, lockWait, null, cancellationToken);
+
+    /// <summary>
+    /// Runs the operation with the facts read for the Series. When <paramref name="needsRun"/> returns false for the loaded
+    /// Series, the facts are not read and nothing runs.
+    /// </summary>
+    public Task<ErrorOr<AdvanceResult>> RunAsync(
+        SeriesId seriesId,
+        AdvancementOperation operation,
+        TimeSpan lockWait,
+        Func<SeriesAggregate, bool>? needsRun,
+        CancellationToken cancellationToken)
+        => RunCoreAsync(seriesId, operation, lockWait, factsReader.ReadAsync, needsRun, cancellationToken);
 
     /// <summary>Runs an operation that reads no facts. It gets <see cref="AdvancementFacts.Empty"/>, and the reader is never called.</summary>
     public Task<ErrorOr<AdvanceResult>> RunWithoutFactsAsync(
         SeriesId seriesId, AdvancementOperation operation, TimeSpan lockWait, CancellationToken cancellationToken)
-        => RunCoreAsync(seriesId, operation, lockWait, (_, _) => Task.FromResult(AdvancementFacts.Empty), cancellationToken);
+        => RunCoreAsync(seriesId, operation, lockWait, (_, _) => Task.FromResult(AdvancementFacts.Empty), null, cancellationToken);
 
     private async Task<ErrorOr<AdvanceResult>> RunCoreAsync(
         SeriesId seriesId,
         AdvancementOperation operation,
         TimeSpan lockWait,
         Func<SeriesAggregate, CancellationToken, Task<AdvancementFacts>> loadFacts,
+        Func<SeriesAggregate, bool>? needsRun,
         CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(operation);
@@ -71,6 +84,11 @@ internal sealed class SeriesAdvancement(
         if (series is null)
         {
             return SeriesErrors.NotFound(seriesId);
+        }
+
+        if (needsRun is not null && !needsRun(series))
+        {
+            return AdvanceResult.None;
         }
 
         var facts = await loadFacts(series, cancellationToken);
@@ -100,7 +118,15 @@ internal sealed class SeriesAdvancement(
     }
 
     /// <summary>Job entry. Finds the Series the tournament belongs to (most have none) and runs the operation.</summary>
-    public async Task RunForTournamentAsync(TournamentId tournamentId, AdvancementOperation operation, CancellationToken cancellationToken)
+    public Task RunForTournamentAsync(TournamentId tournamentId, AdvancementOperation operation, CancellationToken cancellationToken)
+        => RunForTournamentAsync(tournamentId, operation, null, cancellationToken);
+
+    /// <summary>Job entry with a pre-check: when <paramref name="needsRun"/> returns false for the Series, no facts are read.</summary>
+    public async Task RunForTournamentAsync(
+        TournamentId tournamentId,
+        AdvancementOperation operation,
+        Func<SeriesAggregate, bool>? needsRun,
+        CancellationToken cancellationToken)
     {
         var seriesId = await appDbContext.Series.AsNoTracking()
             .Where(s => s.Stages.Any(stage => stage.TournamentId == tournamentId))
@@ -109,7 +135,7 @@ internal sealed class SeriesAdvancement(
 
         if (seriesId is { } id)
         {
-            EnsureJobSucceeded(await RunAsync(id, operation, JobLockWait, cancellationToken));
+            EnsureJobSucceeded(await RunAsync(id, operation, JobLockWait, needsRun, cancellationToken));
         }
     }
 

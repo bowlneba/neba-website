@@ -17,9 +17,8 @@ internal sealed class AdvanceOnSquadScoresReplaced(SeriesAdvancement advancement
 
         return advancement.RunForTournamentAsync(
             domainEvent.TournamentId,
-            (series, facts, now) => series.HasStageResolvedTo(domainEvent.SquadId)
-                ? series.Advance(domainEvent.TournamentId, facts, now)
-                : AdvanceResult.None,
+            (series, facts, now) => series.Advance(domainEvent.TournamentId, facts, now),
+            series => series.HasStageResolvedTo(domainEvent.SquadId),
             ct);
     }
 }
