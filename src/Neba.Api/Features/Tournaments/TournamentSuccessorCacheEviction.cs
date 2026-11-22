@@ -58,7 +58,7 @@ internal static class TournamentSuccessorCacheEviction
     }
 
     /// <summary>Evicts the cached detail and season list of each successor.</summary>
-    public static async Task EvictAsync(
+    public static Task EvictAsync(
         IFusionCache cache, IEnumerable<Successor> successors, CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(cache);
@@ -70,7 +70,7 @@ internal static class TournamentSuccessorCacheEviction
             .Distinct(StringComparer.Ordinal)
             .ToList();
 
-        await Task.WhenAll(tags.Select(tag => cache.RemoveByTagAsync(tag, token: cancellationToken).AsTask()));
+        return Task.WhenAll(tags.Select(tag => cache.RemoveByTagAsync(tag, token: cancellationToken).AsTask()));
     }
 
     /// <summary>Finds the successors of <paramref name="tournamentId"/> and evicts them.</summary>

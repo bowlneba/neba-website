@@ -44,7 +44,7 @@ public sealed class SeriesAdvancementSettingsTests
     public void SectionName_ShouldBeSeriesAdvancement()
     {
         // Arrange & Act
-        var sectionName = SeriesAdvancementSettings.SectionName;
+        const string sectionName = SeriesAdvancementSettings.SectionName;
 
         // Assert
         sectionName.ShouldBe("SeriesAdvancement");

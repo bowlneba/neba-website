@@ -688,12 +688,9 @@ public sealed class Tournament
             return AddResult(bowlerId, place, prizeMoney, points);
         }
 
-        if (Status == TournamentStatus.Scheduled || Status == TournamentStatus.Cancelled)
-        {
-            return TournamentErrors.TournamentNotFinalized;
-        }
-
-        return existing.Update(place, prizeMoney, points);
+        return Status == TournamentStatus.Scheduled || Status == TournamentStatus.Cancelled
+            ? TournamentErrors.TournamentNotFinalized
+            : existing.Update(place, prizeMoney, points);
     }
 
     /// <summary>
