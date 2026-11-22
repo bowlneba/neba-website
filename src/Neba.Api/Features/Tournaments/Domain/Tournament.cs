@@ -401,6 +401,11 @@ public sealed class Tournament
             return error;
         }
 
+        if (startDate != StartDate || endDate != EndDate || tournamentType != TournamentType)
+        {
+            RaiseChanged();
+        }
+
         Name = name;
         TournamentType = tournamentType;
         StartDate = startDate;
@@ -609,7 +614,18 @@ public sealed class Tournament
         // A cancelled tournament never followed its previous tournament, so it frees the link for a replacement.
         PreviousTournamentId = null;
 
+        RaiseChanged();
+
         return Result.Success;
+    }
+
+    // One pending event per save, so an edit that changes several fields makes one job.
+    private void RaiseChanged()
+    {
+        if (!DomainEvents.OfType<TournamentChanged>().Any())
+        {
+            AddDomainEvent(new TournamentChanged { TournamentId = Id });
+        }
     }
 
     private readonly List<TournamentResult> _results = [];
@@ -661,7 +677,7 @@ public sealed class Tournament
 
     /// <summary>
     /// Signals that a sync finished writing this tournament's results. Call it after the <see cref="AddResult"/> loop on
-    /// every sync, including one that adds nothing, so a re-sync redelivers the event. Calls before one save raise one event. Complete, Truncate and Cancel raise
+    /// every sync, including one that adds nothing, so a re-sync redelivers the event. Calls before one save raise one event. Complete and Truncate raise
     /// nothing: in the legacy chain the results arrive after the status flips.
     /// </summary>
     public ErrorOr<Success> MarkResultsRecorded()

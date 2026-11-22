@@ -45,6 +45,7 @@ public sealed class TournamentDomainEventTests
     {
         // Arrange
         var tournament = TournamentFactory.Create(status: TournamentStatus.FromName(statusName));
+        tournament.ClearDomainEvents();
 
         // Act
         var result = tournament.MarkResultsRecorded();
@@ -86,24 +87,108 @@ public sealed class TournamentDomainEventTests
         tournament.DomainEvents.ShouldHaveSingleItem().ShouldBeOfType<TournamentResultsRecorded>();
     }
 
-    [Fact(DisplayName = "CompleteTournament, TruncateTournament and CancelTournament raise no domain events")]
+    [Fact(DisplayName = "CompleteTournament and TruncateTournament raise no domain events")]
     public void StatusChanges_ShouldRaiseNoEvents()
     {
         // Arrange
         var completed = TournamentFactory.Create();
         var truncated = TournamentFactory.Create();
-        var cancelled = TournamentFactory.Create();
 
         // Act
         completed.CompleteTournament(entryCount: 100);
         truncated.TruncateTournament();
-        cancelled.CancelTournament();
 
         // Assert
         completed.DomainEvents.ShouldBeEmpty();
         truncated.DomainEvents.ShouldBeEmpty();
-        cancelled.DomainEvents.ShouldBeEmpty();
     }
+
+    [Fact(DisplayName = "CancelTournament raises one TournamentChanged carrying the tournament id")]
+    public void CancelTournament_ShouldRaiseTournamentChanged()
+    {
+        // Arrange
+        var tournament = TournamentFactory.Create();
+
+        // Act
+        var result = tournament.CancelTournament();
+
+        // Assert
+        result.IsError.ShouldBeFalse();
+        tournament.DomainEvents.ShouldHaveSingleItem().ShouldBeOfType<TournamentChanged>().TournamentId.ShouldBe(tournament.Id);
+    }
+
+    [Fact(DisplayName = "CancelTournament raises nothing when the tournament is already finalized")]
+    public void CancelTournament_ShouldRaiseNothing_WhenAlreadyFinalized()
+    {
+        // Arrange
+        var tournament = TournamentFactory.Create(status: TournamentStatus.Completed);
+
+        // Act
+        var result = tournament.CancelTournament();
+
+        // Assert
+        result.IsError.ShouldBeTrue();
+        tournament.DomainEvents.ShouldBeEmpty();
+    }
+
+    [Theory(DisplayName = "Update raises one TournamentChanged when the start date, end date or type changes")]
+    [InlineData("start")]
+    [InlineData("end")]
+    [InlineData("type")]
+    [InlineData("all")]
+    public void Update_ShouldRaiseTournamentChanged_WhenScheduleOrTypeChanges(string change)
+    {
+        // Arrange
+        var tournament = TournamentFactory.Create();
+        var changesStart = change is "start" or "all";
+        var changesEnd = change is "end" or "all";
+        var changesType = change is "type" or "all";
+        var otherType = TournamentType.List.First(t => t != tournament.TournamentType && t != TournamentType.NonChampions);
+
+        // Act
+        var result = UpdateWith(
+            tournament,
+            changesStart ? tournament.StartDate.AddDays(-1) : tournament.StartDate,
+            changesEnd ? tournament.EndDate.AddDays(1) : tournament.EndDate,
+            changesType ? otherType : tournament.TournamentType);
+
+        // Assert
+        result.IsError.ShouldBeFalse();
+        tournament.DomainEvents.ShouldHaveSingleItem().ShouldBeOfType<TournamentChanged>().TournamentId.ShouldBe(tournament.Id);
+    }
+
+    [Fact(DisplayName = "Update raises nothing when the start date, end date and type stay the same")]
+    public void Update_ShouldRaiseNothing_WhenScheduleAndTypeAreUnchanged()
+    {
+        // Arrange
+        var tournament = TournamentFactory.Create();
+
+        // Act
+        var result = UpdateWith(tournament, tournament.StartDate, tournament.EndDate, tournament.TournamentType);
+
+        // Assert
+        result.IsError.ShouldBeFalse();
+        tournament.DomainEvents.ShouldBeEmpty();
+    }
+
+    private static ErrorOr.ErrorOr<ErrorOr.Updated> UpdateWith(
+        Tournament tournament, DateOnly startDate, DateOnly endDate, TournamentType tournamentType)
+        => tournament.Update(
+            tournament.Name,
+            tournamentType,
+            startDate,
+            endDate,
+            tournament.SeasonId,
+            tournament.StatsEligible,
+            tournament.EntryFee,
+            tournament.NebaAddedMoney,
+            tournament.BowlingCenterId,
+            tournament.ExternalRegistrationUrl,
+            tournament.Logo,
+            tournament.PatternLengthCategory,
+            tournament.PatternRatioCategory,
+            tournament.OilPatternRevealDateTime,
+            previousTournament: null);
 
     // ── Squad events: success ─────────────────────────────────────────────────
 
