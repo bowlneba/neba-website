@@ -46,6 +46,7 @@ internal sealed class DeleteTournamentCommandHandler(
         }
 
         var seasonId = tournament.SeasonId;
+        var previousTournamentId = tournament.PreviousTournamentId;
         var logo = tournament.Logo;
 
         // Found before the delete: the database clears each successor's link to this tournament, and the walk needs it.
@@ -57,6 +58,10 @@ internal sealed class DeleteTournamentCommandHandler(
         await cache.RemoveByTagAsync($"neba:tournaments:{tournament.Id}", token: cancellationToken);
         await cache.RemoveByTagAsync($"neba:tournaments:{seasonId}", token: cancellationToken);
         await TournamentSuccessorCacheEviction.EvictAsync(cache, successors, cancellationToken);
+
+        // The predecessor's season list showed this tournament as its next tournament. The predecessor row stays.
+        await TournamentSuccessorCacheEviction.EvictPredecessorSeasonsAsync(
+            appDbContext, cache, [previousTournamentId], cancellationToken);
 
         if (logo is not null)
         {
