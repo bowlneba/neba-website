@@ -63,6 +63,12 @@
     color: #2b1d00;
 }
 
+/* Leads the strip, in line with the label. */
+.defending__medal--lead {
+    align-self: center;
+    margin-right: -1rem;
+}
+
 .defending__medal--small {
     width: 2rem;
     height: 2rem;
@@ -148,6 +154,11 @@
     .defending--strip {
         flex-direction: column;
         gap: 0.5rem;
+    }
+
+    .defending__medal--lead {
+        align-self: flex-start;
+        margin-right: 0;
     }
 
     .defending__row {

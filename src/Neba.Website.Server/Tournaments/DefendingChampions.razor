@@ -29,14 +29,18 @@
     else
     {
         <div class="defending defending--strip">
+            @if (LeadingRepeat is { } leading)
+            {
+                <span class="defending__medal defending__medal--lead" role="img" aria-label="@leading.TitleCountDescription">@leading.TitleCountLabel</span>
+            }
             <span class="defending__label">
                 <span class="material-symbols-outlined" aria-hidden="true">shield</span>
                 @Heading
             </span>
             @foreach (var team in Teams)
             {
-                <div class="defending__group@(team.IsRepeatChampion ? " defending__group--repeat" : string.Empty)">
-                    @if (team.IsRepeatChampion)
+                <div class="defending__group@(ShowsOwnMedal(team) ? " defending__group--repeat" : string.Empty)">
+                    @if (ShowsOwnMedal(team))
                     {
                         <span class="defending__medal" role="img" aria-label="@team.TitleCountDescription">@team.TitleCountLabel</span>
                     }
@@ -63,6 +67,12 @@
 
     [Parameter]
     public DefendingChampionsLayout Layout { get; set; } = DefendingChampionsLayout.Strip;
+
+    // With one team, the medallion leads the whole strip, before the shield. With several (a truncated
+    // tournament adds the winners before it), each team that repeated keeps its own, so it is clear whose it is.
+    private DefendingTeamViewModel? LeadingRepeat => Teams.Count == 1 && Teams[0].IsRepeatChampion ? Teams[0] : null;
+
+    private bool ShowsOwnMedal(DefendingTeamViewModel team) => team.IsRepeatChampion && LeadingRepeat is null;
 
     // Plural when more than one bowler holds the title (a team of two, or two teams after a truncation).
     // An empty list stays singular.

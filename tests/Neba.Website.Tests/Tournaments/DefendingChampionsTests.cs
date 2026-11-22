@@ -35,10 +35,25 @@ public sealed class DefendingChampionsTests : IDisposable
         var cut = Render([team], DefendingChampionsLayout.Strip);
 
         // Assert
-        var medal = cut.Find(".defending__medal");
+        var medal = cut.Find(".defending--strip > .defending__medal--lead");
         medal.TextContent.Trim().ShouldBe("2x");
         medal.GetAttribute("aria-label").ShouldBe("2 titles in a row");
         cut.Find(".defending__tag").TextContent.Trim().ShouldBe("2025 Season winners");
+    }
+
+    [Fact(DisplayName = "Should keep the medallion on the team that repeated when the strip shows several teams")]
+    public void Render_ShouldKeepMedallionOnTeam_WhenSeveralTeams()
+    {
+        // Arrange
+        var repeated = DefendingTeamViewModelFactory.Create(consecutiveTitles: 2);
+        var other = DefendingTeamViewModelFactory.Create(undefended: true, champions: ["Dana Jones"]);
+
+        // Act
+        var cut = Render([repeated, other], DefendingChampionsLayout.Strip);
+
+        // Assert
+        cut.FindAll(".defending__medal--lead").ShouldBeEmpty();
+        cut.FindAll(".defending__group .defending__medal").Count.ShouldBe(1);
     }
 
     [Fact(DisplayName = "Should show the medallion in the panel too")]
