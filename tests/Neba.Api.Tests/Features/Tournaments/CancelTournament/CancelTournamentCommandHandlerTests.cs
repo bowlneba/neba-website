@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 
+using Neba.Api.Caching;
 using Neba.Api.Database;
 using Neba.Api.Features.Tournaments.CancelTournament;
 using Neba.Api.Features.Tournaments.Domain;
@@ -143,6 +144,27 @@ public sealed class CancelTournamentCommandHandlerTests(AppDbContextFixture fixt
             _ => Task.FromResult("fresh-season-tournaments"),
             token: ct);
         seasonCacheAfterCancel.ShouldBe("fresh-season-tournaments");
+    }
+
+    [Fact(DisplayName = "HandleAsync evicts the Series caches when the tournament is cancelled")]
+    public async Task HandleAsync_ShouldEvictSeriesCaches_WhenCancelled()
+    {
+        // Arrange
+        var ct = TestContext.Current.CancellationToken;
+        var tournament = await SeedTournamentAsync(ct);
+        var cache = _serviceProvider.GetRequiredService<IFusionCache>();
+        const string seriesKey = "cancel-series-cache-test";
+        await cache.GetOrSetAsync(seriesKey, _ => Task.FromResult("cached-series"), tags: [CacheDescriptors.Series.Tag], token: ct);
+
+        var handler = CreateHandler();
+        var command = new CancelTournamentCommand { TournamentId = tournament.Id };
+
+        // Act
+        await handler.HandleAsync(command, ct);
+
+        // Assert
+        var seriesAfter = await cache.GetOrSetAsync(seriesKey, _ => Task.FromResult("fresh-series"), token: ct);
+        seriesAfter.ShouldBe("fresh-series");
     }
 
     [Fact(DisplayName = "HandleAsync clears the previous tournament and evicts its season list when the tournament is cancelled")]

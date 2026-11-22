@@ -7,6 +7,7 @@ using Microsoft.Extensions.Options;
 using Microsoft.Extensions.Time.Testing;
 
 using Neba.Api.BackgroundJobs;
+using Neba.Api.Caching;
 using Neba.Api.Database;
 using Neba.Api.Features.BowlingCenters.Domain;
 using Neba.Api.Features.Seasons.Domain;
@@ -607,6 +608,28 @@ public sealed class EditTournamentCommandHandlerTests(AppDbContextFixture fixtur
         detailAfterEdit.ShouldBe("fresh-detail");
         var listAfterEdit = await cache.GetOrSetAsync(seasonCacheKey, _ => Task.FromResult("fresh-list"), token: ct);
         listAfterEdit.ShouldBe("fresh-list");
+    }
+
+    [Fact(DisplayName = "HandleAsync evicts the Series caches when the tournament is edited")]
+    public async Task HandleAsync_ShouldEvictSeriesCaches_WhenEdited()
+    {
+        // Arrange
+        var ct = TestContext.Current.CancellationToken;
+        var season = await SeedSeasonAsync(new DateOnly(2025, 1, 1), new DateOnly(2025, 12, 31), ct);
+        var tournament = await SeedTournamentAsync(season, ct);
+        var cache = _serviceProvider.GetRequiredService<IFusionCache>();
+        const string seriesKey = "edit-series-cache-test";
+        await cache.GetOrSetAsync(seriesKey, _ => Task.FromResult("cached-series"), tags: [CacheDescriptors.Series.Tag], token: ct);
+
+        var handler = CreateHandler();
+        var command = ValidCommand(tournament.Id, name: "Series Eviction Tournament", startDate: season.StartDate, endDate: season.StartDate);
+
+        // Act
+        await handler.HandleAsync(command, ct);
+
+        // Assert
+        var seriesAfter = await cache.GetOrSetAsync(seriesKey, _ => Task.FromResult("fresh-series"), token: ct);
+        seriesAfter.ShouldBe("fresh-series");
     }
 
     [Theory(DisplayName = "HandleAsync evicts the champions and bowler titles caches only when name, end date or type changes")]

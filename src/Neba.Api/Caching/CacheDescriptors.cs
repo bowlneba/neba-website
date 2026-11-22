@@ -461,6 +461,12 @@ public static class CacheDescriptors
     public static class Series
     {
         /// <summary>
+        /// The tag every cached Series list, detail and finales list carries. A Series embeds its Stage
+        /// tournaments' names, dates and types, so a tournament edit, cancel or truncate clears it too.
+        /// </summary>
+        public const string Tag = "neba:series";
+
+        /// <summary>
         /// Returns a cache descriptor for the list of every Series. It carries the tournaments tag, which
         /// every Series command clears.
         /// </summary>
@@ -468,7 +474,7 @@ public static class CacheDescriptors
             => new()
             {
                 Key = "neba:series:list",
-                Tags = ["neba", Tournaments.Tag, "neba:series"]
+                Tags = ["neba", Tournaments.Tag, Tag]
             };
 
         /// <summary>
@@ -480,7 +486,7 @@ public static class CacheDescriptors
             => new()
             {
                 Key = $"neba:series:{id}",
-                Tags = ["neba", Tournaments.Tag, "neba:bowling-centers", "neba:series", $"neba:series:{id}"]
+                Tags = ["neba", Tournaments.Tag, "neba:bowling-centers", Tag, $"{Tag}:{id}"]
             };
 
         /// <summary>
@@ -491,7 +497,7 @@ public static class CacheDescriptors
             => new()
             {
                 Key = "neba:series:finales:list",
-                Tags = ["neba", Tournaments.Tag, "neba:bowling-centers", "neba:series"]
+                Tags = ["neba", Tournaments.Tag, "neba:bowling-centers", Tag]
             };
     }
 

@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 
+using Neba.Api.Caching;
 using Neba.Api.Database;
 using Neba.Api.Features.Tournaments.Domain;
 using Neba.Api.Features.Tournaments.TruncateTournament;
@@ -101,6 +102,27 @@ public sealed class TruncateTournamentCommandHandlerTests(AppDbContextFixture fi
         // Assert
         result.IsError.ShouldBeTrue();
         result.FirstError.Code.ShouldBe("Tournament.AlreadyFinalized");
+    }
+
+    [Fact(DisplayName = "HandleAsync evicts the Series caches when the tournament is truncated")]
+    public async Task HandleAsync_ShouldEvictSeriesCaches_WhenTruncated()
+    {
+        // Arrange
+        var ct = TestContext.Current.CancellationToken;
+        var tournament = await SeedTournamentAsync(ct);
+        var cache = _serviceProvider.GetRequiredService<IFusionCache>();
+        const string seriesKey = "truncate-series-cache-test";
+        await cache.GetOrSetAsync(seriesKey, _ => Task.FromResult("cached-series"), tags: [CacheDescriptors.Series.Tag], token: ct);
+
+        var handler = CreateHandler();
+        var command = new TruncateTournamentCommand { TournamentId = tournament.Id };
+
+        // Act
+        await handler.HandleAsync(command, ct);
+
+        // Assert
+        var seriesAfter = await cache.GetOrSetAsync(seriesKey, _ => Task.FromResult("fresh-series"), token: ct);
+        seriesAfter.ShouldBe("fresh-series");
     }
 
     [Fact(DisplayName = "HandleAsync invalidates the tournament and season cache tags when the tournament is truncated")]
