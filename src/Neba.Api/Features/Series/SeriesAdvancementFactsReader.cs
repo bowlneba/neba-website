@@ -1,3 +1,5 @@
+using System.Collections.Frozen;
+
 using Microsoft.EntityFrameworkCore;
 
 using Neba.Api.Database;
@@ -148,14 +150,11 @@ internal sealed class SeriesAdvancementFactsReader(AppDbContext appDbContext)
             .Distinct()
             .ToList();
 
-        if (bowlerIds.Count == 0)
-        {
-            return new Dictionary<BowlerId, BowlerSortName>();
-        }
-
-        return await appDbContext.Bowlers.AsNoTracking()
-            .Where(bowler => bowlerIds.Contains(bowler.Id))
-            .Select(bowler => new { bowler.Id, bowler.Name.LastName, bowler.Name.FirstName })
-            .ToDictionaryAsync(bowler => bowler.Id, bowler => new BowlerSortName(bowler.LastName, bowler.FirstName), cancellationToken);
+        return bowlerIds.Count == 0
+            ? FrozenDictionary<BowlerId, BowlerSortName>.Empty
+            : await appDbContext.Bowlers.AsNoTracking()
+                .Where(bowler => bowlerIds.Contains(bowler.Id))
+                .Select(bowler => new { bowler.Id, bowler.Name.LastName, bowler.Name.FirstName })
+                .ToDictionaryAsync(bowler => bowler.Id, bowler => new BowlerSortName(bowler.LastName, bowler.FirstName), cancellationToken);
     }
 }

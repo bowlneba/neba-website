@@ -323,22 +323,16 @@ internal static class SeriesDisplay
     public static string RecomputeLabel(int order) => "Recompute from Stage " + Num(order);
 
     /// <summary>Why a Pending Stage shows no output.</summary>
-    public static string PendingReason(StageAdvancementViewModel stage)
+    public static string PendingReason(StageAdvancementViewModel stage) => stage switch
     {
-        if (stage.IsTournamentCancelled)
-        {
-            return "This tournament was cancelled. Remove this Stage on the Edit page, then recompute from the Stage before it.";
-        }
-
-        if (stage.NeedsSquad)
-        {
-            return "Waiting for a squad. Pick the squad this round uses and the Stage computes.";
-        }
-
-        return stage.Kind == StageKinds.Placement
-            ? "Positions appear when the Placement Round computes."
-            : "Not computed yet. This Stage computes when its tournament completes.";
-    }
+        { IsTournamentCancelled: true } =>
+            "This tournament was cancelled. Remove this Stage on the Edit page, then recompute from the Stage before it.",
+        { NeedsSquad: true } =>
+            "Waiting for a squad. Pick the squad this round uses and the Stage computes.",
+        _ when stage.Kind == StageKinds.Placement =>
+            "Positions appear when the Placement Round computes.",
+        _ => "Not computed yet. This Stage computes when its tournament completes.",
+    };
 
     /// <summary>"8 slots" (the bold lead of the Qualifying summary).</summary>
     public static string SlotsLead(int slots) => "slot".ToQuantity(slots, formatProvider: DisplayCulture.English);
@@ -357,24 +351,20 @@ internal static class SeriesDisplay
     public static string OrdinalPlace(int? place) => place is { } p ? p.ToOrdinal() : "—";
 
     public static string EntrySource(FieldEntryViewModel entry)
-    {
-        if (entry.ViaOverride)
+        => entry switch
         {
-            return "Added by admin";
-        }
-
-        return entry.IsBackfill ? "Backfill" : "Qualifier";
-    }
+            { ViaOverride: true } => "Added by admin",
+            { IsBackfill: true } => "Backfill",
+            _ => "Qualifier",
+        };
 
     public static string SourceClass(FieldEntryViewModel entry)
-    {
-        if (entry.ViaOverride)
+        => entry switch
         {
-            return "series-src--admin";
-        }
-
-        return entry.IsBackfill ? "series-src--backfill" : string.Empty;
-    }
+            { ViaOverride: true } => "series-src--admin",
+            { IsBackfill: true } => "series-src--backfill",
+            _ => string.Empty,
+        };
 
     public static string Points(int? points) => points is { } p ? Num(p) : "—";
 

@@ -452,10 +452,10 @@ public sealed class BackfillOnSeasonStatsGeneratedTests(AppDbContextFixture fixt
         var sweep = CreateSweep(reader, locks);
 
         // Act
-        var act = () => ExecuteAsync(sweep, busy.Series);
+        Task Act() => ExecuteAsync(sweep, busy.Series);
 
         // Assert
-        var exception = await Should.ThrowAsync<InvalidOperationException>(act);
+        var exception = await Should.ThrowAsync<InvalidOperationException>(Act);
         exception.Message.ShouldBe("Backfill failed for 1 Series.");
         (await StoredAsync(other)).BackfillAsOf.ShouldBe(other.Qualifier.EndDate);
         (await StoredAsync(busy)).BackfillAsOf.ShouldBeNull();
@@ -482,10 +482,10 @@ public sealed class BackfillOnSeasonStatsGeneratedTests(AppDbContextFixture fixt
             interceptor: otherWriter);
 
         // Act
-        var act = () => ExecuteAsync(sweep, first.Series);
+        Task Act() => ExecuteAsync(sweep, first.Series);
 
         // Assert
-        var exception = await Should.ThrowAsync<InvalidOperationException>(act);
+        var exception = await Should.ThrowAsync<InvalidOperationException>(Act);
         exception.Message.ShouldBe("Backfill failed for 1 Series.");
         var storedFirst = await StoredAsync(first);
         var storedSecond = await StoredAsync(second);
@@ -511,10 +511,10 @@ public sealed class BackfillOnSeasonStatsGeneratedTests(AppDbContextFixture fixt
         var sweep = CreateSweep(reader, locks);
 
         // Act
-        var act = () => ExecuteAsync(sweep, broken.Series);
+        Task Act() => ExecuteAsync(sweep, broken.Series);
 
         // Assert
-        var exception = await Should.ThrowAsync<InvalidOperationException>(act);
+        var exception = await Should.ThrowAsync<InvalidOperationException>(Act);
         exception.Message.ShouldBe("Backfill failed for 1 Series.");
         (await StoredAsync(other)).BackfillAsOf.ShouldBe(other.Qualifier.EndDate);
         (await StoredAsync(broken)).BackfillAsOf.ShouldBeNull();
@@ -535,10 +535,10 @@ public sealed class BackfillOnSeasonStatsGeneratedTests(AppDbContextFixture fixt
         var sweep = CreateSweep(reader);
 
         // Act
-        var act = () => ExecuteAsync(sweep, first.Series);
+        Task Act() => ExecuteAsync(sweep, first.Series);
 
         // Assert
-        var exception = await Should.ThrowAsync<InvalidOperationException>(act);
+        var exception = await Should.ThrowAsync<InvalidOperationException>(Act);
         exception.Message.ShouldBe("Backfill failed for 2 Series.");
         sweep.Log.Collector.GetSnapshot().Count(record => record.Level == LogLevel.Error).ShouldBe(2);
         (await StoredAsync(first)).BackfillAsOf.ShouldBeNull();
@@ -582,10 +582,10 @@ public sealed class BackfillOnSeasonStatsGeneratedTests(AppDbContextFixture fixt
         var sweep = CreateSweep(FactsReaderDoubles.Untouched(), locks, SeriesCache.Untouched());
 
         // Act
-        var act = () => ExecuteAsync(sweep, scenario.Series);
+        Task Act() => ExecuteAsync(sweep, scenario.Series);
 
         // Assert
-        await Should.ThrowAsync<OperationCanceledException>(act);
+        await Should.ThrowAsync<OperationCanceledException>(Act);
         sweep.Log.Collector.GetSnapshot().ShouldBeEmpty();
         sweep.Db.ChangeTracker.Entries().ShouldBeEmpty();
         (await StoredAsync(scenario)).BackfillAsOf.ShouldBeNull();
@@ -599,10 +599,10 @@ public sealed class BackfillOnSeasonStatsGeneratedTests(AppDbContextFixture fixt
         var sweep = CreateSweep(FactsReaderDoubles.Untouched(), KeyedLockDoubles.Untouched(), SeriesCache.Untouched());
 
         // Act
-        var act = () => sweep.Handler.HandleAsync(null, TestContext.Current.CancellationToken);
+        Task Act() => sweep.Handler.HandleAsync(null, TestContext.Current.CancellationToken);
 
         // Assert
-        await Should.ThrowAsync<ArgumentNullException>(act);
+        await Should.ThrowAsync<ArgumentNullException>(Act);
     }
 #nullable enable
 }

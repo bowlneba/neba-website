@@ -22,19 +22,16 @@ internal static class StageResultRowsReader
             .Select(s => new { s.TournamentId })
             .SingleOrDefaultAsync(cancellationToken);
 
-        if (stage is null)
-        {
-            return null;
-        }
-
-        return await appDbContext.Tournaments.AsNoTracking()
-            .Where(tournament => tournament.Id == stage.TournamentId)
-            .SelectMany(tournament => tournament.Results)
-            .OrderBy(result => result.Place)
-            .ThenBy(result => result.Bowler.Name.LastName)
-            .ThenBy(result => result.Bowler.Name.FirstName)
-            .Select(result => new StageResultPickRow(result.BowlerId, result.Bowler.Name, result.Place))
-            .ToListAsync(cancellationToken);
+        return stage is null
+            ? null
+            : await appDbContext.Tournaments.AsNoTracking()
+                .Where(tournament => tournament.Id == stage.TournamentId)
+                .SelectMany(tournament => tournament.Results)
+                .OrderBy(result => result.Place)
+                .ThenBy(result => result.Bowler.Name.LastName)
+                .ThenBy(result => result.Bowler.Name.FirstName)
+                .Select(result => new StageResultPickRow(result.BowlerId, result.Bowler.Name, result.Place))
+                .ToListAsync(cancellationToken);
     }
 
     /// <summary>The place of every bowler in each of the tournaments, in one query. A tournament with no results has no entry.</summary>

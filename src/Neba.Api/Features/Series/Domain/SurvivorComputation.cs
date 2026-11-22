@@ -32,7 +32,7 @@ internal static class SurvivorComputation
             cutoff = bowled[count - 1].Total;
         }
 
-        var advanced = bowled.Where(x => x.Total >= cutoff).Select(x => x.BowlerId).ToHashSet();
+        var advanced = bowled.FindAll(x => x.Total >= cutoff).Select(x => x.BowlerId).ToHashSet();
 
         return new StageComputation
         {

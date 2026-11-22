@@ -94,10 +94,10 @@ public sealed class AdvanceOnResultsRecordedTests(AppDbContextFixture fixture)
         var run = _harness.CreateRun(FactsReaderDoubles.Reading(script.Build), cache: SeriesCache.Untouched());
 
         // Act
-        var act = () => HandleAsync(run, scenario.Placement.Id);
+        Task Act() => HandleAsync(run, scenario.Placement.Id);
 
         // Assert
-        await Should.NotThrowAsync(act);
+        await Should.NotThrowAsync(Act);
         run.Saves.Saves.ShouldBe(0);
         var stored = await StoredAsync(scenario);
         stored.Version.ShouldBe(0);
@@ -141,10 +141,10 @@ public sealed class AdvanceOnResultsRecordedTests(AppDbContextFixture fixture)
             SeriesCache.Untouched());
 
         // Act
-        var act = () => HandleAsync(run, scenario.Qualifier.Id);
+        Task Act() => HandleAsync(run, scenario.Qualifier.Id);
 
         // Assert
-        var exception = await Should.ThrowAsync<InvalidOperationException>(act);
+        var exception = await Should.ThrowAsync<InvalidOperationException>(Act);
         exception.Message.ShouldContain(SeriesAdvancementErrors.Busy.Code);
         (await StoredAsync(scenario)).Version.ShouldBe(0);
     }
@@ -157,10 +157,10 @@ public sealed class AdvanceOnResultsRecordedTests(AppDbContextFixture fixture)
         var run = _harness.CreateRun(FactsReaderDoubles.Untouched(), KeyedLockDoubles.Untouched(), SeriesCache.Untouched());
 
         // Act
-        var act = () => new Handler(run.Run).HandleAsync(null, TestContext.Current.CancellationToken);
+        Task Act() => new Handler(run.Run).HandleAsync(null, TestContext.Current.CancellationToken);
 
         // Assert
-        await Should.ThrowAsync<ArgumentNullException>(act);
+        await Should.ThrowAsync<ArgumentNullException>(Act);
     }
 #nullable enable
 }

@@ -46,20 +46,18 @@ public sealed class StageOverride
         }
 
         var trimmed = reason.Trim();
-        if (trimmed.Length > ReasonMaxLength)
-        {
-            return SeriesAdvancementErrors.OverrideReasonTooLong(ReasonMaxLength);
-        }
 
-        return new StageOverride
-        {
-            Id = StageOverrideId.New(),
-            BowlerId = bowlerId,
-            Kind = kind,
-            Reason = trimmed,
-            CreatedBy = createdBy,
-            CreatedAt = createdAt,
-            Applied = true,
-        };
+        return trimmed.Length > ReasonMaxLength
+            ? SeriesAdvancementErrors.OverrideReasonTooLong(ReasonMaxLength)
+            : new StageOverride
+            {
+                Id = StageOverrideId.New(),
+                BowlerId = bowlerId,
+                Kind = kind,
+                Reason = trimmed,
+                CreatedBy = createdBy,
+                CreatedAt = createdAt,
+                Applied = true,
+            };
     }
 }

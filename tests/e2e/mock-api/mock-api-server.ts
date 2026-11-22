@@ -905,11 +905,8 @@ async function handleAdvancementWrite(req: IncomingMessage, res: ServerResponse,
   if (!match || match[2] === 'advancement') return false;
 
   const action = match[4];
-  const isWrite =
-    (req.method === 'POST' && (action === 'recomputations' || action === 'overrides') && !match[5]) ||
-    (req.method === 'PUT' && action === 'squad' && !match[5]) ||
-    (req.method === 'DELETE' && action === 'overrides' && !!match[5]);
-  if (!isWrite) return false;
+  const overrideId = match[5];
+  if (!isAdvancementWriteRoute(req.method, action, !!overrideId)) return false;
 
   if (sendMockOverrideErrorIfSet(res, pathname)) return true;
 
@@ -920,117 +917,121 @@ async function handleAdvancementWrite(req: IncomingMessage, res: ServerResponse,
     return true;
   }
 
-  const staleVersion = () => {
-    sendAdvancementError(res, 409, 'Series.Version', 'The Series changed since you loaded it. Reload and try again.');
-    return true;
-  };
-  const noContent = () => {
-    res.writeHead(204);
-    res.end();
-    return true;
-  };
-
   if (req.method === 'DELETE') {
     lastRequestBodies.set('DELETE ' + pathname, JSON.stringify({ version: Number(requestUrl.searchParams.get('version')) }));
-    const index = stage.overrides.findIndex((o) => o.overrideId === match[5]);
-    // A missing override is 204 before the Version check (delete is idempotent).
-    if (index < 0) return noContent();
-    if (Number(requestUrl.searchParams.get('version')) !== state.version) return staleVersion();
-    if (stage.status !== 'Computed') {
-      sendAdvancementError(res, 409, 'Series.Stage', 'The Stage is not Computed, so its overrides cannot change.');
-      return true;
-    }
-
-    const [removed] = stage.overrides.splice(index, 1);
-    if (removed.kind === 'Add') {
-      stage.entries = stage.entries.filter((e) => !(e.bowlerId === removed.bowlerId && e.viaOverride));
-    } else {
-      const row = state.results[stage.stageId]?.find((r) => r.bowlerId === removed.bowlerId);
-      stage.entries.push({ bowlerId: removed.bowlerId, bowlerName: removed.bowlerName, sourceStageId: stage.stageId, place: row?.place, viaOverride: false });
-      stage.entries.sort((a, b) => (a.place ?? 999) - (b.place ?? 999));
-      stage.vacantSlotCount = Math.max(0, (stage.vacantSlotCount ?? 0) - 1);
-    }
-    state.version++;
-    return noContent();
+    handleOverrideDelete(res, state, stage, overrideId, Number(requestUrl.searchParams.get('version')));
+    return true;
   }
 
   const body = await readRequestBody(req);
   lastRequestBodies.set(req.method + ' ' + pathname, body);
 
-  if (action === 'overrides') {
-    const input = advBodyProp<Record<string, unknown>>(body, 'stageOverride');
-    const kind = advField<number>(input, 'kind');
-    const bowlerId = advField<string>(input, 'bowlerId') ?? '';
-    const reason = (advField<string>(input, 'reason') ?? '').trim();
+  if (action === 'overrides') handleOverrideCreate(res, state, stage, body);
+  else if (action === 'squad') handleSquadReplace(res, state, stage, body);
+  else handleRecompute(res, state, stage, body);
+  return true;
+}
 
-    if (advField<number>(input, 'version') !== state.version) return staleVersion();
-    if (!reason) {
-      sendAdvancementError(res, 422, 'StageOverride.Reason', 'A reason is required.');
-      return true;
-    }
-    if (reason.length > 500) {
-      sendAdvancementError(res, 422, 'StageOverride.Reason', 'The reason must be 500 characters or fewer.');
-      return true;
-    }
-    if (stage.kind !== 'Qualifying') {
-      sendAdvancementError(res, 422, 'Series.Stage', 'Only a Qualifying Stage takes an override.');
-      return true;
-    }
-    if (stage.status !== 'Computed') {
-      sendAdvancementError(res, 409, 'Series.Stage', 'The Stage is not Computed, so it cannot take an override.');
-      return true;
-    }
+function isAdvancementWriteRoute(method: string | undefined, action: string, hasOverrideId: boolean): boolean {
+  if (method === 'POST') return (action === 'recomputations' || action === 'overrides') && !hasOverrideId;
+  if (method === 'PUT') return action === 'squad' && !hasOverrideId;
+  return method === 'DELETE' && action === 'overrides' && hasOverrideId;
+}
 
-    const created = advApplyOverride(state, stage, kind === OVERRIDE_KIND_CLEAR ? 'Clear' : 'Add', bowlerId, reason);
-    if ('status' in created) {
-      sendAdvancementError(res, created.status, created.name, created.reason);
-      return true;
-    }
+function sendAdvancementStale(res: ServerResponse): void {
+  sendAdvancementError(res, 409, 'Series.Version', 'The Series changed since you loaded it. Reload and try again.');
+}
 
-    sendJsonResponse(res, { overrideId: created.overrideId, version: state.version }, 201);
-    return true;
+function sendNoContent(res: ServerResponse): void {
+  res.writeHead(204);
+  res.end();
+}
+
+function handleOverrideDelete(res: ServerResponse, state: AdvState, stage: AdvStage, overrideId: string, version: number): void {
+  const index = stage.overrides.findIndex((o) => o.overrideId === overrideId);
+  // A missing override is 204 before the Version check (delete is idempotent).
+  if (index < 0) return sendNoContent(res);
+  if (version !== state.version) return sendAdvancementStale(res);
+  if (stage.status !== 'Computed') {
+    return sendAdvancementError(res, 409, 'Series.Stage', 'The Stage is not Computed, so its overrides cannot change.');
   }
 
-  if (action === 'squad') {
-    const input = advBodyProp<Record<string, unknown>>(body, 'squad');
-    const squadId = advField<string>(input, 'squadId');
+  const [removed] = stage.overrides.splice(index, 1);
+  if (removed.kind === 'Add') {
+    stage.entries = stage.entries.filter((e) => !(e.bowlerId === removed.bowlerId && e.viaOverride));
+  } else {
+    const row = state.results[stage.stageId]?.find((r) => r.bowlerId === removed.bowlerId);
+    stage.entries.push({ bowlerId: removed.bowlerId, bowlerName: removed.bowlerName, sourceStageId: stage.stageId, place: row?.place, viaOverride: false });
+    stage.entries.sort((a, b) => (a.place ?? 999) - (b.place ?? 999));
+    stage.vacantSlotCount = Math.max(0, (stage.vacantSlotCount ?? 0) - 1);
+  }
+  state.version++;
+  sendNoContent(res);
+}
 
-    if (advField<number>(input, 'version') !== state.version) return staleVersion();
-    if (stage.kind !== 'Survivor') {
-      sendAdvancementError(res, 422, 'Series.Stage', 'Only a Survivor Stage takes a squad.');
-      return true;
-    }
-    if (!state.squads[stage.stageId]?.some((s) => s.squadId === squadId)) {
-      sendAdvancementError(res, 422, 'Squad.SquadId', 'The tournament has no such squad.');
-      return true;
-    }
+// The first rule an override request breaks, or null when it is valid.
+function overrideRequestError(stage: AdvStage, reason: string): { status: number; name: string; reason: string } | null {
+  if (!reason) return { status: 422, name: 'StageOverride.Reason', reason: 'A reason is required.' };
+  if (reason.length > 500) return { status: 422, name: 'StageOverride.Reason', reason: 'The reason must be 500 characters or fewer.' };
+  if (stage.kind !== 'Qualifying') return { status: 422, name: 'Series.Stage', reason: 'Only a Qualifying Stage takes an override.' };
+  if (stage.status !== 'Computed') return { status: 409, name: 'Series.Stage', reason: 'The Stage is not Computed, so it cannot take an override.' };
+  return null;
+}
 
-    const previous = state.stages[stage.order - 2];
-    if (stage.tournamentStatus === 'Completed' && previous && previous.status !== 'Pending') {
-      advComputeSurvivor(state, stage, false, squadId);
-    } else {
-      // The Stage cannot compute yet: only the squad is chosen.
-      stage.resolvedSquadId = squadId;
-      stage.needsSquad = false;
-    }
-    stage.isStale = false;
-    state.version++;
-    return noContent();
+function handleOverrideCreate(res: ServerResponse, state: AdvState, stage: AdvStage, body: string): void {
+  const input = advBodyProp<Record<string, unknown>>(body, 'stageOverride');
+  const kind = advField<number>(input, 'kind');
+  const bowlerId = advField<string>(input, 'bowlerId') ?? '';
+  const reason = (advField<string>(input, 'reason') ?? '').trim();
+
+  if (advField<number>(input, 'version') !== state.version) return sendAdvancementStale(res);
+
+  const invalid = overrideRequestError(stage, reason);
+  if (invalid) return sendAdvancementError(res, invalid.status, invalid.name, invalid.reason);
+
+  const created = advApplyOverride(state, stage, kind === OVERRIDE_KIND_CLEAR ? 'Clear' : 'Add', bowlerId, reason);
+  if ('status' in created) return sendAdvancementError(res, created.status, created.name, created.reason);
+
+  sendJsonResponse(res, { overrideId: created.overrideId, version: state.version }, 201);
+}
+
+function handleSquadReplace(res: ServerResponse, state: AdvState, stage: AdvStage, body: string): void {
+  const input = advBodyProp<Record<string, unknown>>(body, 'squad');
+  const squadId = advField<string>(input, 'squadId');
+
+  if (advField<number>(input, 'version') !== state.version) return sendAdvancementStale(res);
+  if (stage.kind !== 'Survivor') {
+    return sendAdvancementError(res, 422, 'Series.Stage', 'Only a Survivor Stage takes a squad.');
+  }
+  if (!state.squads[stage.stageId]?.some((s) => s.squadId === squadId)) {
+    return sendAdvancementError(res, 422, 'Squad.SquadId', 'The tournament has no such squad.');
   }
 
-  // recomputations
+  const previous = state.stages[stage.order - 2];
+  if (stage.tournamentStatus === 'Completed' && previous && previous.status !== 'Pending') {
+    advComputeSurvivor(state, stage, false, squadId);
+  } else {
+    // The Stage cannot compute yet: only the squad is chosen.
+    stage.resolvedSquadId = squadId;
+    stage.needsSquad = false;
+  }
+  stage.isStale = false;
+  state.version++;
+  sendNoContent(res);
+}
+
+function handleRecompute(res: ServerResponse, state: AdvState, stage: AdvStage, body: string): void {
   const input = advBodyProp<Record<string, unknown>>(body, 'recomputation');
-  if (advField<number>(input, 'version') !== state.version) return staleVersion();
+  if (advField<number>(input, 'version') !== state.version) return sendAdvancementStale(res);
 
   const inRange = state.stages.filter((s) => s.order >= stage.order);
   const official = inRange.filter((s) => s.status === 'Official');
   if (official.length > 0 && advField<boolean>(input, 'confirmResetOfficial') !== true) {
-    sendJsonResponse(res, {
+    return sendJsonResponse(res, {
       status: 409,
       title: 'One or more validation errors occurred.',
       errors: official.map((s) => ({ name: `Series.Stages[${s.order - 1}]`, reason: 'Recomputing resets this Official Stage to Computed.' })),
     }, 409);
-    return true;
   }
 
   let changed = false;
@@ -1048,7 +1049,7 @@ async function handleAdvancementWrite(req: IncomingMessage, res: ServerResponse,
   }
   // A no-op recompute writes nothing, so Version stays.
   if (changed) state.version++;
-  return noContent();
+  sendNoContent(res);
 }
 
 const OVERRIDE_KIND_CLEAR = 2;

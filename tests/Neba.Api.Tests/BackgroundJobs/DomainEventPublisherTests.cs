@@ -232,7 +232,7 @@ public sealed class DomainEventPublisherTests
 
         // Act
         var exception = Should.Throw<InvalidOperationException>(() => publisher.PublishAndClear(aggregate));
-        var afterFailure = created.Select(j => j.Args[0]).ToList();
+        var afterFailure = created.ConvertAll(j => j.Args[0]);
         var eventsAfterFailure = aggregate.DomainEvents.ToList();
 
         failOnSecond = false;

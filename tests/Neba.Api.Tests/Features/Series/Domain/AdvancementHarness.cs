@@ -181,14 +181,12 @@ internal sealed class AdvancementHarness
     }
 
     private static StageResultRow Swapped(StageResultRow row, BowlerId first, BowlerId second)
-    {
-        if (row.BowlerId == first)
+        => row.BowlerId switch
         {
-            return row with { Place = 2 };
-        }
-
-        return row.BowlerId == second ? row with { Place = 1 } : row;
-    }
+            var id when id == first => row with { Place = 2 },
+            var id when id == second => row with { Place = 1 },
+            _ => row,
+        };
 
     /// <summary>Replaces the members on a Stage's tournament end date.</summary>
     public AdvancementHarness SetMembers(int order, IEnumerable<BowlerId> members)

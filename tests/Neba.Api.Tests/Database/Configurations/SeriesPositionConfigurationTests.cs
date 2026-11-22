@@ -64,8 +64,9 @@ public sealed class SeriesPositionConfigurationTests(AppDbContextFixture fixture
 
         // Act
         var keyNames = entity.FindPrimaryKey()!.Properties.Select(p => p.Name).ToList();
+        string[] positionIndexColumns = [SeriesConfiguration.ForeignKeyName, nameof(SeriesPosition.Position)];
         var positionIndex = entity.GetIndexes().Single(index => index.Properties.Select(p => p.Name)
-            .SequenceEqual(new[] { SeriesConfiguration.ForeignKeyName, nameof(SeriesPosition.Position) }));
+            .SequenceEqual(positionIndexColumns));
 
         // Assert
         keyNames.ShouldBe([SeriesConfiguration.ForeignKeyName, nameof(SeriesPosition.BowlerId)]);

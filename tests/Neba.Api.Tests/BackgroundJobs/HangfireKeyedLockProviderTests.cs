@@ -84,9 +84,9 @@ public sealed class HangfireKeyedLockProviderTests : IDisposable
         await cts.CancelAsync();
 
         // Act
-        var act = () => _provider.TryAcquireAsync(Key, Wait, cts.Token);
+        Task<IDisposable?> Act() => _provider.TryAcquireAsync(Key, Wait, cts.Token);
 
         // Assert
-        await Should.ThrowAsync<OperationCanceledException>(act);
+        await Should.ThrowAsync<OperationCanceledException>(Act);
     }
 }

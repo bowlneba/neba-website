@@ -71,10 +71,10 @@ public sealed class CreateStageOverrideEndpointTests
         var endpoint = Factory.Create<CreateStageOverrideEndpoint>(AsCaller(caller), handler.Object);
 
         // Act
-        var act = async () => await endpoint.HandleAsync(request, ct);
+        Task Act() => endpoint.HandleAsync(request, ct);
 
         // Assert
-        var exception = await Should.ThrowAsync<InvalidOperationException>(act);
+        var exception = await Should.ThrowAsync<InvalidOperationException>(Act);
         exception.Message.ShouldContain("LinkGenerator");
         captured.ShouldNotBeNull();
         captured.SeriesId.ShouldBe(new SeriesId(request.Id));

@@ -119,10 +119,10 @@ public partial class SeriesDetail
         await LoadAdvancementAsync();
     }
 
-    private async Task RetryAdvancementAsync()
+    private Task RetryAdvancementAsync()
     {
         _advancementState = AdvancementState.Loading;
-        await LoadAdvancementAsync();
+        return LoadAdvancementAsync();
     }
 
     /// <summary>
@@ -132,14 +132,15 @@ public partial class SeriesDetail
     private async Task LoadAdvancementAsync()
     {
         HttpStatusCode? status = null;
-        Func<CancellationToken, Task<IApiResponse<SeriesAdvancementResponse>>> call = async ct =>
+
+        async Task<IApiResponse<SeriesAdvancementResponse>> CallAsync(CancellationToken ct)
         {
             var response = await SeriesApi.GetSeriesAdvancementAsync(Id, ct);
             status = response.StatusCode;
             return response;
-        };
+        }
 
-        var result = await ApiExecutor.ExecuteAsync("SeriesApi", "GetSeriesAdvancement", call);
+        var result = await ApiExecutor.ExecuteAsync("SeriesApi", "GetSeriesAdvancement", CallAsync);
 
         if (result.IsError)
         {

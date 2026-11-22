@@ -16,7 +16,7 @@ public sealed class BowlerForeignKeyInventoryTests(AppDbContextFixture fixture)
     public async Task Model_ShouldListEveryBowlerForeignKey()
     {
         // Arrange
-        using var context = fixture.CreateDbContext();
+        await using var context = fixture.CreateDbContext();
 
         // Act
         var inventory = context.Model.GetEntityTypes()

@@ -152,10 +152,10 @@ public sealed class AdvanceOnSquadsChangedTests(AppDbContextFixture fixture)
             SeriesCache.Untouched());
 
         // Act
-        var act = () => HandleAsync(run, scenario.Survivor.Id);
+        Task Act() => HandleAsync(run, scenario.Survivor.Id);
 
         // Assert
-        var exception = await Should.ThrowAsync<InvalidOperationException>(act);
+        var exception = await Should.ThrowAsync<InvalidOperationException>(Act);
         exception.Message.ShouldContain(SeriesAdvancementErrors.Busy.Code);
         (await StoredAsync(scenario)).Version.ShouldBe(0);
     }
@@ -175,10 +175,10 @@ public sealed class AdvanceOnSquadsChangedTests(AppDbContextFixture fixture)
         var run = _harness.CreateRun(FactsReaderDoubles.Reading(script.Build), cache: SeriesCache.Untouched(), extraInterceptor: otherWriter);
 
         // Act
-        var act = () => HandleAsync(run, scenario.Survivor.Id);
+        Task Act() => HandleAsync(run, scenario.Survivor.Id);
 
         // Assert
-        var exception = await Should.ThrowAsync<InvalidOperationException>(act);
+        var exception = await Should.ThrowAsync<InvalidOperationException>(Act);
         exception.Message.ShouldContain(SeriesAdvancementErrors.ConcurrentChange.Code);
         var stored = await StoredAsync(scenario);
         stored.Version.ShouldBe(1);
@@ -193,10 +193,10 @@ public sealed class AdvanceOnSquadsChangedTests(AppDbContextFixture fixture)
         var run = _harness.CreateRun(FactsReaderDoubles.Untouched(), KeyedLockDoubles.Untouched(), SeriesCache.Untouched());
 
         // Act
-        var act = () => new Handler(run.Run).HandleAsync(null, TestContext.Current.CancellationToken);
+        Task Act() => new Handler(run.Run).HandleAsync(null, TestContext.Current.CancellationToken);
 
         // Assert
-        await Should.ThrowAsync<ArgumentNullException>(act);
+        await Should.ThrowAsync<ArgumentNullException>(Act);
     }
 #nullable enable
 }

@@ -206,12 +206,9 @@ public sealed partial class Series
             return SeriesAdvancementErrors.BowlerAlreadyInField;
         }
 
-        if (stage.Overrides.Any(o => o.BowlerId == bowlerId))
-        {
-            return SeriesAdvancementErrors.OverrideExists;
-        }
-
-        return ApplyOverride(stage, OverrideKind.Add, bowlerId, reason, createdBy, facts, now);
+        return stage.Overrides.Any(o => o.BowlerId == bowlerId)
+            ? SeriesAdvancementErrors.OverrideExists
+            : ApplyOverride(stage, OverrideKind.Add, bowlerId, reason, createdBy, facts, now);
     }
 
     /// <summary>Vacates the slot a bowler holds in the Stage and bars the bowler from the Backfill, then recomputes inline.</summary>
@@ -234,12 +231,9 @@ public sealed partial class Series
             return SeriesAdvancementErrors.OverrideExists;
         }
 
-        if (!_fieldEntries.Exists(e => e.SourceStageId == stage.Id && !e.ViaOverride && e.BowlerId == bowlerId))
-        {
-            return SeriesAdvancementErrors.BowlerNotInSlot;
-        }
-
-        return ApplyOverride(stage, OverrideKind.Clear, bowlerId, reason, createdBy, facts, now);
+        return _fieldEntries.Exists(e => e.SourceStageId == stage.Id && !e.ViaOverride && e.BowlerId == bowlerId)
+            ? ApplyOverride(stage, OverrideKind.Clear, bowlerId, reason, createdBy, facts, now)
+            : SeriesAdvancementErrors.BowlerNotInSlot;
     }
 
     /// <summary>
@@ -310,12 +304,12 @@ public sealed partial class Series
             return version.Errors;
         }
 
-        if (stage.Kind != StageKind.Qualifying)
+        return stage switch
         {
-            return SeriesAdvancementErrors.NotQualifyingStage;
-        }
-
-        return stage.Status == StageStatus.Computed ? stage : SeriesAdvancementErrors.StageNotComputed(stage.Status);
+            _ when stage.Kind != StageKind.Qualifying => SeriesAdvancementErrors.NotQualifyingStage,
+            _ when stage.Status != StageStatus.Computed => SeriesAdvancementErrors.StageNotComputed(stage.Status),
+            _ => stage,
+        };
     }
 
     // ---------- the fold ----------
@@ -427,12 +421,8 @@ public sealed partial class Series
             return false;
         }
 
-        if (previous is not null && previous.Status == StageStatus.Pending)
-        {
-            return false;
-        }
-
-        if (stage.Kind != StageKind.Qualifying && BackfillAsOf is null)
+        if ((previous is not null && previous.Status == StageStatus.Pending)
+            || (stage.Kind != StageKind.Qualifying && BackfillAsOf is null))
         {
             return false;
         }

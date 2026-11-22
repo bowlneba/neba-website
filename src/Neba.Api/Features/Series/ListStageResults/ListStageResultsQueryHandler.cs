@@ -14,13 +14,10 @@ internal sealed class ListStageResultsQueryHandler(AppDbContext appDbContext)
     {
         var rows = await StageResultRowsReader.ReadAsync(appDbContext, query.SeriesId, query.StageId, cancellationToken);
 
-        if (rows is null)
-        {
-            return SeriesAdvancementErrors.StageNotFound(query.StageId);
-        }
-
-        return rows
-            .Select(row => new StageResultSummaryDto(row.BowlerId, row.BowlerName.ToDisplayName(), row.Place))
-            .ToList();
+        return rows is null
+            ? SeriesAdvancementErrors.StageNotFound(query.StageId)
+            : rows
+                .Select(row => new StageResultSummaryDto(row.BowlerId, row.BowlerName.ToDisplayName(), row.Place))
+                .ToList();
     }
 }

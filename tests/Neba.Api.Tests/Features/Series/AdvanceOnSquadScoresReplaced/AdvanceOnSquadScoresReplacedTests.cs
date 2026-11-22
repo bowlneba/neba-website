@@ -187,10 +187,10 @@ public sealed class AdvanceOnSquadScoresReplacedTests(AppDbContextFixture fixtur
         var run = _harness.CreateRun(FactsReaderDoubles.Untouched(), KeyedLockDoubles.Untouched(), SeriesCache.Untouched());
 
         // Act
-        var act = () => new Handler(run.Run).HandleAsync(null, TestContext.Current.CancellationToken);
+        Task Act() => new Handler(run.Run).HandleAsync(null, TestContext.Current.CancellationToken);
 
         // Assert
-        await Should.ThrowAsync<ArgumentNullException>(act);
+        await Should.ThrowAsync<ArgumentNullException>(Act);
     }
 #nullable enable
 }

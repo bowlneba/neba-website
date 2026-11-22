@@ -333,10 +333,10 @@ public sealed class CreateStageOverrideCommandHandlerTests(AppDbContextFixture f
         var handler = new CreateStageOverrideCommandHandler(_context.Run().Run);
 
         // Act
-        var act = async () => await handler.HandleAsync(null, TestContext.Current.CancellationToken);
+        Task Act() => handler.HandleAsync(null, TestContext.Current.CancellationToken);
 
         // Assert
-        await Should.ThrowAsync<ArgumentNullException>(act);
+        await Should.ThrowAsync<ArgumentNullException>(Act);
     }
 #nullable enable
 }
