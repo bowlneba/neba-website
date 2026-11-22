@@ -22,6 +22,8 @@ concurrency:
 env:
   SIXLABORS_LICENSE_KEY: ${{ secrets.SIXLABORS_LICENSE_KEY }}
   MODE: ${{ inputs.mode }}
+  # Staging has no DNS. Without this the AppHost fails on a blank custom domain, as production must.
+  CustomDomains__AllowNone: "true"
 
 jobs:
   deploy:
@@ -107,8 +109,8 @@ jobs:
           Parameters__concurrentRequests: ${{ vars.AZURE_CONTAINERAPP_CONCURRENT_REQUESTS }}
         run: .github/scripts/whatif-guard.sh
 
-      # Custom domains are left unset on purpose: staging has no DNS, and the AppHost skips a
-      # domain whose parameter is empty. Migrations__Run is what registers the run-migrations step
+      # Custom domains are left unset on purpose: staging has no DNS, and CustomDomains__AllowNone
+      # (set above) tells the AppHost to skip a domain whose parameter is empty. Migrations__Run is what registers the run-migrations step
       # (see MigrationPipelineStep.cs): set in full mode, empty in hotfix mode, which deploys only
       # the api and web steps and fails if the migration step shows up in the log.
       - name: Deploy

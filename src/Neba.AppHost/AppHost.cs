@@ -270,12 +270,13 @@ if (builder.ExecutionContext.IsPublishMode)
     // feed its name back in via the certificate-name parameter (AZURE_*_CERTIFICATE_NAME repo var) - that permanently
     // binds it (BindingType SniEnabled) from then on.
     //
-    // A custom domain is declared only when its parameter has a value, so an environment with
-    // no DNS (staging) deploys without binding any hostname. Production always sets all of them.
+    // The web and api domains are required: a blank value fails the deploy, so a renamed or empty
+    // repo variable cannot ship the apps without their hostnames. An environment with no DNS
+    // (staging) sets CustomDomains__AllowNone=true to deploy without binding any hostname.
     // CustomDomainBinding reads configuration (Parameters__<name> or user secrets) only, not a
     // value that Aspire prompts for or keeps in deploy state.
-    var webDomain = CustomDomainBinding.AddIfConfigured(builder, "webCustomDomain", "webCertificateName");
-    var apiDomain = CustomDomainBinding.AddIfConfigured(builder, "apiCustomDomain", "apiCertificateName");
+    var webDomain = CustomDomainBinding.AddRequired(builder, "webCustomDomain", "webCertificateName");
+    var apiDomain = CustomDomainBinding.AddRequired(builder, "apiCustomDomain", "apiCertificateName");
 
     // Optional second hostname on the web app (www.<apex>). The app redirects www to the apex,
     // so www must reach the container app over HTTPS, which needs its own binding and managed
