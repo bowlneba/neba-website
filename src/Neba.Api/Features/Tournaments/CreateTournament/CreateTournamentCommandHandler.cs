@@ -103,6 +103,9 @@ internal sealed class CreateTournamentCommandHandler(
 
         await cache.RemoveByTagAsync($"neba:tournaments:{season.Id}", token: cancellationToken);
 
+        await TournamentSuccessorCacheEviction.EvictPredecessorSeasonsAsync(
+            appDbContext, cache, [tournament.PreviousTournamentId], cancellationToken);
+
         var now = timeProvider.GetUtcNow();
 
         if (tournament.OilPatternRevealDateTime is { } revealAt && revealAt > now)

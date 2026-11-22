@@ -135,6 +135,9 @@ public sealed record SeasonTournamentDto
     /// </summary>
     public IReadOnlyCollection<DefendingTeamDto> DefendingChampions { get; init; } = [];
 
+    /// <summary>The tournament that names this one as its previous tournament, or null when none does.</summary>
+    public TournamentId? NextTournamentId { get; init; }
+
     /// <summary>The Series this tournament is a Stage of, or null.</summary>
     public TournamentSeriesDto? Series { get; init; }
 }

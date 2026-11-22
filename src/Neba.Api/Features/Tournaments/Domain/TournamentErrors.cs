@@ -141,6 +141,13 @@ internal static class TournamentErrors
             description: "The previous tournament was not found.",
             metadata: new Dictionary<string, object> { { "PreviousTournamentId", id.ToString() } });
 
+    // Conflict: the input is valid, but another tournament already follows the chosen one.
+    public static Error PreviousTournamentAlreadyUsed(TournamentId id)
+        => Error.Conflict(
+            code: "Tournament.PreviousTournament.AlreadyUsed",
+            description: "Another tournament already uses this tournament as its previous tournament.",
+            metadata: new Dictionary<string, object> { { "PreviousTournamentId", id.ToString() } });
+
     public static Error SponsorNotFound(SponsorId sponsorId)
         => Error.Conflict(
             code: "Tournament.SponsorNotFound",

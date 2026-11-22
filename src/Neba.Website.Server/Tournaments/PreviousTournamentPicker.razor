@@ -101,7 +101,7 @@
         }
     }
 
-    // Candidates: same type, ended before this one starts, from the three seasons before the start date.
+    // Candidates: same type, ended before this one starts, not yet followed by another tournament, from the three seasons before the start date.
     private async Task LoadCandidatesAsync()
     {
         _loadFailed = false;
@@ -156,14 +156,17 @@
             return;
         }
 
-        // A cancelled tournament has no winners, so it never defends anything.
+        // A cancelled tournament has no winners, so it never defends anything. A tournament can be the previous
+        // tournament of one other tournament only, so one that another tournament already follows is not offered
+        // (the tournament being edited still sees its own choice).
         _candidates =
         [
             .. prior.SelectMany(season => _bySeason[season.Id])
                 .Where(tournament => tournament.TournamentType == TournamentType
                     && tournament.EndDate < start
                     && tournament.Id != SelfId
-                    && !tournament.IsCancelled)
+                    && !tournament.IsCancelled
+                    && (tournament.NextTournamentId is null || tournament.NextTournamentId == SelfId))
                 .OrderByDescending(tournament => tournament.StartDate)
         ];
     }

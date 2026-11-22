@@ -70,7 +70,7 @@ internal sealed class EditTournamentCommandHandler(
         }
 
         var previousTournament = await PreviousTournamentResolver.ResolveAsync(
-            appDbContext, command.PreviousTournamentId, cancellationToken);
+            appDbContext, command.PreviousTournamentId, cancellationToken, tournament.Id);
 
         if (previousTournament.IsError)
         {
@@ -79,6 +79,7 @@ internal sealed class EditTournamentCommandHandler(
 
         (Season season, PatternLengthCategory? patternLengthCategory, PatternRatioCategory? patternRatioCategory) = resolveResult.Value;
 
+        var oldPreviousTournamentId = tournament.PreviousTournamentId;
         var previousSeasonId = tournament.SeasonId;
         var previousStatsEligible = tournament.StatsEligible;
         var previousChampionDetails = (tournament.Name, tournament.EndDate, tournament.TournamentType);
@@ -129,6 +130,12 @@ internal sealed class EditTournamentCommandHandler(
         await TournamentPendingUploadCleaner.RemoveClaimedAsync(appDbContext, command.Logo, cancellationToken);
 
         await appDbContext.SaveChangesAsync(cancellationToken);
+
+        if (oldPreviousTournamentId != tournament.PreviousTournamentId)
+        {
+            await TournamentSuccessorCacheEviction.EvictPredecessorSeasonsAsync(
+                appDbContext, cache, [oldPreviousTournamentId, tournament.PreviousTournamentId], cancellationToken);
+        }
 
         await EvictCachesAsync(
             tournament.Id,

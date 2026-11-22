@@ -1,5 +1,7 @@
 using ErrorOr;
 
+using Microsoft.EntityFrameworkCore;
+
 using Neba.Api.Database;
 using Neba.Api.Features.Seasons.Domain;
 using Neba.Api.Features.Tournaments;
@@ -79,5 +81,63 @@ public sealed class PreviousTournamentResolverTests(AppDbContextFixture fixture)
         result.IsError.ShouldBeTrue();
         result.FirstError.Type.ShouldBe(ErrorType.Conflict);
         result.FirstError.Code.ShouldBe("Tournament.PreviousTournament.NotFound");
+    }
+
+    private async Task<Tournament> SeedTournamentAsync(int year, Tournament? previous, CancellationToken ct)
+    {
+        var season = await _dbContext.Seasons.FirstOrDefaultAsync(ct);
+
+        if (season is null)
+        {
+            season = SeasonFactory.Create(startDate: new DateOnly(2020, 1, 1), endDate: new DateOnly(2030, 12, 31));
+            await _dbContext.Seasons.AddAsync(season, ct);
+        }
+
+        var tournament = TournamentFactory.Create(
+            tournamentType: TournamentType.Doubles,
+            startDate: new DateOnly(year, 3, 7),
+            endDate: new DateOnly(year, 3, 8),
+            seasonId: season.Id,
+            previousTournament: previous is null
+                ? null
+                : PreviousTournamentFactsFactory.Create(previous.Id, TournamentType.Doubles, previous.EndDate));
+        await _dbContext.Tournaments.AddAsync(tournament, ct);
+        await _dbContext.SaveChangesAsync(ct);
+
+        return tournament;
+    }
+
+    [Fact(DisplayName = "ResolveAsync returns a conflict error when another tournament already follows the tournament")]
+    public async Task ResolveAsync_ShouldReturnConflictError_WhenAnotherTournamentFollowsIt()
+    {
+        // Arrange
+        var ct = TestContext.Current.CancellationToken;
+        var first = await SeedTournamentAsync(2024, null, ct);
+        await SeedTournamentAsync(2025, first, ct);
+
+        // Act
+        var result = await PreviousTournamentResolver.ResolveAsync(_dbContext, first.Id, ct);
+
+        // Assert
+        result.IsError.ShouldBeTrue();
+        result.FirstError.Type.ShouldBe(ErrorType.Conflict);
+        result.FirstError.Code.ShouldBe("Tournament.PreviousTournament.AlreadyUsed");
+    }
+
+    [Fact(DisplayName = "ResolveAsync accepts the tournament when the only tournament that follows it is the one being edited")]
+    public async Task ResolveAsync_ShouldReturnFacts_WhenOnlyTheEditedTournamentFollowsIt()
+    {
+        // Arrange
+        var ct = TestContext.Current.CancellationToken;
+        var first = await SeedTournamentAsync(2024, null, ct);
+        var second = await SeedTournamentAsync(2025, first, ct);
+
+        // Act
+        var result = await PreviousTournamentResolver.ResolveAsync(_dbContext, first.Id, ct, second.Id);
+
+        // Assert
+        result.IsError.ShouldBeFalse();
+        result.Value.ShouldNotBeNull();
+        result.Value.Value.Id.ShouldBe(first.Id);
     }
 }
