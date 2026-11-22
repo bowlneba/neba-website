@@ -126,8 +126,7 @@ internal sealed class ListTournamentsInSeasonQueryHandler(
                 .Where(tournament => rowIds.Contains(tournament.PreviousTournamentId))
                 .Select(tournament => new { tournament.Id, tournament.PreviousTournamentId })
                 .ToListAsync(cancellationToken))
-            .GroupBy(next => next.PreviousTournamentId!.Value)
-            .ToDictionary(group => group.Key, group => group.First().Id);
+            .ToDictionary(next => next.PreviousTournamentId!.Value, next => next.Id);
 
         var seriesByTournament = await tournamentSeriesReader.LoadAsync([.. rows.Select(row => row.Id)], cancellationToken);
 
