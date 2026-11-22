@@ -6,6 +6,7 @@ public static class DefendingTeamViewModelFactory
 {
     public const string ValidTournamentName = "Joe's Pizza Open";
     public const string ValidSeasonDescription = "2025 Season";
+    public const int ValidConsecutiveTitles = 1;
 
     public static DefendingTeamViewModel Create(
         string? tournamentName = null,
@@ -20,5 +21,5 @@ public static class DefendingTeamViewModelFactory
             sourceTruncated ?? false,
             undefended ?? false,
             champions ?? ["Dave Smith"],
-            consecutiveTitles ?? 1);
+            consecutiveTitles ?? ValidConsecutiveTitles);
 }

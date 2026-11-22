@@ -52,7 +52,7 @@
     width: 3rem;
     height: 3rem;
     border-radius: 50%;
-    background: radial-gradient(circle at 30% 25%, #f7dc93, var(--neba-gold) 55%, var(--neba-gold-deep));
+    background: radial-gradient(circle at 30% 25%, var(--neba-gold-light), var(--neba-gold) 55%, var(--neba-gold-deep));
     border: 2px solid var(--neba-bg-panel);
     box-shadow: 0 0 0 2px var(--neba-gold-deep), 0 2px 6px rgba(0, 0, 0, 0.25);
     font-family: var(--neba-font-display);
@@ -60,10 +60,11 @@
     font-size: 1.25rem;
     line-height: 1;
     /* Dark on gold in both themes: the medal colour does not change with the theme. */
-    color: #2b1d00;
+    color: var(--neba-on-gold);
 }
 
-/* Leads the strip, in line with the label. */
+/* Leads the strip, in line with the label. The strip's column gap is 2rem; the -1rem margin halves it, so the
+   medallion sits close to the label it belongs to. */
 .defending__medal--lead {
     align-self: center;
     margin-right: -1rem;

@@ -82,6 +82,39 @@ public sealed class DefendingChampionsTests : IDisposable
         cut.FindAll(".defending__medal").ShouldBeEmpty();
     }
 
+    [Fact(DisplayName = "Should show no medallion in the strip when several teams are shown and none repeated")]
+    public void Render_ShouldShowNoMedallion_WhenSeveralTeamsAndNoneRepeated()
+    {
+        // Arrange
+        var first = DefendingTeamViewModelFactory.Create();
+        var second = DefendingTeamViewModelFactory.Create(undefended: true, champions: ["Dana Jones"]);
+
+        // Act
+        var cut = Render([first, second], DefendingChampionsLayout.Strip);
+
+        // Assert
+        cut.FindAll(".defending__medal").ShouldBeEmpty();
+    }
+
+    [Fact(DisplayName = "Panel should show a medallion on each row whose team repeated and none on the others")]
+    public void Render_ShouldShowMedallionPerRow_InPanelWithSeveralTeams()
+    {
+        // Arrange
+        var repeated = DefendingTeamViewModelFactory.Create(consecutiveTitles: 2);
+        var single = DefendingTeamViewModelFactory.Create(seasonDescription: "2024 Season", undefended: true);
+        var repeatedAgain = DefendingTeamViewModelFactory.Create(seasonDescription: "2023 Season", consecutiveTitles: 4);
+
+        // Act
+        var cut = Render([repeated, single, repeatedAgain], DefendingChampionsLayout.Panel);
+
+        // Assert
+        var rows = cut.FindAll(".defending__row");
+        rows.Count.ShouldBe(3);
+        rows[0].QuerySelector(".defending__medal")!.TextContent.Trim().ShouldBe("2x");
+        rows[1].QuerySelector(".defending__medal").ShouldBeNull();
+        rows[2].QuerySelector(".defending__medal")!.TextContent.Trim().ShouldBe("4x");
+    }
+
     [Theory(DisplayName = "Should render nothing when there are no defending teams")]
     [InlineData(DefendingChampionsLayout.Strip, TestDisplayName = "Strip")]
     [InlineData(DefendingChampionsLayout.Panel, TestDisplayName = "Panel")]
