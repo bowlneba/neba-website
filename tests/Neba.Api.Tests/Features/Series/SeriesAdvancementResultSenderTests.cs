@@ -155,11 +155,11 @@ public sealed class SeriesAdvancementResultSenderTests
     public void SendAsync_ShouldThrow_WhenErrorsAreNull()
     {
         // Arrange & Act
-        var act = () => SeriesAdvancementResultSender.SendAsync(
+        static Task Act() => SeriesAdvancementResultSender.SendAsync(
             null, _ => { }, (_, _) => Task.CompletedTask, _ => Task.CompletedTask, TestContext.Current.CancellationToken);
 
         // Assert
-        Should.Throw<ArgumentNullException>(act);
+        Should.Throw<ArgumentNullException>(Act);
     }
 
     [Fact(DisplayName = "SendAsync should throw ArgumentNullException when a callback is null")]

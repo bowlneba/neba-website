@@ -25,11 +25,15 @@ public sealed record FieldStep(string Label, string Detail, int Count, string Ki
 
 internal static class SeriesDisplay
 {
+    private const string DateFormat = "M/d/yyyy";
+    private const string TimeFormat = "h:mm tt";
+    private const string Bowler = "bowler";
+
     private static readonly CultureInfo Culture = CultureInfo.GetCultureInfo("en-US");
 
     /// <summary>"1/1/2025 to 12/31/2025".</summary>
     public static string SeasonRange(DateOnly start, DateOnly end)
-        => start.ToString("M/d/yyyy", Culture) + " to " + end.ToString("M/d/yyyy", Culture);
+        => start.ToString(DateFormat, Culture) + " to " + end.ToString(DateFormat, Culture);
 
     /// <summary>"1/24 to 1/25", or "2/21" for a one-day tournament.</summary>
     public static string TournamentDates(DateOnly start, DateOnly end)
@@ -50,7 +54,7 @@ internal static class SeriesDisplay
                 : new AdvancingLabel("Final standings", "(no Finale)"),
             (StageKinds.Qualifying, { } n) when teamSize > 1 => new AdvancingLabel(
                 "Top " + "team".ToQuantity(n, formatProvider: DisplayCulture.English),
-                "(" + "bowler".ToQuantity(n * teamSize, formatProvider: DisplayCulture.English) + ")"),
+                "(" + Bowler.ToQuantity(n * teamSize, formatProvider: DisplayCulture.English) + ")"),
             (StageKinds.Qualifying, { } n) => new AdvancingLabel("Top " + n.ToString(Culture), null),
             (StageKinds.Survivor, { } n) => new AdvancingLabel(n.ToString(Culture) + " advance", null),
             _ => new AdvancingLabel("—", null), // a saved Qualifying/Survivor Stage always has a count
@@ -59,7 +63,7 @@ internal static class SeriesDisplay
     /// <summary>"9:00 AM squad on 7/12"; null when the Stage has no squad.</summary>
     public static string? Squad(DateOnly? date, TimeOnly? startTime)
         => date is { } d && startTime is { } t
-            ? t.ToString("h:mm tt", Culture) + " squad on " + d.ToString("M/d", Culture)
+            ? t.ToString(TimeFormat, Culture) + " squad on " + d.ToString("M/d", Culture)
             : null;
 
     /// <summary>"Teams of 3" + "(6 bowlers)" under a Qualifying row's advancing input.</summary>
@@ -73,7 +77,7 @@ internal static class SeriesDisplay
         string? bowlers = null;
         if (count is { } n)
         {
-            bowlers = "(" + "bowler".ToQuantity(n * teamSize, formatProvider: DisplayCulture.English) + ")";
+            bowlers = "(" + Bowler.ToQuantity(n * teamSize, formatProvider: DisplayCulture.English) + ")";
         }
 
         return new AdvancingLabel("Teams of " + teamSize.ToString(Culture), bowlers);
@@ -81,7 +85,7 @@ internal static class SeriesDisplay
 
     /// <summary>"Sat 9/27 at 2:00 PM": when the Finale is bowled.</summary>
     public static string FinaleWhen(DateOnly date, TimeOnly startTime)
-        => date.ToString("ddd M/d", Culture) + " at " + startTime.ToString("h:mm tt", Culture);
+        => date.ToString("ddd M/d", Culture) + " at " + startTime.ToString(TimeFormat, Culture);
 
     /// <summary>"Callahan's Bowl-O-Rama, Seekonk, MA"; null while the host center is to be announced.</summary>
     public static string? Host(string? name, string? city, string? state)
@@ -147,12 +151,12 @@ internal static class SeriesDisplay
                 finale.Date is { } fd && finale.StartTime is { } ft ? "Finale: " + FinaleWhen(fd, ft) + "." : null),
             (StageKinds.Qualifying, { } n) when teamSize > 1 => new AdvancingLabel(
                 "Top " + "team".ToQuantity(n, formatProvider: DisplayCulture.English) + " enter the Series field.",
-                "(" + "bowler".ToQuantity(n * teamSize, formatProvider: DisplayCulture.English) + ")"),
+                "(" + Bowler.ToQuantity(n * teamSize, formatProvider: DisplayCulture.English) + ")"),
             (StageKinds.Qualifying, { } n) => new AdvancingLabel("Top " + n.ToString(Culture) + " finishers enter the Series field.", null),
             (StageKinds.Survivor, { } n) => new AdvancingLabel(
                 n.ToString(Culture) + " bowlers advance.",
                 squad.Date is { } d && squad.StartTime is { } t
-                    ? "Series squad: " + t.ToString("h:mm tt", Culture) + " on " + d.ToString("M/d", Culture) + "."
+                    ? "Series squad: " + t.ToString(TimeFormat, Culture) + " on " + d.ToString("M/d", Culture) + "."
                     : null),
             _ => new AdvancingLabel("Part of the Series.", null), // a saved Qualifying/Survivor Stage always has a count
         };
@@ -283,11 +287,11 @@ internal static class SeriesDisplay
 
     /// <summary>"Becomes official about 3:15 PM on 7/12". The sweep runs every 15 minutes, so it says "about".</summary>
     public static string? OfficialDueLabel(DateTimeOffset? local)
-        => local is { } at ? "Becomes official about " + at.ToString("h:mm tt", Culture) + " on " + at.ToString("M/d", Culture) : null;
+        => local is { } at ? "Becomes official about " + at.ToString(TimeFormat, Culture) + " on " + at.ToString("M/d", Culture) : null;
 
     /// <summary>"Backfill as of 6/14/2025"; null until the Backfill ran.</summary>
     public static string? BackfillLabel(DateOnly? asOf)
-        => asOf is { } date ? "Backfill as of " + date.ToString("M/d/yyyy", Culture) : null;
+        => asOf is { } date ? "Backfill as of " + date.ToString(DateFormat, Culture) : null;
 
     /// <summary>"4 of 11 Stages" + " computed or official (3 official). Backfill has not run."</summary>
     public static SummaryLine Progress(IReadOnlyList<StageAdvancementViewModel> stages, DateOnly? backfillAsOf)
@@ -295,7 +299,7 @@ internal static class SeriesDisplay
         var done = stages.Count(s => s.Status != StageStatuses.Pending);
         var official = stages.Count(s => s.Status == StageStatuses.Official);
         var backfill = backfillAsOf is { } date
-            ? "Backfill ran as of " + date.ToString("M/d/yyyy", Culture) + "."
+            ? "Backfill ran as of " + date.ToString(DateFormat, Culture) + "."
             : "Backfill has not run.";
 
         return new SummaryLine(
@@ -375,7 +379,7 @@ internal static class SeriesDisplay
     public static string OverrideStatus(bool applied) => applied ? "Applied" : "No longer applies";
 
     /// <summary>"3/23/2025".</summary>
-    public static string AddedDate(DateTimeOffset local) => local.ToString("M/d/yyyy", Culture);
+    public static string AddedDate(DateTimeOffset local) => local.ToString(DateFormat, Culture);
 
     /// <summary>"12 advance" + " of 40 in the field. 38 bowled; 2 did not."</summary>
     public static SummaryLine SurvivorSummary(IReadOnlyList<SurvivorOutcomeViewModel> outcomes)
@@ -388,7 +392,7 @@ internal static class SeriesDisplay
 
     /// <summary>"20 bowlers ranked." + the Finale note.</summary>
     public static SummaryLine PlacementSummary(int ranked, bool hasFinalists)
-        => new("bowler".ToQuantity(ranked, formatProvider: DisplayCulture.English) + " ranked.",
+        => new(Bowler.ToQuantity(ranked, formatProvider: DisplayCulture.English) + " ranked.",
             hasFinalists ? " Finalist positions are provisional until the Finale is recorded." : " These positions are final.");
 
     /// <summary>"Recompute from Stage 3?"</summary>
@@ -447,7 +451,7 @@ internal static class SeriesDisplay
 
     /// <summary>"9:30 AM on 7/12" (the API already sends Eastern time).</summary>
     public static string SquadOption(DateOnly date, TimeOnly startTime)
-        => startTime.ToString("h:mm tt", Culture) + " on " + date.ToString("M/d", Culture);
+        => startTime.ToString(TimeFormat, Culture) + " on " + date.ToString("M/d", Culture);
 
     /// <summary>"Has scores · Current".</summary>
     public static string SquadDetail(bool hasScores, bool isSelected)

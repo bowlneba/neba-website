@@ -18,6 +18,8 @@ namespace Neba.Website.Server.Series;
 /// <summary>The Series page: the advancement rail for Series.EditSeries holders.</summary>
 public partial class SeriesDetail
 {
+    private const string ApiName = "SeriesApi";
+
     private enum AdvancementState { Hidden, Loading, Loaded, Failed }
 
     private enum WriteOutcome { Saved, Conflict, Failed }
@@ -140,7 +142,7 @@ public partial class SeriesDetail
             return response;
         }
 
-        var result = await ApiExecutor.ExecuteAsync("SeriesApi", "GetSeriesAdvancement", CallAsync);
+        var result = await ApiExecutor.ExecuteAsync(ApiName, "GetSeriesAdvancement", CallAsync);
 
         if (result.IsError)
         {
@@ -245,7 +247,7 @@ public partial class SeriesDetail
         StateHasChanged(); // show the picker skeleton while the call runs
         try
         {
-            var result = await ApiExecutor.ExecuteAsync("SeriesApi", "ListStageResults", ct => SeriesApi.ListStageResultsAsync(Id, stageId, ct));
+            var result = await ApiExecutor.ExecuteAsync(ApiName, "ListStageResults", ct => SeriesApi.ListStageResultsAsync(Id, stageId, ct));
 
             if (result.IsError)
             {
@@ -300,7 +302,7 @@ public partial class SeriesDetail
                 },
             };
 
-            var created = await ApiExecutor.ExecuteAsync("SeriesApi", "CreateStageOverride",
+            var created = await ApiExecutor.ExecuteAsync(ApiName, "CreateStageOverride",
                 ct => SeriesApi.CreateStageOverrideAsync(Id, target.StageId, request, ct));
 
             // The reload that follows decides the next Version, so the Version in the response is ignored.
@@ -357,7 +359,7 @@ public partial class SeriesDetail
         _isWriting = true;
         try
         {
-            var result = await ApiExecutor.ExecuteAsync("SeriesApi", "RemoveStageOverride",
+            var result = await ApiExecutor.ExecuteAsync(ApiName, "RemoveStageOverride",
                 ct => SeriesApi.RemoveStageOverrideAsync(Id, target.StageId, target.Override.OverrideId, _version, ct));
 
             _removeTarget = null;
@@ -430,7 +432,7 @@ public partial class SeriesDetail
                 Recomputation = new RecomputeSeriesAdvancementInput { Version = _version, ConfirmResetOfficial = mode == RecomputeMode.ConfirmResetOfficial },
             };
 
-            var result = await ApiExecutor.ExecuteAsync("SeriesApi", "RecomputeSeriesAdvancement",
+            var result = await ApiExecutor.ExecuteAsync(ApiName, "RecomputeSeriesAdvancement",
                 ct => SeriesApi.RecomputeSeriesAdvancementAsync(Id, stageId, request, ct));
 
             _recomputeTarget = null;
@@ -471,7 +473,7 @@ public partial class SeriesDetail
         _squadsError = null;
         _isSquadsLoading = true;
 
-        var result = await ApiExecutor.ExecuteAsync("SeriesApi", "ListStageSquads", ct => SeriesApi.ListStageSquadsAsync(Id, stage.Id, ct));
+        var result = await ApiExecutor.ExecuteAsync(ApiName, "ListStageSquads", ct => SeriesApi.ListStageSquadsAsync(Id, stage.Id, ct));
         _isSquadsLoading = false;
 
         if (result.IsError)
@@ -507,7 +509,7 @@ public partial class SeriesDetail
                 Squad = new PickStageSquadInput { SquadId = squadId, Version = _version },
             };
 
-            var result = await ApiExecutor.ExecuteAsync("SeriesApi", "PickStageSquad",
+            var result = await ApiExecutor.ExecuteAsync(ApiName, "PickStageSquad",
                 ct => SeriesApi.PickStageSquadAsync(Id, stageId, request, ct));
 
             var outcome = await SettleWriteAsync(result, "Squad Saved", SeriesDisplay.SquadSavedMessage);

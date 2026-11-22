@@ -195,16 +195,14 @@ public sealed partial class Series
 
         var stage = target.Value;
 
-        if (!facts.Tournaments.TryGetValue(stage.TournamentId, out var tournament)
-            || tournament.Results.All(row => row.BowlerId != bowlerId))
-        {
-            return SeriesAdvancementErrors.NoResultRow;
-        }
+        var hasResultRow = facts.Tournaments.TryGetValue(stage.TournamentId, out var tournament)
+            && tournament.Results.Any(row => row.BowlerId == bowlerId);
 
-        return (_fieldEntries.Exists(e => e.BowlerId == bowlerId), stage.Overrides.Any(o => o.BowlerId == bowlerId)) switch
+        return (hasResultRow, _fieldEntries.Exists(e => e.BowlerId == bowlerId), stage.Overrides.Any(o => o.BowlerId == bowlerId)) switch
         {
-            (true, _) => SeriesAdvancementErrors.BowlerAlreadyInField,
-            (_, true) => SeriesAdvancementErrors.OverrideExists,
+            (false, _, _) => SeriesAdvancementErrors.NoResultRow,
+            (_, true, _) => SeriesAdvancementErrors.BowlerAlreadyInField,
+            (_, _, true) => SeriesAdvancementErrors.OverrideExists,
             _ => ApplyOverride(stage, OverrideKind.Add, bowlerId, reason, createdBy, facts, now),
         };
     }
@@ -410,14 +408,10 @@ public sealed partial class Series
     // and has at least one score row.
     private bool MayCompute(SeriesStage stage, SeriesStage? previous, StageTournamentResults? tournament)
     {
-        if (tournament is null
-            || tournament.Results.Count == 0
-            || (tournament.Status != TournamentStatus.Completed && tournament.Status != TournamentStatus.Truncated))
-        {
-            return false;
-        }
-
-        return (previous is null || previous.Status != StageStatus.Pending)
+        return tournament is not null
+            && tournament.Results.Count > 0
+            && (tournament.Status == TournamentStatus.Completed || tournament.Status == TournamentStatus.Truncated)
+            && (previous is null || previous.Status != StageStatus.Pending)
             && (stage.Kind == StageKind.Qualifying || BackfillAsOf is not null)
             && (stage.Kind != StageKind.Survivor
                 || (stage.SquadDesignation?.SquadId is { } squadId
