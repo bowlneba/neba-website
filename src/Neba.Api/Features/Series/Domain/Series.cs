@@ -325,18 +325,24 @@ public sealed partial class Series
 
             if (definition.Kind == StageKind.Placement)
             {
-                if (placementSeen)
+                if (CheckPlacement(placementSeen, i == stages.Count - 1, order, facts.TournamentName) is { } placementError)
                 {
-                    yield return SeriesErrors.MultiplePlacementStages(order, facts.TournamentName);
-                }
-                else if (i != stages.Count - 1)
-                {
-                    yield return SeriesErrors.PlacementNotLast(order, facts.TournamentName);
+                    yield return placementError;
                 }
 
                 placementSeen = true;
             }
         }
+    }
+
+    private static Error? CheckPlacement(bool placementSeen, bool isLast, int order, string tournamentName)
+    {
+        if (placementSeen)
+        {
+            return SeriesErrors.MultiplePlacementStages(order, tournamentName);
+        }
+
+        return isLast ? null : SeriesErrors.PlacementNotLast(order, tournamentName);
     }
 
     private static IEnumerable<Error> CheckAgainstPrevious(
