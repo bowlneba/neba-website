@@ -13,7 +13,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace Neba.Api.Database.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20261122172950_UniquePreviousTournament")]
+    [Migration("20261122181204_UniquePreviousTournament")]
     partial class UniquePreviousTournament
     {
         /// <inheritdoc />
@@ -1874,8 +1874,7 @@ namespace Neba.Api.Database.Migrations
 
                     b.HasIndex("PreviousTournamentId")
                         .IsUnique()
-                        .HasDatabaseName("ix_tournaments_previous_tournament_id")
-                        .HasFilter("previous_tournament_id IS NOT NULL");
+                        .HasDatabaseName("ix_tournaments_previous_tournament_id");
 
                     b.HasIndex("SeasonId")
                         .HasDatabaseName("ix_tournaments_season_id");

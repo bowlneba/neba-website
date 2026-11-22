@@ -94,10 +94,10 @@ internal sealed class TournamentConfiguration
             .HasPrincipalKey(tournament => tournament.Id)
             .OnDelete(DeleteBehavior.SetNull);
 
-        // A tournament is the previous tournament of one other tournament only.
+        // A tournament is the previous tournament of one other tournament only. Postgres treats NULLs as distinct
+        // in a unique index, so any number of tournaments can have no previous tournament.
         builder.HasIndex(tournament => tournament.PreviousTournamentId)
-            .IsUnique()
-            .HasFilter("previous_tournament_id IS NOT NULL");
+            .IsUnique();
 
         builder.Property(tournament => tournament.EntryFee)
             .HasPrecision(5, 2)

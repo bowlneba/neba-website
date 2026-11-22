@@ -20,8 +20,7 @@ namespace Neba.Api.Database.Migrations
                 schema: "app",
                 table: "tournaments",
                 column: "previous_tournament_id",
-                unique: true,
-                filter: "previous_tournament_id IS NOT NULL");
+                unique: true);
         }
 
         /// <inheritdoc />
