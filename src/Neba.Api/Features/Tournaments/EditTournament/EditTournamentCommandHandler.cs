@@ -144,13 +144,14 @@ internal sealed class EditTournamentCommandHandler(
         }
 
         await EvictCachesAsync(
-            tournament.Id,
-            previousSeasonId,
-            season.Id,
-            oldPreviousTournamentId,
-            tournament.PreviousTournamentId,
-            previousStatsEligible != tournament.StatsEligible,
-            previousChampionDetails != (tournament.Name, tournament.EndDate, tournament.TournamentType),
+            new TournamentEdit(
+                tournament.Id,
+                previousSeasonId,
+                season.Id,
+                oldPreviousTournamentId,
+                tournament.PreviousTournamentId,
+                previousStatsEligible != tournament.StatsEligible,
+                previousChampionDetails != (tournament.Name, tournament.EndDate, tournament.TournamentType)),
             cancellationToken);
 
         ScheduleBackgroundJobs(command, previousLogo, previousRevealDateTime, tournament, season.Id);
@@ -158,16 +159,20 @@ internal sealed class EditTournamentCommandHandler(
         return Result.Updated;
     }
 
-    private async Task EvictCachesAsync(
-        TournamentId tournamentId,
-        SeasonId previousSeasonId,
-        SeasonId currentSeasonId,
-        TournamentId? oldPreviousTournamentId,
-        TournamentId? newPreviousTournamentId,
-        bool statsEligibleChanged,
-        bool championDetailsChanged,
-        CancellationToken cancellationToken)
+    private sealed record TournamentEdit(
+        TournamentId TournamentId,
+        SeasonId PreviousSeasonId,
+        SeasonId CurrentSeasonId,
+        TournamentId? OldPreviousTournamentId,
+        TournamentId? NewPreviousTournamentId,
+        bool StatsEligibleChanged,
+        bool ChampionDetailsChanged);
+
+    private async Task EvictCachesAsync(TournamentEdit edit, CancellationToken cancellationToken)
     {
+        var (tournamentId, previousSeasonId, currentSeasonId, oldPreviousTournamentId, newPreviousTournamentId,
+            statsEligibleChanged, championDetailsChanged) = edit;
+
         await cache.RemoveByTagAsync($"neba:tournaments:{tournamentId}", token: cancellationToken);
         await cache.RemoveByTagAsync($"neba:tournaments:{previousSeasonId}", token: cancellationToken);
 

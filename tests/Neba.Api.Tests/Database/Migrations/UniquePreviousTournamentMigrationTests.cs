@@ -26,8 +26,8 @@ public sealed class UniquePreviousTournamentMigrationTests(AppDbContextFixture f
     public ValueTask DisposeAsync()
         => ValueTask.CompletedTask;
 
-    private static async Task<string> ReadIndexDefinitionAsync(DbContext context, CancellationToken ct)
-        => await context.Database
+    private static Task<string> ReadIndexDefinitionAsync(DbContext context, CancellationToken ct)
+        => context.Database
             .SqlQueryRaw<string>($"SELECT indexdef AS \"Value\" FROM pg_indexes WHERE schemaname = 'app' AND indexname = '{IndexName}'")
             .SingleAsync(ct);
 

@@ -152,10 +152,10 @@ public sealed class CancelTournamentCommandHandlerTests(AppDbContextFixture fixt
         var ct = TestContext.Current.CancellationToken;
         var previous = await SeedTournamentAsync(ct);
         var tournament = TournamentFactory.Create(
-            seasonId: previous.SeasonId,
+            tournamentType: previous.TournamentType,
             startDate: previous.EndDate.AddDays(30),
             endDate: previous.EndDate.AddDays(31),
-            tournamentType: previous.TournamentType,
+            seasonId: previous.SeasonId,
             previousTournament: PreviousTournamentFactsFactory.Create(previous.Id, previous.TournamentType, previous.EndDate));
         await _dbContext.Tournaments.AddAsync(tournament, ct);
         await _dbContext.SaveChangesAsync(ct);
