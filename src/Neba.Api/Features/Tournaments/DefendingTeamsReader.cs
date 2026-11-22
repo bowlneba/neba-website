@@ -36,8 +36,9 @@ internal sealed record DefendingTeam(
 internal sealed class DefendingTeamsReader(AppDbContext appDbContext)
 {
     // The chain is short in practice (a truncated tournament in a row is rare). The cap only guards against
-    // a loop that bad data could cause.
-    private const int MaxChainLength = 10;
+    // a loop that bad data could cause. A title run counts at most this many tournaments before the source, so a
+    // count tops out at MaxChainLength + 1.
+    internal const int MaxChainLength = 10;
 
     private sealed record SourceRow(
         TournamentId Id,

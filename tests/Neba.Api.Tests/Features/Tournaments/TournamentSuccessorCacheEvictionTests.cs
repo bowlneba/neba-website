@@ -117,6 +117,25 @@ public sealed class TournamentSuccessorCacheEvictionTests(AppDbContextFixture fi
         successors.Select(successor => successor.Id).ShouldBe([second.Id, third.Id, fourth.Id, fifth.Id], ignoreOrder: true);
     }
 
+    [Fact(DisplayName = "FindAsync reaches the tournament whose title run counts the first tournament, eleven steps on")]
+    public async Task FindAsync_ShouldReachEleventhSuccessor_WhenChainIsLong()
+    {
+        // Arrange
+        var ct = TestContext.Current.CancellationToken;
+        var chain = new List<Tournament> { await SeedAsync(2020, null, null, ct) };
+
+        for (var year = 2021; year <= 2031; year++)
+        {
+            chain.Add(await SeedAsync(year, chain[^1], null, ct));
+        }
+
+        // Act
+        var successors = await TournamentSuccessorCacheEviction.FindAsync(_dbContext, chain[0].Id, ct);
+
+        // Assert
+        successors.Select(successor => successor.Id).ShouldBe(chain.Skip(1).Select(tournament => tournament.Id), ignoreOrder: true);
+    }
+
     [Fact(DisplayName = "EvictAsync removes the cached detail and season list of each successor and leaves other entries")]
     public async Task EvictAsync_ShouldRemoveSuccessorTags_AndKeepOthers()
     {

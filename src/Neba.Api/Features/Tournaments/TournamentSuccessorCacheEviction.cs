@@ -16,8 +16,9 @@ namespace Neba.Api.Features.Tournaments;
 /// </summary>
 internal static class TournamentSuccessorCacheEviction
 {
-    // Same bound as the defending teams reader: the chain is short, and the cap only guards against bad data.
-    private const int MaxChainLength = 10;
+    // The title run walk reaches MaxChainLength tournaments back from the source, and the source is itself the
+    // previous tournament of the viewed one, so the viewed tournament sits one step further out.
+    private const int MaxChainLength = DefendingTeamsReader.MaxChainLength + 1;
 
     /// <summary>A tournament whose cached reads show the evicting tournament's winners.</summary>
     internal readonly record struct Successor(TournamentId Id, SeasonId SeasonId);
