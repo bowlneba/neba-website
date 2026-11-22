@@ -54,6 +54,25 @@ public sealed class SeriesStateMachineTests
         result.StatusChanged.ShouldBeTrue();
     }
 
+    [Fact(DisplayName = "MakeDueOfficial should hold back a later Stage while an earlier Stage is Stale")]
+    public void MakeDueOfficial_ShouldHoldBackLaterStage_WhenEarlierStageIsStale()
+    {
+        // Arrange
+        var harness = AdvancementHarness.Create(StageKind.Qualifying, StageKind.Survivor, StageKind.Placement).Advanced();
+        harness.SetResults(1, []);
+        _ = harness.Advance(now: Now.AddHours(1));
+        harness.Stage(1).IsStale.ShouldBeTrue();
+        harness.Stage(2).Status.ShouldBe(StageStatus.Computed);
+
+        // Act
+        var result = harness.MakeDueOfficial(Now.AddDays(10));
+
+        // Assert
+        harness.Stage(1).Status.ShouldBe(StageStatus.Computed);
+        harness.Stage(2).Status.ShouldBe(StageStatus.Computed);
+        result.OfficialStageIds.ShouldBeEmpty();
+    }
+
     [Theory(DisplayName = "Advance should leave a Stage Pending unless its tournament is Completed or Truncated")]
     [InlineData("Scheduled", false)]
     [InlineData("Cancelled", false)]

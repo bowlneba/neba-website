@@ -93,7 +93,7 @@ public sealed partial class Series
 
     /// <summary>
     /// Makes every Computed Qualifying or Survivor Stage whose grace period passed Official, in order. A Stage waits for every
-    /// earlier one, is skipped while stale, and the last Qualifying Stage waits for the Backfill. A Placement Stage never becomes Official.
+    /// earlier one, so a stale Stage holds back every later Stage until an admin recomputes it, and the last Qualifying Stage waits for the Backfill. A Placement Stage never becomes Official.
     /// </summary>
     public AdvanceResult MakeDueOfficial(DateTimeOffset now, TimeSpan grace)
     {
