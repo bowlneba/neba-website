@@ -7,8 +7,9 @@ using Microsoft.AspNetCore.Mvc;
 namespace Neba.Api.Legacy.Tournaments.Complete;
 
 // Re-runs only SyncTournamentResultsJob, without the completion and season-stats steps of
-// /tournaments/complete. Safe to repeat: results already recorded are skipped, so this adds
-// whatever was missing (e.g. a bowler synced after the first run). Reuses CompleteTournamentRequest
+// /tournaments/complete. Safe to repeat: an unchanged result stays as it is, so this adds
+// whatever was missing (e.g. a bowler synced after the first run) and overwrites place, prize
+// money and points on results the Software has since corrected. Reuses CompleteTournamentRequest
 // since the payload is the same legacy tournament id.
 internal static class SyncTournamentResultsEndpoint
 {

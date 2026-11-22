@@ -286,11 +286,11 @@ internal sealed class SyncTournamentResultsJob(
                 continue;
             }
 
-            var added = tournament.AddResult(bowlerId, place, row.PrizeMoney, row.Points);
-            if (added.IsError)
+            // Upsert, not add: a re-sync must overwrite a result the Software has since corrected.
+            var recorded = tournament.UpsertResult(bowlerId, place, row.PrizeMoney, row.Points);
+            if (recorded.IsError)
             {
-                // Expected on retry: ResultAlreadyRecorded for a bowler synced by a prior run.
-                logger.LogLegacyResultSyncSkipped(row.BowlerId, legacyTournamentId, added.FirstError.Description);
+                logger.LogLegacyResultSyncSkipped(row.BowlerId, legacyTournamentId, recorded.FirstError.Description);
             }
         }
 

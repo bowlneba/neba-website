@@ -141,6 +141,17 @@ public sealed class SyncTournamentResultsJobTests(AppDbContextFixture fixture, L
         await insert.ExecuteNonQueryAsync();
     }
 
+    private async Task UpdateResultsStatsAsync(int statsId, int? place, decimal payout, int points)
+    {
+        await using var update = _legacyConnection.CreateCommand();
+        update.CommandText = "UPDATE Stats_ResultsStats SET Place = @Place, Payout = @Payout, Points = @Points WHERE Id = @Id";
+        update.Parameters.AddWithValue("@Id", statsId);
+        update.Parameters.AddWithValue("@Place", place.HasValue ? place.Value : DBNull.Value);
+        update.Parameters.AddWithValue("@Payout", payout);
+        update.Parameters.AddWithValue("@Points", points);
+        await update.ExecuteNonQueryAsync();
+    }
+
     private async Task InsertQualifyingStatsAsync(int statsId, int squadId, int score, int games, int highGame)
     {
         await using var insert = _legacyConnection.CreateCommand();
@@ -750,7 +761,7 @@ public sealed class SyncTournamentResultsJobTests(AppDbContextFixture fixture, L
         otherTournament.Results.ShouldBeEmpty();
     }
 
-    [Fact(DisplayName = "SyncAsync should not duplicate results and should log the skip when run twice for the same legacy tournament id")]
+    [Fact(DisplayName = "SyncAsync should not duplicate results when run twice for the same legacy tournament id")]
     public async Task SyncAsync_ShouldNotDuplicateResults_WhenRunTwice()
     {
         // Arrange
@@ -773,7 +784,38 @@ public sealed class SyncTournamentResultsJobTests(AppDbContextFixture fixture, L
         var tournament = await ReloadTournamentAsync(42, ct);
         var result = tournament.Results.ShouldHaveSingleItem();
         result.BowlerId.ShouldBe(bowler.Id);
-        fakeLogger.Collector.GetSnapshot().ShouldContain(r => r.Level == LogLevel.Information);
+    }
+
+    [Fact(DisplayName = "SyncAsync should update an already-recorded result when the legacy points, place or prize money changed")]
+    public async Task SyncAsync_ShouldUpdateExistingResult_WhenLegacyValuesChanged()
+    {
+        // Arrange
+        var ct = TestContext.Current.CancellationToken;
+        await CreateTournamentAsync(42, TournamentType.Singles, complete: true, ct);
+        var bowler = await CreateBowlerAsync(100, ct);
+
+        var statsId = await InsertStatsAsync(100, 42);
+        await InsertResultsStatsAsync(statsId, place: 1, payout: 500m, points: 100);
+
+        var job = CreateJob();
+        await job.SyncAsync(42, ct);
+        _dbContext.ChangeTracker.Clear();
+        var originalResultId = (await ReloadTournamentAsync(42, ct)).Results.Single().Id;
+        _dbContext.ChangeTracker.Clear();
+
+        await UpdateResultsStatsAsync(statsId, place: 2, payout: 250m, points: 60);
+
+        // Act
+        await job.SyncAsync(42, ct);
+
+        // Assert
+        var tournament = await ReloadTournamentAsync(42, ct);
+        var result = tournament.Results.ShouldHaveSingleItem();
+        result.Id.ShouldBe(originalResultId);
+        result.BowlerId.ShouldBe(bowler.Id);
+        result.Place.ShouldBe(2);
+        result.PrizeMoney.ShouldBe(250m);
+        result.Points.ShouldBe(60);
     }
 
     [Fact(DisplayName = "SyncAsync should call PublishAndClear once with a tournament holding one TournamentResultsRecorded on the first sync")]

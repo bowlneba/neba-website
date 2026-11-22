@@ -676,6 +676,27 @@ public sealed class Tournament
     }
 
     /// <summary>
+    /// Records a bowler's result, or updates it in place when the bowler already has one. Used by the legacy
+    /// sync, where a corrected place, prize or points value in the Software must overwrite the stored result.
+    /// </summary>
+    public ErrorOr<Success> UpsertResult(BowlerId bowlerId, int place, decimal prizeMoney, int points)
+    {
+        var existing = _results.FirstOrDefault(result => result.BowlerId == bowlerId);
+
+        if (existing is null)
+        {
+            return AddResult(bowlerId, place, prizeMoney, points);
+        }
+
+        if (Status == TournamentStatus.Scheduled || Status == TournamentStatus.Cancelled)
+        {
+            return TournamentErrors.TournamentNotFinalized;
+        }
+
+        return existing.Update(place, prizeMoney, points);
+    }
+
+    /// <summary>
     /// Signals that a sync finished writing this tournament's results. Call it after the <see cref="AddResult"/> loop on
     /// every sync, including one that adds nothing, so a re-sync redelivers the event. Calls before one save raise one event. Complete and Truncate raise
     /// nothing: in the legacy chain the results arrive after the status flips.
