@@ -408,8 +408,7 @@ public sealed partial class Series
     // and has at least one score row.
     private bool MayCompute(SeriesStage stage, SeriesStage? previous, StageTournamentResults? tournament)
     {
-        return tournament is not null
-            && tournament.Results.Count > 0
+        return tournament?.Results.Count > 0
             && (tournament.Status == TournamentStatus.Completed || tournament.Status == TournamentStatus.Truncated)
             && (previous is null || previous.Status != StageStatus.Pending)
             && (stage.Kind == StageKind.Qualifying || BackfillAsOf is not null)
