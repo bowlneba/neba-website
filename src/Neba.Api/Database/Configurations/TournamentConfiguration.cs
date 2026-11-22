@@ -94,7 +94,10 @@ internal sealed class TournamentConfiguration
             .HasPrincipalKey(tournament => tournament.Id)
             .OnDelete(DeleteBehavior.SetNull);
 
-        builder.HasIndex(tournament => tournament.PreviousTournamentId);
+        // A tournament is the previous tournament of one other tournament only.
+        builder.HasIndex(tournament => tournament.PreviousTournamentId)
+            .IsUnique()
+            .HasFilter("previous_tournament_id IS NOT NULL");
 
         builder.Property(tournament => tournament.EntryFee)
             .HasPrecision(5, 2)

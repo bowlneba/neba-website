@@ -1870,7 +1870,9 @@ namespace Neba.Api.Database.Migrations
                     NpgsqlIndexBuilderExtensions.AreNullsDistinct(b.HasIndex("LegacyId"), true);
 
                     b.HasIndex("PreviousTournamentId")
-                        .HasDatabaseName("ix_tournaments_previous_tournament_id");
+                        .IsUnique()
+                        .HasDatabaseName("ix_tournaments_previous_tournament_id")
+                        .HasFilter("previous_tournament_id IS NOT NULL");
 
                     b.HasIndex("SeasonId")
                         .HasDatabaseName("ix_tournaments_season_id");
