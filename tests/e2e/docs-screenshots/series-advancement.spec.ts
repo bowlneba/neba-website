@@ -6,6 +6,7 @@ import {
   MOCK_ADVANCEMENT_COMPLETE_ID,
   MOCK_ADVANCEMENT_MID_SEASON_ID,
   MOCK_ADVANCEMENT_OVERRIDES_ID,
+  MOCK_ADVANCEMENT_REVIEW_ID,
   MOCK_ADVANCEMENT_SQUAD_ID,
   perProjectAdvancementSeriesId,
 } from '../mock-api/mock-api-server';
@@ -24,8 +25,8 @@ const outDir = path.join('docs', 'help', 'images', 'series-advancement');
 const MOCK_API = 'http://localhost:5151';
 const PROJECT = 'chrome';
 
-const MANAGER = 'Series.EditSeries';
-const ADMIN = 'Series.EditSeries,Series.ManageAdvancement';
+const MANAGER = 'Series.EditSeries,Series.MakeStageOfficial';
+const ADMIN = 'Series.EditSeries,Series.ManageAdvancement,Series.MakeStageOfficial';
 
 const seriesId = (baseId: string) => perProjectAdvancementSeriesId(baseId, PROJECT);
 const shot = (name: string) => path.join(outDir, `${name}.png`);
@@ -64,9 +65,22 @@ test.describe('series-advancement help screenshots', () => {
     await page.getByTestId('series-progress').screenshot({ path: shot('rail-phone') });
   });
 
-  test('the Stale, Needs squad and Becomes official labels', async ({ page }) => {
+  test('the Stale and Needs squad labels', async ({ page }) => {
     await open(page, MOCK_ADVANCEMENT_MID_SEASON_ID, MANAGER);
     await page.getByTestId('series-progress').screenshot({ path: shot('indicators') });
+  });
+
+  test('a Stage that is ready to mark official', async ({ page }) => {
+    await open(page, MOCK_ADVANCEMENT_REVIEW_ID, MANAGER);
+    await card(page, 1).screenshot({ path: shot('mark-official-button') });
+  });
+
+  test('the Mark official confirmation', async ({ page }) => {
+    await open(page, MOCK_ADVANCEMENT_REVIEW_ID, MANAGER);
+    await card(page, 1).getByTestId('stage-make-official').click();
+    await expect(page.getByText('Mark Stage 1 official?')).toBeVisible();
+    await page.screenshot({ path: shot('mark-official-confirm') });
+    await page.locator('.confirm-action-modal-cancel:visible').click();
   });
 
   test('a Qualifying Stage with a Backfill entry', async ({ page }) => {

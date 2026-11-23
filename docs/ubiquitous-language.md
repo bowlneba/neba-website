@@ -1290,7 +1290,7 @@ Phase 1 stores the configuration. Phase 2 computes the field and each Stage's ou
 3. A bowler who does not bowl is eliminated and no alternate takes the spot. A bowler cannot re-enter the designated squad, and the squad score is the score
 4. A bowler who starts the squad and does not finish is scored on the games bowled
 5. No payout is made at a Survivor Round
-6. The Stage becomes Official automatically after the Grace Period (see Stage Status)
+6. A person marks the Stage Official after review (see Stage Status)
 7. A Survivor Stage computes only when its tournament is Completed or Truncated with results recorded, the previous Stage is Computed or Official, its squad is resolved, and the squad has at least one score row. Until then it is Pending
 8. An admin cannot override a Survivor Stage
 
@@ -1355,14 +1355,16 @@ Phase 1 stores the configuration. Phase 2 computes the field and each Stage's ou
 - A Stage starts Pending. It becomes Computed when its output is first worked out
 - Any non-Pending Stage locks the Series
 - **Official** means the output is settled and no longer changes on its own. Only a confirmed Recompute resets it to Computed
-- A Computed Qualifying or Survivor Stage becomes Official automatically after the Grace Period if its output did not change. There is no admin action to make a Stage Official
+- A person with `Series.MakeStageOfficial` (Admin, Webmaster, Manager, Tournament Director) marks a Computed Qualifying or Survivor Stage Official after reviewing its output. Nothing makes a Stage Official on its own
+- A Stage can be marked Official only while it is Computed and not Stale. Marking an Official Stage again does nothing
+- The public Series page shows who advanced from a Stage only once it is Official, so the review window is the time the Stage stays Computed. A Placement Stage is the exception: it never becomes Official, so a computed Placement Stage with a Finale shows its finalists
 - The last Qualifying Stage becomes Official only after the Backfill ran, and that makes the Backfill official too
 - A Stage becomes Official only after every earlier Qualifying and Survivor Stage is Official
 - A Placement Stage is never Official. Its output is final once computed. Its later commit points are, with a Finale, a replacement or the Finale result, and, without a Finale, recorded payouts (phase 3). A Recompute that reaches the Placement Stage after those needs confirmation and clears them
 - A job writes a Stage's output only while the Stage is not Official. A result event for an Official Stage re-runs the computation in memory and only marks the Stage Stale if the output differs
-- A Stale Stage does not become Official on its own
+- A Stale Stage cannot be marked Official until a Recompute clears the mark
 
-**In Code**: `StageStatus` (SmartEnum: `Pending`, `Computed`, `Official`), `SeriesStage.Status`, `ComputedAt`, `OfficialAt`. The make-official job (`MakeDueStagesOfficial`) runs on a schedule; `OfficialDueAt` is when a Computed Stage will become Official.
+**In Code**: `StageStatus` (SmartEnum: `Pending`, `Computed`, `Official`), `SeriesStage.Status`, `ComputedAt`, `OfficialAt`. `Series.MakeOfficial` marks a Stage Official; `StageAdvancementResponse.CanMakeOfficial` says whether a Stage is ready. The old make-official job was removed. `UseSeriesRemoveMakeOfficialJob` deletes its recurring entry from Hangfire; delete that call once every environment has deployed it.
 
 ---
 
@@ -1522,20 +1524,6 @@ Phase 1 stores the configuration. Phase 2 computes the field and each Stage's ou
 
 ---
 
-### Grace Period
-
-**Definition**: The time a Computed Qualifying or Survivor Stage waits, with unchanged output, before it becomes Official.
-
-**Rules**:
-
-- A setting, default 24 hours
-- It counts from when the output last changed (`ComputedAt`)
-- The job runs every 15 minutes, so the change can land up to 15 minutes late
-
-**In Code**: `SeriesAdvancement:OfficialGraceHours` setting.
-
----
-
 ### Recompute
 
 **Definition**: An admin action that works a Stage and every later Stage out again from the stored results and overrides.
@@ -1658,7 +1646,7 @@ These are decisions the posted rules do not state. They are recorded here until 
 8. **Membership**: open to members, judged on the qualifying tournament's end date, with no retroactive membership. This replaces the earlier "start date"
 9. **The Finale is optional**: the 2025 posted rules have one; earlier Series had none. Without a Finale, the Placement Round positions are the final standings and every bowler is paid by Series Position
 10. **The Finale is its own event** with a date, start time and host center, and can be rescheduled after processing begins
-11. **Official was called Announced**: earlier drafts used "Announced" with an admin Announce action. The word was dropped because it clashes with Discord announcements, with a tournament being "completed", with the Locked badge, and with how the public reads it. A Stage now becomes Official on its own after the Grace Period
+11. **Official was called Announced**: earlier drafts used "Announced" with an admin Announce action. The word was dropped because it clashes with Discord announcements, with a tournament being "completed", with the Locked badge, and with how the public reads it. A Stage becomes Official when a person marks it after review. An earlier version made it Official on a timer (the Grace Period), and that was removed so a person checks the output first
 12. **Placement ties** break by bowler ID
 13. **A Survivor Stage waits for at least one score row** on its squad before it computes
 14. **A re-sent result event on an Official Stage** re-runs the computation in memory and only marks the Stage Stale. It writes no output

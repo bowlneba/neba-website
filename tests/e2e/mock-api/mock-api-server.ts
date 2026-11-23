@@ -432,7 +432,7 @@ function resolveSeriesRoute(pathname: string): object | null {
 }
 
 // ── Series advancement fixtures (GET /series/{id}/advancement and its writes) ────────────────
-// Six fixture Series show the states the advancement UI has. The three Playwright projects share one
+// Seven fixture Series show the states the advancement UI has. The three Playwright projects share one
 // mock server and the writes change the fixture, so each project uses its own copy of an id
 // (perProjectAdvancementSeriesId); the base id works too. State is built on first use and POST
 // /__mock/series-advancement/reset?seriesId= (no seriesId: every Series) restores the fixtures.
@@ -443,6 +443,7 @@ export const MOCK_ADVANCEMENT_COMPLETE_ID = '01JX0000000000000000000522'; // Off
 export const MOCK_ADVANCEMENT_OVERRIDES_ID = '01JX0000000000000000000523'; // Official Qualifying, then Computed with an Add and a Clear
 export const MOCK_ADVANCEMENT_SQUAD_ID = '01JX0000000000000000000524'; // Survivor Stage with two squads to pick
 export const MOCK_ADVANCEMENT_CANCELLED_ID = '01JX0000000000000000000525'; // locked, one Pending Stage with a Cancelled tournament
+export const MOCK_ADVANCEMENT_REVIEW_ID = '01JX0000000000000000000526'; // both Qualifying Stages Computed, Backfill ran: Stage 1 is ready to mark Official
 export const MOCK_ADVANCEMENT_ADMIN_ID = '01JX0000000000000000000001'; // the createdBy of the fixture overrides
 
 // perProjectTournamentId keeps only the last digit of the base id, so 502 and 522 would collide: this one keeps all three.
@@ -490,7 +491,6 @@ interface AdvStage {
   isStale: boolean;
   needsSquad: boolean;
   computedAt?: string;
-  officialDueAt?: string;
   officialAt?: string;
   slotCount?: number;
   vacantSlotCount?: number;
@@ -542,6 +542,7 @@ const ADV_FIXTURE_NAMES: Record<string, string> = {
   [MOCK_ADVANCEMENT_OVERRIDES_ID]: 'Advancement Overrides Series',
   [MOCK_ADVANCEMENT_SQUAD_ID]: 'Advancement Squad Series',
   [MOCK_ADVANCEMENT_CANCELLED_ID]: 'Advancement Cancelled Series',
+  [MOCK_ADVANCEMENT_REVIEW_ID]: 'Advancement Review Series',
 };
 
 // Name, start date, kind, advancing count, squad date. Every Stage is singles; a Qualifying Stage has 4 slots.
@@ -555,7 +556,6 @@ const ADV_STAGE_ROWS: [string, string, AdvStage['kind'], number | null, string |
 const ADV_SLOTS = 4;
 const ADV_COMPUTED_AT = '2026-03-23T18:00:00+00:00';
 const ADV_OFFICIAL_AT = '2026-03-24T18:15:00+00:00';
-const ADV_OFFICIAL_DUE_AT = '2030-03-24T18:15:00+00:00'; // a fixed future time, so the Stage never comes due
 const ADV_BACKFILL_AS_OF = '2026-04-18';
 
 const ADV_BOWLER_NAMES = [
@@ -638,18 +638,20 @@ function advFallbackState(detail: Record<string, unknown>): AdvState {
   return state;
 }
 
-function advStageDue(state: AdvState, stage: AdvStage): string | undefined {
+// Mirrors the API: a Computed, non-stale Qualifying or Survivor Stage can be marked Official once every earlier one is Official
+// and, for the last Qualifying Stage, the Backfill ran.
+function advCanMakeOfficial(state: AdvState, stage: AdvStage): boolean {
   const lastQualifying = state.stages.findLast((s) => s.kind === 'Qualifying');
   const awaitsBackfill = stage === lastQualifying && state.backfillAsOf === null;
-  return stage.kind === 'Placement' || awaitsBackfill ? undefined : ADV_OFFICIAL_DUE_AT;
+  const earlierReady = state.stages.every((s) => s.order >= stage.order || s.kind === 'Placement' || s.status === 'Official');
+  return stage.kind !== 'Placement' && stage.status === 'Computed' && !stage.isStale && !awaitsBackfill && earlierReady;
 }
 
-function advSetComputed(state: AdvState, stage: AdvStage, official: boolean): void {
+function advSetComputed(_state: AdvState, stage: AdvStage, official: boolean): void {
   stage.status = official ? 'Official' : 'Computed';
   stage.tournamentStatus = 'Completed';
   stage.computedAt = ADV_COMPUTED_AT;
   stage.officialAt = official ? ADV_OFFICIAL_AT : undefined;
-  stage.officialDueAt = official ? undefined : advStageDue(state, stage);
 }
 
 function advFillQualifying(state: AdvState, order: number, official: boolean, vacant = 0): void {
@@ -724,6 +726,12 @@ function advBuildFixture(baseId: string): AdvState {
       survivor.tournamentStatus = 'Completed';
       survivor.needsSquad = true;
       state.version = 20;
+      break;
+    case MOCK_ADVANCEMENT_REVIEW_ID:
+      advFillQualifying(state, 1, false);
+      advFillQualifying(state, 2, false, 1);
+      advAddBackfill(state, 8, 520);
+      state.version = 9;
       break;
     case MOCK_ADVANCEMENT_CANCELLED_ID:
       advFillQualifying(state, 1, true);
@@ -852,7 +860,7 @@ function mockAdvancementResponse(state: AdvState): object {
     version: state.version,
     backfillAsOf: state.backfillAsOf,
     targetField,
-    stages: state.stages,
+    stages: state.stages.map((s) => ({ ...s, canMakeOfficial: advCanMakeOfficial(state, s) })),
     positions: state.positions,
   };
 }
@@ -888,7 +896,7 @@ function mockAdvancersResponse(state: AdvState): object {
   return { stages };
 }
 
-const ADV_PATH = /^\/series\/([^/]+)\/(advancement|advancers|stages\/([^/]+)\/(results|squads|recomputations|squad|overrides)(?:\/([^/]+))?)$/;
+const ADV_PATH = /^\/series\/([^/]+)\/(advancement|advancers|stages\/([^/]+)\/(results|squads|recomputations|squad|overrides|official)(?:\/([^/]+))?)$/;
 
 function resolveAdvancementRoute(pathname: string): object | null {
   const match = ADV_PATH.exec(pathname);
@@ -963,13 +971,14 @@ async function handleAdvancementWrite(req: IncomingMessage, res: ServerResponse,
 
   if (action === 'overrides') handleOverrideCreate(res, state, stage, body);
   else if (action === 'squad') handleSquadReplace(res, state, stage, body);
+  else if (action === 'official') handleMakeOfficial(res, state, stage, body);
   else handleRecompute(res, state, stage, body);
   return true;
 }
 
 function isAdvancementWriteRoute(method: string | undefined, action: string, hasOverrideId: boolean): boolean {
   if (method === 'POST') return (action === 'recomputations' || action === 'overrides') && !hasOverrideId;
-  if (method === 'PUT') return action === 'squad' && !hasOverrideId;
+  if (method === 'PUT') return (action === 'squad' || action === 'official') && !hasOverrideId;
   return method === 'DELETE' && action === 'overrides' && hasOverrideId;
 }
 
@@ -1074,7 +1083,6 @@ function handleRecompute(res: ServerResponse, state: AdvState, stage: AdvStage, 
     if (target.status === 'Official') {
       target.status = 'Computed';
       target.officialAt = undefined;
-      target.officialDueAt = advStageDue(state, target);
       changed = true;
     }
     if (target.isStale) {
@@ -1084,6 +1092,26 @@ function handleRecompute(res: ServerResponse, state: AdvState, stage: AdvStage, 
   }
   // A no-op recompute writes nothing, so Version stays.
   if (changed) state.version++;
+  sendNoContent(res);
+}
+
+// PUT /series/{id}/stages/{stageId}/official. A stale Version is 409, a Placement Stage is 422, a Stage that is not ready is 409,
+// and a Stage that is already Official is a no-op 204.
+function handleMakeOfficial(res: ServerResponse, state: AdvState, stage: AdvStage, body: string): void {
+  const input = (JSON.parse(body || '{}') as Record<string, unknown>);
+  const wrapper = (input.official ?? input.Official) as Record<string, unknown> | undefined;
+  if (advField<number>(wrapper, 'version') !== state.version) return sendAdvancementStale(res);
+  if (stage.status === 'Official') return sendNoContent(res);
+  if (stage.kind === 'Placement') {
+    return sendAdvancementError(res, 422, 'Series.Stage', 'A Placement Stage never becomes official.');
+  }
+  if (!advCanMakeOfficial(state, stage)) {
+    return sendAdvancementError(res, 409, 'Series.Stage', 'This Stage is not ready to be made official.');
+  }
+
+  stage.status = 'Official';
+  stage.officialAt = ADV_OFFICIAL_AT;
+  state.version++;
   sendNoContent(res);
 }
 

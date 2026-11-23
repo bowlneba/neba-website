@@ -1,6 +1,6 @@
 # Series advancement
 
-Shows who advances through each Stage of a Series, and lets staff fix the field when the automatic result is wrong.
+Shows who advances through each Stage of a Series. Staff review each result, fix the field when it is wrong, and mark the Stage official. Visitors see the names once a Stage is official.
 
 ## What it is
 
@@ -15,9 +15,17 @@ A Stage computes only when its tournament is completed (or truncated), it has re
 
 ## Prerequisites
 
-You need the `Series.EditSeries` permission to see Series advancement. Admin, Webmaster and Manager hold it. Without it, the Series page shows no advancement section.
+You need the `Series.EditSeries` or the `Series.MakeStageOfficial` permission to see the season rail. Without either, the Series page shows the public view.
 
-Adding a bowler, clearing a slot and removing an override also need the `Series.ManageAdvancement` permission. Admin and Webmaster hold it. Manager does not. See [`docs/policies/README.md`](../policies/README.md).
+| Permission | Who holds it | What it allows |
+| --- | --- | --- |
+| `Series.EditSeries` | Admin, Webmaster, Manager | See the rail. Pick squad. Recompute. |
+| `Series.MakeStageOfficial` | Admin, Webmaster, Manager, Tournament Director | See the rail. Mark a Stage official. |
+| `Series.ManageAdvancement` | Admin, Webmaster | Add bowler, Clear slot, Remove override. |
+
+A Tournament Director sees the rail and the **Mark official** button, and nothing that edits the Series.
+
+See [`docs/policies/README.md`](../policies/README.md).
 
 ## The season rail
 
@@ -31,23 +39,22 @@ Each Stage shows a status:
 | --- | --- |
 | Pending | The Stage has not computed. |
 | Computed | The Stage has a result. It can still change. |
-| Official | The result is settled. It changes only when staff run a confirmed Recompute. |
+| Official | Staff reviewed the result and marked it official. It changes only when staff run a confirmed Recompute. Visitors see its names. |
 
 A Placement Stage is Pending or Computed. It is never Official.
 
-A Computed Qualifying or Survivor Stage becomes Official on its own after 24 hours, if nothing changes it. An earlier Stage must be official first. The last Qualifying Stage becomes Official only after the Backfill ran.
+A Stage never becomes Official on its own. Someone reviews a Computed Qualifying or Survivor Stage and marks it official (see [Mark a Stage official](#mark-a-stage-official)). An earlier Stage must be official first. The last Qualifying Stage can become Official only after the Backfill ran.
 
 ### Indicators
 
 A Stage can also show these labels.
 
-![A Stale Stage, a Stage that needs a squad, and a Becomes official time](images/series-advancement/indicators.png)
+![A Stale Stage and a Stage that needs a squad](images/series-advancement/indicators.png)
 
 | Label | What it means |
 | --- | --- |
 | Needs squad | A Survivor Stage cannot find its squad. Use **Pick squad**. |
 | Stale | An earlier Stage changed after this Stage was official. This Stage's result has not changed. Use **Recompute from here** to refresh it. |
-| Becomes official about 2:15 PM on 3/24 | The time the Stage turns Official if nothing changes it. |
 | Backfill as of 4/18/2026 | The Backfill date. It shows on the last Qualifying Stage. |
 | Tournament cancelled: remove this Stage | The Stage's tournament was cancelled. See [Remove a cancelled Stage](#remove-a-cancelled-stage). |
 
@@ -77,6 +84,39 @@ A summary line says how many bowlers advance and how many bowled. The table list
 ### Placement Round
 
 A summary line says how many bowlers are ranked. The table lists each position and whether the bowler bowled. If the Series has a Finale, a **Finalist** column shows who is in. Finalist positions are provisional until the Finale is recorded.
+
+## Mark a Stage official
+
+Review a Stage's result first, then mark it official. Visitors see who advanced from a Stage only after you do.
+
+1. Open the Stage with the arrow and check the field. If it is wrong, fix it first (see [Change the Qualifying field](#change-the-qualifying-field-admin-and-webmaster)).
+2. Click **Mark official** on the Stage.
+![A Computed Stage with the Mark official button](images/series-advancement/mark-official-button.png)
+
+3. Read the confirmation and click **Mark official**. A message says "Stage 2 is official."
+
+![The Mark official confirmation](images/series-advancement/mark-official-confirm.png)
+
+The button shows only on a Stage that is ready:
+
+- The Stage is Computed and not Stale.
+- Every earlier Qualifying and Survivor Stage is Official. Mark them in order.
+- For the last Qualifying Stage, the Backfill ran.
+- A Placement Stage never shows the button. It is never Official.
+
+Marking a Stage official does nothing if it is already official.
+
+If someone finds a mistake after that, an Admin, Webmaster or Manager runs **Recompute from here** on the Stage and confirms. The Stage goes back to Computed and visitors stop seeing its names until it is marked official again.
+
+## What visitors see
+
+A visitor sees a **Who advanced** section on the Series page. It lists the bowlers who advanced out of each Official Stage:
+
+- **Qualifying.** Each bowler with their place. Backfill entries say **Backfill**.
+- **Survivor Round.** Each bowler who advanced, with their block total.
+- **Placement Round.** Shown when the Series has a Finale and the Stage computed. It lists the finalists with their tournament place.
+
+The section has no status labels, no override reasons and no buttons. A Stage that is not yet official does not show.
 
 ## Recompute from a Stage
 
@@ -162,13 +202,14 @@ If someone else changed the Series after you opened the page, your change does n
 
 ## Who can do what
 
-| Action | Admin | Webmaster | Manager |
-| --- | --- | --- | --- |
-| See Stage status and results | Yes | Yes | Yes |
-| Pick squad | Yes | Yes | Yes |
-| Recompute from a Stage | Yes | Yes | Yes |
-| Remove a cancelled Stage (Edit Series) | Yes | Yes | Yes |
-| Add bowler, Clear slot, Remove override | Yes | Yes | No |
+| Action | Admin | Webmaster | Manager | Tournament Director |
+| --- | --- | --- | --- | --- |
+| See Stage status and results | Yes | Yes | Yes | Yes |
+| Mark a Stage official | Yes | Yes | Yes | Yes |
+| Pick squad | Yes | Yes | Yes | No |
+| Recompute from a Stage | Yes | Yes | Yes | No |
+| Remove a cancelled Stage (Edit Series) | Yes | Yes | Yes | No |
+| Add bowler, Clear slot, Remove override | Yes | Yes | No | No |
 
 ## If something looks wrong
 
@@ -182,7 +223,10 @@ If someone else changed the Series after you opened the page, your change does n
 | "The Stage status could not refresh" | Reload the page. |
 | A Stage shows **Tournament cancelled: remove this Stage** | See [Remove a cancelled Stage](#remove-a-cancelled-stage). |
 | You cannot add an override to a Stage | The Stage may be Official, or not a Qualifying Stage. Run a confirmed Recompute to reset an Official Stage. |
-| No Season progress section | You do not hold `Series.EditSeries`. |
+| No Season progress section | You hold neither `Series.EditSeries` nor `Series.MakeStageOfficial`. |
+| A Stage has no **Mark official** button | The Stage may be Pending, Stale or Official, an earlier Stage may not be official yet, the Backfill may not have run, or it is a Placement Stage. You may also lack `Series.MakeStageOfficial`. |
+| Visitors do not see a Stage's names | The Stage is not official yet. Review it and click **Mark official**. |
+| You found a mistake in an Official Stage | Run a confirmed **Recompute from here**, fix the field, then mark the Stage official again. |
 
 ## Related
 

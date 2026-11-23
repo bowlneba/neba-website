@@ -6,6 +6,7 @@ import {
   MOCK_ADVANCEMENT_MID_SEASON_ID,
   MOCK_ADVANCEMENT_OVERRIDES_ID,
   MOCK_ADVANCEMENT_PENDING_ID,
+  MOCK_ADVANCEMENT_REVIEW_ID,
   MOCK_ADVANCEMENT_SQUAD_ID,
   perProjectAdvancementSeriesId,
 } from './mock-api/mock-api-server';
@@ -19,8 +20,10 @@ const MOCK_API = 'http://localhost:5151';
 
 // Personas are permission sets (POST /__test/login). Webmaster holds the same two permissions as Admin, so the
 // page cannot tell them apart and one Admin persona covers both.
-const MANAGER = 'Series.EditSeries';
-const ADMIN = 'Series.EditSeries,Series.ManageAdvancement';
+const MANAGER = 'Series.EditSeries,Series.MakeStageOfficial';
+const EDITOR_ONLY = 'Series.EditSeries';
+const ADMIN = 'Series.EditSeries,Series.ManageAdvancement,Series.MakeStageOfficial';
+const TOURNAMENT_DIRECTOR = 'Series.MakeStageOfficial';
 
 const seriesIdFor = (baseId: string, testInfo: TestInfo) => perProjectAdvancementSeriesId(baseId, testInfo.project.name);
 
@@ -186,7 +189,8 @@ test.describe('Series advancement: season under way (mid-season)', () => {
     await expect(status(page, 1)).toHaveText('Computed');
     await expect(card(page, 1).getByTestId('stage-headline')).toHaveText('4 of 4 slots filled');
     await expect(card(page, 1).getByTestId('stage-flag-stale')).toHaveText('Stale');
-    await expect(card(page, 1).getByTestId('stage-flag-due')).toContainText('Becomes official about');
+    await expect(card(page, 1).getByTestId('stage-flag-due')).toHaveCount(0);
+    await expect(page.getByTestId('stage-make-official')).toHaveCount(0); // a stale Stage is not ready
 
     await expect(status(page, 2)).toHaveText('Pending');
     // The Backfill date shows only once the Backfill ran.
@@ -797,5 +801,78 @@ test.describe('Series advancement: cancelled Stage tournament', () => {
     await page.waitForSelector('[data-testid="series-stage-card"]');
     await expect(cards(page)).toHaveCount(3);
     await expect(page.getByTestId('stage-flag-cancelled')).toHaveCount(0);
+  });
+});
+
+
+test.describe('Series advancement: marking a Stage official', () => {
+  test.use({ viewport: { width: 1200, height: 900 } });
+
+  test.describe.configure({ mode: 'serial' });
+
+  test.beforeEach(async ({ page }, testInfo) => {
+    await resetSeries(page, seriesIdFor(MOCK_ADVANCEMENT_REVIEW_ID, testInfo));
+  });
+
+  test('a Manager marks the ready Stage official after confirming, and the next Stage becomes ready', async ({ page }, testInfo) => {
+    await openSeries(page, seriesIdFor(MOCK_ADVANCEMENT_REVIEW_ID, testInfo), MANAGER);
+
+    await expect(status(page, 1)).toHaveText('Computed');
+    await expect(page.getByTestId('stage-make-official')).toHaveCount(1);
+    await expect(card(page, 1).getByTestId('stage-make-official')).toBeVisible();
+
+    await card(page, 1).getByTestId('stage-make-official').click();
+    await expect(page.getByText('Mark Stage 1 official?')).toBeVisible();
+    await page.locator('.confirm-action-modal-confirm').click();
+
+    await expect(status(page, 1)).toHaveText('Official');
+    await expect(card(page, 2).getByTestId('stage-make-official')).toBeVisible();
+    await expect(card(page, 1).getByTestId('stage-make-official')).toHaveCount(0);
+  });
+
+  test('cancelling the confirmation leaves the Stage Computed', async ({ page }, testInfo) => {
+    await openSeries(page, seriesIdFor(MOCK_ADVANCEMENT_REVIEW_ID, testInfo), MANAGER);
+
+    await card(page, 1).getByTestId('stage-make-official').click();
+    await page.locator('.confirm-action-modal-cancel').click();
+
+    await expect(status(page, 1)).toHaveText('Computed');
+  });
+
+  test('a Tournament Director sees the rail and Mark official, but not Recompute', async ({ page }, testInfo) => {
+    await openSeries(page, seriesIdFor(MOCK_ADVANCEMENT_REVIEW_ID, testInfo), TOURNAMENT_DIRECTOR);
+
+    await expect(page.getByTestId('series-progress')).toBeVisible();
+    await expect(card(page, 1).getByTestId('stage-make-official')).toBeVisible();
+    await expect(page.getByTestId('stage-recompute')).toHaveCount(0);
+    await expect(page.getByTestId('stage-pick-squad')).toHaveCount(0);
+  });
+
+  test('an editor without Series.MakeStageOfficial sees no Mark official button', async ({ page }, testInfo) => {
+    await openSeries(page, seriesIdFor(MOCK_ADVANCEMENT_REVIEW_ID, testInfo), EDITOR_ONLY);
+
+    await expect(page.getByTestId('stage-recompute').first()).toBeVisible();
+    await expect(page.getByTestId('stage-make-official')).toHaveCount(0);
+  });
+
+  test('the public sees nothing until a Stage is official, then sees who advanced', async ({ page }, testInfo) => {
+    const seriesId = seriesIdFor(MOCK_ADVANCEMENT_REVIEW_ID, testInfo);
+
+    await page.goto(`/series/${seriesId}`);
+    await page.waitForSelector('.series-stage-list');
+    await expect(page.getByTestId('series-advancers')).toHaveCount(0);
+
+    await page.request.post(`/__test/login?permissions=${MANAGER}`);
+    await page.goto(`/series/${seriesId}`);
+    await page.waitForSelector('[data-testid="series-stage-card"]');
+    await card(page, 1).getByTestId('stage-make-official').click();
+    await page.locator('.confirm-action-modal-confirm').click();
+    await expect(status(page, 1)).toHaveText('Official');
+
+    await page.context().clearCookies();
+    await page.goto(`/series/${seriesId}`);
+    await page.waitForSelector('[data-testid="series-advancers"]');
+    await expect(page.getByTestId('series-advancers-stage')).toHaveCount(1);
+    await expect(page.getByTestId('stage-status')).toHaveCount(0);
   });
 });
