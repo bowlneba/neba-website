@@ -166,6 +166,9 @@ public sealed record TournamentDetailResponse
     /// </summary>
     public IReadOnlyCollection<DefendingTeamResponse> DefendingChampions { get; init; } = [];
 
+    /// <summary>The Series this tournament is a Stage of, or null.</summary>
+    public TournamentSeriesResponse? Series { get; init; }
+
     /// <summary>
     /// Per-bowler results ordered by place (nulls last) then bowler name; empty for upcoming or data-unavailable tournaments.
     /// </summary>

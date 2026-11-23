@@ -14,7 +14,8 @@ internal sealed class ListTournamentsInSeasonQueryHandler(
     AppDbContext appDbContext,
     IFileStorageService fileStorageService,
     TimeProvider timeProvider,
-    DefendingTeamsReader defendingTeamsReader)
+    DefendingTeamsReader defendingTeamsReader,
+    TournamentSeriesReader tournamentSeriesReader)
     : IQueryHandler<ListTournamentsInSeasonQuery, IReadOnlyCollection<SeasonTournamentDto>>
 {
     private readonly IQueryable<Tournament> _tournaments =
@@ -119,6 +120,16 @@ internal sealed class ListTournamentsInSeasonQueryHandler(
 
         var defendingByTournament = await defendingTeamsReader.LoadAsync([.. rows.Select(row => row.Id)], cancellationToken);
 
+        var rowIds = rows.ConvertAll(row => (TournamentId?)row.Id);
+
+        var nextByTournament = (await _tournaments
+                .Where(tournament => rowIds.Contains(tournament.PreviousTournamentId))
+                .Select(tournament => new { tournament.Id, tournament.PreviousTournamentId })
+                .ToListAsync(cancellationToken))
+            .ToDictionary(next => next.PreviousTournamentId!.Value, next => next.Id);
+
+        var seriesByTournament = await tournamentSeriesReader.LoadAsync([.. rows.Select(row => row.Id)], cancellationToken);
+
         var now = timeProvider.GetUtcNow();
 
         return [.. rows.Select(row =>
@@ -183,6 +194,8 @@ internal sealed class ListTournamentsInSeasonQueryHandler(
                 Winners = winnersByTournamentDbId.GetValueOrDefault(row.DbId, []),
                 TeamSize = TournamentType.FromValue(row.TournamentTypeValue).TeamSize,
                 DefendingChampions = [.. defendingByTournament.GetValueOrDefault(row.Id, []).Select(team => team.ToDto())],
+                NextTournamentId = nextByTournament.TryGetValue(row.Id, out var nextId) ? nextId : null,
+                Series = seriesByTournament.GetValueOrDefault(row.Id),
             };
         })];
     }

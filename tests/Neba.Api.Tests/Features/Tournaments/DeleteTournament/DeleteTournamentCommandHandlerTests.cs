@@ -4,6 +4,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Neba.Api.BackgroundJobs;
 using Neba.Api.Database;
 using Neba.Api.Database.Entities;
+using Neba.Api.Features.Series.Domain;
 using Neba.Api.Features.Storage.Domain;
 using Neba.Api.Features.Tournaments.DeleteTournament;
 using Neba.Api.Features.Tournaments.Domain;
@@ -12,6 +13,7 @@ using Neba.TestFactory.Attributes;
 using Neba.TestFactory.Bowlers;
 using Neba.TestFactory.Infrastructure;
 using Neba.TestFactory.Seasons;
+using Neba.TestFactory.Series;
 using Neba.TestFactory.Storage;
 using Neba.TestFactory.Tournaments;
 
@@ -61,6 +63,37 @@ public sealed class DeleteTournamentCommandHandlerTests(AppDbContextFixture fixt
         await _dbContext.Tournaments.AddAsync(tournament, ct);
         await _dbContext.SaveChangesAsync(ct);
         return tournament;
+    }
+
+    [Fact(DisplayName = "HandleAsync evicts the cached season list of the deleted tournament's previous tournament")]
+    public async Task HandleAsync_ShouldEvictPreviousTournamentSeasonList_WhenTournamentHasPreviousTournament()
+    {
+        // Arrange
+        var ct = TestContext.Current.CancellationToken;
+        var earlierSeason = SeasonFactory.Create(startDate: new DateOnly(2024, 1, 1), endDate: new DateOnly(2024, 12, 31));
+        var season = SeasonFactory.Create(startDate: new DateOnly(2025, 1, 1), endDate: new DateOnly(2025, 12, 31));
+        await _dbContext.Seasons.AddRangeAsync([earlierSeason, season], ct);
+        var previous = TournamentFactory.Create(
+            startDate: new DateOnly(2024, 3, 1), endDate: new DateOnly(2024, 3, 2), seasonId: earlierSeason.Id);
+        await _dbContext.Tournaments.AddAsync(previous, ct);
+        var tournament = TournamentFactory.Create(
+            startDate: new DateOnly(2025, 3, 1),
+            endDate: new DateOnly(2025, 3, 2),
+            seasonId: season.Id,
+            previousTournament: PreviousTournamentFactsFactory.Create(previous.Id, previous.TournamentType, previous.EndDate));
+        await _dbContext.Tournaments.AddAsync(tournament, ct);
+        await _dbContext.SaveChangesAsync(ct);
+
+        var cache = _serviceProvider.GetRequiredService<IFusionCache>();
+        await cache.GetOrSetAsync("previous-season-list", _ => Task.FromResult("stale"), tags: [$"neba:tournaments:{earlierSeason.Id}"], token: ct);
+        var handler = CreateHandler();
+
+        // Act
+        var result = await handler.HandleAsync(new DeleteTournamentCommand { TournamentId = tournament.Id }, ct);
+
+        // Assert
+        result.IsError.ShouldBeFalse();
+        (await cache.GetOrSetAsync("previous-season-list", _ => Task.FromResult("fresh"), token: ct)).ShouldBe("fresh");
     }
 
     [Fact(DisplayName = "HandleAsync returns Deleted when tournament does not exist")]
@@ -127,6 +160,54 @@ public sealed class DeleteTournamentCommandHandlerTests(AppDbContextFixture fixt
         var stillExists = await _dbContext.Tournaments.AsNoTracking()
             .AnyAsync(t => t.Id == existingTournament.Id, ct);
         stillExists.ShouldBeTrue();
+    }
+
+    [Fact(DisplayName = "HandleAsync returns a conflict error naming the Series when the tournament is a Series Stage")]
+    public async Task HandleAsync_ShouldReturnConflictError_WhenTournamentIsASeriesStage()
+    {
+        // Arrange
+        var ct = TestContext.Current.CancellationToken;
+        var tournament = await SeedTournamentAsync(ct);
+        var season = await _dbContext.Seasons.SingleAsync(ct);
+        var series = SeriesFactory.CreateFor(season, [(tournament, StageKind.Qualifying, 8, null, null)], name: "Vincent Hall");
+        await _dbContext.Series.AddAsync(series, ct);
+        await _dbContext.SaveChangesAsync(ct);
+
+        var handler = CreateHandler();
+
+        // Act
+        var result = await handler.HandleAsync(new DeleteTournamentCommand { TournamentId = tournament.Id }, ct);
+
+        // Assert
+        result.FirstError.Code.ShouldBe("Tournament.IsSeriesStage");
+        result.FirstError.Type.ShouldBe(ErrorOr.ErrorType.Conflict);
+        result.FirstError.Description.ShouldContain("Vincent Hall");
+        (await _dbContext.Tournaments.CountAsync(ct)).ShouldBe(1);
+    }
+
+    [Fact(DisplayName = "HandleAsync deletes the tournament once it is removed from its Series")]
+    public async Task HandleAsync_ShouldDeleteTournament_AfterItIsRemovedFromItsSeries()
+    {
+        // Arrange
+        var ct = TestContext.Current.CancellationToken;
+        var tournament = await SeedTournamentAsync(ct);
+        var season = await _dbContext.Seasons.SingleAsync(ct);
+        var series = SeriesFactory.CreateFor(season, [(tournament, StageKind.Qualifying, 8, null, null)]);
+        await _dbContext.Series.AddAsync(series, ct);
+        await _dbContext.SaveChangesAsync(ct);
+
+        var facts = new Dictionary<TournamentId, StageTournamentFacts>();
+        series.ReplaceConfiguration([], null, facts).IsError.ShouldBeFalse();
+        await _dbContext.SaveChangesAsync(ct);
+
+        var handler = CreateHandler();
+
+        // Act
+        var result = await handler.HandleAsync(new DeleteTournamentCommand { TournamentId = tournament.Id }, ct);
+
+        // Assert
+        result.IsError.ShouldBeFalse();
+        (await _dbContext.Tournaments.CountAsync(ct)).ShouldBe(0);
     }
 
     [Fact(DisplayName = "HandleAsync returns a conflict error when the tournament has a historical champion")]

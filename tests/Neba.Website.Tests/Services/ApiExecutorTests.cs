@@ -715,6 +715,109 @@ public sealed class ApiExecutorTests
         result.FirstError.Description.ShouldBe(expectedMessage);
     }
 
+    private async Task<ErrorOr.Error> ExecuteWithErrorBodyAsync(System.Net.HttpStatusCode status, string body)
+    {
+        const long startTimestamp = 1000;
+        var cancellationToken = TestContext.Current.CancellationToken;
+
+        using var requestMessage = new HttpRequestMessage(HttpMethod.Put, "https://api.example.com/data");
+        using var responseMessage = new HttpResponseMessage(status) { Content = new StringContent(body) };
+        var apiException = await ApiException.Create(requestMessage, HttpMethod.Put, responseMessage, new RefitSettings());
+
+        var apiResponse = new StubApiResponse<string>
+        {
+            IsSuccessStatusCode = false,
+            StatusCode = status,
+            Error = apiException,
+            Content = null
+        };
+
+        _stopwatchProviderMock.Setup(s => s.GetTimestamp()).Returns(startTimestamp);
+        _stopwatchProviderMock.Setup(s => s.GetElapsedTime(startTimestamp)).Returns(TimeSpan.FromMilliseconds(50));
+
+        var result = await _executor.ExecuteAsync(
+            "TestApi", "Save",
+            _ => Task.FromResult<IApiResponse<string>>(apiResponse),
+            cancellationToken);
+
+        result.IsError.ShouldBeTrue();
+        return result.FirstError;
+    }
+
+    [Fact(DisplayName = "Should keep the named errors of a 422 response in the error metadata and still flatten the description")]
+    public async Task ExecuteAsync_ShouldKeepNamedErrors_For422Response()
+    {
+        // Arrange
+        const string body = "{\"status\":422,\"errors\":[{\"name\":\"series.Stages[2]\",\"reason\":\"Stage 3: needs a count.\"},{\"name\":\"series.Finale.Date\",\"reason\":\"Finale is too early.\"}]}";
+
+        // Act
+        var error = await ExecuteWithErrorBodyAsync(System.Net.HttpStatusCode.UnprocessableEntity, body);
+
+        // Assert
+        error.Type.ShouldBe(ErrorOr.ErrorType.Validation);
+        error.Description.ShouldBe("Stage 3: needs a count. Finale is too early.");
+        error.GetFieldErrors().ShouldBe(
+        [
+            new ApiFieldError("series.Stages[2]", "Stage 3: needs a count."),
+            new ApiFieldError("series.Finale.Date", "Finale is too early."),
+        ]);
+    }
+
+    [Fact(DisplayName = "Should keep the named errors of a 409 response in the error metadata")]
+    public async Task ExecuteAsync_ShouldKeepNamedErrors_For409Response()
+    {
+        // Arrange
+        const string body = "{\"status\":409,\"errors\":[{\"name\":\"series.Stages[0]\",\"reason\":\"Already in another Series.\"}]}";
+
+        // Act
+        var error = await ExecuteWithErrorBodyAsync(System.Net.HttpStatusCode.Conflict, body);
+
+        // Assert
+        error.Type.ShouldBe(ErrorOr.ErrorType.Conflict);
+        error.GetFieldErrors().ShouldBe([new ApiFieldError("series.Stages[0]", "Already in another Series.")]);
+    }
+
+    [Fact(DisplayName = "Should skip errors with a blank name from the metadata but keep their reason in the description")]
+    public async Task ExecuteAsync_ShouldSkipUnnamedErrors_InMetadata()
+    {
+        // Arrange
+        const string body = "{\"status\":422,\"errors\":[{\"name\":\"\",\"reason\":\"General problem.\"},{\"name\":\"name\",\"reason\":\"Name is required.\"}]}";
+
+        // Act
+        var error = await ExecuteWithErrorBodyAsync(System.Net.HttpStatusCode.UnprocessableEntity, body);
+
+        // Assert
+        error.Description.ShouldBe("General problem. Name is required.");
+        error.GetFieldErrors().ShouldBe([new ApiFieldError("name", "Name is required.")]);
+    }
+
+    [Fact(DisplayName = "Should leave the error metadata empty when the response has only a detail message")]
+    public async Task ExecuteAsync_ShouldLeaveMetadataEmpty_WhenThereAreNoNamedErrors()
+    {
+        // Arrange
+        const string body = "{\"status\":409,\"detail\":\"This Series is locked.\"}";
+
+        // Act
+        var error = await ExecuteWithErrorBodyAsync(System.Net.HttpStatusCode.Conflict, body);
+
+        // Assert
+        error.Description.ShouldBe("This Series is locked.");
+        error.Metadata.ShouldBeNull();
+        error.GetFieldErrors().ShouldBeEmpty();
+    }
+
+    [Fact(DisplayName = "GetFieldErrors should return an empty list for an error with no field error metadata")]
+    public void GetFieldErrors_ShouldReturnEmpty_WhenMetadataIsMissingOrOfAnotherType()
+    {
+        // Arrange
+        var plain = ErrorOr.Error.Validation("a", "b");
+        var wrongType = ErrorOr.Error.Validation("a", "b", new Dictionary<string, object> { [ApiFieldErrorExtensions.MetadataKey] = "not a list" });
+
+        // Act & Assert
+        plain.GetFieldErrors().ShouldBeEmpty();
+        wrongType.GetFieldErrors().ShouldBeEmpty();
+    }
+
     [Fact(DisplayName = "Should record stopwatch timestamp at start")]
     public async Task ExecuteAsync_ShouldRecordStartTimestamp_AtBeginning()
     {

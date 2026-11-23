@@ -225,6 +225,42 @@ public sealed class TournamentApiServiceTests
         mapped.ShowTeamEligibilityLink.ShouldBeTrue();
     }
 
+    [Fact(DisplayName = "GetTournamentsForSeasonAsync should map the consecutive titles of each defending team and the next tournament id")]
+    public async Task GetTournamentsForSeasonAsync_ShouldMapConsecutiveTitlesAndNextTournamentId()
+    {
+        // Arrange
+        var season = new SeasonViewModel
+        {
+            Id = "01000000000000000000000001",
+            Description = "2026-2027 Season",
+            StartDate = new DateOnly(2026, 9, 1),
+            EndDate = new DateOnly(2027, 6, 30),
+        };
+
+        var tournament = new SeasonTournamentResponse
+        {
+            Id = "01000000000000000000000002",
+            Name = "NEBA Doubles",
+            StartDate = new DateOnly(2027, 3, 1),
+            EndDate = new DateOnly(2027, 3, 2),
+            TournamentType = "Doubles",
+            Status = "Scheduled",
+            TitleEligible = false,
+            TeamSize = 2,
+            NextTournamentId = "01000000000000000000000003",
+            DefendingChampions = [DefendingTeamResponseFactory.Create(consecutiveTitles: 3)],
+        };
+        SetupTournamentsInSeasonSuccess(season.Id, [tournament]);
+
+        // Act
+        var result = await _service.GetTournamentsForSeasonAsync(season, TestContext.Current.CancellationToken);
+
+        // Assert
+        var mapped = result.Value.Single();
+        mapped.NextTournamentId.ShouldBe("01000000000000000000000003");
+        mapped.DefendingChampions.ShouldHaveSingleItem().ConsecutiveTitles.ShouldBe(3);
+    }
+
     [Fact(DisplayName = "GetTournamentsForSeasonAsync should map TitleEligible true for a Scheduled tournament regardless of the API's raw flag")]
     public async Task GetTournamentsForSeasonAsync_ShouldMapTitleEligibleTrue_ForScheduledTournament()
     {

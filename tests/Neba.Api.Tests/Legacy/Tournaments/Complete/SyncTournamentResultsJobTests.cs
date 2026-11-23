@@ -1,13 +1,21 @@
 using System.Diagnostics.CodeAnalysis;
 
+using Hangfire;
+using Hangfire.Common;
+using Hangfire.States;
+
 using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Testing;
 
+using Neba.Api.BackgroundJobs;
+using Neba.Api.Caching;
 using Neba.Api.Database;
+using Neba.Api.Database.Interceptors;
 using Neba.Api.Discord;
+using Neba.Api.Domain;
 using Neba.Api.Features.Bowlers.Domain;
 using Neba.Api.Features.Tournaments.Domain;
 using Neba.Api.Legacy.Tournaments.Complete;
@@ -133,6 +141,17 @@ public sealed class SyncTournamentResultsJobTests(AppDbContextFixture fixture, L
         await insert.ExecuteNonQueryAsync();
     }
 
+    private async Task UpdateResultsStatsAsync(int statsId, int? place, decimal payout, int points)
+    {
+        await using var update = _legacyConnection.CreateCommand();
+        update.CommandText = "UPDATE Stats_ResultsStats SET Place = @Place, Payout = @Payout, Points = @Points WHERE Id = @Id";
+        update.Parameters.AddWithValue("@Id", statsId);
+        update.Parameters.AddWithValue("@Place", place.HasValue ? place.Value : DBNull.Value);
+        update.Parameters.AddWithValue("@Payout", payout);
+        update.Parameters.AddWithValue("@Points", points);
+        await update.ExecuteNonQueryAsync();
+    }
+
     private async Task InsertQualifyingStatsAsync(int statsId, int squadId, int score, int games, int highGame)
     {
         await using var insert = _legacyConnection.CreateCommand();
@@ -203,13 +222,59 @@ public sealed class SyncTournamentResultsJobTests(AppDbContextFixture fixture, L
         return bowler;
     }
 
+    // The publisher is a seam here; the event tests assert what it receives.
+    private static IDomainEventPublisher CreatePublisher()
+    {
+        var publisher = new Mock<IDomainEventPublisher>(MockBehavior.Strict);
+        publisher.Setup(p => p.Publish(It.IsAny<IDomainEvent>()));
+        publisher.Setup(p => p.PublishAndClear(It.IsAny<IAggregateRoot>()));
+
+        return publisher.Object;
+    }
+
+    // Records the events each PublishAndClear call saw. The mock does not clear them, so the copy is taken at call time.
+    private static Mock<IDomainEventPublisher> CreateRecordingPublisher(
+        List<(IAggregateRoot Aggregate, IReadOnlyList<IDomainEvent> Events)> calls)
+    {
+        var publisher = new Mock<IDomainEventPublisher>(MockBehavior.Strict);
+        publisher
+            .Setup(p => p.PublishAndClear(It.IsAny<IAggregateRoot>()))
+            .Callback<IAggregateRoot>(aggregate => calls.Add((aggregate, [.. aggregate.DomainEvents])));
+
+        return publisher;
+    }
+
+    private static Mock<IBackgroundJobClient> CreateRecordingJobClient(List<Job> createdJobs)
+    {
+        var client = new Mock<IBackgroundJobClient>(MockBehavior.Strict);
+        client
+            .Setup(c => c.Create(It.IsAny<Job>(), It.IsAny<IState>()))
+            .Callback<Job, IState>((job, _) => createdJobs.Add(job))
+            .Returns("job-1");
+
+        return client;
+    }
+
+    private async Task CreateTournamentWithStatusAsync(int legacyTournamentId, TournamentStatus status, CancellationToken ct)
+    {
+        var season = SeasonFactory.Create();
+        await _dbContext.Seasons.AddAsync(season, ct);
+        var tournament = TournamentFactory.Create(legacyId: legacyTournamentId, seasonId: season.Id, status: status);
+        await _dbContext.Tournaments.AddAsync(tournament, ct);
+        await _dbContext.SaveChangesAsync(ct);
+        _dbContext.ChangeTracker.Clear();
+    }
+
     private SyncTournamentResultsJob CreateJob(
         Mock<IManualInterventionNotifier>? manualInterventionNotifier = null,
-        FakeLogger<SyncTournamentResultsJob>? logger = null) =>
+        FakeLogger<SyncTournamentResultsJob>? logger = null,
+        IDomainEventPublisher? publisher = null,
+        AppDbContext? db = null) =>
         new(
-            _dbContext,
+            db ?? _dbContext,
             _legacyConnection,
             _serviceProvider.GetRequiredService<IFusionCache>(),
+            publisher ?? CreatePublisher(),
             (manualInterventionNotifier ?? new Mock<IManualInterventionNotifier>(MockBehavior.Strict)).Object,
             logger ?? new FakeLogger<SyncTournamentResultsJob>());
 
@@ -299,6 +364,36 @@ public sealed class SyncTournamentResultsJobTests(AppDbContextFixture fixture, L
         championsValueAfterSync.ShouldBe("fresh-value");
         var pointsValueAfterSync = await cache.GetOrSetAsync(pointsCacheKey, _ => Task.FromResult("fresh-value"), token: ct);
         pointsValueAfterSync.ShouldBe("fresh-value");
+    }
+
+    [Fact(DisplayName = "SyncAsync should evict the cached titles of each winner, and only the winners")]
+    public async Task SyncAsync_ShouldEvictWinnersTitlesCache_AndNotOtherBowlers()
+    {
+        // Arrange
+        var ct = TestContext.Current.CancellationToken;
+        await CreateTournamentAsync(42, TournamentType.Singles, complete: true, ct);
+        var winner = await CreateBowlerAsync(100, ct);
+        var runnerUp = await CreateBowlerAsync(200, ct);
+
+        var winnerStatsId = await InsertStatsAsync(100, 42);
+        await InsertResultsStatsAsync(winnerStatsId, place: 1, payout: 500m, points: 100);
+        var runnerUpStatsId = await InsertStatsAsync(200, 42);
+        await InsertResultsStatsAsync(runnerUpStatsId, place: 2, payout: 300m, points: 80);
+
+        var cache = _serviceProvider.GetRequiredService<IFusionCache>();
+        var winnerTitles = CacheDescriptors.Bowlers.Titles(winner.Id);
+        var runnerUpTitles = CacheDescriptors.Bowlers.Titles(runnerUp.Id);
+        await cache.GetOrSetAsync(winnerTitles.Key, _ => Task.FromResult("stale-cached-value"), tags: winnerTitles.Tags, token: ct);
+        await cache.GetOrSetAsync(runnerUpTitles.Key, _ => Task.FromResult("stale-cached-value"), tags: runnerUpTitles.Tags, token: ct);
+
+        var job = CreateJob();
+
+        // Act
+        await job.SyncAsync(42, ct);
+
+        // Assert
+        (await cache.GetOrSetAsync(winnerTitles.Key, _ => Task.FromResult("fresh-value"), token: ct)).ShouldBe("fresh-value");
+        (await cache.GetOrSetAsync(runnerUpTitles.Key, _ => Task.FromResult("fresh-value"), token: ct)).ShouldBe("stale-cached-value");
     }
 
     [Fact(DisplayName = "SyncAsync should evict the cached reads of the next tournament, which show these winners as defenders")]
@@ -666,7 +761,7 @@ public sealed class SyncTournamentResultsJobTests(AppDbContextFixture fixture, L
         otherTournament.Results.ShouldBeEmpty();
     }
 
-    [Fact(DisplayName = "SyncAsync should not duplicate results and should log the skip when run twice for the same legacy tournament id")]
+    [Fact(DisplayName = "SyncAsync should not duplicate results when run twice for the same legacy tournament id")]
     public async Task SyncAsync_ShouldNotDuplicateResults_WhenRunTwice()
     {
         // Arrange
@@ -689,6 +784,186 @@ public sealed class SyncTournamentResultsJobTests(AppDbContextFixture fixture, L
         var tournament = await ReloadTournamentAsync(42, ct);
         var result = tournament.Results.ShouldHaveSingleItem();
         result.BowlerId.ShouldBe(bowler.Id);
-        fakeLogger.Collector.GetSnapshot().ShouldContain(r => r.Level == LogLevel.Information);
+    }
+
+    [Fact(DisplayName = "SyncAsync should update an already-recorded result when the legacy points, place or prize money changed")]
+    public async Task SyncAsync_ShouldUpdateExistingResult_WhenLegacyValuesChanged()
+    {
+        // Arrange
+        var ct = TestContext.Current.CancellationToken;
+        await CreateTournamentAsync(42, TournamentType.Singles, complete: true, ct);
+        var bowler = await CreateBowlerAsync(100, ct);
+
+        var statsId = await InsertStatsAsync(100, 42);
+        await InsertResultsStatsAsync(statsId, place: 1, payout: 500m, points: 100);
+
+        var job = CreateJob();
+        await job.SyncAsync(42, ct);
+        _dbContext.ChangeTracker.Clear();
+        var originalResultId = (await ReloadTournamentAsync(42, ct)).Results.Single().Id;
+        _dbContext.ChangeTracker.Clear();
+
+        await UpdateResultsStatsAsync(statsId, place: 2, payout: 250m, points: 60);
+
+        // Act
+        await job.SyncAsync(42, ct);
+
+        // Assert
+        var tournament = await ReloadTournamentAsync(42, ct);
+        var result = tournament.Results.ShouldHaveSingleItem();
+        result.Id.ShouldBe(originalResultId);
+        result.BowlerId.ShouldBe(bowler.Id);
+        result.Place.ShouldBe(2);
+        result.PrizeMoney.ShouldBe(250m);
+        result.Points.ShouldBe(60);
+    }
+
+    [Fact(DisplayName = "SyncAsync should call PublishAndClear once with a tournament holding one TournamentResultsRecorded on the first sync")]
+    public async Task SyncAsync_ShouldPublishResultsRecorded_OnFirstSync()
+    {
+        // Arrange
+        var ct = TestContext.Current.CancellationToken;
+        await CreateTournamentAsync(42, TournamentType.Singles, complete: true, ct);
+        await CreateBowlerAsync(100, ct);
+        var statsId = await InsertStatsAsync(100, 42);
+        await InsertResultsStatsAsync(statsId, place: 1, payout: 500m, points: 100);
+
+        var calls = new List<(IAggregateRoot Aggregate, IReadOnlyList<IDomainEvent> Events)>();
+        var publisher = CreateRecordingPublisher(calls);
+        var job = CreateJob(publisher: publisher.Object);
+
+        // Act
+        await job.SyncAsync(42, ct);
+
+        // Assert
+        var (aggregate, events) = calls.ShouldHaveSingleItem();
+        var published = aggregate.ShouldBeOfType<Tournament>();
+        published.LegacyId.ShouldBe(42);
+        var domainEvent = events.ShouldHaveSingleItem().ShouldBeOfType<TournamentResultsRecorded>();
+        domainEvent.TournamentId.ShouldBe(published.Id);
+    }
+
+    [Fact(DisplayName = "SyncAsync should still publish TournamentResultsRecorded on a re-sync that adds no rows")]
+    public async Task SyncAsync_ShouldPublishResultsRecorded_WhenReSyncAddsNoRows()
+    {
+        // Arrange
+        var ct = TestContext.Current.CancellationToken;
+        await CreateTournamentAsync(42, TournamentType.Singles, complete: true, ct);
+        await CreateBowlerAsync(100, ct);
+        var statsId = await InsertStatsAsync(100, 42);
+        await InsertResultsStatsAsync(statsId, place: 1, payout: 500m, points: 100);
+        await CreateJob().SyncAsync(42, ct);
+        _dbContext.ChangeTracker.Clear();
+
+        var calls = new List<(IAggregateRoot Aggregate, IReadOnlyList<IDomainEvent> Events)>();
+        var publisher = CreateRecordingPublisher(calls);
+        var job = CreateJob(publisher: publisher.Object);
+
+        // Act
+        await job.SyncAsync(42, ct);
+
+        // Assert
+        var (aggregate, events) = calls.ShouldHaveSingleItem();
+        var published = aggregate.ShouldBeOfType<Tournament>();
+        published.Results.ShouldHaveSingleItem();
+        events.ShouldHaveSingleItem().ShouldBeOfType<TournamentResultsRecorded>().TournamentId.ShouldBe(published.Id);
+    }
+
+    [Theory(DisplayName = "SyncAsync should log LogLegacyResultsNotMarkedRecorded with ids only and publish no results event when the tournament is Scheduled or Cancelled")]
+    [InlineData("Scheduled")]
+    [InlineData("Cancelled")]
+    public async Task SyncAsync_ShouldLogNotMarkedRecordedAndPublishNoResultsEvent_WhenTournamentIsNotFinalized(string statusName)
+    {
+        // Arrange
+        var ct = TestContext.Current.CancellationToken;
+        await CreateTournamentWithStatusAsync(42, TournamentStatus.FromName(statusName), ct);
+
+        var calls = new List<(IAggregateRoot Aggregate, IReadOnlyList<IDomainEvent> Events)>();
+        var publisher = CreateRecordingPublisher(calls);
+        var fakeLogger = new FakeLogger<SyncTournamentResultsJob>();
+        var job = CreateJob(logger: fakeLogger, publisher: publisher.Object);
+
+        // Act
+        await job.SyncAsync(42, ct);
+
+        // Assert
+        var record = fakeLogger.Collector.GetSnapshot().ShouldHaveSingleItem();
+        record.Level.ShouldBe(LogLevel.Warning);
+        record.Message.ShouldBe(
+            "Results synced for legacy tournament 42 but the tournament cannot signal them: "
+            + TournamentErrors.TournamentNotFinalized.Description);
+        record.Message.ShouldNotContain(TournamentFactory.ValidName);
+        calls.ShouldHaveSingleItem().Events.ShouldBeEmpty();
+    }
+
+    [Fact(DisplayName = "SyncAsync should publish nothing when SaveChangesAsync throws")]
+    public async Task SyncAsync_ShouldPublishNothing_WhenSaveChangesThrows()
+    {
+        // Arrange
+        var ct = TestContext.Current.CancellationToken;
+        await CreateTournamentAsync(42, TournamentType.Singles, complete: true, ct);
+        await CreateBowlerAsync(100, ct);
+        var statsId = await InsertStatsAsync(100, 42);
+        await InsertResultsStatsAsync(statsId, place: 1, payout: 500m, points: 100);
+
+        var saveInterceptor = new FailOnNthSaveInterceptor();
+        saveInterceptor.FailOnCall(1, new InvalidOperationException("boom"));
+        await using var failingDb = fixture.CreateDbContext(saveInterceptor);
+        var publisher = new Mock<IDomainEventPublisher>(MockBehavior.Strict);
+        var job = CreateJob(publisher: publisher.Object, db: failingDb);
+
+        // Act
+        await Should.ThrowAsync<InvalidOperationException>(() => job.SyncAsync(42, ct));
+
+        // Assert
+        publisher.VerifyNoOtherCalls();
+    }
+
+    [Fact(DisplayName = "SyncAsync with the real interceptor and publisher should enqueue exactly one TournamentResultsRecorded job on the first sync")]
+    public async Task SyncAsync_ShouldEnqueueExactlyOneJob_WhenInterceptorAndExplicitPublishBothRun()
+    {
+        // Arrange
+        var ct = TestContext.Current.CancellationToken;
+        await CreateTournamentAsync(42, TournamentType.Singles, complete: true, ct);
+        await CreateBowlerAsync(100, ct);
+        var statsId = await InsertStatsAsync(100, 42);
+        await InsertResultsStatsAsync(statsId, place: 1, payout: 500m, points: 100);
+
+        var createdJobs = new List<Job>();
+        var publisher = new DomainEventPublisher(CreateRecordingJobClient(createdJobs).Object);
+        await using var interceptedDb = fixture.CreateDbContext(new DomainEventDispatcherInterceptor(publisher));
+        var job = CreateJob(publisher: publisher, db: interceptedDb);
+
+        // Act
+        await job.SyncAsync(42, ct);
+
+        // Assert
+        var enqueued = createdJobs.ShouldHaveSingleItem();
+        enqueued.Type.ShouldBe(typeof(IDomainEventJob<TournamentResultsRecorded>));
+    }
+
+    [Fact(DisplayName = "SyncAsync with the real interceptor and publisher should enqueue exactly one job on a re-sync that adds no rows")]
+    public async Task SyncAsync_ShouldEnqueueExactlyOneJob_WhenReSyncAddsNoRows()
+    {
+        // Arrange
+        var ct = TestContext.Current.CancellationToken;
+        await CreateTournamentAsync(42, TournamentType.Singles, complete: true, ct);
+        await CreateBowlerAsync(100, ct);
+        var statsId = await InsertStatsAsync(100, 42);
+        await InsertResultsStatsAsync(statsId, place: 1, payout: 500m, points: 100);
+        await CreateJob().SyncAsync(42, ct);
+        _dbContext.ChangeTracker.Clear();
+
+        var createdJobs = new List<Job>();
+        var publisher = new DomainEventPublisher(CreateRecordingJobClient(createdJobs).Object);
+        await using var interceptedDb = fixture.CreateDbContext(new DomainEventDispatcherInterceptor(publisher));
+        var job = CreateJob(publisher: publisher, db: interceptedDb);
+
+        // Act
+        await job.SyncAsync(42, ct);
+
+        // Assert - the explicit PublishAndClear covers the case where EF skips SavedChanges on a no-row save.
+        var enqueued = createdJobs.ShouldHaveSingleItem();
+        enqueued.Type.ShouldBe(typeof(IDomainEventJob<TournamentResultsRecorded>));
     }
 }

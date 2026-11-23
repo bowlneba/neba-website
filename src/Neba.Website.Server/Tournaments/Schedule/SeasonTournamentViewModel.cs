@@ -7,6 +7,15 @@ namespace Neba.Website.Server.Tournaments.Schedule;
 /// </summary>
 public sealed record SeasonTournamentViewModel
 {
+    /// <summary>The Series this tournament is a Stage of, or null.</summary>
+    public TournamentSeriesViewModel? Series { get; init; }
+
+    /// <summary>Id of the tournament that names this one as its previous tournament, or null when none does.</summary>
+    public string? NextTournamentId { get; init; }
+
+    /// <summary>True when the tournament is a Stage of a Series.</summary>
+    public bool IsSeriesStage => Series is not null;
+
     // ── Core ─────────────────────────────────────────────────────────────────
 
     /// <summary>

@@ -504,6 +504,28 @@ public sealed class NewTournamentSyncJobTests(AppDbContextFixture fixture, Legac
         squad.BowlingDateTimeUtc.ShouldBe(new DateTimeOffset(2025, 10, 5, 17, 0, 0, TimeSpan.Zero));
     }
 
+    [Fact(DisplayName = "SyncAsync should raise exactly one TournamentSquadsChanged when it adds several squads")]
+    public async Task SyncAsync_ShouldRaiseOneSquadsChanged_WhenSeveralSquadsAreAdded()
+    {
+        // Arrange - the tournament stays tracked so the job loads this same instance and its events stay visible.
+        var ct = TestContext.Current.CancellationToken;
+        var endDate = new DateOnly(2025, 10, 5);
+        var seasonId = await CreateSeasonAsync(ct);
+        var tournament = await CreateUnlinkedTournamentAsync(seasonId, TournamentType.Singles, endDate, ct);
+        await InsertLegacySinglesTournamentAsync(1, endDate.ToDateTime(TimeOnly.MinValue), singlesTournamentType: 0);
+        await InsertLegacySinglesSquadAsync(101, legacyTournamentId: 1, bowlingDate: new DateTime(2025, 10, 5, 13, 0, 0, DateTimeKind.Unspecified));
+        await InsertLegacySinglesSquadAsync(102, legacyTournamentId: 1, bowlingDate: new DateTime(2025, 10, 5, 15, 0, 0, DateTimeKind.Unspecified));
+        var job = CreateJob();
+
+        // Act
+        await job.SyncAsync(1, ct);
+
+        // Assert
+        tournament.Squads.Count.ShouldBe(2);
+        var domainEvent = tournament.DomainEvents.ShouldHaveSingleItem().ShouldBeOfType<TournamentSquadsChanged>();
+        domainEvent.TournamentId.ShouldBe(tournament.Id);
+    }
+
     [Fact(DisplayName = "SyncAsync should sync new squads without duplicating already-synced ones when the legacy id was already synced")]
     public async Task SyncAsync_ShouldSyncNewSquadsWithoutDuplicating_WhenLegacyIdWasAlreadySynced()
     {

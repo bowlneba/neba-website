@@ -181,6 +181,20 @@ public sealed class CheckTeamEligibilityTests : IDisposable
         cut.Markup.ShouldContain("All " + teamSize + " bowlers are required.");
     }
 
+    [Fact(DisplayName = "Should warn before the check that PBA and PWBA titles are not verified")]
+    public void Render_ShouldWarnThatProfessionalTitlesAreNotVerified()
+    {
+        // Arrange
+        SetupTournament(TournamentType.Doubles, 2);
+
+        // Act
+        var cut = Render();
+
+        // Assert
+        cut.Markup.ShouldContain("We can't verify PBA or PWBA titles");
+        cut.Markup.ShouldContain("responsible for making sure everyone is eligible");
+    }
+
     [Fact(DisplayName = "Should show the team rules for the format")]
     public void Render_ShouldShowTeamRules()
     {
@@ -233,7 +247,7 @@ public sealed class CheckTeamEligibilityTests : IDisposable
         // Assert
         sentIds.ShouldBe(["id-1"]);
         sentUnknown.ShouldBe(1);
-        cut.Markup.ShouldContain("This team can bowl together.");
+        cut.Markup.ShouldContain("This team is eligible to bowl.");
     }
 
     [Fact(DisplayName = "Should show the reasons when the team is ineligible")]
@@ -254,7 +268,7 @@ public sealed class CheckTeamEligibilityTests : IDisposable
         await cut.FindAll("button").First(b => b.TextContent.Trim() == "Check team").ClickAsync();
 
         // Assert
-        cut.Markup.ShouldContain("This team can't bowl together.");
+        cut.Markup.ShouldContain("This team is not eligible to bowl.");
         cut.Markup.ShouldContain("Too many champions.");
         cut.Markup.ShouldContain("info@bowlneba.com");
     }

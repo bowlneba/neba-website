@@ -26,6 +26,7 @@
     <ItemGroup>
       <InternalsVisibleTo Include="Neba.Infrastructure.Tests" />
       <InternalsVisibleTo Include="Neba.Api.Tests" />
+      <InternalsVisibleTo Include="Neba.Website.Tests" />
     </ItemGroup>
 
     <ItemGroup>

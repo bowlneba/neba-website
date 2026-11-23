@@ -10,11 +10,12 @@ internal sealed class DeleteTournamentSummary : Summary<DeleteTournamentEndpoint
         Description = "Permanently deletes the tournament, its sponsor links, and oil pattern assignments. " +
                       "Returns 204 whether or not a tournament with the given ID existed, so callers cannot use this " +
                       "endpoint to probe for tournament existence. Refuses with 409 if the tournament has recorded " +
-                      "championship, entry, or result history. Requires the Tournaments.DeleteTournament permission.";
+                      "championship, entry, or result history, or if the tournament is a Stage in a Series (remove it from the " +
+                      "Series first). Requires the Tournaments.DeleteTournament permission.";
 
         Response(204, "Tournament deleted, or no tournament existed with the given ID.");
         Response(401, "No valid bearer token provided.");
         Response(403, "Authenticated user does not have the Tournaments.DeleteTournament permission.");
-        Response(409, "The tournament has recorded championship, entry, or result history and cannot be deleted.");
+        Response(409, "The tournament has recorded championship, entry, or result history, or is a Stage in a Series, and cannot be deleted.");
     }
 }

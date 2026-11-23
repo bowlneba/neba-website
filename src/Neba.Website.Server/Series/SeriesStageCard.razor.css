@@ -1,0 +1,154 @@
+.series-card {
+    padding: 0.875rem 1.125rem;
+}
+
+.series-card__top {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    align-items: flex-start;
+    justify-content: space-between;
+}
+
+.series-card__kind {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.375rem;
+    font-size: 0.8125rem;
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+.series-card__kind::before {
+    content: "";
+    width: 0.5rem;
+    height: 0.5rem;
+    border-radius: 2px;
+    background: currentColor;
+}
+
+.series-card__kind.kind-qualifying { color: var(--neba-blue-600); }
+.series-card__kind.kind-survivor { color: var(--neba-gold-deep); }
+.series-card__kind.kind-placement { color: var(--neba-blue-brand); }
+.dark .series-card__kind.kind-qualifying,
+.dark .series-card__kind.kind-placement { color: var(--neba-blue-300); }
+
+.series-card__title {
+    font: 700 1rem/1.3 var(--neba-font-display);
+    margin: 0.125rem 0 0;
+}
+
+.series-card__title a { color: var(--neba-text); text-decoration: none; }
+.series-card__title a:hover { text-decoration: underline; }
+
+.series-card__meta {
+    color: var(--neba-text-muted);
+    font-size: 0.84375rem;
+    margin: 0.125rem 0 0;
+}
+
+.series-card__right {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.625rem;
+    align-items: center;
+}
+
+.series-card__fill { font-weight: 600; font-size: 0.875rem; }
+
+.series-card__sub {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem 1.125rem;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 0.625rem;
+}
+
+.series-card__panel {
+    border-top: 1px dashed var(--neba-border);
+    margin-top: 0.625rem;
+    padding-top: 0.625rem;
+}
+
+/* Status pill: every pill carries text, so color is never the only signal. */
+.series-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.375rem;
+    font: 600 0.78125rem/1 var(--neba-font-base);
+    padding: 0.3125rem 0.625rem;
+    border-radius: 999px;
+    white-space: nowrap;
+}
+
+.series-pill::before {
+    content: "";
+    width: 0.4375rem;
+    height: 0.4375rem;
+    border-radius: 50%;
+    background: currentColor;
+}
+
+.series-pill--pending { background: var(--series-pending-bg); color: var(--series-pending-fg); }
+.series-pill--pending::before { background: transparent; border: 1.5px solid currentColor; }
+.series-pill--computed { background: var(--series-computed-bg); color: var(--series-computed-fg); }
+.series-pill--official { background: var(--series-official-bg); color: var(--series-official-fg); }
+
+.series-flags { display: flex; flex-wrap: wrap; gap: 0.375rem 0.5rem; }
+
+.series-flag {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.375rem;
+    font-size: 0.8125rem;
+    font-weight: 500;
+    padding: 0.1875rem 0.625rem;
+    border-radius: var(--neba-radius);
+    background: var(--series-pending-bg);
+    color: var(--neba-text);
+}
+
+.series-flag--warn { background: var(--series-warn-bg); color: var(--series-warn-fg); }
+.series-flag--error { background: var(--series-error-bg); color: var(--series-error-fg); }
+.series-flag--info { background: var(--series-computed-bg); color: var(--series-computed-fg); }
+.series-flag a { color: inherit; font-weight: 600; }
+
+.series-acts { display: flex; flex-wrap: wrap; gap: 0.25rem 0.875rem; align-items: center; }
+
+.series-act {
+    background: none;
+    border: 0;
+    padding: 0.375rem 0;
+    min-height: 2rem;
+    font: 600 0.84375rem/1.2 var(--neba-font-base);
+    color: var(--neba-blue-600);
+    cursor: pointer;
+}
+
+.dark .series-act { color: var(--neba-blue-300); }
+.series-act:hover { text-decoration: underline; }
+.series-act:focus-visible { outline: 2px solid var(--neba-blue-500); outline-offset: 2px; border-radius: 2px; }
+.series-act:disabled { color: var(--neba-text-muted); cursor: not-allowed; text-decoration: none; }
+
+.series-expander {
+    width: 2rem;
+    height: 2rem;
+    border-radius: var(--neba-radius);
+    border: 1px solid var(--neba-border);
+    background: transparent;
+    color: var(--neba-text-muted);
+    cursor: pointer;
+    display: inline-grid;
+    place-items: center;
+}
+
+.series-expander svg { transition: transform 0.15s; }
+.series-expander[aria-expanded="true"] svg { transform: rotate(90deg); }
+.series-expander:hover { color: var(--neba-text); }
+.series-expander:focus-visible { outline: 2px solid var(--neba-blue-500); outline-offset: 2px; }
+
+@media (max-width: 767px) {
+    .series-act { min-height: 2.75rem; }
+    .series-expander { width: 2.75rem; height: 2.75rem; }
+}

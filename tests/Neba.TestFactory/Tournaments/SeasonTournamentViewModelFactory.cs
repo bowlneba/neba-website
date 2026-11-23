@@ -26,7 +26,9 @@ public static class SeasonTournamentViewModelFactory
         decimal? sponsorMoney = null,
         decimal? nebaAddedMoney = null,
         int? teamSize = null,
-        IReadOnlyList<DefendingTeamViewModel>? defendingChampions = null)
+        IReadOnlyList<DefendingTeamViewModel>? defendingChampions = null,
+        TournamentSeriesViewModel? series = null,
+        string? nextTournamentId = null)
         => new()
         {
             Id = id ?? ValidId,
@@ -54,6 +56,8 @@ public static class SeasonTournamentViewModelFactory
             Winners = ["Alex Example"],
             TeamSize = teamSize ?? 1,
             DefendingChampions = defendingChampions ?? [],
+            Series = series,
+            NextTournamentId = nextTournamentId,
         };
 
     public static IReadOnlyCollection<SeasonTournamentViewModel> Bogus(int count, int? seed = null)

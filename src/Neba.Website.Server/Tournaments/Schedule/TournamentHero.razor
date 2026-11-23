@@ -1,4 +1,5 @@
 @namespace Neba.Website.Server.Tournaments.Schedule
+@using Neba.Api.Contracts.Security
 @using System.Globalization
 
 <section class="tournament-hero" aria-label="Next upcoming tournament">
@@ -99,7 +100,7 @@
         <div class="tournament-hero__tile-wrapper">
             <img src="@Tournament.DisplayLogoSrc"
                  alt="@Tournament.Name logo" class="tournament-hero__logo-img" />
-            <TournamentLogoEditButton TournamentName="@Tournament.Name" ShowLabel="true"
+            <LogoEditButton Policy="@Permissions.EditTournamentLogo.PolicyName" OwnerName="@Tournament.Name" ShowLabel="true"
                                       OnClick="@(() => OnEditLogo.InvokeAsync(Tournament))" />
         </div>
     </div>

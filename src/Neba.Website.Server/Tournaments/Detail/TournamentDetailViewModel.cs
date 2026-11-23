@@ -73,6 +73,12 @@ public sealed record TournamentDetailViewModel
     /// </summary>
     public bool IsCancelled => Status == "Cancelled";
 
+    /// <summary>The Series this tournament is a Stage of, or null.</summary>
+    public TournamentSeriesViewModel? Series { get; init; }
+
+    /// <summary>True when the tournament is a Stage of a Series.</summary>
+    public bool IsSeriesStage => Series is not null;
+
     /// <summary>
     /// True for a scheduled tournament whose type has its own rule section. Completed, truncated and
     /// cancelled tournaments get no link, because the rules may have changed since they ran.
@@ -307,9 +313,9 @@ public sealed record TournamentDetailViewModel
     public bool IsMultiDay => EndDate > StartDate;
 
     /// <summary>
-    /// True when the start date is today or in the future.
+    /// True until the tournament is completed or its end date passes.
     /// </summary>
-    public bool IsUpcoming => StartDate >= DateOnly.FromDateTime(DateTime.Today);
+    public bool IsUpcoming => !IsCompleted && EndDate >= DateOnly.FromDateTime(DateTime.Today);
 
     /// <summary>
     /// Results where the bowler competed in the main cut (no side cut).

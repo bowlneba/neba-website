@@ -1,0 +1,18 @@
+﻿{
+  captured: {
+    SeriesId: 01J1M4RNK9NG4VZ7BKEG1DQ4Q7,
+    StageId: 01G24PVTCW4QKVW5XXQE5FD8J2,
+    Kind: {
+      Name: Add,
+      Value: 1
+    },
+    BowlerId: 01J1WQ0QK1CHEH9ARV9E16FX2Y,
+    Reason: Id perferendis voluptate minima temporibus fugit reprehenderit quo ea laudantium.,
+    CallerUserId: 01M7XPMPJMC55SRJYQBHJPK7M8,
+    Version: 22
+  },
+  Response: {
+    OverrideId: 01FMVSTEF8DX4X504NEF7C5YM1,
+    Version: 26
+  }
+}

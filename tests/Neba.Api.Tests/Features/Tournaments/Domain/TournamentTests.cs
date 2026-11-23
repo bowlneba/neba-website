@@ -1200,6 +1200,22 @@ public sealed class TournamentTests
         tournament.TitleEligible.ShouldBeFalse();
     }
 
+    [Fact(DisplayName = "CancelTournament clears the previous tournament so a replacement can use it")]
+    public void CancelTournament_ShouldClearPreviousTournament_WhenCancelled()
+    {
+        // Arrange
+        var tournament = TournamentFactory.Create(
+            previousTournament: PreviousTournamentFactsFactory.Create(
+                TournamentId.New(), TournamentType.Singles, new DateOnly(2000, 1, 1)));
+        tournament.PreviousTournamentId.ShouldNotBeNull();
+
+        // Act
+        tournament.CancelTournament();
+
+        // Assert
+        tournament.PreviousTournamentId.ShouldBeNull();
+    }
+
     [Theory(DisplayName = "CancelTournament returns Tournament.AlreadyFinalized when the tournament is already finalized")]
     [InlineData(nameof(TournamentStatus.Completed))]
     [InlineData(nameof(TournamentStatus.Truncated))]
@@ -1296,6 +1312,86 @@ public sealed class TournamentTests
         // Assert
         result.IsError.ShouldBeTrue();
         result.FirstError.Code.ShouldBe("TournamentResult.Place.Invalid");
+    }
+
+    [Theory(DisplayName = "UpsertResult returns Tournament.NotFinalized when the tournament is not finalized")]
+    [InlineData("Scheduled")]
+    [InlineData("Cancelled")]
+    public void UpsertResult_ShouldReturnError_WhenTournamentNotFinalized(string statusName)
+    {
+        // Arrange
+        var tournament = TournamentFactory.Create(status: TournamentStatus.FromName(statusName));
+
+        // Act
+        var result = tournament.UpsertResult(BowlerId.New(), place: 1, prizeMoney: 100m, points: 10);
+
+        // Assert
+        result.IsError.ShouldBeTrue();
+        result.FirstError.Code.ShouldBe("Tournament.NotFinalized");
+    }
+
+    [Fact(DisplayName = "UpsertResult adds the result when the bowler has no result yet")]
+    public void UpsertResult_ShouldAddResult_WhenBowlerHasNoResult()
+    {
+        // Arrange
+        var tournament = TournamentFactory.Create();
+        tournament.CompleteTournament(entryCount: 100);
+        var bowlerId = BowlerId.New();
+
+        // Act
+        var result = tournament.UpsertResult(bowlerId, place: 1, prizeMoney: 100m, points: 10);
+
+        // Assert
+        result.IsError.ShouldBeFalse();
+        tournament.Results.ShouldHaveSingleItem()
+            .ShouldSatisfyAllConditions(
+                r => r.BowlerId.ShouldBe(bowlerId),
+                r => r.Place.ShouldBe(1),
+                r => r.PrizeMoney.ShouldBe(100m),
+                r => r.Points.ShouldBe(10));
+    }
+
+    [Fact(DisplayName = "UpsertResult updates place, prize money and points in place when the bowler already has a result")]
+    public void UpsertResult_ShouldUpdateExistingResult_WhenBowlerAlreadyHasResult()
+    {
+        // Arrange
+        var tournament = TournamentFactory.Create();
+        tournament.CompleteTournament(entryCount: 100);
+        var bowlerId = BowlerId.New();
+        tournament.AddResult(bowlerId, place: 1, prizeMoney: 100m, points: 10);
+        var originalId = tournament.Results.Single().Id;
+
+        // Act
+        var result = tournament.UpsertResult(bowlerId, place: 2, prizeMoney: 50m, points: 25);
+
+        // Assert
+        result.IsError.ShouldBeFalse();
+        var updated = tournament.Results.ShouldHaveSingleItem();
+        updated.Id.ShouldBe(originalId);
+        updated.Place.ShouldBe(2);
+        updated.PrizeMoney.ShouldBe(50m);
+        updated.Points.ShouldBe(25);
+    }
+
+    [Fact(DisplayName = "UpsertResult leaves the existing result unchanged when the new values are invalid")]
+    public void UpsertResult_ShouldKeepExistingResult_WhenNewValuesInvalid()
+    {
+        // Arrange
+        var tournament = TournamentFactory.Create();
+        tournament.CompleteTournament(entryCount: 100);
+        var bowlerId = BowlerId.New();
+        tournament.AddResult(bowlerId, place: 1, prizeMoney: 100m, points: 10);
+
+        // Act
+        var result = tournament.UpsertResult(bowlerId, place: 2, prizeMoney: 50m, points: -1);
+
+        // Assert
+        result.IsError.ShouldBeTrue();
+        result.FirstError.Code.ShouldBe("TournamentResult.Points.Invalid");
+        var unchanged = tournament.Results.ShouldHaveSingleItem();
+        unchanged.Place.ShouldBe(1);
+        unchanged.PrizeMoney.ShouldBe(100m);
+        unchanged.Points.ShouldBe(10);
     }
 
     [Fact(DisplayName = "ChangeLogo replaces the logo and leaves the other fields unchanged")]

@@ -14,7 +14,9 @@ None. The page is public: you do not need to sign in. It works for scheduled tea
 
 2. Read the **Team rules** at the top of the page: the team composition rule and the champion definition for this format, taken from the NEBA rules document.
 
-   ![The checker page with the team rules and one empty picker per team member](images/check-team-eligibility/checker-page.png)
+   A warning under the rules says the tool cannot verify PBA or PWBA titles and that your team is responsible for them.
+
+   ![The checker page with the team rules, the PBA and PWBA warning and one empty picker per team member](images/check-team-eligibility/checker-page.png)
 
 3. Under **Your team**, fill in every bowler. Type at least three letters of a name into a picker and choose the right bowler from the list. Each entry shows the bowler's name and USBC ID, so bowlers with the same name are easy to tell apart. A bowler you already chose does not show in the other pickers.
 
@@ -32,13 +34,13 @@ None. The page is public: you do not need to sign in. It works for scheduled tea
 
 | Answer | What it means |
 | --- | --- |
-| **These are the defending champions.** | The team is the previous tournament's winners (or, after a truncated tournament, the winners before it), so the champion limits do not apply. The answer names the tournament they won. |
-| **This team can bowl together.** | The team passes the champion, Hall of Fame and age rules on every date of the tournament. |
-| **This team can't bowl together.** | The team breaks a rule. Each reason is listed. |
+| **These are the defending champions.** | The team is the previous tournament's winners (or, after a truncated tournament, the winners before it), so the champion limits do not apply. The answer names the tournament they won. A team that won more than one tournament in a row shows a gold medallion with its count, such as "2x", in the banner and on the tournament card. |
+| **This team is eligible to bowl.** | The team passes the champion, Hall of Fame and age rules on every date of the tournament. |
+| **This team is not eligible to bowl.** | The team breaks a rule. Each reason is listed. |
 | **The answer depends on the squad date.** | The team passes on some days of the tournament and not others (for example, a bowler turns 50 during the event). Each date shows its own verdict. |
 
 ![A team that is over the champion limit, with the reason and the contact line](images/check-team-eligibility/result-not-eligible.png)
-![A team that can bowl together, with the note that pro titles are not checked](images/check-team-eligibility/result-eligible.png)
+![A team that is eligible to bowl, with the note that pro titles are not checked](images/check-team-eligibility/result-eligible.png)
 
 Under every answer except "defending champions", **What we checked** shows how each bowler counts: a line with the bowler's name, USBC ID and last NEBA title, and on the right whether they count as a non-champion, a one-time champion or a multi-time champion. Small cards under it show the facts that decided it:
 
@@ -48,7 +50,7 @@ Under every answer except "defending champions", **What we checked** shows how e
 
 A card turns red when that fact counts against a rule the team broke, and a short list under the bowlers gives each rule's tally, such as "Multi-time champions: 2 (at most 1)". A bowler marked as not in our system counts as a non-champion with no age. The counts are as of the tournament's first day.
 
-PBA and PWBA titles are not checked. When a team passes, the answer reminds you to make sure no one on it has a professional title inside the champion window.
+We cannot verify PBA or PWBA titles. A notice on the page says so before you check, and a team that passes sees it again with the answer. The team is responsible for making sure everyone is eligible to bowl together, including any professional titles inside the champion window. A passing answer does not confirm eligibility.
 
 ## Troubleshooting
 

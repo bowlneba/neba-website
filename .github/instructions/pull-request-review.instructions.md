@@ -12,9 +12,9 @@ applyTo: "**"
 
 ### Domain (Feature Domain Types in `Features/*/Domain/`)
 
-**Treat each feature domain namespace as a separate bounded context.** Types under `Features/Tournaments/Domain`, `Features/Bowlers/Domain`, `Features/BowlingCenters/Domain`, etc. should never directly reference each other's domain objects — review as if they were separate assemblies without project references.
+**The boundary that matters is between use cases, not between feature domains.** A feature's `Domain` folder may reference another feature's domain types (EF navigations, strongly-typed IDs). The aggregate is the unit of consistency, not the feature folder. Do not flag a domain type for referencing another feature's domain type.
 
-**Exception — strongly-typed IDs only**: A feature domain may import a strongly-typed ID from another feature's domain (e.g., `HallOfFame` importing `BowlerId` from `Features.Bowlers.Domain`) when it needs to record a cross-context foreign key relationship. This is analogous to a database FK: the context stores the _identifier_, not the object. Importing the full aggregate, entity, value objects, or domain services of another feature is still prohibited.
+**What to flag instead:** a use-case folder (endpoint, handler, DTO, validator) that depends on another feature's use-case code. Each use case defines its own DTO. `tests/Neba.Api.Tests/Architecture/FeatureBoundaryTests.cs` enforces this. A class that several features need goes in the namespace of the feature that uses it.
 
 **Do NOT flag** `internal` navigation properties on domain aggregates. These are intentional: EF Core entity configurations in `Neba.Api/Database/` live in the same assembly (`Neba.Api`) and rely on `internal` access for mapping and query projections. The `internal` modifier is what prevents external assemblies (Contracts, Website) from using these properties. Flagging them as an accessibility problem misreads the intent.
 
@@ -22,10 +22,9 @@ applyTo: "**"
 
 Flag when:
 
-- A feature domain folder imports domain objects from another feature domain folder (aggregates, entities, value objects, domain services, or enums — e.g., `Tournaments/Domain` importing `Bowler`, not `BowlerId`)
+- A use-case folder depends on another feature's use-case code (handler, endpoint, DTO, validator)
 - Cross-cutting domain base types (`AggregateRoot`, `IDomainEvent`) are duplicated inside a feature folder instead of using the shared `Neba.Api/Domain/` types
 - Domain entities expose public setters or mutable collections
-- Aggregates lack domain event support when state changes occur
 - Business logic appears outside the domain layer
 - A child entity owned by an aggregate does **not** have an `internal static ErrorOr<T> Create(...)` factory — every child entity must own its structural invariants through this factory, even if validation is minimal (e.g., non-negative amount). The `internal` modifier ensures construction is only possible from the same assembly (the aggregate root or `InternalsVisibleTo` test helpers)
 - A child entity owned by an aggregate has a `public static Create(...)` factory — it should be `internal` so construction is only possible through the aggregate root (by convention — both live in `Neba.Api`)
@@ -644,7 +643,7 @@ When reviewing, verify:
 
 ### Architecture & Code Quality
 
-- [ ] Feature boundaries respected (no cross-feature domain references)
+- [ ] Use-case folders do not depend on another feature's use-case code
 - [ ] Commands return `ErrorOr<T>`
 - [ ] Queries return DTOs, not entities
 - [ ] Extension methods use `extension()` block syntax, not legacy `this` parameter

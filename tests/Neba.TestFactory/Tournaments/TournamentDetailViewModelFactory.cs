@@ -44,7 +44,8 @@ public static class TournamentDetailViewModelFactory
         IReadOnlyCollection<TournamentDetailArticleViewModel>? articles = null,
         int? teamSize = null,
         string? previousTournamentId = null,
-        IReadOnlyList<DefendingTeamViewModel>? defendingChampions = null)
+        IReadOnlyList<DefendingTeamViewModel>? defendingChampions = null,
+        TournamentSeriesViewModel? series = null)
         => new()
         {
             Id = id ?? ValidId,
@@ -76,6 +77,7 @@ public static class TournamentDetailViewModelFactory
             TeamSize = teamSize ?? 1,
             PreviousTournamentId = previousTournamentId,
             DefendingChampions = defendingChampions ?? [],
+            Series = series,
         };
 
     public static IReadOnlyCollection<TournamentDetailViewModel> Bogus(int count, int? seed = null)

@@ -6,11 +6,15 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Testing;
 
+using Neba.Api.BackgroundJobs;
+using Neba.Api.Caching;
 using Neba.Api.Contracts.Memberships;
 using Neba.Api.Database;
 using Neba.Api.Discord;
+using Neba.Api.Domain;
 using Neba.Api.Features.Bowlers.Domain;
 using Neba.Api.Features.Seasons.Domain;
+using Neba.Api.Features.Stats.Domain;
 using Neba.Api.Features.Tournaments.Domain;
 using Neba.Api.Legacy.Tournaments.Stats;
 using Neba.TestFactory.Attributes;
@@ -135,11 +139,26 @@ public sealed class GenerateSeasonStatsJobTests(AppDbContextFixture fixture, Leg
         await _dbContext.DisposeAsync();
     }
 
-    private GenerateSeasonStatsJob CreateJob(Mock<IManualInterventionNotifier>? manualInterventionNotifier = null, FakeLogger<GenerateSeasonStatsJob>? logger = null) =>
+    // The publisher is a seam here; the event tests assert what it receives.
+    private static IDomainEventPublisher CreatePublisher()
+    {
+        var publisher = new Mock<IDomainEventPublisher>(MockBehavior.Strict);
+        publisher.Setup(p => p.Publish(It.IsAny<IDomainEvent>()));
+        publisher.Setup(p => p.PublishAndClear(It.IsAny<IAggregateRoot>()));
+
+        return publisher.Object;
+    }
+
+    private GenerateSeasonStatsJob CreateJob(
+        Mock<IManualInterventionNotifier>? manualInterventionNotifier = null,
+        FakeLogger<GenerateSeasonStatsJob>? logger = null,
+        IDomainEventPublisher? publisher = null,
+        AppDbContext? db = null) =>
         new(
-            _dbContext,
+            db ?? _dbContext,
             _legacyConnection,
             _serviceProvider.GetRequiredService<IFusionCache>(),
+            publisher ?? CreatePublisher(),
             (manualInterventionNotifier ?? new Mock<IManualInterventionNotifier>(MockBehavior.Strict)).Object,
             logger ?? new FakeLogger<GenerateSeasonStatsJob>());
 
@@ -630,5 +649,138 @@ public sealed class GenerateSeasonStatsJobTests(AppDbContextFixture fixture, Leg
         var row = rows.ShouldHaveSingleItem();
         row.BowlerId.ShouldBe(inSeasonBowler.Id);
         _ = await ReloadTournamentAsync(42, ct);
+    }
+
+    // ── SeasonStatsGenerated ──────────────────────────────────────────────────
+
+    [Fact(DisplayName = "SyncAsync should publish one SeasonStatsGenerated with the season id after the save and the cache eviction")]
+    public async Task SyncAsync_ShouldPublishSeasonStatsGenerated_AfterSaveAndCacheEviction()
+    {
+        // Arrange
+        var ct = TestContext.Current.CancellationToken;
+        var (season, _) = await ArrangeSingleBowlerSeasonAsync(_ => { }, ct);
+
+        var cache = _serviceProvider.GetRequiredService<IFusionCache>();
+        var cacheKey = $"season-stats-event-order:{season.Id}";
+        await cache.GetOrSetAsync(
+            cacheKey,
+            _ => Task.FromResult("stale-cached-value"),
+            tags: [CacheDescriptors.Stats.SeasonTag(season.Id)],
+            token: ct);
+
+        var published = new List<IDomainEvent>();
+        var cacheEntryPresentAtPublish = new List<bool>();
+        var savedRowCountAtPublish = new List<int>();
+        var publisher = new Mock<IDomainEventPublisher>(MockBehavior.Strict);
+        publisher
+            .Setup(p => p.Publish(It.IsAny<IDomainEvent>()))
+            .Callback<IDomainEvent>(domainEvent =>
+            {
+                published.Add(domainEvent);
+                cacheEntryPresentAtPublish.Add(cache.TryGet<string>(cacheKey).HasValue);
+                using var verifyDb = fixture.CreateDbContext();
+                savedRowCountAtPublish.Add(verifyDb.BowlerSeasonStats.Count(s => s.SeasonId == season.Id));
+            });
+        var job = CreateJob(publisher: publisher.Object);
+
+        // Act
+        await job.SyncAsync(42, ct);
+
+        // Assert
+        published.ShouldHaveSingleItem().ShouldBeOfType<SeasonStatsGenerated>().SeasonId.ShouldBe(season.Id);
+        savedRowCountAtPublish.ShouldHaveSingleItem().ShouldBe(1);
+        cacheEntryPresentAtPublish.ShouldHaveSingleItem().ShouldBeFalse();
+    }
+
+    [Fact(DisplayName = "SyncAsync should publish SeasonStatsGenerated on every regeneration, including a repeat")]
+    public async Task SyncAsync_ShouldPublishSeasonStatsGenerated_OnEveryRegeneration()
+    {
+        // Arrange
+        var ct = TestContext.Current.CancellationToken;
+        var (season, _) = await ArrangeSingleBowlerSeasonAsync(_ => { }, ct);
+        var published = new List<IDomainEvent>();
+        var publisher = new Mock<IDomainEventPublisher>(MockBehavior.Strict);
+        publisher
+            .Setup(p => p.Publish(It.IsAny<IDomainEvent>()))
+            .Callback<IDomainEvent>(published.Add);
+        var job = CreateJob(publisher: publisher.Object);
+
+        // Act
+        await job.SyncAsync(42, ct);
+        _dbContext.ChangeTracker.Clear();
+        await job.SyncAsync(42, ct);
+
+        // Assert
+        published.Count.ShouldBe(2);
+        published.ShouldAllBe(e => e is SeasonStatsGenerated);
+        published.Cast<SeasonStatsGenerated>().ShouldAllBe(e => e.SeasonId == season.Id);
+    }
+
+    [Fact(DisplayName = "SyncAsync should not publish SeasonStatsGenerated when the legacy tournament has no linked website tournament")]
+    public async Task SyncAsync_ShouldNotPublishSeasonStatsGenerated_WhenTournamentNotLinked()
+    {
+        // Arrange
+        var ct = TestContext.Current.CancellationToken;
+        var manualInterventionNotifier = new Mock<IManualInterventionNotifier>(MockBehavior.Strict);
+        manualInterventionNotifier
+            .Setup(n => n.NotifyAsync(It.IsAny<DiscordAlert>(), It.IsAny<CancellationToken>()))
+            .Returns(Task.CompletedTask);
+        var publisher = new Mock<IDomainEventPublisher>(MockBehavior.Strict);
+        var job = CreateJob(manualInterventionNotifier, publisher: publisher.Object);
+
+        // Act
+        await job.SyncAsync(999, ct);
+
+        // Assert
+        publisher.VerifyNoOtherCalls();
+    }
+
+    [Fact(DisplayName = "SyncAsync should not publish SeasonStatsGenerated when SaveChangesAsync throws")]
+    public async Task SyncAsync_ShouldNotPublishSeasonStatsGenerated_WhenSaveChangesThrows()
+    {
+        // Arrange
+        var ct = TestContext.Current.CancellationToken;
+        await ArrangeSingleBowlerSeasonAsync(_ => { }, ct);
+        var saveInterceptor = new FailOnNthSaveInterceptor();
+        saveInterceptor.FailOnCall(1, new InvalidOperationException("boom"));
+        await using var failingDb = fixture.CreateDbContext(saveInterceptor);
+        var publisher = new Mock<IDomainEventPublisher>(MockBehavior.Strict);
+        var job = CreateJob(publisher: publisher.Object, db: failingDb);
+
+        // Act
+        await Should.ThrowAsync<InvalidOperationException>(() => job.SyncAsync(42, ct));
+
+        // Assert
+        publisher.VerifyNoOtherCalls();
+    }
+
+    [Fact(DisplayName = "SyncAsync should still publish SeasonStatsGenerated once when some bowlers are unmapped")]
+    public async Task SyncAsync_ShouldStillPublishSeasonStatsGenerated_WhenSomeBowlersAreUnmapped()
+    {
+        // Arrange
+        var ct = TestContext.Current.CancellationToken;
+        var (season, _) = await CreateSeasonAndTournamentAsync(
+            legacyTournamentId: 42, seasonStart: new DateOnly(2026, 1, 1), seasonEnd: new DateOnly(2026, 12, 31), ct);
+        await InsertLegacyTournamentAsync(42, new DateTime(2026, 3, 1, 0, 0, 0, DateTimeKind.Utc), new DateTime(2026, 3, 2, 0, 0, 0, DateTimeKind.Utc), yearlyStatEligible: true);
+        var statsId = await InsertStatsAsync(999, 42);
+        await InsertQualifyingStatsAsync(statsId, squadId: 1, score: 1200, games: 6, highGame: 220);
+        await InsertResultsStatsAsync(statsId, sideCut: null);
+
+        var manualInterventionNotifier = new Mock<IManualInterventionNotifier>(MockBehavior.Strict);
+        manualInterventionNotifier
+            .Setup(n => n.NotifyAsync(It.IsAny<DiscordAlert>(), It.IsAny<CancellationToken>()))
+            .Returns(Task.CompletedTask);
+        var published = new List<IDomainEvent>();
+        var publisher = new Mock<IDomainEventPublisher>(MockBehavior.Strict);
+        publisher
+            .Setup(p => p.Publish(It.IsAny<IDomainEvent>()))
+            .Callback<IDomainEvent>(published.Add);
+        var job = CreateJob(manualInterventionNotifier, publisher: publisher.Object);
+
+        // Act
+        await job.SyncAsync(42, ct);
+
+        // Assert
+        published.ShouldHaveSingleItem().ShouldBeOfType<SeasonStatsGenerated>().SeasonId.ShouldBe(season.Id);
     }
 }

@@ -34,7 +34,9 @@ public static class SeasonTournamentDtoFactory
         Uri? logoUrl = null,
         IReadOnlyCollection<Name>? winners = null,
         int? teamSize = null,
-        IReadOnlyCollection<DefendingTeamDto>? defendingChampions = null)
+        IReadOnlyCollection<DefendingTeamDto>? defendingChampions = null,
+        TournamentSeriesDto? series = null,
+        TournamentId? nextTournamentId = null)
             => new()
             {
                 Id = id ?? TournamentId.New(),
@@ -60,7 +62,9 @@ public static class SeasonTournamentDtoFactory
                 LogoUrl = logoUrl,
                 Winners = winners ?? [],
                 TeamSize = teamSize ?? 1,
-                DefendingChampions = defendingChampions ?? []
+                DefendingChampions = defendingChampions ?? [],
+                Series = series,
+                NextTournamentId = nextTournamentId
             };
 
     public static IReadOnlyCollection<SeasonTournamentDto> Bogus(int count, int? seed = null)

@@ -139,6 +139,7 @@ Detailed write-ups live in `docs/learnings/`. Read the matching file before work
 - Polling helpers must pick the latest event and tolerate a torn read on a live collection.
 - Assert log content with `FakeLogger<T>`; assert redaction through a DI container with `EnableRedaction()`.
 - E2E failure tests use a 4xx (a 5xx retries past the expect timeout), and `MOCK_UPCOMING_TOURNAMENTS` stays empty (`docs/learnings/testing.md`).
+- Endpoint tests use Verify snapshots with a fixed seed; Blazor tests build Refit responses with `StubApiResponse<T>` (`docs/learnings/testing.md`).
 - FastEndpoints mutation testing has unkillable mutants; see the file for `ignore-methods` and Stryker disable comments.
 
 ### Backend — `docs/learnings/backend.md`
@@ -150,6 +151,7 @@ Detailed write-ups live in `docs/learnings/`. Read the matching file before work
 - `[LogProperties]` tags are `<param>.<Property>` and skip the formatted message; log enrichers also need `Logging.EnableEnrichment()`; resource monitoring is Linux/Windows only (`docs/learnings/backend.md`).
 - Emails: inline styles, `<table>` layout, hosted logo URL, `WebUtility.HtmlEncode` on user values.
 - A class a use case needs from another feature (a reader, a mapper) goes in the using feature's namespace: `FeatureBoundaryTests` treats a feature's root namespace as use-case code. Pass an explicit escape character to `EF.Functions.ILike` (`docs/learnings/backend.md`).
+- Enqueue every domain event through `IDomainEventPublisher`, one `IDomainEventJob<T>` per event, events carry typed IDs only; the outbox (#56) is deferred; lock Series advancement with the keyed lock (`docs/learnings/backend.md`).
 - ImageSharp needs a license in Release builds: local `sixlabors.lic` in the repo root (git-ignored, never commit), CI `SIXLABORS_LICENSE_KEY` secret. Resize uploads through `IImageResizer`.
 
 ### Hangfire PostgreSql — `docs/learnings/hangfire-postgres.md`
@@ -160,4 +162,4 @@ Detailed write-ups live in `docs/learnings/`. Read the matching file before work
 
 - Emergency fixes go on a `hotfix/*` branch cut from the latest release tag (tagged by hand after each deploy) and deploy with `hotfix.yml` (manual dispatch). Open the PR to `main` right away; never leave a hotfix off `main`.
 - Release version lives in `<Version>` in `Directory.Build.props`. PRs to `main` must raise it above `main`'s version, PRs to `release/vX.Y.Z` must set it to `X.Y.Z`, and hotfixes must exceed the base tag (`.github/scripts/check-version-bump.sh`).
-- Hotfixes never run migrations. `hotfix.yml` and `cd.yml` hold copies of the deploy steps; change both.
+- Hotfixes never run migrations (`Migrations__Run` stays unset). `hotfix.yml`, `cd.yml` and `staging.yml` hold copies of the deploy settings; change all three. Deploys use `aspire deploy`, and `cd.yml` and `hotfix.yml` run a read-only what-if first (`.github/scripts/whatif-guard.sh`). Test pipeline changes with `staging.yml` (`docs/learnings/aspire-deploy.md`).

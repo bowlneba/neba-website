@@ -1,0 +1,158 @@
+@using ErrorOr
+
+<NebaModal IsOpen="@IsOpen" OnClose="@HandleCloseAsync" MaxWidth="520px" CompactSize="true" Title="Pick squad">
+    <ChildContent>
+        <div class="stage-squad" data-testid="stage-squad-modal">
+            <p class="stage-squad__lead" data-testid="stage-squad-lead">@SeriesDisplay.SquadLead(StageOrder, TournamentName, ExpectedSquad, NeedsSquad)</p>
+
+            @if (_errorMessage is not null)
+            {
+                <div data-testid="stage-squad-error">
+                    <NebaAlert Severity="NotifySeverity.Error" Title="Couldn't save the squad" Message="@_errorMessage"
+                               Dismissible="true" OnDismiss="@(() => _errorMessage = null)" />
+                </div>
+            }
+
+            @if (IsLoading)
+            {
+                <div aria-busy="true" data-testid="stage-squad-loading">
+                    <NebaSkeletonLoader Type="SkeletonType.Text" Rows="2" />
+                </div>
+            }
+            else if (LoadError is not null)
+            {
+                <div data-testid="stage-squad-load-error">
+                    <NebaAlert Severity="NotifySeverity.Error" Title="Couldn't load the squads" Message="@LoadError" />
+                </div>
+            }
+            else if (Squads.Count == 0)
+            {
+                <p class="stage-squad__empty" data-testid="stage-squad-empty">@SeriesDisplay.NoSquads</p>
+            }
+            else
+            {
+                <fieldset class="stage-squad__list" aria-label="Squads" data-testid="stage-squad-list">
+                    @foreach (var squad in Squads)
+                    {
+                        <label class="stage-squad__row" @key="squad.SquadId" data-testid="stage-squad-option" data-squad-id="@squad.SquadId">
+                            <input type="radio" name="stage-squad" value="@squad.SquadId"
+                                   checked="@(_selectedId == squad.SquadId)"
+                                   @onchange="@(() => _selectedId = squad.SquadId)" />
+                            <span><b>@squad.Label</b><small>@squad.Detail</small></span>
+                        </label>
+                    }
+                </fieldset>
+            }
+        </div>
+    </ChildContent>
+    <FooterContent>
+        <div class="stage-squad__actions">
+            <button type="button" class="neba-btn neba-btn-secondary" data-testid="stage-squad-cancel" @onclick="HandleCloseAsync" disabled="@_isSubmitting">Cancel</button>
+            <button type="button" class="neba-btn neba-btn-primary" data-testid="stage-squad-save" @onclick="SubmitAsync" disabled="@(!CanSave)">
+                @(_isSubmitting ? "Saving..." : "Use this squad")
+            </button>
+        </div>
+    </FooterContent>
+</NebaModal>
+
+@code {
+    /// <summary>True when the dialog shows.</summary>
+    [Parameter, EditorRequired]
+    public bool IsOpen { get; set; }
+
+    /// <summary>The Stage's order, for the lead text.</summary>
+    [Parameter, EditorRequired]
+    public int StageOrder { get; set; }
+
+    /// <summary>The Stage's tournament name, for the lead text.</summary>
+    [Parameter, EditorRequired]
+    public string TournamentName { get; set; } = string.Empty;
+
+    /// <summary>The squad the Series expects, such as "9:00 AM squad on 7/12"; null when it names none.</summary>
+    [Parameter]
+    public string? ExpectedSquad { get; set; }
+
+    /// <summary>True when no squad matches the expected one exactly.</summary>
+    [Parameter]
+    public bool NeedsSquad { get; set; }
+
+    /// <summary>The tournament's squads.</summary>
+    [Parameter, EditorRequired]
+    public IReadOnlyList<StageSquadViewModel> Squads { get; set; } = [];
+
+    /// <summary>True while the page loads the squads.</summary>
+    [Parameter]
+    public bool IsLoading { get; set; }
+
+    /// <summary>The text of a failed squad load; null when it worked.</summary>
+    [Parameter]
+    public string? LoadError { get; set; }
+
+    /// <summary>Raised when the dialog asks to close.</summary>
+    [Parameter, EditorRequired]
+    public EventCallback OnClose { get; set; }
+
+    /// <summary>Saves the chosen squad. An error keeps the dialog open; success closes it. The page handles a 409.</summary>
+    [Parameter, EditorRequired]
+    public Func<string, Task<ErrorOr<Success>>> OnSubmitRequestedAsync { get; set; } = default!;
+
+    private string? _selectedId;
+    private string? _initialId;
+    private bool _isSubmitting;
+    private bool _wasOpen;
+    private string? _errorMessage;
+    private IReadOnlyList<StageSquadViewModel>? _seenSquads;
+
+    private bool CanSave => !_isSubmitting && _selectedId is not null && _selectedId != _initialId;
+
+    protected override void OnParametersSet()
+    {
+        var opened = IsOpen && !_wasOpen;
+        if (opened)
+        {
+            _isSubmitting = false;
+            _errorMessage = null;
+        }
+
+        // Preselect the current squad whenever the page hands in a fresh list (it loads on every open).
+        if (opened || !ReferenceEquals(_seenSquads, Squads))
+        {
+            _selectedId = Squads.FirstOrDefault(squad => squad.IsSelected)?.SquadId;
+            _initialId = _selectedId;
+            _seenSquads = Squads;
+        }
+
+        _wasOpen = IsOpen;
+    }
+
+    private Task HandleCloseAsync() => _isSubmitting ? Task.CompletedTask : OnClose.InvokeAsync();
+
+    private async Task SubmitAsync()
+    {
+        if (!CanSave)
+        {
+            return;
+        }
+
+        _isSubmitting = true;
+        _errorMessage = null;
+
+        ErrorOr<Success> result;
+        try
+        {
+            result = await OnSubmitRequestedAsync(_selectedId!);
+        }
+        finally
+        {
+            _isSubmitting = false;
+        }
+
+        if (result.IsError)
+        {
+            _errorMessage = result.FirstError.Description;
+            return;
+        }
+
+        await OnClose.InvokeAsync();
+    }
+}

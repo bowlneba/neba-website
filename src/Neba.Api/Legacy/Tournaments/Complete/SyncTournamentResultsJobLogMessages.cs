@@ -26,4 +26,9 @@ internal static partial class SyncTournamentResultsJobLogMessages
         Level = LogLevel.Information,
         Message = "Skipped syncing result for legacy bowler {LegacyBowlerId} (legacy tournament {LegacyTournamentId}): {Reason}")]
     public static partial void LogLegacyResultSyncSkipped(this ILogger<SyncTournamentResultsJob> logger, int legacyBowlerId, int legacyTournamentId, string reason);
+
+    [LoggerMessage(
+        Level = LogLevel.Warning,
+        Message = "Results synced for legacy tournament {LegacyTournamentId} but the tournament cannot signal them: {Reason}")]
+    public static partial void LogLegacyResultsNotMarkedRecorded(this ILogger<SyncTournamentResultsJob> logger, int legacyTournamentId, string reason);
 }

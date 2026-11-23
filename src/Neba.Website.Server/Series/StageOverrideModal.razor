@@ -1,0 +1,290 @@
+@using ErrorOr
+@implements IDisposable
+
+<DirtyFormGuard IsDirty="@(IsOpen && _isDirty)" />
+
+<ConfirmActionModal IsOpen="@_isDiscardConfirmOpen"
+                    Title="Discard changes?"
+                    Message="You have not saved this change. Closing now loses what you typed."
+                    ConfirmLabel="Discard"
+                    CancelLabel="Keep editing"
+                    OnConfirm="ConfirmDiscardAsync"
+                    OnCancel="@(() => _isDiscardConfirmOpen = false)" />
+
+<NebaModal IsOpen="@IsOpen" OnClose="@HandleCancelRequestedAsync" MaxWidth="520px" CompactSize="true"
+           AriaLabelledById="stage-override-title">
+    <HeaderContent>
+        <h2 class="neba-modal-title" id="stage-override-title">@SeriesDisplay.OverrideTitle(Kind)</h2>
+    </HeaderContent>
+    <ChildContent>
+        <div class="stage-override" data-testid="stage-override-modal" data-kind="@Kind">
+            <p class="stage-override__lead" data-testid="stage-override-lead">@SeriesDisplay.OverrideLead(Kind, StageOrder, TournamentName)</p>
+
+            @if (_errorMessage is not null)
+            {
+                <div data-testid="stage-override-error">
+                    <NebaAlert Severity="NotifySeverity.Error" Title="Couldn't save the change" Message="@_errorMessage"
+                               Dismissible="true" OnDismiss="@(() => _errorMessage = null)" />
+                </div>
+            }
+
+            @* Enter never submits: the autocomplete uses Enter to pick a bowler. The Save button validates and sends. *@
+            <EditForm @key="_formKey" EditContext="_editContext" OnSubmit="IgnoreFormSubmit">
+                <DataAnnotationsValidator />
+
+                <div class="stage-override__field">
+                    @if (Kind == OverrideKinds.Add)
+                    {
+                        <FormLabel TValue="string" TargetId="override-bowler" Required="true">Bowler</FormLabel>
+                        @if (IsLoadingChoices)
+                        {
+                            <div aria-busy="true" data-testid="stage-override-loading">
+                                <NebaSkeletonLoader Type="SkeletonType.Text" Rows="2" />
+                            </div>
+                        }
+                        else if (ChoicesError is not null)
+                        {
+                            <div data-testid="stage-override-load-error">
+                                <NebaAlert Severity="NotifySeverity.Error" Title="Couldn't load the bowlers" Message="@ChoicesError" />
+                            </div>
+                        }
+                        else
+                        {
+                            <div data-testid="stage-override-bowler">
+                                <NebaAutocomplete Id="override-bowler" TValue="string" TItem="StageResultViewModel"
+                                                  Value="@_bowlerId"
+                                                  ValueChanged="HandleBowlerChanged"
+                                                  Items="@Choices"
+                                                  DisplayText="@(choice => choice.Label)"
+                                                  ItemValue="@(choice => choice.BowlerId)"
+                                                  Placeholder="Search by name"
+                                                  EmptyLabel="Search by name"
+                                                  NoResultsText="No bowler with a result matches. Bowlers already in the field are not listed." />
+                            </div>
+                        }
+                    }
+                    else
+                    {
+                        <span class="stage-override__label">Bowler</span>
+                        <div class="stage-override__readonly" data-testid="stage-override-bowler-fixed"><strong>@BowlerName</strong> · @SeriesDisplay.ClearPlace(Place)</div>
+                    }
+                </div>
+
+                <div class="stage-override__field">
+                    @* @oninput on purpose: the character count and the Save button follow every keystroke, which a blur-bound box cannot do.
+                       The count and Save state are display only; the text itself is never filtered or advanced per key. *@
+                    <FormLabel TargetId="override-reason" For="@(() => _model.Reason)">Reason</FormLabel>
+                    <textarea id="override-reason" class="neba-textarea stage-override__reason" maxlength="@ReasonInputLimit"
+                              data-testid="stage-override-reason"
+                              value="@_model.Reason" @oninput="HandleReasonInput"
+                              aria-describedby="override-reason-hint override-reason-error"></textarea>
+                    <NebaValidationMessage For="@(() => _model.Reason)" Id="override-reason-error" Class="stage-override__error" />
+                    <div class="stage-override__hint" id="override-reason-hint">
+                        <span>Shown to other admins. Say who confirmed it.</span>
+                        <span class="@CountClass" data-testid="stage-override-count">@SeriesDisplay.ReasonCount(_model.Reason.Length)</span>
+                    </div>
+                </div>
+            </EditForm>
+        </div>
+    </ChildContent>
+    <FooterContent>
+        <div class="stage-override__actions">
+            <button type="button" class="neba-btn neba-btn-secondary" data-testid="stage-override-cancel"
+                    @onclick="HandleCancelRequestedAsync" disabled="@_isSubmitting">Cancel</button>
+            <button type="button" class="neba-btn neba-btn-primary" data-testid="stage-override-save"
+                    @onclick="SubmitAsync" disabled="@(!CanSave)">
+                @(_isSubmitting ? "Saving..." : SeriesDisplay.OverrideTitle(Kind))
+            </button>
+        </div>
+    </FooterContent>
+</NebaModal>
+
+@code {
+    // The box takes a little past the limit so the count turns red and Save stays off, instead of cutting the text silently.
+    private const int ReasonInputLimit = StageOverrideFormModel.ReasonMaxLength + 100;
+
+    /// <summary>True when the dialog shows.</summary>
+    [Parameter, EditorRequired]
+    public bool IsOpen { get; set; }
+
+    /// <summary>Add or Clear (<see cref="OverrideKinds"/>).</summary>
+    [Parameter, EditorRequired]
+    public string Kind { get; set; } = OverrideKinds.Add;
+
+    /// <summary>The Stage's order, for the lead text.</summary>
+    [Parameter, EditorRequired]
+    public int StageOrder { get; set; }
+
+    /// <summary>The Stage's tournament name, for the lead text.</summary>
+    [Parameter, EditorRequired]
+    public string TournamentName { get; set; } = string.Empty;
+
+    /// <summary>Clear only: the bowler whose slot clears.</summary>
+    [Parameter]
+    public string? BowlerId { get; set; }
+
+    /// <summary>Clear only: the bowler's name.</summary>
+    [Parameter]
+    public string BowlerName { get; set; } = string.Empty;
+
+    /// <summary>Clear only: the bowler's place.</summary>
+    [Parameter]
+    public int? Place { get; set; }
+
+    /// <summary>Add only: result rows not already in the field and with no override on this Stage.</summary>
+    [Parameter]
+    public IReadOnlyList<StageResultViewModel> Choices { get; set; } = [];
+
+    /// <summary>True while the page loads the result rows.</summary>
+    [Parameter]
+    public bool IsLoadingChoices { get; set; }
+
+    /// <summary>The text of a failed result load; null when it worked.</summary>
+    [Parameter]
+    public string? ChoicesError { get; set; }
+
+    /// <summary>Raised when the dialog asks to close.</summary>
+    [Parameter, EditorRequired]
+    public EventCallback OnClose { get; set; }
+
+    /// <summary>
+    /// Sends the change. An error keeps the dialog open and shows its text; success closes it.
+    /// The page handles a 409 itself (toast and reload) and returns success.
+    /// </summary>
+    [Parameter, EditorRequired]
+    public Func<StageOverrideSubmission, Task<ErrorOr<Success>>> OnSubmitRequestedAsync { get; set; } = default!;
+
+    private StageOverrideFormModel _model = new();
+    private EditContext _editContext = default!;
+    private FieldIdentifier _reasonField;
+    private Guid _formKey = Guid.NewGuid();
+    private string? _bowlerId;
+    private bool _isDirty;
+    private bool _isSubmitting;
+    private bool _isDiscardConfirmOpen;
+    private bool _wasOpen;
+    private string? _errorMessage;
+
+    private string? SelectedBowlerId => Kind == OverrideKinds.Add ? _bowlerId : BowlerId;
+
+    private string SelectedBowlerName
+        => Kind == OverrideKinds.Add
+            ? Choices.FirstOrDefault(choice => choice.BowlerId == _bowlerId)?.BowlerName ?? string.Empty
+            : BowlerName;
+
+    private bool CanSave
+        => !_isSubmitting
+           && SelectedBowlerId is not null
+           && !string.IsNullOrWhiteSpace(_model.Reason)
+           && _model.Reason.Length <= StageOverrideFormModel.ReasonMaxLength;
+
+    private string CountClass
+        => _model.Reason.Length > StageOverrideFormModel.ReasonMaxLength
+            ? "stage-override__count stage-override__count--over"
+            : "stage-override__count";
+
+    protected override void OnInitialized() => ResetForm();
+
+    protected override void OnParametersSet()
+    {
+        if (IsOpen && !_wasOpen)
+        {
+            ResetForm(); // each open starts clean
+        }
+
+        _wasOpen = IsOpen;
+    }
+
+    public void Dispose() => _editContext.OnFieldChanged -= HandleFieldChanged;
+
+    private void ResetForm()
+    {
+        if (_editContext is not null)
+        {
+            _editContext.OnFieldChanged -= HandleFieldChanged;
+        }
+
+        _model = new StageOverrideFormModel();
+        _editContext = new EditContext(_model);
+        _editContext.OnFieldChanged += HandleFieldChanged;
+        _reasonField = _editContext.Field(nameof(StageOverrideFormModel.Reason));
+        _formKey = Guid.NewGuid(); // a new key rebuilds the form, so old validation messages go
+        _bowlerId = null;
+        _isDirty = false;
+        _isSubmitting = false;
+        _isDiscardConfirmOpen = false;
+        _errorMessage = null;
+    }
+
+    private void HandleFieldChanged(object? sender, FieldChangedEventArgs e) => MarkDirty();
+
+    private void MarkDirty() => _isDirty = true;
+
+    private static Task IgnoreFormSubmit(EditContext _) => Task.CompletedTask;
+
+    private void HandleBowlerChanged(string? bowlerId)
+    {
+        _bowlerId = bowlerId;
+        MarkDirty(); // the picker is not an InputBase, so the EditContext never hears about it
+    }
+
+    private void HandleReasonInput(ChangeEventArgs e)
+    {
+        _model.Reason = e.Value?.ToString() ?? string.Empty;
+        _editContext.NotifyFieldChanged(_reasonField); // validates the field and marks the form dirty
+    }
+
+    private Task HandleCancelRequestedAsync()
+    {
+        if (_isSubmitting)
+        {
+            return Task.CompletedTask;
+        }
+
+        if (_isDirty)
+        {
+            _isDiscardConfirmOpen = true;
+            return Task.CompletedTask;
+        }
+
+        return OnClose.InvokeAsync();
+    }
+
+    private Task ConfirmDiscardAsync()
+    {
+        _isDiscardConfirmOpen = false;
+        _isDirty = false;
+        return OnClose.InvokeAsync();
+    }
+
+    private async Task SubmitAsync()
+    {
+        if (!CanSave || !_editContext.Validate())
+        {
+            return;
+        }
+
+        _isSubmitting = true;
+        _errorMessage = null;
+
+        ErrorOr<Success> result;
+        try
+        {
+            result = await OnSubmitRequestedAsync(
+                new StageOverrideSubmission(SelectedBowlerId!, SelectedBowlerName, _model.Reason.Trim()));
+        }
+        finally
+        {
+            _isSubmitting = false;
+        }
+
+        if (result.IsError)
+        {
+            _errorMessage = result.FirstError.Description; // a 422 stays here, with the dialog open
+            return;
+        }
+
+        _isDirty = false; // before the close, so the guard does not fire
+        await OnClose.InvokeAsync();
+    }
+}

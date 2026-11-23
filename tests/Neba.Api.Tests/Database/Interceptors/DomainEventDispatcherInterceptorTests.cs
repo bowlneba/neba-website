@@ -2,6 +2,7 @@ using Hangfire;
 using Hangfire.Common;
 using Hangfire.States;
 
+using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Diagnostics;
 using Microsoft.Extensions.Logging;
@@ -48,7 +49,7 @@ public sealed class DomainEventDispatcherInterceptorTests
     }
 
     private static DomainEventDispatcherInterceptor CreateInterceptor(Mock<IBackgroundJobClient> client) =>
-        new(client.Object);
+        new(new DomainEventPublisher(client.Object));
 
     private static SaveChangesCompletedEventData CreateEventData(DbContext? context)
     {
@@ -245,5 +246,207 @@ public sealed class DomainEventDispatcherInterceptorTests
         CreateInterceptor(client).SavedChanges(CreateEventData(ctx), 0);
 
         capturedState.ShouldBeOfType<EnqueuedState>();
+    }
+
+    // ── Strict publisher: who gets published ──────────────────────────────────
+
+    private static TestAggregate AggregateWithEvents(int id, int eventCount)
+    {
+        var aggregate = new TestAggregate { Id = id };
+        for (var i = 0; i < eventCount; i++)
+        {
+            aggregate.Raise(new TestDomainEvent());
+        }
+
+        return aggregate;
+    }
+
+    [Fact(DisplayName = "SavedChanges should call PublishAndClear once per tracked aggregate that has events, and not for aggregates without")]
+    public void SavedChanges_WithMixedAggregates_CallsPublishAndClearOncePerAggregateWithEvents()
+    {
+        // Arrange
+        var first = AggregateWithEvents(1, 1);
+        var second = AggregateWithEvents(2, 2);
+        var withoutEvents = AggregateWithEvents(3, 0);
+        var publisher = new Mock<IDomainEventPublisher>(MockBehavior.Strict);
+        publisher.Setup(p => p.PublishAndClear(first));
+        publisher.Setup(p => p.PublishAndClear(second));
+
+        using var ctx = CreateContext();
+        ctx.Entry(first).State = EntityState.Unchanged;
+        ctx.Entry(second).State = EntityState.Unchanged;
+        ctx.Entry(withoutEvents).State = EntityState.Unchanged;
+        var interceptor = new DomainEventDispatcherInterceptor(publisher.Object);
+
+        // Act
+        var result = interceptor.SavedChanges(CreateEventData(ctx), 7);
+
+        // Assert
+        result.ShouldBe(7);
+        publisher.Verify(p => p.PublishAndClear(first), Times.Once);
+        publisher.Verify(p => p.PublishAndClear(second), Times.Once);
+        publisher.VerifyNoOtherCalls();
+    }
+
+    [Fact(DisplayName = "SavedChangesAsync should call PublishAndClear once per tracked aggregate that has events, and not for aggregates without")]
+    public async Task SavedChangesAsync_WithMixedAggregates_CallsPublishAndClearOncePerAggregateWithEvents()
+    {
+        // Arrange
+        var first = AggregateWithEvents(1, 1);
+        var second = AggregateWithEvents(2, 2);
+        var withoutEvents = AggregateWithEvents(3, 0);
+        var publisher = new Mock<IDomainEventPublisher>(MockBehavior.Strict);
+        publisher.Setup(p => p.PublishAndClear(first));
+        publisher.Setup(p => p.PublishAndClear(second));
+
+        await using var ctx = CreateContext();
+        ctx.Entry(first).State = EntityState.Unchanged;
+        ctx.Entry(second).State = EntityState.Unchanged;
+        ctx.Entry(withoutEvents).State = EntityState.Unchanged;
+        var interceptor = new DomainEventDispatcherInterceptor(publisher.Object);
+
+        // Act
+        var result = await interceptor.SavedChangesAsync(CreateEventData(ctx), 7, CancellationToken.None);
+
+        // Assert
+        result.ShouldBe(7);
+        publisher.Verify(p => p.PublishAndClear(first), Times.Once);
+        publisher.Verify(p => p.PublishAndClear(second), Times.Once);
+        publisher.VerifyNoOtherCalls();
+    }
+
+    [Fact(DisplayName = "SavedChanges should call the publisher not at all when the context is null")]
+    public void SavedChanges_WhenContextIsNull_CallsNoPublisherMethod()
+    {
+        // Arrange
+        var publisher = new Mock<IDomainEventPublisher>(MockBehavior.Strict);
+        var interceptor = new DomainEventDispatcherInterceptor(publisher.Object);
+
+        // Act
+        var result = interceptor.SavedChanges(CreateEventData(null), 42);
+
+        // Assert
+        result.ShouldBe(42);
+        publisher.VerifyNoOtherCalls();
+    }
+
+    [Fact(DisplayName = "SavedChangesAsync should call the publisher not at all when the context is null")]
+    public async Task SavedChangesAsync_WhenContextIsNull_CallsNoPublisherMethod()
+    {
+        // Arrange
+        var publisher = new Mock<IDomainEventPublisher>(MockBehavior.Strict);
+        var interceptor = new DomainEventDispatcherInterceptor(publisher.Object);
+
+        // Act
+        var result = await interceptor.SavedChangesAsync(CreateEventData(null), 42, CancellationToken.None);
+
+        // Assert
+        result.ShouldBe(42);
+        publisher.VerifyNoOtherCalls();
+    }
+
+    // ── Failed saves ──────────────────────────────────────────────────────────
+
+    private static TestDbContext CreateInterceptedContext(SqliteConnection connection, DomainEventDispatcherInterceptor interceptor)
+    {
+        var options = new DbContextOptionsBuilder<TestDbContext>()
+            .UseSqlite(connection)
+            .AddInterceptors(interceptor)
+            .EnableServiceProviderCaching(false)
+            .Options;
+        return new TestDbContext(options);
+    }
+
+    [Fact(DisplayName = "A save that throws should keep the aggregate's events and enqueue nothing, and a retried save should publish once (sync)")]
+    public void SaveChanges_WhenSaveThrows_KeepsEventsAndRetryPublishesOnce()
+    {
+        // Arrange
+        var client = new Mock<IBackgroundJobClient>(MockBehavior.Strict);
+        var publisher = new DomainEventPublisher(client.Object);
+        using var connection = new SqliteConnection("Data Source=:memory:");
+        connection.Open();
+        using var ctx = CreateInterceptedContext(connection, new DomainEventDispatcherInterceptor(publisher));
+        var aggregate = AggregateWithEvents(1, 1);
+        ctx.Aggregates.Add(aggregate);
+
+        // Act
+        // No schema yet, so the INSERT fails. SaveChangesFailed is not hooked: the interceptor never runs.
+        Should.Throw<DbUpdateException>(() => ctx.SaveChanges());
+        var eventsAfterFailure = aggregate.DomainEvents.Count;
+
+        client.Setup(c => c.Create(It.IsAny<Job>(), It.IsAny<IState>())).Returns("job-1");
+        ctx.Database.EnsureCreated();
+        ctx.SaveChanges();
+
+        // Assert
+        eventsAfterFailure.ShouldBe(1);
+        client.Verify(c => c.Create(It.IsAny<Job>(), It.IsAny<IState>()), Times.Once);
+        aggregate.DomainEvents.ShouldBeEmpty();
+    }
+
+    [Fact(DisplayName = "A save that throws should keep the aggregate's events and enqueue nothing, and a retried save should publish once (async)")]
+    public async Task SaveChangesAsync_WhenSaveThrows_KeepsEventsAndRetryPublishesOnce()
+    {
+        // Arrange
+        var client = new Mock<IBackgroundJobClient>(MockBehavior.Strict);
+        var publisher = new DomainEventPublisher(client.Object);
+        await using var connection = new SqliteConnection("Data Source=:memory:");
+        await connection.OpenAsync(TestContext.Current.CancellationToken);
+        await using var ctx = CreateInterceptedContext(connection, new DomainEventDispatcherInterceptor(publisher));
+        var aggregate = AggregateWithEvents(1, 1);
+        ctx.Aggregates.Add(aggregate);
+
+        // Act
+        await Should.ThrowAsync<DbUpdateException>(() => ctx.SaveChangesAsync(TestContext.Current.CancellationToken));
+        var eventsAfterFailure = aggregate.DomainEvents.Count;
+
+        client.Setup(c => c.Create(It.IsAny<Job>(), It.IsAny<IState>())).Returns("job-1");
+        await ctx.Database.EnsureCreatedAsync(TestContext.Current.CancellationToken);
+        await ctx.SaveChangesAsync(TestContext.Current.CancellationToken);
+
+        // Assert
+        eventsAfterFailure.ShouldBe(1);
+        client.Verify(c => c.Create(It.IsAny<Job>(), It.IsAny<IState>()), Times.Once);
+        aggregate.DomainEvents.ShouldBeEmpty();
+    }
+
+    // ── No double publishing ──────────────────────────────────────────────────
+
+    [Fact(DisplayName = "An explicit PublishAndClear after the interceptor should publish nothing more")]
+    public void SavedChanges_ThenExplicitPublishAndClear_PublishesEachEventOnce()
+    {
+        // Arrange
+        var client = new Mock<IBackgroundJobClient>(MockBehavior.Strict);
+        client.Setup(c => c.Create(It.IsAny<Job>(), It.IsAny<IState>())).Returns("job-1");
+        var publisher = new DomainEventPublisher(client.Object);
+        using var ctx = CreateContext();
+        var aggregate = AggregateWithEvents(1, 2);
+        ctx.Entry(aggregate).State = EntityState.Unchanged;
+
+        // Act
+        new DomainEventDispatcherInterceptor(publisher).SavedChanges(CreateEventData(ctx), 0);
+        publisher.PublishAndClear(aggregate);
+
+        // Assert
+        client.Verify(c => c.Create(It.IsAny<Job>(), It.IsAny<IState>()), Times.Exactly(2));
+    }
+
+    [Fact(DisplayName = "The interceptor after an explicit PublishAndClear should publish nothing more")]
+    public void ExplicitPublishAndClear_ThenSavedChanges_PublishesEachEventOnce()
+    {
+        // Arrange
+        var client = new Mock<IBackgroundJobClient>(MockBehavior.Strict);
+        client.Setup(c => c.Create(It.IsAny<Job>(), It.IsAny<IState>())).Returns("job-1");
+        var publisher = new DomainEventPublisher(client.Object);
+        using var ctx = CreateContext();
+        var aggregate = AggregateWithEvents(1, 2);
+        ctx.Entry(aggregate).State = EntityState.Unchanged;
+
+        // Act
+        publisher.PublishAndClear(aggregate);
+        new DomainEventDispatcherInterceptor(publisher).SavedChanges(CreateEventData(ctx), 0);
+
+        // Assert
+        client.Verify(c => c.Create(It.IsAny<Job>(), It.IsAny<IState>()), Times.Exactly(2));
     }
 }

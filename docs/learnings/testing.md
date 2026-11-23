@@ -96,3 +96,59 @@ The repo's `node_modules` comes from a `node:24-slim` container (see the lockfil
 docker run --rm -v "$PWD":/app -w /app node:24-slim npx jest src/Neba.Website.Server/Components/FocalPointPicker.razor.tests.js
 ```
 
+
+### Endpoint tests: Verify snapshots
+
+Endpoint tests are unit tests. They build the endpoint with `Factory.Create<TEndpoint>(handlerMock.Object)` from FastEndpoints and call `HandleAsync` directly. Copy `tests/Neba.Api.Tests/Features/Sponsors/ListActiveSponsors/ListActiveSponsorsEndpointTests.cs`.
+
+- Use `await Verify(endpoint.Response)` to snapshot the full mapped response for the happy path. This is VerifyXunit (`global using static VerifyXunit.Verifier`), not Moq's `Verify`.
+- Always use a fixed seed (`Bogus(count, seed)`) in a snapshot test, so the output is the same each run.
+- The first run writes `*.received.txt`. Check it, then copy it over `*.verified.txt` and commit the `.verified.txt`.
+- Use explicit Shouldly assertions for edge cases (empty collection, error status codes) where the shape needs no snapshot.
+- For a handler that returns `ErrorOr<T>`, add one test per error path and assert `endpoint.HttpContext.Response.StatusCode`.
+- For a paged endpoint, assert `PageNumber`, `PageSize` and `TotalItems` explicitly. `WithTotalItems` in `PagedResultExtensions` builds the paged result.
+- Each endpoint also gets an authorization test (`CreateSponsorEndpointAuthorizationTests`) and a summary test (`CreateSponsorSummaryTests`).
+
+### Blazor tests: `StubApiResponse<T>` for Refit responses
+
+When a page or component calls a Refit interface through `ApiExecutor`, mock the interface with `Mock<I...Api>(MockBehavior.Strict)`. Build the `IApiResponse<T>` it returns with `StubApiResponse<T>` from `Refit.Testing`, never `Mock<IApiResponse<T>>`.
+
+```csharp
+using var response = new StubApiResponse<CollectionResponse<SponsorSummaryResponse>>
+{
+    IsSuccessStatusCode = true,
+    StatusCode = HttpStatusCode.OK,
+    Content = new CollectionResponse<SponsorSummaryResponse> { Items = items }
+};
+_mockApi.Setup(x => x.ListActiveSponsorsAsync(It.IsAny<CancellationToken>())).ReturnsAsync(response);
+```
+
+- Wrap the stub in `using var`. Its `Dispose()` does nothing, but `CA2000` flags a bare `IDisposable`.
+- Pass the stub straight to `.ReturnsAsync(response)`. Do not add `.Object`: the stub is the `IApiResponse<T>`, not a wrapper.
+- `Task<T>` is invariant. When a lambda returns `Task.FromResult(response)`, the type is `Task<StubApiResponse<T>>`. Write `Task.FromResult<IApiResponse<T>>(response)` or declare `IApiResponse<T> response = ...`. In that case use `#pragma warning disable CA2000` with a reason instead of `using var`, because `using` next to `Task.FromResult` trips `CA2025`.
+- Mock only the Refit interface. The response it returns is the stub.
+
+### E2E: when to add a Playwright spec
+
+Playwright covers what bUnit cannot: the real browser and the real HTTP stack together. The rule that a new routable page needs a spec is in `.github/instructions/pull-request-review.instructions.md` ("E2E Coverage for New UI Features").
+
+| Add a Playwright test when | Skip it when |
+|---|---|
+| A new page renders API data (check the data flow end to end) | The logic is inside one component: use bUnit |
+| A link changes the URL (navigation between pages) | The state is pure UI inside one component: use bUnit |
+| A URL query parameter drives the page | It is data transformation or business logic: use a unit test |
+| A modal or overlay opens and closes (button or backdrop) | The page is static, with no API call or interaction |
+| An API 404 triggers a redirect or a not-found state | An existing Playwright test already covers the page |
+| State survives navigation (the season stays selected across pages) | |
+| Keyboard access for an interactive widget | |
+
+When you add a spec:
+
+- Add a mock route in `tests/e2e/mock-api/mock-api-server.ts` for every new API route the page calls.
+- Add the spec under `tests/e2e/`. Group by page, and put closely related pages in one file.
+- Anchor structural assertions on stable CSS class selectors (BEM, `.block__element--modifier`), not on text.
+- Wait with `page.waitForSelector()` in `beforeEach` for data-driven content. Never sleep.
+
+### Integration tests share one Postgres container
+
+`PostgreSqlFixture` (behind `AppDbContextFixture` and `SecurityDbContextFixture`) starts one `postgres:17` container per test process, with up to three start attempts. Each fixture creates its own database on it and drops it on dispose. Do not start a container per fixture again: with over a hundred fixture classes, one slow Docker start failed a whole class at random ("Npgsql.NpgsqlException: The operation has timed out", 0 ms, in `InitializeAsync`). Connections use a 60 second timeout for the same reason. A new class needs nothing beyond `IClassFixture<AppDbContextFixture>`; it gets its own database. Azurite and SQL Server fixtures still start their own containers.

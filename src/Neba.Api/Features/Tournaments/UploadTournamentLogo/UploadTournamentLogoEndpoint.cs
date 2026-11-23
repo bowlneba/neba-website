@@ -12,8 +12,8 @@ using PermissionCatalog = Neba.Api.Contracts.Security.Permissions;
 
 namespace Neba.Api.Features.Tournaments.UploadTournamentLogo;
 
-internal sealed class UploadTournamentLogoEndpoint(IUploadStagingService stagingService, IFileStorageService fileStorageService)
-    : Endpoint<UploadTournamentLogoRequest, UploadedFileResponse>
+internal sealed class UploadTournamentLogoEndpoint(IUploadStagingService stagingService, IFileStorageService fileStorageService, IImageResizer imageResizer)
+    : LogoUploadEndpoint<UploadTournamentLogoRequest>
 {
     public override void Configure()
     {
@@ -33,24 +33,15 @@ internal sealed class UploadTournamentLogoEndpoint(IUploadStagingService staging
             .Produces<UploadedFileResponse>(StatusCodes.Status200OK)
             .ProducesProblemDetails(StatusCodes.Status400BadRequest)
             .ProducesProblemDetails(StatusCodes.Status401Unauthorized)
-            .ProducesProblemDetails(StatusCodes.Status403Forbidden));
+            .ProducesProblemDetails(StatusCodes.Status403Forbidden)
+            .ProducesProblemDetails(StatusCodes.Status422UnprocessableEntity));
     }
 
     public override async Task HandleAsync(UploadTournamentLogoRequest req, CancellationToken ct)
     {
-        var storedFile = await stagingService.StageUploadAsync(req.File, "bowlneba-public", "tournaments/logo", null, ct);
+        var result = await LogoUploadProcessor.ResizeAndStageAsync(
+            req.File, "tournaments/logo", UploadTournamentLogoRequestValidator.AllowedContentTypes, imageResizer, stagingService, fileStorageService, ct);
 
-        var response = new UploadedFileResponse
-        {
-            Container = storedFile.Container,
-            Path = storedFile.Path,
-            FileName = req.File.FileName,
-            ContentType = storedFile.ContentType,
-            SizeInBytes = storedFile.SizeInBytes,
-            Url = fileStorageService.GetBlobUri(storedFile.Container, storedFile.Path)
-        };
-
-        // Stryker disable once Statement
-        await Send.OkAsync(response, ct);
+        await SendResultAsync(result, ct);
     }
 }

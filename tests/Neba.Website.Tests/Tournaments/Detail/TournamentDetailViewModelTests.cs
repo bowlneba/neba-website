@@ -7,6 +7,28 @@ namespace Neba.Website.Tests.Tournaments.Detail;
 [Component("Website.Tournaments.Detail.TournamentDetailViewModel")]
 public sealed class TournamentDetailViewModelTests
 {
+    [Theory(DisplayName = "IsUpcoming should be false once the tournament is completed, even on its start date")]
+    [InlineData(0, 0, "Completed", false)]
+    [InlineData(0, 0, "Scheduled", true)]
+    [InlineData(-1, 1, "Scheduled", true)]
+    [InlineData(-2, -1, "Scheduled", false)]
+    [InlineData(5, 6, "Scheduled", true)]
+    public void IsUpcoming_ShouldReflectEndDateAndStatus(int startOffsetDays, int endOffsetDays, string status, bool expected)
+    {
+        // Arrange
+        var today = DateOnly.FromDateTime(DateTime.Today);
+        var model = TournamentDetailViewModelFactory.Create(
+            startDate: today.AddDays(startOffsetDays),
+            endDate: today.AddDays(endOffsetDays),
+            status: status);
+
+        // Act
+        var isUpcoming = model.IsUpcoming;
+
+        // Assert
+        isUpcoming.ShouldBe(expected);
+    }
+
     [Fact(DisplayName = "Should order breakdown sponsors by amount descending")]
     public void AddedMoneyBreakdown_ShouldOrderByAmountDescending_WhenAmountsDiffer()
     {

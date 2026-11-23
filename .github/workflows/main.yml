@@ -8,6 +8,9 @@ on:
       - 'src/**'
       - 'tests/**'
       - '.github/workflows/**'
+      - '.github/scripts/**'
+      - 'Directory.Packages.props'
+      - 'Directory.Build.props'
   workflow_dispatch:
     inputs:
       environment:

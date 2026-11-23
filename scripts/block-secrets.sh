@@ -43,7 +43,9 @@ done < <(git ls-files --others --exclude-standard)
 patterns=(
     'password\s*='
     'Server=.*;Password='
-    'apikey'
+    # A key name followed by a literal value. A reference such as ${{ secrets.X }} or $KEY, or a
+    # bare name with no assignment, is not a secret.
+    'apikey["'"'"']?[[:space:]]*[:=][[:space:]]*["'"'"']?[^$"'"'"'[:space:]{]'
     'BEGIN (RSA )?PRIVATE KEY'
 )
 

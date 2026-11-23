@@ -1,3 +1,5 @@
+using Humanizer;
+
 using Neba.Api.Contracts.Tournaments;
 
 namespace Neba.Website.Server.Tournaments;
@@ -8,7 +10,8 @@ public sealed record DefendingTeamViewModel(
     string SeasonDescription,
     bool SourceTruncated,
     bool Undefended,
-    IReadOnlyList<string> Champions)
+    IReadOnlyList<string> Champions,
+    int ConsecutiveTitles = 1)
 {
     /// <summary>Short note under the season, or null for a normal defending team.</summary>
     public string? Note => (SourceTruncated, Undefended) switch
@@ -17,6 +20,15 @@ public sealed record DefendingTeamViewModel(
         (_, true) => "could not defend",
         _ => null
     };
+
+    /// <summary>True when the same bowlers won more than one tournament in a row.</summary>
+    public bool IsRepeatChampion => ConsecutiveTitles > 1;
+
+    /// <summary>Text of the medallion, such as "2x".</summary>
+    public string TitleCountLabel => ConsecutiveTitles + "x";
+
+    /// <summary>Spoken text for the medallion.</summary>
+    public string TitleCountDescription => "title".ToQuantity(ConsecutiveTitles) + " in a row";
 }
 
 internal static class DefendingTeamMappingExtensions
@@ -28,6 +40,7 @@ internal static class DefendingTeamMappingExtensions
             response.SeasonDescription,
             response.SourceTruncated,
             response.Undefended,
-            [.. response.Champions]);
+            [.. response.Champions],
+            response.ConsecutiveTitles);
     }
 }

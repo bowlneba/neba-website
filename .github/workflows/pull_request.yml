@@ -41,6 +41,14 @@ jobs:
             .github/scripts/check-version-bump.sh
           fi
 
+      # CD, hotfix and infrastructure preview install the Aspire CLI at the version this script prints.
+      - name: Test aspire-version.sh
+        run: .github/scripts/aspire-version.test.sh
+
+      # Uses fake aspire and az commands; needs no Azure access.
+      - name: Test whatif-guard.sh
+        run: .github/scripts/whatif-guard.test.sh
+
   format-check:
     name: Code Format Check
     runs-on: ubuntu-latest
@@ -148,6 +156,7 @@ jobs:
     needs: format-check
     permissions:
       contents: read
+      pull-requests: read
     outputs:
       apphost_changed: ${{ steps.changes.outputs.apphost }}
 
@@ -160,19 +169,15 @@ jobs:
         with:
           filters: |
             apphost:
-              - 'src/Neba.AppHost/AppHost.cs'
+              - 'src/Neba.AppHost/**'
 
-  azd-provision-preview:
+  infra-whatif:
     name: Infrastructure Preview
     if: needs.detect-apphost-changes.outputs.apphost_changed == 'true'
     needs: detect-apphost-changes
     uses: ./.github/workflows/infrastructure_preview.yml
     with:
-      azure_env_name: bowlneba-prod
-      azure_location: ${{ vars.AZURE_LOCATION }}
-      artifact_name: pr-azd-preview
-    secrets:
-      SIXLABORS_LICENSE_KEY: ${{ secrets.SIXLABORS_LICENSE_KEY }}
+      artifact_name: pr-infra-whatif
     permissions:
       contents: read
       id-token: write
@@ -180,20 +185,24 @@ jobs:
 
   comment-infra-preview:
     name: Comment preview on PR
-    if: needs.detect-apphost-changes.outputs.apphost_changed == 'true' && github.event_name == 'pull_request'
+    # !cancelled(): a blocked what-if fails infra-whatif, and the comment is how the PR shows why.
+    # A run that a newer push cancelled must not touch the comment.
+    if: ${{ !cancelled() && needs.detect-apphost-changes.outputs.apphost_changed == 'true' && github.event_name == 'pull_request' }}
     runs-on: ubuntu-latest
     needs:
       - detect-apphost-changes
-      - azd-provision-preview
+      - infra-whatif
     permissions:
       contents: read
       pull-requests: write
 
     steps:
       - name: Download preview artifact
+        # The what-if can fail before it writes a summary, so a missing artifact is not an error.
+        continue-on-error: true
         uses: actions/download-artifact@v8
         with:
-          name: ${{ needs.azd-provision-preview.outputs.artifact-name }}
+          name: ${{ needs.infra-whatif.outputs.artifact-name }}
           path: /tmp
 
       - name: Comment preview on PR
@@ -202,16 +211,19 @@ jobs:
           PR_NUMBER: ${{ github.event.pull_request.number }}
           REPO: ${{ github.repository }}
         run: |
-          PREVIEW=$(cat /tmp/azd-preview.txt)
-          BODY="<!-- azd-provision-preview -->
-          ## Infrastructure Preview
+          if [ -f /tmp/whatif-summary.md ]; then
+            PREVIEW=$(cat /tmp/whatif-summary.md)
+          else
+            # Replace any earlier preview so the PR does not keep an old clean result.
+            PREVIEW="## Infrastructure what-if
 
-          \`\`\`
-          ${PREVIEW}
-          \`\`\`"
+          The what-if failed before it wrote a summary. See the Infrastructure Preview job for the error."
+          fi
+          BODY="<!-- infra-whatif -->
+          ${PREVIEW}"
 
           COMMENT_ID=$(gh api "repos/${REPO}/issues/${PR_NUMBER}/comments" \
-            --jq '.[] | select(.body | startswith("<!-- azd-provision-preview -->")) | .id' | head -1)
+            --jq '.[] | select(.body | startswith("<!-- infra-whatif -->")) | .id' | head -1)
 
           if [ -n "$COMMENT_ID" ]; then
             gh api "repos/${REPO}/issues/comments/${COMMENT_ID}" -X PATCH -f body="$BODY"

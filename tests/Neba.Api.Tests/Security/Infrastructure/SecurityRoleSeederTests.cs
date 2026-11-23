@@ -54,12 +54,13 @@ public sealed class SecurityRoleSeederTests
                 Permissions.CreateSponsor, Permissions.EditSponsor,
                 Permissions.EditHallOfFamePhoto,
                 Permissions.CreateTournament, Permissions.EditTournament, Permissions.ManageTournamentSponsors, Permissions.EditTournamentLogo, Permissions.DeleteTournament, Permissions.ManageTournamentStatus,
+                Permissions.CreateSeries, Permissions.EditSeries, Permissions.DeleteSeries, Permissions.EditSeriesLogo, Permissions.ManageAdvancement,
                 Permissions.ViewBackgroundJobsDashboard, Permissions.RefreshDocument]);
         }
 
         if (roleUnderTest != Roles.Manager)
         {
-            SetupRoleAlreadySynced(mock, Roles.Manager, [Permissions.CreateArticle, Permissions.EditArticle, Permissions.DeleteArticle, Permissions.CreateSponsor, Permissions.EditSponsor, Permissions.EditHallOfFamePhoto, Permissions.CreateTournament, Permissions.EditTournament, Permissions.EditTournamentLogo, Permissions.ManageTournamentSponsors, Permissions.ManageTournamentStatus]);
+            SetupRoleAlreadySynced(mock, Roles.Manager, [Permissions.CreateArticle, Permissions.EditArticle, Permissions.DeleteArticle, Permissions.CreateSponsor, Permissions.EditSponsor, Permissions.EditHallOfFamePhoto, Permissions.CreateTournament, Permissions.EditTournament, Permissions.EditTournamentLogo, Permissions.ManageTournamentSponsors, Permissions.ManageTournamentStatus, Permissions.CreateSeries, Permissions.EditSeries, Permissions.DeleteSeries, Permissions.EditSeriesLogo]);
         }
 
         if (roleUnderTest != Roles.TournamentDirector)
@@ -227,7 +228,7 @@ public sealed class SecurityRoleSeederTests
         roleManagerMock.VerifyAll();
     }
 
-    [Fact(DisplayName = "SeedAsync should create the Webmaster role and add exactly the CreateArticle, EditArticle, DeleteArticle, CreateSponsor, EditSponsor, EditHallOfFamePhoto, CreateTournament, EditTournament, EditTournamentLogo, ManageTournamentSponsors, DeleteTournament, ManageTournamentStatus, CreateUser, EditUser, ResetUserPassword, GetUsers, ViewBackgroundJobsDashboard, and RefreshDocument permission claims when the role does not exist")]
+    [Fact(DisplayName = "SeedAsync should create the Webmaster role and add exactly the CreateArticle, EditArticle, DeleteArticle, CreateSponsor, EditSponsor, EditHallOfFamePhoto, CreateTournament, EditTournament, EditTournamentLogo, ManageTournamentSponsors, DeleteTournament, ManageTournamentStatus, CreateSeries, EditSeries, DeleteSeries, EditSeriesLogo, ManageAdvancement, CreateUser, EditUser, ResetUserPassword, GetUsers, ViewBackgroundJobsDashboard, and RefreshDocument permission claims when the role does not exist")]
     public async Task SeedAsync_ShouldCreateWebmasterRoleAndAddExpectedClaims_WhenRoleDoesNotExist()
     {
         // Arrange
@@ -245,6 +246,11 @@ public sealed class SecurityRoleSeederTests
             Permissions.ManageTournamentSponsors,
             Permissions.DeleteTournament,
             Permissions.ManageTournamentStatus,
+            Permissions.CreateSeries,
+            Permissions.EditSeries,
+            Permissions.DeleteSeries,
+            Permissions.EditSeriesLogo,
+            Permissions.ManageAdvancement,
             Permissions.CreateUser,
             Permissions.EditUser,
             Permissions.ResetUserPassword,
@@ -282,7 +288,7 @@ public sealed class SecurityRoleSeederTests
         roleManagerMock.VerifyAll();
     }
 
-    [Fact(DisplayName = "SeedAsync should create the Manager role and add exactly the CreateArticle, EditArticle, DeleteArticle, CreateSponsor, EditSponsor, EditHallOfFamePhoto, CreateTournament, EditTournament, EditTournamentLogo, ManageTournamentSponsors, and ManageTournamentStatus permission claims when the role does not exist")]
+    [Fact(DisplayName = "SeedAsync should create the Manager role and add exactly the CreateArticle, EditArticle, DeleteArticle, CreateSponsor, EditSponsor, EditHallOfFamePhoto, CreateTournament, EditTournament, EditTournamentLogo, ManageTournamentSponsors, ManageTournamentStatus, CreateSeries, EditSeries, DeleteSeries, and EditSeriesLogo permission claims when the role does not exist")]
     public async Task SeedAsync_ShouldCreateManagerRoleAndAddExpectedClaims_WhenRoleDoesNotExist()
     {
         // Arrange
@@ -298,7 +304,11 @@ public sealed class SecurityRoleSeederTests
             Permissions.EditTournament,
             Permissions.EditTournamentLogo,
             Permissions.ManageTournamentSponsors,
-            Permissions.ManageTournamentStatus
+            Permissions.ManageTournamentStatus,
+            Permissions.CreateSeries,
+            Permissions.EditSeries,
+            Permissions.DeleteSeries,
+            Permissions.EditSeriesLogo
         };
 
         var roleManagerMock = CreateRoleManagerMock();
@@ -348,7 +358,11 @@ public sealed class SecurityRoleSeederTests
                 Permissions.EditTournament,
                 Permissions.EditTournamentLogo,
                 Permissions.ManageTournamentSponsors,
-                Permissions.ManageTournamentStatus
+                Permissions.ManageTournamentStatus,
+                Permissions.CreateSeries,
+                Permissions.EditSeries,
+                Permissions.DeleteSeries,
+                Permissions.EditSeriesLogo
             }
             .Select(p => new Claim(SecurityRoleSeeder.PermissionClaimType, p.Value))
             .Append(staleClaim)
@@ -541,6 +555,57 @@ public sealed class SecurityRoleSeederTests
 
         // Assert
         roleManagerMock.VerifyAll();
+    }
+
+    [Fact(DisplayName = "Permissions.List should contain ManageAdvancement, which gives Admin the permission")]
+    public void PermissionsList_ShouldContainManageAdvancement()
+    {
+        // Arrange & Act
+        var permissions = Permissions.List;
+
+        // Assert
+        permissions.ShouldContain(Permissions.ManageAdvancement);
+    }
+
+    [Theory(DisplayName = "SeedAsync should add the ManageAdvancement claim only to Admin and Webmaster")]
+    [InlineData(Roles.Admin, true)]
+    [InlineData(Roles.Webmaster, true)]
+    [InlineData(Roles.Manager, false)]
+    [InlineData(Roles.TournamentDirector, false)]
+    [InlineData(Roles.Journalist, false)]
+    [InlineData(Roles.Member, false)]
+    public async Task SeedAsync_ShouldAddManageAdvancementClaimOnlyToAdminAndWebmaster(string roleName, bool expectedToHold)
+    {
+        // Arrange
+        var existingRole = ApplicationRoleFactory.Create(name: roleName);
+        var addedClaimValues = new List<string>();
+
+        var roleManagerMock = CreateRoleManagerMock();
+        SetupOtherRolesAlreadySynced(roleManagerMock, roleName);
+
+        roleManagerMock
+            .Setup(m => m.FindByNameAsync(roleName))
+            .ReturnsAsync(existingRole);
+        roleManagerMock
+            .Setup(m => m.GetClaimsAsync(existingRole))
+            .ReturnsAsync([]);
+        roleManagerMock
+            .Setup(m => m.AddClaimAsync(existingRole, It.Is<Claim>(c => c.Type == SecurityRoleSeeder.PermissionClaimType)))
+            .Callback<ApplicationRole, Claim>((_, claim) => addedClaimValues.Add(claim.Value))
+            .ReturnsAsync(IdentityResult.Success);
+
+        // Act
+        await SecurityRoleSeeder.SeedAsync(roleManagerMock.Object, NullLogger.Instance);
+
+        // Assert
+        if (expectedToHold)
+        {
+            addedClaimValues.ShouldContain(Permissions.ManageAdvancement.Value);
+        }
+        else
+        {
+            addedClaimValues.ShouldNotContain(Permissions.ManageAdvancement.Value);
+        }
     }
 
     [Fact(DisplayName = "SeedAsync should log and throw instead of continuing when role creation fails")]

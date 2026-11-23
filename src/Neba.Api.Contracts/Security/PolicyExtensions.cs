@@ -27,6 +27,9 @@ public static class PolicyExtensions
             builder.AddPolicy(Permissions.CanUploadTournamentLogoPolicyName, policy => policy
                 .RequireAssertion(context => context.User.HasAnyPermission(Permissions.TournamentLogoUploadPermissions)));
 
+            builder.AddPolicy(Permissions.CanUploadSeriesLogoPolicyName, policy => policy
+                .RequireAssertion(context => context.User.HasAnyPermission(Permissions.SeriesLogoUploadPermissions)));
+
             return builder;
         }
     }

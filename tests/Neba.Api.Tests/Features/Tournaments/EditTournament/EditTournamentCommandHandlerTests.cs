@@ -2,10 +2,12 @@ using ErrorOr;
 
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
 using Microsoft.Extensions.Time.Testing;
 
 using Neba.Api.BackgroundJobs;
+using Neba.Api.Caching;
 using Neba.Api.Database;
 using Neba.Api.Features.BowlingCenters.Domain;
 using Neba.Api.Features.Seasons.Domain;
@@ -71,7 +73,8 @@ public sealed class EditTournamentCommandHandlerTests(AppDbContextFixture fixtur
             scheduler,
             timeProvider ?? new FakeTimeProvider(Now),
             permissionDenialReader ?? DenialReader(denied: false),
-            Options.Create(new OilPatternAnnouncementSettings()));
+            Options.Create(new OilPatternAnnouncementSettings()),
+            NullLogger<EditTournamentCommandHandler>.Instance);
     }
 
     private static IPermissionDenialReader DenialReader(bool denied, Action? onLookup = null)
@@ -197,6 +200,152 @@ public sealed class EditTournamentCommandHandlerTests(AppDbContextFixture fixtur
         afterSet.ShouldBe(previous.Id);
         cleared.IsError.ShouldBeFalse();
         afterClear.ShouldBeNull();
+    }
+
+    private async Task<Tournament> SeedInSeasonAsync(
+        Season season, DateOnly date, Tournament? previous, CancellationToken ct)
+    {
+        var tournament = TournamentFactory.Create(
+            tournamentType: TournamentFactory.ValidTournamentType,
+            startDate: date,
+            endDate: date,
+            seasonId: season.Id,
+            previousTournament: previous is null
+                ? null
+                : PreviousTournamentFactsFactory.Create(previous.Id, previous.TournamentType, previous.EndDate));
+        await _dbContext.Tournaments.AddAsync(tournament, ct);
+        await _dbContext.SaveChangesAsync(ct);
+        return tournament;
+    }
+
+    [Fact(DisplayName = "HandleAsync keeps the previous tournament the edited tournament already follows")]
+    public async Task HandleAsync_ShouldKeepPreviousTournament_WhenResavedWithTheSameOne()
+    {
+        // Arrange
+        var ct = TestContext.Current.CancellationToken;
+        var earlierSeason = await SeedSeasonAsync(new DateOnly(2023, 9, 1), new DateOnly(2024, 8, 31), ct);
+        var season = await SeedSeasonAsync(new DateOnly(2025, 9, 1), new DateOnly(2026, 8, 31), ct);
+        var previous = await SeedInSeasonAsync(earlierSeason, earlierSeason.StartDate, null, ct);
+        var tournament = await SeedInSeasonAsync(season, season.StartDate, previous, ct);
+        var command = ValidCommand(
+            tournament.Id, startDate: season.StartDate, endDate: season.StartDate, previousTournamentId: previous.Id);
+
+        // Act
+        var result = await CreateHandler().HandleAsync(command, ct);
+
+        // Assert
+        result.IsError.ShouldBeFalse();
+        _dbContext.ChangeTracker.Clear();
+        (await _dbContext.Tournaments.AsNoTracking().SingleAsync(t => t.Id == tournament.Id, ct)).PreviousTournamentId.ShouldBe(previous.Id);
+    }
+
+    [Fact(DisplayName = "HandleAsync evicts the season lists of the old and the new previous tournament when the link changes")]
+    public async Task HandleAsync_ShouldEvictPreviousTournamentSeasonLists_WhenLinkChanges()
+    {
+        // Arrange
+        var ct = TestContext.Current.CancellationToken;
+        var oldSeason = await SeedSeasonAsync(new DateOnly(2022, 9, 1), new DateOnly(2023, 8, 31), ct);
+        var newSeason = await SeedSeasonAsync(new DateOnly(2023, 9, 1), new DateOnly(2024, 8, 31), ct);
+        var season = await SeedSeasonAsync(new DateOnly(2025, 9, 1), new DateOnly(2026, 8, 31), ct);
+        var oldPrevious = await SeedInSeasonAsync(oldSeason, oldSeason.StartDate, null, ct);
+        var newPrevious = await SeedInSeasonAsync(newSeason, newSeason.StartDate, null, ct);
+        var tournament = await SeedInSeasonAsync(season, season.StartDate, oldPrevious, ct);
+
+        var cache = _serviceProvider.GetRequiredService<IFusionCache>();
+        await cache.GetOrSetAsync("old-list", _ => Task.FromResult("stale"), tags: [$"neba:tournaments:{oldSeason.Id}"], token: ct);
+        await cache.GetOrSetAsync("new-list", _ => Task.FromResult("stale"), tags: [$"neba:tournaments:{newSeason.Id}"], token: ct);
+        var command = ValidCommand(
+            tournament.Id, startDate: season.StartDate, endDate: season.StartDate, previousTournamentId: newPrevious.Id);
+
+        // Act
+        var result = await CreateHandler().HandleAsync(command, ct);
+
+        // Assert
+        result.IsError.ShouldBeFalse();
+        (await cache.GetOrSetAsync("old-list", _ => Task.FromResult("fresh"), token: ct)).ShouldBe("fresh");
+        (await cache.GetOrSetAsync("new-list", _ => Task.FromResult("fresh"), token: ct)).ShouldBe("fresh");
+    }
+
+    [Fact(DisplayName = "HandleAsync keeps the previous tournament's cached season list when the link does not change")]
+    public async Task HandleAsync_ShouldKeepPreviousTournamentSeasonList_WhenLinkUnchanged()
+    {
+        // Arrange
+        var ct = TestContext.Current.CancellationToken;
+        var earlierSeason = await SeedSeasonAsync(new DateOnly(2023, 9, 1), new DateOnly(2024, 8, 31), ct);
+        var season = await SeedSeasonAsync(new DateOnly(2025, 9, 1), new DateOnly(2026, 8, 31), ct);
+        var previous = await SeedInSeasonAsync(earlierSeason, earlierSeason.StartDate, null, ct);
+        var tournament = await SeedInSeasonAsync(season, season.StartDate, previous, ct);
+
+        var cache = _serviceProvider.GetRequiredService<IFusionCache>();
+        await cache.GetOrSetAsync("previous-list", _ => Task.FromResult("kept"), tags: [$"neba:tournaments:{earlierSeason.Id}"], token: ct);
+        var command = ValidCommand(
+            tournament.Id, name: "Renamed Tournament", startDate: season.StartDate, endDate: season.StartDate, previousTournamentId: previous.Id);
+
+        // Act
+        var result = await CreateHandler().HandleAsync(command, ct);
+
+        // Assert
+        result.IsError.ShouldBeFalse();
+        (await cache.GetOrSetAsync("previous-list", _ => Task.FromResult("fresh"), token: ct)).ShouldBe("kept");
+    }
+
+    [Fact(DisplayName = "HandleAsync returns a conflict error when another tournament already follows the chosen previous tournament")]
+    public async Task HandleAsync_ShouldReturnConflictError_WhenPreviousTournamentAlreadyUsed()
+    {
+        // Arrange
+        var ct = TestContext.Current.CancellationToken;
+        var earlierSeason = await SeedSeasonAsync(new DateOnly(2023, 9, 1), new DateOnly(2024, 8, 31), ct);
+        var season = await SeedSeasonAsync(new DateOnly(2025, 9, 1), new DateOnly(2026, 8, 31), ct);
+        var previous = await SeedInSeasonAsync(earlierSeason, earlierSeason.StartDate, null, ct);
+        await SeedInSeasonAsync(earlierSeason, earlierSeason.StartDate.AddMonths(2), previous, ct);
+        var tournament = await SeedInSeasonAsync(season, season.StartDate, null, ct);
+        var command = ValidCommand(
+            tournament.Id, startDate: season.StartDate, endDate: season.StartDate, previousTournamentId: previous.Id);
+
+        // Act
+        var result = await CreateHandler().HandleAsync(command, ct);
+
+        // Assert
+        result.IsError.ShouldBeTrue();
+        result.FirstError.Type.ShouldBe(ErrorType.Conflict);
+        result.FirstError.Code.ShouldBe("Tournament.PreviousTournament.AlreadyUsed");
+    }
+
+    [Fact(DisplayName = "HandleAsync returns a conflict error when another request takes the previous tournament before the save")]
+    public async Task HandleAsync_ShouldReturnConflictError_WhenPreviousTournamentTakenDuringSave()
+    {
+        // Arrange
+        var ct = TestContext.Current.CancellationToken;
+        var earlierSeason = await SeedSeasonAsync(new DateOnly(2023, 9, 1), new DateOnly(2024, 8, 31), ct);
+        var season = await SeedSeasonAsync(new DateOnly(2025, 9, 1), new DateOnly(2026, 8, 31), ct);
+        var previous = await SeedInSeasonAsync(earlierSeason, earlierSeason.StartDate, null, ct);
+        var tournament = await SeedInSeasonAsync(season, season.StartDate, null, ct);
+
+        // The competing request lands after the handler's check passes and before its save.
+        var competing = new BeforeSaveInterceptor(async () =>
+        {
+            await using var other = fixture.CreateDbContext();
+            await other.Tournaments.AddAsync(
+                TournamentFactory.Create(
+                    tournamentType: TournamentFactory.ValidTournamentType,
+                    startDate: earlierSeason.StartDate.AddMonths(2),
+                    endDate: earlierSeason.StartDate.AddMonths(2),
+                    seasonId: earlierSeason.Id,
+                    previousTournament: PreviousTournamentFactsFactory.Create(previous.Id, previous.TournamentType, previous.EndDate)),
+                ct);
+            await other.SaveChangesAsync(ct);
+        });
+        await using var racingContext = fixture.CreateDbContext(competing);
+        var command = ValidCommand(
+            tournament.Id, startDate: season.StartDate, endDate: season.StartDate, previousTournamentId: previous.Id);
+
+        // Act
+        var result = await CreateHandler(dbContext: racingContext).HandleAsync(command, ct);
+
+        // Assert
+        result.IsError.ShouldBeTrue();
+        result.FirstError.Type.ShouldBe(ErrorType.Conflict);
+        result.FirstError.Code.ShouldBe("Tournament.PreviousTournament.AlreadyUsed");
     }
 
     [Fact(DisplayName = "Deleting a previous tournament sets its successor's link to null")]
@@ -459,6 +608,28 @@ public sealed class EditTournamentCommandHandlerTests(AppDbContextFixture fixtur
         detailAfterEdit.ShouldBe("fresh-detail");
         var listAfterEdit = await cache.GetOrSetAsync(seasonCacheKey, _ => Task.FromResult("fresh-list"), token: ct);
         listAfterEdit.ShouldBe("fresh-list");
+    }
+
+    [Fact(DisplayName = "HandleAsync evicts the Series caches when the tournament is edited")]
+    public async Task HandleAsync_ShouldEvictSeriesCaches_WhenEdited()
+    {
+        // Arrange
+        var ct = TestContext.Current.CancellationToken;
+        var season = await SeedSeasonAsync(new DateOnly(2025, 1, 1), new DateOnly(2025, 12, 31), ct);
+        var tournament = await SeedTournamentAsync(season, ct);
+        var cache = _serviceProvider.GetRequiredService<IFusionCache>();
+        const string seriesKey = "edit-series-cache-test";
+        await cache.GetOrSetAsync(seriesKey, _ => Task.FromResult("cached-series"), tags: [CacheDescriptors.Series.Tag], token: ct);
+
+        var handler = CreateHandler();
+        var command = ValidCommand(tournament.Id, name: "Series Eviction Tournament", startDate: season.StartDate, endDate: season.StartDate);
+
+        // Act
+        await handler.HandleAsync(command, ct);
+
+        // Assert
+        var seriesAfter = await cache.GetOrSetAsync(seriesKey, _ => Task.FromResult("fresh-series"), token: ct);
+        seriesAfter.ShouldBe("fresh-series");
     }
 
     [Theory(DisplayName = "HandleAsync evicts the champions and bowler titles caches only when name, end date or type changes")]
@@ -876,7 +1047,7 @@ public sealed class EditTournamentCommandHandlerTests(AppDbContextFixture fixtur
         persisted.PatternRatioCategory.ShouldBe(oilPattern.RatioCategory);
 
         var fileStorageMock = new Mock<IFileStorageService>(MockBehavior.Strict);
-        var getTournamentHandler = new GetTournamentQueryHandler(_dbContext, fileStorageMock.Object, TimeProvider.System, new DefendingTeamsReader(_dbContext));
+        var getTournamentHandler = new GetTournamentQueryHandler(_dbContext, fileStorageMock.Object, TimeProvider.System, new DefendingTeamsReader(_dbContext), new TournamentSeriesReader(_dbContext, fileStorageMock.Object));
         var getResult = await getTournamentHandler.HandleAsync(
             new GetTournamentQuery { Id = tournament.Id, CallerIsAuthenticated = true, CallerHasTournamentManagementPermission = true },
             ct);
@@ -920,7 +1091,7 @@ public sealed class EditTournamentCommandHandlerTests(AppDbContextFixture fixtur
         // Assert
         secondResult.IsError.ShouldBeFalse();
         var fileStorageMock = new Mock<IFileStorageService>(MockBehavior.Strict);
-        var getTournamentHandler = new GetTournamentQueryHandler(_dbContext, fileStorageMock.Object, TimeProvider.System, new DefendingTeamsReader(_dbContext));
+        var getTournamentHandler = new GetTournamentQueryHandler(_dbContext, fileStorageMock.Object, TimeProvider.System, new DefendingTeamsReader(_dbContext), new TournamentSeriesReader(_dbContext, fileStorageMock.Object));
         var getResult = await getTournamentHandler.HandleAsync(
             new GetTournamentQuery { Id = tournament.Id, CallerIsAuthenticated = true, CallerHasTournamentManagementPermission = true },
             ct);

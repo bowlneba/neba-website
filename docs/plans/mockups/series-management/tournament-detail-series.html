@@ -1,0 +1,146 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Tournament detail - BowlNEBA (Series callout)</title>
+<link rel="stylesheet" href="mockup.css">
+<style>
+  .hero-eyebrow { font-size: 13px; letter-spacing: .04em; text-transform: uppercase; opacity: .85; margin: 0 0 6px; }
+  .hero-sponsor { margin: 6px 0 0; color: rgba(255,255,255,.85); }
+  .stats { display: flex; gap: 32px; flex-wrap: wrap; margin-top: 18px; }
+  .stat .label { display: block; font-size: 12px; text-transform: uppercase; letter-spacing: .05em; opacity: .75; }
+  .stat .value { font-weight: 700; font-size: 17px; }
+  .stat .sub { display: block; font-size: 13px; opacity: .8; }
+
+  .callout {
+    display: grid; grid-template-columns: auto 1fr auto; gap: 20px; align-items: center;
+    padding: 20px 24px; margin-bottom: 24px; border-left: 6px solid var(--callout-color, var(--neba-blue-600));
+  }
+  .callout.k-qualifying { --callout-color: var(--kind-qualifying); }
+  .callout.k-survivor { --callout-color: var(--kind-survivor); }
+  .callout.k-placement { --callout-color: var(--kind-placement); }
+  .callout .logo-tile { width: 72px; height: 72px; }
+  .callout .eyebrow { font-size: 13px; color: var(--muted); margin: 0 0 2px; }
+  .callout h2 { font-family: var(--font-display); font-size: 20px; margin: 0 0 6px; }
+  .callout .round { font-size: 15px; }
+  .callout .rule { margin: 6px 0 0; }
+  .callout .rule small { display: block; color: var(--muted); font-size: 13px; margin-top: 2px; }
+  .callout .view { white-space: nowrap; }
+
+  .section { padding: 24px; margin-bottom: 24px; }
+  .section h2 { font-family: var(--font-display); font-size: 18px; margin: 0 0 10px; }
+  .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+
+  @media (max-width: 767px) {
+    .callout { grid-template-columns: auto 1fr; }
+    .callout .view { grid-column: 1 / -1; }
+    .grid { grid-template-columns: 1fr; }
+  }
+  body:not(.has-series) .callout { display: none; }
+</style>
+</head>
+<body class="has-series">
+<div class="mock-switcher">
+  <strong>Tournament detail: Series callout</strong>
+  <label>Round
+    <select id="scenario">
+      <option value="qualifying">Qualifying (singles)</option>
+      <option value="qualifying-team">Qualifying (team event)</option>
+      <option value="survivor">Survivor</option>
+      <option value="placement">Placement (with Finale)</option>
+      <option value="placement-nofinale">Placement (no Finale)</option>
+    </select>
+  </label>
+  <label><input type="checkbox" id="toggle-series" checked> Part of a Series (off = how it looks today)</label>
+  <label><input type="checkbox" id="toggle-nologo"> Series has no logo</label>
+  <a href="tournaments-list-series.html">List mockup</a>
+</div>
+
+<nav class="site-nav"><div class="site-nav-inner">
+  <a class="site-logo" href="#">NEBA</a>
+  <div class="site-links"><span class="is-active">Tournaments <small>(Schedule · Series · Rules)</small></span><span>Stats</span><span>About</span><span>News</span><span>History</span></div>
+</div></nav>
+
+<header class="title-bar"><div class="title-bar-inner" style="display:block">
+  <p class="hero-eyebrow" id="hero-eyebrow"></p>
+  <h1 id="t-name"></h1>
+  <p class="hero-sponsor" id="t-sponsor"></p>
+  <div class="stats">
+    <div class="stat"><span class="label">Dates</span><span class="value" id="t-dates"></span></div>
+    <div class="stat"><span class="label">Host</span><span class="value">Callahan's Bowl-O-Rama</span><span class="sub">Seekonk, MA</span></div>
+    <div class="stat"><span class="label">Format</span><span class="value" id="t-format"></span></div>
+  </div>
+</div></header>
+
+<main class="page">
+  <aside class="panel callout" id="callout" aria-labelledby="callout-title">
+    <span class="logo-tile" id="callout-logo"><img src="vincent-hall-logo.png" alt="2025 Vincent Hall Memorial Series logo"></span>
+    <div>
+      <p class="eyebrow">This tournament is part of a Series</p>
+      <h2 id="callout-title">2025 Vincent Hall Memorial Series</h2>
+      <span class="round kind-chip" id="callout-kind"></span>
+      <p class="rule" id="callout-rule"></p>
+    </div>
+    <a class="btn btn-secondary view" href="series-detail-option-1.html">View Series →</a>
+  </aside>
+
+  <div class="grid">
+    <section class="panel section"><h2>Registration</h2><p class="muted">Entry fee, deadlines and the Register button sit here today. Unchanged.</p></section>
+    <section class="panel section"><h2>Oil pattern</h2><p class="muted">Pattern details sit here today. Unchanged.</p></section>
+  </div>
+  <section class="panel section"><h2>Results</h2><p class="muted">Results table sits here today. Unchanged.</p></section>
+</main>
+
+<script>
+  const S = {
+    qualifying: {
+      kind: 'Qualifying', name: "Callahan's Bowl-O-Rama Open", dates: 'Jan 24 – 25, 2025', format: 'Singles',
+      rule: 'Top 8 finishers enter the Series field.',
+    },
+    'qualifying-team': {
+      kind: 'Qualifying', name: 'Trios Team Event', dates: 'Feb 21, 2025', format: 'Trios (teams of 3)',
+      rule: 'Top 2 teams enter the Series field.', sub: '(6 bowlers)',
+    },
+    survivor: {
+      kind: 'Survivor', name: "Callahan's Singles", dates: 'Jul 12, 2025', format: 'Singles',
+      rule: '40 bowlers advance.', sub: 'Series squad: 9:00 AM on 7/12.',
+    },
+    placement: {
+      kind: 'Placement', name: 'East Providence Singles', dates: 'Sep 13, 2025', format: 'Singles',
+      rule: 'Final standings. The top 4 go to the Finale.', sub: 'Finale: Sat 9/27 at 2:00 PM.',
+    },
+    'placement-nofinale': {
+      kind: 'Placement', name: 'East Providence Singles', dates: 'Sep 13, 2025', format: 'Singles',
+      rule: 'Final standings (no Finale).',
+    },
+  };
+
+  function render() {
+    const s = S[document.getElementById('scenario').value];
+    const k = s.kind.toLowerCase();
+    document.getElementById('t-name').textContent = s.name;
+    document.getElementById('t-dates').textContent = s.dates;
+    document.getElementById('t-format').textContent = s.format;
+    document.getElementById('t-sponsor').textContent = 'Presented by Callahan’s Bowl-O-Rama';
+    document.getElementById('hero-eyebrow').textContent = 'Upcoming tournament';
+    const callout = document.getElementById('callout');
+    callout.className = 'panel callout k-' + k;
+    const kind = document.getElementById('callout-kind');
+    kind.className = 'round kind-chip kind-' + k;
+    kind.textContent = s.kind + ' Round';
+    const rule = document.getElementById('callout-rule');
+    rule.textContent = s.rule;
+    if (s.sub) { const small = document.createElement('small'); small.textContent = s.sub; rule.appendChild(small); }
+  }
+  document.getElementById('scenario').addEventListener('change', render);
+  document.getElementById('toggle-series').addEventListener('change', e => document.body.classList.toggle('has-series', e.target.checked));
+  document.getElementById('toggle-nologo').addEventListener('change', e => {
+    const tile = document.getElementById('callout-logo');
+    if (e.target.checked) { tile.className = 'logo-tile logo-tile--initials'; tile.style.fontSize = '24px'; tile.textContent = 'VH'; }
+    else { tile.className = 'logo-tile'; tile.style.fontSize = ''; tile.innerHTML = '<img src="vincent-hall-logo.png" alt="2025 Vincent Hall Memorial Series logo">'; }
+  });
+  render();
+</script>
+</body>
+</html>

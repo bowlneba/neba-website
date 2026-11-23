@@ -10,6 +10,7 @@ using Neba.Api.Documents;
 using Neba.Api.Email;
 using Neba.Api.Features.News;
 using Neba.Api.Features.Seasons;
+using Neba.Api.Features.Series;
 using Neba.Api.Features.Tournaments;
 using Neba.Api.Legacy;
 using Neba.Api.RateLimiting;
@@ -56,6 +57,7 @@ public static class InfrastructureConfiguration
             builder.Services.AddGoogleDrive(builder.Configuration);
             builder.Services.AddNews(builder.Configuration);
             builder.Services.AddTournaments(builder.Configuration);
+            builder.Services.AddSeries(builder.Configuration);
 
             builder.Services.AddSingleton(TimeProvider.System);
             builder.Services.AddSingleton<IStopwatchProvider, StopwatchProvider>();
@@ -92,6 +94,7 @@ public static class InfrastructureConfiguration
             app.UseDocumentSyncJobs();
             app.UseUploadCleanupJob();
             app.UseSeasonRolloverJob();
+            app.UseSeriesMakeOfficialJob();
             app.UseLegacyWeeklySync();
             app.UseApiAuditMiddleware();
 

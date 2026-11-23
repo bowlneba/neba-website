@@ -1,202 +1,89 @@
 ---
 name: dotnet-aspnet-core
-version: "1.0.0"
+version: "2.0.0"
 category: "Web"
-description: "Build, debug, modernize, or review ASP.NET Core applications with correct hosting, middleware, security, configuration, logging, and deployment patterns on current .NET."
+description: "Generic ASP.NET Core guidance: middleware order, configuration and options, HttpClient, async, DI lifetimes, error handling, security basics, and logging. For building an API from scratch see dotnet-aspnetcore:dotnet-webapi (reference only)."
 compatibility: "Requires an ASP.NET Core project or solution."
 ---
 
 # ASP.NET Core
 
-## Trigger On
+Generic guidance for hosting, pipeline, configuration and security. Repo-specific rules live in `CLAUDE.md`, `docs/architecture/backend.md` and `docs/learnings/backend.md`; where they disagree with this file, they win. This repo's endpoints use Fast Endpoints in vertical slices; see the `vsa-ddd` skill.
 
-- working on ASP.NET Core apps, services, or middleware
-- changing auth, routing, configuration, hosting, or deployment behavior
-- deciding between ASP.NET Core sub-stacks such as Blazor, Minimal APIs, or controller APIs
-- debugging request pipeline issues
-- modernizing legacy ASP.NET to ASP.NET Core
+## Use this skill for
 
-## Documentation
+- Changing hosting, middleware, auth, routing, or configuration
+- Debugging request pipeline problems
+- Reviewing `HttpClient`, async, DI lifetime, or error handling code
 
-- [ASP.NET Core Overview](https://learn.microsoft.com/en-us/aspnet/core/?view=aspnetcore-10.0)
-- [ASP.NET Core Middleware](https://learn.microsoft.com/en-us/aspnet/core/fundamentals/middleware/?view=aspnetcore-10.0)
-- [ASP.NET Core Best Practices](https://learn.microsoft.com/en-us/aspnet/core/fundamentals/best-practices?view=aspnetcore-10.0)
-- [Configuration in ASP.NET Core](https://learn.microsoft.com/en-us/aspnet/core/fundamentals/configuration/?view=aspnetcore-10.0)
-- [Authentication and Authorization](https://learn.microsoft.com/en-us/aspnet/core/security/?view=aspnetcore-10.0)
+## Related skills
 
-### References
-
-- [patterns.md](references/patterns.md) - Detailed middleware patterns, security patterns, configuration patterns, DI patterns, error handling patterns, and logging patterns
-- [anti-patterns.md](references/anti-patterns.md) - Common ASP.NET Core mistakes including HttpClient misuse, async anti-patterns, configuration errors, DI issues, middleware ordering problems, and security vulnerabilities
+- Blazor UI: `dotnet-blazor` plugin skills (`author-component`, `coordinate-components`).
+- Building an API from scratch: `dotnet-aspnetcore:dotnet-webapi`. **Reference only.** It recommends a service layer, which conflicts with our slices. Read it for OpenAPI and error-handling ideas.
+- Docs: [ASP.NET Core](https://learn.microsoft.com/en-us/aspnet/core/?view=aspnetcore-10.0), [Best practices](https://learn.microsoft.com/en-us/aspnet/core/fundamentals/best-practices?view=aspnetcore-10.0).
 
 ## Workflow
 
-1. **Detect the real hosting shape first:**
-   - top-level `Program.cs` structure
-   - middleware order and registration
-   - auth model (Identity, JWT, OAuth, cookies)
-   - endpoint registrations and routing
+1. Read `Program.cs` first: middleware order, auth scheme, endpoint registration.
+2. Make the change.
+3. Check with a build, tests, and a targeted request to the affected endpoint.
 
-2. **Follow the correct middleware order:**
-   ```
-   ExceptionHandler → HttpsRedirection → Static Files → Routing
-   → CORS → Authentication → Authorization → Rate Limiting
-   → Response Caching → Custom Middleware → Endpoints
-   ```
+## Middleware order
 
-3. **Use built-in patterns correctly:**
-   - Prefer `IOptions<T>` / `IOptionsSnapshot<T>` for configuration
-   - Use `ILogger<T>` for structured logging
-   - Use `IHttpClientFactory` for HTTP clients (never `new HttpClient()`)
-   - Use `IHostedService` / `BackgroundService` for background work
-
-4. **Route specialized work to specific skills:**
-   - UI and components → `dotnet-blazor`
-   - Real-time → `dotnet-signalr`
-   - RPC → `dotnet-grpc`
-   - New HTTP APIs → `dotnet-minimal-apis` (prefer unless controllers needed)
-   - Controller APIs → `dotnet-web-api`
-
-5. **Validate with build, tests, and targeted endpoint checks.**
-
-## Middleware Patterns
-
-### Correct Order Matters
-```csharp
-var app = builder.Build();
-
-app.UseExceptionHandler("/error");      // 1. Catch all exceptions
-app.UseHsts();                          // 2. Security headers
-app.UseHttpsRedirection();              // 3. HTTPS redirect
-app.UseStaticFiles();                   // 4. Serve static files
-app.UseRouting();                       // 5. Route matching
-app.UseCors();                          // 6. CORS policy
-app.UseAuthentication();                // 7. Who are you?
-app.UseAuthorization();                 // 8. Can you access?
-app.UseRateLimiter();                   // 9. Rate limiting
-app.UseResponseCaching();               // 10. Response cache
-app.MapControllers();                   // 11. Endpoints
+```
+ExceptionHandler → HSTS → HttpsRedirection → StaticFiles → Routing → CORS
+→ Authentication → Authorization → RateLimiter → ResponseCaching → Endpoints
 ```
 
-### Custom Middleware Pattern
-```csharp
-public class RequestTimingMiddleware
-{
-    private readonly RequestDelegate _next;
-    private readonly ILogger<RequestTimingMiddleware> _logger;
+Authentication must come before authorization, and both before the endpoints. A misplaced `UseAuthorization` or `UseCors` fails without an error, so check the order whenever you add middleware.
 
-    public RequestTimingMiddleware(RequestDelegate next, ILogger<RequestTimingMiddleware> logger)
-    {
-        _next = next;
-        _logger = logger;
-    }
+## Configuration
 
-    public async Task InvokeAsync(HttpContext context)
-    {
-        var sw = Stopwatch.StartNew();
-        await _next(context);
-        _logger.LogInformation("Request {Path} completed in {Elapsed}ms",
-            context.Request.Path, sw.ElapsedMilliseconds);
-    }
-}
-```
+- Bind settings to a class with `Configure<T>(section)` and inject `IOptions<T>` (or `IOptionsSnapshot<T>` for per-request reload).
+- Keep secrets out of `appsettings.json` and source control. Use user secrets locally and a vault in deployment.
+- Layer sources in this order: JSON, environment-specific JSON, environment variables, user secrets.
 
-## Configuration Patterns
+## HttpClient
 
-### Strongly-Typed Options
-```csharp
-// appsettings.json
-{
-  "EmailSettings": {
-    "SmtpServer": "smtp.example.com",
-    "Port": 587
-  }
-}
+- Get clients from `IHttpClientFactory` (or typed clients). Never `new HttpClient()` per request: it exhausts sockets.
+- Do not inject scoped services into a `DelegatingHandler`. Handlers live longer than a request scope.
 
-// Registration
-builder.Services.Configure<EmailSettings>(
-    builder.Configuration.GetSection("EmailSettings"));
+## Async
 
-// Usage
-public class EmailService(IOptions<EmailSettings> options)
-{
-    private readonly EmailSettings _settings = options.Value;
-}
-```
+- Use `async`/`await` all the way. Never `.Result`, `.Wait()`, or `.GetAwaiter().GetResult()` in request code: it starves the thread pool.
+- Never `async void` outside event handlers.
+- Pass `CancellationToken` through every async call.
 
-### Environment-Based Configuration
-```csharp
-builder.Configuration
-    .AddJsonFile("appsettings.json", optional: false)
-    .AddJsonFile($"appsettings.{builder.Environment.EnvironmentName}.json", optional: true)
-    .AddEnvironmentVariables()
-    .AddUserSecrets<Program>(optional: true);
-```
+## Dependency injection
 
-## Security Patterns
+- Match lifetimes: a singleton must not hold a scoped service (captive dependency). Use `IServiceScopeFactory` to open a scope from a singleton.
+- `DbContext` is scoped.
+- Register in extension methods grouped by feature, not one long `Program.cs`.
 
-### Authentication Setup
-```csharp
-builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
-    .AddJwtBearer(options =>
-    {
-        options.TokenValidationParameters = new TokenValidationParameters
-        {
-            ValidateIssuer = true,
-            ValidateAudience = true,
-            ValidateLifetime = true,
-            ValidateIssuerSigningKey = true,
-            ValidIssuer = builder.Configuration["Jwt:Issuer"],
-            ValidAudience = builder.Configuration["Jwt:Audience"],
-            IssuerSigningKey = new SymmetricSecurityKey(
-                Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"]!))
-        };
-    });
-```
+## Error handling
 
-### Authorization Policies
-```csharp
-builder.Services.AddAuthorization(options =>
-{
-    options.AddPolicy("AdminOnly", policy =>
-        policy.RequireRole("Admin"));
-    options.AddPolicy("MinAge18", policy =>
-        policy.RequireClaim("Age", "18", "19", "20")); // simplified
-});
-```
+- Register an `IExceptionHandler` and return `ProblemDetails`. Do not catch and swallow exceptions without logging them.
+- Do not leak stack traces or internal messages to clients outside development.
+- Business-rule failures are results, not exceptions (see `CLAUDE.md`: commands return `ErrorOr<T>`).
 
-## Anti-Patterns to Avoid
+## Security
 
-| Anti-Pattern | Why It's Bad | Better Approach |
-|--------------|--------------|-----------------|
-| `new HttpClient()` | Socket exhaustion | `IHttpClientFactory` |
-| Sync-over-async (`Task.Result`) | Thread pool starvation | `await` properly |
-| Storing secrets in `appsettings.json` | Security risk | User Secrets, Key Vault |
-| Catching all exceptions silently | Hides bugs | Use `IExceptionHandler` |
-| `async void` in middleware | Crashes process | `async Task` |
-| Missing HTTPS redirect | Security risk | `UseHttpsRedirection()` |
+- Validate token issuer, audience, lifetime, and signing key.
+- Make authorization explicit on every endpoint: policy, role, or anonymous.
+- Keep HTTPS redirection and HSTS on outside development.
+- Rate-limit public and expensive endpoints.
+- Never log secrets, tokens, or personal data (see the `[PersonalData]` rule in `CLAUDE.md`).
 
-## Performance Best Practices
+## Logging
 
-1. **Use async/await everywhere** — avoid sync blocking calls
-2. **Pool DbContext properly** — use scoped lifetime
-3. **Enable response compression** — `UseResponseCompression()`
-4. **Use output caching** — `UseOutputCache()` for .NET 7+
-5. **Profile with diagnostic tools** — Visual Studio Diagnostic Tools, PerfView
-6. **Avoid allocations in hot paths** — use `Span<T>`, pooling
-
-## Deliver
-
-- production-credible ASP.NET Core code and config
-- a clear request pipeline and hosting story
-- verification that matches the affected endpoints and middleware
-- security headers and HTTPS configured correctly
+- Use `ILogger<T>` with message templates, not string interpolation. In this repo, use `[LoggerMessage]`.
+- Log a caught exception before you swallow it.
 
 ## Validate
 
-- middleware order is intentional and documented
-- security and configuration changes are explicit
-- endpoint behavior is covered by tests or smoke checks
-- no blocking calls in async context
-- secrets are not committed to source control
-- health checks are implemented for production readiness
+- Middleware order is intentional.
+- Security and configuration changes are explicit.
+- Endpoint behavior is covered by a test or smoke check.
+- No blocking calls in async paths.
+- No secrets in source control.
+- Health checks cover production readiness.

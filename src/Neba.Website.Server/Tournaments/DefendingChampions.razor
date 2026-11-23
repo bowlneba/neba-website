@@ -11,6 +11,10 @@
             {
                 <div class="defending__row">
                     <div class="defending__season">
+                        @if (team.IsRepeatChampion)
+                        {
+                            <span class="defending__medal defending__medal--small" role="img" aria-label="@team.TitleCountDescription">@team.TitleCountLabel</span>
+                        }
                         @team.SeasonDescription
                         @if (team.Note is not null)
                         {
@@ -25,22 +29,32 @@
     else
     {
         <div class="defending defending--strip">
+            @if (LeadingRepeat is { } leading)
+            {
+                <span class="defending__medal defending__medal--lead" role="img" aria-label="@leading.TitleCountDescription">@leading.TitleCountLabel</span>
+            }
             <span class="defending__label">
                 <span class="material-symbols-outlined" aria-hidden="true">shield</span>
                 @Heading
             </span>
             @foreach (var team in Teams)
             {
-                <div class="defending__group">
-                    <div class="defending__pills">
-                        @foreach (var champion in team.Champions)
-                        {
-                            <span class="defending__pill">@champion</span>
-                        }
+                <div class="defending__group@(ShowsOwnMedal(team) ? " defending__group--repeat" : string.Empty)">
+                    @if (ShowsOwnMedal(team))
+                    {
+                        <span class="defending__medal" role="img" aria-label="@team.TitleCountDescription">@team.TitleCountLabel</span>
+                    }
+                    <div class="defending__body">
+                        <div class="defending__pills">
+                            @foreach (var champion in team.Champions)
+                            {
+                                <span class="defending__pill">@champion</span>
+                            }
+                        </div>
+                        <span class="defending__tag">
+                            @team.SeasonDescription @("winner".ToQuantity(team.Champions.Count, ShowQuantityAs.None))@(team.Note is null ? string.Empty : ", " + team.Note)
+                        </span>
                     </div>
-                    <span class="defending__tag">
-                        @team.SeasonDescription winners@(team.Note is null ? string.Empty : ", " + team.Note)
-                    </span>
                 </div>
             }
         </div>
@@ -54,8 +68,14 @@
     [Parameter]
     public DefendingChampionsLayout Layout { get; set; } = DefendingChampionsLayout.Strip;
 
-    // Plural for any team of more than one bowler, and for two teams after a truncation.
-    private string Heading => Teams.Count > 1 || Teams.Any(team => team.Champions.Count > 1)
-        ? "Defending champions"
-        : "Defending champion";
+    // With one team, the medallion leads the whole strip, before the shield. With several (a truncated
+    // tournament adds the winners before it), each team that repeated keeps its own, so it is clear whose it is.
+    private DefendingTeamViewModel? LeadingRepeat => Teams.Count == 1 && Teams[0].IsRepeatChampion ? Teams[0] : null;
+
+    private bool ShowsOwnMedal(DefendingTeamViewModel team) => team.IsRepeatChampion && LeadingRepeat is null;
+
+    // Plural when more than one bowler holds the title (a team of two, or two teams after a truncation).
+    // An empty list stays singular.
+    private string Heading => "Defending champion".ToQuantity(
+        Math.Max(1, Teams.Sum(team => team.Champions.Count)), ShowQuantityAs.None);
 }

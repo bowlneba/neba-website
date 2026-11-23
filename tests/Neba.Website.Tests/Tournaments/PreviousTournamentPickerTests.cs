@@ -35,9 +35,10 @@ public sealed class PreviousTournamentPickerTests : IDisposable
     public void Dispose() => _ctx.Dispose();
 
     private static SeasonTournamentViewModel Tournament(
-        string id, string name, string type, DateOnly start, string status = "Completed")
+        string id, string name, string type, DateOnly start, string status = "Completed", string? nextId = null)
         => SeasonTournamentViewModelFactory.Create(
-            id: id, name: name, startDate: start, endDate: start.AddDays(1), tournamentType: type, status: status);
+            id: id, name: name, startDate: start, endDate: start.AddDays(1), tournamentType: type, status: status,
+            nextTournamentId: nextId);
 
     private void SetupSeasons(params SeasonViewModel[] seasons)
         => _service.Setup(x => x.GetSeasonsAsync(It.IsAny<CancellationToken>())).ReturnsAsync(seasons.ToList());
@@ -120,6 +121,24 @@ public sealed class PreviousTournamentPickerTests : IDisposable
 
         // Assert
         OptionLabels(cut).ShouldBe(["None", "Fine Open (02/2025)"]);
+    }
+
+    [Fact(DisplayName = "Should leave out a tournament another tournament already follows, but keep the one the edited tournament follows")]
+    public async Task Render_ShouldLeaveOutTournamentsAlreadyFollowed()
+    {
+        // Arrange
+        SetupSeasons(Season2025);
+        SetupSeasonTournaments(Season2025,
+            Tournament("free", "Free Open", "Doubles", new DateOnly(2025, 2, 1)),
+            Tournament("taken", "Taken Open", "Doubles", new DateOnly(2025, 3, 1), nextId: "someone-else"),
+            Tournament("mine", "Mine Open", "Doubles", new DateOnly(2025, 4, 1), nextId: "self"));
+
+        // Act
+        var cut = Render(selfId: "self");
+        await cut.WaitForStateAsync(() => cut.FindAll("option").Count > 1);
+
+        // Assert
+        OptionLabels(cut).ShouldBe(["None", "Mine Open (04/2025)", "Free Open (02/2025)"]);
     }
 
     [Fact(DisplayName = "Should raise ValueChanged with the chosen tournament's ID, and with null for None")]

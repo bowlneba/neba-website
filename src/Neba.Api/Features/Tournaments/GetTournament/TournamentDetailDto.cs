@@ -164,6 +164,9 @@ public sealed record TournamentDetailDto
     /// </summary>
     public IReadOnlyCollection<DefendingTeamDto> DefendingChampions { get; init; } = [];
 
+    /// <summary>The Series this tournament is a Stage of, or null.</summary>
+    public TournamentSeriesDto? Series { get; init; }
+
     /// <summary>
     /// Results for bowlers in this tournament; empty for pending/upcoming events.
     /// </summary>

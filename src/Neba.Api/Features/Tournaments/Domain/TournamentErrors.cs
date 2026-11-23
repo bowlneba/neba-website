@@ -141,6 +141,13 @@ internal static class TournamentErrors
             description: "The previous tournament was not found.",
             metadata: new Dictionary<string, object> { { "PreviousTournamentId", id.ToString() } });
 
+    // Conflict: the input is valid, but another tournament already follows the chosen one.
+    public static Error PreviousTournamentAlreadyUsed(TournamentId id)
+        => Error.Conflict(
+            code: "Tournament.PreviousTournament.AlreadyUsed",
+            description: "Another tournament already uses this tournament as its previous tournament.",
+            metadata: new Dictionary<string, object> { { "PreviousTournamentId", id.ToString() } });
+
     public static Error SponsorNotFound(SponsorId sponsorId)
         => Error.Conflict(
             code: "Tournament.SponsorNotFound",
@@ -166,6 +173,16 @@ internal static class TournamentErrors
             metadata: new Dictionary<string, object>
             {
                 { "TournamentId", id.ToString() }
+            });
+
+    public static Error IsSeriesStage(TournamentId id, string seriesName)
+        => Error.Conflict(
+            code: "Tournament.IsSeriesStage",
+            description: $"This tournament is a Stage in the {seriesName} Series. Remove it from the Series before deleting it.",
+            metadata: new Dictionary<string, object>
+            {
+                { "TournamentId", id.ToString() },
+                { "SeriesName", seriesName }
             });
 
     public static Error SquadDateOutOfRange(DateTimeOffset bowlingDateTime, DateOnly startDate, DateOnly endDate)

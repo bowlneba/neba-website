@@ -1,0 +1,219 @@
+.series-detail .page-title-bar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1.125rem;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.series-detail__logo {
+    position: relative;
+    z-index: 1;
+}
+
+.series-detail .page-title-bar > .page-title-inner {
+    flex: 1 1 280px;
+}
+
+.series-detail__actions {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    align-items: center;
+}
+
+.series-detail__lock-note {
+    flex-basis: 100%;
+    color: rgb(255 255 255 / 0.85);
+    font-size: 0.8125rem;
+    margin: 0.375rem 0 0;
+}
+
+.series-detail__message {
+    margin: 2rem 0 1rem;
+}
+
+.series-detail-loading {
+    display: grid;
+    place-items: center;
+    padding: 4rem 0;
+}
+
+.series-group-title {
+    font-family: var(--neba-font-display);
+    font-size: 1.125rem;
+    margin: 2.25rem 0 0.75rem;
+    display: flex;
+    gap: 0.625rem;
+    align-items: baseline;
+    flex-wrap: wrap;
+}
+
+.series-group-title span {
+    font-family: var(--neba-font-base);
+    font-weight: 400;
+    font-size: 0.875rem;
+    color: var(--neba-text-muted);
+}
+
+.series-stage-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+.series-stage-list li {
+    display: grid;
+    grid-template-columns: 36px 1fr 150px 180px;
+    gap: 0.875rem;
+    align-items: center;
+    padding: 0.875rem 1.25rem;
+}
+
+.series-stage-list li + li {
+    border-top: 1px solid var(--neba-border);
+}
+
+.series-stage__order {
+    font-family: var(--neba-font-display);
+    font-weight: 700;
+    color: var(--neba-text-muted);
+}
+
+.series-stage__tournament a {
+    font-weight: 600;
+    text-decoration: none;
+}
+
+.series-stage__tournament a:hover {
+    text-decoration: underline;
+}
+
+.series-stage__tournament small {
+    display: block;
+    color: var(--neba-text-muted);
+    font-size: 0.8125rem;
+}
+
+.series-stage__advancing {
+    font-weight: 600;
+}
+
+.series-stage__advancing-sub {
+    display: block;
+    font-weight: 400;
+    font-size: 0.8125rem;
+    color: var(--neba-text-muted);
+}
+
+.series-stage__squad {
+    font-size: 0.875rem;
+    color: var(--neba-text-muted);
+}
+
+.series-finale {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem 1.5rem;
+    padding: 1.125rem 1.25rem;
+    font-weight: 600;
+}
+
+.series-finale__host {
+    color: var(--neba-text-muted);
+    font-weight: 400;
+}
+
+@media (max-width: 767px) {
+    .series-stage-list li {
+        grid-template-columns: 28px 1fr;
+    }
+
+    .series-stage-list .series-stage__advancing,
+    .series-stage-list .series-stage__squad {
+        grid-column: 2;
+    }
+}
+
+.series-detail__retry {
+    margin-top: 0.75rem;
+}
+
+/* Advancement section. The mockup's local tokens map onto the theme. Child components read these through inheritance.
+   Pending is neutral, Computed primary, Official success, Stale and Needs squad warning, cancelled error.
+   The foreground mixes keep text readable on the tinted background in both modes. */
+.series-detail {
+    --series-pending-bg: var(--neba-surface-high);
+    --series-pending-fg: var(--neba-text-muted);
+    --series-computed-bg: color-mix(in srgb, var(--neba-blue-600) 12%, transparent);
+    --series-computed-fg: var(--neba-blue-600);
+    --series-official-bg: color-mix(in srgb, var(--neba-success) 12%, transparent);
+    --series-official-fg: color-mix(in srgb, var(--neba-success) 75%, black);
+    --series-warn-bg: color-mix(in srgb, var(--neba-warning) 12%, transparent);
+    --series-warn-fg: color-mix(in srgb, var(--neba-warning) 75%, black);
+    --series-error-bg: color-mix(in srgb, var(--neba-accent-red) 10%, transparent);
+    --series-error-fg: color-mix(in srgb, var(--neba-accent-red) 85%, black);
+}
+
+.dark .series-detail {
+    --series-computed-fg: var(--neba-blue-300);
+    --series-official-fg: color-mix(in srgb, var(--neba-success) 55%, white);
+    --series-warn-fg: color-mix(in srgb, var(--neba-warning) 55%, white);
+    --series-error-fg: color-mix(in srgb, var(--neba-accent-red) 45%, white);
+}
+
+.series-rail-loading {
+    display: grid;
+    gap: 0.875rem;
+}
+
+.series-rail {
+    list-style: none;
+    margin: 0;
+    padding: 0 0 0 2.125rem;
+    position: relative;
+}
+
+.series-rail::before {
+    content: "";
+    position: absolute;
+    left: 0.6875rem;
+    top: 0.875rem;
+    bottom: 0.875rem;
+    width: 2px;
+    background: var(--neba-border);
+}
+
+.series-node {
+    position: relative;
+    margin-bottom: 0.875rem;
+}
+
+.series-node::before {
+    content: "";
+    position: absolute;
+    left: -1.8125rem;
+    top: 1.25rem;
+    width: 0.875rem;
+    height: 0.875rem;
+    border-radius: 50%;
+    background: var(--neba-bg-panel);
+    border: 2px solid var(--neba-border);
+}
+
+.series-node--computed::before {
+    background: var(--series-computed-fg);
+    border-color: var(--series-computed-fg);
+}
+
+.series-node--official::before {
+    background: var(--series-official-fg);
+    border-color: var(--series-official-fg);
+}
+
+.series-node--cancelled::before {
+    background: var(--series-error-fg);
+    border-color: var(--series-error-fg);
+}

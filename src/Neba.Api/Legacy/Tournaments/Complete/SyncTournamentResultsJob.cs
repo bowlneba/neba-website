@@ -5,6 +5,7 @@ using Dapper;
 
 using Microsoft.EntityFrameworkCore;
 
+using Neba.Api.BackgroundJobs;
 using Neba.Api.Caching;
 using Neba.Api.Database;
 using Neba.Api.Discord;
@@ -23,6 +24,7 @@ internal sealed class SyncTournamentResultsJob(
     AppDbContext db,
     IDbConnection legacyConnection,
     IFusionCache cache,
+    IDomainEventPublisher domainEventPublisher,
     IManualInterventionNotifier manualInterventionNotifier,
     ILogger<SyncTournamentResultsJob> logger)
 {
@@ -63,13 +65,31 @@ internal sealed class SyncTournamentResultsJob(
         var unmappedLegacyBowlerIds = AddResults(
             tournament, singleResultRows, bowlerIdsByLegacyId, placeByLegacyBowlerId, legacyTournamentId);
 
+        // Raised on every sync, even one that adds nothing: the re-sync is the Series' redelivery path.
+        var recorded = tournament.MarkResultsRecorded();
+        if (recorded.IsError)
+        {
+            logger.LogLegacyResultsNotMarkedRecorded(legacyTournamentId, recorded.FirstError.Description);
+        }
+
         await db.SaveChangesAsync(ct);
+
+        // EF skips SavedChanges on a save with no rows, so a re-sync that adds nothing would not reach the interceptor
+        // (SyncTournamentResultsJobTests pins this). When rows were saved, the interceptor has already cleared the
+        // events, so nothing publishes twice.
+        domainEventPublisher.PublishAndClear(tournament);
 
         // Place == 1 results feed the champions list (ListChampionsQueryHandler) directly, in
         // addition to the tournament's own detail view.
         await cache.RemoveByTagAsync($"neba:tournaments:{tournament.Id}", token: ct);
         await cache.RemoveByTagAsync("neba:tournaments:champions", token: ct);
         await cache.RemoveByTagAsync(CacheDescriptors.HallOfFame.PointsTag, token: ct);
+
+        // Each winner's cached title list (GetBowlerTitlesQuery) lasts days and nothing else clears it.
+        foreach (var winnerId in tournament.Results.Where(result => result.Place == 1).Select(result => result.BowlerId).Distinct())
+        {
+            await cache.RemoveAsync(CacheDescriptors.Bowlers.Titles(winnerId).Key, token: ct);
+        }
 
         // The winners are the next tournament's defending champions, which its cached list and detail show.
         await TournamentSuccessorCacheEviction.EvictAsync(db, cache, tournament.Id, ct);
@@ -266,11 +286,11 @@ internal sealed class SyncTournamentResultsJob(
                 continue;
             }
 
-            var added = tournament.AddResult(bowlerId, place, row.PrizeMoney, row.Points);
-            if (added.IsError)
+            // Upsert, not add: a re-sync must overwrite a result the Software has since corrected.
+            var recorded = tournament.UpsertResult(bowlerId, place, row.PrizeMoney, row.Points);
+            if (recorded.IsError)
             {
-                // Expected on retry: ResultAlreadyRecorded for a bowler synced by a prior run.
-                logger.LogLegacyResultSyncSkipped(row.BowlerId, legacyTournamentId, added.FirstError.Description);
+                logger.LogLegacyResultSyncSkipped(row.BowlerId, legacyTournamentId, recorded.FirstError.Description);
             }
         }
 

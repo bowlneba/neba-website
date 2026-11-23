@@ -13,7 +13,7 @@ internal sealed class ListTournamentsInSeasonSummary
     public ListTournamentsInSeasonSummary()
     {
         Summary = "Lists all tournaments in a season.";
-        Description = "Retrieves all tournaments for the given season, including dates, entry fees, bowling center, sponsors, and oil patterns.";
+        Description = "Retrieves all tournaments for the given season, including dates, entry fees, bowling center, sponsors, and oil patterns. Includes the Series each tournament is a Stage of, when it is one.";
 
         Response(200, "The list of tournaments.",
             contentType: MediaTypeNames.Application.Json,

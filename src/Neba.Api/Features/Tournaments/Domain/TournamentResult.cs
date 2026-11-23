@@ -63,6 +63,21 @@ public sealed class TournamentResult
             };
     }
 
+    internal ErrorOr<Success> Update(int place, decimal prizeMoney, int points)
+    {
+        var validated = Validate(place, prizeMoney, points);
+        if (validated.IsError)
+        {
+            return validated.Errors;
+        }
+
+        Place = place;
+        PrizeMoney = prizeMoney;
+        Points = points;
+
+        return Result.Success;
+    }
+
     private static ErrorOr<Success> Validate(int place, decimal prizeMoney, int points)
     {
         if (place <= 0)

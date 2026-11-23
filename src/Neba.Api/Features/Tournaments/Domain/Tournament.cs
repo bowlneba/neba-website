@@ -211,6 +211,7 @@ public sealed class Tournament
         }
 
         _squads.Add(squad.Value);
+        RaiseSquadsChanged();
 
         return Result.Success;
     }
@@ -233,9 +234,18 @@ public sealed class Tournament
             return rangeCheck.Errors;
         }
 
-        return _squads.Any(s => s.Id != squadId && s.BowlingDateTimeUtc == bowlingDateTime)
-            ? TournamentErrors.SquadBowlingDateTimeAlreadyUsed(bowlingDateTime)
-            : squad.UpdateDetails(bowlingDateTime, maxEntries);
+        if (_squads.Any(s => s.Id != squadId && s.BowlingDateTimeUtc == bowlingDateTime))
+        {
+            return TournamentErrors.SquadBowlingDateTimeAlreadyUsed(bowlingDateTime);
+        }
+
+        var updated = squad.UpdateDetails(bowlingDateTime, maxEntries);
+        if (!updated.IsError)
+        {
+            RaiseSquadsChanged();
+        }
+
+        return updated;
     }
 
     /// <summary>
@@ -250,8 +260,18 @@ public sealed class Tournament
         }
 
         _squads.Remove(squad);
+        RaiseSquadsChanged();
 
         return Result.Deleted;
+    }
+
+    // One pending event per save, so a batch of squad changes makes one job.
+    private void RaiseSquadsChanged()
+    {
+        if (!DomainEvents.OfType<TournamentSquadsChanged>().Any())
+        {
+            AddDomainEvent(new TournamentSquadsChanged { TournamentId = Id });
+        }
     }
 
     private ErrorOr<Success> ValidateSquadDateInRange(DateTimeOffset bowlingDateTime)
@@ -379,6 +399,11 @@ public sealed class Tournament
         if (previousError is { } error)
         {
             return error;
+        }
+
+        if (startDate != StartDate || endDate != EndDate || tournamentType != TournamentType)
+        {
+            RaiseChanged();
         }
 
         Name = name;
@@ -586,7 +611,21 @@ public sealed class Tournament
 
         Status = TournamentStatus.Cancelled;
 
+        // A cancelled tournament never followed its previous tournament, so it frees the link for a replacement.
+        PreviousTournamentId = null;
+
+        RaiseChanged();
+
         return Result.Success;
+    }
+
+    // One pending event per save, so an edit that changes several fields makes one job.
+    private void RaiseChanged()
+    {
+        if (!DomainEvents.OfType<TournamentChanged>().Any())
+        {
+            AddDomainEvent(new TournamentChanged { TournamentId = Id });
+        }
     }
 
     private readonly List<TournamentResult> _results = [];
@@ -632,6 +671,45 @@ public sealed class Tournament
         }
 
         _results.Add(result.Value);
+
+        return Result.Success;
+    }
+
+    /// <summary>
+    /// Records a bowler's result, or updates it in place when the bowler already has one. Used by the legacy
+    /// sync, where a corrected place, prize or points value in the Software must overwrite the stored result.
+    /// </summary>
+    public ErrorOr<Success> UpsertResult(BowlerId bowlerId, int place, decimal prizeMoney, int points)
+    {
+        var existing = _results.FirstOrDefault(result => result.BowlerId == bowlerId);
+
+        if (existing is null)
+        {
+            return AddResult(bowlerId, place, prizeMoney, points);
+        }
+
+        return Status == TournamentStatus.Scheduled || Status == TournamentStatus.Cancelled
+            ? TournamentErrors.TournamentNotFinalized
+            : existing.Update(place, prizeMoney, points);
+    }
+
+    /// <summary>
+    /// Signals that a sync finished writing this tournament's results. Call it after the <see cref="AddResult"/> loop on
+    /// every sync, including one that adds nothing, so a re-sync redelivers the event. Calls before one save raise one event. Complete and Truncate raise
+    /// nothing: in the legacy chain the results arrive after the status flips.
+    /// </summary>
+    public ErrorOr<Success> MarkResultsRecorded()
+    {
+        if (Status == TournamentStatus.Scheduled || Status == TournamentStatus.Cancelled)
+        {
+            return TournamentErrors.TournamentNotFinalized;
+        }
+
+        // One pending event per save, so a second call before the save makes no second job.
+        if (!DomainEvents.OfType<TournamentResultsRecorded>().Any())
+        {
+            AddDomainEvent(new TournamentResultsRecorded { TournamentId = Id });
+        }
 
         return Result.Success;
     }

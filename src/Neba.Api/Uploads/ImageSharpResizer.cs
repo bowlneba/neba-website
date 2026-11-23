@@ -3,6 +3,7 @@ using ErrorOr;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.Formats;
 using SixLabors.ImageSharp.Memory;
+using SixLabors.ImageSharp.PixelFormats;
 using SixLabors.ImageSharp.Processing;
 
 namespace Neba.Api.Uploads;
@@ -21,10 +22,35 @@ internal sealed class ImageSharpResizer(ILogger<ImageSharpResizer> logger)
     /// </summary>
     internal const long MaxSourcePixels = 50_000_000;
 
-    public async Task<ErrorOr<ResizedImage>> ResizeAsync(
+    /// <summary>
+    /// Pixels with an alpha at or below this count as empty when cropping a logo.
+    /// </summary>
+    private const byte EmptyAlphaThreshold = 8;
+
+    /// <summary>
+    /// The margin a cropped logo keeps on each side, as a share of its longest side.
+    /// </summary>
+    private const double LogoMarginRatio = 0.04;
+
+    public Task<ErrorOr<ResizedImage>> ResizeAsync(
         Stream content,
         int maxDimension,
         IReadOnlySet<string> allowedContentTypes,
+        CancellationToken cancellationToken)
+        => ProcessAsync(content, maxDimension, allowedContentTypes, isLogo: false, cancellationToken);
+
+    public Task<ErrorOr<ResizedImage>> ResizeLogoAsync(
+        Stream content,
+        int maxDimension,
+        IReadOnlySet<string> allowedContentTypes,
+        CancellationToken cancellationToken)
+        => ProcessAsync(content, maxDimension, allowedContentTypes, isLogo: true, cancellationToken);
+
+    private async Task<ErrorOr<ResizedImage>> ProcessAsync(
+        Stream content,
+        int maxDimension,
+        IReadOnlySet<string> allowedContentTypes,
+        bool isLogo,
         CancellationToken cancellationToken)
     {
         // A seekable stream is read in place (identify, rewind, decode); only a forward-only one is copied.
@@ -66,6 +92,13 @@ internal sealed class ImageSharpResizer(ILogger<ImageSharpResizer> logger)
 
             if (info.FrameMetadataCollection.Count > 1)
             {
+                // A logo is one still image: reject an animation instead of silently flattening it.
+                if (isLogo)
+                {
+                    logger.LogImageAnimatedRejected(info.FrameMetadataCollection.Count, format.DefaultMimeType);
+                    return ImageErrors.Animated;
+                }
+
                 logger.LogImageFramesDropped(info.FrameMetadataCollection.Count, format.DefaultMimeType);
             }
 
@@ -74,9 +107,15 @@ internal sealed class ImageSharpResizer(ILogger<ImageSharpResizer> logger)
                 source.Position = 0;
                 using var image = await Image.LoadAsync(new DecoderOptions { MaxFrames = 1 }, source, cancellationToken);
 
+                image.Mutate(context => context.AutoOrient());
+
+                if (isLogo)
+                {
+                    TrimTransparentBorder(image);
+                }
+
                 image.Mutate(context =>
                 {
-                    context.AutoOrient();
 
                     if (image.Width > maxDimension || image.Height > maxDimension)
                     {
@@ -111,6 +150,63 @@ internal sealed class ImageSharpResizer(ILogger<ImageSharpResizer> logger)
     }
 
     /// <summary>
+    /// Crops <paramref name="image"/> to the pixels that are not (nearly) transparent, plus an even margin.
+    /// Leaves it alone when nothing is transparent or nothing is visible.
+    /// </summary>
+    private static void TrimTransparentBorder(Image image)
+    {
+        // A format with no alpha channel (JPEG) has nothing to trim, so skip the scan.
+        if (image.PixelType.AlphaRepresentation is PixelAlphaRepresentation.None)
+        {
+            return;
+        }
+
+        // Scan the decoded image in place when it is already Rgba32; clone only for other pixel types.
+        using var clone = image is Image<Rgba32> ? null : image.CloneAs<Rgba32>();
+        var pixels = image as Image<Rgba32> ?? clone!;
+
+        var found = new OpaqueExtent(pixels.Width, pixels.Height);
+        pixels.ProcessPixelRows(accessor =>
+        {
+            for (var y = 0; y < accessor.Height; y++)
+            {
+                var row = accessor.GetRowSpan(y);
+                for (var x = 0; x < row.Length; x++)
+                {
+                    if (row[x].A > EmptyAlphaThreshold)
+                    {
+                        found.Include(x, y);
+                    }
+                }
+            }
+        });
+
+        if (found.IsEmpty)
+        {
+            return;
+        }
+
+        var bounds = found.ToRectangle();
+        if (bounds.Width == image.Width && bounds.Height == image.Height)
+        {
+            return;
+        }
+
+        var margin = (int)Math.Round(Math.Max(bounds.Width, bounds.Height) * LogoMarginRatio);
+        image.Mutate(context =>
+        {
+            context.Crop(bounds);
+            context.Resize(new ResizeOptions
+            {
+                Size = new Size(bounds.Width + (2 * margin), bounds.Height + (2 * margin)),
+                Mode = ResizeMode.BoxPad,
+                PadColor = Color.Transparent,
+                Position = AnchorPositionMode.Center
+            });
+        });
+    }
+
+    /// <summary>
     /// True for the failures a damaged or hostile file causes in the decoder or encoder: a malformed
     /// stream can surface as an ImageSharp error, a truncated read, a bad index or size, or a refused allocation.
     /// </summary>
@@ -123,6 +219,27 @@ internal sealed class ImageSharpResizer(ILogger<ImageSharpResizer> logger)
             or EndOfStreamException
             or IndexOutOfRangeException
             or OverflowException;
+
+    /// <summary>Running bounds of the opaque pixels. A class, so the pixel-row lambda can update it.</summary>
+    private sealed class OpaqueExtent(int width, int height)
+    {
+        private int _minX = width;
+        private int _minY = height;
+        private int _maxX = -1;
+        private int _maxY = -1;
+
+        public bool IsEmpty => _maxX < 0;
+
+        public void Include(int x, int y)
+        {
+            _minX = Math.Min(_minX, x);
+            _maxX = Math.Max(_maxX, x);
+            _minY = Math.Min(_minY, y);
+            _maxY = Math.Max(_maxY, y);
+        }
+
+        public Rectangle ToRectangle() => new(_minX, _minY, _maxX - _minX + 1, _maxY - _minY + 1);
+    }
 }
 
 internal static partial class ImageSharpResizerLogMessages
@@ -141,10 +258,16 @@ internal static partial class ImageSharpResizerLogMessages
 
     [LoggerMessage(Level = LogLevel.Information, Message = "Uploaded {ContentType} image has {FrameCount} frames; only the first is kept.")]
     public static partial void LogImageFramesDropped(this ILogger<ImageSharpResizer> logger, int frameCount, string contentType);
+
+    [LoggerMessage(Level = LogLevel.Information, Message = "Uploaded {ContentType} logo rejected: it has {FrameCount} frames.")]
+    public static partial void LogImageAnimatedRejected(this ILogger<ImageSharpResizer> logger, int frameCount, string contentType);
 }
 
 internal static class ImageErrors
 {
+    public static Error Animated
+        => Error.Validation("Image.Animated", "A logo must be a still image. Upload one without animation.");
+
     public static Error Unreadable
         => Error.Validation("Image.Unreadable", "The file could not be read as an image.");
 

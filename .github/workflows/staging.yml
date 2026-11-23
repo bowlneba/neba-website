@@ -1,0 +1,182 @@
+name: Staging Deploy
+
+# Deploys the whole stack with `aspire deploy` into its own resource group in the production
+# subscription. It exists to prove the deploy pipeline (provisioning, secrets, migration jobs,
+# api and web) before a change reaches production, which deploys the same way (cd.yml). Manual only. The app does not need to work.
+# Setup notes live in docs/plans/aspire-17.md (B1). Staging runs in westus2 (Staging AZURE_LOCATION).
+
+on:
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: "full = provision, migrate, deploy. hotfix = deploy api and web only, no migrations."
+        type: choice
+        options: [full, hotfix]
+        default: full
+
+concurrency:
+  group: staging-deploy
+  cancel-in-progress: false
+
+# ImageSharp needs a Six Labors license in Release builds (see Directory.Build.props).
+env:
+  SIXLABORS_LICENSE_KEY: ${{ secrets.SIXLABORS_LICENSE_KEY }}
+  MODE: ${{ inputs.mode }}
+  # Staging has no DNS. Without this the AppHost fails on a blank custom domain, as production must.
+  CustomDomains__AllowNone: "true"
+
+jobs:
+  deploy:
+    name: Deploy to staging
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    environment: Staging
+    permissions:
+      contents: read
+      id-token: write
+
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Check staging settings
+        env:
+          AZURE_RESOURCE_GROUP: ${{ vars.AZURE_RESOURCE_GROUP }}
+          AZURE_SUBSCRIPTION_ID: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+          AZURE_TENANT_ID: ${{ vars.AZURE_TENANT_ID }}
+          AZURE_CLIENT_ID: ${{ vars.AZURE_CLIENT_ID }}
+          AZURE_LOCATION: ${{ vars.AZURE_LOCATION }}
+          AZURE_PRINCIPAL_ID: ${{ vars.AZURE_PRINCIPAL_ID }}
+          AZURE_POSTGRES_SKU_NAME: ${{ vars.AZURE_POSTGRES_SKU_NAME }}
+          AZURE_POSTGRES_SKU_TIER: ${{ vars.AZURE_POSTGRES_SKU_TIER }}
+          AZURE_CONTAINERAPP_MIN_REPLICAS: ${{ vars.AZURE_CONTAINERAPP_MIN_REPLICAS }}
+          AZURE_CONTAINERAPP_MAX_REPLICAS: ${{ vars.AZURE_CONTAINERAPP_MAX_REPLICAS }}
+          AZURE_CONTAINERAPP_CONCURRENT_REQUESTS: ${{ vars.AZURE_CONTAINERAPP_CONCURRENT_REQUESTS }}
+        run: |
+          set -euo pipefail
+
+          for name in AZURE_RESOURCE_GROUP AZURE_SUBSCRIPTION_ID AZURE_TENANT_ID AZURE_CLIENT_ID AZURE_LOCATION \
+            AZURE_PRINCIPAL_ID AZURE_POSTGRES_SKU_NAME AZURE_POSTGRES_SKU_TIER \
+            AZURE_CONTAINERAPP_MIN_REPLICAS AZURE_CONTAINERAPP_MAX_REPLICAS AZURE_CONTAINERAPP_CONCURRENT_REQUESTS; do
+            if [ -z "${!name}" ]; then
+              echo "::error::Variable $name is not set for the Staging environment"
+              exit 1
+            fi
+          done
+
+          # Production lives in rg-bowlneba-prod in this subscription. A staging run must never
+          # target it, whatever the variable says.
+          if [[ ! "$AZURE_RESOURCE_GROUP" =~ ^rg-[a-z0-9-]+-staging$ ]]; then
+            echo "::error::AZURE_RESOURCE_GROUP '$AZURE_RESOURCE_GROUP' must match rg-<name>-staging"
+            exit 1
+          fi
+
+      - name: Login to Azure
+        uses: azure/login@93381592711f247e165c389ebb30b596c84cdc48 # v3
+        with:
+          tenant-id: ${{ vars.AZURE_TENANT_ID }}
+          subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+          client-id: ${{ vars.AZURE_CLIENT_ID }}
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v6
+        with:
+          dotnet-version: 10.0.x
+
+      - name: Install Aspire CLI
+        run: |
+          set -euo pipefail
+          aspire_version="$(.github/scripts/aspire-version.sh)"
+          curl -sSL --fail --proto '=https' --tlsv1.2 https://aspire.dev/install.sh -o install-aspire.sh
+          [ -s install-aspire.sh ]
+          bash install-aspire.sh --version "$aspire_version"
+          rm -f install-aspire.sh
+          echo "$HOME/.aspire/bin" >> "$GITHUB_PATH"
+
+      # Same read-only check as production runs before it deploys. A new staging environment has
+      # nothing yet, so creating Postgres and storage is allowed here (ALLOW_CREATE).
+      - name: What-if guard
+        env:
+          ASPIRE_ENVIRONMENT: staging
+          ALLOW_CREATE: "true"
+          AZURE_SUBSCRIPTION_ID: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+          AZURE_RESOURCE_GROUP: ${{ vars.AZURE_RESOURCE_GROUP }}
+          AZURE_LOCATION: ${{ vars.AZURE_LOCATION }}
+          Parameters__postgresSkuName: ${{ vars.AZURE_POSTGRES_SKU_NAME }}
+          Parameters__postgresSkuTier: ${{ vars.AZURE_POSTGRES_SKU_TIER }}
+          Parameters__deployPrincipalId: ${{ vars.AZURE_PRINCIPAL_ID }}
+          Parameters__minReplicas: ${{ vars.AZURE_CONTAINERAPP_MIN_REPLICAS }}
+          Parameters__maxReplicas: ${{ vars.AZURE_CONTAINERAPP_MAX_REPLICAS }}
+          Parameters__concurrentRequests: ${{ vars.AZURE_CONTAINERAPP_CONCURRENT_REQUESTS }}
+        run: .github/scripts/whatif-guard.sh
+
+      # Custom domains are left unset on purpose: staging has no DNS, and CustomDomains__AllowNone
+      # (set above) tells the AppHost to skip a domain whose parameter is empty. Migrations__Run is what registers the run-migrations step
+      # (see MigrationPipelineStep.cs): set in full mode, empty in hotfix mode, which deploys only
+      # the api and web steps and fails if the migration step shows up in the log.
+      - name: Deploy
+        env:
+          Azure__SubscriptionId: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+          Azure__TenantId: ${{ vars.AZURE_TENANT_ID }}
+          Azure__Location: ${{ vars.AZURE_LOCATION }}
+          Azure__ResourceGroup: ${{ vars.AZURE_RESOURCE_GROUP }}
+          Azure__AllowResourceGroupCreation: "true"
+          # AppHost.cs registers the run-migrations step only when Migrations:Run is "true", so an
+          # empty value and an unset variable behave the same.
+          Migrations__Run: ${{ env.MODE == 'full' && 'true' || '' }}
+          Parameters__postgresSkuName: ${{ vars.AZURE_POSTGRES_SKU_NAME }}
+          Parameters__postgresSkuTier: ${{ vars.AZURE_POSTGRES_SKU_TIER }}
+          Parameters__deployPrincipalId: ${{ vars.AZURE_PRINCIPAL_ID }}
+          Parameters__minReplicas: ${{ vars.AZURE_CONTAINERAPP_MIN_REPLICAS }}
+          Parameters__maxReplicas: ${{ vars.AZURE_CONTAINERAPP_MAX_REPLICAS }}
+          Parameters__concurrentRequests: ${{ vars.AZURE_CONTAINERAPP_CONCURRENT_REQUESTS }}
+          Parameters__googlePrivateKey: ${{ secrets.GOOGLE_PRIVATE_KEY }}
+          Parameters__googlePrivateKeyId: ${{ secrets.GOOGLE_PRIVATE_KEY_ID }}
+          Parameters__googleClientEmail: ${{ secrets.GOOGLE_CLIENT_EMAIL }}
+          Parameters__emailAppPassword: ${{ secrets.GOOGLE_PASSWORD }}
+          Parameters__jwtSigningKey: ${{ secrets.JWT_SIGNING_KEY }}
+          Parameters__legacyApiKey: ${{ secrets.LEGACY_API_KEY }}
+          Parameters__legacyConnectionString: ${{ secrets.LEGACY_DB_CONNECTION_STRING }}
+          Parameters__discordApiLogsWebhookUrl: ${{ secrets.DISCORD_API_LOGS_WEBHOOK_URL }}
+          Parameters__discordManualInterventionWebhookUrl: ${{ secrets.DISCORD_MANUAL_INTERVENTION_WEBHOOK_URL }}
+          Parameters__discordNewsWebhookUrl: ${{ secrets.DISCORD_NEWS_WEBHOOK_URL }}
+        run: |
+          set -euo pipefail
+          date -u +"Deploy ($MODE) started %H:%M:%S UTC"
+
+          if [ "$MODE" = "full" ]; then
+            aspire deploy --environment staging --non-interactive --include-exception-details
+          else
+            for step in provision-api-containerapp provision-web-containerapp; do
+              aspire do "$step" --environment staging --non-interactive --include-exception-details 2>&1 | tee -a hotfix-deploy.log
+            done
+
+            if grep -q "run-migrations" hotfix-deploy.log; then
+              echo "::error::A hotfix run reached the migration step"
+              exit 1
+            fi
+            for step in provision-api-containerapp provision-web-containerapp; do
+              if ! grep -q "$step completed successfully" hotfix-deploy.log; then
+                echo "::error::$step did not complete"
+                exit 1
+              fi
+            done
+          fi
+
+          date -u +"Deploy ($MODE) finished %H:%M:%S UTC"
+
+      # The OIDC token from the first login lasts about 5 minutes, so log in again before the
+      # listing. Also a data point for how long the deploy takes (see the Deploy step's times).
+      - name: Re-login to Azure
+        if: always()
+        uses: azure/login@93381592711f247e165c389ebb30b596c84cdc48 # v3
+        with:
+          tenant-id: ${{ vars.AZURE_TENANT_ID }}
+          subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+          client-id: ${{ vars.AZURE_CLIENT_ID }}
+
+      # Lists what the run created, to compare names and types with production.
+      - name: List staging resources
+        if: always()
+        env:
+          AZURE_RESOURCE_GROUP: ${{ vars.AZURE_RESOURCE_GROUP }}
+        run: az resource list --resource-group "$AZURE_RESOURCE_GROUP" --query "[].{name:name, type:type}" --output table

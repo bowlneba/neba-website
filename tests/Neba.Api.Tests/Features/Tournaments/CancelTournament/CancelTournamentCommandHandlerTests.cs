@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 
+using Neba.Api.Caching;
 using Neba.Api.Database;
 using Neba.Api.Features.Tournaments.CancelTournament;
 using Neba.Api.Features.Tournaments.Domain;
@@ -137,6 +138,67 @@ public sealed class CancelTournamentCommandHandlerTests(AppDbContextFixture fixt
             _ => Task.FromResult("fresh-tournament"),
             token: ct);
         tournamentCacheAfterCancel.ShouldBe("fresh-tournament");
+
+        var seasonCacheAfterCancel = await cache.GetOrSetAsync(
+            seasonCacheKey,
+            _ => Task.FromResult("fresh-season-tournaments"),
+            token: ct);
+        seasonCacheAfterCancel.ShouldBe("fresh-season-tournaments");
+    }
+
+    [Fact(DisplayName = "HandleAsync evicts the Series caches when the tournament is cancelled")]
+    public async Task HandleAsync_ShouldEvictSeriesCaches_WhenCancelled()
+    {
+        // Arrange
+        var ct = TestContext.Current.CancellationToken;
+        var tournament = await SeedTournamentAsync(ct);
+        var cache = _serviceProvider.GetRequiredService<IFusionCache>();
+        const string seriesKey = "cancel-series-cache-test";
+        await cache.GetOrSetAsync(seriesKey, _ => Task.FromResult("cached-series"), tags: [CacheDescriptors.Series.Tag], token: ct);
+
+        var handler = CreateHandler();
+        var command = new CancelTournamentCommand { TournamentId = tournament.Id };
+
+        // Act
+        await handler.HandleAsync(command, ct);
+
+        // Assert
+        var seriesAfter = await cache.GetOrSetAsync(seriesKey, _ => Task.FromResult("fresh-series"), token: ct);
+        seriesAfter.ShouldBe("fresh-series");
+    }
+
+    [Fact(DisplayName = "HandleAsync clears the previous tournament and evicts its season list when the tournament is cancelled")]
+    public async Task HandleAsync_ShouldClearPreviousTournamentAndEvictItsSeason_WhenCancelled()
+    {
+        // Arrange
+        var ct = TestContext.Current.CancellationToken;
+        var previous = await SeedTournamentAsync(ct);
+        var tournament = TournamentFactory.Create(
+            tournamentType: previous.TournamentType,
+            startDate: previous.EndDate.AddDays(30),
+            endDate: previous.EndDate.AddDays(31),
+            seasonId: previous.SeasonId,
+            previousTournament: PreviousTournamentFactsFactory.Create(previous.Id, previous.TournamentType, previous.EndDate));
+        await _dbContext.Tournaments.AddAsync(tournament, ct);
+        await _dbContext.SaveChangesAsync(ct);
+
+        var cache = _serviceProvider.GetRequiredService<IFusionCache>();
+        var seasonCacheKey = $"neba:tournaments:{previous.SeasonId}:list";
+        await cache.GetOrSetAsync(
+            seasonCacheKey,
+            _ => Task.FromResult("cached-season-tournaments"),
+            tags: [$"neba:tournaments:{previous.SeasonId}"],
+            token: ct);
+
+        var handler = CreateHandler();
+
+        // Act
+        var result = await handler.HandleAsync(new CancelTournamentCommand { TournamentId = tournament.Id }, ct);
+
+        // Assert
+        result.IsError.ShouldBeFalse();
+        var reloaded = await _dbContext.Tournaments.AsNoTracking().SingleAsync(t => t.Id == tournament.Id, ct);
+        reloaded.PreviousTournamentId.ShouldBeNull();
 
         var seasonCacheAfterCancel = await cache.GetOrSetAsync(
             seasonCacheKey,

@@ -1,0 +1,61 @@
+@page "/series/new"
+@using Neba.Api.Contracts.Seasons
+@using Neba.Api.Contracts.Security
+@using Neba.Website.Server.Services
+@using Neba.Website.Server.Time
+@rendermode @(new InteractiveServerRenderMode(prerender: false))
+
+@inject ApiExecutor ApiExecutor
+@inject ISeasonsApi SeasonsApi
+@inject TimeProvider TimeProvider
+@inject IClientTimeZoneService ClientTimeZoneService
+
+<PageTitle>Create Series - BowlNEBA</PageTitle>
+
+<AuthorizeView Policy="@Permissions.CreateSeries.PolicyName" Context="authContext">
+    <Authorized>
+        <div class="neba-space-y-6">
+            <div class="page-title-bar">
+                <div class="page-title-inner">
+                    <h1>Create Series</h1>
+                    <p>Set the Stages in order. Each Stage is one tournament's role in the Series.</p>
+                </div>
+                <div class="page-title-help"><HelpButton DocName="create-series" Light="true" /></div>
+            </div>
+
+            @if (_seasons is null)
+            {
+                <NebaSkeletonLoader Type="SkeletonType.Card" />
+            }
+            else
+            {
+                @if (_seasonsFailed)
+                {
+                    <NebaAlert Severity="NotifySeverity.Error" Title="Unable to load seasons" Message="The season list did not load, so a Series can't be created yet. Refresh the page to try again." />
+                }
+
+                <SeriesEditor Model="@_model" Seasons="@_seasons" IsCreate="true" IsLocked="false" />
+            }
+        </div>
+    </Authorized>
+    <NotAuthorized>
+        <p class="neba-content-wrapper">You don't have permission to create a Series.</p>
+    </NotAuthorized>
+</AuthorizeView>
+
+@code {
+    private readonly SeriesFormModel _model = new();
+    private IReadOnlyList<SeasonOption>? _seasons;
+    private bool _seasonsFailed;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var result = await ApiExecutor.ExecuteAsync("SeasonsApi", "ListSeasons", ct => SeasonsApi.ListSeasonsAsync(ct));
+        _seasonsFailed = result.IsError;
+        var seasons = result.IsError ? [] : result.Value.Items.Select(SeasonOption.From).OrderByDescending(s => s.StartDate).ToList();
+
+        var local = await ClientTimeZoneService.ToLocalAsync(TimeProvider.GetUtcNow());
+        _model.SeasonId = SeasonOption.Default(seasons, DateOnly.FromDateTime(local.DateTime))?.Id;
+        _seasons = seasons;
+    }
+}

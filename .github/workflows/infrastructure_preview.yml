@@ -1,44 +1,44 @@
 name: Infrastructure Preview
 
+# Read-only what-if of the production infrastructure for an AppHost change. It reads Azure and
+# changes nothing, and fails if the deploy would create or delete Postgres or the storage
+# account. Pull requests call it and post the result as a comment. The deploy job in cd.yml
+# runs the same check itself, right before it deploys.
+#
+# It runs without a GitHub environment, so every value comes from repository variables (the
+# Production environment's values are not visible here). See docs/learnings/aspire-deploy-cutover.md.
+
 on:
   workflow_call:
     inputs:
-      azure_env_name:
-        description: Azure Developer CLI environment name
-        required: true
-        type: string
-      azure_location:
-        description: Azure location for environment initialization
-        required: true
-        type: string
       artifact_name:
-        description: Artifact name for the preview output
+        description: Artifact name for the what-if summary
         required: false
-        default: azd-preview
+        default: infra-whatif
         type: string
     outputs:
       artifact-name:
-        description: Name of the uploaded artifact containing preview output
+        description: Name of the uploaded artifact containing the what-if summary
         value: ${{ jobs.preview.outputs.artifact-name }}
-    secrets:
-      SIXLABORS_LICENSE_KEY:
-        description: Six Labors license key; azd builds the AppHost, which builds Neba.Api (ImageSharp)
-        required: false
 
 jobs:
   preview:
     name: Infrastructure Preview
     runs-on: ubuntu-latest
-    env:
-      SIXLABORS_LICENSE_KEY: ${{ secrets.SIXLABORS_LICENSE_KEY }}
     permissions:
       contents: read
       id-token: write
     outputs:
-      artifact-name: ${{ steps.meta.outputs.artifact-name }}
+      # Set from the input, not by a step, so it exists when the what-if step fails.
+      artifact-name: ${{ inputs.artifact_name }}
 
     steps:
       - uses: actions/checkout@v7
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v6
+        with:
+          dotnet-version: 10.0.x
 
       - name: Login to Azure
         uses: azure/login@93381592711f247e165c389ebb30b596c84cdc48 # v3
@@ -47,76 +47,41 @@ jobs:
           subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
           client-id: ${{ vars.AZURE_CLIENT_ID }}
 
-      - name: Setup azd
-        uses: Azure/setup-azd@80591774c092d5d640d43663766a76728d66e07d # v2.3.0
-
       - name: Install Aspire CLI
         run: |
           set -euo pipefail
-          aspire_version="$(grep -oP '(?<=Aspire\.AppHost\.Sdk/)[0-9.]+' src/Neba.AppHost/Neba.AppHost.csproj)"
+          aspire_version="$(.github/scripts/aspire-version.sh)"
           curl -sSL --fail --proto '=https' --tlsv1.2 https://aspire.dev/install.sh -o install-aspire.sh
           [ -s install-aspire.sh ]
           bash install-aspire.sh --version "$aspire_version"
           rm -f install-aspire.sh
           echo "$HOME/.aspire/bin" >> "$GITHUB_PATH"
 
-      - name: Configure azd authentication
-        run: azd config set auth.useAzCliAuth true
-
-      - name: Initialize azd environment
+      - name: What-if
         env:
-          AZURE_ENV_NAME: ${{ inputs.azure_env_name }}
-          AZURE_LOCATION: ${{ inputs.azure_location }}
-        run: |
-          if ! azd env list | grep -q "$AZURE_ENV_NAME"; then
-            azd env new "$AZURE_ENV_NAME" --location "$AZURE_LOCATION" --subscription "${{ vars.AZURE_SUBSCRIPTION_ID }}"
-          else
-            azd env select "$AZURE_ENV_NAME"
-          fi
-
-      - name: Preview provision
-        env:
-          AZURE_ENV_NAME: ${{ inputs.azure_env_name }}
-          AZURE_LOCATION: ${{ inputs.azure_location }}
-          AZURE_TENANT_ID: ${{ vars.AZURE_TENANT_ID }}
+          OUTPUT_DIR: whatif-output
           AZURE_SUBSCRIPTION_ID: ${{ vars.AZURE_SUBSCRIPTION_ID }}
-          AZURE_CLIENT_ID: ${{ vars.AZURE_CLIENT_ID }}
-          AZURE_PRINCIPAL_ID: ${{ vars.AZURE_PRINCIPAL_ID }}
-          AZURE_CONTAINERAPP_MIN_REPLICAS: ${{ vars.AZURE_CONTAINERAPP_MIN_REPLICAS }}
-          AZURE_CONTAINERAPP_MAX_REPLICAS: ${{ vars.AZURE_CONTAINERAPP_MAX_REPLICAS }}
-          AZURE_CONTAINERAPP_CONCURRENT_REQUESTS: ${{ vars.AZURE_CONTAINERAPP_CONCURRENT_REQUESTS }}
-          AZURE_POSTGRES_SKU_NAME: ${{ vars.AZURE_POSTGRES_SKU_NAME }}
-          AZURE_POSTGRES_SKU_TIER: ${{ vars.AZURE_POSTGRES_SKU_TIER }}
-          AZURE_WEB_CUSTOM_DOMAIN: ${{ vars.AZURE_WEB_CUSTOM_DOMAIN }}
-          AZURE_WEB_CERTIFICATE_NAME: ${{ vars.AZURE_WEB_CERTIFICATE_NAME }}
-          AZURE_WEB_WWW_CUSTOM_DOMAIN: ${{ vars.AZURE_WEB_WWW_CUSTOM_DOMAIN }}
-          AZURE_WEB_WWW_CERTIFICATE_NAME: ${{ vars.AZURE_WEB_WWW_CERTIFICATE_NAME }}
-          AZURE_API_CUSTOM_DOMAIN: ${{ vars.AZURE_API_CUSTOM_DOMAIN }}
-          AZURE_API_CERTIFICATE_NAME: ${{ vars.AZURE_API_CERTIFICATE_NAME }}
-          AZD_AUTH_USE_AZURE_CLI: 'true'
-        run: |
-          set -euo pipefail
-          azd provision --preview 2>&1 | tee azd-preview.txt
+          AZURE_RESOURCE_GROUP: ${{ vars.AZURE_RESOURCE_GROUP }}
+          AZURE_LOCATION: ${{ vars.AZURE_LOCATION }}
+          Parameters__postgresSkuName: ${{ vars.AZURE_POSTGRES_SKU_NAME }}
+          Parameters__postgresSkuTier: ${{ vars.AZURE_POSTGRES_SKU_TIER }}
+          Parameters__deployPrincipalId: ${{ vars.AZURE_PRINCIPAL_ID }}
+          Parameters__minReplicas: ${{ vars.AZURE_CONTAINERAPP_MIN_REPLICAS }}
+          Parameters__maxReplicas: ${{ vars.AZURE_CONTAINERAPP_MAX_REPLICAS }}
+          Parameters__concurrentRequests: ${{ vars.AZURE_CONTAINERAPP_CONCURRENT_REQUESTS }}
+          Parameters__webCustomDomain: ${{ vars.AZURE_WEB_CUSTOM_DOMAIN }}
+          Parameters__webCertificateName: ${{ vars.AZURE_WEB_CERTIFICATE_NAME }}
+          Parameters__webWwwCustomDomain: ${{ vars.AZURE_WEB_WWW_CUSTOM_DOMAIN }}
+          Parameters__webWwwCertificateName: ${{ vars.AZURE_WEB_WWW_CERTIFICATE_NAME }}
+          Parameters__apiCustomDomain: ${{ vars.AZURE_API_CUSTOM_DOMAIN }}
+          Parameters__apiCertificateName: ${{ vars.AZURE_API_CERTIFICATE_NAME }}
+        run: .github/scripts/whatif-guard.sh
 
-      - name: Add preview to job summary
-        run: |
-          {
-            echo "## Infrastructure Preview"
-            echo
-            echo '```'
-            cat azd-preview.txt
-            echo '```'
-          } >> "$GITHUB_STEP_SUMMARY"
-
-      - name: Set artifact metadata
-        id: meta
-        env:
-          ARTIFACT_NAME: ${{ inputs.artifact_name }}
-        run: echo "artifact-name=$ARTIFACT_NAME" >> "$GITHUB_OUTPUT"
-
-      - name: Upload preview artifact
+      - name: Upload what-if artifact
+        if: always()
         uses: actions/upload-artifact@v7
         with:
           name: ${{ inputs.artifact_name }}
-          path: azd-preview.txt
+          path: whatif-output/whatif-summary.md
+          if-no-files-found: ignore
           retention-days: 7

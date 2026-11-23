@@ -17,6 +17,7 @@ using Neba.Api.Features.HallOfFame.Domain;
 using Neba.Api.Features.Memberships.Domain;
 using Neba.Api.Features.News.Domain;
 using Neba.Api.Features.Seasons.Domain;
+using Neba.Api.Features.Series.Domain;
 using Neba.Api.Features.Sponsors.Domain;
 using Neba.Api.Features.Tournaments.Domain;
 using Neba.Api.Identity;
@@ -69,6 +70,9 @@ internal static class AuditingConfiguration
             .Include<BowlerMembership>()
             .Include<Season>()
             .Include<Tournament>()
+            .Include<Series>()
+            .Include<SeriesStage>()
+            .Include<StageOverride>()
             .Include<OilPattern>()
             .Include<HallOfFameInduction>()
             .Include<HighAverageAward>()

@@ -21,9 +21,14 @@
     /// <summary>
     /// Expression identifying the bound model property, e.g. <c>() =&gt; _model.Name</c>. Used to
     /// detect a <see cref="RequiredAttribute"/> so the "(required)" tag never drifts from the model.
+    /// Leave it out for a field the form model does not bind (an autocomplete), and set <see cref="Required"/>.
     /// </summary>
-    [Parameter, EditorRequired]
-    public Expression<Func<TValue>> For { get; set; } = default!;
+    [Parameter]
+    public Expression<Func<TValue>>? For { get; set; }
+
+    /// <summary>Shows "(required)" for a field with no <see cref="For"/> expression. Ignored when <see cref="For"/> is set.</summary>
+    [Parameter]
+    public bool Required { get; set; }
 
     [Parameter]
     public RenderFragment? ChildContent { get; set; }
@@ -32,6 +37,12 @@
 
     protected override void OnParametersSet()
     {
+        if (For is null)
+        {
+            _isRequired = Required;
+            return;
+        }
+
         var fieldIdentifier = FieldIdentifier.Create(For);
         var property = fieldIdentifier.Model.GetType().GetProperty(fieldIdentifier.FieldName);
         _isRequired = property?.GetCustomAttribute<RequiredAttribute>() is not null;

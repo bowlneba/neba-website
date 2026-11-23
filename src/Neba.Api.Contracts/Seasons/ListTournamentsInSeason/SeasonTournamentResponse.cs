@@ -104,6 +104,15 @@ public sealed record SeasonTournamentResponse
     public IReadOnlyCollection<DefendingTeamResponse> DefendingChampions { get; init; } = [];
 
     /// <summary>
+    /// Id of the tournament that names this one as its previous tournament; null when none does. A tournament
+    /// can be the previous tournament of one other tournament only.
+    /// </summary>
+    public string? NextTournamentId { get; init; }
+
+    /// <summary>The Series this tournament is a Stage of, or null.</summary>
+    public TournamentSeriesResponse? Series { get; init; }
+
+    /// <summary>
     /// Host bowling center; null until confirmed.
     /// </summary>
     public TournamentBowlingCenterResponse? BowlingCenter { get; init; }

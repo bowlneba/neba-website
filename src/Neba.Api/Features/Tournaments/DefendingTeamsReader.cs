@@ -18,13 +18,15 @@ internal readonly record struct TournamentWinner(BowlerId BowlerId, Name Name);
 /// <param name="SourceTruncated">True when the tournament the team won was truncated.</param>
 /// <param name="Undefended">True when the team won an earlier tournament and never got to defend, because a later tournament in the chain was truncated.</param>
 /// <param name="Champions">The bowlers on the team.</param>
+/// <param name="ConsecutiveTitles">How many tournaments in a row, ending with the one the team won, the same bowlers won. Skipped years do not break the run, because a tournament's previous tournament is the one it follows.</param>
 internal sealed record DefendingTeam(
     TournamentId SourceTournamentId,
     string SourceTournamentName,
     string SeasonDescription,
     bool SourceTruncated,
     bool Undefended,
-    IReadOnlyList<TournamentWinner> Champions);
+    IReadOnlyList<TournamentWinner> Champions,
+    int ConsecutiveTitles = 1);
 
 /// <summary>
 /// Loads the defending teams of the given tournaments. A tournament's first defending team is the winners of its
@@ -34,8 +36,9 @@ internal sealed record DefendingTeam(
 internal sealed class DefendingTeamsReader(AppDbContext appDbContext)
 {
     // The chain is short in practice (a truncated tournament in a row is rare). The cap only guards against
-    // a loop that bad data could cause.
-    private const int MaxChainLength = 10;
+    // a loop that bad data could cause. A title run counts at most this many tournaments before the source, so a
+    // count tops out at MaxChainLength + 1.
+    internal const int MaxChainLength = 10;
 
     private sealed record SourceRow(
         TournamentId Id,
@@ -118,6 +121,11 @@ internal sealed class DefendingTeamsReader(AppDbContext appDbContext)
 
         var winners = await LoadWinnersAsync(allSourceIds, cancellationToken);
 
+        var titleRuns = await LoadTitleRunsAsync(
+            [.. sourcesByOwner.Values.SelectMany(list => list).DistinctBy(source => source.Id)],
+            winners,
+            cancellationToken);
+
         foreach (var (ownerId, sources) in sourcesByOwner)
         {
             result[ownerId] = [.. sources
@@ -129,11 +137,73 @@ internal sealed class DefendingTeamsReader(AppDbContext appDbContext)
                     item.source.SeasonDescription,
                     item.source.Status == TournamentStatus.Truncated,
                     item.index > 0,
-                    winners[item.source.Id]))];
+                    winners[item.source.Id],
+                    titleRuns.GetValueOrDefault(item.source.Id, 1)))];
         }
 
         return result;
     }
+
+    // Counts, per source tournament, how many tournaments in a row the same bowlers won. Walks back through each
+    // previous tournament and stops at the first one with other winners, no winners, or no previous tournament.
+    private async Task<Dictionary<TournamentId, int>> LoadTitleRunsAsync(
+        List<SourceRow> sources,
+        Dictionary<TournamentId, IReadOnlyList<TournamentWinner>> sourceWinners,
+        CancellationToken cancellationToken)
+    {
+        var runs = new Dictionary<TournamentId, int>();
+        var frontier = new Dictionary<TournamentId, TournamentId>();
+
+        foreach (var source in sources)
+        {
+            runs[source.Id] = 1;
+
+            if (source.PreviousTournamentId is { } previousId && sourceWinners.ContainsKey(source.Id))
+            {
+                frontier[source.Id] = previousId;
+            }
+        }
+
+        for (var depth = 0; frontier.Count > 0 && depth < MaxChainLength; depth++)
+        {
+            var earlierIds = frontier.Values.Distinct().ToArray();
+
+            var earlierWinners = await LoadWinnersAsync(earlierIds, cancellationToken);
+
+            var earlierPrevious = (await appDbContext.Tournaments
+                    .AsNoTracking()
+                    .Where(tournament => earlierIds.Contains(tournament.Id))
+                    .Select(tournament => new { tournament.Id, tournament.PreviousTournamentId })
+                    .ToListAsync(cancellationToken))
+                .ToDictionary(row => row.Id, row => row.PreviousTournamentId);
+
+            var next = new Dictionary<TournamentId, TournamentId>();
+
+            foreach (var (sourceId, earlierId) in frontier)
+            {
+                if (!earlierWinners.TryGetValue(earlierId, out var earlier)
+                    || !SameBowlers(sourceWinners[sourceId], earlier))
+                {
+                    continue;
+                }
+
+                runs[sourceId]++;
+
+                if (earlierPrevious.GetValueOrDefault(earlierId) is { } earlierPreviousId)
+                {
+                    next[sourceId] = earlierPreviousId;
+                }
+            }
+
+            frontier = next;
+        }
+
+        return runs;
+    }
+
+    private static bool SameBowlers(IReadOnlyList<TournamentWinner> first, IReadOnlyList<TournamentWinner> second)
+        => first.Select(winner => winner.BowlerId).ToHashSet()
+            .SetEquals(second.Select(winner => winner.BowlerId));
 
     // Place-1 bowlers from historical champions and recorded results. A title does not need to be eligible:
     // a truncated tournament's first place counts.

@@ -1,0 +1,234 @@
+@if (Stage.Status == StageStatuses.Pending)
+{
+    <div class="series-output" data-testid="stage-output-pending">
+        <p class="series-output__empty">@SeriesDisplay.PendingReason(Stage)</p>
+    </div>
+}
+else
+{
+    <div class="series-output">
+        @if (Stage.IsStale)
+        {
+            <p class="series-output__summary series-output__summary--warn" data-testid="stage-stale-note">@SeriesDisplay.StaleNote</p>
+        }
+
+        @if (Stage.Kind == StageKinds.Qualifying)
+        {
+            <p class="series-output__summary" data-testid="stage-slots"><strong>@SeriesDisplay.SlotsLead(Stage.SlotCount ?? 0)</strong>@SeriesDisplay.VacantLabel(Stage.VacantSlotCount ?? 0)</p>
+            <div class="series-output__tools">
+                <span class="series-output__hint">@SeriesDisplay.EntriesHeading(Stage.IsLastQualifying)</span>
+                @if (Stage.CanAddOverride)
+                {
+                    <button type="button" class="neba-btn neba-btn-secondary neba-btn-sm" data-testid="stage-add-bowler"
+                            aria-label="@SeriesDisplay.AddBowlerLabel(Stage.Order)"
+                            disabled="@IsBusy" @onclick="OnAddBowler">Add bowler</button>
+                }
+            </div>
+
+            @if (Stage.Entries.Count == 0)
+            {
+                <p class="series-output__empty">@SeriesDisplay.NoFieldEntries</p>
+            }
+            else
+            {
+                <div class="series-output__scroll series-output__scroll--free">
+                    <table class="neba-table neba-data-table" aria-label="Field entries" data-testid="stage-entries">
+                        <thead>
+                            <tr>
+                                <th scope="col">Place</th>
+                                <th scope="col">Bowler</th>
+                                <th scope="col">Source</th>
+                                <th scope="col">Backfill points</th>
+                                @if (CanManage)
+                                {
+                                    <th scope="col">Actions</th>
+                                }
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var entry in Stage.Entries)
+                            {
+                                <tr @key="entry.BowlerId">
+                                    <td class="series-output__num">@SeriesDisplay.OrdinalPlace(entry.Place)</td>
+                                    <td>@entry.BowlerName</td>
+                                    <td class="@SeriesDisplay.SourceClass(entry)">@SeriesDisplay.EntrySource(entry)</td>
+                                    <td class="series-output__num">@SeriesDisplay.Points(entry.BackfillPoints)</td>
+                                    @if (CanManage)
+                                    {
+                                        <td>
+                                            @if (entry.CanClear)
+                                            {
+                                                <button type="button" class="series-act" data-testid="entry-clear" data-bowler-id="@entry.BowlerId"
+                                                        aria-label="@SeriesDisplay.ClearSlotLabel(entry.BowlerName)"
+                                                        disabled="@IsBusy" @onclick="@(() => OnClearSlot.InvokeAsync(entry))">Clear slot</button>
+                                            }
+                                        </td>
+                                    }
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+
+            @if (Stage.Overrides.Count > 0)
+            {
+                <h4 class="series-output__heading">Admin overrides</h4>
+                <div class="series-output__scroll series-output__scroll--free">
+                    <table class="neba-table neba-data-table" aria-label="Admin overrides" data-testid="stage-overrides">
+                        <thead>
+                            <tr>
+                                <th scope="col">Change</th>
+                                <th scope="col">Bowler</th>
+                                <th scope="col">Status</th>
+                                <th scope="col">Reason</th>
+                                <th scope="col">Added</th>
+                                @if (CanManage)
+                                {
+                                    <th scope="col">Actions</th>
+                                }
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var item in Stage.Overrides)
+                            {
+                                <tr @key="item.OverrideId">
+                                    <td>@SeriesDisplay.OverrideChange(item.Kind)</td>
+                                    <td>@item.BowlerName</td>
+                                    <td>
+                                        @if (item.Applied)
+                                        {
+                                            @SeriesDisplay.OverrideStatus(true)
+                                        }
+                                        else
+                                        {
+                                            <span class="series-output__inactive">@SeriesDisplay.OverrideStatus(false)</span>
+                                        }
+                                    </td>
+                                    <td class="series-output__reason">@item.Reason</td>
+                                    <td>@SeriesDisplay.AddedDate(item.CreatedAt)</td>
+                                    @if (CanManage)
+                                    {
+                                        <td>
+                                            @if (Stage.CanRemoveOverride)
+                                            {
+                                                <button type="button" class="series-act" data-testid="override-remove" data-override-id="@item.OverrideId"
+                                                        aria-label="@SeriesDisplay.RemoveOverrideLabel(item.BowlerName)"
+                                                        disabled="@IsBusy" @onclick="@(() => OnRemoveOverride.InvokeAsync(item))">Remove override</button>
+                                            }
+                                        </td>
+                                    }
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+        }
+        else if (Stage.Kind == StageKinds.Survivor)
+        {
+            if (Stage.Outcomes.Count == 0)
+            {
+                <p class="series-output__empty">@SeriesDisplay.NoFieldEntries</p>
+            }
+            else
+            {
+                var summary = SeriesDisplay.SurvivorSummary(Stage.Outcomes);
+                <p class="series-output__summary" data-testid="stage-survivor-summary"><strong>@summary.Lead</strong>@summary.Detail</p>
+                <div class="series-output__scroll">
+                    <table class="neba-table" aria-label="Survivor results" data-testid="stage-outcomes">
+                        <thead>
+                            <tr>
+                                <th scope="col">Bowler</th>
+                                <th scope="col">Block total</th>
+                                <th scope="col">Advanced</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var outcome in Stage.Outcomes)
+                            {
+                                <tr @key="outcome.BowlerId" class="@(outcome.Advanced ? null : "series-output__out")">
+                                    <td>@outcome.BowlerName</td>
+                                    <td class="series-output__num">@SeriesDisplay.BlockTotal(outcome.BlockTotal)</td>
+                                    <td>@(outcome.Advanced ? "Yes" : "No")</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+        }
+        else
+        {
+            if (Positions.Count == 0)
+            {
+                <p class="series-output__empty">Positions appear when the Placement Round computes.</p>
+            }
+            else
+            {
+                var hasFinalists = Positions.Any(p => p.IsFinalist is not null);
+                var summary = SeriesDisplay.PlacementSummary(Positions.Count, hasFinalists);
+                <p class="series-output__summary" data-testid="stage-placement-summary"><strong>@summary.Lead</strong>@summary.Detail</p>
+                <div class="series-output__scroll">
+                    <table class="@(hasFinalists ? "neba-table neba-data-table" : "neba-table")" aria-label="Placement positions" data-testid="stage-positions">
+                        <thead>
+                            <tr>
+                                <th scope="col">Position</th>
+                                <th scope="col">Bowler</th>
+                                <th scope="col">Bowled</th>
+                                @if (hasFinalists)
+                                {
+                                    <th scope="col">Finalist</th>
+                                }
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var position in Positions)
+                            {
+                                <tr @key="position.BowlerId">
+                                    <td class="series-output__num">@SeriesDisplay.OrdinalPlace(position.Position)</td>
+                                    <td>@position.BowlerName</td>
+                                    <td>@(position.Bowled ? "Yes" : "No")</td>
+                                    @if (hasFinalists)
+                                    {
+                                        <td>@(position.IsFinalist == true ? "Yes" : "No")</td>
+                                    }
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+        }
+    </div>
+}
+
+@code {
+    /// <summary>The Stage whose output shows.</summary>
+    [Parameter, EditorRequired]
+    public StageAdvancementViewModel Stage { get; set; } = default!;
+
+    /// <summary>The Series' Placement positions (only the Placement Stage shows them).</summary>
+    [Parameter, EditorRequired]
+    public IReadOnlyList<PositionViewModel> Positions { get; set; } = [];
+
+    /// <summary>Holds Series.ManageAdvancement: show the Actions columns.</summary>
+    [Parameter, EditorRequired]
+    public bool CanManage { get; set; }
+
+    /// <summary>True while a write runs; the action buttons disable.</summary>
+    [Parameter, EditorRequired]
+    public bool IsBusy { get; set; }
+
+    /// <summary>Raised when the user asks to add a bowler.</summary>
+    [Parameter, EditorRequired]
+    public EventCallback OnAddBowler { get; set; }
+
+    /// <summary>Raised with the entry whose slot the user asks to clear.</summary>
+    [Parameter, EditorRequired]
+    public EventCallback<FieldEntryViewModel> OnClearSlot { get; set; }
+
+    /// <summary>Raised with the override the user asks to remove.</summary>
+    [Parameter, EditorRequired]
+    public EventCallback<StageOverrideViewModel> OnRemoveOverride { get; set; }
+}

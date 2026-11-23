@@ -6,17 +6,20 @@ public static class DefendingTeamViewModelFactory
 {
     public const string ValidTournamentName = "Joe's Pizza Open";
     public const string ValidSeasonDescription = "2025 Season";
+    public const int ValidConsecutiveTitles = 1;
 
     public static DefendingTeamViewModel Create(
         string? tournamentName = null,
         string? seasonDescription = null,
         bool? sourceTruncated = null,
         bool? undefended = null,
-        IReadOnlyList<string>? champions = null)
+        IReadOnlyList<string>? champions = null,
+        int? consecutiveTitles = null)
         => new(
             tournamentName ?? ValidTournamentName,
             seasonDescription ?? ValidSeasonDescription,
             sourceTruncated ?? false,
             undefended ?? false,
-            champions ?? ["Dave Smith", "Dana Jones"]);
+            champions ?? ["Dave Smith"],
+            consecutiveTitles ?? ValidConsecutiveTitles);
 }

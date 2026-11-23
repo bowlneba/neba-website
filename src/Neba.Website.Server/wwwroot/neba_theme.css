@@ -9,6 +9,9 @@
 
   --neba-gold: #E0B454;
   --neba-gold-deep: #B98C2D;
+  --neba-gold-light: #F7DC93;
+  /* Dark text for use on gold fills. Does not change with the theme. */
+  --neba-on-gold: #2B1D00;
 
   --neba-gray-050: #FAFAFA;
   --neba-gray-100: #F5F5F5;

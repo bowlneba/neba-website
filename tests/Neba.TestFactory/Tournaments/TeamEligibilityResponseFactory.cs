@@ -7,7 +7,7 @@ namespace Neba.TestFactory.Tournaments;
 public static class TeamEligibilityResponseFactory
 {
     public const string ValidOutcome = "Eligible";
-    public const string ValidSummary = "The team can bowl together.";
+    public const string ValidSummary = "The team is eligible to bowl.";
 
     public static TeamEligibilityResponse Create(
         string? outcome = null,

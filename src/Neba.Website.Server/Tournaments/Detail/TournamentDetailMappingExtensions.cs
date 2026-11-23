@@ -34,6 +34,7 @@ internal static class TournamentDetailMappingExtensions
             Winners = response.Winners,
             TeamSize = response.TeamSize,
             PreviousTournamentId = response.PreviousTournamentId,
+            Series = response.Series?.ToViewModel(),
             DefendingChampions = [.. response.DefendingChampions.Select(team => team.ToViewModel())],
             Results = [.. response.Results.Select(r => r.ToViewModel())],
             Articles = [.. response.Articles.Select(a => a.ToViewModel())],
