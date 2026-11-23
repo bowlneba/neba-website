@@ -32,6 +32,10 @@ internal sealed record AdvancementFieldEntryRow(
     SeriesFieldEntryId EntryId, BowlerId BowlerId, Name BowlerName,
     SeriesStageId? SourceStageId, int? Place, int? BackfillPoints, bool ViaOverride);
 
+/// <summary>A result row inside a Qualifying Stage's cut whose bowler already advanced from an earlier Stage.</summary>
+internal sealed record AdvancementAlreadyAdvancedRow(
+    SeriesStageId StageId, BowlerId BowlerId, Name BowlerName, int Place, SeriesStageId EarlierStageId);
+
 internal sealed record AdvancementSurvivorOutcomeRow(
     SeriesStageId StageId, BowlerId BowlerId, Name BowlerName, int? BlockTotal, bool Advanced);
 
@@ -46,6 +50,7 @@ internal sealed record SeriesAdvancementRows(
     AdvancementHeaderRow Header,
     IReadOnlyList<AdvancementStageRow> Stages,
     IReadOnlyList<AdvancementFieldEntryRow> FieldEntries,
+    IReadOnlyList<AdvancementAlreadyAdvancedRow> AlreadyAdvanced,
     IReadOnlyList<AdvancementSurvivorOutcomeRow> SurvivorOutcomes,
     IReadOnlyList<AdvancementPositionRow> Positions,
     IReadOnlyList<AdvancementOverrideRow> Overrides);
@@ -68,10 +73,14 @@ internal static class SeriesAdvancementReader
                 return null;
             }
 
+            var stages = await ReadStagesAsync(appDbContext, seriesId, cancellationToken);
+            var fieldEntries = await ReadFieldEntriesAsync(appDbContext, seriesId, cancellationToken);
+
             rows = new SeriesAdvancementRows(
                 header,
-                await ReadStagesAsync(appDbContext, seriesId, cancellationToken),
-                await ReadFieldEntriesAsync(appDbContext, seriesId, cancellationToken),
+                stages,
+                fieldEntries,
+                await ReadAlreadyAdvancedAsync(appDbContext, stages, fieldEntries, cancellationToken),
                 await ReadSurvivorOutcomesAsync(appDbContext, seriesId, cancellationToken),
                 await ReadPositionsAsync(appDbContext, seriesId, cancellationToken),
                 await ReadOverridesAsync(appDbContext, seriesId, cancellationToken));
@@ -134,6 +143,52 @@ internal static class SeriesAdvancementReader
                 entry.Id, entry.BowlerId, entry.Bowler.Name,
                 entry.SourceStageId, entry.Place, entry.BackfillPoints, entry.ViaOverride))
             .ToListAsync(cancellationToken);
+
+    // A slot row whose bowler already advanced from an earlier Qualifying Stage stays vacant (QualifyingComputation). The
+    // stored output has no row for it, so find it again here from the results: place within the cut, bowler already in the
+    // field from an earlier Stage.
+    private static async Task<IReadOnlyList<AdvancementAlreadyAdvancedRow>> ReadAlreadyAdvancedAsync(
+        AppDbContext appDbContext,
+        IReadOnlyList<AdvancementStageRow> stages,
+        IReadOnlyList<AdvancementFieldEntryRow> fieldEntries,
+        CancellationToken cancellationToken)
+    {
+        var stageOrder = stages.ToDictionary(stage => stage.StageId, stage => stage.Order);
+
+        // The earlier Stage each bowler advanced from (Stage entries only, not the Backfill).
+        var advancedFrom = fieldEntries
+            .Where(entry => entry.SourceStageId is { } id && stageOrder.ContainsKey(id))
+            .ToDictionary(entry => entry.BowlerId, entry => entry.SourceStageId!.Value);
+
+        var qualifying = stages
+            .Where(stage => stage.Kind == StageKind.Qualifying && stage.SlotCount is not null && stage.AdvancingCount is > 0)
+            .ToList();
+
+        if (qualifying.Count == 0 || advancedFrom.Count == 0)
+        {
+            return [];
+        }
+
+        var tournamentIds = qualifying.Select(stage => stage.TournamentId).Distinct().ToList();
+        var bowlerIds = advancedFrom.Keys.ToList();
+        var maxPlace = qualifying.Max(stage => stage.AdvancingCount!.Value);
+
+        var results = await appDbContext.Tournaments.AsNoTracking()
+            .Where(tournament => tournamentIds.Contains(tournament.Id))
+            .SelectMany(
+                tournament => tournament.Results.Where(result => result.Place > 0 && result.Place <= maxPlace && bowlerIds.Contains(result.BowlerId)),
+                (tournament, result) => new { TournamentId = tournament.Id, result.BowlerId, result.Bowler.Name, result.Place })
+            .ToListAsync(cancellationToken);
+
+        return [.. qualifying
+            .SelectMany(stage => results
+                .Where(result => result.TournamentId == stage.TournamentId && result.Place <= stage.AdvancingCount!.Value)
+                .Where(result => stageOrder[advancedFrom[result.BowlerId]] < stage.Order)
+                .Select(result => new AdvancementAlreadyAdvancedRow(
+                    stage.StageId, result.BowlerId, result.Name, result.Place, advancedFrom[result.BowlerId])))
+            .OrderBy(row => row.Place)
+            .ThenBy(row => row.BowlerId.Value)];
+    }
 
     private static async Task<IReadOnlyList<AdvancementSurvivorOutcomeRow>> ReadSurvivorOutcomesAsync(
         AppDbContext appDbContext, SeriesId seriesId, CancellationToken cancellationToken)

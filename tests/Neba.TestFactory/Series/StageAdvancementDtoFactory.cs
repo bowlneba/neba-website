@@ -33,7 +33,8 @@ internal static class StageAdvancementDtoFactory
         SquadId? resolvedSquadId = null,
         IReadOnlyList<FieldEntryDto>? entries = null,
         IReadOnlyList<StageOverrideDto>? overrides = null,
-        IReadOnlyList<SurvivorOutcomeDto>? survivorOutcomes = null)
+        IReadOnlyList<SurvivorOutcomeDto>? survivorOutcomes = null,
+        IReadOnlyList<AlreadyAdvancedDto>? alreadyAdvanced = null)
         => new(
             stageId ?? SeriesStageId.New(),
             order ?? ValidOrder,
@@ -50,6 +51,7 @@ internal static class StageAdvancementDtoFactory
             tournamentStatus ?? ValidTournamentStatus,
             resolvedSquadId,
             entries ?? [],
+            alreadyAdvanced ?? [],
             overrides ?? [],
             survivorOutcomes ?? []);
 

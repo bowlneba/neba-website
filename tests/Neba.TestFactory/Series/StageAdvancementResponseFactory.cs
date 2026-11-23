@@ -40,7 +40,8 @@ public static class StageAdvancementResponseFactory
         string? resolvedSquadId = null,
         IReadOnlyList<FieldEntryResponse>? entries = null,
         IReadOnlyList<StageOverrideResponse>? overrides = null,
-        IReadOnlyList<SurvivorOutcomeResponse>? survivorOutcomes = null)
+        IReadOnlyList<SurvivorOutcomeResponse>? survivorOutcomes = null,
+        IReadOnlyList<AlreadyAdvancedResponse>? alreadyAdvanced = null)
     {
         var stageKind = kind ?? ValidKind;
         var isQualifying = stageKind == "Qualifying";
@@ -63,6 +64,7 @@ public static class StageAdvancementResponseFactory
             TournamentStatus = tournamentStatus ?? ValidTournamentStatus,
             ResolvedSquadId = resolvedSquadId ?? (isSurvivor ? ValidResolvedSquadId : null),
             Entries = entries ?? (isQualifying ? [FieldEntryResponseFactory.Create()] : []),
+            AlreadyAdvanced = alreadyAdvanced ?? [],
             Overrides = overrides ?? [],
             SurvivorOutcomes = survivorOutcomes ?? (isSurvivor ? [SurvivorOutcomeResponseFactory.Create()] : []),
         };

@@ -42,6 +42,16 @@ internal sealed class GetSeriesAdvancementQueryHandler(
                 ? slots - rows.FieldEntries.Count(e => e.SourceStageId == stage.StageId && !e.ViaOverride)
                 : null;
 
+            var alreadyAdvanced = rows.AlreadyAdvanced
+                .Where(a => a.StageId == stage.StageId)
+                .Select(a => new AlreadyAdvancedDto(
+                    a.BowlerId, a.BowlerName.ToDisplayName(), a.Place, a.EarlierStageId,
+                    rows.Stages.Single(s => s.StageId == a.EarlierStageId).Order))
+                .OrderBy(a => a.Place)
+                .ThenBy(a => a.BowlerName, StringComparer.Ordinal)
+                .ThenBy(a => a.BowlerId.Value)
+                .ToList();
+
             var overrides = rows.Overrides
                 .Where(o => o.StageId == stage.StageId)
                 .OrderBy(o => o.CreatedAt)
@@ -77,6 +87,7 @@ internal sealed class GetSeriesAdvancementQueryHandler(
                 stage.TournamentStatus.Name,
                 stage.SquadId,
                 entries,
+                alreadyAdvanced,
                 overrides,
                 outcomes);
         }).ToList();

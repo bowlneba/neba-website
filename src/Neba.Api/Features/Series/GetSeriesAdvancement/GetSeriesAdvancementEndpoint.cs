@@ -85,6 +85,14 @@ internal sealed class GetSeriesAdvancementEndpoint(
                     BackfillPoints = e.BackfillPoints,
                     ViaOverride = e.ViaOverride,
                 })],
+                AlreadyAdvanced = [.. s.AlreadyAdvanced.Select(a => new AlreadyAdvancedResponse
+                {
+                    BowlerId = a.BowlerId.Value.ToString(),
+                    BowlerName = a.BowlerName,
+                    Place = a.Place,
+                    EarlierStageId = a.EarlierStageId.Value.ToString(),
+                    EarlierStageOrder = a.EarlierStageOrder,
+                })],
                 Overrides = [.. s.Overrides.Select(o => new StageOverrideResponse
                 {
                     OverrideId = o.OverrideId.Value.ToString(),

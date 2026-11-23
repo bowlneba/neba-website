@@ -25,7 +25,7 @@ else
                 }
             </div>
 
-            @if (Stage.Entries.Count == 0)
+            @if (Stage.Entries.Count == 0 && Stage.AlreadyAdvanced.Count == 0)
             {
                 <p class="series-output__empty">@SeriesDisplay.NoFieldEntries</p>
             }
@@ -63,6 +63,19 @@ else
                                                         disabled="@IsBusy" @onclick="@(() => OnClearSlot.InvokeAsync(entry))">Clear slot</button>
                                             }
                                         </td>
+                                    }
+                                </tr>
+                            }
+                            @foreach (var advanced in Stage.AlreadyAdvanced)
+                            {
+                                <tr @key="@("advanced-" + advanced.BowlerId)" class="series-output__advanced" data-testid="stage-already-advanced">
+                                    <td class="series-output__num">@SeriesDisplay.OrdinalPlace(advanced.Place)</td>
+                                    <td>@advanced.BowlerName</td>
+                                    <td class="series-output__inactive">@SeriesDisplay.AlreadyAdvancedSource(advanced.EarlierStageOrder)</td>
+                                    <td class="series-output__num">—</td>
+                                    @if (CanManage)
+                                    {
+                                        <td></td>
                                     }
                                 </tr>
                             }

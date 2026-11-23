@@ -48,6 +48,9 @@ public sealed record StageAdvancementResponse
     /// <summary>Field entries. The last Qualifying Stage's list includes the Backfill (null SourceStageId).</summary>
     public required IReadOnlyList<FieldEntryResponse> Entries { get; init; }
 
+    /// <summary>Bowlers inside the cut who already advanced from an earlier Stage. Their slots are vacant.</summary>
+    public required IReadOnlyList<AlreadyAdvancedResponse> AlreadyAdvanced { get; init; }
+
     /// <summary>The Stage's overrides.</summary>
     public required IReadOnlyList<StageOverrideResponse> Overrides { get; init; }
 

@@ -133,6 +133,29 @@ public sealed class SeriesAdvancementOutputTests : IDisposable
         output.QuerySelector("[data-testid='stage-slots']").ShouldBeNull();
     }
 
+    [Fact(DisplayName = "Should list a bowler who already advanced in the entries table, marked with the earlier Stage")]
+    public async Task Output_ShouldShowAlreadyAdvancedBowler()
+    {
+        // Arrange
+        var stage = StageAdvancementResponseFactory.Create(
+            stageId: "q2", order: 2, status: "Computed",
+            entries: [FieldEntryResponseFactory.Create(bowlerId: "b1", bowlerName: "Josh Palrao", sourceStageId: "q2", place: 2)],
+            alreadyAdvanced:
+            [
+                new AlreadyAdvancedResponse { BowlerId = "b2", BowlerName = "Kyle Wilks", Place = 2, EarlierStageId = "q1", EarlierStageOrder = 1 },
+            ]);
+
+        // Act
+        var cut = await RenderExpandedAsync("q2", [stage]);
+
+        // Assert
+        var rows = Output(cut, "q2").QuerySelectorAll("[data-testid='stage-entries'] tbody tr").ToList();
+        rows.Count.ShouldBe(2);
+        Cells(rows[1]).ShouldBe(["2nd", "Kyle Wilks", "Advanced in Stage 1", "—"]);
+        rows[1].GetAttribute("data-testid").ShouldBe("stage-already-advanced");
+        rows[1].QuerySelector("button").ShouldBeNull();
+    }
+
     [Fact(DisplayName = "Should show the stale note on an expanded stale Stage")]
     public async Task Output_ShouldShowStaleNote()
     {

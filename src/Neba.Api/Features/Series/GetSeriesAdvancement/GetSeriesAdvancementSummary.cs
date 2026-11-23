@@ -47,6 +47,7 @@ internal sealed class GetSeriesAdvancementSummary : Summary<GetSeriesAdvancement
                                 ViaOverride = false,
                             },
                         ],
+                        AlreadyAdvanced = [],
                         Overrides = [],
                         SurvivorOutcomes = [],
                     },

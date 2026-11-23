@@ -429,4 +429,67 @@ public sealed class SeriesAdvancementReaderTests(AppDbContextFixture fixture)
         add.CreatedAt.ShouldBe(Now.AddHours(1));
         add.OverrideId.ShouldBe(scenario.QualifyingStage.Overrides.Single(o => o.Kind == OverrideKind.Add).Id);
     }
+
+    [Fact(DisplayName = "ReadAsync should return a bowler inside a later Stage's cut who already advanced from an earlier Stage")]
+    public async Task ReadAsync_ShouldReturnAlreadyAdvancedBowlers()
+    {
+        // Arrange
+        var ct = TestContext.Current.CancellationToken;
+        var season = await SeriesSeed.AddSeasonAsync(_dbContext, 2025, ct);
+        var bowlers = await AdvancementReaderSeed.AddBowlersAsync(_dbContext, 4, ct);
+
+        // Stage 1 advances bowlers 0 and 1. Stage 2 places bowler 1 first and bowler 2 second, so bowler 1's slot is vacant.
+        var first = await AdvancementReaderSeed.AddTournamentAsync(
+            _dbContext, season, "First Qualifier", new DateOnly(2025, 2, 1), null, ct,
+            status: TournamentStatus.Completed,
+            results: [AdvancementReaderSeed.Result(bowlers[0], 1), AdvancementReaderSeed.Result(bowlers[1], 2), AdvancementReaderSeed.Result(bowlers[3], 3)]);
+        var second = await AdvancementReaderSeed.AddTournamentAsync(
+            _dbContext, season, "Second Qualifier", new DateOnly(2025, 3, 1), null, ct,
+            status: TournamentStatus.Completed,
+            results: [AdvancementReaderSeed.Result(bowlers[1], 1), AdvancementReaderSeed.Result(bowlers[2], 2), AdvancementReaderSeed.Result(bowlers[3], 3)]);
+
+        var series = SeriesFactory.CreateFor(
+            season,
+            [
+                (first, StageKind.Qualifying, 2, null, null),
+                (second, StageKind.Qualifying, 2, null, null),
+            ]);
+        _dbContext.Series.Add(series);
+        await _dbContext.SaveChangesAsync(ct);
+
+        var facts = AdvancementFactsFactory.Create(
+            tournaments: new Dictionary<TournamentId, StageTournamentResults>
+            {
+                [first.Id] = StageTournamentResultsFactory.Create(
+                    first.Id, TournamentStatus.Completed, first.StartDate, first.EndDate,
+                    results: [StageResultRowFactory.Create(bowlers[0].Id, 1), StageResultRowFactory.Create(bowlers[1].Id, 2), StageResultRowFactory.Create(bowlers[3].Id, 3)]),
+                [second.Id] = StageTournamentResultsFactory.Create(
+                    second.Id, TournamentStatus.Completed, second.StartDate, second.EndDate,
+                    results: [StageResultRowFactory.Create(bowlers[1].Id, 1), StageResultRowFactory.Create(bowlers[2].Id, 2), StageResultRowFactory.Create(bowlers[3].Id, 3)]),
+            },
+            membersOnDate: new Dictionary<DateOnly, IReadOnlySet<BowlerId>>
+            {
+                [first.EndDate] = bowlers.Select(bowler => bowler.Id).ToHashSet(),
+                [second.EndDate] = bowlers.Select(bowler => bowler.Id).ToHashSet(),
+            },
+            backfill: BackfillFactsFactory.Create(second.EndDate, true, []));
+
+        _ = series.Advance(first.Id, facts, Now);
+        await _dbContext.SaveChangesAsync(ct);
+
+        var stageOne = series.Stages.Single(stage => stage.Order == 1);
+        var stageTwo = series.Stages.Single(stage => stage.Order == 2);
+
+        // Act
+        var rows = await SeriesAdvancementReader.ReadAsync(_readContext, series.Id, ct);
+
+        // Assert
+        rows.ShouldNotBeNull();
+        var advanced = rows.AlreadyAdvanced.ShouldHaveSingleItem();
+        advanced.StageId.ShouldBe(stageTwo.Id);
+        advanced.BowlerId.ShouldBe(bowlers[1].Id);
+        advanced.BowlerName.ShouldBe(bowlers[1].Name);
+        advanced.Place.ShouldBe(1);
+        advanced.EarlierStageId.ShouldBe(stageOne.Id);
+    }
 }

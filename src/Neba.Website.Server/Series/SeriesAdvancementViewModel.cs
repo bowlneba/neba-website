@@ -52,6 +52,7 @@ internal sealed record SeriesAdvancementViewModel
 /// <param name="ResolvedSquadId">The squad a Survivor Stage uses, when known.</param>
 /// <param name="IsLastQualifying">True for the last Qualifying Stage, which owns the Backfill.</param>
 /// <param name="Entries">Field entries for this Stage (the last Qualifying Stage also holds the Backfill).</param>
+/// <param name="AlreadyAdvanced">Bowlers inside the cut who already advanced from an earlier Stage.</param>
 /// <param name="Overrides">Admin overrides on this Stage.</param>
 /// <param name="Outcomes">Survivor results.</param>
 /// <param name="CanAddOverride">Admin may add a bowler.</param>
@@ -73,6 +74,7 @@ public sealed record StageAdvancementViewModel(
     string? ResolvedSquadId,
     bool IsLastQualifying,
     IReadOnlyList<FieldEntryViewModel> Entries,
+    IReadOnlyList<AlreadyAdvancedViewModel> AlreadyAdvanced,
     IReadOnlyList<StageOverrideViewModel> Overrides,
     IReadOnlyList<SurvivorOutcomeViewModel> Outcomes,
     bool CanAddOverride,
@@ -98,6 +100,13 @@ public sealed record FieldEntryViewModel(
     /// <summary>The entry came from the Backfill.</summary>
     public bool IsBackfill => SourceStageId is null;
 }
+
+/// <summary>A bowler inside a Stage's cut who already advanced from an earlier Stage.</summary>
+/// <param name="BowlerId">The bowler.</param>
+/// <param name="BowlerName">The bowler's name.</param>
+/// <param name="Place">Place in this Stage's tournament.</param>
+/// <param name="EarlierStageOrder">The earlier Stage the bowler advanced from.</param>
+public sealed record AlreadyAdvancedViewModel(string BowlerId, string BowlerName, int Place, int EarlierStageOrder);
 
 /// <summary>An admin Add or Clear on a Qualifying Stage.</summary>
 /// <param name="OverrideId">The override.</param>

@@ -347,6 +347,10 @@ internal static class SeriesDisplay
             ? ", " + "vacant slot".ToQuantity(vacant, formatProvider: DisplayCulture.English) + ". Vacant slots go to the Backfill."
             : ", none vacant.";
 
+    /// <summary>"Advanced in Stage 1": the source of a bowler inside the cut who already advanced.</summary>
+    public static string AlreadyAdvancedSource(int earlierStageOrder)
+        => "Advanced in Stage " + earlierStageOrder.ToString(DisplayCulture.English);
+
     /// <summary>"Field entries from this Stage, then the Backfill".</summary>
     public static string EntriesHeading(bool isLastQualifying)
         => "Field entries from this Stage" + (isLastQualifying ? ", then the Backfill" : string.Empty);

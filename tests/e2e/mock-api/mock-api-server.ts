@@ -498,6 +498,7 @@ interface AdvStage {
   tournamentStatus: 'Scheduled' | 'Completed' | 'Cancelled';
   resolvedSquadId?: string;
   entries: AdvFieldEntry[];
+  alreadyAdvanced: unknown[];
   overrides: AdvOverride[];
   survivorOutcomes: AdvOutcome[];
 }
@@ -586,6 +587,7 @@ function advPendingState(series3: string): AdvState {
     tournamentId: advId(`9${series3}${String(index + 1).padStart(2, '0')}`),
     tournamentStatus: 'Scheduled',
     entries: [],
+    alreadyAdvanced: [],
     overrides: [],
     survivorOutcomes: [],
   }));
@@ -627,6 +629,7 @@ function advFallbackState(detail: Record<string, unknown>): AdvState {
     tournamentId: stage.tournamentId,
     tournamentStatus: 'Scheduled',
     entries: [],
+    alreadyAdvanced: [],
     overrides: [],
     survivorOutcomes: [],
   }));

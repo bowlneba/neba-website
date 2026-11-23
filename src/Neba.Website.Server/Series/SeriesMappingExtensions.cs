@@ -145,6 +145,8 @@ internal static class SeriesMappingExtensions
             Entries: [.. stage.Entries.Select(e => new FieldEntryViewModel(
                 e.BowlerId, e.BowlerName, e.SourceStageId, e.Place, e.BackfillPoints, e.ViaOverride,
                 CanClear: canChangeOutput && e.SourceStageId == stage.StageId && !e.ViaOverride))],
+            AlreadyAdvanced: [.. stage.AlreadyAdvanced.Select(a => new AlreadyAdvancedViewModel(
+                a.BowlerId, a.BowlerName, a.Place, a.EarlierStageOrder))],
             Overrides: [.. stage.Overrides.Select(o => new StageOverrideViewModel(
                 o.OverrideId, o.BowlerId, o.BowlerName, o.Kind, o.Reason, ToLocal(o.CreatedAt, localTimes), o.Applied))],
             Outcomes: [.. stage.SurvivorOutcomes.Select(o => new SurvivorOutcomeViewModel(o.BowlerId, o.BowlerName, o.BlockTotal, o.Advanced))],
