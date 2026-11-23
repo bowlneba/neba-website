@@ -1586,7 +1586,7 @@ Phase 1 stores the configuration. Phase 2 computes the field and each Stage's ou
 
 - A Series has a Finale exactly when it has one; there is no separate flag
 - The **finalist count** is above zero and no larger than the last Survivor Stage's count (no upper limit when there is no Survivor Round)
-- No Stage can come after the Finale: every Stage's tournament ends before the Finale's date
+- No Stage can come after the Finale: every Stage's tournament ends on or before the Finale's date (the Finale can run the same day, after the last Stage)
 - Survivor Rounds and a Placement Round are optional before a Finale
 - A newly chosen host center must exist and be Open; a center already on the Finale stays valid if it later closes
 - Locked once processing begins, except its date, start time and center, so a Finale can be rescheduled

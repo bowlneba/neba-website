@@ -423,8 +423,8 @@ public sealed class SeriesTests
         error.Metadata![SeriesErrors.PropertyKey].ShouldBe("Series.Finale.Date");
     }
 
-    [Fact(DisplayName = "Create should return StageNotBeforeFinale when the Finale is the same day as the latest Stage's end (#11)")]
-    public void Create_ShouldReturnStageNotBeforeFinale_WhenFinaleIsSameDay()
+    [Fact(DisplayName = "Create should accept a Finale on the same day as the latest Stage's end (#11)")]
+    public void Create_ShouldSucceed_WhenFinaleIsSameDay()
     {
         // Arrange
         var scenario = ValidScenario();
@@ -433,7 +433,7 @@ public sealed class SeriesTests
         var result = scenario.Create(SeriesFinaleDefinitionFactory.Create(date: new DateOnly(2025, 9, 13)));
 
         // Assert
-        result.Errors.Single().Code.ShouldBe("Series.Finale.Date.StageNotBefore");
+        result.IsError.ShouldBeFalse();
     }
 
     [Fact(DisplayName = "Create should accept a Finale the day after the latest Stage's end (#11)")]
@@ -456,12 +456,12 @@ public sealed class SeriesTests
         var scenario = new SeriesTestScenario().Add(StageKind.Qualifying, 8, new DateOnly(2025, 9, 10), new DateOnly(2025, 9, 12));
 
         // Act
+        var beforeEndDay = scenario.Create(SeriesFinaleDefinitionFactory.Create(date: new DateOnly(2025, 9, 11)));
         var onEndDay = scenario.Create(SeriesFinaleDefinitionFactory.Create(date: new DateOnly(2025, 9, 12)));
-        var dayAfter = scenario.Create(SeriesFinaleDefinitionFactory.Create(date: new DateOnly(2025, 9, 13)));
 
         // Assert
-        onEndDay.IsError.ShouldBeTrue();
-        dayAfter.IsError.ShouldBeFalse();
+        beforeEndDay.IsError.ShouldBeTrue();
+        onEndDay.IsError.ShouldBeFalse();
     }
 
     [Fact(DisplayName = "Create should name only the latest-ending Stage when the Finale precedes several (#11)")]

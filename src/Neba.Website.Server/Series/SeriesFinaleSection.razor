@@ -28,7 +28,7 @@
             <div>
                 <FormLabel TargetId="finale-date" For="@(() => finale.Date)">Date</FormLabel>
                 <NebaDateInput id="finale-date" Value="@finale.Date" ValueChanged="@((DateOnly? d) => HandleDateChangedAsync(finale, d))" ValueExpression="@(() => finale.Date)" />
-                <p class="series-editor__hint">After every Stage's tournament ends.</p>
+                <p class="series-editor__hint">On or after the day every Stage's tournament ends.</p>
             </div>
 
             <div>
