@@ -424,4 +424,42 @@ public sealed class QualifyingComputationTests
         result.OverrideEffects.ShouldContain(new OverrideEffect(clear.Id, true));
         result.OverrideEffects.ShouldContain(new OverrideEffect(add.Id, true));
     }
+
+    [Fact(DisplayName = "Compute should treat an unplaced row (place below 1) as missing the cut")]
+    public void Compute_ShouldIgnoreUnplacedRows()
+    {
+        // Arrange
+        var stage = SeriesStageFactory.Create(StageKind.Qualifying, 2);
+        var ids = AdvancementTestData.Ids(4);
+        var rows = new[]
+        {
+            StageResultRowFactory.Create(ids[0], 1), StageResultRowFactory.Create(ids[1], 2),
+            StageResultRowFactory.Create(ids[2], -1), StageResultRowFactory.Create(ids[3], -1),
+        };
+
+        // Act
+        var result = Compute(stage, rows);
+
+        // Assert
+        result.Entries.Select(e => e.BowlerId).ShouldBe([ids[0], ids[1]]);
+        result.SlotCount.ShouldBe(2);
+        result.Vacancies.ShouldBe(0);
+    }
+
+    [Fact(DisplayName = "Compute should not apply an Add override for an unplaced bowler")]
+    public void Compute_ShouldNotAddUnplacedBowler()
+    {
+        // Arrange
+        var stage = SeriesStageFactory.Create(StageKind.Qualifying, 1);
+        var ids = AdvancementTestData.Ids(2);
+        var rows = new[] { StageResultRowFactory.Create(ids[0], 1), StageResultRowFactory.Create(ids[1], -1) };
+        var add = Override(OverrideKind.Add, ids[1]);
+
+        // Act
+        var result = Compute(stage, rows, overrides: [add]);
+
+        // Assert
+        result.Entries.Select(e => e.BowlerId).ShouldBe([ids[0]]);
+        result.OverrideEffects.ShouldContain(new OverrideEffect(add.Id, false));
+    }
 }
