@@ -1,9 +1,11 @@
 namespace Neba.Website.Server.Series;
 
 /// <summary>What the signed-in user may do in the advancement section.</summary>
-/// <param name="CanView">Holds Series.EditSeries.</param>
-/// <param name="CanManage">Holds Series.EditSeries and Series.ManageAdvancement.</param>
-internal readonly record struct AdvancementAccess(bool CanView, bool CanManage);
+/// <param name="CanView">Holds Series.EditSeries or Series.MakeStageOfficial, so sees the season rail.</param>
+/// <param name="CanEdit">Holds Series.EditSeries: Recompute and Pick squad.</param>
+/// <param name="CanManage">Holds Series.ManageAdvancement: overrides.</param>
+/// <param name="CanMakeOfficial">Holds Series.MakeStageOfficial.</param>
+internal readonly record struct AdvancementAccess(bool CanView, bool CanEdit, bool CanManage, bool CanMakeOfficial);
 
 /// <summary>The advancement read, shaped for the page.</summary>
 internal sealed record SeriesAdvancementViewModel
@@ -44,7 +46,7 @@ internal sealed record SeriesAdvancementViewModel
 /// <param name="Status">Pending, Computed or Official.</param>
 /// <param name="IsStale">The stored output may differ from a recompute.</param>
 /// <param name="NeedsSquad">A Survivor Stage with no squad, or whose squad vanished.</param>
-/// <param name="OfficialDueAt">When a Computed Stage becomes Official, in the viewer's time zone.</param>
+/// <param name="CanMakeOfficial">The viewer may mark the Stage Official, and it is ready.</param>
 /// <param name="SlotCount">Qualifying slots, once computed.</param>
 /// <param name="VacantSlotCount">Slots not filled by a qualifier.</param>
 /// <param name="TournamentId">The Stage's tournament.</param>
@@ -57,8 +59,8 @@ internal sealed record SeriesAdvancementViewModel
 /// <param name="Outcomes">Survivor results.</param>
 /// <param name="CanAddOverride">Admin may add a bowler.</param>
 /// <param name="CanRemoveOverride">Admin may remove an override.</param>
-/// <param name="CanRecompute">Holder may recompute from this Stage.</param>
-/// <param name="CanPickSquad">Holder may pick this Survivor Stage's squad.</param>
+/// <param name="CanRecompute">Editor may recompute from this Stage.</param>
+/// <param name="CanPickSquad">Editor may pick this Survivor Stage's squad.</param>
 public sealed record StageAdvancementViewModel(
     string Id,
     int Order,
@@ -66,7 +68,7 @@ public sealed record StageAdvancementViewModel(
     string Status,
     bool IsStale,
     bool NeedsSquad,
-    DateTimeOffset? OfficialDueAt,
+    bool CanMakeOfficial,
     int? SlotCount,
     int? VacantSlotCount,
     string TournamentId,

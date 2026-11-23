@@ -88,9 +88,7 @@ internal static class SeriesMappingExtensions
     {
         /// <summary>Every UTC instant the page shows in local time, once each. The page converts them, then calls ToViewModel.</summary>
         public IReadOnlyList<DateTimeOffset> Instants()
-            => [.. response.Stages.Select(s => s.OfficialDueAt).OfType<DateTimeOffset>()
-                .Concat(response.Stages.SelectMany(s => s.Overrides).Select(o => o.CreatedAt))
-                .Distinct()];
+            => [.. response.Stages.SelectMany(s => s.Overrides).Select(o => o.CreatedAt).Distinct()];
 
         public SeriesAdvancementViewModel ToViewModel(AdvancementAccess access, IReadOnlyDictionary<DateTimeOffset, DateTimeOffset> localTimes)
         {
@@ -144,7 +142,7 @@ internal static class SeriesMappingExtensions
             Status: stage.Status,
             IsStale: stage.IsStale,
             NeedsSquad: stage.NeedsSquad,
-            OfficialDueAt: stage.OfficialDueAt is { } due ? ToLocal(due, localTimes) : null,
+            CanMakeOfficial: access.CanMakeOfficial && stage.CanMakeOfficial,
             SlotCount: stage.SlotCount,
             VacantSlotCount: stage.VacantSlotCount,
             TournamentId: stage.TournamentId,
@@ -161,8 +159,8 @@ internal static class SeriesMappingExtensions
             Outcomes: [.. stage.SurvivorOutcomes.Select(o => new SurvivorOutcomeViewModel(o.BowlerId, o.BowlerName, o.BlockTotal, o.Advanced))],
             CanAddOverride: canChangeOutput,
             CanRemoveOverride: canChangeOutput,
-            CanRecompute: access.CanView,
-            CanPickSquad: access.CanView && stage.Kind == StageKinds.Survivor);
+            CanRecompute: access.CanEdit,
+            CanPickSquad: access.CanEdit && stage.Kind == StageKinds.Survivor);
     }
 
     private static DateTimeOffset ToLocal(DateTimeOffset utc, IReadOnlyDictionary<DateTimeOffset, DateTimeOffset> localTimes)

@@ -225,39 +225,6 @@ public sealed class SeriesAdvancementRailTests : IDisposable
         card.QuerySelector("[data-testid='stage-flag-cancelled']").ShouldBeNull();
     }
 
-    [Fact(DisplayName = "Should show when a Computed Stage becomes official, in the viewer's time zone")]
-    public void Flags_ShouldShowDueLabel_WhenComputed()
-    {
-        // Arrange
-        var due = new DateTimeOffset(2030, 7, 12, 19, 15, 0, TimeSpan.Zero);
-        _host.TimeZone.Setup(x => x.ToLocalAsync(due)).ReturnsAsync(due.AddHours(-4));
-        var stage = StageAdvancementResponseFactory.Create(stageId: "q1", status: "Computed", officialDueAt: due);
-
-        // Act
-        var card = Render("q1", stage);
-
-        // Assert
-        var flag = card.QuerySelector("[data-testid='stage-flag-due']")!;
-        flag.TextContent.ShouldBe("Becomes official about 3:15 PM on 7/12");
-        flag.ClassList.ShouldContain("series-flag--info");
-    }
-
-    [Theory(DisplayName = "Should not show the due label unless the Stage is Computed")]
-    [InlineData("Pending")]
-    [InlineData("Official")]
-    public void Flags_ShouldHideDueLabel_WhenNotComputed(string status)
-    {
-        // Arrange
-        var due = new DateTimeOffset(2030, 7, 12, 19, 15, 0, TimeSpan.Zero);
-        var stage = StageAdvancementResponseFactory.Create(stageId: "q1", status: status, officialDueAt: due);
-
-        // Act
-        var card = Render("q1", stage);
-
-        // Assert
-        card.QuerySelector("[data-testid='stage-flag-due']").ShouldBeNull();
-    }
-
     [Fact(DisplayName = "Should show a cancelled flag with a link to edit the Series when the tournament was cancelled")]
     public void Flags_ShouldShowCancelledWithEditLink()
     {
@@ -278,10 +245,9 @@ public sealed class SeriesAdvancementRailTests : IDisposable
     public void Flags_ShouldShowAllThatApply()
     {
         // Arrange
-        var due = new DateTimeOffset(2030, 7, 12, 19, 15, 0, TimeSpan.Zero);
         var stages = new[]
         {
-            StageAdvancementResponseFactory.Create(stageId: "q1", order: 1, status: "Computed", isStale: true, officialDueAt: due),
+            StageAdvancementResponseFactory.Create(stageId: "q1", order: 1, status: "Computed", isStale: true),
             StageAdvancementResponseFactory.Create(stageId: "s1", order: 2, kind: "Survivor", needsSquad: true, tournamentStatus: "Cancelled"),
         };
 
@@ -291,7 +257,6 @@ public sealed class SeriesAdvancementRailTests : IDisposable
         // Assert
         var computed = SeriesDetailHost.Card(cut, "q1");
         computed.QuerySelector("[data-testid='stage-flag-stale']").ShouldNotBeNull();
-        computed.QuerySelector("[data-testid='stage-flag-due']").ShouldNotBeNull();
         computed.QuerySelector("[data-testid='stage-flag-backfill']").ShouldNotBeNull();
         computed.QuerySelector("[data-testid='stage-flag-needs-squad']").ShouldBeNull();
         var survivor = SeriesDetailHost.Card(cut, "s1");

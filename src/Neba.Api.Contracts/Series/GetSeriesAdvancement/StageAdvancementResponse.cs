@@ -24,8 +24,8 @@ public sealed record StageAdvancementResponse
     /// <summary>When the Stage last computed.</summary>
     public DateTimeOffset? ComputedAt { get; init; }
 
-    /// <summary>When a Computed Stage will become Official (up to 15 minutes later). Null when it will not.</summary>
-    public DateTimeOffset? OfficialDueAt { get; init; }
+    /// <summary>True when the Stage is Computed, not stale, and every earlier Stage is Official (and the Backfill ran, for the last Qualifying Stage). A person can mark it Official.</summary>
+    public required bool CanMakeOfficial { get; init; }
 
     /// <summary>When the Stage became Official.</summary>
     public DateTimeOffset? OfficialAt { get; init; }

@@ -259,7 +259,7 @@ public sealed class SeriesOverrideTests
     {
         // Arrange
         var (harness, extra) = Computed();
-        _ = harness.MakeDueOfficial();
+        _ = harness.MakeReadyOfficial();
 
         // Act
         var result = clear ? harness.ClearSlot(1, harness.Qualifiers(1)[0]) : harness.AddOverride(1, extra);
@@ -526,7 +526,7 @@ public sealed class SeriesOverrideTests
         // Arrange
         var (harness, extra) = Computed();
         var overrideId = harness.AddOverride(1, extra).Value.OverrideId!.Value;
-        _ = harness.MakeDueOfficial(Now.AddDays(5));
+        _ = harness.MakeReadyOfficial(Now.AddDays(5));
 
         // Act
         var result = harness.RemoveOverride(1, overrideId);

@@ -37,6 +37,26 @@ internal static class SeriesAdvancementErrors
             ? "This Stage is official. Recompute it from the Series page before changing it."
             : "This Stage has not been computed yet.");
 
+    public static readonly Error PlacementCannotBeOfficial = Error.Validation(
+        code: "Series.Official.StagePlacement",
+        description: "A Placement Stage never becomes official.");
+
+    public static readonly Error OfficialStageNotComputed = Error.Conflict(
+        code: "Series.Official.StageNotComputed",
+        description: "This Stage has not been computed yet.");
+
+    public static readonly Error OfficialStageStale = Error.Conflict(
+        code: "Series.Official.StageStale",
+        description: "An earlier Stage changed after this Stage was computed. Recompute from that Stage first.");
+
+    public static readonly Error OfficialAwaitingBackfill = Error.Conflict(
+        code: "Series.Official.AwaitingBackfill",
+        description: "The Backfill has not run, so the last Qualifying Stage cannot become official yet.");
+
+    public static Error OfficialEarlierStageNotOfficial(int order) => Error.Conflict(
+        code: "Series.Official.EarlierStageNotOfficial",
+        description: $"Stage {order} must be official first.");
+
     public static readonly Error NoResultRow = Error.Validation(
         code: "Series.Override.NoResultRow",
         description: "The bowler has no result in this Stage's tournament.");

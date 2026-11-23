@@ -252,32 +252,35 @@ public sealed class SeriesVersionTests
         harness.Series.Version.ShouldBe(1);
     }
 
-    [Fact(DisplayName = "MakeDueOfficial should bump Version when a Stage becomes Official")]
-    public void MakeDueOfficial_ShouldBumpVersion_WhenAStageBecomesOfficial()
+    [Fact(DisplayName = "MakeReadyOfficial should bump Version when a Stage becomes Official")]
+    public void MakeReadyOfficial_ShouldBumpVersion_WhenAStageBecomesOfficial()
     {
         // Arrange
         var harness = AdvancementHarness.Create(StageKind.Qualifying).Advanced();
 
         // Act
-        var result = harness.MakeDueOfficial();
+        var result = harness.MakeReadyOfficial();
 
         // Assert
         result.Changed.ShouldBeTrue();
         harness.Series.Version.ShouldBe(2);
     }
 
-    [Fact(DisplayName = "MakeDueOfficial should leave Version alone when no Stage is due")]
-    public void MakeDueOfficial_ShouldLeaveVersionAlone_WhenNoStageIsDue()
+    [Fact(DisplayName = "MakeOfficial should leave Version alone when the Stage is already Official")]
+    public void MakeOfficial_ShouldLeaveVersionAlone_WhenStageIsAlreadyOfficial()
     {
         // Arrange
         var harness = AdvancementHarness.Create(StageKind.Qualifying).Advanced();
+        _ = harness.MakeReadyOfficial();
+        var version = harness.Series.Version;
 
         // Act
-        var result = harness.MakeDueOfficial(AdvancementHarness.Now + AdvancementHarness.Grace - TimeSpan.FromSeconds(1));
+        var result = harness.Series.MakeOfficial(harness.Stage(1).Id, version, AdvancementHarness.Now);
 
         // Assert
-        result.Changed.ShouldBeFalse();
-        harness.Series.Version.ShouldBe(1);
+        result.IsError.ShouldBeFalse();
+        result.Value.Changed.ShouldBeFalse();
+        harness.Series.Version.ShouldBe(version);
     }
 
     [Fact(DisplayName = "ReplaceConfiguration should bump Version when the Stages change")]

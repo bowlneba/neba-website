@@ -11,7 +11,7 @@
       IsStale: true,
       NeedsSquad: false,
       ComputedAt: DateTimeOffset_1,
-      OfficialDueAt: DateTimeOffset_2,
+      CanMakeOfficial: false,
       SlotCount: 17,
       VacantSlotCount: 1,
       TournamentId: 01JB1WD6ATQDZQ599RZC6AP1XZ,
@@ -45,7 +45,7 @@
           Kind: Add,
           Reason: Autem est consequatur est natus dignissimos inventore temporibus.,
           CreatedBy: 01FWW9QC0WTNEN70HAMDW4ZNBS,
-          CreatedAt: DateTimeOffset_3,
+          CreatedAt: DateTimeOffset_2,
           Applied: false
         },
         {
@@ -55,7 +55,7 @@
           Kind: Add,
           Reason: Id ad suscipit dolore magni eveniet.,
           CreatedBy: 01H0S1GKWG92VA1NA3JX9RNHXC,
-          CreatedAt: DateTimeOffset_4,
+          CreatedAt: DateTimeOffset_3,
           Applied: false
         }
       ]
@@ -67,8 +67,8 @@
       Status: Computed,
       IsStale: true,
       NeedsSquad: false,
-      ComputedAt: DateTimeOffset_5,
-      OfficialDueAt: DateTimeOffset_6,
+      ComputedAt: DateTimeOffset_4,
+      CanMakeOfficial: false,
       TournamentId: 01GHWJBPEK61EK20NHVAX9B37R,
       TournamentStatus: Completed,
       ResolvedSquadId: 01HGPSV8225NJTZDY9VWP9MD3S,
@@ -94,9 +94,9 @@
       Status: Official,
       IsStale: false,
       NeedsSquad: false,
-      ComputedAt: DateTimeOffset_7,
-      OfficialDueAt: DateTimeOffset_8,
-      OfficialAt: DateTimeOffset_9,
+      ComputedAt: DateTimeOffset_5,
+      CanMakeOfficial: false,
+      OfficialAt: DateTimeOffset_6,
       TournamentId: 01F6YFKQQ6C3ABCQX8K9EEW2CZ,
       TournamentStatus: Completed
     }

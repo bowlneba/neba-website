@@ -9,6 +9,7 @@ using Neba.Api.Contracts.Series.ListSeries;
 using Neba.Api.Contracts.Series.ListSeriesFinales;
 using Neba.Api.Contracts.Series.ListStageResults;
 using Neba.Api.Contracts.Series.ListStageSquads;
+using Neba.Api.Contracts.Series.MakeStageOfficial;
 using Neba.Api.Contracts.Series.PickStageSquad;
 using Neba.Api.Contracts.Series.RecomputeSeriesAdvancement;
 using Neba.Api.Contracts.Uploads;
@@ -55,7 +56,7 @@ public interface ISeriesApi
     [Put("/series/{seriesId}/logo")]
     Task<IApiResponse> EditSeriesLogoAsync(string seriesId, EditSeriesLogoRequest request, CancellationToken cancellationToken = default);
 
-    /// <summary>Gets each Stage's status, output and markers, and the Version writes must send. Requires Series.EditSeries.</summary>
+    /// <summary>Gets each Stage's status, output and markers, and the Version writes must send. Requires Series.EditSeries or Series.MakeStageOfficial.</summary>
     [Get("/series/{seriesId}/advancement")]
     Task<IApiResponse<SeriesAdvancementResponse>> GetSeriesAdvancementAsync(string seriesId, CancellationToken cancellationToken = default);
 
@@ -66,6 +67,10 @@ public interface ISeriesApi
     /// <summary>Recomputes from a Stage to the end. Requires Series.EditSeries.</summary>
     [Post("/series/{seriesId}/stages/{stageId}/recomputations")]
     Task<IApiResponse> RecomputeSeriesAdvancementAsync(string seriesId, string stageId, RecomputeSeriesAdvancementRequest request, CancellationToken cancellationToken = default);
+
+    /// <summary>Marks a reviewed Stage Official. Requires Series.MakeStageOfficial.</summary>
+    [Put("/series/{seriesId}/stages/{stageId}/official")]
+    Task<IApiResponse> MakeStageOfficialAsync(string seriesId, string stageId, MakeStageOfficialRequest request, CancellationToken cancellationToken = default);
 
     /// <summary>Picks a Survivor Stage's squad. Requires Series.EditSeries.</summary>
     [Put("/series/{seriesId}/stages/{stageId}/squad")]

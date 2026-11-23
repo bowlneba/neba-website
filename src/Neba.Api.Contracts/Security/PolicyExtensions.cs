@@ -30,6 +30,9 @@ public static class PolicyExtensions
             builder.AddPolicy(Permissions.CanUploadSeriesLogoPolicyName, policy => policy
                 .RequireAssertion(context => context.User.HasAnyPermission(Permissions.SeriesLogoUploadPermissions)));
 
+            builder.AddPolicy(Permissions.CanViewSeriesAdvancementPolicyName, policy => policy
+                .RequireAssertion(context => context.User.HasAnyPermission(Permissions.SeriesAdvancementViewPermissions)));
+
             return builder;
         }
     }

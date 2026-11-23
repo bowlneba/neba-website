@@ -28,7 +28,7 @@ internal sealed class GetSeriesAdvancementEndpoint(
             .WithVersionSet("Series")
             .MapToApiVersion(new ApiVersion(1, 0)));
 
-        Policies(PermissionCatalog.EditSeries.PolicyName);
+        Policies(PermissionCatalog.CanViewSeriesAdvancementPolicyName);
 
         Description(description => description
             .WithName("GetSeriesAdvancement")
@@ -69,7 +69,7 @@ internal sealed class GetSeriesAdvancementEndpoint(
                 IsStale = s.IsStale,
                 NeedsSquad = s.NeedsSquad,
                 ComputedAt = s.ComputedAt,
-                OfficialDueAt = s.OfficialDueAt,
+                CanMakeOfficial = s.CanMakeOfficial,
                 OfficialAt = s.OfficialAt,
                 SlotCount = s.SlotCount,
                 VacantSlotCount = s.VacantSlotCount,

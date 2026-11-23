@@ -287,10 +287,6 @@ internal static class SeriesDisplay
             : Num(positionCount) + " ranked";
     }
 
-    /// <summary>"Becomes official about 3:15 PM on 7/12". The sweep runs every 15 minutes, so it says "about".</summary>
-    public static string? OfficialDueLabel(DateTimeOffset? local)
-        => local is { } at ? "Becomes official about " + at.ToString(TimeFormat, Culture) + " on " + at.ToString("M/d", Culture) : null;
-
     /// <summary>"Backfill as of 6/14/2025"; null until the Backfill ran.</summary>
     public static string? BackfillLabel(DateOnly? asOf)
         => asOf is { } date ? "Backfill as of " + date.ToString(DateFormat, Culture) : null;
@@ -428,6 +424,15 @@ internal static class SeriesDisplay
 
     /// <summary>The toast after Pick squad (the Stage may stay Pending, so it says only that the squad is saved).</summary>
     public const string SquadSavedMessage = "Squad saved.";
+
+    public static string MakeOfficialLabel(int order) => "Mark Stage " + Num(order) + " official";
+
+    public static string MakeOfficialTitle(int order) => "Mark Stage " + Num(order) + " official?";
+
+    public static string MakeOfficialMessage(int order)
+        => "The bowlers who advanced from Stage " + Num(order) + " will show on the public Series page. Check the field first. If it is wrong, recompute from this Stage to reopen it.";
+
+    public static string MadeOfficialMessage(int order) => "Stage " + Num(order) + " is official.";
 
     public static string RecomputedMessage(int order) => "Recomputed from Stage " + Num(order) + ".";
 

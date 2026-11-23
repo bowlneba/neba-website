@@ -19,7 +19,7 @@ internal sealed record StageAdvancementDto(
     bool IsStale,
     bool NeedsSquad,
     DateTimeOffset? ComputedAt,
-    DateTimeOffset? OfficialDueAt,
+    bool CanMakeOfficial,
     DateTimeOffset? OfficialAt,
     int? SlotCount,
     int? VacantSlotCount,

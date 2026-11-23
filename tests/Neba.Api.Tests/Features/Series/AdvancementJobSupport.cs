@@ -1,6 +1,7 @@
 using Neba.Api.Features.Bowlers.Domain;
 using Neba.Api.Features.Series.Domain;
 using Neba.Api.Features.Tournaments.Domain;
+using Neba.TestFactory.Series;
 
 using SeriesAggregate = Neba.Api.Features.Series.Domain.Series;
 
@@ -36,7 +37,7 @@ internal static class AdvancementJobSupport
 
         var result = await run.Run.RunWithoutFactsAsync(
             scenario.SeriesId,
-            (series, _, now) => series.MakeDueOfficial(now.AddDays(3), TimeSpan.FromHours(24)),
+            (series, _, now) => series.MakeReadyStagesOfficial(now.AddDays(3)),
             AdvancementRunHarness.Wait,
             cancellationToken);
 

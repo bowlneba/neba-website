@@ -1,7 +1,5 @@
 using ErrorOr;
 
-using Microsoft.Extensions.Options;
-
 using Neba.Api.Database;
 using Neba.Api.Features.Bowlers.Domain;
 using Neba.Api.Features.Series;
@@ -24,7 +22,6 @@ public sealed class GetSeriesAdvancementQueryHandlerTests(AppDbContextFixture fi
     : IClassFixture<AppDbContextFixture>, IAsyncLifetime
 {
     private const string Admin = "01JTESTADMIN000000000000AA";
-    private const int GraceHours = 36;
 
     private static readonly DateTimeOffset Now = AdvancementReadSeed.Now;
 
@@ -62,11 +59,8 @@ public sealed class GetSeriesAdvancementQueryHandlerTests(AppDbContextFixture fi
     private static Name Name(string first, string last, string? nickname = null)
         => NameFactory.Create(firstName: first, lastName: last, nickname: nickname);
 
-    private GetSeriesAdvancementQueryHandler CreateHandler(int graceHours = GraceHours)
-        => new(_readContext, Options.Create(new SeriesAdvancementSettings { OfficialGraceHours = graceHours }));
-
-    private Task<ErrorOr<SeriesAdvancementDto>> ReadAsync(SeriesId seriesId, int graceHours = GraceHours)
-        => CreateHandler(graceHours).HandleAsync(new GetSeriesAdvancementQuery { SeriesId = seriesId }, TestContext.Current.CancellationToken);
+    private Task<ErrorOr<SeriesAdvancementDto>> ReadAsync(SeriesId seriesId)
+        => new GetSeriesAdvancementQueryHandler(_readContext).HandleAsync(new GetSeriesAdvancementQuery { SeriesId = seriesId }, TestContext.Current.CancellationToken);
 
     // Slots 1 to 8 hold six members (bowlers 6 and 7 are not members), so two slots go vacant and the Backfill takes bowlers
     // 9, 8 and 10 (points 90, 50, 50: the tie at the cutoff all advance). Bowler 11 is outside the slots (place 9).
@@ -129,7 +123,7 @@ public sealed class GetSeriesAdvancementQueryHandlerTests(AppDbContextFixture fi
         dto.Stages.Select(s => s.Order).ShouldBe([1, 2, 3]);
         dto.Stages.Select(s => s.Kind).ShouldBe(["Qualifying", "Survivor", "Placement"]);
         dto.Stages.ShouldAllBe(s => s.Status == "Pending" && s.TournamentStatus == "Scheduled");
-        dto.Stages.ShouldAllBe(s => !s.IsStale && s.ComputedAt == null && s.OfficialDueAt == null && s.OfficialAt == null);
+        dto.Stages.ShouldAllBe(s => !s.IsStale && s.ComputedAt == null && !s.CanMakeOfficial && s.OfficialAt == null);
         dto.Stages.ShouldAllBe(s => s.SlotCount == null && s.VacantSlotCount == null && s.ResolvedSquadId == null);
         dto.Stages.ShouldAllBe(s => s.Entries.Count == 0 && s.Overrides.Count == 0 && s.SurvivorOutcomes.Count == 0);
         dto.Stages.Select(s => s.TournamentId).ShouldBe([.. series.Stages.OrderBy(s => s.Order).Select(s => s.TournamentId)]);
@@ -444,42 +438,42 @@ public sealed class GetSeriesAdvancementQueryHandlerTests(AppDbContextFixture fi
         overrides.Skip(1).ShouldAllBe(o => o.Kind == "Add" && o.CreatedAt == later);
     }
 
-    [Fact(DisplayName = "HandleAsync should set OfficialDueAt to ComputedAt plus the grace for a Computed Stage that is not Placement and not stale, and null for Placement")]
-    public async Task HandleAsync_ShouldSetOfficialDueAt_ForComputedNonPlacementStages()
+    [Fact(DisplayName = "HandleAsync should let only the first Computed Stage be made Official, and never the Placement Stage")]
+    public async Task HandleAsync_ShouldSetCanMakeOfficial_ForTheFirstComputedStageOnly()
     {
         // Arrange
         var ct = TestContext.Current.CancellationToken;
         var scenario = await AdvancementReadSeed.SeedAsync(_dbContext, ct);
 
         // Act
-        var result = await ReadAsync(scenario.Series.Id, graceHours: 36);
+        var result = await ReadAsync(scenario.Series.Id);
 
         // Assert
         result.IsError.ShouldBeFalse();
         var stages = result.Value.Stages;
         stages.ShouldAllBe(s => s.Status == "Computed" && s.ComputedAt == Now);
-        stages[0].OfficialDueAt.ShouldBe(Now.AddHours(36));
-        stages[1].OfficialDueAt.ShouldBe(Now.AddHours(36));
-        stages[2].OfficialDueAt.ShouldBeNull();
+        stages.Select(s => s.CanMakeOfficial).ShouldBe([true, false, false]);
     }
 
-    [Fact(DisplayName = "HandleAsync should read the grace from the settings")]
-    public async Task HandleAsync_ShouldReadGraceFromSettings()
+    [Fact(DisplayName = "HandleAsync should let the next Stage be made Official once the earlier Stage is Official")]
+    public async Task HandleAsync_ShouldSetCanMakeOfficial_ForNextStage_WhenEarlierStageIsOfficial()
     {
         // Arrange
         var ct = TestContext.Current.CancellationToken;
         var scenario = await AdvancementReadSeed.SeedAsync(_dbContext, ct);
+        scenario.Stage(1).MarkOfficial(Now.AddHours(2));
+        await _dbContext.SaveChangesAsync(ct);
 
         // Act
-        var result = await ReadAsync(scenario.Series.Id, graceHours: 5);
+        var result = await ReadAsync(scenario.Series.Id);
 
         // Assert
         result.IsError.ShouldBeFalse();
-        result.Value.Stages[0].OfficialDueAt.ShouldBe(Now.AddHours(5));
+        result.Value.Stages.Select(s => s.CanMakeOfficial).ShouldBe([false, true, false]);
     }
 
-    [Fact(DisplayName = "HandleAsync should return a null OfficialDueAt for a stale Stage and keep the due time of the others")]
-    public async Task HandleAsync_ShouldReturnNullOfficialDueAt_WhenStageIsStale()
+    [Fact(DisplayName = "HandleAsync should not let a stale Stage be made Official")]
+    public async Task HandleAsync_ShouldNotSetCanMakeOfficial_WhenStageIsStale()
     {
         // Arrange
         var ct = TestContext.Current.CancellationToken;
@@ -494,13 +488,12 @@ public sealed class GetSeriesAdvancementQueryHandlerTests(AppDbContextFixture fi
         result.IsError.ShouldBeFalse();
         var stages = result.Value.Stages;
         stages[0].IsStale.ShouldBeTrue();
-        stages[0].OfficialDueAt.ShouldBeNull();
-        stages[1].IsStale.ShouldBeFalse();
-        stages[1].OfficialDueAt.ShouldBe(Now.AddHours(GraceHours));
+        stages[0].CanMakeOfficial.ShouldBeFalse();
+        stages[1].CanMakeOfficial.ShouldBeFalse();
     }
 
-    [Fact(DisplayName = "HandleAsync should return a null OfficialDueAt and the OfficialAt for an Official Stage")]
-    public async Task HandleAsync_ShouldReturnNullOfficialDueAt_WhenStageIsOfficial()
+    [Fact(DisplayName = "HandleAsync should return the OfficialAt and no CanMakeOfficial for an Official Stage")]
+    public async Task HandleAsync_ShouldNotSetCanMakeOfficial_WhenStageIsOfficial()
     {
         // Arrange
         var ct = TestContext.Current.CancellationToken;
@@ -516,11 +509,11 @@ public sealed class GetSeriesAdvancementQueryHandlerTests(AppDbContextFixture fi
         var official = result.Value.Stages[0];
         official.Status.ShouldBe("Official");
         official.OfficialAt.ShouldBe(Now.AddHours(2));
-        official.OfficialDueAt.ShouldBeNull();
+        official.CanMakeOfficial.ShouldBeFalse();
     }
 
-    [Fact(DisplayName = "HandleAsync should return a null OfficialDueAt for the last Qualifying Stage while it awaits the Backfill")]
-    public async Task HandleAsync_ShouldReturnNullOfficialDueAt_WhenLastQualifyingStageAwaitsBackfill()
+    [Fact(DisplayName = "HandleAsync should not let the last Qualifying Stage be made Official while it awaits the Backfill")]
+    public async Task HandleAsync_ShouldNotSetCanMakeOfficial_WhenLastQualifyingStageAwaitsBackfill()
     {
         // Arrange
         var ct = TestContext.Current.CancellationToken;
@@ -541,7 +534,7 @@ public sealed class GetSeriesAdvancementQueryHandlerTests(AppDbContextFixture fi
         qualifying.IsStale.ShouldBeFalse();
         qualifying.ComputedAt.ShouldBe(Now);
         qualifying.VacantSlotCount.ShouldBe(1);
-        qualifying.OfficialDueAt.ShouldBeNull();
+        qualifying.CanMakeOfficial.ShouldBeFalse();
         result.Value.Stages.Skip(1).ShouldAllBe(s => s.Status == "Pending");
     }
 

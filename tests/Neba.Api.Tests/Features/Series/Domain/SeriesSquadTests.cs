@@ -180,7 +180,7 @@ public sealed class SeriesSquadTests
     {
         // Arrange
         var harness = SurvivorHarness().Advanced();
-        _ = harness.MakeDueOfficial();
+        _ = harness.MakeReadyOfficial();
         var stage = harness.Stage(2);
         var storedOutcomes = Outcomes(stage);
         harness.SetSquads(2, []);
@@ -244,7 +244,7 @@ public sealed class SeriesSquadTests
         var designated = harness.Tournament(2).Squads.Single();
         var other = SquadLike(harness, new TimeOnly(18, 0), reverseTotals: true);
         harness.SetSquads(2, [designated, other]).Advanced();
-        _ = harness.MakeDueOfficial();
+        _ = harness.MakeReadyOfficial();
         var before = Outcomes(harness.Stage(2));
 
         // Act

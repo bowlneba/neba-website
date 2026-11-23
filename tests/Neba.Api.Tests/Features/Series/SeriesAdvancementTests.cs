@@ -9,6 +9,7 @@ using Neba.Api.Features.Series.Domain;
 using Neba.Api.Features.Tournaments.Domain;
 using Neba.TestFactory.Attributes;
 using Neba.TestFactory.Infrastructure;
+using Neba.TestFactory.Series;
 
 using SeriesAggregate = Neba.Api.Features.Series.Domain.Series;
 
@@ -20,7 +21,6 @@ namespace Neba.Api.Tests.Features.Series;
 public sealed class SeriesAdvancementTests(AppDbContextFixture fixture)
     : IClassFixture<AppDbContextFixture>, IAsyncLifetime
 {
-    private static readonly TimeSpan Grace = TimeSpan.FromHours(24);
 
     private readonly AppDbContext _dbContext = fixture.CreateDbContext();
     private readonly AdvancementRunHarness _harness = new(fixture);
@@ -39,7 +39,7 @@ public sealed class SeriesAdvancementTests(AppDbContextFixture fixture)
         => (series, facts, now) => series.Advance(tournament.Id, facts, now);
 
     private static AdvancementOperation MakeOfficial()
-        => (series, _, now) => series.MakeDueOfficial(now.AddDays(3), Grace);
+        => (series, _, now) => series.MakeReadyStagesOfficial(now.AddDays(3));
 
     private static Task<ErrorOr<AdvanceResult>> RunAsync(
         AdvancementRun run, AdvancementScenario scenario, AdvancementOperation operation)

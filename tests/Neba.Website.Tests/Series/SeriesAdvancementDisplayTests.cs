@@ -194,30 +194,7 @@ public sealed class SeriesAdvancementDisplayTests
         headline.ShouldBe("20 ranked");
     }
 
-    // ---- Due and Backfill labels, Progress ----
-
-    [Fact(DisplayName = "OfficialDueLabel should show the time and date with about")]
-    public void OfficialDueLabel_ShouldShowTimeAndDate()
-    {
-        // Arrange
-        var local = new DateTimeOffset(2025, 7, 12, 15, 15, 0, TimeSpan.FromHours(-4));
-
-        // Act
-        var label = SeriesDisplay.OfficialDueLabel(local);
-
-        // Assert
-        label.ShouldBe("Becomes official about 3:15 PM on 7/12");
-    }
-
-    [Fact(DisplayName = "OfficialDueLabel should be null for a missing time")]
-    public void OfficialDueLabel_ShouldBeNull_WhenMissing()
-    {
-        // Arrange & Act
-        var label = SeriesDisplay.OfficialDueLabel(null);
-
-        // Assert
-        label.ShouldBeNull();
-    }
+    // ---- Backfill label, Progress ----
 
     [Fact(DisplayName = "BackfillLabel should show the date")]
     public void BackfillLabel_ShouldShowDate()
@@ -872,14 +849,12 @@ public sealed class SeriesAdvancementDisplayTests
             // Act
             var ordinal = SeriesDisplay.OrdinalPlace(22);
             var headline = SeriesDisplay.Headline(stage, 0);
-            var due = SeriesDisplay.OfficialDueLabel(new DateTimeOffset(2025, 7, 12, 15, 15, 0, TimeSpan.FromHours(-4)));
             var points = SeriesDisplay.Points(12345);
             var option = SeriesDisplay.ResultOption("Dave Smith", 3);
 
             // Assert
             ordinal.ShouldBe("22nd");
             headline.ShouldBe("7 of 8 slots filled");
-            due.ShouldBe("Becomes official about 3:15 PM on 7/12");
             points.ShouldBe("12345");
             option.ShouldBe("Dave Smith (3rd)");
         }
@@ -888,5 +863,23 @@ public sealed class SeriesAdvancementDisplayTests
             CultureInfo.CurrentCulture = original;
             CultureInfo.CurrentUICulture = originalUi;
         }
+    }
+
+    [Fact(DisplayName = "Mark official text should name the Stage and say what happens")]
+    public void MakeOfficialText_ShouldNameTheStage()
+    {
+        // Arrange & Act
+        var label = SeriesDisplay.MakeOfficialLabel(2);
+        var title = SeriesDisplay.MakeOfficialTitle(2);
+        var message = SeriesDisplay.MakeOfficialMessage(2);
+        var done = SeriesDisplay.MadeOfficialMessage(2);
+
+        // Assert
+        label.ShouldBe("Mark Stage 2 official");
+        title.ShouldBe("Mark Stage 2 official?");
+        message.ShouldContain("Stage 2");
+        message.ShouldContain("public Series page");
+        message.ShouldContain("recompute");
+        done.ShouldBe("Stage 2 is official.");
     }
 }

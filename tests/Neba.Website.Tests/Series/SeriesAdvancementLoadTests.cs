@@ -232,7 +232,7 @@ public sealed class SeriesAdvancementLoadTests : IDisposable
         _host.SetupDetailFor(advancement, new Uri("https://storage.example.com/series/logo.png"));
         _host.SetupAdvancement(advancement);
         _host.Auth.SetAuthorized("test-user");
-        _host.Auth.SetPolicies(Permissions.EditSeries.PolicyName, Permissions.EditSeriesLogo.PolicyName);
+        _host.Auth.SetPolicies(Permissions.CanViewSeriesAdvancementPolicyName, Permissions.EditSeries.PolicyName, Permissions.EditSeriesLogo.PolicyName);
         using var saved = new StubApiResponse<object>
         {
             IsSuccessStatusCode = true,

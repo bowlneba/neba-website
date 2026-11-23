@@ -214,6 +214,25 @@ public sealed class Permissions
     public static readonly Permissions ManageAdvancement = new("Series.ManageAdvancement", "Manage Series Advancement");
 
     /// <summary>
+    /// Permission to mark a reviewed Series Stage Official. Held by Admin, Webmaster, Manager and Tournament Director.
+    /// </summary>
+    public static readonly Permissions MakeStageOfficial = new("Series.MakeStageOfficial", "Make Series Stage Official");
+
+    /// <summary>
+    /// Permissions that let a caller read a Series' advancement: the editors and those who mark Stages Official.
+    /// </summary>
+    public static readonly IReadOnlyCollection<Permissions> SeriesAdvancementViewPermissions =
+    [
+        EditSeries,
+        MakeStageOfficial
+    ];
+
+    /// <summary>
+    /// Policy name satisfied when the caller holds any permission in <see cref="SeriesAdvancementViewPermissions"/>.
+    /// </summary>
+    public const string CanViewSeriesAdvancementPolicyName = "CanViewSeriesAdvancement";
+
+    /// <summary>
     /// Permissions that let a caller upload a Series logo to staging.
     /// </summary>
     public static readonly IReadOnlyCollection<Permissions> SeriesLogoUploadPermissions =

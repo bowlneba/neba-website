@@ -5,6 +5,7 @@ using Neba.Api.Database;
 using Neba.Api.Features.Series;
 using Neba.Api.Features.Series.Domain;
 using Neba.TestFactory.Infrastructure;
+using Neba.TestFactory.Series;
 
 using ZiggyCreatures.Caching.Fusion;
 
@@ -19,7 +20,6 @@ namespace Neba.Api.Tests.Features.Series;
 /// </summary>
 internal sealed class AdvancementWriteContext(AppDbContextFixture fixture) : IAsyncDisposable
 {
-    private static readonly TimeSpan Grace = TimeSpan.FromHours(24);
 
     private readonly AppDbContext _seedDb = fixture.CreateDbContext();
 
@@ -69,7 +69,7 @@ internal sealed class AdvancementWriteContext(AppDbContextFixture fixture) : IAs
         var run = Harness.CreateRun(FactsReaderDoubles.Untouched());
 
         var result = await run.Run.RunWithoutFactsAsync(
-            SeriesId, (series, _, now) => series.MakeDueOfficial(now.AddDays(3), Grace), AdvancementRunHarness.Wait, ct);
+            SeriesId, (series, _, now) => series.MakeReadyStagesOfficial(now.AddDays(3)), AdvancementRunHarness.Wait, ct);
 
         result.IsError.ShouldBeFalse();
         result.Value.OfficialStageIds.ShouldBe([Scenario.Stage(1).Id, Scenario.Stage(2).Id]);

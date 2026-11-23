@@ -1,7 +1,5 @@
 using ErrorOr;
 
-using Microsoft.Extensions.Options;
-
 using Neba.Api.Database;
 using Neba.Api.Features.Series.Domain;
 using Neba.Api.Messaging;
@@ -9,7 +7,7 @@ using Neba.Api.Messaging;
 namespace Neba.Api.Features.Series.GetSeriesAdvancement;
 
 internal sealed class GetSeriesAdvancementQueryHandler(
-    AppDbContext appDbContext, IOptions<SeriesAdvancementSettings> settings)
+    AppDbContext appDbContext)
     : IQueryHandler<GetSeriesAdvancementQuery, ErrorOr<SeriesAdvancementDto>>
 {
     public async Task<ErrorOr<SeriesAdvancementDto>> HandleAsync(
@@ -21,10 +19,11 @@ internal sealed class GetSeriesAdvancementQueryHandler(
             return SeriesErrors.NotFound(query.SeriesId);
         }
 
-        var grace = settings.Value.OfficialGrace;
         var lastQualifying = rows.Stages.Where(s => s.Kind == StageKind.Qualifying).MaxBy(s => s.Order);
 
-        var stages = rows.Stages.OrderBy(s => s.Order).Select(stage =>
+        var ordered = rows.Stages.OrderBy(s => s.Order).ToList();
+
+        var stages = ordered.Select(stage =>
         {
             var isLastQualifying = stage.StageId == lastQualifying?.StageId;
 
@@ -69,6 +68,17 @@ internal sealed class GetSeriesAdvancementQueryHandler(
                 .ThenBy(o => o.BowlerId.Value)
                 .ToList();
 
+            var firstUnofficialEarlier = ordered
+                .Where(s => s.Order < stage.Order && s.Kind != StageKind.Placement && s.Status != StageStatus.Official)
+                .Select(s => (int?)s.Order)
+                .FirstOrDefault();
+
+            var canMakeOfficial = stage.Status != StageStatus.Official
+                && SeriesAdvancementRules.MakeOfficialBlocker(
+                    stage.Kind, stage.Status, stage.IsStale,
+                    awaitingBackfill: isLastQualifying && rows.Header.BackfillAsOf is null,
+                    firstUnofficialEarlier) is null;
+
             return new StageAdvancementDto(
                 stage.StageId,
                 stage.Order,
@@ -77,9 +87,7 @@ internal sealed class GetSeriesAdvancementQueryHandler(
                 stage.IsStale,
                 NeedsSquad: stage.Kind == StageKind.Survivor && (stage.SquadId is null || !stage.SquadExists),
                 stage.ComputedAt,
-                SeriesAdvancementRules.OfficialDueAt(
-                    stage.Kind, stage.Status, stage.IsStale, stage.ComputedAt,
-                    awaitingBackfill: isLastQualifying && rows.Header.BackfillAsOf is null, grace),
+                canMakeOfficial,
                 stage.OfficialAt,
                 stage.SlotCount,
                 vacant,

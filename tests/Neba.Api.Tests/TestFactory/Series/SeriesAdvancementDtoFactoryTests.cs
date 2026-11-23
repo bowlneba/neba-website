@@ -36,7 +36,7 @@ public sealed class SeriesAdvancementDtoFactoryTests
         dto.IsStale.ShouldBeFalse();
         dto.NeedsSquad.ShouldBeFalse();
         dto.ComputedAt.ShouldBeNull();
-        dto.OfficialDueAt.ShouldBeNull();
+        dto.CanMakeOfficial.ShouldBeFalse();
         dto.OfficialAt.ShouldBeNull();
         dto.SlotCount.ShouldBeNull();
         dto.VacantSlotCount.ShouldBeNull();

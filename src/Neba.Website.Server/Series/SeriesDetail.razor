@@ -114,6 +114,7 @@ else
                                                  IsExpanded="@_expandedStageIds.Contains(stage.Id)"
                                                  IsBusy="@_isWriting"
                                                  OnToggle="@(() => ToggleStage(stage.Id))"
+                                                 OnMakeOfficial="@(() => OpenMakeOfficial(stage))"
                                                  OnRecompute="@(() => StartRecomputeAsync(stage))"
                                                  OnPickSquad="@(() => OpenSquadPickerAsync(stage))">
                                     <SeriesStageOutput Stage="@stage"
@@ -236,6 +237,15 @@ else
                                 OnConfirm="ConfirmRemoveAsync"
                                 OnCancel="CancelRemove" />
         }
+
+        <ConfirmActionModal IsOpen="@(_makeOfficialTarget is not null)"
+                            Title="@MakeOfficialTitle"
+                            Message="@MakeOfficialMessage"
+                            ConfirmLabel="Mark official"
+                            BusyLabel="Saving..."
+                            IsBusy="@_isWriting"
+                            OnConfirm="ConfirmMakeOfficialAsync"
+                            OnCancel="CancelMakeOfficial" />
 
         <ConfirmActionModal IsOpen="@(_recomputeTarget is not null)"
                             Title="@RecomputeTitle"
