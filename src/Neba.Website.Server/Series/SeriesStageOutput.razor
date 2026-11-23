@@ -163,7 +163,12 @@ else
                             {
                                 var isCut = !outcome.Advanced && !cutDrawn;
                                 if (!outcome.Advanced) { cutDrawn = true; }
-                                <tr @key="outcome.BowlerId" class="@(outcome.Advanced ? "series-output__in" : isCut ? "series-output__out series-output__cut" : "series-output__out")">
+                                var rowClass = "series-output__in";
+                                if (!outcome.Advanced)
+                                {
+                                    rowClass = isCut ? "series-output__out series-output__cut" : "series-output__out";
+                                }
+                                <tr @key="outcome.BowlerId" class="@rowClass">
                                     <td>@outcome.BowlerName</td>
                                     <td class="series-output__num">@SeriesDisplay.BlockTotal(outcome.BlockTotal)</td>
                                     <td>@(outcome.Advanced ? "Yes" : "No")</td>
@@ -191,6 +196,7 @@ else
                             <tr>
                                 <th scope="col">Position</th>
                                 <th scope="col">Bowler</th>
+                                <th scope="col">Tournament place</th>
                                 <th scope="col">Bowled</th>
                                 @if (hasFinalists)
                                 {
@@ -199,11 +205,26 @@ else
                             </tr>
                         </thead>
                         <tbody>
+                            @{ var finaleCutDrawn = false; }
                             @foreach (var position in Positions)
                             {
-                                <tr @key="position.BowlerId">
+                                var rowClass = "";
+                                if (hasFinalists)
+                                {
+                                    if (position.IsFinalist == true)
+                                    {
+                                        rowClass = "series-output__in";
+                                    }
+                                    else
+                                    {
+                                        rowClass = finaleCutDrawn ? "series-output__out" : "series-output__out series-output__cut";
+                                        finaleCutDrawn = true;
+                                    }
+                                }
+                                <tr @key="position.BowlerId" class="@rowClass">
                                     <td class="series-output__num">@SeriesDisplay.OrdinalPlace(position.Position)</td>
                                     <td>@position.BowlerName</td>
+                                    <td class="series-output__num">@SeriesDisplay.OrdinalPlace(position.TournamentPlace)</td>
                                     <td>@(position.Bowled ? "Yes" : "No")</td>
                                     @if (hasFinalists)
                                     {

@@ -49,4 +49,4 @@ internal sealed record StageOverrideDto(
 
 internal sealed record SurvivorOutcomeDto(BowlerId BowlerId, string BowlerName, int? BlockTotal, bool Advanced);
 
-internal sealed record SeriesPositionDto(BowlerId BowlerId, string BowlerName, int Position, bool Bowled, bool? IsFinalist);
+internal sealed record SeriesPositionDto(BowlerId BowlerId, string BowlerName, int Position, bool Bowled, bool? IsFinalist, int? TournamentPlace = null);

@@ -103,7 +103,7 @@ internal sealed class GetSeriesAdvancementQueryHandler(
             targetField,
             stages,
             [.. rows.Positions
-                .Select(p => new SeriesPositionDto(p.BowlerId, p.BowlerName.ToDisplayName(), p.Position, p.Bowled, p.IsFinalist))
+                .Select(p => new SeriesPositionDto(p.BowlerId, p.BowlerName.ToDisplayName(), p.Position, p.Bowled, p.IsFinalist, p.TournamentPlace))
                 .OrderBy(p => p.Position)
                 .ThenBy(p => p.BowlerId.Value)]);
     }

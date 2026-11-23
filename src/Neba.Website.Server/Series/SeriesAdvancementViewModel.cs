@@ -132,7 +132,8 @@ public sealed record SurvivorOutcomeViewModel(string BowlerId, string BowlerName
 /// <param name="Position">1-based position.</param>
 /// <param name="Bowled">The bowler bowled the Placement Stage.</param>
 /// <param name="IsFinalist">Null when the Series has no Finale.</param>
-public sealed record PositionViewModel(string BowlerId, string BowlerName, int Position, bool Bowled, bool? IsFinalist);
+/// <param name="TournamentPlace">Place in the Placement Stage's tournament; null when unplaced.</param>
+public sealed record PositionViewModel(string BowlerId, string BowlerName, int Position, bool Bowled, bool? IsFinalist, int? TournamentPlace = null);
 
 /// <summary>A result row the Add bowler picker offers.</summary>
 /// <param name="BowlerId">The bowler.</param>

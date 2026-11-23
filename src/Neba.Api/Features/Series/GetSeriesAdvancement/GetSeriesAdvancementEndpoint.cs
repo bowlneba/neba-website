@@ -119,6 +119,7 @@ internal sealed class GetSeriesAdvancementEndpoint(
                 Position = p.Position,
                 Bowled = p.Bowled,
                 IsFinalist = p.IsFinalist,
+                TournamentPlace = p.TournamentPlace,
             })],
         }, ct);
     }

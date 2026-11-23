@@ -359,7 +359,7 @@ public sealed class SeriesAdvancementOutputTests : IDisposable
         var stage = StageAdvancementResponseFactory.Create(stageId: "p1", kind: "Placement", status: "Computed");
         SeriesPositionResponse[] positions =
         [
-            SeriesPositionResponseFactory.Create(bowlerId: "b1", bowlerName: "Alice Adams", position: 1, bowled: true, isFinalist: true),
+            SeriesPositionResponseFactory.Create(bowlerId: "b1", bowlerName: "Alice Adams", position: 1, bowled: true, isFinalist: true, tournamentPlace: 3),
             SeriesPositionResponseFactory.Create(bowlerId: "b2", bowlerName: "Bea Brown", position: 2, bowled: false, isFinalist: false),
         ];
 
@@ -373,10 +373,13 @@ public sealed class SeriesAdvancementOutputTests : IDisposable
         var table = output.QuerySelector("[data-testid='stage-positions']")!;
         table.GetAttribute("aria-label").ShouldBe("Placement positions");
         table.ClassList.ShouldContain("neba-data-table");
-        table.QuerySelectorAll("thead th").Select(th => th.TextContent).ShouldBe(["Position", "Bowler", "Bowled", "Finalist"]);
+        table.QuerySelectorAll("thead th").Select(th => th.TextContent).ShouldBe(["Position", "Bowler", "Tournament place", "Bowled", "Finalist"]);
         var rows = table.QuerySelectorAll("tbody tr").ToList();
-        Cells(rows[0]).ShouldBe(["1st", "Alice Adams", "Yes", "Yes"]);
-        Cells(rows[1]).ShouldBe(["2nd", "Bea Brown", "No", "No"]);
+        Cells(rows[0]).ShouldBe(["1st", "Alice Adams", "3rd", "Yes", "Yes"]);
+        Cells(rows[1]).ShouldBe(["2nd", "Bea Brown", "—", "No", "No"]);
+        rows[0].ClassList.ShouldContain("series-output__in");
+        rows[1].ClassList.ShouldContain("series-output__out");
+        rows[1].ClassList.ShouldContain("series-output__cut");
     }
 
     [Fact(DisplayName = "Should omit the Finalist column and the phone table class when no position has a Finalist flag")]
@@ -399,8 +402,9 @@ public sealed class SeriesAdvancementOutputTests : IDisposable
             .ShouldBe("2 bowlers ranked. These positions are final.");
         var table = output.QuerySelector("[data-testid='stage-positions']")!;
         table.ClassList.ShouldNotContain("neba-data-table");
-        table.QuerySelectorAll("thead th").Select(th => th.TextContent).ShouldBe(["Position", "Bowler", "Bowled"]);
-        Cells(table.QuerySelectorAll("tbody tr")[0]).ShouldBe(["1st", "Alice Adams", "Yes"]);
+        table.QuerySelectorAll("thead th").Select(th => th.TextContent).ShouldBe(["Position", "Bowler", "Tournament place", "Bowled"]);
+        Cells(table.QuerySelectorAll("tbody tr")[0]).ShouldBe(["1st", "Alice Adams", "—", "Yes"]);
+        table.QuerySelectorAll("tbody tr").ShouldAllBe(row => !row.ClassList.Contains("series-output__in") && !row.ClassList.Contains("series-output__out"));
     }
 
     [Fact(DisplayName = "Should show the positions-appear text when a computed Placement Stage has no positions")]

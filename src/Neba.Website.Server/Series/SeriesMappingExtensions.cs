@@ -103,7 +103,7 @@ internal static class SeriesMappingExtensions
                 TargetField = response.TargetField,
                 Stages = [.. ordered.Select(s => MapStage(s, s.StageId == lastQualifyingId, access, localTimes))],
                 Positions = [.. response.Positions.OrderBy(p => p.Position)
-                    .Select(p => new PositionViewModel(p.BowlerId, p.BowlerName, p.Position, p.Bowled, p.IsFinalist))],
+                    .Select(p => new PositionViewModel(p.BowlerId, p.BowlerName, p.Position, p.Bowled, p.IsFinalist, p.TournamentPlace))],
             };
         }
     }
