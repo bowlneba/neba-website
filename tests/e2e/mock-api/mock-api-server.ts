@@ -857,7 +857,38 @@ function mockAdvancementResponse(state: AdvState): object {
   };
 }
 
-const ADV_PATH = /^\/series\/([^/]+)\/(advancement|stages\/([^/]+)\/(results|squads|recomputations|squad|overrides)(?:\/([^/]+))?)$/;
+// GET /series/{id}/advancers: names from Official Qualifying and Survivor Stages (and finalists once a Finale ranks them).
+function mockAdvancersResponse(state: AdvState): object {
+  const stages = state.stages
+    .filter((s) => s.status === 'Official' && s.kind !== 'Placement')
+    .map((s) => ({
+      stageId: s.stageId,
+      order: s.order,
+      kind: s.kind,
+      advancers:
+        s.kind === 'Qualifying'
+          ? s.entries.map((e) => ({
+              bowlerId: e.bowlerId,
+              bowlerName: e.bowlerName,
+              place: e.place ?? null,
+              blockTotal: null,
+              isBackfill: e.sourceStageId === undefined,
+            }))
+          : s.survivorOutcomes
+              .filter((o) => o.advanced)
+              .map((o) => ({
+                bowlerId: o.bowlerId,
+                bowlerName: o.bowlerName,
+                place: null,
+                blockTotal: o.blockTotal ?? null,
+                isBackfill: false,
+              })),
+    }));
+
+  return { stages };
+}
+
+const ADV_PATH = /^\/series\/([^/]+)\/(advancement|advancers|stages\/([^/]+)\/(results|squads|recomputations|squad|overrides)(?:\/([^/]+))?)$/;
 
 function resolveAdvancementRoute(pathname: string): object | null {
   const match = ADV_PATH.exec(pathname);
@@ -867,6 +898,7 @@ function resolveAdvancementRoute(pathname: string): object | null {
   if (!state) return null;
 
   if (match[2] === 'advancement') return mockAdvancementResponse(state);
+  if (match[2] === 'advancers') return mockAdvancersResponse(state);
 
   const stage = state.stages.find((s) => s.stageId === match[3]);
   if (!stage) return null;
@@ -905,7 +937,7 @@ function advField<T>(wrapper: Record<string, unknown> | undefined, name: string)
 // Recompute is 409 with one failure per Official Stage, a bad request is 422. Returns true when it handled the request.
 async function handleAdvancementWrite(req: IncomingMessage, res: ServerResponse, pathname: string, requestUrl: URL): Promise<boolean> {
   const match = ADV_PATH.exec(pathname);
-  if (!match || match[2] === 'advancement') return false;
+  if (!match || match[2] === 'advancement' || match[2] === 'advancers') return false;
 
   const action = match[4];
   const overrideId = match[5];

@@ -13,6 +13,7 @@ using Neba.Api.Contracts.Series;
 using Neba.Api.Contracts.Series.CreateStageOverride;
 using Neba.Api.Contracts.Series.GetSeries;
 using Neba.Api.Contracts.Series.GetSeriesAdvancement;
+using Neba.Api.Contracts.Series.GetSeriesAdvancers;
 using Neba.Api.Contracts.Series.ListStageResults;
 using Neba.Api.Contracts.Series.ListStageSquads;
 using Neba.Api.Contracts.Series.PickStageSquad;
@@ -52,6 +53,8 @@ internal sealed class SeriesDetailHost : IDisposable
         stopwatch.Setup(x => x.GetElapsedTime(It.IsAny<long>())).Returns(TimeSpan.Zero);
 
         TimeZone.Setup(x => x.ToLocalAsync(It.IsAny<DateTimeOffset>())).ReturnsAsync((DateTimeOffset utc) => utc);
+
+        SetupAdvancers(SeriesAdvancersResponseFactory.Create([]));
 
         Ctx.Services.AddSingleton(Api.Object);
         Ctx.Services.AddSingleton(TimeZone.Object);
@@ -124,6 +127,19 @@ internal sealed class SeriesDetailHost : IDisposable
             .ToArray();
 
         SetupDetail(SeriesDetailResponseFactory.Create(id: SeriesId, finale: SeriesFinaleResponseFactory.Create(), logoUrl: logo, stages: stages));
+    }
+
+    /// <summary>What the public advancers call returns. The default is no settled Stage.</summary>
+    public void SetupAdvancers(SeriesAdvancersResponse advancers)
+    {
+        var response = Track(Stub(HttpStatusCode.OK, advancers));
+        Api.Setup(x => x.GetSeriesAdvancersAsync(SeriesId, It.IsAny<CancellationToken>())).ReturnsAsync(response);
+    }
+
+    public void SetupAdvancersStatus(HttpStatusCode status)
+    {
+        var response = Track(Stub<SeriesAdvancersResponse>(status, null));
+        Api.Setup(x => x.GetSeriesAdvancersAsync(SeriesId, It.IsAny<CancellationToken>())).ReturnsAsync(response);
     }
 
     public void SetupAdvancement(SeriesAdvancementResponse advancement)

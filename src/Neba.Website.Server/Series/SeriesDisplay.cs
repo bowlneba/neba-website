@@ -208,6 +208,8 @@ internal static class SeriesDisplay
     public const string CancelledCheckFailed = "A Stage whose tournament was cancelled can't be removed until this check works. Reload the page to try again.";
     public const string StaleNote = "An earlier Stage changed after this Stage was official. Its output has not changed. Recompute from here to refresh it.";
     public const string StaleHint = "An earlier Stage changed after this Stage was official.";
+    public static string AdvancersLabel(int order) => "Bowlers who advanced from Stage " + Num(order);
+
     public const string NoFieldEntries = "No bowlers in the field from this Stage.";
     public const string NoSquads = "No squads yet. They arrive when the desktop software sends this tournament's squads.";
     public const string OverrideRemovedMessage = "Override removed.";

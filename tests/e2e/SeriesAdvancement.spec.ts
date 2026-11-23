@@ -113,6 +113,7 @@ test.describe('Series advancement: all Stages Pending, and who sees it', () => {
     await expect(page.getByTestId('stage-recompute')).toHaveCount(0);
     await expect(page.getByTestId('stage-pick-squad')).toHaveCount(0);
     await expect(page.getByRole('link', { name: 'Edit', exact: true })).toHaveCount(0);
+    await expect(page.getByTestId('series-advancers')).toHaveCount(0);
   });
 
   test('a signed-in user without Series.EditSeries sees the public page only', async ({ page }, testInfo) => {
@@ -420,6 +421,19 @@ test.describe('Series advancement: complete season', () => {
 
   test.beforeEach(async ({ page }, testInfo) => {
     await resetSeries(page, seriesIdFor(MOCK_ADVANCEMENT_COMPLETE_ID, testInfo));
+  });
+
+  test('an anonymous visitor sees who advanced from the Official Stages, with no status or controls', async ({ page }, testInfo) => {
+    await page.goto(`/series/${seriesIdFor(MOCK_ADVANCEMENT_COMPLETE_ID, testInfo)}`);
+    await page.waitForSelector('[data-testid="series-advancers"]');
+
+    const stages = page.getByTestId('series-advancers-stage');
+    await expect(stages.first()).toContainText('Qualifying');
+    await expect(stages.first().locator('tbody tr').first()).toBeVisible();
+    await expect(page.getByTestId('stage-status')).toHaveCount(0);
+    await expect(page.getByTestId('series-advancers').getByRole('button')).toHaveCount(0);
+    await expect(page.getByTestId('series-advancers')).not.toContainText('Official');
+    await expect(page.getByTestId('series-advancers')).not.toContainText('Computed');
   });
 
   test('the rail shows Official Stages, the Backfill date and a Computed Placement Stage', async ({ page }, testInfo) => {

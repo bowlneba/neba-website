@@ -1,0 +1,79 @@
+<section aria-labelledby="series-advancers-title" data-testid="series-advancers">
+    <h2 class="series-group-title" id="series-advancers-title">Who advanced</h2>
+
+    @foreach (var stage in Stages)
+    {
+                var showPlace = stage.Advancers.Any(a => a.Place is not null);
+        var showTotal = stage.Advancers.Any(a => a.BlockTotal is not null);
+        var showSource = stage.Advancers.Any(a => a.IsBackfill);
+
+        <div class="neba-card series-advancers" @key="stage.Id" data-testid="series-advancers-stage" data-stage-id="@stage.Id">
+            <h3 class="series-advancers__title">
+                <span class="series-card__kind @SeriesDisplay.KindClass(stage.Kind)">@SeriesDisplay.StageChip(stage.Kind, stage.Order)</span>
+                @if (TournamentNames.TryGetValue(stage.Id, out var tournamentName))
+                {
+                    <span>@tournamentName</span>
+                }
+            </h3>
+
+            @if (stage.Advancers.Count == 0)
+            {
+                <p class="series-output__empty">@SeriesDisplay.NoFieldEntries</p>
+            }
+            else
+            {
+                <div class="series-output__scroll series-output__scroll--free">
+                    <table class="neba-table" aria-label="@SeriesDisplay.AdvancersLabel(stage.Order)">
+                        <thead>
+                            <tr>
+                                @if (showPlace)
+                                {
+                                    <th scope="col">Place</th>
+                                }
+                                <th scope="col">Bowler</th>
+                                @if (showTotal)
+                                {
+                                    <th scope="col">Block total</th>
+                                }
+                                @if (showSource)
+                                {
+                                    <th scope="col">Source</th>
+                                }
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var advancer in stage.Advancers)
+                            {
+                                <tr @key="advancer.BowlerId">
+                                    @if (showPlace)
+                                    {
+                                        <td class="series-output__num">@SeriesDisplay.OrdinalPlace(advancer.Place)</td>
+                                    }
+                                    <td>@advancer.BowlerName</td>
+                                    @if (showTotal)
+                                    {
+                                        <td class="series-output__num">@SeriesDisplay.BlockTotal(advancer.BlockTotal)</td>
+                                    }
+                                    @if (showSource)
+                                    {
+                                        <td class="@(advancer.IsBackfill ? "series-src--backfill" : null)">@(advancer.IsBackfill ? "Backfill" : "Qualifier")</td>
+                                    }
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+        </div>
+    }
+</section>
+
+@code {
+    /// <summary>The settled Stages and who advanced out of them.</summary>
+    [Parameter, EditorRequired]
+    public IReadOnlyList<StageAdvancersViewModel> Stages { get; set; } = [];
+
+    /// <summary>Each Stage's tournament name, by Stage ID.</summary>
+    [Parameter, EditorRequired]
+    public IReadOnlyDictionary<string, string> TournamentNames { get; set; } = new Dictionary<string, string>();
+}

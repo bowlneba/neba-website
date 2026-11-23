@@ -132,6 +132,11 @@ else
         }
         else
         {
+            @if (_advancers.Count > 0)
+            {
+                <SeriesAdvancersSection Stages="@_advancers" TournamentNames="@_model.Stages.ToDictionary(stage => stage.Id, stage => stage.TournamentName)" />
+            }
+
             @foreach (var kind in StageKinds.All)
             {
                 var stages = StagesOf(kind);

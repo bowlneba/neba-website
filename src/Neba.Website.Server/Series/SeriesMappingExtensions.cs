@@ -1,6 +1,7 @@
 using Neba.Api.Contracts.Series.CreateSeries;
 using Neba.Api.Contracts.Series.GetSeries;
 using Neba.Api.Contracts.Series.GetSeriesAdvancement;
+using Neba.Api.Contracts.Series.GetSeriesAdvancers;
 using Neba.Api.Contracts.Series.ListSeries;
 using Neba.Api.Contracts.Series.ListStageResults;
 using Neba.Api.Contracts.Series.ListStageSquads;
@@ -106,6 +107,14 @@ internal static class SeriesMappingExtensions
                     .Select(p => new PositionViewModel(p.BowlerId, p.BowlerName, p.Position, p.Bowled, p.IsFinalist, p.TournamentPlace))],
             };
         }
+    }
+
+    extension(SeriesAdvancersResponse response)
+    {
+        public IReadOnlyList<StageAdvancersViewModel> ToViewModel()
+            => [.. response.Stages.OrderBy(s => s.Order).Select(s => new StageAdvancersViewModel(
+                s.StageId, s.Order, s.Kind,
+                [.. s.Advancers.Select(a => new AdvancerViewModel(a.BowlerId, a.BowlerName, a.Place, a.BlockTotal, a.IsBackfill))]))];
     }
 
     extension(StageResultSummaryResponse response)

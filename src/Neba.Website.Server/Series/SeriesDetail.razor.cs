@@ -35,6 +35,7 @@ public partial class SeriesDetail
     private bool _canManage;
     private AdvancementState _advancementState = AdvancementState.Hidden;
     private SeriesAdvancementViewModel? _advancement;
+    private IReadOnlyList<StageAdvancersViewModel> _advancers = [];
     private int _version; // set by every successful advancement GET; every write sends it
     private bool _isWriting;
     private readonly HashSet<string> _expandedStageIds = [];
@@ -78,6 +79,7 @@ public partial class SeriesDetail
 
         _advancementSeriesId = seriesId;
         _advancement = null;
+        _advancers = [];
         _advancementState = AdvancementState.Hidden;
         _canView = false;
         _canManage = false;
@@ -106,6 +108,7 @@ public partial class SeriesDetail
         {
             _canManage = false;
             _advancementState = AdvancementState.Hidden;
+            await LoadAdvancersAsync();
             return;
         }
 
@@ -119,6 +122,13 @@ public partial class SeriesDetail
         }
 
         await LoadAdvancementAsync();
+    }
+
+    /// <summary>The public view: names from Official Stages only. A failed load shows nothing, as the page works without it.</summary>
+    private async Task LoadAdvancersAsync()
+    {
+        var result = await ApiExecutor.ExecuteAsync(ApiName, "GetSeriesAdvancers", ct => SeriesApi.GetSeriesAdvancersAsync(Id, ct));
+        _advancers = result.IsError ? [] : result.Value.ToViewModel();
     }
 
     private Task RetryAdvancementAsync()
