@@ -41,6 +41,9 @@
 .series-output__scroll td { font-size: 0.875rem; vertical-align: top; }
 .series-output__num { font-variant-numeric: tabular-nums; }
 .series-output__out td { color: var(--neba-text-muted); }
+.series-output__in td:first-child { box-shadow: inset 3px 0 0 var(--neba-success, #2e7d32); }
+.series-output__in td:last-child { font-weight: 700; color: var(--neba-success, #2e7d32); }
+.series-output__cut td { border-top: 2px dashed var(--neba-text-muted); }
 .series-output__reason { max-width: 46ch; }
 .series-output__inactive { color: var(--series-warn-fg); font-weight: 600; }
 .series-src--admin { color: var(--series-computed-fg); font-weight: 600; }

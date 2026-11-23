@@ -158,9 +158,12 @@ else
                             </tr>
                         </thead>
                         <tbody>
+                            @{ var cutDrawn = false; }
                             @foreach (var outcome in Stage.Outcomes)
                             {
-                                <tr @key="outcome.BowlerId" class="@(outcome.Advanced ? null : "series-output__out")">
+                                var isCut = !outcome.Advanced && !cutDrawn;
+                                if (!outcome.Advanced) { cutDrawn = true; }
+                                <tr @key="outcome.BowlerId" class="@(outcome.Advanced ? "series-output__in" : isCut ? "series-output__out series-output__cut" : "series-output__out")">
                                     <td>@outcome.BowlerName</td>
                                     <td class="series-output__num">@SeriesDisplay.BlockTotal(outcome.BlockTotal)</td>
                                     <td>@(outcome.Advanced ? "Yes" : "No")</td>
