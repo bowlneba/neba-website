@@ -243,8 +243,8 @@ public sealed class SeriesTests
 
     // ---- #4 ----
 
-    [Fact(DisplayName = "Create should return DateNotAfterPrevious for an equal start date (#4)")]
-    public void Create_ShouldReturnDateNotAfterPrevious_WhenStartDatesAreEqual()
+    [Fact(DisplayName = "Create should succeed for an equal start date (#4)")]
+    public void Create_ShouldSucceed_WhenStartDatesAreEqual()
     {
         // Arrange
         var scenario = new SeriesTestScenario().Qualifying(1, 10).Qualifying(1, 10);
@@ -253,11 +253,11 @@ public sealed class SeriesTests
         var result = scenario.Create();
 
         // Assert
-        result.Errors.Single().Code.ShouldBe("Series.Stage.DateNotAfterPrevious");
+        result.IsError.ShouldBeFalse();
     }
 
-    [Fact(DisplayName = "Create should return DateNotAfterPrevious for an earlier start date (#4)")]
-    public void Create_ShouldReturnDateNotAfterPrevious_WhenStartDateIsEarlier()
+    [Fact(DisplayName = "Create should return DateBeforePrevious for an earlier start date (#4)")]
+    public void Create_ShouldReturnDateBeforePrevious_WhenStartDateIsEarlier()
     {
         // Arrange
         var scenario = new SeriesTestScenario().Qualifying(2, 10).Qualifying(1, 10);
@@ -266,7 +266,7 @@ public sealed class SeriesTests
         var result = scenario.Create();
 
         // Assert
-        result.Errors.Single().Code.ShouldBe("Series.Stage.DateNotAfterPrevious");
+        result.Errors.Single().Code.ShouldBe("Series.Stage.DateBeforePrevious");
     }
 
     // ---- #5 ----

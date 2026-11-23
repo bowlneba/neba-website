@@ -66,8 +66,8 @@ internal static class SeriesErrors
     public static Error PlacementNotLast(int order, string tournament)
         => Stage(order, tournament, "Series.Stage.PlacementNotLast", "the Placement Stage must be the last Stage.", ErrorType.Validation);
 
-    public static Error DateNotAfterPrevious(int order, string tournament, DateOnly startDate, DateOnly previousStartDate)
-        => Stage(order, tournament, "Series.Stage.DateNotAfterPrevious", $"this tournament starts {Format(startDate)}, which is not after the previous Stage's tournament ({Format(previousStartDate)}). Stages must follow tournament dates.", ErrorType.Validation);
+    public static Error DateBeforePrevious(int order, string tournament, DateOnly startDate, DateOnly previousStartDate)
+        => Stage(order, tournament, "Series.Stage.DateBeforePrevious", $"this tournament starts {Format(startDate)}, which is before the previous Stage's tournament ({Format(previousStartDate)}). Stages must follow tournament dates.", ErrorType.Validation);
 
     public static Error SurvivorCountNotDecreasing(int order, string tournament, int count, int previousCount)
         => Stage(order, tournament, "Series.Stage.SurvivorCountNotDecreasing", $"{count} advancing must be fewer than the previous Survivor Stage's {previousCount}.", ErrorType.Validation);

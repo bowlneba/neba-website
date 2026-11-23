@@ -361,9 +361,9 @@ public sealed partial class Series
             yield return SeriesErrors.KindOutOfOrder(order, facts.TournamentName, definition.Kind, previousDefinition.Kind);
         }
 
-        if (facts.StartDate <= previousFacts.StartDate)
+        if (facts.StartDate < previousFacts.StartDate)
         {
-            yield return SeriesErrors.DateNotAfterPrevious(order, facts.TournamentName, facts.StartDate, previousFacts.StartDate);
+            yield return SeriesErrors.DateBeforePrevious(order, facts.TournamentName, facts.StartDate, previousFacts.StartDate);
         }
     }
 

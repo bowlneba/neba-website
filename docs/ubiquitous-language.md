@@ -1232,7 +1232,7 @@ Phase 1 stores the configuration. Phase 2 computes the field and each Stage's ou
 
 - A tournament is a Stage in at most one Series, and at most once in it
 - The tournament must belong to the Series' season
-- Stages follow tournament start dates; each Stage's tournament starts after the previous Stage's tournament starts
+- Stages follow tournament start dates; no Stage's tournament starts before the previous Stage's tournament starts (equal start dates are allowed)
 - Kinds run in order: Qualifying, then Survivor, then Placement; a Series has at most one Placement Round and it is the last Stage
 - A Stage's order is its position in the submitted list; a Stage keeps its ID across edits
 - The Series is **locked** once any Stage leaves Pending: Stages and the Finale's existence and count cannot change, and the Series cannot be deleted. Name, logo and the Finale's date, start time and center stay editable
