@@ -17,7 +17,7 @@ public sealed class SeriesFeatureConfigurationTests
     {
         // Arrange
         var scheduler = new Mock<IBackgroundJobScheduler>(MockBehavior.Strict);
-        scheduler.Setup(s => s.AddOrUpdateRecurring("series-make-official", new MakeDueStagesOfficialJob(), "*/15 * * * *"));
+        scheduler.Setup(s => s.AddOrUpdateRecurring("series-make-official", new MakeDueStagesOfficialJob(), "0 23 * * 1"));
         var builder = WebApplication.CreateSlimBuilder();
         builder.Services.AddSingleton(scheduler.Object);
         using var app = builder.Build();
@@ -27,7 +27,7 @@ public sealed class SeriesFeatureConfigurationTests
 
         // Assert
         scheduler.Verify(
-            s => s.AddOrUpdateRecurring("series-make-official", new MakeDueStagesOfficialJob(), "*/15 * * * *"),
+            s => s.AddOrUpdateRecurring("series-make-official", new MakeDueStagesOfficialJob(), "0 23 * * 1"),
             Times.Once);
         scheduler.Invocations.ShouldHaveSingleItem();
     }

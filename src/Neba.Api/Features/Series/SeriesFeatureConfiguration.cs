@@ -30,8 +30,8 @@ internal static class SeriesFeatureConfiguration
             using var scope = app.Services.CreateScope();
             var scheduler = scope.ServiceProvider.GetRequiredService<IBackgroundJobScheduler>();
 
-            // Every 15 minutes, so a Stage becomes Official up to 15 minutes after its grace period ends.
-            scheduler.AddOrUpdateRecurring(MakeOfficialRecurringJobId, new MakeDueStagesOfficialJob(), "*/15 * * * *");
+            // Mondays at 23:00 UTC (Hangfire default). One sweep makes every due Stage Official, so a weekend with two tournaments needs one run. A Stage waits for the next Monday if its grace period ends after the run.
+            scheduler.AddOrUpdateRecurring(MakeOfficialRecurringJobId, new MakeDueStagesOfficialJob(), "0 23 * * 1");
         }
     }
 }
