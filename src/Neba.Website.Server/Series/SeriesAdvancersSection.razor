@@ -3,9 +3,11 @@
 
     @foreach (var stage in Stages)
     {
-                var showPlace = stage.Advancers.Any(a => a.Place is not null);
+        var showPlace = stage.Advancers.Any(a => a.Place is not null);
         var showTotal = stage.Advancers.Any(a => a.BlockTotal is not null);
-        var showSource = stage.Advancers.Any(a => a.IsBackfill);
+        var showSource = stage.Advancers.Any(a => a.IsBackfill || a.AlreadyAdvancedFromOrder is not null);
+        var showAdvanced = stage.Kind == StageKinds.Survivor;
+        var cutDrawn = false;
 
         <div class="neba-card series-advancers" @key="stage.Id" data-testid="series-advancers-stage" data-stage-id="@stage.Id">
             <h3 class="series-advancers__title">
@@ -22,7 +24,7 @@
             }
             else
             {
-                <div class="series-output__scroll series-output__scroll--free">
+                <div class="series-advancers__scroll">
                     <table class="neba-table" aria-label="@SeriesDisplay.AdvancersLabel(stage.Order)">
                         <thead>
                             <tr>
@@ -39,24 +41,35 @@
                                 {
                                     <th scope="col">Source</th>
                                 }
+                                @if (showAdvanced)
+                                {
+                                    <th scope="col">Advanced</th>
+                                }
                             </tr>
                         </thead>
                         <tbody>
                             @foreach (var advancer in stage.Advancers)
                             {
-                                <tr @key="advancer.BowlerId">
+                                var isCut = showAdvanced && !advancer.Advanced && !cutDrawn;
+                                if (!advancer.Advanced) { cutDrawn = true; }
+                                var rowClass = SeriesDisplay.AdvancerRowClass(showAdvanced, advancer, isCut);
+                                <tr @key="advancer.BowlerId" class="@rowClass" data-testid="series-advancer">
                                     @if (showPlace)
                                     {
-                                        <td class="series-output__num">@SeriesDisplay.OrdinalPlace(advancer.Place)</td>
+                                        <td class="series-advancers__num">@SeriesDisplay.OrdinalPlace(advancer.Place)</td>
                                     }
                                     <td>@advancer.BowlerName</td>
                                     @if (showTotal)
                                     {
-                                        <td class="series-output__num">@SeriesDisplay.BlockTotal(advancer.BlockTotal)</td>
+                                        <td class="series-advancers__num">@SeriesDisplay.BlockTotal(advancer.BlockTotal)</td>
                                     }
                                     @if (showSource)
                                     {
-                                        <td class="@(advancer.IsBackfill ? "series-src--backfill" : null)">@(advancer.IsBackfill ? "Backfill" : "Qualifier")</td>
+                                        <td class="@SeriesDisplay.AdvancerSourceClass(advancer)">@SeriesDisplay.AdvancerSource(advancer)</td>
+                                    }
+                                    @if (showAdvanced)
+                                    {
+                                        <td>@(advancer.Advanced ? "Yes" : "No")</td>
                                     }
                                 </tr>
                             }

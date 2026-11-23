@@ -1309,8 +1309,7 @@ Phase 1 stores the configuration. Phase 2 computes the field and each Stage's ou
 3. With a Finale, the top N Series bowlers go to it and the rest are paid by Series Position in that order; without one, every Series bowler is paid by Series Position
 4. Everyone who advanced to the Placement Round receives a Series Position and its payout, which may be zero
 5. A Placement Stage has no advancing count; the Finale's finalist count belongs to the Finale
-6. A Placement Stage is never Official: its output is final once computed
-7. Ties in place break by bowler ID
+6. Ties in place break by bowler ID
 
 **In Code**: `StageKind.Placement`, `SeriesPosition` (`Position`, `Bowled`, `IsFinalist`), `Series.Positions`.
 
@@ -1355,12 +1354,12 @@ Phase 1 stores the configuration. Phase 2 computes the field and each Stage's ou
 - A Stage starts Pending. It becomes Computed when its output is first worked out
 - Any non-Pending Stage locks the Series
 - **Official** means the output is settled and no longer changes on its own. Only a confirmed Recompute resets it to Computed
-- A person with `Series.MakeStageOfficial` (Admin, Webmaster, Manager, Tournament Director) marks a Computed Qualifying or Survivor Stage Official after reviewing its output. Nothing makes a Stage Official on its own
+- A person with `Series.MakeStageOfficial` (Admin, Webmaster, Manager, Tournament Director) marks a Computed Stage Official after reviewing its output. Nothing makes a Stage Official on its own
 - A Stage can be marked Official only while it is Computed and not Stale. Marking an Official Stage again does nothing
-- The public Series page shows who advanced from a Stage only once it is Official, so the review window is the time the Stage stays Computed. A Placement Stage is the exception: it never becomes Official, so a computed Placement Stage with a Finale shows its finalists
+- The public Series page shows who advanced from a Stage only once it is Official, so the review window is the time the Stage stays Computed.
 - The last Qualifying Stage becomes Official only after the Backfill ran, and that makes the Backfill official too
-- A Stage becomes Official only after every earlier Qualifying and Survivor Stage is Official
-- A Placement Stage is never Official. Its output is final once computed. Its later commit points are, with a Finale, a replacement or the Finale result, and, without a Finale, recorded payouts (phase 3). A Recompute that reaches the Placement Stage after those needs confirmation and clears them
+- A Stage becomes Official only after every earlier Stage is Official
+- A Placement Stage is marked Official like any other Stage. Its later commit points are, with a Finale, a replacement or the Finale result, and, without a Finale, recorded payouts (phase 3). A Recompute that reaches the Placement Stage after those needs confirmation and clears them
 - A job writes a Stage's output only while the Stage is not Official. A result event for an Official Stage re-runs the computation in memory and only marks the Stage Stale if the output differs
 - A Stale Stage cannot be marked Official until a Recompute clears the mark
 

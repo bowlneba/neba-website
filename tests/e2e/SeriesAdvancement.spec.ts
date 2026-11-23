@@ -7,6 +7,7 @@ import {
   MOCK_ADVANCEMENT_OVERRIDES_ID,
   MOCK_ADVANCEMENT_PENDING_ID,
   MOCK_ADVANCEMENT_REVIEW_ID,
+  MOCK_ADVANCEMENT_FINALE_ID,
   MOCK_ADVANCEMENT_SQUAD_ID,
   perProjectAdvancementSeriesId,
 } from './mock-api/mock-api-server';
@@ -446,7 +447,7 @@ test.describe('Series advancement: complete season', () => {
     await expect(status(page, 1)).toHaveText('Official');
     await expect(status(page, 2)).toHaveText('Official');
     await expect(status(page, 3)).toHaveText('Official');
-    await expect(status(page, 4)).toHaveText('Computed'); // a Placement Stage never reaches Official
+    await expect(status(page, 4)).toHaveText('Computed');
     await expect(card(page, 2).getByTestId('stage-flag-backfill')).toHaveText('Backfill as of 4/18/2026');
     await expect(page.getByTestId('stage-flag-backfill')).toHaveCount(1);
     await expect(card(page, 2).getByTestId('stage-headline')).toHaveText('3 of 4 slots filled');
@@ -874,5 +875,31 @@ test.describe('Series advancement: marking a Stage official', () => {
     await page.waitForSelector('[data-testid="series-advancers"]');
     await expect(page.getByTestId('series-advancers-stage')).toHaveCount(1);
     await expect(page.getByTestId('stage-status')).toHaveCount(0);
+  });
+
+  test('the public sees a bowler who already advanced in place, the full Survivor standings, and the finalists only once the Placement Stage is official', async ({ page }, testInfo) => {
+    const seriesId = seriesIdFor(MOCK_ADVANCEMENT_FINALE_ID, testInfo);
+    await resetSeries(page, seriesId);
+
+    await page.goto(`/series/${seriesId}`);
+    await page.waitForSelector('[data-testid="series-advancers"]');
+    const stages = page.getByTestId('series-advancers-stage');
+    await expect(stages).toHaveCount(3);
+    await expect(stages.nth(1).getByTestId('series-advancer').filter({ hasText: 'Advanced in Stage 1' })).toHaveCount(1);
+    await expect(stages.nth(2)).toContainText('Advanced');
+    await expect(stages.nth(2).getByRole('cell', { name: 'No', exact: true }).first()).toBeVisible();
+
+    await page.request.post(`/__test/login?permissions=${MANAGER}`);
+    await page.goto(`/series/${seriesId}`);
+    await page.waitForSelector('[data-testid="series-stage-card"]');
+    await expect(card(page, 4).getByTestId('stage-make-official')).toBeVisible();
+    await card(page, 4).getByTestId('stage-make-official').click();
+    await page.locator('.confirm-action-modal-confirm').click();
+    await expect(status(page, 4)).toHaveText('Official');
+
+    await page.context().clearCookies();
+    await page.goto(`/series/${seriesId}`);
+    await page.waitForSelector('[data-testid="series-advancers"]');
+    await expect(page.getByTestId('series-advancers-stage')).toHaveCount(4);
   });
 });

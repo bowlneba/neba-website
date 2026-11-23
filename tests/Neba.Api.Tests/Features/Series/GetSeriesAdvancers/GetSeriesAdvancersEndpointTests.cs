@@ -44,8 +44,8 @@ public sealed class GetSeriesAdvancersEndpointTests
         [
             new StageAdvancersDto(stageId, 2, "Qualifying",
             [
-                new AdvancerDto(bowlerId, "Dave Smith", 3, 1234, false),
-                new AdvancerDto(backfillId, "Pat Plain", null, null, true),
+                new AdvancerDto(bowlerId, "Dave Smith", 3, 1234, false, false, 1),
+                new AdvancerDto(backfillId, "Pat Plain", null, null, true, true, null),
             ]),
         ]);
         GetSeriesAdvancersQuery? captured = null;
@@ -75,7 +75,11 @@ public sealed class GetSeriesAdvancersEndpointTests
         stage.Advancers[0].IsBackfill.ShouldBeFalse();
         stage.Advancers[1].Place.ShouldBeNull();
         stage.Advancers[1].BlockTotal.ShouldBeNull();
+        stage.Advancers[0].Advanced.ShouldBeFalse();
+        stage.Advancers[0].AlreadyAdvancedFromOrder.ShouldBe(1);
         stage.Advancers[1].IsBackfill.ShouldBeTrue();
+        stage.Advancers[1].Advanced.ShouldBeTrue();
+        stage.Advancers[1].AlreadyAdvancedFromOrder.ShouldBeNull();
     }
 
     [Fact(DisplayName = "HandleAsync should return an empty Stage list when no Stage is settled")]

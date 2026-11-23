@@ -41,9 +41,7 @@ Each Stage shows a status:
 | Computed | The Stage has a result. It can still change. |
 | Official | Staff reviewed the result and marked it official. It changes only when staff run a confirmed Recompute. Visitors see its names. |
 
-A Placement Stage is Pending or Computed. It is never Official.
-
-A Stage never becomes Official on its own. Someone reviews a Computed Qualifying or Survivor Stage and marks it official (see [Mark a Stage official](#mark-a-stage-official)). An earlier Stage must be official first. The last Qualifying Stage can become Official only after the Backfill ran.
+A Stage never becomes Official on its own. Someone reviews a Computed Stage, a Placement Stage included, and marks it official (see [Mark a Stage official](#mark-a-stage-official)). An earlier Stage must be official first. The last Qualifying Stage can become Official only after the Backfill ran.
 
 ### Indicators
 
@@ -100,9 +98,8 @@ Review a Stage's result first, then mark it official. Visitors see who advanced 
 The button shows only on a Stage that is ready:
 
 - The Stage is Computed and not Stale.
-- Every earlier Qualifying and Survivor Stage is Official. Mark them in order.
+- Every earlier Stage is Official. Mark them in order.
 - For the last Qualifying Stage, the Backfill ran.
-- A Placement Stage never shows the button. It is never Official.
 
 Marking a Stage official does nothing if it is already official.
 
@@ -112,9 +109,9 @@ If someone finds a mistake after that, an Admin, Webmaster or Manager runs **Rec
 
 A visitor sees a **Who advanced** section on the Series page. It lists the bowlers who advanced out of each Official Stage:
 
-- **Qualifying.** Each bowler with their place. Backfill entries say **Backfill**.
-- **Survivor Round.** Each bowler who advanced, with their block total.
-- **Placement Round.** Shown when the Series has a Finale and the Stage computed. It lists the finalists with their tournament place.
+- **Qualifying.** Each bowler with their place. Backfill entries say **Backfill**. A bowler who already advanced from an earlier Stage keeps their place, dimmed, with **Advanced in Stage N**.
+- **Survivor Round.** The full standings by block total. A column says who advanced, and a dashed line marks the cut.
+- **Placement Round.** Shown when the Series has a Finale. It lists the finalists with their tournament place.
 
 The section has no status labels, no override reasons and no buttons. A Stage that is not yet official does not show.
 
@@ -224,7 +221,7 @@ If someone else changed the Series after you opened the page, your change does n
 | A Stage shows **Tournament cancelled: remove this Stage** | See [Remove a cancelled Stage](#remove-a-cancelled-stage). |
 | You cannot add an override to a Stage | The Stage may be Official, or not a Qualifying Stage. Run a confirmed Recompute to reset an Official Stage. |
 | No Season progress section | You hold neither `Series.EditSeries` nor `Series.MakeStageOfficial`. |
-| A Stage has no **Mark official** button | The Stage may be Pending, Stale or Official, an earlier Stage may not be official yet, the Backfill may not have run, or it is a Placement Stage. You may also lack `Series.MakeStageOfficial`. |
+| A Stage has no **Mark official** button | The Stage may be Pending, Stale or Official, an earlier Stage may not be official yet, or the Backfill may not have run. You may also lack `Series.MakeStageOfficial`. |
 | Visitors do not see a Stage's names | The Stage is not official yet. Review it and click **Mark official**. |
 | You found a mistake in an Official Stage | Run a confirmed **Recompute from here**, fix the field, then mark the Stage official again. |
 

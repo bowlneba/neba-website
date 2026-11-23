@@ -444,6 +444,7 @@ export const MOCK_ADVANCEMENT_OVERRIDES_ID = '01JX0000000000000000000523'; // Of
 export const MOCK_ADVANCEMENT_SQUAD_ID = '01JX0000000000000000000524'; // Survivor Stage with two squads to pick
 export const MOCK_ADVANCEMENT_CANCELLED_ID = '01JX0000000000000000000525'; // locked, one Pending Stage with a Cancelled tournament
 export const MOCK_ADVANCEMENT_REVIEW_ID = '01JX0000000000000000000526'; // both Qualifying Stages Computed, Backfill ran: Stage 1 is ready to mark Official
+export const MOCK_ADVANCEMENT_FINALE_ID = '01JX0000000000000000000527'; // Qualifying and Survivor Stages Official, Placement Computed and ready to mark Official, a bowler who already advanced
 export const MOCK_ADVANCEMENT_ADMIN_ID = '01JX0000000000000000000001'; // the createdBy of the fixture overrides
 
 // perProjectTournamentId keeps only the last digit of the base id, so 502 and 522 would collide: this one keeps all three.
@@ -543,6 +544,7 @@ const ADV_FIXTURE_NAMES: Record<string, string> = {
   [MOCK_ADVANCEMENT_SQUAD_ID]: 'Advancement Squad Series',
   [MOCK_ADVANCEMENT_CANCELLED_ID]: 'Advancement Cancelled Series',
   [MOCK_ADVANCEMENT_REVIEW_ID]: 'Advancement Review Series',
+  [MOCK_ADVANCEMENT_FINALE_ID]: 'Advancement Finale Series',
 };
 
 // Name, start date, kind, advancing count, squad date. Every Stage is singles; a Qualifying Stage has 4 slots.
@@ -643,8 +645,8 @@ function advFallbackState(detail: Record<string, unknown>): AdvState {
 function advCanMakeOfficial(state: AdvState, stage: AdvStage): boolean {
   const lastQualifying = state.stages.findLast((s) => s.kind === 'Qualifying');
   const awaitsBackfill = stage === lastQualifying && state.backfillAsOf === null;
-  const earlierReady = state.stages.every((s) => s.order >= stage.order || s.kind === 'Placement' || s.status === 'Official');
-  return stage.kind !== 'Placement' && stage.status === 'Computed' && !stage.isStale && !awaitsBackfill && earlierReady;
+  const earlierReady = state.stages.every((s) => s.order >= stage.order || s.status === 'Official');
+  return stage.status === 'Computed' && !stage.isStale && !awaitsBackfill && earlierReady;
 }
 
 function advSetComputed(_state: AdvState, stage: AdvStage, official: boolean): void {
@@ -733,6 +735,18 @@ function advBuildFixture(baseId: string): AdvState {
       advAddBackfill(state, 8, 520);
       state.version = 9;
       break;
+    case MOCK_ADVANCEMENT_FINALE_ID: {
+      advFillQualifying(state, 1, true);
+      advFillQualifying(state, 2, true, 1);
+      advAddBackfill(state, 8, 520);
+      advComputeSurvivor(state, survivor, true);
+      advComputePlacement(state, placement);
+      // The first Stage's winner also places in the second Stage, so that row shows as already advanced.
+      const winner = q1.entries[0];
+      q2.alreadyAdvanced = [{ bowlerId: winner.bowlerId, bowlerName: winner.bowlerName, place: 1, earlierStageId: q1.stageId, earlierStageOrder: 1 }];
+      state.version = 33;
+      break;
+    }
     case MOCK_ADVANCEMENT_CANCELLED_ID:
       advFillQualifying(state, 1, true);
       q2.tournamentStatus = 'Cancelled';
@@ -865,35 +879,60 @@ function mockAdvancementResponse(state: AdvState): object {
   };
 }
 
-// GET /series/{id}/advancers: names from Official Qualifying and Survivor Stages (and finalists once a Finale ranks them).
+// GET /series/{id}/advancers: Official Stages only. A Qualifying Stage lists its entries and the bowlers who already advanced,
+// a Survivor Stage lists its full standings, and a Placement Stage lists the finalists.
 function mockAdvancersResponse(state: AdvState): object {
   const stages = state.stages
-    .filter((s) => s.status === 'Official' && s.kind !== 'Placement')
+    .filter((s) => s.status === 'Official')
     .map((s) => ({
       stageId: s.stageId,
       order: s.order,
       kind: s.kind,
-      advancers:
-        s.kind === 'Qualifying'
-          ? s.entries.map((e) => ({
-              bowlerId: e.bowlerId,
-              bowlerName: e.bowlerName,
-              place: e.place ?? null,
-              blockTotal: null,
-              isBackfill: e.sourceStageId === undefined,
-            }))
-          : s.survivorOutcomes
-              .filter((o) => o.advanced)
-              .map((o) => ({
-                bowlerId: o.bowlerId,
-                bowlerName: o.bowlerName,
-                place: null,
-                blockTotal: o.blockTotal ?? null,
-                isBackfill: false,
-              })),
-    }));
+      advancers: mockAdvancersOf(state, s),
+    }))
+    .filter((s) => s.advancers.length > 0);
 
   return { stages };
+}
+
+function mockAdvancersOf(state: AdvState, s: AdvStage): object[] {
+  if (s.kind === 'Qualifying') {
+    const entries = s.entries.map((e) => ({
+      bowlerId: e.bowlerId,
+      bowlerName: e.bowlerName,
+      place: e.place ?? null,
+      blockTotal: null,
+      isBackfill: e.sourceStageId === undefined,
+      advanced: true,
+      alreadyAdvancedFromOrder: null,
+    }));
+    const already = (s.alreadyAdvanced as { bowlerId: string; bowlerName: string; place: number; earlierStageOrder: number }[]).map((a) => ({
+      bowlerId: a.bowlerId,
+      bowlerName: a.bowlerName,
+      place: a.place,
+      blockTotal: null,
+      isBackfill: false,
+      advanced: false,
+      alreadyAdvancedFromOrder: a.earlierStageOrder,
+    }));
+    return [...entries, ...already].sort((a, b) => (a.place ?? 999) - (b.place ?? 999));
+  }
+
+  if (s.kind === 'Survivor') {
+    return s.survivorOutcomes.map((o) => ({
+      bowlerId: o.bowlerId,
+      bowlerName: o.bowlerName,
+      place: null,
+      blockTotal: o.blockTotal ?? null,
+      isBackfill: false,
+      advanced: o.advanced,
+      alreadyAdvancedFromOrder: null,
+    }));
+  }
+
+  return state.positions
+    .filter((p) => p.isFinalist)
+    .map((p) => ({ bowlerId: p.bowlerId, bowlerName: p.bowlerName, place: null, blockTotal: null, isBackfill: false, advanced: true, alreadyAdvancedFromOrder: null }));
 }
 
 const ADV_PATH = /^\/series\/([^/]+)\/(advancement|advancers|stages\/([^/]+)\/(results|squads|recomputations|squad|overrides|official)(?:\/([^/]+))?)$/;
@@ -1102,9 +1141,6 @@ function handleMakeOfficial(res: ServerResponse, state: AdvState, stage: AdvStag
   const wrapper = (input.official ?? input.Official) as Record<string, unknown> | undefined;
   if (advField<number>(wrapper, 'version') !== state.version) return sendAdvancementStale(res);
   if (stage.status === 'Official') return sendNoContent(res);
-  if (stage.kind === 'Placement') {
-    return sendAdvancementError(res, 422, 'Series.Stage', 'A Placement Stage never becomes official.');
-  }
   if (!advCanMakeOfficial(state, stage)) {
     return sendAdvancementError(res, 409, 'Series.Stage', 'This Stage is not ready to be made official.');
   }

@@ -372,6 +372,34 @@ internal static class SeriesDisplay
             _ => string.Empty,
         };
 
+    /// <summary>"Backfill", "Advanced in Stage 1" or "Qualifier" for a bowler on the public Qualifying list.</summary>
+    public static string AdvancerSource(AdvancerViewModel advancer)
+        => advancer switch
+        {
+            { AlreadyAdvancedFromOrder: { } order } => AlreadyAdvancedSource(order),
+            { IsBackfill: true } => "Backfill",
+            _ => "Qualifier",
+        };
+
+    public static string AdvancerSourceClass(AdvancerViewModel advancer)
+        => advancer switch
+        {
+            { AlreadyAdvancedFromOrder: not null } => "series-advancers__already",
+            { IsBackfill: true } => "series-advancers__backfill",
+            _ => string.Empty,
+        };
+
+    /// <summary>Row class for the public lists: dimmed when the bowler did not advance, a dashed line at the Survivor cut.</summary>
+    public static string AdvancerRowClass(bool isStanding, AdvancerViewModel advancer, bool isCut)
+    {
+        if (advancer.Advanced)
+        {
+            return isStanding ? "series-advancers__in" : string.Empty;
+        }
+
+        return isCut ? "series-advancers__out series-advancers__cut" : "series-advancers__out";
+    }
+
     public static string Points(int? points) => points is { } p ? Num(p) : "—";
 
     public static string BlockTotal(int? total) => total is { } t ? Num(t) : "No full block";

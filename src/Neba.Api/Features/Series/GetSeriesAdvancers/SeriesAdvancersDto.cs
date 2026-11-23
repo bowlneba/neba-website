@@ -8,4 +8,4 @@ internal sealed record SeriesAdvancersDto(IReadOnlyList<StageAdvancersDto> Stage
 internal sealed record StageAdvancersDto(
     SeriesStageId StageId, int Order, string Kind, IReadOnlyList<AdvancerDto> Advancers);
 
-internal sealed record AdvancerDto(BowlerId BowlerId, string BowlerName, int? Place, int? BlockTotal, bool IsBackfill);
+internal sealed record AdvancerDto(BowlerId BowlerId, string BowlerName, int? Place, int? BlockTotal, bool IsBackfill, bool Advanced, int? AlreadyAdvancedFromOrder);

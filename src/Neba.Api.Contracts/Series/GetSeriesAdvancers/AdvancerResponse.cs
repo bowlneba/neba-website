@@ -1,6 +1,6 @@
 namespace Neba.Api.Contracts.Series.GetSeriesAdvancers;
 
-/// <summary>A bowler who advanced out of a Stage.</summary>
+/// <summary>A bowler listed under a Stage. Most advanced; the Survivor standings and the already-advanced rows also list those who did not.</summary>
 public sealed record AdvancerResponse
 {
     /// <summary>The bowler id.</summary>
@@ -17,4 +17,10 @@ public sealed record AdvancerResponse
 
     /// <summary>True when the bowler took a vacant slot through the Backfill.</summary>
     public required bool IsBackfill { get; init; }
+
+    /// <summary>True when the bowler advanced out of the Stage. False for a Survivor bowler who was cut, or a bowler who had already advanced.</summary>
+    public required bool Advanced { get; init; }
+
+    /// <summary>The order of the earlier Stage the bowler already advanced from. Null otherwise.</summary>
+    public int? AlreadyAdvancedFromOrder { get; init; }
 }

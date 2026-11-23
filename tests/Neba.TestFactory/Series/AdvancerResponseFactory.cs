@@ -8,13 +8,15 @@ public static class AdvancerResponseFactory
     public const string ValidBowlerName = "Dave Smith";
     public const int ValidPlace = 1;
 
-    /// <summary>A qualifier in first place. Pass a null place for a Backfill entry, or a block total for a Survivor Stage.</summary>
+    /// <summary>A qualifier in first place. Pass a null place for a Backfill entry, a block total for a Survivor Stage, or advanced false for a bowler who did not advance.</summary>
     public static AdvancerResponse Create(
         string? bowlerId = null,
         string? bowlerName = null,
         int? place = ValidPlace,
         int? blockTotal = null,
-        bool? isBackfill = null)
+        bool? isBackfill = null,
+        bool? advanced = null,
+        int? alreadyAdvancedFromOrder = null)
         => new()
         {
             BowlerId = bowlerId ?? ValidBowlerId,
@@ -22,6 +24,8 @@ public static class AdvancerResponseFactory
             Place = place,
             BlockTotal = blockTotal,
             IsBackfill = isBackfill ?? false,
+            Advanced = advanced ?? true,
+            AlreadyAdvancedFromOrder = alreadyAdvancedFromOrder,
         };
 
     internal static IReadOnlyList<AdvancerResponse> Bogus(int count, Faker faker)

@@ -13,4 +13,7 @@ public sealed record StageAdvancersViewModel(string Id, int Order, string Kind, 
 /// <param name="Place">Place in the Stage's tournament; null for a Backfill entry, an added bowler or a Survivor Stage.</param>
 /// <param name="BlockTotal">Survivor block total; null otherwise.</param>
 /// <param name="IsBackfill">The bowler took a vacant slot through the Backfill.</param>
-public sealed record AdvancerViewModel(string BowlerId, string BowlerName, int? Place, int? BlockTotal, bool IsBackfill);
+/// <param name="Advanced">The bowler advanced. False for a cut Survivor bowler or one who had already advanced.</param>
+/// <param name="AlreadyAdvancedFromOrder">The earlier Stage the bowler already advanced from; null otherwise.</param>
+public sealed record AdvancerViewModel(
+    string BowlerId, string BowlerName, int? Place, int? BlockTotal, bool IsBackfill, bool Advanced, int? AlreadyAdvancedFromOrder);
