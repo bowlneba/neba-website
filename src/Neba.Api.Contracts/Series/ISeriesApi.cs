@@ -4,6 +4,7 @@ using Neba.Api.Contracts.Series.EditSeries;
 using Neba.Api.Contracts.Series.EditSeriesLogo;
 using Neba.Api.Contracts.Series.GetSeries;
 using Neba.Api.Contracts.Series.GetSeriesAdvancement;
+using Neba.Api.Contracts.Series.GetSeriesAdvancers;
 using Neba.Api.Contracts.Series.ListSeries;
 using Neba.Api.Contracts.Series.ListSeriesFinales;
 using Neba.Api.Contracts.Series.ListStageResults;
@@ -57,6 +58,10 @@ public interface ISeriesApi
     /// <summary>Gets each Stage's status, output and markers, and the Version writes must send. Requires Series.EditSeries.</summary>
     [Get("/series/{seriesId}/advancement")]
     Task<IApiResponse<SeriesAdvancementResponse>> GetSeriesAdvancementAsync(string seriesId, CancellationToken cancellationToken = default);
+
+    /// <summary>Gets the bowlers who advanced out of each settled Stage. Public.</summary>
+    [Get("/series/{seriesId}/advancers")]
+    Task<IApiResponse<SeriesAdvancersResponse>> GetSeriesAdvancersAsync(string seriesId, CancellationToken cancellationToken = default);
 
     /// <summary>Recomputes from a Stage to the end. Requires Series.EditSeries.</summary>
     [Post("/series/{seriesId}/stages/{stageId}/recomputations")]

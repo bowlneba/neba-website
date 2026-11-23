@@ -54,6 +54,9 @@ internal sealed record ReadScenarioOptions
     /// <summary>How many Stages have a Completed tournament (1 to 3).</summary>
     public int CompletedStages { get; init; } = 3;
 
+    /// <summary>The Series' Finale. Null means the Series has none.</summary>
+    public SeriesFinaleDefinition? Finale { get; init; }
+
     /// <summary>Run the advancement for the Qualifier's tournament and save.</summary>
     public bool Advance { get; init; } = true;
 }
@@ -94,7 +97,7 @@ internal static class AdvancementReadSeed
             status: placementDone ? TournamentStatus.Completed : null,
             results: placementDone ? [.. allBowlerRows.Select(r => AdvancementReaderSeed.Result(r.Bowler, r.Place))] : null);
 
-        var series = await AdvancementReaderSeed.AddSeriesAsync(dbContext, season, qualifier, survivor, placement, ct);
+        var series = await AdvancementReaderSeed.AddSeriesAsync(dbContext, season, qualifier, survivor, placement, ct, finale: options.Finale);
         var squadId = survivor.Squads.Single().Id;
 
         var facts = AdvancementFactsFactory.Create(
