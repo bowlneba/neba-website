@@ -23,11 +23,6 @@ internal sealed class SeriesStageConfiguration
                 $"(status = {StageStatus.Computed.Value} AND computed_at_utc IS NOT NULL AND official_at_utc IS NULL) OR " +
                 $"(status = {StageStatus.Official.Value} AND computed_at_utc IS NOT NULL AND official_at_utc IS NOT NULL)");
 
-            // A Placement Stage is never official.
-            table.HasCheckConstraint(
-                "ck_series_stages_placement_never_official",
-                $"NOT (kind = {StageKindValues.Placement} AND status = {StageStatus.Official.Value})");
-
             table.HasCheckConstraint(
                 "ck_series_stages_slot_count_not_negative",
                 "slot_count IS NULL OR slot_count >= 0");

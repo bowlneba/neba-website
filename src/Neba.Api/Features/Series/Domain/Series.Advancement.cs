@@ -109,7 +109,7 @@ public sealed partial class Series
             return version.Errors;
         }
 
-        if (stage.Status == StageStatus.Official && stage.Kind != StageKind.Placement)
+        if (stage.Status == StageStatus.Official)
         {
             return AdvanceResult.None;
         }
@@ -133,13 +133,13 @@ public sealed partial class Series
         ArgumentNullException.ThrowIfNull(stage);
 
         var firstUnofficialEarlier = _stages
-            .Where(s => s.Order < stage.Order && s.Kind != StageKind.Placement && s.Status != StageStatus.Official)
+            .Where(s => s.Order < stage.Order && s.Status != StageStatus.Official)
             .OrderBy(s => s.Order)
             .Select(s => (int?)s.Order)
             .FirstOrDefault();
 
         return SeriesAdvancementRules.MakeOfficialBlocker(
-            stage.Kind, stage.Status, stage.IsStale,
+            stage.Status, stage.IsStale,
             awaitingBackfill: LastQualifyingStage?.Id == stage.Id && BackfillAsOf is null,
             firstUnofficialEarlier);
     }

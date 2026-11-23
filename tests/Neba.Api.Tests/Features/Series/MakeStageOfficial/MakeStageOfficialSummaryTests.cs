@@ -20,14 +20,14 @@ public sealed class MakeStageOfficialSummaryTests
         summary.Description.ShouldContain("Series.MakeStageOfficial");
     }
 
-    [Fact(DisplayName = "Constructor should register 204, 400, 401, 403, 404, 409 and 422 responses")]
+    [Fact(DisplayName = "Constructor should register 204, 400, 401, 403, 404 and 409 responses")]
     public void Constructor_ShouldRegisterExpectedResponses()
     {
         // Arrange & Act
         var summary = new MakeStageOfficialSummary();
 
         // Assert
-        summary.Responses.Keys.Order().ShouldBe([204, 400, 401, 403, 404, 409, 422]);
+        summary.Responses.Keys.Order().ShouldBe([204, 400, 401, 403, 404, 409]);
     }
 
     [Fact(DisplayName = "Constructor should give the summary an example request")]

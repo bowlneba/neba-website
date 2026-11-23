@@ -190,8 +190,8 @@ public sealed class SeriesStageConfigurationTests(AppDbContextFixture fixture)
         sqlState.ShouldBe("23514");
     }
 
-    [Fact(DisplayName = "The check constraint should reject an Official Placement Stage")]
-    public async Task PlacementCheck_ShouldReject_WhenPlacementStageIsOfficial()
+    [Fact(DisplayName = "The check constraints should accept an Official Placement Stage")]
+    public async Task StatusCheck_ShouldAccept_WhenPlacementStageIsOfficial()
     {
         // Arrange
         await SeriesAdvancementTestData.SeedAsync(fixture);
@@ -203,7 +203,7 @@ public sealed class SeriesStageConfigurationTests(AppDbContextFixture fixture)
                 "UPDATE app.series_stages SET status = 2, computed_at_utc = now(), official_at_utc = now() WHERE kind = 3"));
 
         // Assert
-        sqlState.ShouldBe("23514");
+        sqlState.ShouldBeNull();
     }
 
     [Fact(DisplayName = "The check constraint should reject a negative slot count")]

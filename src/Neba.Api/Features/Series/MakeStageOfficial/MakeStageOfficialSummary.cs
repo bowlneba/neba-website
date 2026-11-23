@@ -24,6 +24,5 @@ internal sealed class MakeStageOfficialSummary : Summary<MakeStageOfficialEndpoi
         Response(403, "The caller lacks Series.MakeStageOfficial.");
         Response(404, "Series or Stage not found.");
         Response(409, "The Version is stale, advancement is running, or the Stage is not ready (not computed, stale, an earlier Stage is not Official, or the Backfill has not run).");
-        Response(422, "The Stage is a Placement Stage, which never becomes Official.");
     }
 }

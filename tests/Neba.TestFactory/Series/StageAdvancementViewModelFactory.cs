@@ -70,7 +70,7 @@ public static class StageAdvancementViewModelFactory
             CanPickSquad: canPickSquad);
     }
 
-    /// <summary>Stages 1..count cycling Qualifying, Survivor, Placement. Computed implies a due time; a Placement Stage is never Official.</summary>
+    /// <summary>Stages 1..count cycling Qualifying, Survivor, Placement. A Placement Stage here is Pending or Computed.</summary>
     internal static IReadOnlyList<StageAdvancementViewModel> Bogus(int count, int? seed = null)
     {
         var faker = new Faker();

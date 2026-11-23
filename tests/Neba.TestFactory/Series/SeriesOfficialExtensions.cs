@@ -8,7 +8,7 @@ public static class SeriesOfficialExtensions
 {
     /// <summary>
     /// Marks Stages Official in order until one cannot be made Official (not computed, stale, an earlier Stage not Official,
-    /// or the last Qualifying Stage before the Backfill). Placement Stages are skipped. Stands in for a person reviewing each Stage.
+    /// or the last Qualifying Stage before the Backfill). Stands in for a person reviewing each Stage.
     /// </summary>
     public static AdvanceResult MakeReadyStagesOfficial(this SeriesAggregate series, DateTimeOffset now)
     {
@@ -16,7 +16,7 @@ public static class SeriesOfficialExtensions
 
         var official = new List<SeriesStageId>();
 
-        foreach (var stage in series.Stages.Where(s => s.Kind != StageKind.Placement).OrderBy(s => s.Order))
+        foreach (var stage in series.Stages.OrderBy(s => s.Order))
         {
             if (stage.Status == StageStatus.Official)
             {

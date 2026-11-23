@@ -162,7 +162,7 @@ public sealed class SeriesAdvancementWriteEndpointsTests(AppDbContextFixture fix
             new FakeTimeProvider(AdvancementRunHarness.Now),
             NullLogger<SeriesAdvancement>.Instance);
 
-    // Makes the Qualifying Stage Official, as the make-official job does once the grace period has passed.
+    // Makes every Stage that is ready Official, as a reviewer does one Stage at a time.
     private async Task MakeQualifyingStageOfficialAsync(WriteScenario scenario)
     {
         var result = await RunWithoutFactsAsync(
@@ -491,20 +491,6 @@ public sealed class SeriesAdvancementWriteEndpointsTests(AppDbContextFixture fix
         // Assert
         response.StatusCode.ShouldBe(HttpStatusCode.Conflict);
         (await VersionAsync(scenario.Series.Id)).ShouldBe(version);
-    }
-
-    [Fact(DisplayName = "PUT official returns 422 for the Placement Stage")]
-    public async Task MakeOfficial_ShouldReturn422_ForPlacementStage()
-    {
-        // Arrange
-        var scenario = await SeedAsync();
-        var version = await VersionAsync(scenario.Series.Id);
-
-        // Act
-        using var response = await MakeOfficialAsync(scenario.Id, scenario.StageId(3), TournamentDirectorToken(), version);
-
-        // Assert
-        response.StatusCode.ShouldBe(HttpStatusCode.UnprocessableEntity);
     }
 
     [Fact(DisplayName = "GET advancement returns 200 for a Tournament Director, who holds Series.MakeStageOfficial but not Series.EditSeries")]

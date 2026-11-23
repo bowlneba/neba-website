@@ -54,10 +54,11 @@ public sealed class SeriesAdvancementRailTests : IDisposable
         pill.ClassList.ShouldContain(pillClass);
     }
 
-    [Theory(DisplayName = "Should show a Placement Stage as Pending or Computed, never Official")]
+    [Theory(DisplayName = "Should show a Placement Stage's status, Official included")]
     [InlineData("Pending")]
     [InlineData("Computed")]
-    public void Status_ShouldNotShowOfficial_ForPlacementStage(string status)
+    [InlineData("Official")]
+    public void Status_ShouldShowStatus_ForPlacementStage(string status)
     {
         // Arrange
         var stages = new[]
@@ -72,7 +73,6 @@ public sealed class SeriesAdvancementRailTests : IDisposable
         // Assert
         var pill = card.QuerySelector("[data-testid='stage-status']")!;
         pill.TextContent.Trim().ShouldBe(status);
-        pill.ClassList.ShouldNotContain("series-pill--official");
     }
 
     [Fact(DisplayName = "Should colour each progress strip segment by status and title it with the Stage number")]

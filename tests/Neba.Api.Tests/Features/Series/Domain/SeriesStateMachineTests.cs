@@ -478,8 +478,8 @@ public sealed class SeriesStateMachineTests
         harness.Stage(2).Status.ShouldBe(StageStatus.Pending);
     }
 
-    [Fact(DisplayName = "MakeReadyOfficial should never make a Placement Stage Official")]
-    public void MakeReadyOfficial_ShouldNeverMakePlacementOfficial()
+    [Fact(DisplayName = "MakeReadyOfficial should make a ready Placement Stage Official too")]
+    public void MakeReadyOfficial_ShouldMakePlacementOfficial()
     {
         // Arrange
         var harness = AdvancementHarness.Create(StageKind.Qualifying, StageKind.Placement).Advanced();
@@ -489,9 +489,8 @@ public sealed class SeriesStateMachineTests
         var result = harness.MakeReadyOfficial(Now.AddDays(365));
 
         // Assert
-        result.OfficialStageIds.ShouldBe([harness.Stage(1).Id]);
-        placement.Status.ShouldBe(StageStatus.Computed);
-        harness.Series.MakeOfficialBlocker(placement).ShouldBe(SeriesAdvancementErrors.PlacementCannotBeOfficial);
+        result.OfficialStageIds.ShouldBe([harness.Stage(1).Id, placement.Id]);
+        placement.Status.ShouldBe(StageStatus.Official);
     }
 
     // ---- LastQualifyingStage ----

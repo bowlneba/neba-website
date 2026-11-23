@@ -76,8 +76,8 @@ public sealed class SeriesMakeOfficialTests
         result.FirstError.Type.ShouldBe(ErrorType.Conflict);
     }
 
-    [Fact(DisplayName = "MakeOfficial should return a Validation error for a Placement Stage")]
-    public void MakeOfficial_ShouldReturnValidation_WhenStageIsPlacement()
+    [Fact(DisplayName = "MakeOfficial should make a computed Placement Stage Official once the earlier Stages are Official")]
+    public void MakeOfficial_ShouldMakePlacementOfficial_WhenEarlierStagesAreOfficial()
     {
         // Arrange
         var harness = AdvancementHarness.Create(StageKind.Qualifying, StageKind.Placement).Advanced();
@@ -87,9 +87,8 @@ public sealed class SeriesMakeOfficialTests
         var result = harness.Series.MakeOfficial(harness.Stage(2).Id, harness.Series.Version, Now);
 
         // Assert
-        result.IsError.ShouldBeTrue();
-        result.FirstError.ShouldBe(SeriesAdvancementErrors.PlacementCannotBeOfficial);
-        result.FirstError.Type.ShouldBe(ErrorType.Validation);
+        result.IsError.ShouldBeFalse();
+        harness.Stage(2).Status.ShouldBe(StageStatus.Official);
     }
 
     [Fact(DisplayName = "MakeOfficial should return a Conflict for a stale Stage")]

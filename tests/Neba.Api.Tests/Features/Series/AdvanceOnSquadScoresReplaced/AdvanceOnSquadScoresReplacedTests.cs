@@ -176,7 +176,7 @@ public sealed class AdvanceOnSquadScoresReplacedTests(AppDbContextFixture fixtur
         survivor.IsStale.ShouldBeTrue();
         AdvancementJobSupport.OutcomesOf(survivor).ShouldBe(AdvancementJobSupport.OutcomesOf(AdvancementJobSupport.StageOf(before, 2)));
         AdvancementJobSupport.StageOf(stored, 1).IsStale.ShouldBeFalse();
-        AdvancementJobSupport.StageOf(stored, 3).Status.ShouldBe(StageStatus.Computed);
+        AdvancementJobSupport.StageOf(stored, 3).Status.ShouldBe(StageStatus.Official);
     }
 
 #nullable disable

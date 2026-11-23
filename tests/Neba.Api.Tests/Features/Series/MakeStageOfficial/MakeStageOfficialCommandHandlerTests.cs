@@ -101,23 +101,26 @@ public sealed class MakeStageOfficialCommandHandlerTests(AppDbContextFixture fix
         run.Saves.Saves.ShouldBe(0);
     }
 
-    [Fact(DisplayName = "HandleAsync should return the Placement Validation error for a Placement Stage")]
-    public async Task HandleAsync_ShouldReturnValidation_WhenStageIsPlacement()
+    [Fact(DisplayName = "HandleAsync should mark the Placement Stage Official once the earlier Stages are Official")]
+    public async Task HandleAsync_ShouldMarkPlacementOfficial_WhenEarlierStagesAreOfficial()
     {
         // Arrange
         var ct = TestContext.Current.CancellationToken;
         await _context.AdvanceAllAsync(ct);
+        for (var order = 1; order <= 2; order++)
+        {
+            var current = (await _context.StoredAsync(ct)).Version;
+            (await new MakeStageOfficialCommandHandler(_context.Run().Run).HandleAsync(Command(order, current), ct)).IsError.ShouldBeFalse();
+        }
+
         var version = (await _context.StoredAsync(ct)).Version;
-        var run = _context.Run(cache: SeriesCache.Untouched());
 
         // Act
-        var result = await new MakeStageOfficialCommandHandler(run.Run).HandleAsync(Command(3, version), ct);
+        var result = await new MakeStageOfficialCommandHandler(_context.Run().Run).HandleAsync(Command(3, version), ct);
 
         // Assert
-        result.IsError.ShouldBeTrue();
-        result.FirstError.ShouldBe(SeriesAdvancementErrors.PlacementCannotBeOfficial);
-        result.FirstError.Type.ShouldBe(ErrorType.Validation);
-        run.Saves.Saves.ShouldBe(0);
+        result.IsError.ShouldBeFalse();
+        (await _context.StoredAsync(ct)).Stages.Single(s => s.Order == 3).Status.ShouldBe(StageStatus.Official);
     }
 
     [Fact(DisplayName = "HandleAsync should return the Stage-not-computed Conflict for a Pending Stage")]

@@ -37,10 +37,6 @@ internal static class SeriesAdvancementErrors
             ? "This Stage is official. Recompute it from the Series page before changing it."
             : "This Stage has not been computed yet.");
 
-    public static readonly Error PlacementCannotBeOfficial = Error.Validation(
-        code: "Series.Official.StagePlacement",
-        description: "A Placement Stage never becomes official.");
-
     public static readonly Error OfficialStageNotComputed = Error.Conflict(
         code: "Series.Official.StageNotComputed",
         description: "This Stage has not been computed yet.");

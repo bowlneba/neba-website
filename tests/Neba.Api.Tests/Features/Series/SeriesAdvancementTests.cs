@@ -240,7 +240,7 @@ public sealed class SeriesAdvancementTests(AppDbContextFixture fixture)
         (await AdvanceQualifierAsync(scenario, script)).IsError.ShouldBeFalse();
         var official = _harness.CreateRun(FactsReaderDoubles.Untouched());
         (await RunWithoutFactsAsync(official, scenario, MakeOfficial())).Value.OfficialStageIds
-            .ShouldBe([scenario.Stage(1).Id, scenario.Stage(2).Id]);
+            .ShouldBe([scenario.Stage(1).Id, scenario.Stage(2).Id, scenario.Stage(3).Id]);
         var versionBefore = (await StoredAsync(scenario)).Version;
         var firstTwo = script.QualifierPlaces.Take(2).ToList();
         script.QualifierPlaces = [firstTwo[1], firstTwo[0], .. script.QualifierPlaces.Skip(2)];

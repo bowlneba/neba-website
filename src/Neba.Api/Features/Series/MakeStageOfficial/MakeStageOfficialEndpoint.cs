@@ -36,8 +36,7 @@ internal sealed class MakeStageOfficialEndpoint(Messaging.ICommandHandler<MakeSt
             .ProducesProblemDetails(StatusCodes.Status401Unauthorized)
             .ProducesProblemDetails(StatusCodes.Status403Forbidden)
             .ProducesProblemDetails(StatusCodes.Status404NotFound)
-            .ProducesProblemDetails(StatusCodes.Status409Conflict)
-            .ProducesProblemDetails(StatusCodes.Status422UnprocessableEntity));
+            .ProducesProblemDetails(StatusCodes.Status409Conflict));
     }
 
     public override async Task HandleAsync(MakeStageOfficialRequest req, CancellationToken ct)

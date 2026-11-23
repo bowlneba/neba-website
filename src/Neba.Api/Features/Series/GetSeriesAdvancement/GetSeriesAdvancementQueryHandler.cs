@@ -69,13 +69,13 @@ internal sealed class GetSeriesAdvancementQueryHandler(
                 .ToList();
 
             var firstUnofficialEarlier = ordered
-                .Where(s => s.Order < stage.Order && s.Kind != StageKind.Placement && s.Status != StageStatus.Official)
+                .Where(s => s.Order < stage.Order && s.Status != StageStatus.Official)
                 .Select(s => (int?)s.Order)
                 .FirstOrDefault();
 
             var canMakeOfficial = stage.Status != StageStatus.Official
                 && SeriesAdvancementRules.MakeOfficialBlocker(
-                    stage.Kind, stage.Status, stage.IsStale,
+                    stage.Status, stage.IsStale,
                     awaitingBackfill: isLastQualifying && rows.Header.BackfillAsOf is null,
                     firstUnofficialEarlier) is null;
 
