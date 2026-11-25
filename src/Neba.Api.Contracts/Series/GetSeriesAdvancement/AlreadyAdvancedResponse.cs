@@ -1,6 +1,6 @@
 namespace Neba.Api.Contracts.Series.GetSeriesAdvancement;
 
-/// <summary>A bowler who finished inside a Qualifying Stage's cut but had already advanced from an earlier Stage.</summary>
+/// <summary>A bowler who finished inside a Qualifying tournament's cut but had already advanced from an earlier tournament.</summary>
 public sealed record AlreadyAdvancedResponse
 {
     /// <summary>The bowler id.</summary>
@@ -9,12 +9,12 @@ public sealed record AlreadyAdvancedResponse
     /// <summary>The bowler name.</summary>
     public required string BowlerName { get; init; }
 
-    /// <summary>The place in this Stage's tournament.</summary>
+    /// <summary>The place in the Series tournament.</summary>
     public required int Place { get; init; }
 
-    /// <summary>The earlier Stage the bowler advanced from.</summary>
+    /// <summary>The earlier tournament the bowler advanced from.</summary>
     public required string EarlierStageId { get; init; }
 
-    /// <summary>The earlier Stage's order.</summary>
+    /// <summary>The earlier tournament's order.</summary>
     public required int EarlierStageOrder { get; init; }
 }

@@ -1,6 +1,6 @@
 namespace Neba.Api.Contracts.Series.ListStageResults;
 
-/// <summary>A result row of a Stage's tournament.</summary>
+/// <summary>A result row of the Series tournament.</summary>
 public sealed record StageResultSummaryResponse
 {
     /// <summary>The bowler id.</summary>

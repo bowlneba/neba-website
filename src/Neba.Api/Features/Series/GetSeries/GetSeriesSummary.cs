@@ -10,8 +10,8 @@ internal sealed class GetSeriesSummary : Summary<GetSeriesEndpoint>
 {
     public GetSeriesSummary()
     {
-        Summary = "Gets a Series and its Stage schedule.";
-        Description = "Retrieves a Series with its season, Finale, logo and ordered Stages, each linked to its tournament.";
+        Summary = "Gets a Series and its tournament schedule.";
+        Description = "Retrieves a Series with its season, Finale, logo and ordered tournaments, each linked to its tournament.";
 
         Response(200, "The Series detail.",
             contentType: MediaTypeNames.Application.Json,

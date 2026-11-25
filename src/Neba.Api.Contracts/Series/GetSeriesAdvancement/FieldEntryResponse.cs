@@ -9,13 +9,13 @@ public sealed record FieldEntryResponse
     /// <summary>The bowler name.</summary>
     public required string BowlerName { get; init; }
 
-    /// <summary>The Stage the bowler came from. Null for the Backfill.</summary>
+    /// <summary>The tournament the bowler came from. Null for the Bowler of the Year point list.</summary>
     public string? SourceStageId { get; init; }
 
     /// <summary>The place in the source tournament.</summary>
     public int? Place { get; init; }
 
-    /// <summary>The Backfill points. Null unless a Backfill entry.</summary>
+    /// <summary>The Bowler of the Year points. Null unless a Bowler of the Year point list entry.</summary>
     public int? BackfillPoints { get; init; }
 
     /// <summary>True when an override put the bowler in the field.</summary>

@@ -10,10 +10,10 @@ internal sealed class GetSeriesAdvancersSummary : Summary<GetSeriesAdvancersEndp
 {
     public GetSeriesAdvancersSummary()
     {
-        Summary = "Gets the bowlers who advanced out of each Stage of a Series.";
-        Description = "Public. Returns names only, with no status, override or version data. A Qualifying or Survivor Stage appears once it is Official. A Placement Stage appears once computed, when the Series has a Finale, and lists the finalists.";
+        Summary = "Gets the bowlers who advanced out of each tournament of a Series.";
+        Description = "Public. Returns names only, with no status, override or version data. A Qualifying or Survivor tournament appears once it is Official. A Placement tournament appears once Official and lists every position, marking the finalists when the Series has a Finale.";
 
-        Response(200, "The settled Stages and who advanced out of them. A Stage shows once it is Official.",
+        Response(200, "The settled tournaments and who advanced out of them. A tournament shows once it is Official.",
             contentType: MediaTypeNames.Application.Json,
             example: new SeriesAdvancersResponse
             {

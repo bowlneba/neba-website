@@ -1,6 +1,6 @@
 namespace Neba.Api.Contracts.Series.GetSeriesAdvancement;
 
-/// <summary>A field bowler's result at a Survivor Stage.</summary>
+/// <summary>A field bowler's result at a Survivor tournament.</summary>
 public sealed record SurvivorOutcomeResponse
 {
     /// <summary>The bowler id.</summary>

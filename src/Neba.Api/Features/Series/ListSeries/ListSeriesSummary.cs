@@ -12,7 +12,7 @@ internal sealed class ListSeriesSummary : Summary<ListSeriesEndpoint>
     public ListSeriesSummary()
     {
         Summary = "Lists every Series, newest season first.";
-        Description = "Lists every Series, newest season first, each with its next Stage (the first whose tournament hasn't ended).";
+        Description = "Lists every Series, newest season first, each with its next tournament (the first whose tournament hasn't ended).";
 
         Response(200, "The Series.",
             contentType: MediaTypeNames.Application.Json,

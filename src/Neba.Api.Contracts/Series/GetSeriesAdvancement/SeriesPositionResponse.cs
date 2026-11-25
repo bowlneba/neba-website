@@ -18,6 +18,6 @@ public sealed record SeriesPositionResponse
     /// <summary>True when the bowler is a finalist. Null when not known.</summary>
     public bool? IsFinalist { get; init; }
 
-    /// <summary>The place the bowler finished in the Placement Stage's tournament. Null when unplaced.</summary>
+    /// <summary>The place the bowler finished in the Series tournament. Null when unplaced.</summary>
     public int? TournamentPlace { get; init; }
 }

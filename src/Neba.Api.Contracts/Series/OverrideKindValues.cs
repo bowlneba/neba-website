@@ -1,7 +1,7 @@
 namespace Neba.Api.Contracts.Series;
 
 /// <summary>
-/// The SmartEnum values of a Stage Override kind, as commands send them. The API's OverrideKind and the website share these.
+/// The SmartEnum values of an override kind, as commands send them. The API's OverrideKind and the website share these.
 /// </summary>
 public static class OverrideKindValues
 {

@@ -11,7 +11,7 @@ internal sealed class GetSeriesAdvancementSummary : Summary<GetSeriesAdvancement
     public GetSeriesAdvancementSummary()
     {
         Summary = "Gets a Series' advancement.";
-        Description = "Returns each Stage's status, output and markers (including whether a person can mark it Official), the Backfill date, the target field size, the positions and the Version that writes must send. Kind, status and tournament status are names. Requires the Series.EditSeries or Series.MakeStageOfficial permission.";
+        Description = "Returns each tournament's status, output and markers (including whether a person can mark it Official), the Bowler of the Year point list date, the target field size, the positions and the Version that writes must send. Kind, status and tournament status are names. Requires the Series.EditSeries or Series.MakeStageOfficial permission.";
 
         Response(200, "The Series' advancement.",
             contentType: MediaTypeNames.Application.Json,

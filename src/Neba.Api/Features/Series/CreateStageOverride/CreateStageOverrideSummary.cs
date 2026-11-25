@@ -11,8 +11,8 @@ internal sealed class CreateStageOverrideSummary : Summary<CreateStageOverrideEn
 {
     public CreateStageOverrideSummary()
     {
-        Summary = "Adds a bowler to a Qualifying Stage or clears a slot.";
-        Description = "Kind 1 (Add) puts any bowler with a result row in the Stage's tournament in the field; the field may exceed the target. Kind 2 (Clear) vacates the slot the bowler holds, so the Backfill refills it, and bars the bowler from the Backfill. The Stage must be Computed. The Series recomputes before the response. Requires the Series.ManageAdvancement permission.";
+        Summary = "Adds a bowler to a Qualifying tournament or clears a slot.";
+        Description = "Kind 1 (Add) puts any bowler with a result row in the Series tournament in the field; the field may exceed the target. Kind 2 (Clear) vacates the slot the bowler holds, so the Bowler of the Year point list refills it, and bars the bowler from the Bowler of the Year point list. The tournament must be Computed. The Series recomputes before the response. Requires the Series.ManageAdvancement permission.";
 
         ExampleRequest = new CreateStageOverrideRequest
         {
@@ -38,8 +38,8 @@ internal sealed class CreateStageOverrideSummary : Summary<CreateStageOverrideEn
         Response(400, "The request is structurally invalid.");
         Response(401, "The caller is not authenticated.");
         Response(403, "The caller lacks Series.ManageAdvancement.");
-        Response(404, "Series or Stage not found.");
-        Response(409, "The Version is stale, advancement is running, the Stage is not Computed, the bowler is already in the field, or the bowler already has an override on this Stage.");
-        Response(422, "The Stage is not a Qualifying Stage, the bowler has no result row, or the bowler holds no filled slot.");
+        Response(404, "Series or tournament not found.");
+        Response(409, "The Version is stale, advancement is running, the tournament is not Computed, the bowler is already in the field, or the bowler already has an override on this tournament.");
+        Response(422, "The tournament is not a Qualifying tournament, the bowler has no result row, or the bowler holds no filled slot.");
     }
 }

@@ -8,8 +8,8 @@ internal sealed class PickStageSquadSummary : Summary<PickStageSquadEndpoint>
 {
     public PickStageSquadSummary()
     {
-        Summary = "Picks a Survivor Stage's squad.";
-        Description = "Sets the squad whose scores decide the Survivor Stage, then recomputes from that Stage before the response. Works in any Stage status. Requires the Series.EditSeries permission.";
+        Summary = "Picks a Survivor tournament's squad.";
+        Description = "Sets the squad whose scores decide the Survivor tournament, then recomputes from that tournament before the response. Works in any tournament status. Requires the Series.EditSeries permission.";
 
         ExampleRequest = new PickStageSquadRequest
         {
@@ -26,8 +26,8 @@ internal sealed class PickStageSquadSummary : Summary<PickStageSquadEndpoint>
         Response(400, "The request is structurally invalid.");
         Response(401, "The caller is not authenticated.");
         Response(403, "The caller lacks Series.EditSeries.");
-        Response(404, "Series or Stage not found.");
+        Response(404, "Series or tournament not found.");
         Response(409, "The Version is stale or advancement is running.");
-        Response(422, "The Stage is not a Survivor Stage, or the squad is not in its tournament.");
+        Response(422, "The tournament is not a Survivor tournament, or the squad is not in its tournament.");
     }
 }
