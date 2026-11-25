@@ -63,12 +63,9 @@ public sealed class TournamentSponsor
             return TournamentSponsorErrors.NegativeSponsorshipAmount;
         }
 
-        if (sponsorshipAmount > MaxSponsorshipAmount)
-        {
-            return TournamentSponsorErrors.SponsorshipAmountTooLarge;
-        }
-
-        return new TournamentSponsor
+        return sponsorshipAmount > MaxSponsorshipAmount
+            ? TournamentSponsorErrors.SponsorshipAmountTooLarge
+            : new TournamentSponsor
         {
             SponsorId = sponsorId,
             TitleSponsor = titleSponsor,
