@@ -1,6 +1,6 @@
 ---
 name: release-notes
-description: Generate user-facing GitHub release notes (markdown file) for the changes between main's HEAD and the current branch (the state that will merge into main). Asks for the new version number, derives a release title, groups changes by feature with PR references, and appends a Full Changelog compare link. For major and minor versions, infers the new user-facing features from the changes and works through them with the user before drafting, so the notes can serve as a reference for member communications. Usage: /release-notes [new-version]
+description: Generate user-facing GitHub release notes (markdown file) for the changes between main's HEAD and the current branch (the state that will merge into main). Asks for the new version number, derives a release title, groups changes by feature with PR references, and appends a Full Changelog compare link. For major and minor versions, infers the new user-facing features from the changes and works through them with the user before drafting, so the notes can serve as a reference for member communications. Not for PR descriptions (write-pr) or publishing the release. Usage: /release-notes [new-version]
 ---
 
 Generate release notes for a new release and write them to `release-notes.md` at the repo root, ready to paste into a GitHub release.
@@ -43,27 +43,9 @@ Skip a PR labeled `dependencies` (Dependabot bumps) when it only bumps dependenc
 
 For the remaining PRs, read the `body` in full — it's the primary source of what to write from (these repos write structured PR descriptions with Summary/What Changed sections). Use `git log <base>..<target> --stat` only as a cross-check that nothing substantive was missed (e.g. a merge commit with no PR body, a direct commit on the branch).
 
-### 3a. Infer the new features (major/minor only)
+### 3a-3b. Infer the features and talk them through (major/minor only)
 
-Do not stop at PR titles. A feature is something a member, bowler, or admin can now do that they could not do on the last release. Work it out from the evidence:
-
-- Read each PR body for its stated purpose.
-- Diff the user-facing surface against the previous tag: new or changed routable pages (`git diff <previous-release-tag>..<target> --stat -- 'src/Neba.Website*/**/*.razor'`), new endpoints, and new help docs under `docs/help/`.
-- Group PRs that build one capability (an API PR, a UI PR, and a fix-up PR are one feature).
-- Note who benefits: public visitors, members, bowlers, or admins and staff.
-
-Produce a candidate list: a short name, one line on what the user can do, the audience, and the PR numbers. Mark each as **headline** (worth announcing to members), **smaller improvement**, or **under the hood**. Flag anything you are unsure about, such as a feature that looks unfinished, admin-only, or behind a flag.
-
-### 3b. Talk it through with the user (major/minor only)
-
-Do not draft yet. Show the candidate list and ask the user, in a short back and forth:
-
-- Which items are headlines, and which should drop to smaller improvements or out of the notes?
-- Is the name and one-line description right in the words members use?
-- Did you miss a feature, or group two that should stand apart?
-- Is anything not ready to announce?
-
-Revise the list from their answers and show it again. Repeat until they say it is right. Then draft. Tell them they can keep editing after the draft too.
+Read `references/feature-driven-flow.md`. Work out what members, bowlers and admins can now do, build a candidate list of headline features, smaller improvements and under-the-hood items, and agree it with the user before you draft. Do not draft first.
 
 ### 4. Draft `release-notes.md`
 
@@ -103,40 +85,7 @@ Rules:
 
 ### 4a. Feature-driven structure (major/minor only)
 
-Use the agreed list from step 3b. The same rules as above apply (no H1, no intro sentence, PR numbers on every section, no deferred-items section, same compare link) except as changed here.
-
-```markdown
-### <Headline feature> (#<pr>[, #<pr>...])
-
-<Who it is for, then what they can do now, in one to three sentences. Use the words a member would use.>
-
-- <Concrete thing they can do>
-- <Concrete thing they can do>
-
-### <Headline feature 2> (#<pr>)
-
-...
-
-### Also in this release
-
-- **<Smaller improvement or fix>** (#<pr>) — <one line>
-
-### Under the hood
-
-- **<Item>** (#<pr>) — <what it does and why it matters, kept brief>
-
-**Full Changelog**: https://github.com/<owner>/<repo>/compare/<previous-release-tag>...<new-version>
-```
-
-Rules for this structure:
-- Headline features come first, in the order the user chose. Each gets its own `###` section, even if it is a single PR.
-- Write what the user can do ("Check whether a team is eligible before you enter"), not what the system does ("Added an eligibility evaluator").
-- Name the audience when it is not everyone (members, bowlers, tournament staff, admins).
-- Keep each headline short enough to lift into an email or post with no edits.
-- **Also in this release** holds smaller improvements and bug fixes in the standard bullet format. Omit the section if empty. **Under the hood** works as in the standard structure.
-- Do not mention a feature the user dropped or marked not ready.
-
-After drafting, show the user the headline sections and ask for edits before you finish step 6.
+Use the list agreed in step 3b and the template in `references/feature-driven-flow.md`: headline sections first, then **Also in this release**, then **Under the hood**. Show the headline sections to the user for edits before step 6.
 
 ### 5. Derive the release title
 
@@ -156,3 +105,11 @@ gh release create <new-version> --target main --title "<release title>" --notes-
 
 - Tell them to run it only after the PR merges (and, for a hotfix, after the deploy), then delete `release-notes.md` (it should not be committed)
 - Never run `gh release create` yourself. Publishing is the owner's step, and it creates the tag.
+
+## Gotchas
+
+- The file has no H1 and no intro sentence. The title goes only in the `--title` flag.
+- The range base is `origin/main`, not the last tag. The compare link base is the last tag.
+- A PR labeled `dependencies` can carry real work. Read its body before you skip it.
+- Never run `gh release create`. It creates the tag, so publishing is the owner's step.
+- Do not add a deferred-items section, and do not mention a feature the user dropped.
