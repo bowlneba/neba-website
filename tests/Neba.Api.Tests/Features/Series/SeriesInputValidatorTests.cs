@@ -34,7 +34,7 @@ public sealed class SeriesInputValidatorTests
         var result = await _stage.ValidateAsync(input, TestContext.Current.CancellationToken);
 
         // Assert
-        result.Errors.ShouldContain(e => e.ErrorCode == "SeriesStageInput.IdInvalidLength");
+        result.Errors.ShouldContain(e => e.ErrorCode == "SeriesStageInput.IdInvalidLength" && e.ErrorMessage == "Tournament ID must be a 26-character ULID.");
     }
 
     [Fact(DisplayName = "Stage validator should fail for an unknown kind")]
@@ -47,7 +47,7 @@ public sealed class SeriesInputValidatorTests
         var result = await _stage.ValidateAsync(input, TestContext.Current.CancellationToken);
 
         // Assert
-        result.Errors.ShouldContain(e => e.ErrorCode == "SeriesStageInput.KindInvalid");
+        result.Errors.ShouldContain(e => e.ErrorCode == "SeriesStageInput.KindInvalid" && e.ErrorMessage == "Tournament kind must be Qualifying, Survivor, or Placement.");
     }
 
     [Fact(DisplayName = "Stage validator should fail for a missing or short tournament id")]
@@ -60,7 +60,7 @@ public sealed class SeriesInputValidatorTests
         var result = await _stage.ValidateAsync(input, TestContext.Current.CancellationToken);
 
         // Assert
-        result.Errors.ShouldContain(e => e.ErrorCode == "SeriesStageInput.TournamentIdInvalid");
+        result.Errors.ShouldContain(e => e.ErrorCode == "SeriesStageInput.TournamentIdInvalid" && e.ErrorMessage == "Each row needs a tournament.");
     }
 
     [Theory(DisplayName = "Stage validator should fail when only one of squad date and start time is given")]

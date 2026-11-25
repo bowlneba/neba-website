@@ -216,7 +216,7 @@ public sealed class Permissions
     /// <summary>
     /// Permission to mark a reviewed Series Stage Official. Held by Admin, Webmaster, Manager and Tournament Director.
     /// </summary>
-    public static readonly Permissions MakeStageOfficial = new("Series.MakeStageOfficial", "Make Series Stage Official");
+    public static readonly Permissions MakeStageOfficial = new("Series.MakeStageOfficial", "Make Series Tournament Official");
 
     /// <summary>
     /// Permissions that let a caller read a Series' advancement: the editors and those who mark Stages Official.

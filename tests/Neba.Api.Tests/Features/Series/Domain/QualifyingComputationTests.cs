@@ -48,6 +48,26 @@ public sealed class QualifyingComputationTests
         result.OverrideEffects.ShouldBeEmpty();
     }
 
+    [Fact(DisplayName = "Compute should skip a result row with no real place (below 1)")]
+    public void Compute_ShouldSkipRow_WhenPlaceIsBelowOne()
+    {
+        // Arrange
+        var stage = SeriesStageFactory.Create(StageKind.Qualifying, 2);
+        var ids = AdvancementTestData.Ids(3);
+        var rows = new[]
+        {
+            StageResultRowFactory.Create(ids[0], 0), StageResultRowFactory.Create(ids[1], 1), StageResultRowFactory.Create(ids[2], 2),
+        };
+
+        // Act
+        var result = Compute(stage, rows);
+
+        // Assert
+        result.Entries.Select(e => e.BowlerId).ShouldBe([ids[1], ids[2]]);
+        result.SlotCount.ShouldBe(2);
+        result.Vacancies.ShouldBe(0);
+    }
+
     [Fact(DisplayName = "Compute should count every bowler tied at place N")]
     public void Compute_ShouldCountAllTiedAtN()
     {

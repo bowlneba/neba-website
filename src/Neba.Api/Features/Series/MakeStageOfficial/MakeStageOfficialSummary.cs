@@ -9,7 +9,7 @@ internal sealed class MakeStageOfficialSummary : Summary<MakeStageOfficialEndpoi
     public MakeStageOfficialSummary()
     {
         Summary = "Marks a reviewed tournament Official.";
-        Description = "Settles a Computed Qualifying or Survivor tournament so the public page shows who advanced. The tournament must not be stale, every earlier Qualifying and Survivor tournament must be Official, and the last Qualifying tournament needs the Bowler of the Year point list first. Marking an Official tournament again does nothing. Requires the Series.MakeStageOfficial permission.";
+        Description = "Settles a Computed Qualifying, Survivor or Placement tournament so the public page shows who advanced. The tournament must not be stale, every earlier tournament must be Official, and the last Qualifying tournament needs the Bowler of the Year point list first. Marking an Official tournament again does nothing. Requires the Series.MakeStageOfficial permission.";
 
         ExampleRequest = new MakeStageOfficialRequest
         {
