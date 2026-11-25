@@ -30,7 +30,13 @@ public sealed class EditTournamentSponsorAmountRequestValidatorTests
     [Fact(DisplayName = "Validate should succeed when the request is valid")]
     public void Validate_ShouldSucceed_WhenRequestIsValid()
     {
-        var result = _validator.Validate(CreateRequest());
+        // Arrange
+        var request = CreateRequest();
+
+        // Act
+        var result = _validator.Validate(request);
+
+        // Assert
 
         result.IsValid.ShouldBeTrue();
         result.Errors.ShouldBeEmpty();
@@ -40,7 +46,8 @@ public sealed class EditTournamentSponsorAmountRequestValidatorTests
     public void Validate_ShouldFail_WhenIdIsNull()
     {
 #nullable disable
-        var result = _validator.Validate(new EditTournamentSponsorAmountRequest
+        // Arrange
+        var request = new EditTournamentSponsorAmountRequest
         {
             Id = null,
             SponsorId = ValidSponsorId,
@@ -48,8 +55,13 @@ public sealed class EditTournamentSponsorAmountRequestValidatorTests
             {
                 SponsorshipAmount = 100m
             }
-        });
+        };
 #nullable enable
+
+        // Act
+        var result = _validator.Validate(request);
+
+        // Assert
 
         result.IsValid.ShouldBeFalse();
         result.Errors.ShouldContain(e =>
@@ -60,7 +72,13 @@ public sealed class EditTournamentSponsorAmountRequestValidatorTests
     [Fact(DisplayName = "Validate should fail with IdInvalidLength error when Id is not 26 characters")]
     public void Validate_ShouldFail_WhenIdIsNotCorrectLength()
     {
-        var result = _validator.Validate(CreateRequest(id: "SHORT"));
+        // Arrange
+        var request = CreateRequest(id: "SHORT");
+
+        // Act
+        var result = _validator.Validate(request);
+
+        // Assert
 
         result.IsValid.ShouldBeFalse();
         result.Errors.ShouldContain(e =>
@@ -72,7 +90,8 @@ public sealed class EditTournamentSponsorAmountRequestValidatorTests
     public void Validate_ShouldFail_WhenSponsorIdIsNull()
     {
 #nullable disable
-        var result = _validator.Validate(new EditTournamentSponsorAmountRequest
+        // Arrange
+        var request = new EditTournamentSponsorAmountRequest
         {
             Id = ValidId,
             SponsorId = null,
@@ -80,8 +99,13 @@ public sealed class EditTournamentSponsorAmountRequestValidatorTests
             {
                 SponsorshipAmount = 100m
             }
-        });
+        };
 #nullable enable
+
+        // Act
+        var result = _validator.Validate(request);
+
+        // Assert
 
         result.IsValid.ShouldBeFalse();
         result.Errors.ShouldContain(e =>
@@ -92,7 +116,13 @@ public sealed class EditTournamentSponsorAmountRequestValidatorTests
     [Fact(DisplayName = "Validate should fail with SponsorIdInvalidLength error when SponsorId is not 26 characters")]
     public void Validate_ShouldFail_WhenSponsorIdIsNotCorrectLength()
     {
-        var result = _validator.Validate(CreateRequest(sponsorId: "SHORT"));
+        // Arrange
+        var request = CreateRequest(sponsorId: "SHORT");
+
+        // Act
+        var result = _validator.Validate(request);
+
+        // Assert
 
         result.IsValid.ShouldBeFalse();
         result.Errors.ShouldContain(e =>
@@ -103,7 +133,13 @@ public sealed class EditTournamentSponsorAmountRequestValidatorTests
     [Fact(DisplayName = "Validate should fail with SponsorshipAmountInvalid error when SponsorshipAmount is negative")]
     public void Validate_ShouldFail_WhenSponsorshipAmountIsNegative()
     {
-        var result = _validator.Validate(CreateRequest(sponsorshipAmount: -1m));
+        // Arrange
+        var request = CreateRequest(sponsorshipAmount: -1m);
+
+        // Act
+        var result = _validator.Validate(request);
+
+        // Assert
 
         result.IsValid.ShouldBeFalse();
         result.Errors.ShouldContain(e =>
@@ -114,8 +150,37 @@ public sealed class EditTournamentSponsorAmountRequestValidatorTests
     [Fact(DisplayName = "Validate should succeed when SponsorshipAmount is zero")]
     public void Validate_ShouldSucceed_WhenSponsorshipAmountIsZero()
     {
-        var result = _validator.Validate(CreateRequest(sponsorshipAmount: 0m));
+        // Arrange
+        var request = CreateRequest(sponsorshipAmount: 0m);
+
+        // Act
+        var result = _validator.Validate(request);
+
+        // Assert
 
         result.IsValid.ShouldBeTrue();
+    }
+
+    [Fact(DisplayName = "Validate should fail with SponsorRequired error when Sponsor is null")]
+    public void Validate_ShouldFail_WhenSponsorIsNull()
+    {
+#nullable disable
+        // Arrange
+        var request = new EditTournamentSponsorAmountRequest
+        {
+            Id = ValidId,
+            SponsorId = ValidSponsorId,
+            Sponsor = null
+        };
+#nullable enable
+
+        // Act
+        var result = _validator.Validate(request);
+
+        // Assert
+        result.IsValid.ShouldBeFalse();
+        result.Errors.ShouldContain(e =>
+            e.PropertyName == "Sponsor"
+            && e.ErrorCode == "EditTournamentSponsorAmountRequest.SponsorRequired");
     }
 }

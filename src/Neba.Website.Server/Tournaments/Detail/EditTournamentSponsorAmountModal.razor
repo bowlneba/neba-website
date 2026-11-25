@@ -56,7 +56,6 @@
 
     /// <summary>
     /// Performs the actual "edit sponsor amount" API call, given the sponsor's id and the new input.
-    /// Kept feature-agnostic so this component has no knowledge of the API it's talking to.
     /// </summary>
     [Parameter, EditorRequired]
     public Func<string, EditTournamentSponsorAmountInput, CancellationToken, Task<ErrorOr<Success>>> OnSubmitRequestedAsync { get; set; } = default!;

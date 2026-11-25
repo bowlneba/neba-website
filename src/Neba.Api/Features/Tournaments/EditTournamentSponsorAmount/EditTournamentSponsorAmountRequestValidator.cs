@@ -19,8 +19,12 @@ internal sealed class EditTournamentSponsorAmountRequestValidator
             .NotEmpty().WithErrorCode("EditTournamentSponsorAmountRequest.SponsorIdRequired").WithMessage("Sponsor ID is required.")
             .Length(26).WithErrorCode("EditTournamentSponsorAmountRequest.SponsorIdInvalidLength").WithMessage("Sponsor ID must be a 26-character ULID.");
 
+        RuleFor(r => r.Sponsor)
+            .NotNull().WithErrorCode("EditTournamentSponsorAmountRequest.SponsorRequired").WithMessage("Sponsor is required.");
+
         RuleFor(r => r.Sponsor.SponsorshipAmount)
             .GreaterThanOrEqualTo(0)
+            .When(r => r.Sponsor is not null)
             .WithErrorCode("EditTournamentSponsorAmountRequest.SponsorshipAmountInvalid")
             .WithMessage("Sponsorship amount must be zero or greater.");
     }

@@ -37,7 +37,8 @@ internal sealed class EditTournamentSponsorAmountEndpoint(Messaging.ICommandHand
             .ProducesProblemDetails(StatusCodes.Status401Unauthorized)
             .ProducesProblemDetails(StatusCodes.Status403Forbidden)
             .ProducesProblemDetails(StatusCodes.Status404NotFound)
-            .ProducesProblemDetails(StatusCodes.Status409Conflict));
+            .ProducesProblemDetails(StatusCodes.Status409Conflict)
+            .ProducesProblemDetails(StatusCodes.Status422UnprocessableEntity));
     }
 
     public override async Task HandleAsync(EditTournamentSponsorAmountRequest req, CancellationToken ct)

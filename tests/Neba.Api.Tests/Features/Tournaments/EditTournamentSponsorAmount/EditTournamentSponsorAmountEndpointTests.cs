@@ -128,9 +128,12 @@ public sealed class EditTournamentSponsorAmountEndpointTests
         var commandHandlerMock = new Mock<NebaMessaging.ICommandHandler<EditTournamentSponsorAmountCommand, Success>>(MockBehavior.Strict);
         var endpoint = Factory.Create<EditTournamentSponsorAmountEndpoint>(commandHandlerMock.Object);
 
+        // Act
+        var definition = endpoint.Definition;
+
         // Assert
-        endpoint.Definition.Verbs.ShouldContain("PUT");
-        endpoint.Definition.Routes.ShouldContain(r => r.Contains("tournaments"), "should be under the /tournaments path");
-        endpoint.Definition.AnonymousVerbs.ShouldBeNull();
+        definition.Verbs.ShouldContain("PUT");
+        definition.Routes.ShouldContain(r => r.Contains("tournaments"), "should be under the /tournaments path");
+        definition.AnonymousVerbs.ShouldBeNull();
     }
 }

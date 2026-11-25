@@ -6,6 +6,7 @@ const MOCK_TOURNAMENT_OIL_REVEAL_PENDING_ID = '01JX0000000000000000000030';
 const MOCK_TOURNAMENT_OIL_REVEALED_ID = '01JX0000000000000000000031';
 const MOCK_TOURNAMENT_OIL_REVEAL_MGMT_ID = '01JX0000000000000000000032';
 const MOCK_TOURNAMENT_SPONSOR_MGMT_ID = '01JX0000000000000000000040';
+const MOCK_ACME_SPONSOR_ID = '01JX0000000000000000000101';
 const MOCK_TOURNAMENT_STATUS_ACTIONS_ID = '01JX0000000000000000000050';
 const MOCK_TOURNAMENT_TRUNCATE_ACTIONS_ID = '01JX0000000000000000000051';
 const MOCK_TOURNAMENT_ADDED_MONEY_UPCOMING_ID = '01JX0000000000000000000060';
@@ -92,6 +93,9 @@ test.describe('Tournament Detail — manage sponsors (authorized)', () => {
     await page.request.post(
       `http://localhost:5151/__mock/reset?path=/tournaments/${MOCK_TOURNAMENT_SPONSOR_MGMT_ID}/sponsors`
     );
+    await page.request.post(
+      `http://localhost:5151/__mock/reset?path=/tournaments/${MOCK_TOURNAMENT_SPONSOR_MGMT_ID}/sponsors/${MOCK_ACME_SPONSOR_ID}`
+    );
   });
 
   test('shows the Manage Sponsors section with an empty state for an authorized viewer', async ({ page }) => {
@@ -121,6 +125,37 @@ test.describe('Tournament Detail — manage sponsors (authorized)', () => {
     await expect(row).toBeVisible();
     await expect(row).toContainText('Title Sponsor');
     await expect(row).toContainText('$750');
+  });
+
+  test('edits a sponsor\'s added money via the Edit Added Money modal', async ({ page }) => {
+    await page.goto(`/tournaments/${MOCK_TOURNAMENT_SPONSOR_MGMT_ID}`);
+    await page.waitForSelector('.td-hero');
+
+    const row = page.locator('.mts-row', { hasText: 'Acme Bowling Supply' });
+    await row.getByRole('button', { name: 'Edit added money for Acme Bowling Supply' }).click();
+    await expect(page.locator('.neba-modal-backdrop')).toBeVisible();
+
+    await page.locator('#sponsor-edit-amount').fill('1200');
+    await page.locator('.mts-modal-actions button.neba-btn-primary', { hasText: 'Save' }).click();
+
+    await expect(page.locator('.neba-toast')).toContainText('Added Money Updated');
+    await expect(row).toContainText('$1,200');
+  });
+
+  test('shows an error alert and keeps the modal open when editing a sponsor\'s added money fails', async ({ page }) => {
+    await page.request.post(
+      `http://localhost:5151/__mock/fail?path=/tournaments/${MOCK_TOURNAMENT_SPONSOR_MGMT_ID}/sponsors/${MOCK_ACME_SPONSOR_ID}&status=409`
+    );
+
+    await page.goto(`/tournaments/${MOCK_TOURNAMENT_SPONSOR_MGMT_ID}`);
+    await page.waitForSelector('.td-hero');
+
+    await page.getByRole('button', { name: 'Edit added money for Acme Bowling Supply' }).click();
+    await page.locator('#sponsor-edit-amount').fill('300');
+    await page.locator('.mts-modal-actions button.neba-btn-primary', { hasText: 'Save' }).click();
+
+    await expect(page.locator('.neba-alert-title')).toContainText("Couldn't Update Amount");
+    await expect(page.locator('.neba-modal-backdrop')).toBeVisible();
   });
 
   test('removes a sponsor after confirming', async ({ page }) => {

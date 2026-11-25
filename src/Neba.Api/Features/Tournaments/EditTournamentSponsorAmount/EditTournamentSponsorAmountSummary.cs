@@ -15,5 +15,6 @@ internal sealed class EditTournamentSponsorAmountSummary : Summary<EditTournamen
         Response(403, "Authenticated user does not have the Tournaments.ManageSponsors permission.");
         Response(404, "Tournament was not found.");
         Response(409, "The specified sponsor is not attached to this tournament.");
+        Response(422, "The sponsorship amount is not valid.");
     }
 }
