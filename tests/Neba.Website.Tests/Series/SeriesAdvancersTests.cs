@@ -60,6 +60,58 @@ public sealed class SeriesAdvancersTests : IDisposable
         cut.Markup.ShouldNotContain("Computed");
     }
 
+    [Fact(DisplayName = "Should give the Qualifying table the phone layout class only when it shows the point list, and always give it to the Placement table")]
+    public void Advancers_ShouldUsePhoneTableClass_WhenTableHasMoreThanThreeColumns()
+    {
+        // Arrange
+        _host.SetupDetailFor(SeriesAdvancementResponseFactory.Create(stages:
+        [
+            StageAdvancementResponseFactory.Create(stageId: "q1", order: 1),
+            StageAdvancementResponseFactory.Create(stageId: "q2", order: 2),
+            StageAdvancementResponseFactory.Create(stageId: "p1", order: 3, kind: "Placement"),
+        ]));
+        _host.SetupAdvancers(SeriesAdvancersResponseFactory.Create(
+        [
+            StageAdvancersResponseFactory.Create("q1", 1, "Qualifying",
+            [
+                AdvancerResponseFactory.Create("b1", "Dave Smith", place: 1),
+                AdvancerResponseFactory.Create("b2", "Pat Plain", place: null, isBackfill: true, backfillPoints: 410),
+            ]),
+            StageAdvancersResponseFactory.Create("q2", 2, "Qualifying",
+                [AdvancerResponseFactory.Create("b3", "Mia Alpha", place: 1)]),
+            StageAdvancersResponseFactory.Create("p1", 3, "Placement",
+                [AdvancerResponseFactory.Create("b4", "Lee Park", place: 2, position: 1, bowled: true)]),
+        ]));
+
+        // Act
+        var cut = _host.Render();
+
+        // Assert
+        var tables = cut.FindAll("[data-testid='series-stage-results'] table");
+        tables.Count.ShouldBe(3);
+        tables[0].ClassList.ShouldContain("neba-data-table");
+        tables[1].ClassList.ShouldNotContain("neba-data-table");
+        tables[2].ClassList.ShouldContain("neba-data-table");
+    }
+
+    [Fact(DisplayName = "Should group the tournaments by kind, one headed group for each kind present")]
+    public void Advancers_ShouldGroupStagesByKind()
+    {
+        // Arrange
+        SetupPage();
+
+        // Act
+        var cut = _host.Render();
+
+        // Assert
+        var groups = cut.FindAll("[data-testid='series-stage-group']");
+        groups.Count.ShouldBe(2);
+        groups[0].QuerySelector("h2")!.TextContent.ShouldContain(SeriesDisplay.GroupHeading("Qualifying"));
+        groups[1].QuerySelector("h2")!.TextContent.ShouldContain(SeriesDisplay.GroupHeading("Survivor"));
+        groups[0].QuerySelectorAll("[data-testid='series-stage']").Length.ShouldBe(1);
+        groups[1].QuerySelectorAll("[data-testid='series-stage']").Length.ShouldBe(1);
+    }
+
     [Fact(DisplayName = "Should name a Stage by its place in the season: the 2nd tournament, not Stage 2")]
     public void Advancers_ShouldNameStageByTournamentOrdinal()
     {

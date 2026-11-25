@@ -71,7 +71,7 @@
                 @if (Model.LogoUrl is not null)
                 {
                     <div class="series-editor__logo-current">
-                        <SeriesLogoTile LogoUrl="@Model.LogoUrl" Name="@Model.Name" Size="SeriesLogoTile.Large" />
+                        <SeriesLogoTile LogoUrl="@Model.LogoUrl" Name="@Model.Name" Size="@SeriesLogoTile.Large" />
                         <button type="button" class="neba-btn neba-btn-secondary" @onclick="RemoveLogo">Remove logo</button>
                     </div>
                 }

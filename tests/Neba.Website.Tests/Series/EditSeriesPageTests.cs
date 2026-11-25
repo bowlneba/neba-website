@@ -197,6 +197,19 @@ public sealed class EditSeriesPageTests : IDisposable
         cut.FindAll("[data-testid='stage-remove-cancelled']").Count.ShouldBe(expected ? 1 : 0);
     }
 
+    [Fact(DisplayName = "The page should explain that the tournaments go in order and each has a role")]
+    public async Task Render_ShouldShowTournamentOrderCopy()
+    {
+        // Arrange
+        SetupDetail(isLocked: false);
+
+        // Act
+        var cut = await RenderAsync();
+
+        // Assert
+        cut.Find(".page-title-inner p").TextContent.ShouldBe("Set the tournaments in order. Each one has a role in the Series.");
+    }
+
     [Fact(DisplayName = "A Stage missing from the advancement response should not be removable")]
     public async Task Locked_ShouldNotMarkRemovable_WhenStageMissingFromAdvancement()
     {

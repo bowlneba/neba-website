@@ -191,7 +191,7 @@ else
                 var summary = SeriesDisplay.PlacementSummary(Positions.Count, hasFinalists);
                 <p class="series-output__summary" data-testid="stage-placement-summary"><strong>@summary.Lead</strong>@summary.Detail</p>
                 <div class="series-output__scroll">
-                    <table class="@(hasFinalists ? "neba-table neba-data-table" : "neba-table")" aria-label="Placement positions" data-testid="stage-positions">
+                    <table class="neba-table neba-data-table" aria-label="Placement positions" data-testid="stage-positions">
                         <thead>
                             <tr>
                                 <th scope="col">Position</th>

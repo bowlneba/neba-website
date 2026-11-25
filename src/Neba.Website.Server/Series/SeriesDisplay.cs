@@ -185,9 +185,9 @@ internal static class SeriesDisplay
             _ => "Ranked by tournament position",
         };
 
-    /// <summary>"1 tournament needs changes…" / "2 tournaments need changes…" for the editor banner.</summary>
+    /// <summary>"Changes are still needed in 1 tournament…" / "…in 2 tournaments…" for the editor banner.</summary>
     public static string RowsNeedChanges(int count)
-        => "tournament".ToQuantity(count, formatProvider: DisplayCulture.English) + (count == 1 ? " needs" : " need") + " changes before this Series can be saved.";
+        => "Changes are still needed in " + "tournament".ToQuantity(count, formatProvider: DisplayCulture.English) + " before this Series can be saved.";
 
     /// <summary>Two initials for a logo-less tile: "2025 Vincent Hall Memorial Series" -> "VH".</summary>
     public static string Initials(string name)
@@ -457,8 +457,10 @@ internal static class SeriesDisplay
     /// <summary>"The 3rd and 4th tournaments are official. Recomputing resets them to Computed."</summary>
     public static string OfficialResetMessage(IReadOnlyList<int> orders)
     {
+        // Humanizer pluralizes the noun. It has no helper for "is/are" or "it/them", so those stay as a choice on `one`.
         var one = orders.Count == 1;
-        return "The " + StageWordList(orders) + (one ? " tournament is" : " tournaments are") + " official. Recomputing resets " + (one ? "it" : "them") + " to Computed.";
+        return "The " + StageWordList(orders) + " " + "tournament".ToQuantity(orders.Count, ShowQuantityAs.None)
+            + (one ? " is" : " are") + " official. Recomputing resets " + (one ? "it" : "them") + " to Computed.";
     }
 
     /// <summary>The toast after Pick squad (the Stage may stay Pending, so it says only that the squad is saved).</summary>

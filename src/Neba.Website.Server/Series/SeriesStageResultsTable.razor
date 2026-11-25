@@ -7,7 +7,7 @@ else if (Stage.Kind == StageKinds.Qualifying)
     var showPoints = Stage.Advancers.Any(a => a.BackfillPoints is not null);
 
     <div class="series-results__scroll">
-        <table class="neba-table" aria-label="@SeriesDisplay.ResultsTableLabel(Stage.Kind, Stage.Order)">
+        <table class="@(showPoints ? "neba-table neba-data-table" : "neba-table")" aria-label="@SeriesDisplay.ResultsTableLabel(Stage.Kind, Stage.Order)">
             <thead>
                 <tr>
                     <th scope="col">Place</th>
@@ -70,7 +70,7 @@ else
     var cutDrawn = false;
 
     <div class="series-results__scroll">
-        <table class="neba-table" aria-label="@SeriesDisplay.ResultsTableLabel(Stage.Kind, Stage.Order)">
+        <table class="neba-table neba-data-table" aria-label="@SeriesDisplay.ResultsTableLabel(Stage.Kind, Stage.Order)">
             <thead>
                 <tr>
                     <th scope="col">Position</th>

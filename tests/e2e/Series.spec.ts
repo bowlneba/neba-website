@@ -182,6 +182,7 @@ test.describe('Series (admin)', () => {
   test('creates a Series from Qualifying, Survivor and Placement rows', async ({ page }) => {
     await page.goto('/series/new');
     await page.waitForSelector('#series-name');
+    await expect(page.getByText('Set the tournaments in order. Each one has a role in the Series.')).toBeVisible();
 
     await page.locator('#series-name').fill('E2E Series');
 
@@ -226,7 +227,7 @@ test.describe('Series (admin)', () => {
     const rows = page.locator('li.series-grid__row');
     await expect(rows.nth(1).locator('.series-grid__error')).toContainText('This Stage must follow the previous Stage by date.');
     await expect(rows.nth(0).locator('.series-grid__error')).toHaveCount(0);
-    await expect(page.getByText('1 tournament needs changes before this Series can be saved.')).toBeVisible();
+    await expect(page.getByText('Changes are still needed in 1 tournament before this Series can be saved.')).toBeVisible();
     await expect(page).toHaveURL(/\/series\/new$/);
   });
 

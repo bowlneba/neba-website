@@ -142,7 +142,7 @@ public sealed class SeriesAdvancementOutputTests : IDisposable
             entries: [FieldEntryResponseFactory.Create(bowlerId: "b1", bowlerName: "Josh Palrao", sourceStageId: "q2", place: 2)],
             alreadyAdvanced:
             [
-                new AlreadyAdvancedResponse { BowlerId = "b2", BowlerName = "Kyle Wilks", Place = 2, EarlierStageId = "q1", EarlierStageOrder = 1 },
+                AlreadyAdvancedResponseFactory.Create("b2", "Kyle Wilks", 2, "q1", 1),
             ]);
 
         // Act
@@ -382,7 +382,7 @@ public sealed class SeriesAdvancementOutputTests : IDisposable
         rows[1].ClassList.ShouldContain("series-output__cut");
     }
 
-    [Fact(DisplayName = "Should omit the Finalist column and the phone table class when no position has a Finalist flag")]
+    [Fact(DisplayName = "Should omit the Finalist column but keep the phone table class when no position has a Finalist flag")]
     public async Task Placement_ShouldOmitFinalistColumn_WhenNoFinale()
     {
         // Arrange
@@ -401,7 +401,7 @@ public sealed class SeriesAdvancementOutputTests : IDisposable
         output.QuerySelector("[data-testid='stage-placement-summary']")!.TextContent
             .ShouldBe("2 bowlers ranked. These positions are final.");
         var table = output.QuerySelector("[data-testid='stage-positions']")!;
-        table.ClassList.ShouldNotContain("neba-data-table");
+        table.ClassList.ShouldContain("neba-data-table");
         table.QuerySelectorAll("thead th").Select(th => th.TextContent).ShouldBe(["Position", "Bowler", "Tournament place", "Bowled"]);
         Cells(table.QuerySelectorAll("tbody tr")[0]).ShouldBe(["1st", "Alice Adams", "—", "Yes"]);
         table.QuerySelectorAll("tbody tr").ShouldAllBe(row => !row.ClassList.Contains("series-output__in") && !row.ClassList.Contains("series-output__out"));
