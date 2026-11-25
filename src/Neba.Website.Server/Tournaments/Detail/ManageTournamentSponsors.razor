@@ -3,6 +3,7 @@
 @using Neba.Api.Contracts
 @using Neba.Api.Contracts.Sponsors
 @using Neba.Api.Contracts.Tournaments.AddTournamentSponsor
+@using Neba.Api.Contracts.Tournaments.EditTournamentSponsorAmount
 @using Neba.Website.Server.Sponsors
 
 @inject ToastService ToastService
@@ -51,7 +52,7 @@
                             }
                         </div>
                         <div class="mts-row__meta">
-                            @sponsor.SponsorshipAmount.ToString("C0", CultureInfo.GetCultureInfo("en-US")) added money
+                            <button type="button" class="mts-row__amount" aria-label="@("Edit added money for " + sponsor.Name)" @onclick="() => RequestEditAmount(sponsor)">@sponsor.SponsorshipAmount.ToString("C0", CultureInfo.GetCultureInfo("en-US"))</button> added money
                         </div>
                     </div>
                     <button type="button" class="mts-row__remove" aria-label="@("Remove " + sponsor.Name)" @onclick="() => RequestRemove(sponsor)">Remove</button>
@@ -66,6 +67,12 @@
                             OnAdded="HandleAddedAsync"
                             OnClose="() => _isAddModalOpen = false"
                             OnSubmitRequestedAsync="OnAddSponsorRequestedAsync" />
+
+<EditTournamentSponsorAmountModal IsOpen="_editTarget is not null"
+                                   Sponsor="_editTarget"
+                                   OnSaved="HandleAmountSavedAsync"
+                                   OnClose="() => _editTarget = null"
+                                   OnSubmitRequestedAsync="OnEditSponsorAmountRequestedAsync" />
 
 <ConfirmActionModal IsOpen="_removeTarget is not null"
                      Title="Remove sponsor?"
@@ -102,10 +109,17 @@
     [Parameter, EditorRequired]
     public Func<string, CancellationToken, Task<ErrorOr<Success>>> OnRemoveSponsorRequestedAsync { get; set; } = default!;
 
+    /// <summary>
+    /// Performs the actual "edit sponsor amount" API call, given the sponsor's id and the new input.
+    /// </summary>
+    [Parameter, EditorRequired]
+    public Func<string, EditTournamentSponsorAmountInput, CancellationToken, Task<ErrorOr<Success>>> OnEditSponsorAmountRequestedAsync { get; set; } = default!;
+
     private bool _isAddModalOpen;
     private bool _isRemoving;
     private string? _errorMessage;
     private TournamentDetailSponsorViewModel? _removeTarget;
+    private TournamentDetailSponsorViewModel? _editTarget;
     private IReadOnlyCollection<SponsorSummaryViewModel> _availableSponsors = [];
 
     private string RemoveMessage =>
@@ -139,6 +153,19 @@
         _isAddModalOpen = false;
         await OnChanged.InvokeAsync();
         ToastService.Show("Sponsor Added", "The sponsor was added to this tournament.", NotifySeverity.Success);
+    }
+
+    private void RequestEditAmount(TournamentDetailSponsorViewModel sponsor)
+    {
+        _errorMessage = null;
+        _editTarget = sponsor;
+    }
+
+    private async Task HandleAmountSavedAsync()
+    {
+        _editTarget = null;
+        await OnChanged.InvokeAsync();
+        ToastService.Show("Added Money Updated", "The sponsor's added money was updated.", NotifySeverity.Success);
     }
 
     private void RequestRemove(TournamentDetailSponsorViewModel sponsor)
