@@ -151,7 +151,7 @@ public sealed class ManageTournamentSponsorsTests : IDisposable
 
         // Act
         cut.Find(".mts-row__amount").Click();
-        cut.Find("#sponsor-edit-amount").Change("1250");
+        cut.Find("#sponsor-edit-amount").Input("1250");
         cut.Find(".mts-modal-actions .neba-btn-primary").Click();
 
         // Assert

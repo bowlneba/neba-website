@@ -980,7 +980,7 @@ tournamentType: TournamentType.Doubles, logoUrl: null));
 
         var cut = _ctx.Render<TournamentDetail>(p => p.Add(x => x.Id, TournamentDetailResponseFactory.ValidId));
         await cut.Find("button[aria-label='Edit added money for Acme Corp']").ClickAsync();
-        await cut.Find("#sponsor-edit-amount").ChangeAsync(new Microsoft.AspNetCore.Components.ChangeEventArgs { Value = "750" });
+        await cut.Find("#sponsor-edit-amount").InputAsync(new Microsoft.AspNetCore.Components.ChangeEventArgs { Value = "750" });
 
         // Act
         await cut.Find(".mts-modal-actions button.neba-btn-primary").ClickAsync();
