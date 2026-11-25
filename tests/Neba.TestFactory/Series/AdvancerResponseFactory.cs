@@ -16,7 +16,11 @@ public static class AdvancerResponseFactory
         int? blockTotal = null,
         bool? isBackfill = null,
         bool? advanced = null,
-        int? alreadyAdvancedFromOrder = null)
+        int? alreadyAdvancedFromOrder = null,
+        int? backfillPoints = null,
+        int? position = null,
+        bool? bowled = null,
+        bool? isFinalist = null)
         => new()
         {
             BowlerId = bowlerId ?? ValidBowlerId,
@@ -26,6 +30,10 @@ public static class AdvancerResponseFactory
             IsBackfill = isBackfill ?? false,
             Advanced = advanced ?? true,
             AlreadyAdvancedFromOrder = alreadyAdvancedFromOrder,
+            BackfillPoints = backfillPoints,
+            Position = position,
+            Bowled = bowled,
+            IsFinalist = isFinalist,
         };
 
     internal static IReadOnlyList<AdvancerResponse> Bogus(int count, Faker faker)

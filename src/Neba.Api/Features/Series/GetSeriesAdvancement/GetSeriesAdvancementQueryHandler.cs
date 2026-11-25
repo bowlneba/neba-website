@@ -30,11 +30,13 @@ internal sealed class GetSeriesAdvancementQueryHandler(
             // The Backfill belongs to the last Qualifying Stage.
             var entries = rows.FieldEntries
                 .Where(e => e.SourceStageId == stage.StageId || (isLastQualifying && e.SourceStageId is null))
+                .OrderBy(e => e.Place ?? int.MaxValue)
+                .ThenByDescending(e => e.BackfillPoints ?? 0)
+                .ThenBy(e => e.BowlerName.LastName, StringComparer.OrdinalIgnoreCase)
+                .ThenBy(e => e.BowlerName.FirstName, StringComparer.OrdinalIgnoreCase)
+                .ThenBy(e => e.BowlerId.Value)
                 .Select(e => new FieldEntryDto(
                     e.BowlerId, e.BowlerName.ToDisplayName(), e.SourceStageId, e.Place, e.BackfillPoints, e.ViaOverride))
-                .OrderBy(e => e.Place ?? int.MaxValue)
-                .ThenBy(e => e.BowlerName, StringComparer.Ordinal)
-                .ThenBy(e => e.BowlerId.Value)
                 .ToList();
 
             int? vacant = stage.SlotCount is { } slots

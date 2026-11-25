@@ -65,6 +65,10 @@ internal sealed class GetSeriesAdvancersEndpoint(
                     IsBackfill = a.IsBackfill,
                     Advanced = a.Advanced,
                     AlreadyAdvancedFromOrder = a.AlreadyAdvancedFromOrder,
+                    BackfillPoints = a.BackfillPoints,
+                    Position = a.Position,
+                    Bowled = a.Bowled,
+                    IsFinalist = a.IsFinalist,
                 })],
             })],
         }, ct);

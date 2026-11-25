@@ -12,6 +12,6 @@ public sealed record StageAdvancersResponse
     /// <summary>The kind name: Qualifying, Survivor or Placement.</summary>
     public required string Kind { get; init; }
 
-    /// <summary>The bowlers who advanced. A Placement Stage lists the Finale's finalists.</summary>
+    /// <summary>The bowlers listed under the Stage. A Placement Stage lists every position.</summary>
     public required IReadOnlyList<AdvancerResponse> Advancers { get; init; }
 }

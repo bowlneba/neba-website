@@ -8,8 +8,8 @@ namespace Neba.Api.Features.Series.GetSeriesAdvancers;
 
 /// <summary>
 /// The public view of advancement: names only. A Stage shows once it is Official. A Qualifying Stage lists its field entries
-/// and the bowlers who had already advanced, a Survivor Stage lists its full standings, and a Placement Stage lists the
-/// Finale's finalists (nothing when the Series has no Finale).
+/// and the bowlers who had already advanced, a Survivor Stage lists its full standings, and a Placement Stage lists every position
+/// (with the Finale's finalists marked when the Series has a Finale).
 /// </summary>
 internal sealed class GetSeriesAdvancersQueryHandler(AppDbContext appDbContext)
     : IQueryHandler<GetSeriesAdvancersQuery, ErrorOr<SeriesAdvancersDto>>
@@ -51,18 +51,29 @@ internal sealed class GetSeriesAdvancersQueryHandler(AppDbContext appDbContext)
             // in place, marked, as in the admin view.
             var entries = rows.FieldEntries
                 .Where(e => e.SourceStageId == stage.StageId || (isLastQualifying && e.SourceStageId is null))
-                .Select(e => new AdvancerDto(e.BowlerId, e.BowlerName.ToDisplayName(), e.Place, null, e.SourceStageId is null, true, null));
+                .Select(e => (
+                    Name: e.BowlerName,
+                    Advancer: new AdvancerDto(e.BowlerId, e.BowlerName.ToDisplayName(), e.Place, null, e.SourceStageId is null, true, null)
+                    {
+                        BackfillPoints = e.BackfillPoints,
+                    }));
 
             var alreadyAdvanced = rows.AlreadyAdvanced
                 .Where(a => a.StageId == stage.StageId)
-                .Select(a => new AdvancerDto(
-                    a.BowlerId, a.BowlerName.ToDisplayName(), a.Place, null, false, false,
-                    rows.Stages.Single(s => s.StageId == a.EarlierStageId).Order));
+                .Select(a => (
+                    Name: a.BowlerName,
+                    Advancer: new AdvancerDto(
+                        a.BowlerId, a.BowlerName.ToDisplayName(), a.Place, null, false, false,
+                        rows.Stages.Single(s => s.StageId == a.EarlierStageId).Order)));
 
+            // Placed bowlers first by place. The Backfill list follows by Bowler of the Year points, high to low.
             return [.. entries.Concat(alreadyAdvanced)
-                .OrderBy(a => a.Place ?? int.MaxValue)
-                .ThenBy(a => a.BowlerName, StringComparer.Ordinal)
-                .ThenBy(a => a.BowlerId.Value)];
+                .OrderBy(x => x.Advancer.Place ?? int.MaxValue)
+                .ThenByDescending(x => x.Advancer.BackfillPoints ?? 0)
+                .ThenBy(x => x.Name.LastName, StringComparer.OrdinalIgnoreCase)
+                .ThenBy(x => x.Name.FirstName, StringComparer.OrdinalIgnoreCase)
+                .ThenBy(x => x.Advancer.BowlerId.Value)
+                .Select(x => x.Advancer)];
         }
 
         if (stage.Kind == StageKind.Survivor)
@@ -76,14 +87,14 @@ internal sealed class GetSeriesAdvancersQueryHandler(AppDbContext appDbContext)
                 .ThenBy(a => a.BowlerId.Value)];
         }
 
-        if (rows.Positions.Any(p => p.IsFinalist == true))
-        {
-            return [.. rows.Positions
-                .Where(p => p.IsFinalist == true)
-                .OrderBy(p => p.Position)
-                .Select(p => new AdvancerDto(p.BowlerId, p.BowlerName.ToDisplayName(), p.TournamentPlace, null, false, true, null))];
-        }
-
-        return null;
+        // The Placement Stage: every position, with who made the Finale when the Series has one.
+        return [.. rows.Positions
+            .OrderBy(p => p.Position)
+            .Select(p => new AdvancerDto(p.BowlerId, p.BowlerName.ToDisplayName(), p.TournamentPlace, null, false, p.IsFinalist == true, null)
+            {
+                Position = p.Position,
+                Bowled = p.Bowled,
+                IsFinalist = p.IsFinalist,
+            })];
     }
 }

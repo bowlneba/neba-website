@@ -111,6 +111,29 @@ public sealed class GetSeriesAdvancersQueryHandlerTests(AppDbContextFixture fixt
         advancers.Where(a => a.IsBackfill).ShouldAllBe(a => a.Place == null);
     }
 
+    [Fact(DisplayName = "HandleAsync should sort Backfill entries by Bowler of the Year points, high to low, and return the points")]
+    public async Task HandleAsync_ShouldSortBackfillEntries_ByPointsDescending()
+    {
+        // Arrange
+        var ct = TestContext.Current.CancellationToken;
+        var scenario = await AdvancementReadSeed.SeedAsync(_dbContext, ct, new ReadScenarioOptions
+        {
+            QualifierResults = [(0, 1), (1, 2), (2, 3), (3, 4), (4, 5), (5, 6), (6, 7), (7, 8)],
+            NonMembers = new HashSet<int> { 6, 7 },
+            BackfillPoints = [(8, 50), (9, 90)],
+        });
+        scenario.Stage(1).MarkOfficial(Now.AddHours(2));
+        await _dbContext.SaveChangesAsync(ct);
+
+        // Act
+        var dto = await ReadAsync(scenario.Series.Id);
+
+        // Assert
+        var backfill = dto.Stages.Single().Advancers.Where(a => a.IsBackfill).ToList();
+        backfill.Select(a => a.BowlerId).ShouldBe([scenario.Id(9), scenario.Id(8)]);
+        backfill.Select(a => a.BackfillPoints).ShouldBe([90, 50]);
+    }
+
     [Fact(DisplayName = "HandleAsync should list the full standings of an Official Survivor Stage, best total first, flagging who advanced")]
     public async Task HandleAsync_ShouldListFullStandings_WhenSurvivorStageIsOfficial()
     {
@@ -212,8 +235,8 @@ public sealed class GetSeriesAdvancersQueryHandlerTests(AppDbContextFixture fixt
         dto.Stages.Select(s => s.Kind).ShouldBe(["Qualifying"]);
     }
 
-    [Fact(DisplayName = "HandleAsync should leave out an Official Placement Stage when the Series has no Finale")]
-    public async Task HandleAsync_ShouldLeaveOutPlacementStage_WhenNoFinale()
+    [Fact(DisplayName = "HandleAsync should list every position of an Official Placement Stage, none marked a finalist, when the Series has no Finale")]
+    public async Task HandleAsync_ShouldListEveryPosition_WhenNoFinale()
     {
         // Arrange
         var ct = TestContext.Current.CancellationToken;
@@ -225,7 +248,10 @@ public sealed class GetSeriesAdvancersQueryHandlerTests(AppDbContextFixture fixt
         var dto = await ReadAsync(scenario.Series.Id);
 
         // Assert
-        dto.Stages.ShouldNotContain(s => s.Kind == "Placement");
+        var placement = dto.Stages.Single(s => s.Kind == "Placement");
+        placement.Advancers.ShouldNotBeEmpty();
+        placement.Advancers.ShouldAllBe(a => a.IsFinalist == null && a.Position != null);
+        placement.Advancers.Select(a => a.Position!.Value).ShouldBe(placement.Advancers.Select(a => a.Position!.Value).Order());
     }
 
     [Fact(DisplayName = "HandleAsync should leave out a Computed Placement Stage even when the Series has a Finale")]
@@ -248,8 +274,8 @@ public sealed class GetSeriesAdvancersQueryHandlerTests(AppDbContextFixture fixt
         dto.Stages.ShouldNotContain(s => s.Kind == "Placement");
     }
 
-    [Fact(DisplayName = "HandleAsync should list the finalists of an Official Placement Stage when the Series has a Finale")]
-    public async Task HandleAsync_ShouldListFinalists_WhenPlacementStageIsOfficial()
+    [Fact(DisplayName = "HandleAsync should list every position of an Official Placement Stage and mark the finalists when the Series has a Finale")]
+    public async Task HandleAsync_ShouldMarkFinalists_WhenPlacementStageIsOfficial()
     {
         // Arrange
         var ct = TestContext.Current.CancellationToken;
@@ -265,8 +291,9 @@ public sealed class GetSeriesAdvancersQueryHandlerTests(AppDbContextFixture fixt
 
         // Assert
         var placement = dto.Stages.Single(s => s.Kind == "Placement");
-        placement.Advancers.Count.ShouldBe(3);
-        placement.Advancers.ShouldAllBe(a => !a.IsBackfill && a.BlockTotal == null && a.Advanced);
+        placement.Advancers.Count(a => a.IsFinalist == true).ShouldBe(3);
+        placement.Advancers.ShouldAllBe(a => !a.IsBackfill && a.BlockTotal == null && a.IsFinalist != null && a.Advanced == a.IsFinalist);
+        placement.Advancers.Take(3).ShouldAllBe(a => a.IsFinalist == true);
     }
 
     private static void MarkAllOfficial(SeriesAggregate series)

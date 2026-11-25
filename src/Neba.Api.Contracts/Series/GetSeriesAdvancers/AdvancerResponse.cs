@@ -1,6 +1,6 @@
 namespace Neba.Api.Contracts.Series.GetSeriesAdvancers;
 
-/// <summary>A bowler listed under a Stage. Most advanced; the Survivor standings and the already-advanced rows also list those who did not.</summary>
+/// <summary>A bowler listed under a Stage. Most advanced; the Survivor standings, the Placement positions and the already-advanced rows also list those who did not.</summary>
 public sealed record AdvancerResponse
 {
     /// <summary>The bowler id.</summary>
@@ -23,4 +23,16 @@ public sealed record AdvancerResponse
 
     /// <summary>The order of the earlier Stage the bowler already advanced from. Null otherwise.</summary>
     public int? AlreadyAdvancedFromOrder { get; init; }
+
+    /// <summary>The open-category Bowler of the Year points of a Backfill entry. Null otherwise.</summary>
+    public int? BackfillPoints { get; init; }
+
+    /// <summary>The position on the Placement Stage. Null on other Stages.</summary>
+    public int? Position { get; init; }
+
+    /// <summary>True when a Placement bowler bowled the Stage's tournament. Null on other Stages.</summary>
+    public bool? Bowled { get; init; }
+
+    /// <summary>True when a Placement bowler made the Finale. Null when the Series has no Finale, or on other Stages.</summary>
+    public bool? IsFinalist { get; init; }
 }
