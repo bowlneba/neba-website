@@ -430,6 +430,39 @@ public sealed class SeriesAdvancementReaderTests(AppDbContextFixture fixture)
         add.OverrideId.ShouldBe(scenario.QualifyingStage.Overrides.Single(o => o.Kind == OverrideKind.Add).Id);
     }
 
+    [Fact(DisplayName = "ReadPublicAsync should skip the admin-only overrides but return the same field entries as ReadAsync")]
+    public async Task ReadPublicAsync_ShouldSkipOverrides_WhenSeriesHasThem()
+    {
+        // Arrange
+        var ct = TestContext.Current.CancellationToken;
+        var scenario = await SeedAdvancedSeriesAsync();
+        var full = await SeriesAdvancementReader.ReadAsync(_readContext, scenario.Series.Id, ct);
+
+        // Act
+        var publicRows = await SeriesAdvancementReader.ReadPublicAsync(_readContext, scenario.Series.Id, ct);
+
+        // Assert
+        full.ShouldNotBeNull();
+        full.Overrides.ShouldNotBeEmpty();
+        publicRows.ShouldNotBeNull();
+        publicRows.Overrides.ShouldBeEmpty();
+        publicRows.FieldEntries.ShouldBe(full.FieldEntries);
+        publicRows.Stages.ShouldBe(full.Stages);
+    }
+
+    [Fact(DisplayName = "ReadPublicAsync should return null for an unknown Series")]
+    public async Task ReadPublicAsync_ShouldReturnNull_WhenSeriesDoesNotExist()
+    {
+        // Arrange
+        var ct = TestContext.Current.CancellationToken;
+
+        // Act
+        var rows = await SeriesAdvancementReader.ReadPublicAsync(_readContext, SeriesId.New(), ct);
+
+        // Assert
+        rows.ShouldBeNull();
+    }
+
     [Fact(DisplayName = "ReadAsync should return a bowler inside a later Stage's cut who already advanced from an earlier Stage")]
     public async Task ReadAsync_ShouldReturnAlreadyAdvancedBowlers()
     {

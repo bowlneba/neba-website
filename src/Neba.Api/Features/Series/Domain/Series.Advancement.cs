@@ -132,11 +132,8 @@ public sealed partial class Series
     {
         ArgumentNullException.ThrowIfNull(stage);
 
-        var firstUnofficialEarlier = _stages
-            .Where(s => s.Order < stage.Order && s.Status != StageStatus.Official)
-            .OrderBy(s => s.Order)
-            .Select(s => (int?)s.Order)
-            .FirstOrDefault();
+        var firstUnofficialEarlier = SeriesAdvancementRules.FirstUnofficialEarlierOrder(
+            _stages.Select(s => (s.Order, s.Status)), stage.Order);
 
         return SeriesAdvancementRules.MakeOfficialBlocker(
             stage.Status, stage.IsStale,

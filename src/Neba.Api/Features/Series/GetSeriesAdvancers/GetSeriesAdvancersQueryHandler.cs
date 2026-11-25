@@ -7,9 +7,7 @@ using Neba.Api.Messaging;
 namespace Neba.Api.Features.Series.GetSeriesAdvancers;
 
 /// <summary>
-/// The public view of advancement: names only. A Stage shows once it is Official. A Qualifying Stage lists its field entries
-/// and the bowlers who had already advanced, a Survivor Stage lists its full standings, and a Placement Stage lists every position
-/// (with the Finale's finalists marked when the Series has a Finale).
+/// The public view of advancement: names only, for each Official Stage (entries, standings or positions by kind).
 /// </summary>
 internal sealed class GetSeriesAdvancersQueryHandler(AppDbContext appDbContext)
     : IQueryHandler<GetSeriesAdvancersQuery, ErrorOr<SeriesAdvancersDto>>
@@ -17,7 +15,7 @@ internal sealed class GetSeriesAdvancersQueryHandler(AppDbContext appDbContext)
     public async Task<ErrorOr<SeriesAdvancersDto>> HandleAsync(
         GetSeriesAdvancersQuery query, CancellationToken cancellationToken)
     {
-        var rows = await SeriesAdvancementReader.ReadAsync(appDbContext, query.SeriesId, cancellationToken);
+        var rows = await SeriesAdvancementReader.ReadPublicAsync(appDbContext, query.SeriesId, cancellationToken);
         if (rows is null)
         {
             return SeriesErrors.NotFound(query.SeriesId);
@@ -25,26 +23,21 @@ internal sealed class GetSeriesAdvancersQueryHandler(AppDbContext appDbContext)
 
         var lastQualifying = rows.Stages.Where(s => s.Kind == StageKind.Qualifying).MaxBy(s => s.Order);
 
-        var stages = new List<StageAdvancersDto>();
-        foreach (var stage in rows.Stages.OrderBy(s => s.Order))
-        {
-            var advancers = AdvancersOf(rows, stage, isLastQualifying: stage.StageId == lastQualifying?.StageId);
-            if (advancers is not null)
-            {
-                stages.Add(new StageAdvancersDto(stage.StageId, stage.Order, stage.Kind.Name, advancers));
-            }
-        }
+        var stages = rows.Stages
+            .Where(s => s.Status == StageStatus.Official)
+            .OrderBy(s => s.Order)
+            .Select(stage => new StageAdvancersDto(
+                stage.StageId,
+                stage.Order,
+                stage.Kind.Name,
+                AdvancersOf(rows, stage, isLastQualifying: stage.StageId == lastQualifying?.StageId)))
+            .ToList();
 
         return new SeriesAdvancersDto(stages);
     }
 
-    private static List<AdvancerDto>? AdvancersOf(SeriesAdvancementRows rows, AdvancementStageRow stage, bool isLastQualifying)
+    private static List<AdvancerDto> AdvancersOf(SeriesAdvancementRows rows, AdvancementStageRow stage, bool isLastQualifying)
     {
-        if (stage.Status != StageStatus.Official)
-        {
-            return null;
-        }
-
         if (stage.Kind == StageKind.Qualifying)
         {
             // The Backfill belongs to the last Qualifying Stage. A bowler who already advanced from an earlier Stage sits
@@ -66,13 +59,13 @@ internal sealed class GetSeriesAdvancersQueryHandler(AppDbContext appDbContext)
                         a.BowlerId, a.BowlerName.ToDisplayName(), a.Place, null, false, false,
                         rows.Stages.Single(s => s.StageId == a.EarlierStageId).Order)));
 
-            // Placed bowlers first by place. The Backfill list follows by Bowler of the Year points, high to low.
             return [.. entries.Concat(alreadyAdvanced)
-                .OrderBy(x => x.Advancer.Place ?? int.MaxValue)
-                .ThenByDescending(x => x.Advancer.BackfillPoints ?? 0)
-                .ThenBy(x => x.Name.LastName, StringComparer.OrdinalIgnoreCase)
-                .ThenBy(x => x.Name.FirstName, StringComparer.OrdinalIgnoreCase)
-                .ThenBy(x => x.Advancer.BowlerId.Value)
+                .InFieldOrder(
+                    x => x.Advancer.Place,
+                    x => x.Advancer.BackfillPoints,
+                    x => x.Name.LastName,
+                    x => x.Name.FirstName,
+                    x => x.Advancer.BowlerId.Value)
                 .Select(x => x.Advancer)];
         }
 

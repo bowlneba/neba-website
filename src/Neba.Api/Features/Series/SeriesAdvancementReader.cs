@@ -60,8 +60,22 @@ internal static class SeriesAdvancementReader
     private const int MaxAttempts = 3;
 
     /// <summary>Null when the Series does not exist. Retries when a write lands between the queries.</summary>
-    public static async Task<SeriesAdvancementRows?> ReadAsync(
+    public static Task<SeriesAdvancementRows?> ReadAsync(
         AppDbContext appDbContext, SeriesId seriesId, CancellationToken cancellationToken)
+        => ReadCoreAsync(appDbContext, seriesId, ReadOverridesAsync, cancellationToken);
+
+    /// <summary>
+    /// The same read for the public page. Skips the admin-only overrides (reason and author), which the public view never shows.
+    /// </summary>
+    public static Task<SeriesAdvancementRows?> ReadPublicAsync(
+        AppDbContext appDbContext, SeriesId seriesId, CancellationToken cancellationToken)
+        => ReadCoreAsync(appDbContext, seriesId, NoOverridesAsync, cancellationToken);
+
+    private static async Task<SeriesAdvancementRows?> ReadCoreAsync(
+        AppDbContext appDbContext,
+        SeriesId seriesId,
+        Func<AppDbContext, SeriesId, CancellationToken, Task<IReadOnlyList<AdvancementOverrideRow>>> readOverrides,
+        CancellationToken cancellationToken)
     {
         SeriesAdvancementRows? rows = null;
 
@@ -83,7 +97,7 @@ internal static class SeriesAdvancementReader
                 await ReadAlreadyAdvancedAsync(appDbContext, stages, fieldEntries, cancellationToken),
                 await ReadSurvivorOutcomesAsync(appDbContext, seriesId, cancellationToken),
                 await ReadPositionsAsync(appDbContext, seriesId, stages, cancellationToken),
-                await ReadOverridesAsync(appDbContext, seriesId, cancellationToken));
+                await readOverrides(appDbContext, seriesId, cancellationToken));
 
             // Every output or status change bumps Version, so an unchanged Version means no write landed in between.
             var after = await ReadHeaderAsync(appDbContext, seriesId, cancellationToken);
@@ -229,6 +243,10 @@ internal static class SeriesAdvancementReader
             ? position with { TournamentPlace = place }
             : position)];
     }
+
+    private static Task<IReadOnlyList<AdvancementOverrideRow>> NoOverridesAsync(
+        AppDbContext appDbContext, SeriesId seriesId, CancellationToken cancellationToken)
+        => Task.FromResult<IReadOnlyList<AdvancementOverrideRow>>([]);
 
     private static async Task<IReadOnlyList<AdvancementOverrideRow>> ReadOverridesAsync(
         AppDbContext appDbContext, SeriesId seriesId, CancellationToken cancellationToken)

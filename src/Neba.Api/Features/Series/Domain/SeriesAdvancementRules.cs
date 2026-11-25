@@ -4,6 +4,15 @@ namespace Neba.Api.Features.Series.Domain;
 
 internal static class SeriesAdvancementRules
 {
+    /// <summary>The order of the first Stage before <paramref name="order"/> that is not Official, or null when all are.</summary>
+    public static int? FirstUnofficialEarlierOrder(IEnumerable<(int Order, StageStatus Status)> stages, int order)
+    {
+        return stages
+            .Where(s => s.Order < order && s.Status != StageStatus.Official)
+            .Select(s => (int?)s.Order)
+            .Min();
+    }
+
     /// <summary>
     /// Why a Stage cannot be made Official, or null when it can. A Computed Stage that is not stale can be
     /// made Official once every earlier Stage is Official, and, for the last Qualifying Stage, once the
