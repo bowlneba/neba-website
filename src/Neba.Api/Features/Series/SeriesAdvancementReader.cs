@@ -62,24 +62,26 @@ internal static class SeriesAdvancementReader
     /// <summary>Null when the Series does not exist. Retries when a write lands between the queries.</summary>
     public static Task<SeriesAdvancementRows?> ReadAsync(
         AppDbContext appDbContext, SeriesId seriesId, CancellationToken cancellationToken)
-        => ReadCoreAsync(appDbContext, seriesId, ReadOverridesAsync, cancellationToken);
+        => ReadCoreAsync(appDbContext, seriesId, ReadOverridesAsync, MaxAttempts, cancellationToken);
 
     /// <summary>
     /// The same read for the public page. Skips the admin-only overrides (reason and author), which the public view never shows.
+    /// It reads once, with no version check or retry, because the public view sends no write.
     /// </summary>
     public static Task<SeriesAdvancementRows?> ReadPublicAsync(
         AppDbContext appDbContext, SeriesId seriesId, CancellationToken cancellationToken)
-        => ReadCoreAsync(appDbContext, seriesId, NoOverridesAsync, cancellationToken);
+        => ReadCoreAsync(appDbContext, seriesId, NoOverridesAsync, 1, cancellationToken);
 
     private static async Task<SeriesAdvancementRows?> ReadCoreAsync(
         AppDbContext appDbContext,
         SeriesId seriesId,
         Func<AppDbContext, SeriesId, CancellationToken, Task<IReadOnlyList<AdvancementOverrideRow>>> readOverrides,
+        int maxAttempts,
         CancellationToken cancellationToken)
     {
         SeriesAdvancementRows? rows = null;
 
-        for (var attempt = 1; attempt <= MaxAttempts; attempt++)
+        for (var attempt = 1; attempt <= maxAttempts; attempt++)
         {
             var header = await ReadHeaderAsync(appDbContext, seriesId, cancellationToken);
             if (header is null)
@@ -98,6 +100,11 @@ internal static class SeriesAdvancementReader
                 await ReadSurvivorOutcomesAsync(appDbContext, seriesId, cancellationToken),
                 await ReadPositionsAsync(appDbContext, seriesId, stages, cancellationToken),
                 await readOverrides(appDbContext, seriesId, cancellationToken));
+
+            if (maxAttempts == 1)
+            {
+                break;
+            }
 
             // Every output or status change bumps Version, so an unchanged Version means no write landed in between.
             var after = await ReadHeaderAsync(appDbContext, seriesId, cancellationToken);
