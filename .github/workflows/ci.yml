@@ -139,6 +139,12 @@ jobs:
         run: dotnet build --configuration Release --no-restore
 
       - name: Run tests
+        env:
+          # Keep the CI log readable: these categories logged ~46k info lines per API test run.
+          Logging__LogLevel__Microsoft.EntityFrameworkCore: Warning
+          Logging__LogLevel__Microsoft.Hosting.Lifetime: Warning
+          Logging__LogLevel__ZiggyCreatures.Caching.Fusion: Warning
+          Logging__LogLevel__FastEndpoints.StartupTimer: Warning
         run: |
           if [ "${{ matrix.collect_coverage }}" = "true" ]; then
             dotnet run --project ${{ matrix.test-project }} --configuration Release --no-build -- --coverage --coverage-output-format xml --coverage-output coverage.xml --report-trx --report-trx-filename results.trx --results-directory ${{ matrix.results-dir }}

@@ -9,7 +9,7 @@ internal static class SeriesAdvancementRules
     {
         return stages
             .Where(s => s.Order < order && s.Status != StageStatus.Official)
-            .Min(s => s.Order);
+            .Min(s => (int?)s.Order);
     }
 
     /// <summary>
