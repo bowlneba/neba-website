@@ -1,6 +1,6 @@
 ---
 name: feature-plan
-description: Produce a two-phase (API, then UI) implementation plan for a new feature as a markdown file an agent can implement from in a fresh session with nothing else. Reviews the repo for existing related code, asks clarifying questions, then drafts a functional-level plan followed by a code-level plan per phase, pausing for confirmation at each stage, and ends with a commit plan and an implementation guide. Usage: /feature-plan <feature description>
+description: Produce a two-phase (API, then UI) implementation plan for a new feature as a markdown file an agent can implement from in a fresh session with nothing else. Reviews the repo for existing related code, asks clarifying questions, then drafts a functional-level plan followed by a code-level plan per phase, pausing for confirmation at each stage, and ends with a commit plan and an implementation guide. Not for writing feature code, a /legacy sync action (backdoor-feature) or a small single-layer change. Usage: /feature-plan <feature description>
 ---
 
 Turn a feature description into `docs/plans/{feature-name}.md` — a plan detailed enough to code from, built up in confirmed stages rather than dumped in one shot. The finished file must work for an agent that starts a fresh session with only the file: it must not depend on this chat, on memory, on agent output files in temp folders, or on the order things were discussed.
@@ -71,19 +71,7 @@ Then use `AskUserQuestion` for anything else still unresolved (max 4 questions a
 
 ## Step 2 — NFR checkpoint (critical features only)
 
-Skip this step entirely (and say so) if Step 1 determined the feature is not critical/high-stakes.
-
-Most non-functional requirements for this app are already fixed system-wide (hosting, uptime posture, tech stack) and documented in `docs/architecture/backend.md`/`blazor.md` — re-litigating those per feature would be pure ceremony. This checkpoint only covers the NFRs that genuinely vary **per feature** and change what gets drafted in Phase 1/Phase 2:
-
-- **Performance target** — expected data volume and request rate for this feature's endpoint(s)/page(s). Does a list endpoint need pagination or a page-size cap from day one? Does a query need to be a `ICachedQuery` behind `IFusionCache` (per CLAUDE.md's caching convention) rather than hitting the database on every request?
-- **Concurrency/consistency** — can two users act on the same record at once (e.g. two admins editing the same tournament)? If so, does this need an optimistic concurrency check, or is last-write-wins acceptable?
-- **Security sensitivity** — does this feature touch PII beyond what's already classified in `Neba.Api.Compliance.DataTaxonomy`? Does it need a new `[PersonalData]`/`[PrivateData]` classification, or an audit trail beyond what's already logged?
-- **Availability/degradation** — if a dependency this feature relies on is down (cache, external API, background job), should the feature fail the request outright or degrade gracefully (e.g. the `ResilientAuditDataProvider` pattern — log and continue)?
-- **Data retention** — does this feature introduce data that needs a retention/deletion policy, or is it covered by an existing one?
-
-Present the answers (inferred from the description plus repo conventions where obvious, flagged for the user to confirm/correct) as a short list — one page's worth, not a document. Ask: **"Do these NFR targets look right for this feature? I'll use them to shape the Phase 1/Phase 2 drafts."**
-
-Do not proceed until confirmed. Record the confirmed targets under "Decisions locked in during scoping" in Step 6 — each target should visibly inform a specific decision later (e.g. the caching target drives whether Phase 1 lists the query as an `ICachedQuery`, the concurrency target drives whether the aggregate needs a concurrency token).
+Skip this step (and say so) if Step 1 found the feature not critical. Otherwise read `references/nfr-checkpoint.md`: it lists the five per-feature NFRs to cover (performance, concurrency, security sensitivity, availability, retention) and the question to ask. Do not proceed until the user confirms. Record the confirmed targets under "Decisions locked in during scoping", and let each one drive a visible decision in the drafts.
 
 ## Step 3 — Targeted repository review
 
@@ -206,25 +194,7 @@ Do not proceed until confirmed.
 
 ## Step 10 — Phase 2 UI mockups (HTML)
 
-Once Step 9 is confirmed, and before writing any Blazor code, produce static HTML mockups of the new/changed pages for the user to review. Skip this step entirely (and say so) only if Step 9 concluded the feature has no real UI surface. These mockups give the flow confirmed in Step 5 its actual visual design — they should not change what screens/actions exist, only how they look.
-
-Invoke the `frontend-design` skill first, to calibrate visual direction (typography, color, layout, what reads as templated vs. intentional) before building anything — don't guess at aesthetic choices the skill already has an opinion on.
-
-For each new or substantially-changed page identified in Step 9, decide which kind of page it is:
-
-- **Data capture** (a create/edit form — one obvious input layout, no real layout tradeoff to weigh): produce a **single** HTML mockup.
-- **Data display** (a list/detail/dashboard page where density, hierarchy, and layout genuinely have multiple reasonable answers): produce **2–3 distinct mockup options** (different layouts or visual emphasis) so the user can compare and pick, per `frontend-design`'s guidance on avoiding templated defaults. Don't multiply options for their own sake — only produce more than one when the page's design actually has a meaningful decision to make.
-
-Mockup rules:
-
-- Save each as a plain static HTML file under `docs/plans/mockups/{feature-name}/` (create the directory if needed) — e.g. `docs/plans/mockups/create-tournament/create-tournament.html` for a single data-capture mockup, or `option-1.html`/`option-2.html`/`option-3.html` per page for data-display comparisons. **Do not** use the `Artifact` tool for these — they're local working files reviewed as part of the plan, not something to publish.
-- Use realistic sample data and the feature's actual field names/labels/categories (pulled from the Step 9 draft) — a mockup should read as this feature, not a generic template.
-- For interactions that only make sense at runtime (modals, mode switches, dependent dropdowns, an inline "create new X" flow, tab switching), include lightweight inline `<script>` that simulates the interaction (toggling classes/visibility) — just enough to click through the flow. This is throwaway scripting for review purposes, not a preview of the real implementation.
-- Record each mockup file's path in `docs/plans/{feature-name}.md` under `## Phase 2: UI`, in a `### Mockups` subsection, with a one-line note on what each shows.
-
-Tell the user the mockup file path(s) so they can open and review them (do not attempt to render the HTML inline in chat), and ask: **"Here's the mockup for [page]. Does this look right, or should anything change before I draft the actual code?"**
-
-Do not proceed until confirmed. If the user asks for changes, update the mockup file(s) in place and re-confirm before moving to Step 11 — the same "don't silently fold unconfirmed changes into the next stage" rule that applies to every other gate applies here too.
+Skip this step (and say so) only if Step 9 found no real UI surface. Otherwise read `references/mockups.md`: invoke `frontend-design`, make one HTML mockup for a data-capture page and two or three for a data-display page, save them under `docs/plans/mockups/{feature-name}/` (not as Artifacts), and list them in the plan. Ask the user to confirm before Step 11.
 
 ## Step 11 — Phase 2 code draft (UI)
 
@@ -249,30 +219,15 @@ Show it in chat and ask: **"Does this commit plan look right? Once you confirm, 
 
 ## Step 13 — Implementation guide and handoff check
 
-Once the commit plan is confirmed, make the plan usable by an agent in a fresh session.
+Once the commit plan is confirmed, read `references/implementation-guide.md` and follow it: a consistency pass over the plan, the `## Implementing this plan` section, a paste-ready prompt for a fresh session, and the closing report. Step 13 is not optional.
 
-**1. Consistency pass.** Fix problems in the plan itself before writing the guide:
-- List every rename and every decision that changed after a draft existed. Grep the plan for each old name and fix the code and prose. Reconciliation notes may stay only for conflicts too big to rewrite, and each says which commit applies it.
-- Check the names the drafts assume against the repo, with one grep for each riskiest one: helpers, extension methods, namespaces, existing types. Agents guess these. (A guessed `Ulid` user id turned out to be right in one place and wrong in another, and only a grep showed which.)
-- Check each "not verified" item an agent listed is in the phase's notes, and say which commit will surface it.
-- Check the plan has no pointer to a temp file, an agent id, or the chat.
-- Check "Decisions locked in during scoping" covers every answer the user gave and every default taken.
-- Check every code-draft section is used by some commit, and every commit has code or text to work from.
+## Gotchas
 
-**2. Write `## Implementing this plan`.** Replace the Step 6 placeholder. It sits right after the intro, before the decisions. It holds:
-- **Read first**, in order: that section, the decisions and the confirmed UI flow, the reconciliation or phase notes, the commit plan, then only the sections the commit needs. Say plainly: do not read the whole file, and give its length.
-- **Precedence** when two parts disagree: decisions, notes, code drafts, then the source ticket and docs. The repo wins over the plan on a name that does not match; fix the plan when you find one.
-- **State of the drafts:** whether the code was compiled, what is assumed, and what cannot build until a named commit lands.
-- **Per-commit procedure:** read the entry and its sections; hand it to the agent it names, passing the plan path and the entry; run the build and the tests for that area (with the actual commands); fix failures; update the plan if the code drifted; stage files by name, commit with the subject and the attribution trailer; tick the box.
-- **Do not** list, from the decisions (things the user ruled out, such as a flag, a deferred pattern, a banned word).
-- **Before specific commits:** data checks, contract confirmations, secrets or licenses needed.
-- **Commit to section map:** a table from each commit number to the sections it needs, using heading names and layer labels, not line numbers (lines drift).
-- **Mockups:** where they are, which one is chosen, which commits use them.
-- **Progress:** a checkbox list that repeats each commit subject, so a fresh session resumes at the first unchecked box.
-
-**3. Tell the user how to start a fresh session.** Give a short paste-ready prompt, for example: "Implement `docs/plans/{feature-name}.md`. Start with its 'Implementing this plan' section. Do the next unchecked commit in the progress list: hand it to the agent the commit names, run the build and tests, update the plan if the code drifted, commit by file name, tick the box, then continue with the next commit. Ask me before anything the plan marks as a decision I still owe."
-
-**4.** Report the plan is complete: **"The plan is ready for a fresh session. The full plan is in `docs/plans/{feature-name}.md`. The prompt above starts the work. I'll commit each step as it is done."**
+- A plan that says "as discussed", "see above", or names a temp file or agent id fails the fresh-session test. Write names and reasons into the file.
+- A decision that changes after a draft exists leaves the old name in the code blocks. Grep for the old name and fix it.
+- Agents guess helper, extension and namespace names. Grep the riskiest ones before the plan is final.
+- A new permission goes to Webmaster as well as Admin. Admin-only is a question for the user.
+- Agents draft as text and change no files. The main session writes the plan and runs every gate.
 
 ## Rules
 

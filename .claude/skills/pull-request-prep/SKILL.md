@@ -1,6 +1,6 @@
 ---
 name: pull-request-prep
-description: Review pending changes against main (or a specified branch), flag issues, and generate a copy-paste PR description. Usage: /pull-request-prep [base-branch]
+description: Review pending changes against main (or a specified branch), flag issues, and generate a copy-paste PR description. Not for opening the PR (create-pr), a hotfix branch (hotfix) or a correctness-only review (code-review). Usage: /pull-request-prep [base-branch]
 ---
 
 Prepare a pull request by reviewing all changes, flagging issues against project standards, and producing a markdown PR description ready to paste into GitHub.
@@ -48,12 +48,7 @@ Skip this step entirely when base-branch is not `main` (e.g. merging into a long
 
 ### 3b. Post-merge actions
 
-If `docs/learnings/aspire-deploy-cutover.md` exists on the branch (`git ls-files docs/learnings/aspire-deploy-cutover.md`) and base-branch is `main`, this PR carries the move from `azd` to `aspire deploy`. Some of its steps happen in GitHub and Azure settings, outside the diff, so the review and the PR description must show them.
-
-- Read the file. Copy its three checklists ("Before the merge", "First production deploy", "After the merge") and its "Variable cleanup" table into the review as a **📋 Post-merge Actions** section, every box unticked, in the file's order. The table says which repository variables must stay and which Production-environment copies to delete, so keep it whole.
-- Check what you can without changing anything, and say which items you checked: for example `git diff <base-branch>...HEAD -- .github/workflows/staging.yml` still holds a `push:` trigger (an open "Before the merge" item), and `<Version>` is above `main`'s.
-- Say plainly what you could not check (GitHub variables, Azure credentials). Do not tick those.
-- If the file is deleted on the branch, skip this step.
+If `docs/learnings/aspire-deploy-cutover.md` exists on the branch and base-branch is `main`, the PR carries the move from `azd` to `aspire deploy`. Read `references/post-merge-actions.md` and add its **📋 Post-merge Actions** section to the review and the PR description. Otherwise skip.
 
 ### 4. Run the reviewers in parallel
 
@@ -93,11 +88,7 @@ These stay in the skill because they are not layer work: `npm audit` (step 2), t
 
 **Follow-up review recommendations**
 
-`code-review`, `security-review`, and `performance-review` are separate slash commands — this skill doesn't run them, it recommends whether to. Decide each independently; a PR can warrant more than one, or none.
-
-- **Code review** — recommend `/code-review` (pick an effort level: `medium` for a routine single-feature PR, `high`/`xhigh` for a large diff spanning multiple layers or a critical/high-stakes feature per `feature-plan`'s criticality determination) whenever the diff includes non-trivial logic — new/changed handlers, domain code, or components. Skip the recommendation only for diffs that are entirely docs/README/config, pure test additions with no production code change, or trivial copy/label fixes — the fixed checklist above already covers those well enough that an open-ended pass adds little.
-- **Security review** — recommend `/security-review` when the diff includes any of: new or changed authentication/authorization logic (policies, roles, claims); a new or changed endpoint accepting user input; secrets/connection-string/config handling; a new external integration or third-party API call; file upload/download handling; new or changed PII/sensitive-data handling; a new or upgraded dependency. Don't recommend it for pure UI styling, test-only changes, docs-only changes, or an internal refactor that touches none of the above surfaces.
-- **Performance review** — recommend `/performance-review` when the diff includes any of: a new or changed EF Core query, especially over a collection, join, or list endpoint; a new or changed cached query (`ICachedQuery`/`IFusionCache` usage added, removed, or its key/invalidation logic touched); a new background job (Hangfire) or a loop making repeated external calls; a new Blazor component rendering a collection, or new per-keystroke/high-frequency interactive behavior; any change to a known hot path (an endpoint or page called on every page load, or by every user). Don't recommend it for pure copy/label changes, test-only changes, docs/config-only changes, or a bounded single-entity create/edit form with no list rendering.
+`code-review`, `security-review` and `performance-review` are separate slash commands. This skill only recommends them. Decide each on its own; a PR can warrant several or none. Triggers and skip rules: `references/follow-up-reviews.md`.
 
 **README**
 - [ ] `README.md`'s Project Structure reflects any new/removed top-level `Features/{Feature}` folders, projects, or render-mode changes
@@ -148,46 +139,12 @@ If step 6 found any README Updates, apply them directly to `README.md` now (unle
 
 ### 8. Generate the PR description
 
-After the user confirms (or asks to proceed), infer the PR description format from the changes and the project's PR history. The format used in this project is:
+After the user confirms, read `references/pr-description-format.md` for the template and the writing rules. Output the description in a fenced markdown block so the user can copy it. Add no co-author or AI attribution line.
 
-```markdown
-## Summary
+## Gotchas
 
-[2–4 bullets covering what the PR does at a high level. Lead with the feature name bolded if it's a feature PR.]
-
-## Context
-
-[Optional — include when the domain problem or motivation isn't obvious from the code. 1–3 sentences.]
-
-## What Changed
-
-[Organized by slice/area. Only include sections that actually changed. Use sub-bullets for detail.]
-
-### Features/{Feature} (`Neba.Api.Features.*`)
-[Domain, handlers, endpoints — group by feature if multiple features touched.]
-### Contracts
-### Blazor (`Neba.Website.Server`)
-### Tests
-### Docs
-
-## Test Plan
-
-[Checkbox list. Include component filter commands where applicable:]
-- [ ] `dotnet test --filter "Component=<Feature>"` — all unit and integration tests pass
-- [ ] [specific test class or scenario worth calling out]
-- [ ] Navigate to `/<route>` in the running app and verify [behaviour]
-
-## Deferred
-
-[Optional — list anything explicitly left out of scope. If nothing is deferred, omit this section.]
-```
-
-Rules for the description:
-- When step 3b applies, end the description with a **Post-merge actions** section that holds the same unticked checklists and the variable table, so the person who merges sees them
-- Keep **Summary** bullets tight — what it does, not how
-- **What Changed** should be detailed enough that a reviewer can map each section to the diff; include entity names, table names, query key, route, and page path where relevant
-- **Test Plan** should be actionable checkboxes — include the `dotnet test --filter` command for the component, specific test classes worth calling out, and a manual smoke-test step
-- Write in the same voice as the existing PR descriptions — confident, specific, not over-explained
-- Do NOT add a "Co-authored-by" or AI attribution line
-
-Output the description inside a fenced markdown block so the user can copy it directly.
+- `npm audit` always runs, even when no `package.json` changed: an advisory can land upstream. Never run `npm audit fix --force`, and regenerate any lockfile change on Linux, not macOS.
+- Delete `docs/plans/` files before a merge to `main` unless the plan spans several PRs. Say which you kept and why.
+- A changed source file with no test is a Blocker. Name the file.
+- An agent that returns nothing is not a pass. Say so in the review.
+- Drop any agent finding that contradicts `.github/instructions/pull-request-review.instructions.md`.

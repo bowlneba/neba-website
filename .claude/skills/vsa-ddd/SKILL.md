@@ -1,6 +1,6 @@
 ---
 name: vsa-ddd
-description: Design backend features in Neba.Api as vertical slices with a domain-driven design approach. Use when modeling a domain (aggregates, entities, value objects, typed IDs, ErrorOr results), deciding where a rule lives (domain, handler, validator or endpoint), or shaping a new use-case folder with Fast Endpoints. Not for Blazor, EF configuration details, or test writing.
+description: Design backend features in Neba.Api as vertical slices with a domain-driven design approach. Use when modeling a domain (aggregates, entities, value objects, typed IDs, ErrorOr results), deciding where a rule lives (domain, handler, validator or endpoint), or shaping a new use-case folder with Fast Endpoints. Not for Blazor pages (new-blazor-page), EF configuration and migrations (add-ef-migration), the step order for one endpoint (new-endpoint), or writing tests (write-tests).
 ---
 
 # Vertical slices with DDD design
@@ -10,9 +10,9 @@ Neba.Api is **vertical slice architecture**, not clean architecture. All backend
 Read first: `CLAUDE.md` (rules), `docs/architecture/backend.md`, `docs/learnings/domain-design.md`, `docs/ubiquitous-language.md`.
 Real slice to copy: `src/Neba.Api/Features/Sponsors` (command: `CreateSponsor`; query: `ListActiveSponsors`; domain: `Domain/`).
 
-## This repo overrides
+## This repo overrides (gotchas)
 
-Generic DDD and clean-architecture advice often says otherwise. Here:
+Generic DDD and clean-architecture advice often says otherwise, and models repeat it. Here:
 
 - **No repositories.** Handlers inject `AppDbContext` and query it. Do not add `IFooRepository` or a generic repository.
 - **No Domain, Application or Infrastructure projects.** No layer diagram. A feature folder holds its domain, use cases and errors.
@@ -69,39 +69,9 @@ A child entity owns its own invariants through `internal static ErrorOr<T> Creat
 
 The handler queries live data owned by another aggregate and passes it as a parameter. A per-instance formula coefficient persists on the aggregate. The handler never computes the domain formula. Details: `docs/learnings/domain-design.md`.
 
-### Value objects
+### Value objects, typed IDs, SmartEnums
 
-| `sealed record class` | `readonly record struct` |
-|---|---|
-| Persisted by EF Core (owned or complex type) | Not persisted (commands, transient values) |
-| Private constructor plus `Create` factory | Simple values |
-
-EF binds to private constructors on classes. A struct materializes as `default(T)` and skips them.
-
-```csharp
-public sealed record Money
-{
-    public decimal Amount { get; }
-    public string Currency { get; }
-
-    private Money(decimal amount, string currency) => (Amount, Currency) = (amount, currency);
-
-    public static ErrorOr<Money> Create(decimal amount, string currency)
-    {
-        if (amount < 0)
-            return Error.Validation("Money.Amount.Negative", "Amount cannot be negative");
-        return new Money(amount, currency);
-    }
-}
-```
-
-### Strongly-typed IDs
-
-Use the `[StronglyTypedId("ulid-full")]` source generator (`ulid-full.typedid`). Example: `Features/Sponsors/Domain/SponsorId.cs`.
-
-### SmartEnums
-
-Domain enumerations use SmartEnum types. Cached query DTOs hold primitives, never SmartEnum instances. For which serialization form (name or value) each API uses, see the new-endpoint skill.
+A value object that EF persists is a `sealed record class` with a private constructor and a `Create` factory (a struct would skip the constructor). Typed IDs use `[StronglyTypedId("ulid-full")]`. Domain enumerations are SmartEnums, and cached query DTOs hold primitives, never SmartEnum instances. Code and the full table: `references/value-objects-ids-enums.md`.
 
 ### Results with ErrorOr
 
@@ -113,38 +83,7 @@ Domain enumerations use SmartEnum types. Cached query DTOs hold primitives, neve
 
 ## Use-case folder
 
-```
-Features/{Feature}/
-├── {Feature}EndpointGroup.cs
-├── {Feature}Errors.cs
-├── Domain/                      aggregates, entities, value objects, typed IDs
-└── {UseCase}/
-    ├── {UseCase}Endpoint.cs
-    ├── {UseCase}Summary.cs
-    ├── {UseCase}Command.cs or Query.cs
-    ├── {UseCase}CommandHandler.cs or QueryHandler.cs
-    └── {UseCase}RequestValidator.cs   (when the request has rules)
-```
-
-Request, Input and Response records live in `Neba.Api.Contracts/{Feature}/{UseCase}/`. The Refit interface is there too. Public contract types carry XML `<summary>` and `<example>` docs.
-
-Endpoint, handler and domain types are `internal`. Endpoints are `sealed`.
-
-### Endpoint checklist
-
-- [ ] Folder holds Endpoint, Summary and (if needed) Validator
-- [ ] Request wraps Input for commands
-- [ ] Authorization is explicit: `AllowAnonymous()`, `Roles()` or `Policies()`
-- [ ] Group, API version via `Options(...)` (not in the path), tags
-- [ ] `WithName()` in `Description` for OpenAPI and `CreatedAt` links
-- [ ] `Produces()` and `ProducesProblemDetails()` for every status code
-- [ ] Handler errors flow through `AddError()` and `Send.ErrorsAsync(status)` (see `SponsorMutationResultSender`)
-- [ ] Validator covers structure only (400, automatic)
-- [ ] Summary has request and response examples
-- [ ] Contracts, Refit interface and the e2e mock updated
-- [ ] Tests per `docs/learnings/testing.md`
-
-The `new-endpoint` skill gives the step order.
+One folder per use case under `Features/{Feature}/`: endpoint, summary, command or query, handler, and a request validator when the request has rules. Endpoint, handler and domain types are `internal`; endpoints are `sealed`. Request, Input and Response records live in `Neba.Api.Contracts/{Feature}/{UseCase}/`. Layout tree and the endpoint checklist: `references/use-case-folder.md`.
 
 ## Type design
 

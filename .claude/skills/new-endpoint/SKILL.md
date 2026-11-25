@@ -1,6 +1,6 @@
 ---
 name: new-endpoint
-description: Add a Fast Endpoints use case to Neba.Api (query, command, edit or delete) with its contracts, Refit method, factories, tests and e2e mock. Use when asked to add or change an API endpoint. Usage - /new-endpoint <description: feature, verb, route, who may call it>
+description: Add a Fast Endpoints use case to Neba.Api (query, command, edit or delete) with its contracts, Refit method, factories, tests and e2e mock. Use when asked to add or change an API endpoint. Not for modeling a domain type (new-domain-entity, vsa-ddd), a table change (add-ef-migration), a Blazor page (new-blazor-page) or background work (new-background-job). Usage - /new-endpoint <description: feature, verb, route, who may call it>
 ---
 
 # New endpoint
@@ -54,6 +54,16 @@ An endpoint with a `RequestValidator` must declare 400 in `Description()`, even 
 - Cached query DTOs hold primitives, never SmartEnum instances.
 
 Rationale: "SmartEnum Serialization" in `.github/instructions/pull-request-review.instructions.md`.
+
+## Gotchas
+
+- A new `required` field on a Contracts DTO breaks the e2e mock in a way that looks like flakiness. Update `tests/e2e/mock-api/mock-api-server.ts` in the same commit.
+- Refit 14: register clients with `AddRefitGeneratedClient<T>()` (see `ApiServicesConfiguration.cs`), not `AddRefitClient<T>()`. Refit's `[Url]` attribute collides with DataAnnotations' `[Url]`.
+- A new permission goes to Admin and Webmaster. Webmaster needs an explicit entry in `SecurityRoleSeeder`. Admin-only is a question for the user.
+- Reuse an existing query and project down before adding a lightweight one. Name the DTO `*Summary`, not after the query or route.
+- `EF.Functions.ILike` takes an explicit escape character (see `SearchBowlersQueryHandler`).
+- Delete handlers return 204 when the target is already gone. `NotFound` stays valid for get and edit.
+- A list or collection method returns an empty collection, never `null`.
 
 ## Checklist
 

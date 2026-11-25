@@ -1,6 +1,6 @@
 ---
 name: mutation-score-dotnet
-description: Review surviving mutations for a .NET layer and add/update tests to kill them. Usage: /mutation-score-dotnet <api|ui> <FileName>
+description: Review surviving mutations for a .NET layer and add/update tests to kill them. Use only after a Stryker run. For first-time tests use write-tests. Usage: /mutation-score-dotnet <api|ui> <FileName>
 ---
 
 The user wants to review and fix surviving mutations for a specific .NET source file.

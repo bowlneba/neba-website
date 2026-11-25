@@ -1,6 +1,6 @@
 ---
 name: new-blazor-page
-description: Add a routable Blazor page in Neba.Website.Server with its title, render mode, authorization, form guard, table class, bUnit test, e2e spec and mock. Use when adding a new page or a new mode of a page (create, edit, detail, list).
+description: Add a routable Blazor page in Neba.Website.Server with its title, render mode, authorization, form guard, table class, bUnit test, e2e spec and mock. Use when adding a new page or a new mode of a page (create, edit, detail, list). Not for API endpoints (new-endpoint), visual design critique (ui-design agent) or an e2e-only change (e2e agent).
 ---
 
 # New Blazor page
@@ -28,6 +28,14 @@ Read `docs/learnings/blazor-ui.md` and the "Blazor and UI" rules in `CLAUDE.md`.
 6. **Razor `@code` limits.** No `< N =>` patterns, no `$"{x}"` interpolation, `@` on component attribute values, `[Parameter, EditorRequired]` instead of `required`.
 7. **Tests.** Add a bUnit test. Build the Refit response with `StubApiResponse<T>` (`docs/learnings/testing.md`). Add a Playwright spec under `tests/e2e/` and a mock route in `tests/e2e/mock-api/mock-api-server.ts` when the page is new; the decision table is in the same learnings file.
 8. **Docs.** A user-facing page gets a help doc (`help-documentation` skill).
+
+## Gotchas
+
+- An `HttpClient` handler never injects a scoped service. Reach circuit state through `CircuitServicesAccessor`. In a circuit, `HttpContext` holds the cookie from when the connection opened.
+- Per-keystroke behavior in C# (`@onkeydown`) races on the SignalR round trip. Put it in a `.razor.js` module.
+- A new `required` field on a Contracts DTO needs the e2e mock updated or Playwright fails every time.
+- E2E failure tests use a 4xx (a 5xx retries past the expect timeout). `MOCK_UPCOMING_TOURNAMENTS` stays empty.
+- `reference/components/` (`NebaDropdown`, `NebaSegmentedControl`) holds design sketches, not production code. Use `NebaAutocomplete` for long pickers.
 
 ## Checklist
 

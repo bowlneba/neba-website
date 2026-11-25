@@ -1,6 +1,6 @@
 ---
 name: write-pr
-description: After pull-request-prep has been run and any blockers addressed, generate a PR title and a final PR description, and write the description to pr-description.md at the repo root. Usage: /write-pr
+description: After pull-request-prep has been run and any blockers addressed, generate a PR title and a final PR description, and write the description to pr-description.md at the repo root. Not for reviewing code (pull-request-prep). Usage: /write-pr
 ---
 
 Generate the PR title and final PR description for the current branch. Write the description to `pr-description.md` at the repo root so it can be pasted directly into GitHub, and give the title in your reply.

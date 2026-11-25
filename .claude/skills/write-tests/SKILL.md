@@ -1,6 +1,6 @@
 ---
 name: write-tests
-description: Choose the right kind of test for code in this repo (unit, integration, bUnit, Playwright), then write it with the repo's traits, factories, strict mocks and AAA layout. Use when adding tests for new or changed code or before starting a bug fix.
+description: Choose the right kind of test for code in this repo (unit, integration, bUnit, Playwright), then write it with the repo's traits, factories, strict mocks and AAA layout. Use when adding tests for new or changed code or before starting a bug fix. Not for Stryker survivors (mutation-score-dotnet, mutation-score-js), factories (test-factory-generator) or production code changes.
 ---
 
 # Write tests
@@ -36,6 +36,14 @@ A test goes in the folder that mirrors its source folder.
 ## Bug fix
 
 Write the failing test first, run it, and confirm it fails for the right reason. Then make the smallest fix and run the full suite.
+
+## Gotchas
+
+- Never change process-wide static state in an integration test: `UseFastEndpoints()` needs `UsePropertyNamingPolicy = false`, reset Hangfire statics in `DisposeAsync`, and stop (never dispose) a `WebApplication`.
+- A polling helper picks the latest event and tolerates a torn read on a live collection.
+- Assert log content with `FakeLogger<T>`. Assert redaction through a DI container with `EnableRedaction()`.
+- `dotnet test` runs through MTP: use `--filter-trait`, not `--filter`. Exit code 8 means no tests matched in that project.
+- FastEndpoints mutation testing has unkillable mutants. See `docs/learnings/testing.md` for `ignore-methods` and Stryker disable comments.
 
 ## Run
 
