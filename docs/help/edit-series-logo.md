@@ -27,7 +27,7 @@ If you lack the permission, no edit-logo button appears. The full edit form beha
 
 **Cancel**, **Escape**, or a click outside the window closes it. If you have an unsaved change, you are asked to confirm first ("Discard unsaved changes?").
 
-The logo is presentation only, so you can change it on a **locked** Series, one whose Stages have begun processing.
+The logo is presentation only, so you can change it on a **locked** Series, one whose tournaments have begun processing.
 
 ## Troubleshooting
 

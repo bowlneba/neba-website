@@ -1,6 +1,6 @@
 # Edit a Series
 
-Lets staff change a Series' name, logo, Stages and Finale.
+Lets staff change a Series' name, logo, tournaments and Finale.
 
 ## Prerequisites
 
@@ -15,15 +15,15 @@ Changing the logo through this form also needs the logo permission to be intact.
    ![Series page with the Edit button at the top right](images/edit-series/detail-edit-button.png)
 
 2. The form opens filled in with the current values. Change what you need. The fields work as they do when you create a Series (see [`create-series.md`](create-series.md)), with one difference: **Season** is shown but cannot be changed.
-   ![Edit Series form filled with the Series' current Stages and Finale](images/edit-series/edit-form.png)
+   ![Edit Series form filled with the Series' current tournaments and Finale](images/edit-series/edit-form.png)
 
 3. Click **Save changes** to save, or **Cancel** to leave the Series as it was.
 
-The whole Series saves at once: the name, the logo, the full list of Stages and the Finale. If any rule is broken, nothing is saved and each message appears next to the row or field it names.
+The whole Series saves at once: the name, the logo, the full list of tournaments and the Finale. If any rule is broken, nothing is saved and each message appears next to the row or field it names.
 
 ## A locked Series
 
-A Series locks as soon as any of its Stages has been processed. A locked Series shows a banner at the top of the form and a read-only Stage grid.
+A Series locks as soon as any of its tournaments has been processed. A locked Series shows a banner at the top of the form and a read-only tournament grid.
 
 While a Series is locked you can still:
 
@@ -31,7 +31,7 @@ While a Series is locked you can still:
 - change or remove the **logo**;
 - change the Finale's **date**, **start time** and **host center**, because a Finale can be rescheduled.
 
-You cannot add, remove, reorder or change Stages, turn the Finale on or off, or change its finalist count. A save that tries to returns "This Series is locked because processing has begun."
+You cannot add, remove, reorder or change tournaments, turn the Finale on or off, or change its finalist count. A save that tries to returns "This Series is locked because processing has begun."
 
 ## Troubleshooting
 
@@ -39,8 +39,8 @@ You cannot add, remove, reorder or change Stages, turn the Finale on or off, or 
 | --- | --- |
 | No **Edit** button | You don't hold `Series.EditSeries`. Ask an admin to grant it. |
 | A "locked" banner and a read-only grid | Processing has begun for this Series. Only the name, logo and the Finale's date, time and center can change. |
-| "Stage 4 (Callahan's Bowl-O-Rama): this tournament is already a Stage in the 2026 Series." | That tournament belongs to another Series. Remove the row or pick another tournament. |
-| "this Stage no longer exists. Reload the Series and try again." | Someone else removed that Stage while you were editing. Reload the page and redo your change. |
+| "Tournament 4 (Callahan's Bowl-O-Rama): this tournament is already in the 2026 Series." | That tournament belongs to another Series. Remove the row or pick another tournament. |
+| "this tournament is no longer in the Series. Reload the Series and try again." | Someone else removed that tournament while you were editing. Reload the page and redo your change. |
 | The logo is read only | An admin has denied `Series.EditSeriesLogo` to your account. |
 | "This Series could not be found." | Someone deleted it. Return to the Series list. |
 
