@@ -1,6 +1,6 @@
 ---
 name: new-background-job
-description: Add a Hangfire background job to Neba.Api - the job record, its handler, enqueueing or recurring schedule, serialization and retry traps, and tests. Use when work must run outside the request (file cleanup, sync, notification) or on a schedule.
+description: Add a Hangfire background job to Neba.Api - the job record, its handler, enqueueing or recurring schedule, serialization and retry traps, and tests. Use when work must run outside the request (file cleanup, sync, notification) or on a schedule. Not for a one-off data port (add-ef-migration, data-migration/*.linq) or a domain event on its own (see CLAUDE.md, IDomainEventPublisher).
 ---
 
 # New background job
