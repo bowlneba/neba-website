@@ -1,6 +1,6 @@
 ---
 name: add-ef-migration
-description: Create and review an EF Core migration in Neba.Api - schema change, data backfill, migration test, and the hotfix and Software-port rules. Use when a table, column, index or constraint changes, or when data must be moved or ported from the legacy Software tables.
+description: Create and review an EF Core migration in Neba.Api - schema change, data backfill, migration test, and the hotfix and Software-port rules. Use when a table, column, index or constraint changes, or when data must be moved or ported from the legacy Software tables. Not for query tuning or N+1 review (performance-review, dotnet-data:optimizing-ef-core-queries) or entity design (new-domain-entity). A hotfix cannot carry a migration.
 ---
 
 # Add an EF migration
