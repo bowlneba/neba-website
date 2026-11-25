@@ -65,7 +65,7 @@ public sealed class SeriesMutationResultSenderTests
 
         // Assert
         failures.Single().PropertyName.ShouldBe("Series.Stages[2]");
-        failures.Single().ErrorMessage.ShouldStartWith("Stage 3 (T): ");
+        failures.Single().ErrorMessage.ShouldStartWith("Tournament 3 (T): ");
     }
 
     [Fact(DisplayName = "SendAsync should name a Finale error by its PropertyKey")]

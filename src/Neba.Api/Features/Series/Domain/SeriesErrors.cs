@@ -41,39 +41,39 @@ internal static class SeriesErrors
     public static Error LogoChangeDenied
         => Error.Forbidden("Series.Logo.ChangeDenied", "Your account is not allowed to change Series logos.");
 
-    // Stage errors. "Stage 9 (Callahan's Bowl-O-Rama): ..." names the offending row.
+    // Stage errors. "Tournament 9 (Callahan's Bowl-O-Rama): ..." names the offending row.
     public static Error StageNotFound(int order)
-        => Stage(order, null, "Series.Stage.NotFound", "this Stage no longer exists. Reload the Series and try again.", ErrorType.Validation);
+        => Stage(order, null, "Series.Stage.NotFound", "this tournament is no longer in the Series. Reload the Series and try again.", ErrorType.Validation);
 
     public static Error TournamentNotFound(int order)
         => Stage(order, null, "Series.Stage.TournamentNotFound", "the selected tournament does not exist.", ErrorType.Validation);
 
     public static Error DuplicateTournament(int order, string tournament)
-        => Stage(order, tournament, "Series.Stage.DuplicateTournament", "this tournament is already a Stage in this Series.", ErrorType.Validation);
+        => Stage(order, tournament, "Series.Stage.DuplicateTournament", "this tournament is already in this Series.", ErrorType.Validation);
 
     public static Error TournamentInAnotherSeries(int order, string tournament, string otherSeries)
-        => Stage(order, tournament, "Series.Stage.TournamentInAnotherSeries", $"this tournament is already a Stage in the {otherSeries} Series.", ErrorType.Conflict);
+        => Stage(order, tournament, "Series.Stage.TournamentInAnotherSeries", $"this tournament is already in the {otherSeries} Series.", ErrorType.Conflict);
 
     public static Error TournamentNotInSeason(int order, string tournament)
         => Stage(order, tournament, "Series.Stage.TournamentNotInSeason", "this tournament is not in the Series' season.", ErrorType.Validation);
 
     public static Error KindOutOfOrder(int order, string tournament, StageKind kind, StageKind previous)
-        => Stage(order, tournament, "Series.Stage.KindOutOfOrder", $"a {kind.Name} Stage cannot follow a {previous.Name} Stage. Stages run Qualifying, then Survivor, then Placement.", ErrorType.Validation);
+        => Stage(order, tournament, "Series.Stage.KindOutOfOrder", $"a {kind.Name} tournament cannot follow a {previous.Name} tournament. They run Qualifying, then Survivor, then Placement.", ErrorType.Validation);
 
     public static Error MultiplePlacementStages(int order, string tournament)
-        => Stage(order, tournament, "Series.Stage.MultiplePlacement", "a Series has at most one Placement Stage.", ErrorType.Validation);
+        => Stage(order, tournament, "Series.Stage.MultiplePlacement", "a Series has at most one Placement tournament.", ErrorType.Validation);
 
     public static Error PlacementNotLast(int order, string tournament)
-        => Stage(order, tournament, "Series.Stage.PlacementNotLast", "the Placement Stage must be the last Stage.", ErrorType.Validation);
+        => Stage(order, tournament, "Series.Stage.PlacementNotLast", "the Placement tournament must be the last one.", ErrorType.Validation);
 
     public static Error DateBeforePrevious(int order, string tournament, DateOnly startDate, DateOnly previousStartDate)
-        => Stage(order, tournament, "Series.Stage.DateBeforePrevious", $"this tournament starts {Format(startDate)}, which is before the previous Stage's tournament ({Format(previousStartDate)}). Stages must follow tournament dates.", ErrorType.Validation);
+        => Stage(order, tournament, "Series.Stage.DateBeforePrevious", $"this tournament starts {Format(startDate)}, which is before the previous tournament ({Format(previousStartDate)}). Tournaments must follow tournament dates.", ErrorType.Validation);
 
     public static Error SurvivorCountNotDecreasing(int order, string tournament, int count, int previousCount)
-        => Stage(order, tournament, "Series.Stage.SurvivorCountNotDecreasing", $"{count} advancing must be fewer than the previous Survivor Stage's {previousCount}.", ErrorType.Validation);
+        => Stage(order, tournament, "Series.Stage.SurvivorCountNotDecreasing", $"{count} advancing must be fewer than the previous Survivor tournament's {previousCount}.", ErrorType.Validation);
 
     public static Error AdvancingCountNotAllowed(int order, string tournament)
-        => Stage(order, tournament, "Series.Stage.AdvancingCountNotAllowed", "a Placement Stage has no advancing count. Set the Finale on the Series instead.", ErrorType.Validation);
+        => Stage(order, tournament, "Series.Stage.AdvancingCountNotAllowed", "a Placement tournament has no advancing count. Set the Finale on the Series instead.", ErrorType.Validation);
 
     // Finale errors belong to the Series, not a Stage row. The PropertyKey metadata names the field they land on.
     public static readonly Error FinaleCountNotPositive = Error.Validation(
@@ -83,12 +83,12 @@ internal static class SeriesErrors
 
     public static Error FinaleCountExceedsSurvivor(int count, int survivorCount) => Error.Validation(
         code: "Series.Finale.FinalistCount.ExceedsSurvivor",
-        description: $"A Finale of {count} cannot be larger than the last Survivor Stage's {survivorCount}.",
+        description: $"A Finale of {count} cannot be larger than the last Survivor tournament's {survivorCount}.",
         metadata: new Dictionary<string, object> { { PropertyKey, "Series.Finale.FinalistCount" } });
 
     public static Error StageNotBeforeFinale(DateOnly finaleDate, string tournament, DateOnly tournamentEndDate) => Error.Validation(
         code: "Series.Finale.Date.StageNotBefore",
-        description: $"No Stage can come after the Finale, but {tournament} ends {Format(tournamentEndDate)} and the Finale is {Format(finaleDate)}.",
+        description: $"No tournament can come after the Finale, but {tournament} ends {Format(tournamentEndDate)} and the Finale is {Format(finaleDate)}.",
         metadata: new Dictionary<string, object> { { PropertyKey, "Series.Finale.Date" } });
 
     public static Error FinaleBowlingCenterNotAvailable(string bowlingCenterId) => Error.Validation(
@@ -97,23 +97,23 @@ internal static class SeriesErrors
         metadata: new Dictionary<string, object> { { PropertyKey, "Series.Finale.BowlingCenterId" }, { "BowlingCenterId", bowlingCenterId } });
 
     public static Error AdvancingCountRequired(int order, string tournament, StageKind kind)
-        => Stage(order, tournament, "Series.Stage.AdvancingCountRequired", $"a {kind.Name} Stage needs an advancing count.", ErrorType.Validation);
+        => Stage(order, tournament, "Series.Stage.AdvancingCountRequired", $"a {kind.Name} tournament needs an advancing count.", ErrorType.Validation);
 
     public static Error AdvancingCountNotPositive(int order, string tournament)
         => Stage(order, tournament, "Series.Stage.AdvancingCountNotPositive", "advancing count must be a whole number greater than zero.", ErrorType.Validation);
 
     public static Error SquadRequired(int order, string tournament)
-        => Stage(order, tournament, "Series.Stage.SquadRequired", "a Survivor Stage needs a squad date and start time.", ErrorType.Validation);
+        => Stage(order, tournament, "Series.Stage.SquadRequired", "a Survivor tournament needs a squad date and start time.", ErrorType.Validation);
 
     public static Error SquadNotAllowed(int order, string tournament, StageKind kind)
-        => Stage(order, tournament, "Series.Stage.SquadNotAllowed", $"a {kind.Name} Stage has no designated squad.", ErrorType.Validation);
+        => Stage(order, tournament, "Series.Stage.SquadNotAllowed", $"a {kind.Name} tournament has no designated squad.", ErrorType.Validation);
 
     public static Error SquadDateOutsideTournament(int order, string tournament, DateOnly squadDate, DateOnly startDate, DateOnly endDate)
         => Stage(order, tournament, "Series.Stage.SquadDateOutsideTournament", $"the squad date {Format(squadDate)} is outside the tournament's dates ({Format(startDate)} to {Format(endDate)}).", ErrorType.Validation);
 
     private static Error Stage(int order, string? tournament, string code, string reason, ErrorType type)
     {
-        var label = tournament is null ? $"Stage {order}" : $"Stage {order} ({tournament})";
+        var label = tournament is null ? $"Tournament {order}" : $"Tournament {order} ({tournament})";
         var metadata = new Dictionary<string, object> { { StageOrderKey, order } };
         var description = $"{label}: {reason}";
 

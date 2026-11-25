@@ -13,17 +13,17 @@ internal sealed class SeriesStageInputValidator
         RuleFor(s => s.Id)
             .Length(26).When(s => s.Id is not null)
             .WithErrorCode("SeriesStageInput.IdInvalidLength")
-            .WithMessage("Stage ID must be a 26-character ULID.");
+            .WithMessage("Tournament ID must be a 26-character ULID.");
 
         RuleFor(s => s.Kind)
             .Must(kind => StageKind.TryFromValue(kind, out _))
             .WithErrorCode("SeriesStageInput.KindInvalid")
-            .WithMessage("Stage kind must be Qualifying, Survivor, or Placement.");
+            .WithMessage("Tournament kind must be Qualifying, Survivor, or Placement.");
 
         RuleFor(s => s.TournamentId)
             .NotEmpty().Length(26)
             .WithErrorCode("SeriesStageInput.TournamentIdInvalid")
-            .WithMessage("Each Stage needs a tournament.");
+            .WithMessage("Each row needs a tournament.");
 
         RuleFor(s => s)
             .Must(s => (s.SquadDate is null) == (s.SquadStartTime is null))

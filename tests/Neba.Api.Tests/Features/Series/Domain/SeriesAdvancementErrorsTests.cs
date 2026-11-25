@@ -16,7 +16,7 @@ public sealed class SeriesAdvancementErrorsTests
         var error = SeriesAdvancementErrors.ConfirmationRequired([3]);
 
         // Assert
-        error.Description.ShouldStartWith("Stage 3 is official.");
+        error.Description.ShouldStartWith("Tournament 3 is official. Recomputing resets it to Computed.");
         ((int[])error.Metadata![SeriesAdvancementErrors.OfficialStageOrdersKey]).ShouldBe([3]);
     }
 
@@ -27,7 +27,7 @@ public sealed class SeriesAdvancementErrorsTests
         var error = SeriesAdvancementErrors.ConfirmationRequired([2, 3, 5]);
 
         // Assert
-        error.Description.ShouldStartWith("Stage 2, 3, 5 are official.");
+        error.Description.ShouldStartWith("Tournaments 2, 3, 5 are official. Recomputing resets them to Computed.");
         ((int[])error.Metadata![SeriesAdvancementErrors.OfficialStageOrdersKey]).ShouldBe([2, 3, 5]);
     }
 
@@ -39,8 +39,8 @@ public sealed class SeriesAdvancementErrorsTests
         var pending = SeriesAdvancementErrors.StageNotComputed(StageStatus.Pending);
 
         // Assert
-        official.Description.ShouldBe("This Stage is official. Recompute it from the Series page before changing it.");
-        pending.Description.ShouldBe("This Stage has not been computed yet.");
+        official.Description.ShouldBe("This tournament is official. Recompute it from the Series page before changing it.");
+        pending.Description.ShouldBe("This tournament has not been computed yet.");
         official.Code.ShouldBe(pending.Code);
     }
 

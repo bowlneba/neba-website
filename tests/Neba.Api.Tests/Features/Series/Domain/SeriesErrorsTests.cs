@@ -16,7 +16,7 @@ public sealed class SeriesErrorsTests
         var error = SeriesErrors.TournamentNotInSeason(9, "Callahan's");
 
         // Assert
-        error.Description.ShouldStartWith("Stage 9 (Callahan's): ");
+        error.Description.ShouldStartWith("Tournament 9 (Callahan's): ");
         error.Metadata![SeriesErrors.StageOrderKey].ShouldBe(9);
         error.Type.ShouldBe(ErrorType.Validation);
     }
@@ -28,7 +28,7 @@ public sealed class SeriesErrorsTests
         var error = SeriesErrors.StageNotFound(2);
 
         // Assert
-        error.Description.ShouldStartWith("Stage 2: ");
+        error.Description.ShouldStartWith("Tournament 2: ");
     }
 
     [Fact(DisplayName = "TournamentInAnotherSeries should be a Conflict")]
