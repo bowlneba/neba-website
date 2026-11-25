@@ -52,38 +52,11 @@ Findings to report (user decides):
 
 ## Step 5 — Test review (blocking)
 
-For each changed production file, find the test that covers the changed behavior. Use the repo's mapping from CLAUDE.md:
-
-| Changed code | Test project |
-|---|---|
-| `src/Neba.Api/Features/**` (domain, handler, validator, endpoint) | `tests/Neba.Api.Tests` (unit; integration for EF or endpoints) |
-| `src/Neba.Api/Database/**` | `tests/Neba.Api.Tests` (integration) |
-| `src/Neba.Website*/**` components | `tests/Neba.Website.Tests` (bUnit) |
-| `*.razor.js`, other JS | Jest |
-| UI flow | `tests/e2e` |
-
-A change is covered only when a new or modified test in `<tag>..HEAD` asserts the fixed behavior. An existing test that happens to execute the line does not count. Report a table: file or behavior, covering test, verdict (covered, thin, missing).
-
-Run the `convention-review` skill on the diff and fold its findings in. Tests must follow the repo rules: `[UnitTest]`/`[IntegrationTest]` and `[Component]` traits, `DisplayName`, AAA comments, `MockBehavior.Strict`, Shouldly, `Neba.TestFactory` factories.
-
-**Blocking.** If any behavior is missing or thin, stop and list the gaps. The user either adds tests (then re-run) or gives a reason to ship without them. Record that reason verbatim in the PR block (Step 8). Do not write the tests unless the user asks.
+Read `references/test-review-and-red-check.md`. For each changed production file, find a new or modified test in `<tag>..HEAD` that asserts the fixed behavior. An existing test that only runs the line does not count. Report a table of file or behavior, covering test and verdict (covered, thin, missing). Run `convention-review` on the diff. **Blocking:** stop on any missing or thin behavior; the user adds tests or gives a reason to ship without them, which goes verbatim in the PR block. Do not write the tests unless asked.
 
 ## Step 6 — Red check (new tests must fail without the fix)
 
-Prove each new or changed test guards the fix. Never touch the user's working tree:
-
-1. `git worktree add <scratchpad>/hotfix-base <tag>` (detached).
-2. Copy into it only the test files and test factories changed in `<tag>..HEAD`.
-3. Run the matching tests there (component filter, below).
-4. Remove the worktree (`git worktree remove --force`), even when a step fails.
-
-Interpret the result:
-
-- **Fails on an assertion** — good. The test guards the fix.
-- **Passes** — the test does not prove the fix. Treat as a gap and say so.
-- **Does not compile** — the test needs the new API. That proves the code is new but not the behavior. Report as "unproven" and let the user decide.
-
-Integration tests need Docker. If Docker is down, say the red check is skipped for those tests; do not report them as passing.
+Same file. Prove each new test fails on the base tag, in a throwaway worktree (never the user's working tree): add the worktree, copy in only the changed tests and factories, run them, remove the worktree even on failure. A failing assertion is good; a pass means the test proves nothing; a compile error means "unproven". Docker down means the integration red check is skipped, not passed.
 
 ## Step 7 — Local tests
 
@@ -123,3 +96,10 @@ Remind the user, in this order:
 1. Approve the `Production` environment when the workflow reaches deploy.
 2. Tag the deployed commit by hand once the deploy succeeds.
 3. Merge the PR to `main`. If the fix never reaches `main`, the next `main` deploy reverts it.
+
+## Gotchas
+
+- The hotfix path never runs migrations. A migration is a hard stop.
+- The red check must never touch the user's working tree. Use a worktree and remove it even when a step fails.
+- The MTP runner exits 8 for a project with no matching trait. Read each project's summary line.
+- Never push, dispatch the workflow or open the PR. Print the commands.
