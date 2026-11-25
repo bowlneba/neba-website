@@ -22,7 +22,9 @@ public sealed class GetSeriesAdvancersEndpointTests
     [Fact(DisplayName = "Configure should register an anonymous GET route at /series/{id}/advancers")]
     public void Configure_ShouldRegisterAnonymousGetRoute()
     {
-        // Arrange & Act
+        // Arrange
+
+        // Act
         var endpoint = Factory.Create<GetSeriesAdvancersEndpoint>(Handler().Object);
 
         // Assert
@@ -80,6 +82,45 @@ public sealed class GetSeriesAdvancersEndpointTests
         stage.Advancers[1].IsBackfill.ShouldBeTrue();
         stage.Advancers[1].Advanced.ShouldBeTrue();
         stage.Advancers[1].AlreadyAdvancedFromOrder.ShouldBeNull();
+    }
+
+    [Fact(DisplayName = "HandleAsync should return the public response shape for a Qualifying, Survivor and Placement Stage")]
+    public async Task HandleAsync_ShouldReturnOkWithMappedAdvancers()
+    {
+        // Arrange
+        var ct = TestContext.Current.CancellationToken;
+        var dto = new SeriesAdvancersDto(
+        [
+            new StageAdvancersDto(new SeriesStageId("01000000000000000000000011"), 1, "Qualifying",
+            [
+                new AdvancerDto(new BowlerId("01000000000000000000000021"), "Dave Smith", 1, null, false, true, null),
+                new AdvancerDto(new BowlerId("01000000000000000000000025"), "Ann Early", 3, null, false, false, 1),
+                new AdvancerDto(new BowlerId("01000000000000000000000022"), "Pat Plain", null, null, true, true, null) { BackfillPoints = 80 },
+            ]),
+            new StageAdvancersDto(new SeriesStageId("01000000000000000000000012"), 2, "Survivor",
+            [
+                new AdvancerDto(new BowlerId("01000000000000000000000023"), "Kyle Wilks", null, 1500, false, true, null),
+            ]),
+            new StageAdvancersDto(new SeriesStageId("01000000000000000000000013"), 3, "Placement",
+            [
+                new AdvancerDto(new BowlerId("01000000000000000000000024"), "Lee Park", 2, null, false, true, null)
+                {
+                    Position = 1,
+                    Bowled = true,
+                    IsFinalist = true,
+                },
+            ]),
+        ]);
+        var handler = Handler();
+        handler.Setup(h => h.HandleAsync(It.IsAny<GetSeriesAdvancersQuery>(), ct)).ReturnsAsync(dto);
+        var endpoint = Factory.Create<GetSeriesAdvancersEndpoint>(handler.Object);
+
+        // Act
+        await endpoint.HandleAsync(new GetSeriesAdvancersRequest { SeriesId = ValidId }, ct);
+
+        // Assert
+        endpoint.HttpContext.Response.StatusCode.ShouldBe(200);
+        await Verify(endpoint.Response);
     }
 
     [Fact(DisplayName = "HandleAsync should return an empty Stage list when no Stage is settled")]

@@ -4,6 +4,7 @@ using System.Net.Http.Json;
 using Neba.Api.Contracts;
 using Neba.Api.Contracts.Security;
 using Neba.Api.Contracts.Series.GetSeriesAdvancement;
+using Neba.Api.Contracts.Series.GetSeriesAdvancers;
 using Neba.Api.Contracts.Series.ListStageResults;
 using Neba.Api.Contracts.Series.ListStageSquads;
 using Neba.Api.Features.Series.Domain;
@@ -188,6 +189,56 @@ public sealed class SeriesAdvancementReadEndpointsTests(AppDbContextFixture fixt
         body.Stages[1].SurvivorOutcomes.Count.ShouldBe(8);
         body.Positions.Count.ShouldBe(8);
         body.Positions[0].BowlerId.ShouldBe(scenario.Id(0).Value.ToString());
+    }
+
+    // ---- GET /series/{id}/advancers (public) ----
+
+    [Fact(DisplayName = "GET /series/{id}/advancers returns 200 with the Official Stage for an anonymous caller")]
+    public async Task GetAdvancers_ShouldReturn200WithOfficialStage_WhenAnonymous()
+    {
+        // Arrange
+        var ct = TestContext.Current.CancellationToken;
+        await using var db = fixture.CreateDbContext();
+        var scenario = await AdvancementReadSeed.SeedAsync(db, ct);
+        scenario.Stage(1).MarkOfficial(AdvancementReadSeed.Now.AddHours(2));
+        await db.SaveChangesAsync(ct);
+
+        // Act
+        using var response = await GetAsync($"/series/{Id(scenario.Series.Id)}/advancers", null);
+        var body = await response.Content.ReadFromJsonAsync<SeriesAdvancersResponse>(ct);
+
+        // Assert
+        response.StatusCode.ShouldBe(HttpStatusCode.OK);
+        var stage = body!.Stages.ShouldHaveSingleItem();
+        stage.StageId.ShouldBe(Id(scenario.Stage(1).Id));
+        stage.Advancers.ShouldNotBeEmpty();
+    }
+
+    [Fact(DisplayName = "GET /series/{id}/advancers returns 200 with no Stages while none is Official")]
+    public async Task GetAdvancers_ShouldReturnNoStages_WhenNothingIsOfficial()
+    {
+        // Arrange
+        var scenario = await SeedComputedSeriesAsync();
+
+        // Act
+        using var response = await GetAsync($"/series/{Id(scenario.Series.Id)}/advancers", null);
+        var body = await response.Content.ReadFromJsonAsync<SeriesAdvancersResponse>(TestContext.Current.CancellationToken);
+
+        // Assert
+        response.StatusCode.ShouldBe(HttpStatusCode.OK);
+        body!.Stages.ShouldBeEmpty();
+    }
+
+    [Fact(DisplayName = "GET /series/{id}/advancers returns 404 for an unknown Series")]
+    public async Task GetAdvancers_ShouldReturn404_WhenSeriesIsUnknown()
+    {
+        // Arrange
+
+        // Act
+        using var response = await GetAsync($"/series/{Id(SeriesId.New())}/advancers", null);
+
+        // Assert
+        response.StatusCode.ShouldBe(HttpStatusCode.NotFound);
     }
 
     // ---- GET /series/{id}/stages/{stageId}/results ----
