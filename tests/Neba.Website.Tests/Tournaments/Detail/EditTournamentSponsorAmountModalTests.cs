@@ -73,7 +73,7 @@ public sealed class EditTournamentSponsorAmountModalTests : IDisposable
             onSaved: () => saved = true);
 
         // Act
-        cut.Find("#sponsor-edit-amount").Change("900.50");
+        cut.Find("#sponsor-edit-amount").Input("900.50");
         cut.Find("button.neba-btn-primary").Click();
 
         // Assert
@@ -94,7 +94,7 @@ public sealed class EditTournamentSponsorAmountModalTests : IDisposable
             onSaved: () => saved = true);
 
         // Act
-        cut.Find("#sponsor-edit-amount").Change("123");
+        cut.Find("#sponsor-edit-amount").Input("123");
         cut.Find("button.neba-btn-primary").Click();
 
         // Assert
@@ -125,7 +125,7 @@ public sealed class EditTournamentSponsorAmountModalTests : IDisposable
         var cut = Render(sponsor);
 
         // Act
-        cut.Find("#sponsor-edit-amount").Change(value);
+        cut.Find("#sponsor-edit-amount").Input(value);
 
         // Assert
         cut.Find("button.neba-btn-primary").HasAttribute("disabled").ShouldBeTrue();
