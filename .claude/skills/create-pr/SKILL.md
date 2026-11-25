@@ -1,6 +1,6 @@
 ---
 name: create-pr
-description: Create the GitHub pull request for the current branch with gh. Does what write-pr does (title, pr-description.md, labels), then creates the PR as ready for review, assigned to the signed-in gh user. Asks for the base branch and an optional milestone if not given. Usage: /create-pr [base-branch] [milestone]
+description: Create the GitHub pull request for the current branch with gh. Does what write-pr does (title, pr-description.md, labels), then creates the PR as ready for review, assigned to the signed-in gh user. Asks for the base branch and an optional milestone if not given. Not for reviewing code (pull-request-prep) or a hotfix (hotfix). Usage: /create-pr [base-branch] [milestone]
 ---
 
 Write the PR title and description as `/write-pr` does, then create the PR with `gh`.
