@@ -66,10 +66,10 @@ public sealed class TournamentSponsor
         return sponsorshipAmount > MaxSponsorshipAmount
             ? TournamentSponsorErrors.SponsorshipAmountTooLarge
             : new TournamentSponsor
-        {
-            SponsorId = sponsorId,
-            TitleSponsor = titleSponsor,
-            SponsorshipAmount = sponsorshipAmount
-        };
+            {
+                SponsorId = sponsorId,
+                TitleSponsor = titleSponsor,
+                SponsorshipAmount = sponsorshipAmount
+            };
     }
 }
