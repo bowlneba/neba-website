@@ -4,6 +4,7 @@ using Neba.Api.Contracts.Tournaments.CheckTeamEligibility;
 using Neba.Api.Contracts.Tournaments.CreateTournament;
 using Neba.Api.Contracts.Tournaments.EditTournament;
 using Neba.Api.Contracts.Tournaments.EditTournamentLogo;
+using Neba.Api.Contracts.Tournaments.EditTournamentSponsorAmount;
 using Neba.Api.Contracts.Tournaments.GetTournament;
 using Neba.Api.Contracts.Tournaments.ListChampions;
 using Neba.Api.Contracts.Tournaments.ListTournamentTypes;
@@ -96,6 +97,12 @@ public interface ITournamentsApi
     /// </summary>
     [Post("/tournaments/{id}/sponsors")]
     Task<IApiResponse> AddTournamentSponsorAsync(string id, AddTournamentSponsorRequest request, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Changes the sponsorship amount of a sponsor attached to a tournament.
+    /// </summary>
+    [Put("/tournaments/{id}/sponsors/{sponsorId}")]
+    Task<IApiResponse> EditTournamentSponsorAmountAsync(string id, string sponsorId, EditTournamentSponsorAmountRequest request, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Removes a sponsor from a tournament.

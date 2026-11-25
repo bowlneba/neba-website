@@ -581,6 +581,58 @@ public sealed class TournamentTests
         result.FirstError.Code.ShouldBe("TournamentSponsor.NegativeSponsorshipAmount");
     }
 
+    [Fact(DisplayName = "ChangeSponsorAmount updates only the specified sponsor's amount")]
+    public void ChangeSponsorAmount_ShouldUpdateOnlySpecifiedSponsor_WhenSponsorIsAttached()
+    {
+        // Arrange
+        var tournament = TournamentFactory.Create();
+        var sponsorId = SponsorId.New();
+        var otherSponsorId = SponsorId.New();
+        tournament.AddSponsor(sponsorId, titleSponsor: true, sponsorshipAmount: 500m);
+        tournament.AddSponsor(otherSponsorId, titleSponsor: false, sponsorshipAmount: 750m);
+
+        // Act
+        var result = tournament.ChangeSponsorAmount(sponsorId, 1200m);
+
+        // Assert
+        result.IsError.ShouldBeFalse();
+        var changed = tournament.Sponsors.Single(s => s.SponsorId == sponsorId);
+        changed.SponsorshipAmount.ShouldBe(1200m);
+        changed.TitleSponsor.ShouldBeTrue();
+        tournament.Sponsors.Single(s => s.SponsorId == otherSponsorId).SponsorshipAmount.ShouldBe(750m);
+    }
+
+    [Fact(DisplayName = "ChangeSponsorAmount returns a conflict error when the sponsor is not attached")]
+    public void ChangeSponsorAmount_ShouldReturnConflictError_WhenSponsorIsNotAttached()
+    {
+        // Arrange
+        var tournament = TournamentFactory.Create();
+
+        // Act
+        var result = tournament.ChangeSponsorAmount(SponsorId.New(), 100m);
+
+        // Assert
+        result.IsError.ShouldBeTrue();
+        result.FirstError.Code.ShouldBe("Tournament.SponsorNotAttached");
+    }
+
+    [Fact(DisplayName = "ChangeSponsorAmount returns a validation error and keeps the amount when the amount is negative")]
+    public void ChangeSponsorAmount_ShouldReturnValidationErrorAndKeepAmount_WhenAmountIsNegative()
+    {
+        // Arrange
+        var tournament = TournamentFactory.Create();
+        var sponsorId = SponsorId.New();
+        tournament.AddSponsor(sponsorId, titleSponsor: false, sponsorshipAmount: 500m);
+
+        // Act
+        var result = tournament.ChangeSponsorAmount(sponsorId, -1m);
+
+        // Assert
+        result.IsError.ShouldBeTrue();
+        result.FirstError.Code.ShouldBe("TournamentSponsor.NegativeSponsorshipAmount");
+        tournament.Sponsors.Single().SponsorshipAmount.ShouldBe(500m);
+    }
+
     [Fact(DisplayName = "RemoveSponsor returns Deleted when sponsor is attached")]
     public void RemoveSponsor_ShouldReturnDeleted_WhenSponsorIsAttached()
     {

@@ -32,7 +32,19 @@ public sealed class TournamentSponsor
     /// <summary>
     /// The amount of the sponsorship provided by the sponsor for this tournament. This decimal property allows us to capture the financial contribution of the sponsor to the tournament, which can be used for reporting, analytics, and determining sponsorship tiers. It is required to quantify the sponsorship relationship in the database.
     /// </summary>
-    public required decimal SponsorshipAmount { get; init; }
+    public decimal SponsorshipAmount { get; internal set; }
+
+    internal ErrorOr<Success> ChangeSponsorshipAmount(decimal sponsorshipAmount)
+    {
+        if (sponsorshipAmount < 0)
+        {
+            return TournamentSponsorErrors.NegativeSponsorshipAmount;
+        }
+
+        SponsorshipAmount = sponsorshipAmount;
+
+        return Result.Success;
+    }
 
     internal static ErrorOr<TournamentSponsor> Create(SponsorId sponsorId, bool titleSponsor, decimal sponsorshipAmount)
     {
