@@ -1,6 +1,6 @@
 ---
 name: new-domain-entity
-description: Add an aggregate root or a child entity to a feature's Domain folder - typed ID, always-valid Create factory, aggregate method, errors, ubiquitous-language entry, and test factory. Use when modeling a new domain concept before its endpoints and table.
+description: Add an aggregate root or a child entity to a feature's Domain folder - typed ID, always-valid Create factory, aggregate method, errors, ubiquitous-language entry, and test factory. Use when modeling a new domain concept before its endpoints and table. Not for endpoints (new-endpoint), tables and migrations (add-ef-migration) or glossary audits (ubiquitous-language-review).
 ---
 
 # New domain entity
@@ -30,6 +30,13 @@ Read `docs/learnings/domain-design.md` and the `vsa-ddd` skill. The `backend-api
 8. **XML summaries** are short IntelliSense blurbs. The full definition belongs in the glossary.
 9. **Factory.** Add a test factory in `tests/Neba.TestFactory/` (`test-factory-generator`). `Create()` with no arguments must produce a persistable entity.
 10. **Hand-offs.** The table and configuration go to `efcore`. The tests go to `test-writer`. An endpoint is a `new-endpoint` task.
+
+## Gotchas
+
+- An EF collection navigation on an `IReadOnlyCollection<T>` auto-property with `= []` becomes a fixed-size array. Use a `List<T>` backing field and add an `ICollection<T>.Add` regression test.
+- A domain event goes through `IDomainEventPublisher`, one `IDomainEventJob<T>` per event, and carries typed IDs only. The outbox (#56) is deferred.
+- Calling `Create` on a child from outside the aggregate means someone made it public. Make it `internal`.
+- A new `Create()` factory default must give a persistable entity with no arguments, including any required complex property.
 
 ## Checklist
 
