@@ -11,7 +11,9 @@ public sealed class MakeStageOfficialFactoryTests
     [Fact(DisplayName = "MakeStageOfficialRequestFactory Create should return ULID ids and the valid Version with no arguments")]
     public void MakeStageOfficialRequestFactory_Create_ShouldReturnDefaults()
     {
-        // Arrange & Act
+        // Arrange
+
+        // Act
         var request = MakeStageOfficialRequestFactory.Create();
 
         // Assert
@@ -23,7 +25,9 @@ public sealed class MakeStageOfficialFactoryTests
     [Fact(DisplayName = "MakeStageOfficialRequestFactory Create should use the given values")]
     public void MakeStageOfficialRequestFactory_Create_ShouldUseGivenValues()
     {
-        // Arrange & Act
+        // Arrange
+
+        // Act
         var request = MakeStageOfficialRequestFactory.Create("series", "stage", MakeStageOfficialInputFactory.Create(9));
 
         // Assert
@@ -53,7 +57,9 @@ public sealed class MakeStageOfficialFactoryTests
     [Fact(DisplayName = "MakeStageOfficial factories Bogus should return the requested count")]
     public void MakeStageOfficialFactories_Bogus_ShouldReturnRequestedCount()
     {
-        // Arrange & Act
+        // Arrange
+
+        // Act
         var inputs = MakeStageOfficialInputFactory.Bogus(2, 41);
         var requests = MakeStageOfficialRequestFactory.Bogus(3, 42);
         var commands = MakeStageOfficialCommandFactory.Bogus(4, 43);

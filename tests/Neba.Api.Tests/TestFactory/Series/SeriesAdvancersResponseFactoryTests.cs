@@ -10,7 +10,9 @@ public sealed class SeriesAdvancersResponseFactoryTests
     [Fact(DisplayName = "SeriesAdvancersResponseFactory Create should return one Stage with one qualifier with no arguments")]
     public void SeriesAdvancersResponseFactory_Create_ShouldReturnDefaults()
     {
-        // Arrange & Act
+        // Arrange
+
+        // Act
         var response = SeriesAdvancersResponseFactory.Create();
 
         // Assert
@@ -52,7 +54,9 @@ public sealed class SeriesAdvancersResponseFactoryTests
     [Fact(DisplayName = "SeriesAdvancersResponseFactory Bogus should return the requested count of Stages, ordered from 1")]
     public void SeriesAdvancersResponseFactory_Bogus_ShouldReturnRequestedCount()
     {
-        // Arrange & Act
+        // Arrange
+
+        // Act
         var responses = SeriesAdvancersResponseFactory.Bogus(2, 31);
         var stages = StageAdvancersResponseFactory.Bogus(3, 32);
         var advancers = AdvancerResponseFactory.Bogus(4, 33);

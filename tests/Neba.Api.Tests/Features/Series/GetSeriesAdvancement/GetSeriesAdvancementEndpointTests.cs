@@ -23,7 +23,9 @@ public sealed class GetSeriesAdvancementEndpointTests
     [Fact(DisplayName = "Configure should register a GET route at /series/{id}/advancement that needs the CanViewSeriesAdvancement policy")]
     public void Configure_ShouldRegisterPermissionProtectedGetRoute()
     {
-        // Arrange & Act
+        // Arrange
+
+        // Act
         var endpoint = Factory.Create<GetSeriesAdvancementEndpoint>(Handler().Object);
 
         // Assert

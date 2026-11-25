@@ -37,8 +37,8 @@ public sealed class GetSeriesAdvancersRequestValidatorTests
     }
 
     [Theory(DisplayName = "Validate should fail with SeriesIdInvalidLength for an id that is not 26 characters")]
-    [InlineData(25)]
-    [InlineData(27)]
+    [InlineData(25, TestDisplayName = "25 characters")]
+    [InlineData(27, TestDisplayName = "27 characters")]
     public async Task Validate_ShouldFail_ForWrongLengthId(int length)
     {
         // Arrange

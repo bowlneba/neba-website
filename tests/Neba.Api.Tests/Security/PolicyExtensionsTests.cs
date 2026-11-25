@@ -161,8 +161,8 @@ public sealed class PolicyExtensionsTests
     }
 
     [Theory(DisplayName = "AddNebaPolicies should succeed for CanViewSeriesAdvancement when caller has EditSeries or MakeStageOfficial")]
-    [InlineData("Series.EditSeries")]
-    [InlineData("Series.MakeStageOfficial")]
+    [InlineData("Series.EditSeries", TestDisplayName = "EditSeries")]
+    [InlineData("Series.MakeStageOfficial", TestDisplayName = "MakeStageOfficial")]
     public async Task AddNebaPolicies_ShouldSucceedForCanViewSeriesAdvancement_WhenCallerHasViewPermission(string permission)
     {
         // Arrange

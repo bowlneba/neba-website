@@ -266,9 +266,9 @@ public sealed class Series2025ReplayTests(AppDbContextFixture fixture)
     }
 
     [Theory(DisplayName = "Recompute should ask for confirmation and change nothing when an Official Stage is in range")]
-    [InlineData(1, 11)]
-    [InlineData(9, 3)]
-    [InlineData(10, 2)]
+    [InlineData(1, 11, TestDisplayName = "from the 1st tournament, 11 Official")]
+    [InlineData(9, 3, TestDisplayName = "from the 9th tournament, 3 Official")]
+    [InlineData(10, 2, TestDisplayName = "from the 10th tournament, 2 Official")]
     public async Task Recompute_ShouldAskForConfirmation_WhenOfficialStagesAreInRange(int fromOrder, int officialCount)
     {
         // Arrange

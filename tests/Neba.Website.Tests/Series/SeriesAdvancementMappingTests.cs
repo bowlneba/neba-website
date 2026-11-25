@@ -330,10 +330,10 @@ public sealed class SeriesAdvancementMappingTests
     }
 
     [Theory(DisplayName = "Advancement should allow Mark official only when the viewer may and the API says the Stage is ready")]
-    [InlineData(true, true, true)]
-    [InlineData(true, false, false)]
-    [InlineData(false, true, false)]
-    [InlineData(false, false, false)]
+    [InlineData(true, true, true, TestDisplayName = "viewer may and tournament is ready")]
+    [InlineData(true, false, false, TestDisplayName = "viewer may but tournament is not ready")]
+    [InlineData(false, true, false, TestDisplayName = "viewer may not but tournament is ready")]
+    [InlineData(false, false, false, TestDisplayName = "viewer may not and tournament is not ready")]
     public void AdvancementToViewModel_ShouldSetCanMakeOfficial(bool canMakeOfficial, bool ready, bool expected)
     {
         // Arrange

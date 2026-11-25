@@ -60,7 +60,9 @@ public sealed class SeriesAdvancementDisplayTests
     [Fact(DisplayName = "SegmentTitle should name the Stage and its status")]
     public void SegmentTitle_ShouldNameStageAndStatus()
     {
-        // Arrange & Act
+        // Arrange
+
+        // Act
         var title = SeriesDisplay.SegmentTitle(3, "Official");
 
         // Assert
@@ -70,7 +72,9 @@ public sealed class SeriesAdvancementDisplayTests
     [Fact(DisplayName = "StageChip should name the kind and the Stage")]
     public void StageChip_ShouldNameKindAndStage()
     {
-        // Arrange & Act
+        // Arrange
+
+        // Act
         var chip = SeriesDisplay.StageChip("Qualifying", 3);
 
         // Assert
@@ -199,7 +203,9 @@ public sealed class SeriesAdvancementDisplayTests
     [Fact(DisplayName = "BackfillLabel should show the date")]
     public void BackfillLabel_ShouldShowDate()
     {
-        // Arrange & Act
+        // Arrange
+
+        // Act
         var label = SeriesDisplay.BackfillLabel(new DateOnly(2025, 6, 14));
 
         // Assert
@@ -270,11 +276,13 @@ public sealed class SeriesAdvancementDisplayTests
     // ---- Expand label and pending reason ----
 
     [Theory(DisplayName = "ExpandLabel should say Show or Hide with the Stage order")]
-    [InlineData(true, "Hide output for the 3rd tournament")]
-    [InlineData(false, "Show output for the 3rd tournament")]
+    [InlineData(true, "Hide output for the 3rd tournament", TestDisplayName = "expanded says Hide")]
+    [InlineData(false, "Show output for the 3rd tournament", TestDisplayName = "collapsed says Show")]
     public void ExpandLabel_ShouldReflectState(bool isExpanded, string expected)
     {
-        // Arrange & Act
+        // Arrange
+
+        // Act
         var label = SeriesDisplay.ExpandLabel(isExpanded, 3);
 
         // Assert
@@ -340,7 +348,9 @@ public sealed class SeriesAdvancementDisplayTests
     [Fact(DisplayName = "SlotsLead should pluralize slots")]
     public void SlotsLead_ShouldPluralize()
     {
-        // Arrange & Act
+        // Arrange
+
+        // Act
         var one = SeriesDisplay.SlotsLead(1);
         var many = SeriesDisplay.SlotsLead(8);
 
@@ -350,12 +360,14 @@ public sealed class SeriesAdvancementDisplayTests
     }
 
     [Theory(DisplayName = "VacantLabel should say none, one or several vacant slots")]
-    [InlineData(0, ", none vacant.")]
-    [InlineData(1, ", 1 vacant slot. Vacant slots go to the Bowler of the Year point list.")]
-    [InlineData(3, ", 3 vacant slots. Vacant slots go to the Bowler of the Year point list.")]
+    [InlineData(0, ", none vacant.", TestDisplayName = "none vacant")]
+    [InlineData(1, ", 1 vacant slot. Vacant slots go to the Bowler of the Year point list.", TestDisplayName = "one vacant slot")]
+    [InlineData(3, ", 3 vacant slots. Vacant slots go to the Bowler of the Year point list.", TestDisplayName = "several vacant slots")]
     public void VacantLabel_ShouldPluralize(int vacant, string expected)
     {
-        // Arrange & Act
+        // Arrange
+
+        // Act
         var label = SeriesDisplay.VacantLabel(vacant);
 
         // Assert
@@ -363,11 +375,13 @@ public sealed class SeriesAdvancementDisplayTests
     }
 
     [Theory(DisplayName = "EntriesHeading should mention the Backfill only for the last Qualifying Stage")]
-    [InlineData(true, "Field entries from this tournament, then the Bowler of the Year point list")]
-    [InlineData(false, "Field entries from this tournament")]
+    [InlineData(true, "Field entries from this tournament, then the Bowler of the Year point list", TestDisplayName = "last Qualifying tournament mentions the point list")]
+    [InlineData(false, "Field entries from this tournament", TestDisplayName = "other tournaments do not")]
     public void EntriesHeading_ShouldReflectLastQualifying(bool isLastQualifying, string expected)
     {
-        // Arrange & Act
+        // Arrange
+
+        // Act
         var heading = SeriesDisplay.EntriesHeading(isLastQualifying);
 
         // Assert
@@ -383,7 +397,9 @@ public sealed class SeriesAdvancementDisplayTests
     [InlineData(22, "22nd")]
     public void OrdinalPlace_ShouldOrdinalize(int? place, string expected)
     {
-        // Arrange & Act
+        // Arrange
+
+        // Act
         var label = SeriesDisplay.OrdinalPlace(place);
 
         // Assert
@@ -391,12 +407,14 @@ public sealed class SeriesAdvancementDisplayTests
     }
 
     [Theory(DisplayName = "ClearPlace should say the ordinal place and Backfill for none")]
-    [InlineData(7, "7th place")]
-    [InlineData(22, "22nd place")]
-    [InlineData(null, "Bowler of the Year point list")]
+    [InlineData(7, "7th place", TestDisplayName = "a place of 7")]
+    [InlineData(22, "22nd place", TestDisplayName = "a place of 22")]
+    [InlineData(null, "Bowler of the Year point list", TestDisplayName = "no place")]
     public void ClearPlace_ShouldDescribePlace(int? place, string expected)
     {
-        // Arrange & Act
+        // Arrange
+
+        // Act
         var label = SeriesDisplay.ClearPlace(place);
 
         // Assert
@@ -589,7 +607,9 @@ public sealed class SeriesAdvancementDisplayTests
     [Fact(DisplayName = "PlacementSummary should use the plural and say positions are provisional with a Finale")]
     public void PlacementSummary_ShouldUsePlural_WithFinale()
     {
-        // Arrange & Act
+        // Arrange
+
+        // Act
         var line = SeriesDisplay.PlacementSummary(20, hasFinalists: true);
 
         // Assert
@@ -602,7 +622,9 @@ public sealed class SeriesAdvancementDisplayTests
     [Fact(DisplayName = "RecomputeTitle should name the Stage")]
     public void RecomputeTitle_ShouldNameStage()
     {
-        // Arrange & Act
+        // Arrange
+
+        // Act
         var title = SeriesDisplay.RecomputeTitle(3);
 
         // Assert
@@ -610,13 +632,15 @@ public sealed class SeriesAdvancementDisplayTests
     }
 
     [Theory(DisplayName = "StageWordList should join Stage numbers with commas and and")]
-    [InlineData(new int[0], "")]
-    [InlineData(new[] { 3 }, "3rd")]
-    [InlineData(new[] { 3, 4 }, "3rd and 4th")]
-    [InlineData(new[] { 1, 2, 3 }, "1st, 2nd and 3rd")]
+    [InlineData(new int[0], "", TestDisplayName = "no tournaments")]
+    [InlineData(new[] { 3 }, "3rd", TestDisplayName = "one tournament")]
+    [InlineData(new[] { 3, 4 }, "3rd and 4th", TestDisplayName = "two tournaments")]
+    [InlineData(new[] { 1, 2, 3 }, "1st, 2nd and 3rd", TestDisplayName = "three tournaments")]
     public void StageWordList_ShouldJoinOrders(int[] orders, string expected)
     {
-        // Arrange & Act
+        // Arrange
+
+        // Act
         var list = SeriesDisplay.StageWordList(orders);
 
         // Assert
@@ -626,7 +650,9 @@ public sealed class SeriesAdvancementDisplayTests
     [Fact(DisplayName = "OfficialResetMessage should use the singular for one Stage")]
     public void OfficialResetMessage_ShouldUseSingular_ForOneStage()
     {
-        // Arrange & Act
+        // Arrange
+
+        // Act
         var message = SeriesDisplay.OfficialResetMessage([3]);
 
         // Assert
@@ -636,7 +662,9 @@ public sealed class SeriesAdvancementDisplayTests
     [Fact(DisplayName = "OfficialResetMessage should use the plural for several Stages")]
     public void OfficialResetMessage_ShouldUsePlural_ForSeveralStages()
     {
-        // Arrange & Act
+        // Arrange
+
+        // Act
         var message = SeriesDisplay.OfficialResetMessage([3, 4, 5]);
 
         // Assert
@@ -646,7 +674,9 @@ public sealed class SeriesAdvancementDisplayTests
     [Fact(DisplayName = "RecomputedMessage should name the Stage")]
     public void RecomputedMessage_ShouldNameStage()
     {
-        // Arrange & Act
+        // Arrange
+
+        // Act
         var message = SeriesDisplay.RecomputedMessage(3);
 
         // Assert
@@ -684,7 +714,9 @@ public sealed class SeriesAdvancementDisplayTests
     [Fact(DisplayName = "OverrideAddedMessage should name the bowler and the Stage")]
     public void OverrideAddedMessage_ShouldNameBowlerAndStage()
     {
-        // Arrange & Act
+        // Arrange
+
+        // Act
         var message = SeriesDisplay.OverrideAddedMessage("Dave Smith", 2);
 
         // Assert
@@ -696,7 +728,9 @@ public sealed class SeriesAdvancementDisplayTests
     [InlineData("Clear", "Clear slot")]
     public void OverrideTitle_ShouldNameDialog(string kind, string expected)
     {
-        // Arrange & Act
+        // Arrange
+
+        // Act
         var title = SeriesDisplay.OverrideTitle(kind);
 
         // Assert
@@ -706,7 +740,9 @@ public sealed class SeriesAdvancementDisplayTests
     [Fact(DisplayName = "OverrideLead should explain an Add override")]
     public void OverrideLead_ShouldExplainAdd()
     {
-        // Arrange & Act
+        // Arrange
+
+        // Act
         var lead = SeriesDisplay.OverrideLead("Add", 2, "Callahan's Bowl-O-Rama");
 
         // Assert
@@ -716,7 +752,9 @@ public sealed class SeriesAdvancementDisplayTests
     [Fact(DisplayName = "OverrideLead should explain a Clear override")]
     public void OverrideLead_ShouldExplainClear()
     {
-        // Arrange & Act
+        // Arrange
+
+        // Act
         var lead = SeriesDisplay.OverrideLead("Clear", 2, "Callahan's Bowl-O-Rama");
 
         // Assert
@@ -739,7 +777,9 @@ public sealed class SeriesAdvancementDisplayTests
     [InlineData(500, "500 / 500")]
     public void ReasonCount_ShouldShowLengthOverLimit(int length, string expected)
     {
-        // Arrange & Act
+        // Arrange
+
+        // Act
         var label = SeriesDisplay.ReasonCount(length);
 
         // Assert
@@ -751,7 +791,9 @@ public sealed class SeriesAdvancementDisplayTests
     [Fact(DisplayName = "SquadOption should show the start time and date")]
     public void SquadOption_ShouldShowTimeAndDate()
     {
-        // Arrange & Act
+        // Arrange
+
+        // Act
         var label = SeriesDisplay.SquadOption(new DateOnly(2025, 7, 12), new TimeOnly(9, 30));
 
         // Assert
@@ -765,7 +807,9 @@ public sealed class SeriesAdvancementDisplayTests
     [InlineData(false, false, "No scores yet")]
     public void SquadDetail_ShouldCombineFlags(bool hasScores, bool isSelected, string expected)
     {
-        // Arrange & Act
+        // Arrange
+
+        // Act
         var detail = SeriesDisplay.SquadDetail(hasScores, isSelected);
 
         // Assert
@@ -773,13 +817,15 @@ public sealed class SeriesAdvancementDisplayTests
     }
 
     [Theory(DisplayName = "SquadLead should name the expected squad and say whether to pick one")]
-    [InlineData("9:00 AM squad on 7/12", false, "2nd tournament, Callahan's Bowl-O-Rama. The Series expects a 9:00 AM squad on 7/12. Choose the squad this round uses.")]
-    [InlineData("9:00 AM squad on 7/12", true, "2nd tournament, Callahan's Bowl-O-Rama. The Series expects a 9:00 AM squad on 7/12. No squad matches it exactly, so pick the one this round uses.")]
-    [InlineData(null, false, "2nd tournament, Callahan's Bowl-O-Rama. The Series expects a squad. Choose the squad this round uses.")]
-    [InlineData(null, true, "2nd tournament, Callahan's Bowl-O-Rama. The Series expects a squad. No squad matches it exactly, so pick the one this round uses.")]
+    [InlineData("9:00 AM squad on 7/12", false, "2nd tournament, Callahan's Bowl-O-Rama. The Series expects a 9:00 AM squad on 7/12. Choose the squad this round uses.", TestDisplayName = "a squad time is expected and one can be chosen")]
+    [InlineData("9:00 AM squad on 7/12", true, "2nd tournament, Callahan's Bowl-O-Rama. The Series expects a 9:00 AM squad on 7/12. No squad matches it exactly, so pick the one this round uses.", TestDisplayName = "a squad time is expected and none matches")]
+    [InlineData(null, false, "2nd tournament, Callahan's Bowl-O-Rama. The Series expects a squad. Choose the squad this round uses.", TestDisplayName = "no squad time is expected and one can be chosen")]
+    [InlineData(null, true, "2nd tournament, Callahan's Bowl-O-Rama. The Series expects a squad. No squad matches it exactly, so pick the one this round uses.", TestDisplayName = "no squad time is expected and none matches")]
     public void SquadLead_ShouldDescribeExpectedSquad(string? expected, bool needsSquad, string lead)
     {
-        // Arrange & Act
+        // Arrange
+
+        // Act
         var text = SeriesDisplay.SquadLead(2, "Callahan's Bowl-O-Rama", expected, needsSquad);
 
         // Assert
@@ -791,7 +837,9 @@ public sealed class SeriesAdvancementDisplayTests
     [Fact(DisplayName = "LockedMessage should explain what is fixed")]
     public void LockedMessage_ShouldExplainFixedFields()
     {
-        // Arrange & Act
+        // Arrange
+
+        // Act
         var message = SeriesDisplay.LockedMessage(false);
 
         // Assert
@@ -801,7 +849,9 @@ public sealed class SeriesAdvancementDisplayTests
     [Fact(DisplayName = "LockedMessage should add the removal note when a Stage can be removed")]
     public void LockedMessage_ShouldAddRemovalNote_WhenStageRemovable()
     {
-        // Arrange & Act
+        // Arrange
+
+        // Act
         var message = SeriesDisplay.LockedMessage(true);
 
         // Assert
@@ -814,7 +864,9 @@ public sealed class SeriesAdvancementDisplayTests
     [Fact(DisplayName = "The advancement messages should read as written")]
     public void Constants_ShouldReadAsWritten()
     {
-        // Arrange & Act & Assert
+        // Arrange
+
+        // Act
         SeriesDisplay.AdvancementReloadFailed.ShouldBe("The tournament status could not refresh. Reload the page to see the latest.");
         SeriesDisplay.StaleNote.ShouldBe("An earlier tournament changed after this one was official. Its output has not changed. Recompute from here to refresh it.");
         SeriesDisplay.StaleHint.ShouldBe("An earlier tournament changed after this one was official.");
@@ -826,7 +878,9 @@ public sealed class SeriesAdvancementDisplayTests
     [Fact(DisplayName = "The cancelled Stage messages should read as written")]
     public void CancelledMessages_ShouldReadAsWritten()
     {
-        // Arrange & Act & Assert
+        // Arrange
+
+        // Act
         SeriesDisplay.CancelledStageNote.ShouldBe("Tournament cancelled: remove it from the Series");
         SeriesDisplay.CancelledCheckFailed.ShouldBe("A cancelled tournament can't be removed until this check works. Reload the page to try again.");
     }
@@ -868,7 +922,9 @@ public sealed class SeriesAdvancementDisplayTests
     [Fact(DisplayName = "Mark official text should name the Stage and say what happens")]
     public void MakeOfficialText_ShouldNameTheStage()
     {
-        // Arrange & Act
+        // Arrange
+
+        // Act
         var label = SeriesDisplay.MakeOfficialLabel(2);
         var title = SeriesDisplay.MakeOfficialTitle(2);
         var message = SeriesDisplay.MakeOfficialMessage(2);

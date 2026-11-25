@@ -49,7 +49,9 @@ public sealed class SeriesMakeOfficialTests : IDisposable
     [Fact(DisplayName = "Should show Mark official only on the Stage that is ready, for a Manager")]
     public void Button_ShouldShowOnlyOnReadyStage_ForManager()
     {
-        // Arrange & Act
+        // Arrange
+
+        // Act
         var cut = RenderAs(_host.SignInAsManager);
 
         // Assert
@@ -64,7 +66,9 @@ public sealed class SeriesMakeOfficialTests : IDisposable
     [Fact(DisplayName = "Should show the season rail and Mark official, but no Recompute or Pick squad, for a Tournament Director")]
     public void Button_ShouldShow_ForTournamentDirector_WithoutEditActions()
     {
-        // Arrange & Act
+        // Arrange
+
+        // Act
         var cut = RenderAs(_host.SignInAsTournamentDirector);
 
         // Assert
@@ -77,7 +81,9 @@ public sealed class SeriesMakeOfficialTests : IDisposable
     [Fact(DisplayName = "Should not show Mark official to an editor without Series.MakeStageOfficial")]
     public void Button_ShouldNotShow_WithoutMakeStageOfficial()
     {
-        // Arrange & Act
+        // Arrange
+
+        // Act
         var cut = RenderAs(_host.SignInAsEditorWithoutMakeOfficial);
 
         // Assert
@@ -104,7 +110,9 @@ public sealed class SeriesMakeOfficialTests : IDisposable
     [Fact(DisplayName = "Should no longer show a Becomes official time on a Computed Stage")]
     public void Flags_ShouldNotShowDueTime()
     {
-        // Arrange & Act
+        // Arrange
+
+        // Act
         var cut = RenderAs(_host.SignInAsManager);
 
         // Assert

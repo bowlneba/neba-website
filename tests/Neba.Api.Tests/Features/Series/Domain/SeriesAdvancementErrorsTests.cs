@@ -12,7 +12,9 @@ public sealed class SeriesAdvancementErrorsTests
     [Fact(DisplayName = "ConfirmationRequired should say a single Official Stage is official and carry its order")]
     public void ConfirmationRequired_ShouldUseSingularWording_WhenOneStageIsOfficial()
     {
-        // Arrange & Act
+        // Arrange
+
+        // Act
         var error = SeriesAdvancementErrors.ConfirmationRequired([3]);
 
         // Assert
@@ -23,7 +25,9 @@ public sealed class SeriesAdvancementErrorsTests
     [Fact(DisplayName = "ConfirmationRequired should list several Official Stages and say they are official")]
     public void ConfirmationRequired_ShouldUsePluralWording_WhenSeveralStagesAreOfficial()
     {
-        // Arrange & Act
+        // Arrange
+
+        // Act
         var error = SeriesAdvancementErrors.ConfirmationRequired([2, 3, 5]);
 
         // Assert
@@ -34,7 +38,9 @@ public sealed class SeriesAdvancementErrorsTests
     [Fact(DisplayName = "StageNotComputed should tell the admin to recompute for an Official Stage and to wait for a Pending one")]
     public void StageNotComputed_ShouldExplainTheStatus()
     {
-        // Arrange & Act
+        // Arrange
+
+        // Act
         var official = SeriesAdvancementErrors.StageNotComputed(StageStatus.Official);
         var pending = SeriesAdvancementErrors.StageNotComputed(StageStatus.Pending);
 

@@ -21,7 +21,9 @@ public sealed class MakeStageOfficialEndpointTests
     [Fact(DisplayName = "Configure should register a PUT route at /series/{id}/stages/{stageId}/official that needs the Series.MakeStageOfficial permission")]
     public void Configure_ShouldRegisterPermissionProtectedPutRoute()
     {
-        // Arrange & Act
+        // Arrange
+
+        // Act
         var endpoint = Factory.Create<MakeStageOfficialEndpoint>(Handler().Object);
 
         // Assert
@@ -57,9 +59,9 @@ public sealed class MakeStageOfficialEndpointTests
     }
 
     [Theory(DisplayName = "HandleAsync should map NotFound, Conflict and Validation errors to 404, 409 and 422")]
-    [InlineData("NotFound", 404)]
-    [InlineData("Conflict", 409)]
-    [InlineData("Validation", 422)]
+    [InlineData("NotFound", 404, TestDisplayName = "NotFound maps to 404")]
+    [InlineData("Conflict", 409, TestDisplayName = "Conflict maps to 409")]
+    [InlineData("Validation", 422, TestDisplayName = "Validation maps to 422")]
     public async Task HandleAsync_ShouldMapErrorTypesToStatusCodes(string type, int expected)
     {
         // Arrange

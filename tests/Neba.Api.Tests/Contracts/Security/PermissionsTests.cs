@@ -147,7 +147,9 @@ public sealed class PermissionsTests
     [Fact(DisplayName = "MakeStageOfficial should have the value Series.MakeStageOfficial")]
     public void MakeStageOfficial_ShouldHaveSeriesMakeStageOfficialValue()
     {
-        // Arrange & Act
+        // Arrange
+
+        // Act
         var value = Permissions.MakeStageOfficial.Value;
 
         // Assert
@@ -157,7 +159,9 @@ public sealed class PermissionsTests
     [Fact(DisplayName = "FromValue should return MakeStageOfficial for the value Series.MakeStageOfficial")]
     public void FromValue_ShouldReturnMakeStageOfficial_WhenValueIsSeriesMakeStageOfficial()
     {
-        // Arrange & Act
+        // Arrange
+
+        // Act
         var permission = Permissions.FromValue("Series.MakeStageOfficial");
 
         // Assert
@@ -167,7 +171,9 @@ public sealed class PermissionsTests
     [Fact(DisplayName = "SeriesAdvancementViewPermissions should hold EditSeries and MakeStageOfficial")]
     public void SeriesAdvancementViewPermissions_ShouldHoldEditSeriesAndMakeStageOfficial()
     {
-        // Arrange & Act
+        // Arrange
+
+        // Act
         var permissions = Permissions.SeriesAdvancementViewPermissions;
 
         // Assert

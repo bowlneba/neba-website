@@ -224,7 +224,9 @@ public sealed class SeriesAdvancementFactoryTests
     [Fact(DisplayName = "SeriesFactory CreateWithAdvancement should make every Stage Official, Placement included")]
     public void SeriesFactory_CreateWithAdvancement_ShouldMakeStagesOfficial_WhenAsked()
     {
-        // Arrange & Act
+        // Arrange
+
+        // Act
         var (series, _) = SeriesFactory.CreateWithAdvancement(
             [StageKind.Qualifying, StageKind.Survivor, StageKind.Placement], official: true);
 

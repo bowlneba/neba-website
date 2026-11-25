@@ -613,12 +613,12 @@ public sealed class SecurityRoleSeederTests
     }
 
     [Theory(DisplayName = "SeedAsync should add the MakeStageOfficial claim to Admin, Webmaster, Manager and Tournament Director only")]
-    [InlineData(Roles.Admin, true)]
-    [InlineData(Roles.Webmaster, true)]
-    [InlineData(Roles.Manager, true)]
-    [InlineData(Roles.TournamentDirector, true)]
-    [InlineData(Roles.Journalist, false)]
-    [InlineData(Roles.Member, false)]
+    [InlineData(Roles.Admin, true, TestDisplayName = "Admin holds it")]
+    [InlineData(Roles.Webmaster, true, TestDisplayName = "Webmaster holds it")]
+    [InlineData(Roles.Manager, true, TestDisplayName = "Manager holds it")]
+    [InlineData(Roles.TournamentDirector, true, TestDisplayName = "Tournament Director holds it")]
+    [InlineData(Roles.Journalist, false, TestDisplayName = "Journalist does not hold it")]
+    [InlineData(Roles.Member, false, TestDisplayName = "Member does not hold it")]
     public async Task SeedAsync_ShouldAddMakeStageOfficialClaimOnlyToStaffRoles(string roleName, bool expectedToHold)
     {
         // Arrange

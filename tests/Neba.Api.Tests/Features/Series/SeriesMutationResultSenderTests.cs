@@ -60,7 +60,9 @@ public sealed class SeriesMutationResultSenderTests
     [Fact(DisplayName = "SendAsync should name a Stage error Series.Stages[index] from its StageOrder")]
     public async Task SendAsync_ShouldNameStageErrorByRow()
     {
-        // Arrange & Act
+        // Arrange
+
+        // Act
         var (_, failures) = await RunAsync(SeriesErrors.DuplicateTournament(3, "T"));
 
         // Assert

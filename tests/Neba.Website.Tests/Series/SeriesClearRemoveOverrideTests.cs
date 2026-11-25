@@ -186,8 +186,8 @@ public sealed class SeriesClearRemoveOverrideTests : IDisposable
     // ---- Remove override ----
 
     [Theory(DisplayName = "Should ask to confirm with the remove text for an Add override and for a Clear override")]
-    [InlineData("ov-add", "Cara Cole leaves the field for the 1st tournament.")]
-    [InlineData("ov-clear", "Zed Zane takes the slot back, and the Bowler of the Year point list no longer refills it.")]
+    [InlineData("ov-add", "Cara Cole leaves the field for the 1st tournament.", TestDisplayName = "an Add override")]
+    [InlineData("ov-clear", "Zed Zane takes the slot back, and the Bowler of the Year point list no longer refills it.", TestDisplayName = "a Clear override")]
     public async Task Remove_ShouldAskToConfirm_WithKindText(string overrideId, string message)
     {
         // Arrange

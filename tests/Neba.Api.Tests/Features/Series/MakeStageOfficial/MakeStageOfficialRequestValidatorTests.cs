@@ -31,8 +31,8 @@ public sealed class MakeStageOfficialRequestValidatorTests
     }
 
     [Theory(DisplayName = "Validate should fail with Required for an empty id")]
-    [InlineData("Id")]
-    [InlineData("StageId")]
+    [InlineData("Id", TestDisplayName = "an empty Series id")]
+    [InlineData("StageId", TestDisplayName = "an empty Stage id")]
     public async Task Validate_ShouldFail_ForEmptyId(string field)
     {
         // Arrange

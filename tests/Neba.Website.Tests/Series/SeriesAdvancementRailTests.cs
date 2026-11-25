@@ -55,9 +55,9 @@ public sealed class SeriesAdvancementRailTests : IDisposable
     }
 
     [Theory(DisplayName = "Should show a Placement Stage's status, Official included")]
-    [InlineData("Pending")]
-    [InlineData("Computed")]
-    [InlineData("Official")]
+    [InlineData("Pending", TestDisplayName = "a Pending Placement tournament")]
+    [InlineData("Computed", TestDisplayName = "a Computed Placement tournament")]
+    [InlineData("Official", TestDisplayName = "an Official Placement tournament")]
     public void Status_ShouldShowStatus_ForPlacementStage(string status)
     {
         // Arrange

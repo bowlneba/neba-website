@@ -8,11 +8,13 @@ namespace Neba.Website.Tests.Series;
 public sealed class SeriesOverrideDisplayTests
 {
     [Theory(DisplayName = "AddBowlerLabel should name the Stage order")]
-    [InlineData(1, "Add bowler to the 1st tournament")]
-    [InlineData(12, "Add bowler to the 12th tournament")]
+    [InlineData(1, "Add bowler to the 1st tournament", TestDisplayName = "1st tournament")]
+    [InlineData(12, "Add bowler to the 12th tournament", TestDisplayName = "12th tournament")]
     public void AddBowlerLabel_ShouldNameStage(int order, string expected)
     {
-        // Arrange & Act
+        // Arrange
+
+        // Act
         var label = SeriesDisplay.AddBowlerLabel(order);
 
         // Assert

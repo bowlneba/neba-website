@@ -11,7 +11,9 @@ public sealed class GetSeriesAdvancersSummaryTests
     [Fact(DisplayName = "Constructor should set the Summary and a Description that says the endpoint is public")]
     public void Constructor_ShouldSetSummaryAndDescription()
     {
-        // Arrange & Act
+        // Arrange
+
+        // Act
         var summary = new GetSeriesAdvancersSummary();
 
         // Assert
@@ -23,7 +25,9 @@ public sealed class GetSeriesAdvancersSummaryTests
     [Fact(DisplayName = "Constructor should register 200, 400 and 404 responses")]
     public void Constructor_ShouldRegisterExpectedResponses()
     {
-        // Arrange & Act
+        // Arrange
+
+        // Act
         var summary = new GetSeriesAdvancersSummary();
 
         // Assert
@@ -33,7 +37,9 @@ public sealed class GetSeriesAdvancersSummaryTests
     [Fact(DisplayName = "Constructor should give the 200 response an example of the advancers response")]
     public void Constructor_ShouldGiveTheOkResponseAnExample()
     {
-        // Arrange & Act
+        // Arrange
+
+        // Act
         var summary = new GetSeriesAdvancersSummary();
 
         // Assert

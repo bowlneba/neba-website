@@ -44,7 +44,9 @@ public sealed class GetSeriesAdvancersQueryHandlerTests(AppDbContextFixture fixt
     [Fact(DisplayName = "HandleAsync should return NotFound for an unknown Series")]
     public async Task HandleAsync_ShouldReturnNotFound_WhenSeriesDoesNotExist()
     {
-        // Arrange & Act
+        // Arrange
+
+        // Act
         var result = await new GetSeriesAdvancersQueryHandler(_readContext)
             .HandleAsync(new GetSeriesAdvancersQuery { SeriesId = SeriesId.New() }, TestContext.Current.CancellationToken);
 
