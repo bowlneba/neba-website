@@ -150,6 +150,12 @@ public partial class SeriesDetail
     {
         var result = await ApiExecutor.ExecuteAsync(ApiName, "GetSeriesAdvancers", ct => SeriesApi.GetSeriesAdvancersAsync(Id, ct));
         _advancers = result.IsError ? [] : result.Value.ToViewModel();
+
+        // Official Stages open with their results showing; the visitor can collapse them.
+        foreach (var stage in _advancers)
+        {
+            _expandedStageIds.Add(stage.Id);
+        }
     }
 
     private Task RetryAdvancementAsync()
@@ -215,6 +221,8 @@ public partial class SeriesDetail
 
         _advancementState = AdvancementState.Failed;
     }
+
+    private void ToggleStageById(string stageId) => ToggleStage(stageId);
 
     private void ToggleStage(string stageId)
     {
@@ -448,7 +456,7 @@ public partial class SeriesDetail
                 ct => SeriesApi.MakeStageOfficialAsync(Id, target.StageId, request, ct));
 
             _makeOfficialTarget = null;
-            var outcome = await SettleWriteAsync(result, "Stage Official", SeriesDisplay.MadeOfficialMessage(target.Order));
+            var outcome = await SettleWriteAsync(result, "Tournament Official", SeriesDisplay.MadeOfficialMessage(target.Order));
             if (outcome == WriteOutcome.Failed)
             {
                 ToastService.Show("Mark Official Failed", result.FirstError.Description, NotifySeverity.Error);

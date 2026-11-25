@@ -1,0 +1,76 @@
+@foreach (var kind in StageKinds.All)
+{
+    var stages = Stages.Where(s => s.Kind == kind).ToList();
+    if (stages.Count == 0)
+    {
+        continue;
+    }
+
+    <section aria-labelledby="@GroupId(kind)" data-testid="series-stage-group">
+        <h2 class="series-group-title" id="@GroupId(kind)">@SeriesDisplay.GroupHeading(kind) <span>@SeriesDisplay.GroupNote(kind)</span></h2>
+        <ol class="series-pub-list series-stage-list">
+            @foreach (var stage in stages)
+            {
+                var hasResults = stage.Results is not null;
+                var isExpanded = hasResults && ExpandedIds.Contains(stage.Id);
+                var panelId = "series-results-" + stage.Id;
+
+                <li @key="stage.Id" class="neba-card series-pub-card" data-testid="series-stage" data-stage-id="@stage.Id">
+                    <div class="series-pub-card__top">
+                        <div class="series-pub-card__who series-stage__tournament">
+                            <span class="series-pub-card__kind @SeriesDisplay.KindClass(stage.Kind)">@SeriesDisplay.StageChip(stage.Kind, stage.Order)</span>
+                            <h3 class="series-pub-card__title"><a href="@stage.TournamentHref">@stage.TournamentName</a></h3>
+                            <p class="series-pub-card__meta">@stage.Meta</p>
+                        </div>
+                        <div class="series-pub-card__facts">
+                            <span class="series-pub-card__advancing series-stage__advancing">
+                                @stage.Advancing
+                                @if (stage.AdvancingNote is not null)
+                                {
+                                    <small class="series-stage__advancing-sub">@stage.AdvancingNote</small>
+                                }
+                            </span>
+                            @if (stage.Squad is not null)
+                            {
+                                <span class="series-pub-card__squad series-stage__squad">@stage.Squad</span>
+                            }
+                        </div>
+                        @if (hasResults)
+                        {
+                            <button type="button" class="series-expander" data-testid="series-stage-toggle"
+                                    aria-expanded="@(isExpanded ? "true" : "false")"
+                                    aria-controls="@panelId"
+                                    aria-label="@SeriesDisplay.ResultsToggleLabel(isExpanded, stage.Order)"
+                                    @onclick="@(() => OnToggle.InvokeAsync(stage.Id))">
+                                <svg width="12" height="12" viewBox="0 0 12 12" aria-hidden="true"><path d="M4 2l4 4-4 4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" /></svg>
+                            </button>
+                        }
+                    </div>
+
+                    @if (isExpanded)
+                    {
+                        <div class="series-pub-card__panel" id="@panelId" data-testid="series-stage-results">
+                            <SeriesStageResultsTable Stage="@(stage.Results!)" />
+                        </div>
+                    }
+                </li>
+            }
+        </ol>
+    </section>
+}
+
+@code {
+    /// <summary>Every Stage of the Series, with its results when Official.</summary>
+    [Parameter, EditorRequired]
+    public IReadOnlyList<PublicStageViewModel> Stages { get; set; } = [];
+
+    /// <summary>The IDs of the Stages whose results show.</summary>
+    [Parameter, EditorRequired]
+    public IReadOnlySet<string> ExpandedIds { get; set; } = new HashSet<string>();
+
+    /// <summary>Raised with a Stage ID when its expander is pressed.</summary>
+    [Parameter, EditorRequired]
+    public EventCallback<string> OnToggle { get; set; }
+
+    private static string GroupId(string kind) => "series-group-" + SeriesDisplay.KindClass(kind);
+}

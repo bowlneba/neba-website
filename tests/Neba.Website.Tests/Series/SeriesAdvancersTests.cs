@@ -24,7 +24,7 @@ public sealed class SeriesAdvancersTests : IDisposable
             StageAdvancementResponseFactory.Create(stageId: "s1", order: 2, kind: "Survivor"),
         ]));
 
-    [Fact(DisplayName = "Should show each settled Stage's names to an anonymous visitor, with no status badge or action button")]
+    [Fact(DisplayName = "Should show each settled Stage's names to an anonymous visitor, open, with no status badge or action button")]
     public void Advancers_ShouldShowNames_ForAnonymous()
     {
         // Arrange
@@ -34,7 +34,7 @@ public sealed class SeriesAdvancersTests : IDisposable
             StageAdvancersResponseFactory.Create("q1", 1, "Qualifying",
             [
                 AdvancerResponseFactory.Create("b1", "Dave Smith", place: 1),
-                AdvancerResponseFactory.Create("b2", "Pat Plain", place: null, isBackfill: true),
+                AdvancerResponseFactory.Create("b2", "Pat Plain", place: null, isBackfill: true, backfillPoints: 410),
             ]),
             StageAdvancersResponseFactory.Create("s1", 2, "Survivor",
                 [AdvancerResponseFactory.Create("b3", "Mia Alpha", place: null, blockTotal: 1500)]),
@@ -44,23 +44,24 @@ public sealed class SeriesAdvancersTests : IDisposable
         var cut = _host.Render();
 
         // Assert
-        var stages = cut.FindAll("[data-testid='series-advancers-stage']");
-        stages.Count.ShouldBe(2);
-        stages[0].TextContent.ShouldContain("Tournament 1");
-        stages[0].TextContent.ShouldContain("Dave Smith");
-        stages[0].TextContent.ShouldContain("1st");
-        stages[0].TextContent.ShouldContain("Pat Plain");
-        stages[0].TextContent.ShouldContain("Backfill");
-        stages[1].TextContent.ShouldContain("Mia Alpha");
-        stages[1].TextContent.ShouldContain("1500");
+        var results = cut.FindAll("[data-testid='series-stage-results']");
+        results.Count.ShouldBe(2);
+        results[0].TextContent.ShouldContain("Dave Smith");
+        results[0].TextContent.ShouldContain("1st");
+        results[0].TextContent.ShouldContain("Pat Plain");
+        results[0].TextContent.ShouldContain("Bowler of the Year point list");
+        results[0].TextContent.ShouldContain("410");
+        results[0].TextContent.ShouldNotContain("Backfill");
+        results[1].TextContent.ShouldContain("Mia Alpha");
+        results[1].TextContent.ShouldContain("1500");
         cut.FindAll("[data-testid='stage-status']").ShouldBeEmpty();
-        cut.FindAll("[data-testid='series-advancers'] button").ShouldBeEmpty();
+        cut.FindAll("[data-testid='series-stage'] .series-act").ShouldBeEmpty();
         cut.Markup.ShouldNotContain("Official");
         cut.Markup.ShouldNotContain("Computed");
     }
 
-    [Fact(DisplayName = "Should leave out the Who advanced section when no Stage is settled")]
-    public void Advancers_ShouldHideSection_WhenNoStageSettled()
+    [Fact(DisplayName = "Should name a Stage by its place in the season: the 2nd tournament, not Stage 2")]
+    public void Advancers_ShouldNameStageByTournamentOrdinal()
     {
         // Arrange
         SetupPage();
@@ -69,12 +70,98 @@ public sealed class SeriesAdvancersTests : IDisposable
         var cut = _host.Render();
 
         // Assert
-        cut.FindAll("[data-testid='series-advancers']").ShouldBeEmpty();
+        var cards = cut.FindAll("[data-testid='series-stage']");
+        cards[0].TextContent.ShouldContain("Qualifying · 1st tournament");
+        cards[1].TextContent.ShouldContain("Survivor · 2nd tournament");
+        cut.Markup.ShouldNotContain("· Stage");
+    }
+
+    [Fact(DisplayName = "Should collapse and reopen a Stage's results from its expander")]
+    public void Advancers_ShouldToggleResults()
+    {
+        // Arrange
+        SetupPage();
+        _host.SetupAdvancers(SeriesAdvancersResponseFactory.Create(
+            [StageAdvancersResponseFactory.Create("q1", 1, "Qualifying", [AdvancerResponseFactory.Create("b1", "Dave Smith")])]));
+        var cut = _host.Render();
+        var toggle = cut.Find("[data-testid='series-stage'][data-stage-id='q1'] [data-testid='series-stage-toggle']");
+        toggle.GetAttribute("aria-expanded").ShouldBe("true");
+
+        // Act
+        toggle.Click();
+
+        // Assert
+        cut.FindAll("[data-testid='series-stage-results']").ShouldBeEmpty();
+        cut.Find("[data-testid='series-stage'][data-stage-id='q1'] [data-testid='series-stage-toggle']")
+            .GetAttribute("aria-expanded").ShouldBe("false");
+
+        // Act
+        cut.Find("[data-testid='series-stage'][data-stage-id='q1'] [data-testid='series-stage-toggle']").Click();
+
+        // Assert
+        cut.FindAll("[data-testid='series-stage-results']").Count.ShouldBe(1);
+    }
+
+    [Fact(DisplayName = "Should give a Stage with no results no expander")]
+    public void Advancers_ShouldHideExpander_WhenStageHasNoResults()
+    {
+        // Arrange
+        SetupPage();
+        _host.SetupAdvancers(SeriesAdvancersResponseFactory.Create(
+            [StageAdvancersResponseFactory.Create("q1", 1, "Qualifying", [AdvancerResponseFactory.Create("b1", "Dave Smith")])]));
+
+        // Act
+        var cut = _host.Render();
+
+        // Assert
+        cut.FindAll("[data-testid='series-stage-toggle']").Count.ShouldBe(1);
+        cut.FindAll("[data-testid='series-stage'][data-stage-id='s1'] [data-testid='series-stage-toggle']").ShouldBeEmpty();
+    }
+
+    [Fact(DisplayName = "Should list every Placement position, marking the finalists, not only the finalists")]
+    public void Advancers_ShouldListEveryPlacementPosition()
+    {
+        // Arrange
+        _host.SetupDetailFor(SeriesAdvancementResponseFactory.Create(stages:
+            [StageAdvancementResponseFactory.Create(stageId: "p1", order: 1, kind: "Placement")]));
+        _host.SetupAdvancers(SeriesAdvancersResponseFactory.Create(
+        [
+            StageAdvancersResponseFactory.Create("p1", 1, "Placement",
+            [
+                AdvancerResponseFactory.Create("b1", "Dave Smith", place: 2, advanced: true, position: 1, bowled: true, isFinalist: true),
+                AdvancerResponseFactory.Create("b2", "Pat Plain", place: 9, advanced: false, position: 2, bowled: false, isFinalist: false),
+            ]),
+        ]));
+
+        // Act
+        var cut = _host.Render();
+
+        // Assert
+        var rows = cut.FindAll("[data-testid='series-stage-results'] [data-testid='series-advancer']");
+        rows.Count.ShouldBe(2);
+        rows[0].TextContent.ShouldContain("1st");
+        rows[0].TextContent.ShouldContain("Dave Smith");
+        rows[1].TextContent.ShouldContain("Pat Plain");
+        rows[1].TextContent.ShouldContain("9th");
+        cut.Markup.ShouldContain("Finalist");
+    }
+
+    [Fact(DisplayName = "Should leave out the results when no Stage is settled")]
+    public void Advancers_ShouldHideResults_WhenNoStageSettled()
+    {
+        // Arrange
+        SetupPage();
+
+        // Act
+        var cut = _host.Render();
+
+        // Assert
+        cut.FindAll("[data-testid='series-stage-results']").ShouldBeEmpty();
         cut.FindAll(".series-stage-list li").Count.ShouldBe(2);
     }
 
-    [Fact(DisplayName = "Should leave out the section and keep the page when the advancers call fails")]
-    public void Advancers_ShouldHideSection_WhenCallFails()
+    [Fact(DisplayName = "Should leave out the results and keep the page when the advancers call fails")]
+    public void Advancers_ShouldHideResults_WhenCallFails()
     {
         // Arrange
         SetupPage();
@@ -84,23 +171,24 @@ public sealed class SeriesAdvancersTests : IDisposable
         var cut = _host.Render();
 
         // Assert
-        cut.FindAll("[data-testid='series-advancers']").ShouldBeEmpty();
+        cut.FindAll("[data-testid='series-stage-results']").ShouldBeEmpty();
         cut.FindAll(".series-stage-list li").Count.ShouldBe(2);
     }
 
-    [Fact(DisplayName = "Should show the Who advanced section to a signed-in user without Series.EditSeries")]
+    [Fact(DisplayName = "Should show the results to a signed-in user without Series.EditSeries")]
     public void Advancers_ShouldShow_WithoutEditSeries()
     {
         // Arrange
         SetupPage();
         _host.SignInWithoutEditSeries();
-        _host.SetupAdvancers(SeriesAdvancersResponseFactory.Create());
+        _host.SetupAdvancers(SeriesAdvancersResponseFactory.Create(
+            [StageAdvancersResponseFactory.Create("q1", 1, "Qualifying")]));
 
         // Act
         var cut = _host.Render();
 
         // Assert
-        cut.FindAll("[data-testid='series-advancers-stage']").Count.ShouldBe(1);
+        cut.FindAll("[data-testid='series-stage-results']").Count.ShouldBe(1);
     }
 
     [Fact(DisplayName = "Should make no advancers call for a Series.EditSeries holder, who sees the season rail instead")]
@@ -116,7 +204,7 @@ public sealed class SeriesAdvancersTests : IDisposable
 
         // Assert
         _host.Api.Verify(x => x.GetSeriesAdvancersAsync(SeriesDetailHost.SeriesId, It.IsAny<CancellationToken>()), Times.Never);
-        cut.FindAll("[data-testid='series-advancers']").ShouldBeEmpty();
+        cut.FindAll("[data-testid='series-stage-results']").ShouldBeEmpty();
     }
 
     [Fact(DisplayName = "Should map advancers to the view model in Stage order")]

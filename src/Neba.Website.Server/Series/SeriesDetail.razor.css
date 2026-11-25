@@ -58,61 +58,6 @@
     color: var(--neba-text-muted);
 }
 
-.series-stage-list {
-    list-style: none;
-    margin: 0;
-    padding: 0;
-}
-
-.series-stage-list li {
-    display: grid;
-    grid-template-columns: 36px 1fr 150px 180px;
-    gap: 0.875rem;
-    align-items: center;
-    padding: 0.875rem 1.25rem;
-}
-
-.series-stage-list li + li {
-    border-top: 1px solid var(--neba-border);
-}
-
-.series-stage__order {
-    font-family: var(--neba-font-display);
-    font-weight: 700;
-    color: var(--neba-text-muted);
-}
-
-.series-stage__tournament a {
-    font-weight: 600;
-    text-decoration: none;
-}
-
-.series-stage__tournament a:hover {
-    text-decoration: underline;
-}
-
-.series-stage__tournament small {
-    display: block;
-    color: var(--neba-text-muted);
-    font-size: 0.8125rem;
-}
-
-.series-stage__advancing {
-    font-weight: 600;
-}
-
-.series-stage__advancing-sub {
-    display: block;
-    font-weight: 400;
-    font-size: 0.8125rem;
-    color: var(--neba-text-muted);
-}
-
-.series-stage__squad {
-    font-size: 0.875rem;
-    color: var(--neba-text-muted);
-}
-
 .series-finale {
     display: flex;
     flex-wrap: wrap;
@@ -124,17 +69,6 @@
 .series-finale__host {
     color: var(--neba-text-muted);
     font-weight: 400;
-}
-
-@media (max-width: 767px) {
-    .series-stage-list li {
-        grid-template-columns: 28px 1fr;
-    }
-
-    .series-stage-list .series-stage__advancing,
-    .series-stage-list .series-stage__squad {
-        grid-column: 2;
-    }
 }
 
 .series-detail__retry {

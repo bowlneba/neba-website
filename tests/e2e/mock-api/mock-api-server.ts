@@ -880,7 +880,7 @@ function mockAdvancementResponse(state: AdvState): object {
 }
 
 // GET /series/{id}/advancers: Official Stages only. A Qualifying Stage lists its entries and the bowlers who already advanced,
-// a Survivor Stage lists its full standings, and a Placement Stage lists the finalists.
+// a Survivor Stage lists its full standings, and a Placement Stage lists every position.
 function mockAdvancersResponse(state: AdvState): object {
   const stages = state.stages
     .filter((s) => s.status === 'Official')
@@ -905,6 +905,7 @@ function mockAdvancersOf(state: AdvState, s: AdvStage): object[] {
       isBackfill: e.sourceStageId === undefined,
       advanced: true,
       alreadyAdvancedFromOrder: null,
+      backfillPoints: e.backfillPoints ?? null,
     }));
     const already = (s.alreadyAdvanced as { bowlerId: string; bowlerName: string; place: number; earlierStageOrder: number }[]).map((a) => ({
       bowlerId: a.bowlerId,
@@ -914,8 +915,10 @@ function mockAdvancersOf(state: AdvState, s: AdvStage): object[] {
       isBackfill: false,
       advanced: false,
       alreadyAdvancedFromOrder: a.earlierStageOrder,
+      backfillPoints: null,
     }));
-    return [...entries, ...already].sort((a, b) => (a.place ?? 999) - (b.place ?? 999));
+    // Placed bowlers by place, then the Bowler of the Year point list, high to low.
+    return [...entries, ...already].sort((a, b) => (a.place ?? 999) - (b.place ?? 999) || (b.backfillPoints ?? 0) - (a.backfillPoints ?? 0));
   }
 
   if (s.kind === 'Survivor') {
@@ -930,9 +933,18 @@ function mockAdvancersOf(state: AdvState, s: AdvStage): object[] {
     }));
   }
 
-  return state.positions
-    .filter((p) => p.isFinalist)
-    .map((p) => ({ bowlerId: p.bowlerId, bowlerName: p.bowlerName, place: null, blockTotal: null, isBackfill: false, advanced: true, alreadyAdvancedFromOrder: null }));
+  return state.positions.map((p) => ({
+    bowlerId: p.bowlerId,
+    bowlerName: p.bowlerName,
+    place: null,
+    blockTotal: null,
+    isBackfill: false,
+    advanced: p.isFinalist === true,
+    alreadyAdvancedFromOrder: null,
+    position: p.position,
+    bowled: p.bowled,
+    isFinalist: p.isFinalist ?? null,
+  }));
 }
 
 const ADV_PATH = /^\/series\/([^/]+)\/(advancement|advancers|stages\/([^/]+)\/(results|squads|recomputations|squad|overrides|official)(?:\/([^/]+))?)$/;

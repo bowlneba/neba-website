@@ -112,7 +112,8 @@ internal static class SeriesMappingExtensions
         public IReadOnlyList<StageAdvancersViewModel> ToViewModel()
             => [.. response.Stages.OrderBy(s => s.Order).Select(s => new StageAdvancersViewModel(
                 s.StageId, s.Order, s.Kind,
-                [.. s.Advancers.Select(a => new AdvancerViewModel(a.BowlerId, a.BowlerName, a.Place, a.BlockTotal, a.IsBackfill, a.Advanced, a.AlreadyAdvancedFromOrder))]))];
+                [.. s.Advancers.Select(a => new AdvancerViewModel(a.BowlerId, a.BowlerName, a.Place, a.BlockTotal, a.IsBackfill, a.Advanced, a.AlreadyAdvancedFromOrder,
+                    a.BackfillPoints, a.Position, a.Bowled, a.IsFinalist))]))];
     }
 
     extension(StageResultSummaryResponse response)
