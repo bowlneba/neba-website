@@ -1240,6 +1240,8 @@ Phase 1 stores the configuration. Phase 2 computes the field and each Stage's ou
 - A cancelled tournament keeps its Stage and its Series tag until an admin removes the Stage
 - A Pending Stage whose tournament is Cancelled can be removed even while the Series is locked. The admin then runs Recompute from the Stage before it, and the Target Field shrinks
 
+**In the UI**: a Stage shows as a *tournament*, named by its place in the season: "1st tournament", "2nd tournament". The code, the API and this document keep "Stage".
+
 **In Code**:
 
 - `SeriesStage`, `SeriesStageId`, `SeriesStageDefinition` (the submitted Stage), `StageTournamentFacts` (tournament data the handler reads for the checks)
@@ -1356,7 +1358,7 @@ Phase 1 stores the configuration. Phase 2 computes the field and each Stage's ou
 - **Official** means the output is settled and no longer changes on its own. Only a confirmed Recompute resets it to Computed
 - A person with `Series.MakeStageOfficial` (Admin, Webmaster, Manager, Tournament Director) marks a Computed Stage Official after reviewing its output. Nothing makes a Stage Official on its own
 - A Stage can be marked Official only while it is Computed and not Stale. Marking an Official Stage again does nothing
-- The public Series page shows who advanced from a Stage only once it is Official, so the review window is the time the Stage stays Computed.
+- The public Series page shows a Stage's results only once it is Official, so the review window is the time the Stage stays Computed. An Official Stage opens with its results showing, and a visitor can collapse it.
 - The last Qualifying Stage becomes Official only after the Backfill ran, and that makes the Backfill official too
 - A Stage becomes Official only after every earlier Stage is Official
 - A Placement Stage is marked Official like any other Stage. Its later commit points are, with a Finale, a replacement or the Finale result, and, without a Finale, recorded payouts (phase 3). A Recompute that reaches the Placement Stage after those needs confirmation and clears them
@@ -1393,6 +1395,8 @@ Phase 1 stores the configuration. Phase 2 computes the field and each Stage's ou
 - Open points come from website results of Completed and Truncated stats-eligible tournaments through the as-of date, with the Tournament of Champions double-dip exclusion. The legacy side-cut bonus is not reproduced (see Rules Gaps)
 - Triggers: (1) the Stats context publishes an event when season stats are generated and Series subscribes (Stats does not call Series); (2) it runs when all Qualifying Stages are computed and stats exist through the last qualifier; (3) it reads points as of the stored date; (4) a re-sent stats event must not change an Official field
 - An override Add does not fill a vacant slot
+
+**In the UI**: the Backfill shows as the *Bowler of the Year point list*, and `BackfillPoints` as "Bowler of the Year points". The code, the API and this document keep "Backfill".
 
 **In Code**: `Series.BackfillAsOf`; Backfill entries are `SeriesFieldEntry` rows with no source Stage, no place, and `BackfillPoints` set.
 
