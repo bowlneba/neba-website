@@ -34,11 +34,21 @@ public sealed class TournamentSponsor
     /// </summary>
     public decimal SponsorshipAmount { get; internal set; }
 
+    /// <summary>
+    /// The largest sponsorship amount the database column holds (precision 7, scale 2).
+    /// </summary>
+    public const decimal MaxSponsorshipAmount = 99_999.99m;
+
     internal ErrorOr<Success> ChangeSponsorshipAmount(decimal sponsorshipAmount)
     {
         if (sponsorshipAmount < 0)
         {
             return TournamentSponsorErrors.NegativeSponsorshipAmount;
+        }
+
+        if (sponsorshipAmount > MaxSponsorshipAmount)
+        {
+            return TournamentSponsorErrors.SponsorshipAmountTooLarge;
         }
 
         SponsorshipAmount = sponsorshipAmount;
@@ -48,13 +58,21 @@ public sealed class TournamentSponsor
 
     internal static ErrorOr<TournamentSponsor> Create(SponsorId sponsorId, bool titleSponsor, decimal sponsorshipAmount)
     {
-        return sponsorshipAmount < 0
-            ? TournamentSponsorErrors.NegativeSponsorshipAmount
-            : new TournamentSponsor
-            {
-                SponsorId = sponsorId,
-                TitleSponsor = titleSponsor,
-                SponsorshipAmount = sponsorshipAmount
-            };
+        if (sponsorshipAmount < 0)
+        {
+            return TournamentSponsorErrors.NegativeSponsorshipAmount;
+        }
+
+        if (sponsorshipAmount > MaxSponsorshipAmount)
+        {
+            return TournamentSponsorErrors.SponsorshipAmountTooLarge;
+        }
+
+        return new TournamentSponsor
+        {
+            SponsorId = sponsorId,
+            TitleSponsor = titleSponsor,
+            SponsorshipAmount = sponsorshipAmount
+        };
     }
 }

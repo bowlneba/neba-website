@@ -94,10 +94,53 @@ public sealed class EditTournamentSponsorAmountModalTests : IDisposable
             onSaved: () => saved = true);
 
         // Act
+        cut.Find("#sponsor-edit-amount").Change("123");
         cut.Find("button.neba-btn-primary").Click();
 
         // Assert
         cut.Markup.ShouldContain("The specified sponsor is not attached to this tournament.");
         saved.ShouldBeFalse();
+    }
+
+    [Fact(DisplayName = "Should disable Save when the amount is unchanged")]
+    public void Save_ShouldBeDisabled_WhenAmountUnchanged()
+    {
+        // Arrange
+        var sponsor = TournamentDetailSponsorViewModelFactory.Create(sponsorshipAmount: 750m);
+
+        // Act
+        var cut = Render(sponsor);
+
+        // Assert
+        cut.Find("button.neba-btn-primary").HasAttribute("disabled").ShouldBeTrue();
+    }
+
+    [Theory(DisplayName = "Should disable Save when the amount is empty or above the maximum")]
+    [InlineData("")]
+    [InlineData("100000")]
+    public void Save_ShouldBeDisabled_WhenAmountInvalid(string value)
+    {
+        // Arrange
+        var sponsor = TournamentDetailSponsorViewModelFactory.Create(sponsorshipAmount: 750m);
+        var cut = Render(sponsor);
+
+        // Act
+        cut.Find("#sponsor-edit-amount").Change(value);
+
+        // Assert
+        cut.Find("button.neba-btn-primary").HasAttribute("disabled").ShouldBeTrue();
+    }
+
+    [Fact(DisplayName = "Should limit the amount input to the maximum")]
+    public void Render_ShouldSetMaxOnAmountInput()
+    {
+        // Arrange
+        var sponsor = TournamentDetailSponsorViewModelFactory.Create();
+
+        // Act
+        var cut = Render(sponsor);
+
+        // Assert
+        cut.Find("#sponsor-edit-amount").GetAttribute("max").ShouldBe("99999.99");
     }
 }

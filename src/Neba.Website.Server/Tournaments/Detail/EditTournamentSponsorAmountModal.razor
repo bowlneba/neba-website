@@ -24,14 +24,14 @@
             <FormLabel TargetId="sponsor-edit-amount" For="@(() => _model.SponsorshipAmount)">Added money from @Sponsor?.Name</FormLabel>
             <div class="mts-currency-input">
                 <span class="mts-currency-input__prefix" aria-hidden="true">$</span>
-                <input id="sponsor-edit-amount" class="neba-input mts-currency-input__field" type="number" min="0" step="0.01" @bind="_model.SponsorshipAmount" @bind:after="MarkDirty" />
+                <input id="sponsor-edit-amount" class="neba-input mts-currency-input__field" type="number" min="0" max="99999.99" step="0.01" @bind="_model.SponsorshipAmount" @bind:after="MarkDirty" />
             </div>
         </div>
     </ChildContent>
     <FooterContent>
         <div class="mts-modal-actions">
             <button type="button" class="neba-btn neba-btn-secondary" @onclick="HandleCancelRequestedAsync" disabled="@_isSubmitting">Cancel</button>
-            <button type="button" class="neba-btn neba-btn-primary" @onclick="SubmitAsync" disabled="@_isSubmitting">
+            <button type="button" class="neba-btn neba-btn-primary" @onclick="SubmitAsync" disabled="@(_isSubmitting || !CanSave)">
                 @(_isSubmitting ? "Saving..." : "Save")
             </button>
         </div>
@@ -82,6 +82,12 @@
         }
     }
 
+    private const decimal MaxAmount = 99_999.99m;
+
+    private bool CanSave
+        => _model.SponsorshipAmount is >= 0 and <= MaxAmount
+           && _model.SponsorshipAmount != Sponsor?.SponsorshipAmount;
+
     private void MarkDirty()
         => _isDirty = true;
 
@@ -111,7 +117,7 @@
 
     private async Task SubmitAsync()
     {
-        if (Sponsor is null)
+        if (Sponsor is null || !CanSave)
         {
             return;
         }
@@ -119,7 +125,7 @@
         _isSubmitting = true;
         _errorMessage = null;
 
-        var input = new EditTournamentSponsorAmountInput { SponsorshipAmount = _model.SponsorshipAmount };
+        var input = new EditTournamentSponsorAmountInput { SponsorshipAmount = _model.SponsorshipAmount!.Value };
 
         var result = await OnSubmitRequestedAsync(Sponsor.SponsorId, input, CancellationToken.None);
 
@@ -139,6 +145,6 @@
     private sealed class EditAmountFormModel
     {
         [Required]
-        public decimal SponsorshipAmount { get; set; }
+        public decimal? SponsorshipAmount { get; set; }
     }
 }

@@ -62,23 +62,23 @@
     }
 </div>
 
-<AddTournamentSponsorModal IsOpen="_isAddModalOpen"
-                            AvailableSponsors="_availableSponsors"
+<AddTournamentSponsorModal IsOpen="@_isAddModalOpen"
+                            AvailableSponsors="@_availableSponsors"
                             OnAdded="HandleAddedAsync"
                             OnClose="() => _isAddModalOpen = false"
                             OnSubmitRequestedAsync="OnAddSponsorRequestedAsync" />
 
-<EditTournamentSponsorAmountModal IsOpen="_editTarget is not null"
-                                   Sponsor="_editTarget"
+<EditTournamentSponsorAmountModal IsOpen="@(_editTarget is not null)"
+                                   Sponsor="@_editTarget"
                                    OnSaved="HandleAmountSavedAsync"
                                    OnClose="() => _editTarget = null"
                                    OnSubmitRequestedAsync="OnEditSponsorAmountRequestedAsync" />
 
-<ConfirmActionModal IsOpen="_removeTarget is not null"
+<ConfirmActionModal IsOpen="@(_removeTarget is not null)"
                      Title="Remove sponsor?"
                      Message="@RemoveMessage"
                      ConfirmLabel="Remove Sponsor"
-                     IsBusy="_isRemoving"
+                     IsBusy="@_isRemoving"
                      OnConfirm="ConfirmRemoveAsync"
                      OnCancel="() => _removeTarget = null" />
 

@@ -633,6 +633,37 @@ public sealed class TournamentTests
         tournament.Sponsors.Single().SponsorshipAmount.ShouldBe(500m);
     }
 
+    [Fact(DisplayName = "AddSponsor returns TournamentSponsor.SponsorshipAmountTooLarge when the amount exceeds the maximum")]
+    public void AddSponsor_ShouldReturnError_WhenSponsorshipAmountIsTooLarge()
+    {
+        // Arrange
+        var tournament = TournamentFactory.Create();
+
+        // Act
+        var result = tournament.AddSponsor(SponsorId.New(), titleSponsor: false, sponsorshipAmount: 100_000m);
+
+        // Assert
+        result.IsError.ShouldBeTrue();
+        result.FirstError.Code.ShouldBe("TournamentSponsor.SponsorshipAmountTooLarge");
+    }
+
+    [Fact(DisplayName = "ChangeSponsorAmount returns a validation error and keeps the amount when the amount exceeds the maximum")]
+    public void ChangeSponsorAmount_ShouldReturnValidationErrorAndKeepAmount_WhenAmountIsTooLarge()
+    {
+        // Arrange
+        var tournament = TournamentFactory.Create();
+        var sponsorId = SponsorId.New();
+        tournament.AddSponsor(sponsorId, titleSponsor: false, sponsorshipAmount: 500m);
+
+        // Act
+        var result = tournament.ChangeSponsorAmount(sponsorId, 250_000m);
+
+        // Assert
+        result.IsError.ShouldBeTrue();
+        result.FirstError.Code.ShouldBe("TournamentSponsor.SponsorshipAmountTooLarge");
+        tournament.Sponsors.Single().SponsorshipAmount.ShouldBe(500m);
+    }
+
     [Fact(DisplayName = "RemoveSponsor returns Deleted when sponsor is attached")]
     public void RemoveSponsor_ShouldReturnDeleted_WhenSponsorIsAttached()
     {

@@ -98,6 +98,17 @@ test.describe('Tournament Detail — manage sponsors (authorized)', () => {
     );
   });
 
+
+  // Attaches Acme through the mock API so the edit specs don't depend on the add spec having run.
+  async function attachAcme(page: import('@playwright/test').Page) {
+    await page.request.delete(
+      `http://localhost:5151/tournaments/${MOCK_TOURNAMENT_SPONSOR_MGMT_ID}/sponsors/${MOCK_ACME_SPONSOR_ID}`
+    );
+    await page.request.post(`http://localhost:5151/tournaments/${MOCK_TOURNAMENT_SPONSOR_MGMT_ID}/sponsors`, {
+      data: { sponsor: { sponsorId: MOCK_ACME_SPONSOR_ID, titleSponsor: false, sponsorshipAmount: 1000 } },
+    });
+  }
+
   test('shows the Manage Sponsors section with an empty state for an authorized viewer', async ({ page }) => {
     await page.goto(`/tournaments/${MOCK_TOURNAMENT_SPONSOR_MGMT_ID}`);
     await page.waitForSelector('.td-hero');
@@ -128,6 +139,7 @@ test.describe('Tournament Detail — manage sponsors (authorized)', () => {
   });
 
   test('edits a sponsor\'s added money via the Edit Added Money modal', async ({ page }) => {
+    await attachAcme(page);
     await page.goto(`/tournaments/${MOCK_TOURNAMENT_SPONSOR_MGMT_ID}`);
     await page.waitForSelector('.td-hero');
 
@@ -143,6 +155,7 @@ test.describe('Tournament Detail — manage sponsors (authorized)', () => {
   });
 
   test('shows an error alert and keeps the modal open when editing a sponsor\'s added money fails', async ({ page }) => {
+    await attachAcme(page);
     await page.request.post(
       `http://localhost:5151/__mock/fail?path=/tournaments/${MOCK_TOURNAMENT_SPONSOR_MGMT_ID}/sponsors/${MOCK_ACME_SPONSOR_ID}&status=409`
     );
@@ -159,6 +172,7 @@ test.describe('Tournament Detail — manage sponsors (authorized)', () => {
   });
 
   test('removes a sponsor after confirming', async ({ page }) => {
+    await attachAcme(page);
     await page.goto(`/tournaments/${MOCK_TOURNAMENT_SPONSOR_MGMT_ID}`);
     await page.waitForSelector('.td-hero');
 
