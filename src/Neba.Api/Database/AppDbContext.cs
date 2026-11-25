@@ -20,8 +20,6 @@ using Neba.Api.Features.Stats.Domain;
 using Neba.Api.Features.Tournaments.Domain;
 using Neba.Api.Uploads;
 
-using SmartEnum.EFCore;
-
 namespace Neba.Api.Database;
 
 internal sealed class AppDbContext(

@@ -46,7 +46,7 @@
     <PackageVersion Include="CommunityToolkit.Aspire.Hosting.MailPit" Version="17.0.0" />
     <PackageVersion Include="coverlet.collector" Version="10.1.1" />
     <PackageVersion Include="Dapper" Version="2.1.100" />
-    <PackageVersion Include="EFCore.NamingConventions" Version="[10.0.2, 11.0.0)" />
+    <PackageVersion Include="EFCore.NamingConventions" Version="[10.0.1, 11.0.0)" />
     <PackageVersion Include="EntityFrameworkCore.Exceptions.PostgreSQL" Version="[10.0.2, 11.0.0)" />
     <PackageVersion Include="ErrorOr" Version="2.1.1" />
     <PackageVersion Include="FastEndpoints" Version="9.0.0" />
