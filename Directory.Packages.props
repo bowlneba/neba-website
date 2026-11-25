@@ -4,9 +4,9 @@
     <CentralPackageTransitivePinningEnabled>true</CentralPackageTransitivePinningEnabled>
   </PropertyGroup>
   <ItemGroup>
-    <PackageVersion Include="Ardalis.SmartEnum" Version="8.2.0" />
-    <PackageVersion Include="Ardalis.SmartEnum.EFCore" Version="8.2.0" />
-    <PackageVersion Include="Ardalis.SmartEnum.SystemTextJson" Version="8.1.0" />
+    <PackageVersion Include="Ardalis.SmartEnum" Version="9.0.0" />
+    <PackageVersion Include="Ardalis.SmartEnum.EFCore" Version="9.0.0" />
+    <PackageVersion Include="Ardalis.SmartEnum.SystemTextJson" Version="9.0.0" />
     <PackageVersion Include="Aspire.Azure.Data.Tables" Version="17.0.0" />
     <PackageVersion Include="Aspire.Azure.Npgsql" Version="17.0.0" />
     <!-- No stable 17.0.0 yet: NuGet has only 17.0.0-preview.1.26567.5 (checked 2026-11-22). Move to 17.0.0 when it ships. -->
@@ -46,8 +46,8 @@
     <PackageVersion Include="CommunityToolkit.Aspire.Hosting.MailPit" Version="17.0.0" />
     <PackageVersion Include="coverlet.collector" Version="10.1.1" />
     <PackageVersion Include="Dapper" Version="2.1.100" />
-    <PackageVersion Include="EFCore.NamingConventions" Version="10.0.1" />
-    <PackageVersion Include="EntityFrameworkCore.Exceptions.PostgreSQL" Version="10.0.2" />
+    <PackageVersion Include="EFCore.NamingConventions" Version="[10.0.2, 11.0.0)" />
+    <PackageVersion Include="EntityFrameworkCore.Exceptions.PostgreSQL" Version="[10.0.2, 11.0.0)" />
     <PackageVersion Include="ErrorOr" Version="2.1.1" />
     <PackageVersion Include="FastEndpoints" Version="9.0.0" />
     <PackageVersion Include="FastEndpoints.AspVersioning" Version="9.0.0" />
@@ -108,9 +108,9 @@
     <PackageVersion Include="Refit.HttpClientFactory" Version="17.0.0" />
     <PackageVersion Include="Refit.Testing" Version="17.0.0" />
     <PackageVersion Include="Roslynator.Analyzers" Version="5.0.1" />
-    <PackageVersion Include="Scalar.AspNetCore" Version="3.1.1" />
+    <PackageVersion Include="Scalar.AspNetCore" Version="3.2.1" />
     <PackageVersion Include="Scrutor.AspNetCore" Version="3.3.0" />
-    <PackageVersion Include="SixLabors.ImageSharp" Version="4.1.3" />
+    <PackageVersion Include="SixLabors.ImageSharp" Version="4.1.4" />
     <PackageVersion Include="Shouldly" Version="4.3.0" />
     <PackageVersion Include="SonarAnalyzer.CSharp" Version="10.37.0.15768" />
     <PackageVersion Include="SQLitePCLRaw.lib.e_sqlite3" Version="3.53.3" />
