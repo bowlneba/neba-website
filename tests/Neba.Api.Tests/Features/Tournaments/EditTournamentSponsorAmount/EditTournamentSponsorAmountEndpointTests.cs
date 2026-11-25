@@ -4,8 +4,8 @@ using FastEndpoints;
 
 using Neba.Api.Contracts.Tournaments.EditTournamentSponsorAmount;
 using Neba.Api.Features.Sponsors.Domain;
-using Neba.Api.Features.Tournaments.EditTournamentSponsorAmount;
 using Neba.Api.Features.Tournaments.Domain;
+using Neba.Api.Features.Tournaments.EditTournamentSponsorAmount;
 using Neba.TestFactory.Attributes;
 
 using NebaMessaging = Neba.Api.Messaging;

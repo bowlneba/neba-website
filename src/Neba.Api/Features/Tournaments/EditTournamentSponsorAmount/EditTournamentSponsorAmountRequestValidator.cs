@@ -2,8 +2,8 @@ using FastEndpoints;
 
 using FluentValidation;
 
-using Neba.Api.Features.Tournaments.Domain;
 using Neba.Api.Contracts.Tournaments.EditTournamentSponsorAmount;
+using Neba.Api.Features.Tournaments.Domain;
 
 namespace Neba.Api.Features.Tournaments.EditTournamentSponsorAmount;
 
