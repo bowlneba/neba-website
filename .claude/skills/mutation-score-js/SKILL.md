@@ -1,6 +1,6 @@
 ---
 name: mutation-score-js
-description: Review surviving mutations for a JS file and add/update tests to kill them. Usage: /mutation-score-js <FileName>
+description: Review surviving mutations for a JS file and add/update tests to kill them. Use only after a Stryker run. For first-time tests use write-tests. Usage: /mutation-score-js <FileName>
 ---
 
 The user wants to review and fix surviving mutations for a specific JavaScript file.
