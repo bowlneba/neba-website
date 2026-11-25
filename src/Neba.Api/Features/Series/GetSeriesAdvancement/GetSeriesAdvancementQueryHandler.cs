@@ -23,7 +23,7 @@ internal sealed class GetSeriesAdvancementQueryHandler(
 
         var ordered = rows.Stages.OrderBy(s => s.Order).ToList();
 
-        var stages = ordered.Select(stage =>
+        var stages = ordered.ConvertAll(stage =>
         {
             var isLastQualifying = stage.StageId == lastQualifying?.StageId;
 
@@ -99,7 +99,7 @@ internal sealed class GetSeriesAdvancementQueryHandler(
                 alreadyAdvanced,
                 overrides,
                 outcomes);
-        }).ToList();
+        });
 
         // Target field: a Qualifying Stage's stored slot total, else its advancing count times the team size.
         var targetField = rows.Stages

@@ -203,8 +203,9 @@ internal static class SeriesAdvancementReader
 
         return [.. qualifying
             .SelectMany(stage => results
-                .Where(result => result.TournamentId == stage.TournamentId && result.Place <= stage.AdvancingCount!.Value)
-                .Where(result => stageOrder[advancedFrom[result.BowlerId]] < stage.Order)
+                .Where(result => result.TournamentId == stage.TournamentId
+                    && result.Place <= stage.AdvancingCount!.Value
+                    && stageOrder[advancedFrom[result.BowlerId]] < stage.Order)
                 .Select(result => new AdvancementAlreadyAdvancedRow(
                     stage.StageId, result.BowlerId, result.Name, result.Place, advancedFrom[result.BowlerId])))
             .OrderBy(row => row.Place)
@@ -238,7 +239,7 @@ internal static class SeriesAdvancementReader
         }
 
         // Where each bowler finished in the Placement Stage's tournament (place 0 means unplaced).
-        var bowlerIds = positions.Select(position => position.BowlerId).ToList();
+        var bowlerIds = positions.ConvertAll(position => position.BowlerId);
         var places = await appDbContext.Tournaments.AsNoTracking()
             .Where(tournament => tournament.Id == placementTournamentId)
             .SelectMany(tournament => tournament.Results.Where(result => result.Place > 0 && bowlerIds.Contains(result.BowlerId)))
