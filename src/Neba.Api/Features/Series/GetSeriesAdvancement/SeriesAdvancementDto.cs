@@ -19,7 +19,7 @@ internal sealed record StageAdvancementDto(
     bool IsStale,
     bool NeedsSquad,
     DateTimeOffset? ComputedAt,
-    DateTimeOffset? OfficialDueAt,
+    bool CanMakeOfficial,
     DateTimeOffset? OfficialAt,
     int? SlotCount,
     int? VacantSlotCount,
@@ -27,11 +27,15 @@ internal sealed record StageAdvancementDto(
     string TournamentStatus,
     SquadId? ResolvedSquadId,
     IReadOnlyList<FieldEntryDto> Entries,
+    IReadOnlyList<AlreadyAdvancedDto> AlreadyAdvanced,
     IReadOnlyList<StageOverrideDto> Overrides,
     IReadOnlyList<SurvivorOutcomeDto> SurvivorOutcomes);
 
 internal sealed record FieldEntryDto(
     BowlerId BowlerId, string BowlerName, SeriesStageId? SourceStageId, int? Place, int? BackfillPoints, bool ViaOverride);
+
+internal sealed record AlreadyAdvancedDto(
+    BowlerId BowlerId, string BowlerName, int Place, SeriesStageId EarlierStageId, int EarlierStageOrder);
 
 internal sealed record StageOverrideDto(
     StageOverrideId OverrideId,
@@ -45,4 +49,4 @@ internal sealed record StageOverrideDto(
 
 internal sealed record SurvivorOutcomeDto(BowlerId BowlerId, string BowlerName, int? BlockTotal, bool Advanced);
 
-internal sealed record SeriesPositionDto(BowlerId BowlerId, string BowlerName, int Position, bool Bowled, bool? IsFinalist);
+internal sealed record SeriesPositionDto(BowlerId BowlerId, string BowlerName, int Position, bool Bowled, bool? IsFinalist, int? TournamentPlace = null);

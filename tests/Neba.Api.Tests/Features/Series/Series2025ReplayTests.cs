@@ -28,7 +28,6 @@ namespace Neba.Api.Tests.Features.Series;
 public sealed class Series2025ReplayTests(AppDbContextFixture fixture)
     : IClassFixture<AppDbContextFixture>, IAsyncLifetime
 {
-    private static readonly TimeSpan Grace = TimeSpan.FromHours(24);
 
     public async ValueTask InitializeAsync()
         => await fixture.ResetAsync();
@@ -103,7 +102,7 @@ public sealed class Series2025ReplayTests(AppDbContextFixture fixture)
 
         return await CreateAdvancement(db).RunWithoutFactsAsync(
             replay.Series.Id,
-            (series, _, now) => series.MakeDueOfficial(now.AddDays(3), Grace),
+            (series, _, now) => series.MakeReadyStagesOfficial(now.AddDays(3)),
             SeriesAdvancement.AdminLockWait,
             Ct);
     }
@@ -250,8 +249,8 @@ public sealed class Series2025ReplayTests(AppDbContextFixture fixture)
         stored.FieldEntries.Single(entry => entry.BowlerId == replay.Bowlers[50].Id).ViaOverride.ShouldBeTrue();
     }
 
-    [Fact(DisplayName = "MakeDueOfficial should make the ten Qualifying and Survivor Stages Official and leave the Placement Stage Computed")]
-    public async Task MakeDueOfficial_ShouldMakeTenStagesOfficial_AndNeverThePlacementStage()
+    [Fact(DisplayName = "MakeReadyOfficial should make all eleven Stages Official, the Placement Stage included")]
+    public async Task MakeReadyOfficial_ShouldMakeElevenStagesOfficial()
     {
         // Arrange
         var replay = await ReplayWithOverridesAsync(withFinale: true);
@@ -262,15 +261,14 @@ public sealed class Series2025ReplayTests(AppDbContextFixture fixture)
         // Assert
         result.IsError.ShouldBeFalse();
         var stored = await StoredAsync(replay);
-        stored.Version.ShouldBe(4);
-        stored.Stages.Where(stage => stage.Order <= 10).ShouldAllBe(stage => stage.Status == StageStatus.Official);
-        stored.Stages.Single(stage => stage.Order == 11).Status.ShouldBe(StageStatus.Computed);
+        stored.Version.ShouldBe(14);
+        stored.Stages.ShouldAllBe(stage => stage.Status == StageStatus.Official);
     }
 
     [Theory(DisplayName = "Recompute should ask for confirmation and change nothing when an Official Stage is in range")]
-    [InlineData(1, 10)]
-    [InlineData(9, 2)]
-    [InlineData(10, 1)]
+    [InlineData(1, 11, TestDisplayName = "from the 1st tournament, 11 Official")]
+    [InlineData(9, 3, TestDisplayName = "from the 9th tournament, 3 Official")]
+    [InlineData(10, 2, TestDisplayName = "from the 10th tournament, 2 Official")]
     public async Task Recompute_ShouldAskForConfirmation_WhenOfficialStagesAreInRange(int fromOrder, int officialCount)
     {
         // Arrange
@@ -278,7 +276,7 @@ public sealed class Series2025ReplayTests(AppDbContextFixture fixture)
         (await MakeOfficialAsync(replay)).IsError.ShouldBeFalse();
 
         // Act
-        var result = await RecomputeAsync(replay, fromOrder, version: 4);
+        var result = await RecomputeAsync(replay, fromOrder, version: 14);
 
         // Assert
         result.IsError.ShouldBeTrue();
@@ -288,8 +286,8 @@ public sealed class Series2025ReplayTests(AppDbContextFixture fixture)
         ((int[])error.Metadata![SeriesAdvancementErrors.OfficialStageOrdersKey])
             .ShouldBe(Enumerable.Range(fromOrder, officialCount));
         var stored = await StoredAsync(replay);
-        stored.Version.ShouldBe(4);
-        stored.Stages.Where(stage => stage.Order <= 10).ShouldAllBe(stage => stage.Status == StageStatus.Official);
+        stored.Version.ShouldBe(14);
+        stored.Stages.ShouldAllBe(stage => stage.Status == StageStatus.Official);
     }
 
     [Fact(DisplayName = "A confirmed Recompute from the first Survivor Stage should reset only the Survivor Stages and keep the earlier Official Stages")]
@@ -300,12 +298,12 @@ public sealed class Series2025ReplayTests(AppDbContextFixture fixture)
         (await MakeOfficialAsync(replay)).IsError.ShouldBeFalse();
 
         // Act
-        var result = await RecomputeAsync(replay, 9, version: 4, confirm: true);
+        var result = await RecomputeAsync(replay, 9, version: 14, confirm: true);
 
         // Assert
         result.IsError.ShouldBeFalse();
         var stored = await StoredAsync(replay);
-        stored.Version.ShouldBe(5);
+        stored.Version.ShouldBe(15);
         stored.Stages.Where(stage => stage.Order <= 8).ShouldAllBe(stage => stage.Status == StageStatus.Official);
         stored.Stages.Where(stage => stage.Order >= 9).ShouldAllBe(stage => stage.Status == StageStatus.Computed);
         ShouldHaveOutput(stored, replay, Series2025ReplayExpected.AfterOverrides, withFinale: true);
@@ -319,12 +317,12 @@ public sealed class Series2025ReplayTests(AppDbContextFixture fixture)
         (await MakeOfficialAsync(replay)).IsError.ShouldBeFalse();
 
         // Act
-        var result = await RecomputeAsync(replay, 1, version: 4, confirm: true);
+        var result = await RecomputeAsync(replay, 1, version: 14, confirm: true);
 
         // Assert
         result.IsError.ShouldBeFalse();
         var stored = await StoredAsync(replay);
-        stored.Version.ShouldBe(5);
+        stored.Version.ShouldBe(15);
         stored.Stages.ShouldAllBe(stage => stage.Status == StageStatus.Computed);
         stored.Stages.Single(stage => stage.Order == 5).Overrides.ShouldHaveSingleItem().Applied.ShouldBeTrue();
         stored.Stages.Single(stage => stage.Order == 6).Overrides.ShouldHaveSingleItem().Applied.ShouldBeTrue();

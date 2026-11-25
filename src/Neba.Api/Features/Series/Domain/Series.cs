@@ -361,14 +361,14 @@ public sealed partial class Series
             yield return SeriesErrors.KindOutOfOrder(order, facts.TournamentName, definition.Kind, previousDefinition.Kind);
         }
 
-        if (facts.StartDate <= previousFacts.StartDate)
+        if (facts.StartDate < previousFacts.StartDate)
         {
-            yield return SeriesErrors.DateNotAfterPrevious(order, facts.TournamentName, facts.StartDate, previousFacts.StartDate);
+            yield return SeriesErrors.DateBeforePrevious(order, facts.TournamentName, facts.StartDate, previousFacts.StartDate);
         }
     }
 
     // #6: the Finale's count is above zero and no larger than the last Survivor count (no check without a Survivor Stage).
-    // #11: no Stage can come after the Finale, so every Stage's tournament ends before its date. Only the latest-ending
+    // #11: no Stage can come after the Finale, so every Stage's tournament ends on or before its date (the Finale can follow the last Stage the same day). Only the latest-ending
     // Stage is reported. #10's date and time are structural (the input type cannot be empty); the center is checked by the handler.
     private static IEnumerable<Error> CheckFinale(
         SeriesFinaleDefinition? finale, int? lastSurvivorCount, IReadOnlyCollection<StageTournamentFacts> stageFacts)
@@ -387,7 +387,7 @@ public sealed partial class Series
             yield return SeriesErrors.FinaleCountExceedsSurvivor(finale.FinalistCount, lastSurvivor);
         }
 
-        if (stageFacts.MaxBy(facts => facts.EndDate) is { } latest && latest.EndDate >= finale.Date)
+        if (stageFacts.MaxBy(facts => facts.EndDate) is { } latest && latest.EndDate > finale.Date)
         {
             yield return SeriesErrors.StageNotBeforeFinale(finale.Date, latest.TournamentName, latest.EndDate);
         }

@@ -1,0 +1,111 @@
+@if (Stage.Advancers.Count == 0)
+{
+    <p class="series-results__empty">@SeriesDisplay.NoFieldEntries</p>
+}
+else if (Stage.Kind == StageKinds.Qualifying)
+{
+    var showPoints = Stage.Advancers.Any(a => a.BackfillPoints is not null);
+
+    <div class="series-results__scroll">
+        <table class="@(showPoints ? "neba-table neba-data-table" : "neba-table")" aria-label="@SeriesDisplay.ResultsTableLabel(Stage.Kind, Stage.Order)">
+            <thead>
+                <tr>
+                    <th scope="col">Place</th>
+                    <th scope="col">Bowler</th>
+                    <th scope="col">Source</th>
+                    @if (showPoints)
+                    {
+                        <th scope="col">Bowler of the Year points</th>
+                    }
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var row in Stage.Advancers)
+                {
+                    <tr @key="row.BowlerId" class="@(row.Advanced ? string.Empty : "series-results__out")" data-testid="series-advancer">
+                        <td class="series-results__num">@SeriesDisplay.OrdinalPlace(row.Place)</td>
+                        <td>@row.BowlerName</td>
+                        <td class="@SeriesDisplay.AdvancerSourceClass(row)">@SeriesDisplay.AdvancerSource(row)</td>
+                        @if (showPoints)
+                        {
+                            <td class="series-results__num">@SeriesDisplay.Points(row.BackfillPoints)</td>
+                        }
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+}
+else if (Stage.Kind == StageKinds.Survivor)
+{
+    var cutDrawn = false;
+
+    <div class="series-results__scroll">
+        <table class="neba-table" aria-label="@SeriesDisplay.ResultsTableLabel(Stage.Kind, Stage.Order)">
+            <thead>
+                <tr>
+                    <th scope="col">Bowler</th>
+                    <th scope="col">Block total</th>
+                    <th scope="col">Advanced</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var row in Stage.Advancers)
+                {
+                    var isCut = !row.Advanced && !cutDrawn;
+                    if (!row.Advanced) { cutDrawn = true; }
+                    <tr @key="row.BowlerId" class="@SeriesDisplay.AdvancerRowClass(true, row, isCut)" data-testid="series-advancer">
+                        <td>@row.BowlerName</td>
+                        <td class="series-results__num">@SeriesDisplay.BlockTotal(row.BlockTotal)</td>
+                        <td>@(row.Advanced ? "Yes" : "No")</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+}
+else
+{
+    var hasFinalists = Stage.Advancers.Any(a => a.IsFinalist is not null);
+    var cutDrawn = false;
+
+    <div class="series-results__scroll">
+        <table class="neba-table neba-data-table" aria-label="@SeriesDisplay.ResultsTableLabel(Stage.Kind, Stage.Order)">
+            <thead>
+                <tr>
+                    <th scope="col">Position</th>
+                    <th scope="col">Bowler</th>
+                    <th scope="col">Tournament place</th>
+                    <th scope="col">Bowled</th>
+                    @if (hasFinalists)
+                    {
+                        <th scope="col">Finalist</th>
+                    }
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var row in Stage.Advancers)
+                {
+                    var isCut = hasFinalists && !row.Advanced && !cutDrawn;
+                    if (!row.Advanced) { cutDrawn = true; }
+                    <tr @key="row.BowlerId" class="@(hasFinalists ? SeriesDisplay.AdvancerRowClass(true, row, isCut) : string.Empty)" data-testid="series-advancer">
+                        <td class="series-results__num">@SeriesDisplay.OrdinalPlace(row.Position)</td>
+                        <td>@row.BowlerName</td>
+                        <td class="series-results__num">@SeriesDisplay.OrdinalPlace(row.Place)</td>
+                        <td>@(row.Bowled == true ? "Yes" : "No")</td>
+                        @if (hasFinalists)
+                        {
+                            <td>@(row.Advanced ? "Yes" : "No")</td>
+                        }
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+}
+
+@code {
+    /// <summary>The Stage whose results show. The table keeps every row; the box scrolls.</summary>
+    [Parameter, EditorRequired]
+    public StageAdvancersViewModel Stage { get; set; } = default!;
+}

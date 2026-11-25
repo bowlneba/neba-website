@@ -1,6 +1,6 @@
 namespace Neba.Api.Contracts.Series.ListStageSquads;
 
-/// <summary>A squad of a Stage's tournament.</summary>
+/// <summary>A squad of the Series tournament.</summary>
 public sealed record StageSquadSummaryResponse
 {
     /// <summary>The squad id.</summary>
@@ -15,6 +15,6 @@ public sealed record StageSquadSummaryResponse
     /// <summary>True when the squad has score rows.</summary>
     public required bool HasScores { get; init; }
 
-    /// <summary>True when the Stage uses this squad.</summary>
+    /// <summary>True when the tournament uses this squad.</summary>
     public required bool IsSelected { get; init; }
 }

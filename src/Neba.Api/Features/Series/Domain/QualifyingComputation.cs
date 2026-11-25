@@ -16,9 +16,11 @@ internal static class QualifyingComputation
         IReadOnlyCollection<StageOverride> overrides)
     {
         var advancing = stage.AdvancingCount ?? 0;
-        var placeByBowler = tournament.Results.ToDictionary(row => row.BowlerId, row => row.Place);
+        // A place below 1 means the bowler has no real place (team results not yet grouped), so the bowler missed the cut.
+        var placed = tournament.Results.Where(row => row.Place > 0).ToList();
+        var placeByBowler = placed.ToDictionary(row => row.BowlerId, row => row.Place);
 
-        var slotRows = tournament.Results
+        var slotRows = placed
             .Where(row => row.Place <= advancing)
             .OrderBy(row => row.Place).ThenBy(row => row.BowlerId)
             .ToList();

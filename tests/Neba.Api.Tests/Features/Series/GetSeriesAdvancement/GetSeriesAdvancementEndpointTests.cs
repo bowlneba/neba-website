@@ -20,16 +20,18 @@ public sealed class GetSeriesAdvancementEndpointTests
     private static Mock<IQueryHandler<GetSeriesAdvancementQuery, ErrorOr<SeriesAdvancementDto>>> Handler()
         => new(MockBehavior.Strict);
 
-    [Fact(DisplayName = "Configure should register a GET route at /series/{id}/advancement that needs the Series.EditSeries permission")]
+    [Fact(DisplayName = "Configure should register a GET route at /series/{id}/advancement that needs the CanViewSeriesAdvancement policy")]
     public void Configure_ShouldRegisterPermissionProtectedGetRoute()
     {
-        // Arrange & Act
+        // Arrange
+
+        // Act
         var endpoint = Factory.Create<GetSeriesAdvancementEndpoint>(Handler().Object);
 
         // Assert
         endpoint.Definition.Verbs.ShouldContain("GET");
         endpoint.Definition.Routes.ShouldContain("/series/{id}/advancement");
-        endpoint.Definition.PreBuiltUserPolicies!.ShouldContain("Permission:Series.EditSeries");
+        endpoint.Definition.PreBuiltUserPolicies!.ShouldContain("CanViewSeriesAdvancement");
         endpoint.Definition.PreBuiltUserPolicies!.Count.ShouldBe(1);
         endpoint.Definition.AnonymousVerbs.ShouldBeNull();
     }
@@ -89,7 +91,7 @@ public sealed class GetSeriesAdvancementEndpointTests
         var stage = StageAdvancementDtoFactory.Create(
             stageId: stageId, order: 2, kind: "Survivor", status: "Official", isStale: true, needsSquad: true,
             computedAt: new DateTimeOffset(2025, 3, 1, 12, 0, 0, TimeSpan.Zero),
-            officialDueAt: new DateTimeOffset(2025, 3, 2, 12, 0, 0, TimeSpan.Zero),
+            canMakeOfficial: true,
             officialAt: new DateTimeOffset(2025, 3, 3, 12, 0, 0, TimeSpan.Zero),
             slotCount: 9, vacantSlotCount: 2, tournamentStatus: "Truncated", resolvedSquadId: squadId,
             entries: [entry, backfill], overrides: [stageOverride], survivorOutcomes: [outcome]);
@@ -116,7 +118,7 @@ public sealed class GetSeriesAdvancementEndpointTests
         mappedStage.IsStale.ShouldBeTrue();
         mappedStage.NeedsSquad.ShouldBeTrue();
         mappedStage.ComputedAt.ShouldBe(new DateTimeOffset(2025, 3, 1, 12, 0, 0, TimeSpan.Zero));
-        mappedStage.OfficialDueAt.ShouldBe(new DateTimeOffset(2025, 3, 2, 12, 0, 0, TimeSpan.Zero));
+        mappedStage.CanMakeOfficial.ShouldBeTrue();
         mappedStage.OfficialAt.ShouldBe(new DateTimeOffset(2025, 3, 3, 12, 0, 0, TimeSpan.Zero));
         mappedStage.SlotCount.ShouldBe(9);
         mappedStage.VacantSlotCount.ShouldBe(2);
@@ -179,7 +181,7 @@ public sealed class GetSeriesAdvancementEndpointTests
         endpoint.Response.Positions.ShouldBeEmpty();
         var stage = endpoint.Response.Stages.Single();
         stage.ComputedAt.ShouldBeNull();
-        stage.OfficialDueAt.ShouldBeNull();
+        stage.CanMakeOfficial.ShouldBeFalse();
         stage.OfficialAt.ShouldBeNull();
         stage.SlotCount.ShouldBeNull();
         stage.VacantSlotCount.ShouldBeNull();

@@ -31,7 +31,7 @@ public static class StageAdvancementResponseFactory
         bool? isStale = null,
         bool? needsSquad = null,
         DateTimeOffset? computedAt = null,
-        DateTimeOffset? officialDueAt = null,
+        bool? canMakeOfficial = null,
         DateTimeOffset? officialAt = null,
         int? slotCount = null,
         int? vacantSlotCount = null,
@@ -40,7 +40,8 @@ public static class StageAdvancementResponseFactory
         string? resolvedSquadId = null,
         IReadOnlyList<FieldEntryResponse>? entries = null,
         IReadOnlyList<StageOverrideResponse>? overrides = null,
-        IReadOnlyList<SurvivorOutcomeResponse>? survivorOutcomes = null)
+        IReadOnlyList<SurvivorOutcomeResponse>? survivorOutcomes = null,
+        IReadOnlyList<AlreadyAdvancedResponse>? alreadyAdvanced = null)
     {
         var stageKind = kind ?? ValidKind;
         var isQualifying = stageKind == "Qualifying";
@@ -55,7 +56,7 @@ public static class StageAdvancementResponseFactory
             IsStale = isStale ?? ValidIsStale,
             NeedsSquad = needsSquad ?? ValidNeedsSquad,
             ComputedAt = computedAt,
-            OfficialDueAt = officialDueAt,
+            CanMakeOfficial = canMakeOfficial ?? false,
             OfficialAt = officialAt,
             SlotCount = slotCount ?? (isQualifying ? ValidSlotCount : null),
             VacantSlotCount = vacantSlotCount ?? (isQualifying ? ValidVacantSlotCount : null),
@@ -63,6 +64,7 @@ public static class StageAdvancementResponseFactory
             TournamentStatus = tournamentStatus ?? ValidTournamentStatus,
             ResolvedSquadId = resolvedSquadId ?? (isSurvivor ? ValidResolvedSquadId : null),
             Entries = entries ?? (isQualifying ? [FieldEntryResponseFactory.Create()] : []),
+            AlreadyAdvanced = alreadyAdvanced ?? [],
             Overrides = overrides ?? [],
             SurvivorOutcomes = survivorOutcomes ?? (isSurvivor ? [SurvivorOutcomeResponseFactory.Create()] : []),
         };
@@ -88,7 +90,7 @@ public static class StageAdvancementResponseFactory
                 isStale: faker.Random.Bool(),
                 needsSquad: kind == "Survivor" && faker.Random.Bool(),
                 computedAt: computedAt,
-                officialDueAt: computedAt.AddHours(24),
+                canMakeOfficial: false,
                 officialAt: faker.Random.Bool() ? computedAt.AddHours(25) : null,
                 slotCount: kind == "Qualifying" ? faker.Random.Int(1, 40) : null,
                 vacantSlotCount: kind == "Qualifying" ? faker.Random.Int(0, 3) : null,

@@ -6,7 +6,7 @@ public sealed record CreateStageOverrideRequest
     /// <summary>The series id.</summary>
     public required string Id { get; init; }
 
-    /// <summary>The Stage id.</summary>
+    /// <summary>The Series tournament id.</summary>
     public required string StageId { get; init; }
 
     /// <summary>The override.</summary>

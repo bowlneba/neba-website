@@ -1,9 +1,11 @@
 namespace Neba.Website.Server.Series;
 
 /// <summary>What the signed-in user may do in the advancement section.</summary>
-/// <param name="CanView">Holds Series.EditSeries.</param>
-/// <param name="CanManage">Holds Series.EditSeries and Series.ManageAdvancement.</param>
-internal readonly record struct AdvancementAccess(bool CanView, bool CanManage);
+/// <param name="CanView">Holds Series.EditSeries or Series.MakeStageOfficial, so sees the season rail.</param>
+/// <param name="CanEdit">Holds Series.EditSeries: Recompute and Pick squad.</param>
+/// <param name="CanManage">Holds Series.ManageAdvancement: overrides.</param>
+/// <param name="CanMakeOfficial">Holds Series.MakeStageOfficial.</param>
+internal readonly record struct AdvancementAccess(bool CanView, bool CanEdit, bool CanManage, bool CanMakeOfficial);
 
 /// <summary>The advancement read, shaped for the page.</summary>
 internal sealed record SeriesAdvancementViewModel
@@ -44,7 +46,7 @@ internal sealed record SeriesAdvancementViewModel
 /// <param name="Status">Pending, Computed or Official.</param>
 /// <param name="IsStale">The stored output may differ from a recompute.</param>
 /// <param name="NeedsSquad">A Survivor Stage with no squad, or whose squad vanished.</param>
-/// <param name="OfficialDueAt">When a Computed Stage becomes Official, in the viewer's time zone.</param>
+/// <param name="CanMakeOfficial">The viewer may mark the Stage Official, and it is ready.</param>
 /// <param name="SlotCount">Qualifying slots, once computed.</param>
 /// <param name="VacantSlotCount">Slots not filled by a qualifier.</param>
 /// <param name="TournamentId">The Stage's tournament.</param>
@@ -52,12 +54,13 @@ internal sealed record SeriesAdvancementViewModel
 /// <param name="ResolvedSquadId">The squad a Survivor Stage uses, when known.</param>
 /// <param name="IsLastQualifying">True for the last Qualifying Stage, which owns the Backfill.</param>
 /// <param name="Entries">Field entries for this Stage (the last Qualifying Stage also holds the Backfill).</param>
+/// <param name="AlreadyAdvanced">Bowlers inside the cut who already advanced from an earlier Stage.</param>
 /// <param name="Overrides">Admin overrides on this Stage.</param>
 /// <param name="Outcomes">Survivor results.</param>
 /// <param name="CanAddOverride">Admin may add a bowler.</param>
 /// <param name="CanRemoveOverride">Admin may remove an override.</param>
-/// <param name="CanRecompute">Holder may recompute from this Stage.</param>
-/// <param name="CanPickSquad">Holder may pick this Survivor Stage's squad.</param>
+/// <param name="CanRecompute">Editor may recompute from this Stage.</param>
+/// <param name="CanPickSquad">Editor may pick this Survivor Stage's squad.</param>
 public sealed record StageAdvancementViewModel(
     string Id,
     int Order,
@@ -65,7 +68,7 @@ public sealed record StageAdvancementViewModel(
     string Status,
     bool IsStale,
     bool NeedsSquad,
-    DateTimeOffset? OfficialDueAt,
+    bool CanMakeOfficial,
     int? SlotCount,
     int? VacantSlotCount,
     string TournamentId,
@@ -73,6 +76,7 @@ public sealed record StageAdvancementViewModel(
     string? ResolvedSquadId,
     bool IsLastQualifying,
     IReadOnlyList<FieldEntryViewModel> Entries,
+    IReadOnlyList<AlreadyAdvancedViewModel> AlreadyAdvanced,
     IReadOnlyList<StageOverrideViewModel> Overrides,
     IReadOnlyList<SurvivorOutcomeViewModel> Outcomes,
     bool CanAddOverride,
@@ -99,6 +103,13 @@ public sealed record FieldEntryViewModel(
     public bool IsBackfill => SourceStageId is null;
 }
 
+/// <summary>A bowler inside a Stage's cut who already advanced from an earlier Stage.</summary>
+/// <param name="BowlerId">The bowler.</param>
+/// <param name="BowlerName">The bowler's name.</param>
+/// <param name="Place">Place in this Stage's tournament.</param>
+/// <param name="EarlierStageOrder">The earlier Stage the bowler advanced from.</param>
+public sealed record AlreadyAdvancedViewModel(string BowlerId, string BowlerName, int Place, int EarlierStageOrder);
+
 /// <summary>An admin Add or Clear on a Qualifying Stage.</summary>
 /// <param name="OverrideId">The override.</param>
 /// <param name="BowlerId">The bowler added or cleared.</param>
@@ -123,7 +134,8 @@ public sealed record SurvivorOutcomeViewModel(string BowlerId, string BowlerName
 /// <param name="Position">1-based position.</param>
 /// <param name="Bowled">The bowler bowled the Placement Stage.</param>
 /// <param name="IsFinalist">Null when the Series has no Finale.</param>
-public sealed record PositionViewModel(string BowlerId, string BowlerName, int Position, bool Bowled, bool? IsFinalist);
+/// <param name="TournamentPlace">Place in the Placement Stage's tournament; null when unplaced.</param>
+public sealed record PositionViewModel(string BowlerId, string BowlerName, int Position, bool Bowled, bool? IsFinalist, int? TournamentPlace = null);
 
 /// <summary>A result row the Add bowler picker offers.</summary>
 /// <param name="BowlerId">The bowler.</param>

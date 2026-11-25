@@ -160,6 +160,38 @@ public sealed class PolicyExtensionsTests
         result.Succeeded.ShouldBeFalse();
     }
 
+    [Theory(DisplayName = "AddNebaPolicies should succeed for CanViewSeriesAdvancement when caller has EditSeries or MakeStageOfficial")]
+    [InlineData("Series.EditSeries", TestDisplayName = "EditSeries")]
+    [InlineData("Series.MakeStageOfficial", TestDisplayName = "MakeStageOfficial")]
+    public async Task AddNebaPolicies_ShouldSucceedForCanViewSeriesAdvancement_WhenCallerHasViewPermission(string permission)
+    {
+        // Arrange
+        var provider = BuildAuthorizationServiceProvider();
+        var authorizationService = provider.GetRequiredService<IAuthorizationService>();
+        var principal = new ClaimsPrincipal(new ClaimsIdentity([new Claim(Permissions.ClaimType, permission)]));
+
+        // Act
+        var result = await authorizationService.AuthorizeAsync(principal, Permissions.CanViewSeriesAdvancementPolicyName);
+
+        // Assert
+        result.Succeeded.ShouldBeTrue();
+    }
+
+    [Fact(DisplayName = "AddNebaPolicies should fail for CanViewSeriesAdvancement when caller has only ManageAdvancement")]
+    public async Task AddNebaPolicies_ShouldFailForCanViewSeriesAdvancement_WhenCallerHasNoViewPermission()
+    {
+        // Arrange
+        var provider = BuildAuthorizationServiceProvider();
+        var authorizationService = provider.GetRequiredService<IAuthorizationService>();
+        var principal = new ClaimsPrincipal(new ClaimsIdentity([new Claim(Permissions.ClaimType, Permissions.ManageAdvancement.Value)]));
+
+        // Act
+        var result = await authorizationService.AuthorizeAsync(principal, Permissions.CanViewSeriesAdvancementPolicyName);
+
+        // Assert
+        result.Succeeded.ShouldBeFalse();
+    }
+
     private static ServiceProvider BuildAuthorizationServiceProvider()
     {
         var services = new ServiceCollection();

@@ -243,7 +243,7 @@ public sealed class SeriesEditorTests : IDisposable
         var rows = cut.FindAll("li.series-grid__row");
         rows[0].QuerySelectorAll(".series-grid__error").ShouldBeEmpty();
         rows[1].QuerySelector(".series-grid__error")!.TextContent.ShouldBe("Advancing must be at least 1.");
-        cut.Markup.ShouldContain("1 Stage needs changes before this Series can be saved.");
+        cut.Markup.ShouldContain("Changes are still needed in 1 tournament before this Series can be saved.");
         IsDirty(cut).ShouldBeFalse();
     }
 
@@ -496,13 +496,15 @@ public sealed class SeriesEditorTests : IDisposable
     [Fact(DisplayName = "A locked Series with a removable Stage should add the removable-Stage sentence to the banner")]
     public void Locked_ShouldShowRemovableSentence_WhenAStageIsRemovable()
     {
-        // Arrange & Act
+        // Arrange
+
+        // Act
         var cut = RenderEdit(LockedModel(), isLocked: true);
 
         // Assert
         cut.Markup.ShouldContain("This Series is locked");
         cut.Markup.ShouldContain("Processing has begun for this Series.");
-        cut.Markup.ShouldContain("A Stage whose tournament was cancelled can still be removed. After you save, run Recompute from the Stage before it on the Series page.");
+        cut.Markup.ShouldContain("A cancelled tournament can still be removed. After you save, run Recompute from the tournament before it on the Series page.");
     }
 
     [Fact(DisplayName = "A locked Series with no removable Stage should show the plain banner")]
@@ -610,7 +612,7 @@ public sealed class SeriesEditorTests : IDisposable
         var rows = cut.FindAll("li.series-grid__row");
         rows[0].QuerySelectorAll(".series-grid__error").ShouldBeEmpty();
         rows[1].QuerySelector(".series-grid__error")!.TextContent.ShouldBe("This Stage can't be removed.");
-        cut.Markup.ShouldContain("1 Stage needs changes before this Series can be saved.");
+        cut.Markup.ShouldContain("Changes are still needed in 1 tournament before this Series can be saved.");
         IsDirty(cut).ShouldBeTrue();
     }
 

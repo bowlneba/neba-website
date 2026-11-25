@@ -1,0 +1,64 @@
+﻿{
+  Stages: [
+    {
+      StageId: 01000000000000000000000011,
+      Order: 1,
+      Kind: Qualifying,
+      Advancers: [
+        {
+          BowlerId: 01000000000000000000000021,
+          BowlerName: Dave Smith,
+          Place: 1,
+          IsBackfill: false,
+          Advanced: true
+        },
+        {
+          BowlerId: 01000000000000000000000025,
+          BowlerName: Ann Early,
+          Place: 3,
+          IsBackfill: false,
+          Advanced: false,
+          AlreadyAdvancedFromOrder: 1
+        },
+        {
+          BowlerId: 01000000000000000000000022,
+          BowlerName: Pat Plain,
+          IsBackfill: true,
+          Advanced: true,
+          BackfillPoints: 80
+        }
+      ]
+    },
+    {
+      StageId: 01000000000000000000000012,
+      Order: 2,
+      Kind: Survivor,
+      Advancers: [
+        {
+          BowlerId: 01000000000000000000000023,
+          BowlerName: Kyle Wilks,
+          BlockTotal: 1500,
+          IsBackfill: false,
+          Advanced: true
+        }
+      ]
+    },
+    {
+      StageId: 01000000000000000000000013,
+      Order: 3,
+      Kind: Placement,
+      Advancers: [
+        {
+          BowlerId: 01000000000000000000000024,
+          BowlerName: Lee Park,
+          Place: 2,
+          IsBackfill: false,
+          Advanced: true,
+          Position: 1,
+          Bowled: true,
+          IsFinalist: true
+        }
+      ]
+    }
+  ]
+}

@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.Authorization;
 using Neba.Api.Contracts.Security;
 using Neba.Api.Contracts.Series.CreateStageOverride;
 using Neba.Api.Contracts.Series.GetSeriesAdvancement;
+using Neba.Api.Contracts.Series.MakeStageOfficial;
 using Neba.Api.Contracts.Series.PickStageSquad;
 using Neba.Api.Contracts.Series.RecomputeSeriesAdvancement;
 using Neba.Website.Server.Notifications;
@@ -26,15 +27,20 @@ public partial class SeriesDetail
 
     private sealed record OverrideTarget(string StageId, string Kind, FieldEntryViewModel? Entry);
 
+    private sealed record MakeOfficialTarget(string StageId, int Order);
+
     private sealed record RecomputeTarget(string StageId, int Order, IReadOnlyList<int> OfficialOrders);
 
     private sealed record RemoveTarget(string StageId, int Order, StageOverrideViewModel Override);
 
     private string? _advancementSeriesId;
     private bool _canView;
+    private bool _canEdit;
     private bool _canManage;
+    private bool _canMakeOfficial;
     private AdvancementState _advancementState = AdvancementState.Hidden;
     private SeriesAdvancementViewModel? _advancement;
+    private IReadOnlyList<StageAdvancersViewModel> _advancers = [];
     private int _version; // set by every successful advancement GET; every write sends it
     private bool _isWriting;
     private readonly HashSet<string> _expandedStageIds = [];
@@ -50,6 +56,7 @@ public partial class SeriesDetail
     private bool _isSquadsLoading;
     private string? _squadsError;
 
+    private MakeOfficialTarget? _makeOfficialTarget;
     private RecomputeTarget? _recomputeTarget;
     private RemoveTarget? _removeTarget;
 
@@ -65,6 +72,10 @@ public partial class SeriesDetail
 
     private string RemoveMessage => _removeTarget is { } target ? SeriesDisplay.RemoveOverrideMessage(target.Override, target.Order) : string.Empty;
 
+    private string MakeOfficialTitle => _makeOfficialTarget is { } target ? SeriesDisplay.MakeOfficialTitle(target.Order) : string.Empty;
+
+    private string MakeOfficialMessage => _makeOfficialTarget is { } target ? SeriesDisplay.MakeOfficialMessage(target.Order) : string.Empty;
+
     private string RecomputeTitle => _recomputeTarget is { } target ? SeriesDisplay.RecomputeTitle(target.Order) : string.Empty;
 
     private string RecomputeMessage => _recomputeTarget is { } target ? SeriesDisplay.OfficialResetMessage(target.OfficialOrders) : string.Empty;
@@ -78,12 +89,16 @@ public partial class SeriesDetail
 
         _advancementSeriesId = seriesId;
         _advancement = null;
+        _advancers = [];
         _advancementState = AdvancementState.Hidden;
         _canView = false;
+        _canEdit = false;
         _canManage = false;
+        _canMakeOfficial = false;
         _version = 0;
         _expandedStageIds.Clear();
         _squadStageId = null;
+        _makeOfficialTarget = null;
         _recomputeTarget = null;
         _overrideTarget = null;
         _removeTarget = null;
@@ -100,17 +115,26 @@ public partial class SeriesDetail
         }
 
         var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
-        var view = await AuthorizationService.AuthorizeAsync(authState.User, Permissions.EditSeries.PolicyName);
+        var view = await AuthorizationService.AuthorizeAsync(authState.User, Permissions.CanViewSeriesAdvancementPolicyName);
         _canView = view.Succeeded;
         if (!_canView)
         {
+            _canEdit = false;
             _canManage = false;
+            _canMakeOfficial = false;
             _advancementState = AdvancementState.Hidden;
+            await LoadAdvancersAsync();
             return;
         }
 
+        var edit = await AuthorizationService.AuthorizeAsync(authState.User, Permissions.EditSeries.PolicyName);
+        _canEdit = edit.Succeeded;
+
         var manage = await AuthorizationService.AuthorizeAsync(authState.User, Permissions.ManageAdvancement.PolicyName);
         _canManage = manage.Succeeded;
+
+        var makeOfficial = await AuthorizationService.AuthorizeAsync(authState.User, Permissions.MakeStageOfficial.PolicyName);
+        _canMakeOfficial = makeOfficial.Succeeded;
 
         if (_advancement is null)
         {
@@ -119,6 +143,23 @@ public partial class SeriesDetail
         }
 
         await LoadAdvancementAsync();
+    }
+
+    /// <summary>The public view: names from Official Stages only. A failed load shows nothing, as the page works without it.</summary>
+    private async Task LoadAdvancersAsync()
+    {
+        var result = await ApiExecutor.ExecuteAsync(ApiName, "GetSeriesAdvancers", ct => SeriesApi.GetSeriesAdvancersAsync(Id, ct));
+        var firstLoad = _advancers.Count == 0;
+        _advancers = result.IsError ? [] : result.Value.ToViewModel();
+
+        // Official Stages open with their results showing on the first load only, so a stage the visitor collapsed stays closed.
+        if (firstLoad)
+        {
+            foreach (var stage in _advancers)
+            {
+                _expandedStageIds.Add(stage.Id);
+            }
+        }
     }
 
     private Task RetryAdvancementAsync()
@@ -157,7 +198,7 @@ public partial class SeriesDetail
             localTimes[utc] = await ClientTimeZoneService.ToLocalAsync(utc);
         }
 
-        _advancement = response.ToViewModel(new AdvancementAccess(_canView, _canManage), localTimes);
+        _advancement = response.ToViewModel(new AdvancementAccess(_canView, _canEdit, _canManage, _canMakeOfficial), localTimes);
         _version = _advancement.Version;
         _advancementState = AdvancementState.Loaded;
     }
@@ -168,7 +209,9 @@ public partial class SeriesDetail
         {
             // The viewer lost the permission after the circuit opened: hide the section, no toast.
             _canView = false;
+            _canEdit = false;
             _canManage = false;
+            _canMakeOfficial = false;
             _advancement = null;
             _advancementState = AdvancementState.Hidden;
             return;
@@ -182,6 +225,8 @@ public partial class SeriesDetail
 
         _advancementState = AdvancementState.Failed;
     }
+
+    private void ToggleStageById(string stageId) => ToggleStage(stageId);
 
     private void ToggleStage(string stageId)
     {
@@ -372,6 +417,58 @@ public partial class SeriesDetail
         finally
         {
             _removeTarget = null;
+            _isWriting = false;
+        }
+    }
+
+    // ---- Mark official ----
+
+    private void OpenMakeOfficial(StageAdvancementViewModel stage)
+    {
+        if (!_isWriting && _canMakeOfficial)
+        {
+            _makeOfficialTarget = new MakeOfficialTarget(stage.Id, stage.Order);
+        }
+    }
+
+    private void CancelMakeOfficial()
+    {
+        if (!_isWriting)
+        {
+            _makeOfficialTarget = null;
+        }
+    }
+
+    private async Task ConfirmMakeOfficialAsync()
+    {
+        if (_makeOfficialTarget is not { } target || _isWriting)
+        {
+            return;
+        }
+
+        _isWriting = true;
+        try
+        {
+            var request = new MakeStageOfficialRequest
+            {
+                Id = Id,
+                StageId = target.StageId,
+                Official = new MakeStageOfficialInput { Version = _version },
+            };
+
+            var result = await ApiExecutor.ExecuteAsync(ApiName, "MakeStageOfficial",
+                ct => SeriesApi.MakeStageOfficialAsync(Id, target.StageId, request, ct));
+
+            _makeOfficialTarget = null;
+            var outcome = await SettleWriteAsync(result, "Tournament Official", SeriesDisplay.MadeOfficialMessage(target.Order));
+            if (outcome == WriteOutcome.Failed)
+            {
+                ToastService.Show("Mark Official Failed", result.FirstError.Description, NotifySeverity.Error);
+            }
+        }
+        finally
+        {
+            _makeOfficialTarget = null;
             _isWriting = false;
         }
     }

@@ -221,16 +221,17 @@ public sealed class SeriesAdvancementFactoryTests
         series.Positions.ShouldNotBeEmpty();
     }
 
-    [Fact(DisplayName = "SeriesFactory CreateWithAdvancement should make Qualifying and Survivor Stages Official but not Placement")]
+    [Fact(DisplayName = "SeriesFactory CreateWithAdvancement should make every Stage Official, Placement included")]
     public void SeriesFactory_CreateWithAdvancement_ShouldMakeStagesOfficial_WhenAsked()
     {
-        // Arrange & Act
+        // Arrange
+
+        // Act
         var (series, _) = SeriesFactory.CreateWithAdvancement(
             [StageKind.Qualifying, StageKind.Survivor, StageKind.Placement], official: true);
 
         // Assert
-        series.Stages.Where(stage => stage.Kind != StageKind.Placement).ShouldAllBe(stage => stage.Status == StageStatus.Official);
-        series.Stages.Single(stage => stage.Kind == StageKind.Placement).Status.ShouldBe(StageStatus.Computed);
+        series.Stages.ShouldAllBe(stage => stage.Status == StageStatus.Official);
     }
 
     [Fact(DisplayName = "SeriesFactory CreateWithAdvancement should stamp the Stages with the time it is given")]

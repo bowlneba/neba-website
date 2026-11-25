@@ -11,7 +11,7 @@ public sealed class SeriesAdvancementMappingTests
     private static readonly IReadOnlyDictionary<DateTimeOffset, DateTimeOffset> NoLocalTimes
         = new Dictionary<DateTimeOffset, DateTimeOffset>();
 
-    private static readonly AdvancementAccess ViewAndManage = new(CanView: true, CanManage: true);
+    private static readonly AdvancementAccess ViewAndManage = new(CanView: true, CanEdit: true, CanManage: true, CanMakeOfficial: true);
 
     private const string OtherStageId = "01JBQ5Y7K3M9N2P4R6T8V0W1X6";
 
@@ -156,7 +156,7 @@ public sealed class SeriesAdvancementMappingTests
         model.Stages.ShouldAllBe(s => !s.IsLastQualifying);
     }
 
-    [Theory(DisplayName = "Advancement should set CanRecompute from CanView")]
+    [Theory(DisplayName = "Advancement should set CanRecompute from CanEdit")]
     [InlineData(true, true)]
     [InlineData(true, false)]
     [InlineData(false, false)]
@@ -170,7 +170,7 @@ public sealed class SeriesAdvancementMappingTests
         ]);
 
         // Act
-        var model = response.ToViewModel(new AdvancementAccess(canView, canManage), NoLocalTimes);
+        var model = response.ToViewModel(new AdvancementAccess(canView, canView, canManage, false), NoLocalTimes);
 
         // Assert
         model.Stages.ShouldAllBe(s => s.CanRecompute == canView);
@@ -187,7 +187,7 @@ public sealed class SeriesAdvancementMappingTests
         var response = SeriesAdvancementResponseFactory.Create(stages: [StageAdvancementResponseFactory.Create(kind: kind)]);
 
         // Act
-        var stage = response.ToViewModel(new AdvancementAccess(canView, CanManage: false), NoLocalTimes).Stages.Single();
+        var stage = response.ToViewModel(new AdvancementAccess(canView, canView, CanManage: false, CanMakeOfficial: false), NoLocalTimes).Stages.Single();
 
         // Assert
         stage.CanPickSquad.ShouldBe(expected);
@@ -207,7 +207,7 @@ public sealed class SeriesAdvancementMappingTests
         var response = SeriesAdvancementResponseFactory.Create(stages: [StageAdvancementResponseFactory.Create(kind: kind, status: status)]);
 
         // Act
-        var stage = response.ToViewModel(new AdvancementAccess(canView, canManage), NoLocalTimes).Stages.Single();
+        var stage = response.ToViewModel(new AdvancementAccess(canView, canView, canManage, false), NoLocalTimes).Stages.Single();
 
         // Assert
         stage.CanAddOverride.ShouldBe(expected);
@@ -299,7 +299,7 @@ public sealed class SeriesAdvancementMappingTests
         ]);
 
         // Act
-        var entry = response.ToViewModel(new AdvancementAccess(CanView: true, canManage), NoLocalTimes).Stages.Single().Entries.Single();
+        var entry = response.ToViewModel(new AdvancementAccess(CanView: true, CanEdit: true, canManage, CanMakeOfficial: false), NoLocalTimes).Stages.Single().Entries.Single();
 
         // Assert
         entry.CanClear.ShouldBeFalse();
@@ -329,51 +329,37 @@ public sealed class SeriesAdvancementMappingTests
         entry.ViaOverride.ShouldBeFalse();
     }
 
-    [Fact(DisplayName = "Advancement should convert the official due time through the local times")]
-    public void AdvancementToViewModel_ShouldConvertOfficialDueAt()
+    [Theory(DisplayName = "Advancement should allow Mark official only when the viewer may and the API says the Stage is ready")]
+    [InlineData(true, true, true, TestDisplayName = "viewer may and tournament is ready")]
+    [InlineData(true, false, false, TestDisplayName = "viewer may but tournament is not ready")]
+    [InlineData(false, true, false, TestDisplayName = "viewer may not but tournament is ready")]
+    [InlineData(false, false, false, TestDisplayName = "viewer may not and tournament is not ready")]
+    public void AdvancementToViewModel_ShouldSetCanMakeOfficial(bool canMakeOfficial, bool ready, bool expected)
     {
         // Arrange
-        var utc = new DateTimeOffset(2025, 7, 12, 19, 15, 0, TimeSpan.Zero);
-        var local = new DateTimeOffset(2025, 7, 12, 15, 15, 0, TimeSpan.FromHours(-4));
-        var response = SeriesAdvancementResponseFactory.Create(stages: [StageAdvancementResponseFactory.Create(officialDueAt: utc)]);
-        var localTimes = new Dictionary<DateTimeOffset, DateTimeOffset> { [utc] = local };
+        var response = SeriesAdvancementResponseFactory.Create(stages: [StageAdvancementResponseFactory.Create(canMakeOfficial: ready)]);
+        var access = new AdvancementAccess(CanView: true, CanEdit: false, CanManage: false, CanMakeOfficial: canMakeOfficial);
 
         // Act
-        var stage = response.ToViewModel(ViewAndManage, localTimes).Stages.Single();
+        var stage = response.ToViewModel(access, NoLocalTimes).Stages.Single();
 
         // Assert
-        stage.OfficialDueAt.ShouldNotBeNull();
-        stage.OfficialDueAt.Value.Offset.ShouldBe(TimeSpan.FromHours(-4));
-        stage.OfficialDueAt.Value.DateTime.ShouldBe(new DateTime(2025, 7, 12, 15, 15, 0, DateTimeKind.Unspecified));
+        stage.CanMakeOfficial.ShouldBe(expected);
     }
 
-    [Fact(DisplayName = "Advancement should pass the UTC official due time through when the local times lack it")]
-    public void AdvancementToViewModel_ShouldPassUtcThrough_WhenDueTimeMissingFromLocalTimes()
+    [Fact(DisplayName = "Advancement should not allow Recompute or Pick squad for a viewer who cannot edit the Series")]
+    public void AdvancementToViewModel_ShouldNotAllowEditActions_WithoutCanEdit()
     {
         // Arrange
-        var utc = new DateTimeOffset(2025, 7, 12, 19, 15, 0, TimeSpan.Zero);
-        var response = SeriesAdvancementResponseFactory.Create(stages: [StageAdvancementResponseFactory.Create(officialDueAt: utc)]);
+        var response = SeriesAdvancementResponseFactory.Create(stages: [StageAdvancementResponseFactory.Create(kind: "Survivor")]);
+        var access = new AdvancementAccess(CanView: true, CanEdit: false, CanManage: false, CanMakeOfficial: true);
 
         // Act
-        var stage = response.ToViewModel(ViewAndManage, NoLocalTimes).Stages.Single();
+        var stage = response.ToViewModel(access, NoLocalTimes).Stages.Single();
 
         // Assert
-        stage.OfficialDueAt.ShouldNotBeNull();
-        stage.OfficialDueAt.Value.Offset.ShouldBe(TimeSpan.Zero);
-        stage.OfficialDueAt.Value.DateTime.ShouldBe(new DateTime(2025, 7, 12, 19, 15, 0, DateTimeKind.Unspecified));
-    }
-
-    [Fact(DisplayName = "Advancement should keep a missing official due time null")]
-    public void AdvancementToViewModel_ShouldKeepOfficialDueAtNull()
-    {
-        // Arrange
-        var response = SeriesAdvancementResponseFactory.Create(stages: [StageAdvancementResponseFactory.Create()]);
-
-        // Act
-        var stage = response.ToViewModel(ViewAndManage, NoLocalTimes).Stages.Single();
-
-        // Assert
-        stage.OfficialDueAt.ShouldBeNull();
+        stage.CanRecompute.ShouldBeFalse();
+        stage.CanPickSquad.ShouldBeFalse();
     }
 
     [Fact(DisplayName = "Advancement should convert an override's created time through the local times")]
@@ -515,30 +501,29 @@ public sealed class SeriesAdvancementMappingTests
     public void Instants_ShouldListEachInstantOnce()
     {
         // Arrange
-        var due = new DateTimeOffset(2025, 7, 12, 19, 15, 0, TimeSpan.Zero);
-        var otherDue = new DateTimeOffset(2025, 7, 13, 19, 15, 0, TimeSpan.Zero);
         var created = new DateTimeOffset(2025, 3, 25, 12, 0, 0, TimeSpan.Zero);
+        var later = new DateTimeOffset(2025, 3, 26, 12, 0, 0, TimeSpan.Zero);
         var response = SeriesAdvancementResponseFactory.Create(stages:
         [
-            StageAdvancementResponseFactory.Create(stageId: "a", order: 1, officialDueAt: due, overrides:
+            StageAdvancementResponseFactory.Create(stageId: "a", order: 1, overrides:
             [
                 StageOverrideResponseFactory.Create(overrideId: "o1", createdAt: created),
                 StageOverrideResponseFactory.Create(overrideId: "o2", createdAt: created),
             ]),
-            StageAdvancementResponseFactory.Create(stageId: "b", order: 2, officialDueAt: due),
-            StageAdvancementResponseFactory.Create(stageId: "c", order: 3, officialDueAt: otherDue),
+            StageAdvancementResponseFactory.Create(stageId: "b", order: 2),
+            StageAdvancementResponseFactory.Create(stageId: "c", order: 3, overrides: [StageOverrideResponseFactory.Create(overrideId: "o3", createdAt: later)]),
         ]);
 
         // Act
         var instants = response.Instants();
 
         // Assert
-        instants.Count.ShouldBe(3);
-        instants.ShouldBe([due, otherDue, created], ignoreOrder: true);
+        instants.Count.ShouldBe(2);
+        instants.ShouldBe([created, later], ignoreOrder: true);
     }
 
-    [Fact(DisplayName = "Instants should skip a Stage without an official due time")]
-    public void Instants_ShouldSkipNullOfficialDueAt()
+    [Fact(DisplayName = "Instants should be empty for a Stage without overrides")]
+    public void Instants_ShouldSkipStagesWithoutOverrides()
     {
         // Arrange
         var response = SeriesAdvancementResponseFactory.Create(stages: [StageAdvancementResponseFactory.Create(overrides: [])]);

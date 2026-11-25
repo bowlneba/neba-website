@@ -60,12 +60,14 @@ public sealed class SeriesMutationResultSenderTests
     [Fact(DisplayName = "SendAsync should name a Stage error Series.Stages[index] from its StageOrder")]
     public async Task SendAsync_ShouldNameStageErrorByRow()
     {
-        // Arrange & Act
+        // Arrange
+
+        // Act
         var (_, failures) = await RunAsync(SeriesErrors.DuplicateTournament(3, "T"));
 
         // Assert
         failures.Single().PropertyName.ShouldBe("Series.Stages[2]");
-        failures.Single().ErrorMessage.ShouldStartWith("Stage 3 (T): ");
+        failures.Single().ErrorMessage.ShouldStartWith("Tournament 3 (T): ");
     }
 
     [Fact(DisplayName = "SendAsync should name a Finale error by its PropertyKey")]

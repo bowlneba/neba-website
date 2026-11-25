@@ -11,7 +11,7 @@ internal sealed class GetSeriesAdvancementSummary : Summary<GetSeriesAdvancement
     public GetSeriesAdvancementSummary()
     {
         Summary = "Gets a Series' advancement.";
-        Description = "Returns each Stage's status, output and markers, the Backfill date, the target field size, the positions and the Version that writes must send. Kind, status and tournament status are names. Requires the Series.EditSeries permission.";
+        Description = "Returns each tournament's status, output and markers (including whether a person can mark it Official), the Bowler of the Year point list date, the target field size, the positions and the Version that writes must send. Kind, status and tournament status are names. Requires the Series.EditSeries or Series.MakeStageOfficial permission.";
 
         Response(200, "The Series' advancement.",
             contentType: MediaTypeNames.Application.Json,
@@ -31,7 +31,7 @@ internal sealed class GetSeriesAdvancementSummary : Summary<GetSeriesAdvancement
                         IsStale = false,
                         NeedsSquad = false,
                         ComputedAt = new DateTimeOffset(2025, 6, 1, 15, 0, 0, TimeSpan.Zero),
-                        OfficialDueAt = new DateTimeOffset(2025, 6, 2, 15, 0, 0, TimeSpan.Zero),
+                        CanMakeOfficial = true,
                         SlotCount = 8,
                         VacantSlotCount = 0,
                         TournamentId = "01JSTX1234567890ABCDEFGHIM",
@@ -47,6 +47,7 @@ internal sealed class GetSeriesAdvancementSummary : Summary<GetSeriesAdvancement
                                 ViaOverride = false,
                             },
                         ],
+                        AlreadyAdvanced = [],
                         Overrides = [],
                         SurvivorOutcomes = [],
                     },
@@ -56,7 +57,7 @@ internal sealed class GetSeriesAdvancementSummary : Summary<GetSeriesAdvancement
 
         Response(400, "The request is structurally invalid.");
         Response(401, "The caller is not authenticated.");
-        Response(403, "The caller lacks Series.EditSeries.");
+        Response(403, "The caller lacks Series.EditSeries and Series.MakeStageOfficial.");
         Response(404, "Series not found.");
     }
 }

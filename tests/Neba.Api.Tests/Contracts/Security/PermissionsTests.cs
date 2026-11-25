@@ -143,4 +143,42 @@ public sealed class PermissionsTests
         values.Count(v => v == Permissions.ManageAdvancement.Value).ShouldBe(1);
         values.Distinct(StringComparer.Ordinal).Count().ShouldBe(values.Count);
     }
+
+    [Fact(DisplayName = "MakeStageOfficial should have the value Series.MakeStageOfficial")]
+    public void MakeStageOfficial_ShouldHaveSeriesMakeStageOfficialValue()
+    {
+        // Arrange
+
+        // Act
+        var value = Permissions.MakeStageOfficial.Value;
+
+        // Assert
+        value.ShouldBe("Series.MakeStageOfficial");
+    }
+
+    [Fact(DisplayName = "FromValue should return MakeStageOfficial for the value Series.MakeStageOfficial")]
+    public void FromValue_ShouldReturnMakeStageOfficial_WhenValueIsSeriesMakeStageOfficial()
+    {
+        // Arrange
+
+        // Act
+        var permission = Permissions.FromValue("Series.MakeStageOfficial");
+
+        // Assert
+        permission.ShouldBe(Permissions.MakeStageOfficial);
+    }
+
+    [Fact(DisplayName = "SeriesAdvancementViewPermissions should hold EditSeries and MakeStageOfficial")]
+    public void SeriesAdvancementViewPermissions_ShouldHoldEditSeriesAndMakeStageOfficial()
+    {
+        // Arrange
+
+        // Act
+        var permissions = Permissions.SeriesAdvancementViewPermissions;
+
+        // Assert
+        permissions.Count.ShouldBe(2);
+        permissions.ShouldContain(Permissions.EditSeries);
+        permissions.ShouldContain(Permissions.MakeStageOfficial);
+    }
 }

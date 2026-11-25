@@ -11,7 +11,7 @@ public sealed record SeriesInput
     /// <summary>A file staged through <c>POST /series/logo</c>, or null for no logo.</summary>
     public SeriesLogoInput? Logo { get; init; }
 
-    /// <summary>Stages in order. Order is the list position.</summary>
+    /// <summary>Tournaments in order. Order is the list position.</summary>
     public required IReadOnlyList<SeriesStageInput> Stages { get; init; }
 
     /// <summary>The Finale, or null for a Series with none.</summary>

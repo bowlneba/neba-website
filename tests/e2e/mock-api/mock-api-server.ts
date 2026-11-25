@@ -432,7 +432,7 @@ function resolveSeriesRoute(pathname: string): object | null {
 }
 
 // ── Series advancement fixtures (GET /series/{id}/advancement and its writes) ────────────────
-// Six fixture Series show the states the advancement UI has. The three Playwright projects share one
+// Seven fixture Series show the states the advancement UI has. The three Playwright projects share one
 // mock server and the writes change the fixture, so each project uses its own copy of an id
 // (perProjectAdvancementSeriesId); the base id works too. State is built on first use and POST
 // /__mock/series-advancement/reset?seriesId= (no seriesId: every Series) restores the fixtures.
@@ -443,6 +443,8 @@ export const MOCK_ADVANCEMENT_COMPLETE_ID = '01JX0000000000000000000522'; // Off
 export const MOCK_ADVANCEMENT_OVERRIDES_ID = '01JX0000000000000000000523'; // Official Qualifying, then Computed with an Add and a Clear
 export const MOCK_ADVANCEMENT_SQUAD_ID = '01JX0000000000000000000524'; // Survivor Stage with two squads to pick
 export const MOCK_ADVANCEMENT_CANCELLED_ID = '01JX0000000000000000000525'; // locked, one Pending Stage with a Cancelled tournament
+export const MOCK_ADVANCEMENT_REVIEW_ID = '01JX0000000000000000000526'; // both Qualifying Stages Computed, Backfill ran: Stage 1 is ready to mark Official
+export const MOCK_ADVANCEMENT_FINALE_ID = '01JX0000000000000000000527'; // Qualifying and Survivor Stages Official, Placement Computed and ready to mark Official, a bowler who already advanced
 export const MOCK_ADVANCEMENT_ADMIN_ID = '01JX0000000000000000000001'; // the createdBy of the fixture overrides
 
 // perProjectTournamentId keeps only the last digit of the base id, so 502 and 522 would collide: this one keeps all three.
@@ -490,7 +492,6 @@ interface AdvStage {
   isStale: boolean;
   needsSquad: boolean;
   computedAt?: string;
-  officialDueAt?: string;
   officialAt?: string;
   slotCount?: number;
   vacantSlotCount?: number;
@@ -498,6 +499,7 @@ interface AdvStage {
   tournamentStatus: 'Scheduled' | 'Completed' | 'Cancelled';
   resolvedSquadId?: string;
   entries: AdvFieldEntry[];
+  alreadyAdvanced: unknown[];
   overrides: AdvOverride[];
   survivorOutcomes: AdvOutcome[];
 }
@@ -541,6 +543,8 @@ const ADV_FIXTURE_NAMES: Record<string, string> = {
   [MOCK_ADVANCEMENT_OVERRIDES_ID]: 'Advancement Overrides Series',
   [MOCK_ADVANCEMENT_SQUAD_ID]: 'Advancement Squad Series',
   [MOCK_ADVANCEMENT_CANCELLED_ID]: 'Advancement Cancelled Series',
+  [MOCK_ADVANCEMENT_REVIEW_ID]: 'Advancement Review Series',
+  [MOCK_ADVANCEMENT_FINALE_ID]: 'Advancement Finale Series',
 };
 
 // Name, start date, kind, advancing count, squad date. Every Stage is singles; a Qualifying Stage has 4 slots.
@@ -554,7 +558,6 @@ const ADV_STAGE_ROWS: [string, string, AdvStage['kind'], number | null, string |
 const ADV_SLOTS = 4;
 const ADV_COMPUTED_AT = '2026-03-23T18:00:00+00:00';
 const ADV_OFFICIAL_AT = '2026-03-24T18:15:00+00:00';
-const ADV_OFFICIAL_DUE_AT = '2030-03-24T18:15:00+00:00'; // a fixed future time, so the Stage never comes due
 const ADV_BACKFILL_AS_OF = '2026-04-18';
 
 const ADV_BOWLER_NAMES = [
@@ -586,6 +589,7 @@ function advPendingState(series3: string): AdvState {
     tournamentId: advId(`9${series3}${String(index + 1).padStart(2, '0')}`),
     tournamentStatus: 'Scheduled',
     entries: [],
+    alreadyAdvanced: [],
     overrides: [],
     survivorOutcomes: [],
   }));
@@ -627,6 +631,7 @@ function advFallbackState(detail: Record<string, unknown>): AdvState {
     tournamentId: stage.tournamentId,
     tournamentStatus: 'Scheduled',
     entries: [],
+    alreadyAdvanced: [],
     overrides: [],
     survivorOutcomes: [],
   }));
@@ -635,18 +640,20 @@ function advFallbackState(detail: Record<string, unknown>): AdvState {
   return state;
 }
 
-function advStageDue(state: AdvState, stage: AdvStage): string | undefined {
+// Mirrors the API: a Computed, non-stale Qualifying or Survivor Stage can be marked Official once every earlier one is Official
+// and, for the last Qualifying Stage, the Backfill ran.
+function advCanMakeOfficial(state: AdvState, stage: AdvStage): boolean {
   const lastQualifying = state.stages.findLast((s) => s.kind === 'Qualifying');
   const awaitsBackfill = stage === lastQualifying && state.backfillAsOf === null;
-  return stage.kind === 'Placement' || awaitsBackfill ? undefined : ADV_OFFICIAL_DUE_AT;
+  const earlierReady = state.stages.every((s) => s.order >= stage.order || s.status === 'Official');
+  return stage.status === 'Computed' && !stage.isStale && !awaitsBackfill && earlierReady;
 }
 
-function advSetComputed(state: AdvState, stage: AdvStage, official: boolean): void {
+function advSetComputed(_state: AdvState, stage: AdvStage, official: boolean): void {
   stage.status = official ? 'Official' : 'Computed';
   stage.tournamentStatus = 'Completed';
   stage.computedAt = ADV_COMPUTED_AT;
   stage.officialAt = official ? ADV_OFFICIAL_AT : undefined;
-  stage.officialDueAt = official ? undefined : advStageDue(state, stage);
 }
 
 function advFillQualifying(state: AdvState, order: number, official: boolean, vacant = 0): void {
@@ -722,6 +729,24 @@ function advBuildFixture(baseId: string): AdvState {
       survivor.needsSquad = true;
       state.version = 20;
       break;
+    case MOCK_ADVANCEMENT_REVIEW_ID:
+      advFillQualifying(state, 1, false);
+      advFillQualifying(state, 2, false, 1);
+      advAddBackfill(state, 8, 520);
+      state.version = 9;
+      break;
+    case MOCK_ADVANCEMENT_FINALE_ID: {
+      advFillQualifying(state, 1, true);
+      advFillQualifying(state, 2, true, 1);
+      advAddBackfill(state, 8, 520);
+      advComputeSurvivor(state, survivor, true);
+      advComputePlacement(state, placement);
+      // The first Stage's winner also places in the second Stage, so that row shows as already advanced.
+      const winner = q1.entries[0];
+      q2.alreadyAdvanced = [{ bowlerId: winner.bowlerId, bowlerName: winner.bowlerName, place: 1, earlierStageId: q1.stageId, earlierStageOrder: 1 }];
+      state.version = 33;
+      break;
+    }
     case MOCK_ADVANCEMENT_CANCELLED_ID:
       advFillQualifying(state, 1, true);
       q2.tournamentStatus = 'Cancelled';
@@ -849,12 +874,80 @@ function mockAdvancementResponse(state: AdvState): object {
     version: state.version,
     backfillAsOf: state.backfillAsOf,
     targetField,
-    stages: state.stages,
+    stages: state.stages.map((s) => ({ ...s, canMakeOfficial: advCanMakeOfficial(state, s) })),
     positions: state.positions,
   };
 }
 
-const ADV_PATH = /^\/series\/([^/]+)\/(advancement|stages\/([^/]+)\/(results|squads|recomputations|squad|overrides)(?:\/([^/]+))?)$/;
+// GET /series/{id}/advancers: Official Stages only. A Qualifying Stage lists its entries and the bowlers who already advanced,
+// a Survivor Stage lists its full standings, and a Placement Stage lists every position.
+function mockAdvancersResponse(state: AdvState): object {
+  const stages = state.stages
+    .filter((s) => s.status === 'Official')
+    .map((s) => ({
+      stageId: s.stageId,
+      order: s.order,
+      kind: s.kind,
+      advancers: mockAdvancersOf(state, s),
+    }))
+    .filter((s) => s.advancers.length > 0);
+
+  return { stages };
+}
+
+function mockAdvancersOf(state: AdvState, s: AdvStage): object[] {
+  if (s.kind === 'Qualifying') {
+    const entries = s.entries.map((e) => ({
+      bowlerId: e.bowlerId,
+      bowlerName: e.bowlerName,
+      place: e.place ?? null,
+      blockTotal: null,
+      isBackfill: e.sourceStageId === undefined,
+      advanced: true,
+      alreadyAdvancedFromOrder: null,
+      backfillPoints: e.backfillPoints ?? null,
+    }));
+    const already = (s.alreadyAdvanced as { bowlerId: string; bowlerName: string; place: number; earlierStageOrder: number }[]).map((a) => ({
+      bowlerId: a.bowlerId,
+      bowlerName: a.bowlerName,
+      place: a.place,
+      blockTotal: null,
+      isBackfill: false,
+      advanced: false,
+      alreadyAdvancedFromOrder: a.earlierStageOrder,
+      backfillPoints: null,
+    }));
+    // Placed bowlers by place, then the Bowler of the Year point list, high to low.
+    return [...entries, ...already].sort((a, b) => (a.place ?? 999) - (b.place ?? 999) || (b.backfillPoints ?? 0) - (a.backfillPoints ?? 0));
+  }
+
+  if (s.kind === 'Survivor') {
+    return s.survivorOutcomes.map((o) => ({
+      bowlerId: o.bowlerId,
+      bowlerName: o.bowlerName,
+      place: null,
+      blockTotal: o.blockTotal ?? null,
+      isBackfill: false,
+      advanced: o.advanced,
+      alreadyAdvancedFromOrder: null,
+    }));
+  }
+
+  return state.positions.map((p) => ({
+    bowlerId: p.bowlerId,
+    bowlerName: p.bowlerName,
+    place: null,
+    blockTotal: null,
+    isBackfill: false,
+    advanced: p.isFinalist === true,
+    alreadyAdvancedFromOrder: null,
+    position: p.position,
+    bowled: p.bowled,
+    isFinalist: p.isFinalist ?? null,
+  }));
+}
+
+const ADV_PATH = /^\/series\/([^/]+)\/(advancement|advancers|stages\/([^/]+)\/(results|squads|recomputations|squad|overrides|official)(?:\/([^/]+))?)$/;
 
 function resolveAdvancementRoute(pathname: string): object | null {
   const match = ADV_PATH.exec(pathname);
@@ -864,6 +957,7 @@ function resolveAdvancementRoute(pathname: string): object | null {
   if (!state) return null;
 
   if (match[2] === 'advancement') return mockAdvancementResponse(state);
+  if (match[2] === 'advancers') return mockAdvancersResponse(state);
 
   const stage = state.stages.find((s) => s.stageId === match[3]);
   if (!stage) return null;
@@ -902,7 +996,7 @@ function advField<T>(wrapper: Record<string, unknown> | undefined, name: string)
 // Recompute is 409 with one failure per Official Stage, a bad request is 422. Returns true when it handled the request.
 async function handleAdvancementWrite(req: IncomingMessage, res: ServerResponse, pathname: string, requestUrl: URL): Promise<boolean> {
   const match = ADV_PATH.exec(pathname);
-  if (!match || match[2] === 'advancement') return false;
+  if (!match || match[2] === 'advancement' || match[2] === 'advancers') return false;
 
   const action = match[4];
   const overrideId = match[5];
@@ -928,13 +1022,14 @@ async function handleAdvancementWrite(req: IncomingMessage, res: ServerResponse,
 
   if (action === 'overrides') handleOverrideCreate(res, state, stage, body);
   else if (action === 'squad') handleSquadReplace(res, state, stage, body);
+  else if (action === 'official') handleMakeOfficial(res, state, stage, body);
   else handleRecompute(res, state, stage, body);
   return true;
 }
 
 function isAdvancementWriteRoute(method: string | undefined, action: string, hasOverrideId: boolean): boolean {
   if (method === 'POST') return (action === 'recomputations' || action === 'overrides') && !hasOverrideId;
-  if (method === 'PUT') return action === 'squad' && !hasOverrideId;
+  if (method === 'PUT') return (action === 'squad' || action === 'official') && !hasOverrideId;
   return method === 'DELETE' && action === 'overrides' && hasOverrideId;
 }
 
@@ -1039,7 +1134,6 @@ function handleRecompute(res: ServerResponse, state: AdvState, stage: AdvStage, 
     if (target.status === 'Official') {
       target.status = 'Computed';
       target.officialAt = undefined;
-      target.officialDueAt = advStageDue(state, target);
       changed = true;
     }
     if (target.isStale) {
@@ -1049,6 +1143,23 @@ function handleRecompute(res: ServerResponse, state: AdvState, stage: AdvStage, 
   }
   // A no-op recompute writes nothing, so Version stays.
   if (changed) state.version++;
+  sendNoContent(res);
+}
+
+// PUT /series/{id}/stages/{stageId}/official. A stale Version is 409, a Placement Stage is 422, a Stage that is not ready is 409,
+// and a Stage that is already Official is a no-op 204.
+function handleMakeOfficial(res: ServerResponse, state: AdvState, stage: AdvStage, body: string): void {
+  const input = (JSON.parse(body || '{}') as Record<string, unknown>);
+  const wrapper = (input.official ?? input.Official) as Record<string, unknown> | undefined;
+  if (advField<number>(wrapper, 'version') !== state.version) return sendAdvancementStale(res);
+  if (stage.status === 'Official') return sendNoContent(res);
+  if (!advCanMakeOfficial(state, stage)) {
+    return sendAdvancementError(res, 409, 'Series.Stage', 'This Stage is not ready to be made official.');
+  }
+
+  stage.status = 'Official';
+  stage.officialAt = ADV_OFFICIAL_AT;
+  state.version++;
   sendNoContent(res);
 }
 

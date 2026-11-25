@@ -12,6 +12,7 @@ using Neba.Api.Contracts.Memberships;
 using Neba.Api.Contracts.Security;
 using Neba.Api.Contracts.Series;
 using Neba.Api.Contracts.Series.CreateStageOverride;
+using Neba.Api.Contracts.Series.MakeStageOfficial;
 using Neba.Api.Database;
 using Neba.Api.Features.Bowlers.Domain;
 using Neba.Api.Features.Series;
@@ -40,7 +41,6 @@ namespace Neba.Api.Tests.Features.Series;
 public sealed class SeriesAdvancementWriteEndpointsTests(AppDbContextFixture fixture, SecurityDbContextFixture securityFixture)
     : IClassFixture<AppDbContextFixture>, IClassFixture<SecurityDbContextFixture>, IAsyncLifetime
 {
-    private static readonly TimeSpan Grace = TimeSpan.FromHours(24);
 
     private SeriesApiHost _host = null!;
 
@@ -162,11 +162,11 @@ public sealed class SeriesAdvancementWriteEndpointsTests(AppDbContextFixture fix
             new FakeTimeProvider(AdvancementRunHarness.Now),
             NullLogger<SeriesAdvancement>.Instance);
 
-    // Makes the Qualifying Stage Official, as the make-official job does once the grace period has passed.
+    // Makes every Stage that is ready Official, as a reviewer does one Stage at a time.
     private async Task MakeQualifyingStageOfficialAsync(WriteScenario scenario)
     {
         var result = await RunWithoutFactsAsync(
-            scenario.Series.Id, (series, _, now) => series.MakeDueOfficial(now.AddDays(3), Grace));
+            scenario.Series.Id, (series, _, now) => series.MakeReadyStagesOfficial(now.AddDays(3)));
 
         result.IsError.ShouldBeFalse();
         result.Value.OfficialStageIds.ShouldBe([scenario.Stage(1).Id]);
@@ -196,7 +196,7 @@ public sealed class SeriesAdvancementWriteEndpointsTests(AppDbContextFixture fix
     private static string WebmasterToken()
         => TestAccessTokenFactory.Create(
             roles: [SecurityRoles.Webmaster],
-            permissions: [Permissions.EditSeries, Permissions.ManageAdvancement]);
+            permissions: [Permissions.EditSeries, Permissions.ManageAdvancement, Permissions.MakeStageOfficial]);
 
     private static string Token(string who)
         => who switch
@@ -414,6 +414,96 @@ public sealed class SeriesAdvancementWriteEndpointsTests(AppDbContextFixture fix
         // Assert
         response.StatusCode.ShouldBe(HttpStatusCode.Conflict);
         (await VersionAsync(scenario.Series.Id)).ShouldBe(version);
+    }
+
+    // ---- PUT /series/{id}/stages/{stageId}/official ----
+
+    private static string TournamentDirectorToken()
+        => TestAccessTokenFactory.Create(
+            roles: [SecurityRoles.TournamentDirector],
+            permissions: [Permissions.MakeStageOfficial]);
+
+    private Task<HttpResponseMessage> MakeOfficialAsync(string seriesId, string stageId, string? token, int version)
+        => SendAsync(
+            HttpMethod.Put,
+            StageUrl(seriesId, stageId, "official"),
+            token,
+            MakeStageOfficialRequestFactory.Create(seriesId, stageId, MakeStageOfficialInputFactory.Create(version)));
+
+    [Fact(DisplayName = "PUT official returns 401 without a token")]
+    public async Task MakeOfficial_ShouldReturn401_WhenAnonymous()
+    {
+        // Arrange
+        var scenario = await SeedAsync();
+
+        // Act
+        using var response = await MakeOfficialAsync(scenario.Id, scenario.StageId(1), null, await VersionAsync(scenario.Series.Id));
+
+        // Assert
+        response.StatusCode.ShouldBe(HttpStatusCode.Unauthorized);
+    }
+
+    [Fact(DisplayName = "PUT official returns 403 for a Member and for an editor without Series.MakeStageOfficial, and changes nothing")]
+    public async Task MakeOfficial_ShouldReturn403_WithoutPermission()
+    {
+        // Arrange
+        var scenario = await SeedAsync();
+        var version = await VersionAsync(scenario.Series.Id);
+        var editorOnly = TestAccessTokenFactory.Create(roles: [SecurityRoles.Manager], permissions: [Permissions.EditSeries]);
+
+        // Act
+        using var member = await MakeOfficialAsync(scenario.Id, scenario.StageId(1), Token("Member"), version);
+        using var editor = await MakeOfficialAsync(scenario.Id, scenario.StageId(1), editorOnly, version);
+
+        // Assert
+        member.StatusCode.ShouldBe(HttpStatusCode.Forbidden);
+        editor.StatusCode.ShouldBe(HttpStatusCode.Forbidden);
+        (await VersionAsync(scenario.Series.Id)).ShouldBe(version);
+    }
+
+    [Fact(DisplayName = "PUT official returns 204 for a Tournament Director and makes the Stage Official")]
+    public async Task MakeOfficial_ShouldReturn204_ForTournamentDirector()
+    {
+        // Arrange
+        var scenario = await SeedAsync();
+        var version = await VersionAsync(scenario.Series.Id);
+
+        // Act
+        using var response = await MakeOfficialAsync(scenario.Id, scenario.StageId(1), TournamentDirectorToken(), version);
+
+        // Assert
+        response.StatusCode.ShouldBe(HttpStatusCode.NoContent);
+        var stored = await StoredAsync(scenario.Series.Id);
+        stored.Stages.Single(stage => stage.Order == 1).Status.ShouldBe(StageStatus.Official);
+        stored.Version.ShouldBe(version + 1);
+    }
+
+    [Fact(DisplayName = "PUT official returns 409 for a Stage that is not computed yet")]
+    public async Task MakeOfficial_ShouldReturn409_WhenStageIsPending()
+    {
+        // Arrange
+        var scenario = await SeedAsync();
+        var version = await VersionAsync(scenario.Series.Id);
+
+        // Act
+        using var response = await MakeOfficialAsync(scenario.Id, scenario.StageId(2), TournamentDirectorToken(), version);
+
+        // Assert
+        response.StatusCode.ShouldBe(HttpStatusCode.Conflict);
+        (await VersionAsync(scenario.Series.Id)).ShouldBe(version);
+    }
+
+    [Fact(DisplayName = "GET advancement returns 200 for a Tournament Director, who holds Series.MakeStageOfficial but not Series.EditSeries")]
+    public async Task GetAdvancement_ShouldReturn200_ForTournamentDirector()
+    {
+        // Arrange
+        var scenario = await SeedAsync();
+
+        // Act
+        using var response = await SendAsync(HttpMethod.Get, $"/series/{scenario.Id}/advancement", TournamentDirectorToken());
+
+        // Assert
+        response.StatusCode.ShouldBe(HttpStatusCode.OK);
     }
 
     // ---- POST /series/{id}/stages/{stageId}/recomputations ----

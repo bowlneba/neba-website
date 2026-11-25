@@ -25,7 +25,7 @@ public static class StageAdvancementViewModelFactory
         string? status = null,
         bool isStale = false,
         bool needsSquad = false,
-        DateTimeOffset? officialDueAt = null,
+        bool? canMakeOfficial = null,
         int? slotCount = null,
         int? vacantSlotCount = null,
         string? tournamentId = null,
@@ -35,6 +35,7 @@ public static class StageAdvancementViewModelFactory
         IReadOnlyList<FieldEntryViewModel>? entries = null,
         IReadOnlyList<StageOverrideViewModel>? overrides = null,
         IReadOnlyList<SurvivorOutcomeViewModel>? outcomes = null,
+        IReadOnlyList<AlreadyAdvancedViewModel>? alreadyAdvanced = null,
         bool canAddOverride = false,
         bool canRemoveOverride = false,
         bool canRecompute = false,
@@ -52,7 +53,7 @@ public static class StageAdvancementViewModelFactory
             Status: status ?? ValidStatus,
             IsStale: isStale,
             NeedsSquad: needsSquad,
-            OfficialDueAt: officialDueAt,
+            CanMakeOfficial: canMakeOfficial ?? false,
             SlotCount: slotCount ?? (isQualifying ? ValidSlotCount : null),
             VacantSlotCount: vacantSlotCount ?? (isQualifying ? 0 : null),
             TournamentId: tournamentId ?? ValidTournamentId,
@@ -60,6 +61,7 @@ public static class StageAdvancementViewModelFactory
             ResolvedSquadId: resolvedSquadId ?? (isSurvivor ? ValidResolvedSquadId : null),
             IsLastQualifying: isLastQualifying,
             Entries: entries ?? (isQualifying ? [FieldEntryViewModelFactory.Create(sourceStageId: stageId)] : []),
+            AlreadyAdvanced: alreadyAdvanced ?? [],
             Overrides: overrides ?? [],
             Outcomes: outcomes ?? (isSurvivor ? [SurvivorOutcomeViewModelFactory.Create()] : []),
             CanAddOverride: canAddOverride,
@@ -68,7 +70,7 @@ public static class StageAdvancementViewModelFactory
             CanPickSquad: canPickSquad);
     }
 
-    /// <summary>Stages 1..count cycling Qualifying, Survivor, Placement. Computed implies a due time; a Placement Stage is never Official.</summary>
+    /// <summary>Stages 1..count cycling Qualifying, Survivor, Placement. A Placement Stage here is Pending or Computed.</summary>
     internal static IReadOnlyList<StageAdvancementViewModel> Bogus(int count, int? seed = null)
     {
         var faker = new Faker();
@@ -78,7 +80,6 @@ public static class StageAdvancementViewModelFactory
         }
 
         string[] kinds = [StageKinds.Qualifying, StageKinds.Survivor, StageKinds.Placement];
-        var reference = new DateTimeOffset(2026, 1, 1, 0, 0, 0, TimeSpan.Zero);
 
         return [.. Enumerable.Range(0, count).Select(index =>
         {
@@ -95,9 +96,7 @@ public static class StageAdvancementViewModelFactory
                 status: status,
                 isStale: status != StageStatuses.Pending && faker.Random.Bool(),
                 needsSquad: kind == StageKinds.Survivor && status == StageStatuses.Pending && faker.Random.Bool(),
-                officialDueAt: status == StageStatuses.Computed && kind != StageKinds.Placement
-                    ? reference.AddHours(faker.Random.Int(1, 48))
-                    : null,
+                canMakeOfficial: status == StageStatuses.Computed && kind != StageKinds.Placement && faker.Random.Bool(),
                 slotCount: kind == StageKinds.Qualifying ? faker.Random.Int(1, 40) : null,
                 vacantSlotCount: kind == StageKinds.Qualifying ? faker.Random.Int(0, 3) : null,
                 tournamentId: Ulid.BogusString(faker),

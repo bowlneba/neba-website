@@ -289,7 +289,7 @@ public sealed class SeriesEndpointsTests(AppDbContextFixture fixture, SecurityDb
         response.StatusCode.ShouldBe(HttpStatusCode.Conflict);
     }
 
-    [Fact(DisplayName = "POST /series returns 422 naming the Finale date when a Stage ends on or after it")]
+    [Fact(DisplayName = "POST /series returns 422 naming the Finale date when a Stage ends after it")]
     public async Task Create_ShouldReturn422NamingFinaleDate()
     {
         // Arrange
@@ -297,7 +297,7 @@ public sealed class SeriesEndpointsTests(AppDbContextFixture fixture, SecurityDb
 
         // Act
         using var response = await SendAsync(HttpMethod.Post, "/series", SeriesApiHost.ManagerToken(),
-            Create(season, [Stage(tournaments[0])], FinaleInput(date: tournaments[0].EndDate)));
+            Create(season, [Stage(tournaments[0])], FinaleInput(date: tournaments[0].EndDate.AddDays(-1))));
 
         // Assert
         response.StatusCode.ShouldBe(HttpStatusCode.UnprocessableEntity);

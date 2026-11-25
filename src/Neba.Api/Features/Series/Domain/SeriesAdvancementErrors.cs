@@ -16,7 +16,7 @@ internal static class SeriesAdvancementErrors
 
     public static readonly Error SaveConflict = Error.Conflict(
         code: "Series.Save.Conflict",
-        description: "Another save took one of this Series' Stage tournaments, orders or field bowlers first. Reload and try again.");
+        description: "Another save took one of this Series' tournaments, orders or field bowlers first. Reload and try again.");
 
     public static readonly Error Busy = Error.Conflict(
         code: "Series.Advancement.Busy",
@@ -24,22 +24,38 @@ internal static class SeriesAdvancementErrors
 
     public static Error StageNotFound(SeriesStageId id) => Error.NotFound(
         code: "Series.Advancement.StageNotFound",
-        description: "Stage not found.",
+        description: "Tournament not found.",
         metadata: new Dictionary<string, object> { { "StageId", id.ToString() } });
 
     public static readonly Error NotQualifyingStage = Error.Validation(
         code: "Series.Override.StageNotQualifying",
-        description: "Overrides apply to Qualifying Stages only.");
+        description: "Overrides apply to Qualifying tournaments only.");
 
     public static Error StageNotComputed(StageStatus status) => Error.Conflict(
         code: "Series.Override.StageNotComputed",
         description: status == StageStatus.Official
-            ? "This Stage is official. Recompute it from the Series page before changing it."
-            : "This Stage has not been computed yet.");
+            ? "This tournament is official. Recompute it from the Series page before changing it."
+            : "This tournament has not been computed yet.");
+
+    public static readonly Error OfficialStageNotComputed = Error.Conflict(
+        code: "Series.Official.StageNotComputed",
+        description: "This tournament has not been computed yet.");
+
+    public static readonly Error OfficialStageStale = Error.Conflict(
+        code: "Series.Official.StageStale",
+        description: "An earlier tournament changed after this one was computed. Recompute from that tournament first.");
+
+    public static readonly Error OfficialAwaitingBackfill = Error.Conflict(
+        code: "Series.Official.AwaitingBackfill",
+        description: "The Bowler of the Year point list has not been used, so the last Qualifying tournament cannot become official yet.");
+
+    public static Error OfficialEarlierStageNotOfficial(int order) => Error.Conflict(
+        code: "Series.Official.EarlierStageNotOfficial",
+        description: $"Tournament {order} must be official first.");
 
     public static readonly Error NoResultRow = Error.Validation(
         code: "Series.Override.NoResultRow",
-        description: "The bowler has no result in this Stage's tournament.");
+        description: "The bowler has no result in this tournament.");
 
     public static readonly Error BowlerAlreadyInField = Error.Conflict(
         code: "Series.Override.BowlerAlreadyInField",
@@ -47,11 +63,11 @@ internal static class SeriesAdvancementErrors
 
     public static readonly Error OverrideExists = Error.Conflict(
         code: "Series.Override.Exists",
-        description: "This bowler already has an override on this Stage. Remove it first.");
+        description: "This bowler already has an override on this tournament. Remove it first.");
 
     public static readonly Error BowlerNotInSlot = Error.Validation(
         code: "Series.Override.BowlerNotInSlot",
-        description: "The bowler does not hold a filled slot in this Stage.");
+        description: "The bowler does not hold a filled slot in this tournament.");
 
     public static readonly Error OverrideReasonRequired = Error.Validation(
         code: "Series.Override.Reason.Required",
@@ -63,21 +79,21 @@ internal static class SeriesAdvancementErrors
 
     public static Error ConfirmationRequired(IReadOnlyCollection<int> officialOrders) => Error.Conflict(
         code: "Series.Recompute.ConfirmationRequired",
-        description: $"Stage {string.Join(", ", officialOrders)} {(officialOrders.Count == 1 ? "is" : "are")} official. Recomputing resets them to Computed. Confirm to continue.",
+        description: $"{(officialOrders.Count == 1 ? "Tournament" : "Tournaments")} {string.Join(", ", officialOrders)} {(officialOrders.Count == 1 ? "is" : "are")} official. Recomputing resets {(officialOrders.Count == 1 ? "it" : "them")} to Computed. Confirm to continue.",
         metadata: new Dictionary<string, object> { { OfficialStageOrdersKey, officialOrders.ToArray() } });
 
     public static readonly Error StageNotSurvivor = Error.Validation(
         code: "Series.Squad.StageNotSurvivor",
-        description: "Only a Survivor Stage has a squad.");
+        description: "Only a Survivor tournament has a squad.");
 
     public static readonly Error SquadNotInTournament = Error.Validation(
         code: "Series.Squad.NotInTournament",
-        description: "The squad does not belong to this Stage's tournament.");
+        description: "The squad does not belong to this tournament.");
 
     // Invariants of the stored output types. Computed data should never trip these.
     public static readonly Error EntryInvalid = Error.Validation(
         code: "Series.FieldEntry.Invalid",
-        description: "A Stage entry needs a place; a Backfill entry needs points above zero and no place.");
+        description: "A tournament entry needs a place; a Bowler of the Year point list entry needs points above zero and no place.");
 
     public static readonly Error PositionInvalid = Error.Validation(
         code: "Series.Position.Invalid",

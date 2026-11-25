@@ -6,6 +6,8 @@ import {
   MOCK_ADVANCEMENT_MID_SEASON_ID,
   MOCK_ADVANCEMENT_OVERRIDES_ID,
   MOCK_ADVANCEMENT_PENDING_ID,
+  MOCK_ADVANCEMENT_REVIEW_ID,
+  MOCK_ADVANCEMENT_FINALE_ID,
   MOCK_ADVANCEMENT_SQUAD_ID,
   perProjectAdvancementSeriesId,
 } from './mock-api/mock-api-server';
@@ -19,8 +21,10 @@ const MOCK_API = 'http://localhost:5151';
 
 // Personas are permission sets (POST /__test/login). Webmaster holds the same two permissions as Admin, so the
 // page cannot tell them apart and one Admin persona covers both.
-const MANAGER = 'Series.EditSeries';
-const ADMIN = 'Series.EditSeries,Series.ManageAdvancement';
+const MANAGER = 'Series.EditSeries,Series.MakeStageOfficial';
+const EDITOR_ONLY = 'Series.EditSeries';
+const ADMIN = 'Series.EditSeries,Series.ManageAdvancement,Series.MakeStageOfficial';
+const TOURNAMENT_DIRECTOR = 'Series.MakeStageOfficial';
 
 const seriesIdFor = (baseId: string, testInfo: TestInfo) => perProjectAdvancementSeriesId(baseId, testInfo.project.name);
 
@@ -113,6 +117,7 @@ test.describe('Series advancement: all Stages Pending, and who sees it', () => {
     await expect(page.getByTestId('stage-recompute')).toHaveCount(0);
     await expect(page.getByTestId('stage-pick-squad')).toHaveCount(0);
     await expect(page.getByRole('link', { name: 'Edit', exact: true })).toHaveCount(0);
+    await expect(page.getByTestId('series-stage-results')).toHaveCount(0);
   });
 
   test('a signed-in user without Series.EditSeries sees the public page only', async ({ page }, testInfo) => {
@@ -131,7 +136,7 @@ test.describe('Series advancement: all Stages Pending, and who sees it', () => {
     await expect(page.locator('.series-stage-list')).toHaveCount(0);
     await expect(cards(page)).toHaveCount(4);
     await expect(page.getByTestId('series-strip').locator('.series-strip__seg')).toHaveCount(4);
-    await expect(page.getByTestId('series-progress-line')).toContainText('0 of 4 Stages computed or official (0 official). Backfill has not run.');
+    await expect(page.getByTestId('series-progress-line')).toContainText('0 of 4 tournaments computed or official (0 official). Bowler of the Year point list not used yet.');
 
     for (let order = 1; order <= 4; order++) {
       await expect(status(page, order)).toHaveText('Pending');
@@ -185,7 +190,8 @@ test.describe('Series advancement: season under way (mid-season)', () => {
     await expect(status(page, 1)).toHaveText('Computed');
     await expect(card(page, 1).getByTestId('stage-headline')).toHaveText('4 of 4 slots filled');
     await expect(card(page, 1).getByTestId('stage-flag-stale')).toHaveText('Stale');
-    await expect(card(page, 1).getByTestId('stage-flag-due')).toContainText('Becomes official about');
+    await expect(card(page, 1).getByTestId('stage-flag-due')).toHaveCount(0);
+    await expect(page.getByTestId('stage-make-official')).toHaveCount(0); // a stale Stage is not ready
 
     await expect(status(page, 2)).toHaveText('Pending');
     // The Backfill date shows only once the Backfill ran.
@@ -194,14 +200,14 @@ test.describe('Series advancement: season under way (mid-season)', () => {
     await expect(status(page, 3)).toHaveText('Pending');
     await expect(card(page, 3).getByTestId('stage-flag-needs-squad')).toHaveText('Needs squad');
     await expect(status(page, 4)).toHaveText('Pending');
-    await expect(page.getByTestId('series-progress-line')).toContainText('1 of 4 Stages computed or official (0 official).');
+    await expect(page.getByTestId('series-progress-line')).toContainText('1 of 4 tournaments computed or official (0 official).');
   });
 
   test('expanding a Computed Qualifying Stage shows its slots, entries and the stale note', async ({ page }, testInfo) => {
     await openSeries(page, seriesIdFor(MOCK_ADVANCEMENT_MID_SEASON_ID, testInfo), MANAGER);
 
     const panel = await expand(page, 1);
-    await expect(panel.getByTestId('stage-stale-note')).toContainText('An earlier Stage changed');
+    await expect(panel.getByTestId('stage-stale-note')).toContainText('An earlier tournament changed');
     await expect(panel.getByTestId('stage-slots')).toContainText('4 slots, none vacant.');
     await expect(panel.getByTestId('stage-entries').locator('tbody tr')).toHaveCount(4);
     await expect(panel.getByTestId('stage-entries').locator('tbody tr').first()).toContainText('1st');
@@ -422,20 +428,40 @@ test.describe('Series advancement: complete season', () => {
     await resetSeries(page, seriesIdFor(MOCK_ADVANCEMENT_COMPLETE_ID, testInfo));
   });
 
+  test('an anonymous visitor sees who advanced from the Official Stages, with no status or controls', async ({ page }, testInfo) => {
+    await page.goto(`/series/${seriesIdFor(MOCK_ADVANCEMENT_COMPLETE_ID, testInfo)}`);
+    await page.waitForSelector('[data-testid="series-stage-results"]');
+
+    const stages = page.getByTestId('series-stage');
+    await expect(stages.first()).toContainText('Qualifying · 1st tournament');
+    await expect(stages.first().locator('tbody tr').first()).toBeVisible();
+    await expect(page.getByTestId('stage-status')).toHaveCount(0);
+    await expect(page.locator('.series-act')).toHaveCount(0);
+    await expect(stages.filter({ hasText: 'Official' })).toHaveCount(0);
+    await expect(stages.filter({ hasText: 'Computed' })).toHaveCount(0);
+
+    // The expander collapses and reopens a Stage's results.
+    const toggle = stages.first().getByTestId('series-stage-toggle');
+    await toggle.click();
+    await expect(stages.first().getByTestId('series-stage-results')).toHaveCount(0);
+    await toggle.click();
+    await expect(stages.first().getByTestId('series-stage-results')).toBeVisible();
+  });
+
   test('the rail shows Official Stages, the Backfill date and a Computed Placement Stage', async ({ page }, testInfo) => {
     await openSeries(page, seriesIdFor(MOCK_ADVANCEMENT_COMPLETE_ID, testInfo), MANAGER);
 
     await expect(status(page, 1)).toHaveText('Official');
     await expect(status(page, 2)).toHaveText('Official');
     await expect(status(page, 3)).toHaveText('Official');
-    await expect(status(page, 4)).toHaveText('Computed'); // a Placement Stage never reaches Official
-    await expect(card(page, 2).getByTestId('stage-flag-backfill')).toHaveText('Backfill as of 4/18/2026');
+    await expect(status(page, 4)).toHaveText('Computed');
+    await expect(card(page, 2).getByTestId('stage-flag-backfill')).toHaveText('Bowler of the Year point list as of 4/18/2026');
     await expect(page.getByTestId('stage-flag-backfill')).toHaveCount(1);
     await expect(card(page, 2).getByTestId('stage-headline')).toHaveText('3 of 4 slots filled');
     await expect(card(page, 3).getByTestId('stage-headline')).toHaveText('4 advance');
     await expect(card(page, 4).getByTestId('stage-headline')).toHaveText('4 ranked');
     await expect(page.getByTestId('series-progress-line')).toContainText(
-      '4 of 4 Stages computed or official (3 official). Backfill ran as of 4/18/2026.'
+      '4 of 4 tournaments computed or official (3 official). Bowler of the Year point list used as of 4/18/2026.'
     );
   });
 
@@ -444,7 +470,7 @@ test.describe('Series advancement: complete season', () => {
 
     const qualifying = await expand(page, 2);
     await expect(qualifying.getByTestId('stage-entries').locator('tbody tr')).toHaveCount(4); // 3 qualifiers and 1 Backfill
-    await expect(qualifying.getByTestId('stage-entries').locator('tbody tr', { hasText: 'Backfill' })).toContainText('520');
+    await expect(qualifying.getByTestId('stage-entries').locator('tbody tr', { hasText: 'Bowler of the Year point list' })).toContainText('520');
     await expect(qualifying.getByTestId('stage-slots')).toContainText('1 vacant slot');
 
     const survivor = await expand(page, 3);
@@ -463,11 +489,11 @@ test.describe('Series advancement: complete season', () => {
 
     await card(page, 1).getByTestId('stage-recompute').click();
 
-    await expect(page.getByText('Recompute from Stage 1?')).toBeVisible();
-    await expect(page.getByText('Stages 1, 2 and 3 are official. Recomputing resets them to Computed.')).toBeVisible();
+    await expect(page.getByText('Recompute from the 1st tournament?')).toBeVisible();
+    await expect(page.getByText('The 1st, 2nd and 3rd tournaments are official. Recomputing resets them to Computed.')).toBeVisible();
     await visibleCancel(page).click();
 
-    await expect(page.getByText('Recompute from Stage 1?')).toHaveCount(0);
+    await expect(page.getByText('Recompute from the 1st tournament?')).toHaveCount(0);
     await expect(status(page, 1)).toHaveText('Official');
     await expect(status(page, 2)).toHaveText('Official');
     await expect(status(page, 3)).toHaveText('Official');
@@ -480,11 +506,11 @@ test.describe('Series advancement: complete season', () => {
     const stageId = (await card(page, 1).getAttribute('data-stage-id')) as string;
 
     await card(page, 1).getByTestId('stage-recompute').click();
-    await expect(page.getByText('Recompute from Stage 1?')).toBeVisible();
+    await expect(page.getByText('Recompute from the 1st tournament?')).toBeVisible();
     await visibleConfirm(page).click();
 
     await expect(toast(page)).toContainText('Recomputed');
-    await expect(page.getByText('Recompute from Stage 1?')).toHaveCount(0);
+    await expect(page.getByText('Recompute from the 1st tournament?')).toHaveCount(0);
     await expect(status(page, 1)).toHaveText('Computed');
     await expect(status(page, 2)).toHaveText('Computed');
     await expect(status(page, 3)).toHaveText('Computed');
@@ -574,7 +600,7 @@ test.describe('Series advancement: overrides', () => {
     await addRow.getByTestId('override-remove').click();
 
     await expect(page.getByText('Remove this override?')).toBeVisible();
-    await expect(page.getByText('Nate Lombardi leaves the field for Stage 2.')).toBeVisible();
+    await expect(page.getByText('Nate Lombardi leaves the field for the 2nd tournament.')).toBeVisible();
     await visibleConfirm(page).click();
 
     await expect(toast(page)).toContainText('Override Removed');
@@ -745,8 +771,8 @@ test.describe('Series advancement: cancelled Stage tournament', () => {
     await openSeries(page, id, MANAGER);
 
     const flag = card(page, 2).getByTestId('stage-flag-cancelled');
-    await expect(flag).toContainText('Tournament cancelled: remove this Stage');
-    await expect(flag.getByRole('link', { name: 'remove this Stage' })).toHaveAttribute('href', `/series/${id}/edit`);
+    await expect(flag).toContainText('Tournament cancelled: remove it from the Series');
+    await expect(flag.getByRole('link', { name: 'remove it from the Series' })).toHaveAttribute('href', `/series/${id}/edit`);
     await expect(page.getByTestId('stage-flag-cancelled')).toHaveCount(1);
     await expect(page.locator('.series-node--cancelled')).toHaveCount(1);
 
@@ -761,7 +787,7 @@ test.describe('Series advancement: cancelled Stage tournament', () => {
     await page.waitForSelector('[data-testid="stage-remove-cancelled"]');
 
     await expect(page.getByTestId('stage-remove-cancelled')).toHaveCount(1);
-    await expect(page.getByTestId('stage-cancelled-note')).toHaveText('Tournament cancelled: remove this Stage');
+    await expect(page.getByTestId('stage-cancelled-note')).toHaveText('Tournament cancelled: remove it from the Series');
     await expect(page.getByTestId('series-cancelled-check-warning')).toHaveCount(0);
     await expect(page.locator('li.series-grid__row')).toHaveCount(4);
 
@@ -783,5 +809,108 @@ test.describe('Series advancement: cancelled Stage tournament', () => {
     await page.waitForSelector('[data-testid="series-stage-card"]');
     await expect(cards(page)).toHaveCount(3);
     await expect(page.getByTestId('stage-flag-cancelled')).toHaveCount(0);
+  });
+});
+
+
+test.describe('Series advancement: marking a Stage official', () => {
+  test.use({ viewport: { width: 1200, height: 900 } });
+
+  test.describe.configure({ mode: 'serial' });
+
+  test.beforeEach(async ({ page }, testInfo) => {
+    await resetSeries(page, seriesIdFor(MOCK_ADVANCEMENT_REVIEW_ID, testInfo));
+  });
+
+  test('a Manager marks the ready Stage official after confirming, and the next Stage becomes ready', async ({ page }, testInfo) => {
+    await openSeries(page, seriesIdFor(MOCK_ADVANCEMENT_REVIEW_ID, testInfo), MANAGER);
+
+    await expect(status(page, 1)).toHaveText('Computed');
+    await expect(page.getByTestId('stage-make-official')).toHaveCount(1);
+    await expect(card(page, 1).getByTestId('stage-make-official')).toBeVisible();
+
+    await card(page, 1).getByTestId('stage-make-official').click();
+    await expect(page.getByText('Mark the 1st tournament official?')).toBeVisible();
+    await page.locator('.confirm-action-modal-confirm').click();
+
+    await expect(status(page, 1)).toHaveText('Official');
+    await expect(card(page, 2).getByTestId('stage-make-official')).toBeVisible();
+    await expect(card(page, 1).getByTestId('stage-make-official')).toHaveCount(0);
+  });
+
+  test('cancelling the confirmation leaves the Stage Computed', async ({ page }, testInfo) => {
+    await openSeries(page, seriesIdFor(MOCK_ADVANCEMENT_REVIEW_ID, testInfo), MANAGER);
+
+    await card(page, 1).getByTestId('stage-make-official').click();
+    await page.locator('.confirm-action-modal-cancel').click();
+
+    await expect(status(page, 1)).toHaveText('Computed');
+  });
+
+  test('a Tournament Director sees the rail and Mark official, but not Recompute', async ({ page }, testInfo) => {
+    await openSeries(page, seriesIdFor(MOCK_ADVANCEMENT_REVIEW_ID, testInfo), TOURNAMENT_DIRECTOR);
+
+    await expect(page.getByTestId('series-progress')).toBeVisible();
+    await expect(card(page, 1).getByTestId('stage-make-official')).toBeVisible();
+    await expect(page.getByTestId('stage-recompute')).toHaveCount(0);
+    await expect(page.getByTestId('stage-pick-squad')).toHaveCount(0);
+  });
+
+  test('an editor without Series.MakeStageOfficial sees no Mark official button', async ({ page }, testInfo) => {
+    await openSeries(page, seriesIdFor(MOCK_ADVANCEMENT_REVIEW_ID, testInfo), EDITOR_ONLY);
+
+    await expect(page.getByTestId('stage-recompute').first()).toBeVisible();
+    await expect(page.getByTestId('stage-make-official')).toHaveCount(0);
+  });
+
+  test('the public sees nothing until a Stage is official, then sees who advanced', async ({ page }, testInfo) => {
+    const seriesId = seriesIdFor(MOCK_ADVANCEMENT_REVIEW_ID, testInfo);
+
+    await page.goto(`/series/${seriesId}`);
+    await page.waitForSelector('.series-stage-list');
+    await expect(page.getByTestId('series-stage-results')).toHaveCount(0);
+
+    await page.request.post(`/__test/login?permissions=${MANAGER}`);
+    await page.goto(`/series/${seriesId}`);
+    await page.waitForSelector('[data-testid="series-stage-card"]');
+    await card(page, 1).getByTestId('stage-make-official').click();
+    await page.locator('.confirm-action-modal-confirm').click();
+    await expect(status(page, 1)).toHaveText('Official');
+
+    await page.context().clearCookies();
+    await page.goto(`/series/${seriesId}`);
+    await page.waitForSelector('[data-testid="series-stage-results"]');
+    await expect(page.getByTestId('series-stage-results')).toHaveCount(1);
+    await expect(page.getByTestId('stage-status')).toHaveCount(0);
+  });
+
+  test('the public sees a bowler who already advanced in place, the full Survivor standings, and the Placement positions only once the Placement Stage is official', async ({ page }, testInfo) => {
+    const seriesId = seriesIdFor(MOCK_ADVANCEMENT_FINALE_ID, testInfo);
+    await resetSeries(page, seriesId);
+
+    await page.goto(`/series/${seriesId}`);
+    await page.waitForSelector('[data-testid="series-stage-results"]');
+    const stages = page.getByTestId('series-stage-results');
+    await expect(stages).toHaveCount(3);
+    await expect(stages.nth(1).getByTestId('series-advancer').filter({ hasText: 'Advanced in 1st tournament' })).toHaveCount(1);
+    await expect(stages.nth(2)).toContainText('Advanced');
+    await expect(stages.nth(2).getByRole('cell', { name: 'No', exact: true }).first()).toBeVisible();
+
+    await page.request.post(`/__test/login?permissions=${MANAGER}`);
+    await page.goto(`/series/${seriesId}`);
+    await page.waitForSelector('[data-testid="series-stage-card"]');
+    await expect(card(page, 4).getByTestId('stage-make-official')).toBeVisible();
+    await card(page, 4).getByTestId('stage-make-official').click();
+    await page.locator('.confirm-action-modal-confirm').click();
+    await expect(status(page, 4)).toHaveText('Official');
+
+    await page.context().clearCookies();
+    await page.goto(`/series/${seriesId}`);
+    await page.waitForSelector('[data-testid="series-stage-results"]');
+    await expect(page.getByTestId('series-stage-results')).toHaveCount(4);
+    // The Placement Stage lists every position, not only the finalists.
+    const placement = page.getByTestId('series-stage-results').nth(3);
+    await expect(placement.getByRole('columnheader', { name: 'Finalist' })).toBeVisible();
+    await expect(placement.getByRole('cell', { name: 'No', exact: true }).first()).toBeVisible();
   });
 });

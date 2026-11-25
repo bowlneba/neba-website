@@ -42,6 +42,7 @@ internal static class SecurityRoleSeeder
             Permissions.DeleteSeries,
             Permissions.EditSeriesLogo,
             Permissions.ManageAdvancement,
+            Permissions.MakeStageOfficial,
 
             Permissions.ViewBackgroundJobsDashboard,
 
@@ -68,7 +69,8 @@ internal static class SecurityRoleSeeder
             Permissions.CreateSeries,
             Permissions.EditSeries,
             Permissions.DeleteSeries,
-            Permissions.EditSeriesLogo
+            Permissions.EditSeriesLogo,
+            Permissions.MakeStageOfficial
         ],
 
         [Roles.TournamentDirector] =
@@ -77,7 +79,9 @@ internal static class SecurityRoleSeeder
             Permissions.EditTournament,
             Permissions.EditTournamentLogo,
             Permissions.ManageTournamentSponsors,
-            Permissions.ManageTournamentStatus
+            Permissions.ManageTournamentStatus,
+
+            Permissions.MakeStageOfficial
         ],
 
         [Roles.Journalist] =

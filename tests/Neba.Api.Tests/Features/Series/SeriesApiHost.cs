@@ -51,7 +51,7 @@ internal sealed class SeriesApiHost : IAsyncDisposable
     public static string ManagerToken()
         => TestAccessTokenFactory.Create(
             roles: [SecurityRoles.Manager],
-            permissions: [Permissions.CreateSeries, Permissions.EditSeries, Permissions.DeleteSeries, Permissions.EditSeriesLogo]);
+            permissions: [Permissions.CreateSeries, Permissions.EditSeries, Permissions.DeleteSeries, Permissions.EditSeriesLogo, Permissions.MakeStageOfficial]);
 
     public static string AdminToken()
         => TestAccessTokenFactory.Create(roles: [SecurityRoles.Admin], permissions: [.. Permissions.List]);

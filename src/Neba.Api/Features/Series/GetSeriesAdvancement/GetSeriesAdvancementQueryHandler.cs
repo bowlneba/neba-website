@@ -1,7 +1,5 @@
 using ErrorOr;
 
-using Microsoft.Extensions.Options;
-
 using Neba.Api.Database;
 using Neba.Api.Features.Series.Domain;
 using Neba.Api.Messaging;
@@ -9,7 +7,7 @@ using Neba.Api.Messaging;
 namespace Neba.Api.Features.Series.GetSeriesAdvancement;
 
 internal sealed class GetSeriesAdvancementQueryHandler(
-    AppDbContext appDbContext, IOptions<SeriesAdvancementSettings> settings)
+    AppDbContext appDbContext)
     : IQueryHandler<GetSeriesAdvancementQuery, ErrorOr<SeriesAdvancementDto>>
 {
     public async Task<ErrorOr<SeriesAdvancementDto>> HandleAsync(
@@ -21,26 +19,40 @@ internal sealed class GetSeriesAdvancementQueryHandler(
             return SeriesErrors.NotFound(query.SeriesId);
         }
 
-        var grace = settings.Value.OfficialGrace;
         var lastQualifying = rows.Stages.Where(s => s.Kind == StageKind.Qualifying).MaxBy(s => s.Order);
 
-        var stages = rows.Stages.OrderBy(s => s.Order).Select(stage =>
+        var ordered = rows.Stages.OrderBy(s => s.Order).ToList();
+
+        var stages = ordered.ConvertAll(stage =>
         {
             var isLastQualifying = stage.StageId == lastQualifying?.StageId;
 
             // The Backfill belongs to the last Qualifying Stage.
             var entries = rows.FieldEntries
                 .Where(e => e.SourceStageId == stage.StageId || (isLastQualifying && e.SourceStageId is null))
+                .InFieldOrder(
+                    e => e.Place,
+                    e => e.BackfillPoints,
+                    e => e.BowlerName.LastName,
+                    e => e.BowlerName.FirstName,
+                    e => e.BowlerId.Value)
                 .Select(e => new FieldEntryDto(
                     e.BowlerId, e.BowlerName.ToDisplayName(), e.SourceStageId, e.Place, e.BackfillPoints, e.ViaOverride))
-                .OrderBy(e => e.Place ?? int.MaxValue)
-                .ThenBy(e => e.BowlerName, StringComparer.Ordinal)
-                .ThenBy(e => e.BowlerId.Value)
                 .ToList();
 
             int? vacant = stage.SlotCount is { } slots
                 ? slots - rows.FieldEntries.Count(e => e.SourceStageId == stage.StageId && !e.ViaOverride)
                 : null;
+
+            var alreadyAdvanced = rows.AlreadyAdvanced
+                .Where(a => a.StageId == stage.StageId)
+                .Select(a => new AlreadyAdvancedDto(
+                    a.BowlerId, a.BowlerName.ToDisplayName(), a.Place, a.EarlierStageId,
+                    rows.Stages.Single(s => s.StageId == a.EarlierStageId).Order))
+                .OrderBy(a => a.Place)
+                .ThenBy(a => a.BowlerName, StringComparer.Ordinal)
+                .ThenBy(a => a.BowlerId.Value)
+                .ToList();
 
             var overrides = rows.Overrides
                 .Where(o => o.StageId == stage.StageId)
@@ -59,6 +71,15 @@ internal sealed class GetSeriesAdvancementQueryHandler(
                 .ThenBy(o => o.BowlerId.Value)
                 .ToList();
 
+            var firstUnofficialEarlier = SeriesAdvancementRules.FirstUnofficialEarlierOrder(
+                ordered.Select(s => (s.Order, s.Status)), stage.Order);
+
+            var canMakeOfficial = stage.Status != StageStatus.Official
+                && SeriesAdvancementRules.MakeOfficialBlocker(
+                    stage.Status, stage.IsStale,
+                    awaitingBackfill: isLastQualifying && rows.Header.BackfillAsOf is null,
+                    firstUnofficialEarlier) is null;
+
             return new StageAdvancementDto(
                 stage.StageId,
                 stage.Order,
@@ -67,9 +88,7 @@ internal sealed class GetSeriesAdvancementQueryHandler(
                 stage.IsStale,
                 NeedsSquad: stage.Kind == StageKind.Survivor && (stage.SquadId is null || !stage.SquadExists),
                 stage.ComputedAt,
-                SeriesAdvancementRules.OfficialDueAt(
-                    stage.Kind, stage.Status, stage.IsStale, stage.ComputedAt,
-                    awaitingBackfill: isLastQualifying && rows.Header.BackfillAsOf is null, grace),
+                canMakeOfficial,
                 stage.OfficialAt,
                 stage.SlotCount,
                 vacant,
@@ -77,9 +96,10 @@ internal sealed class GetSeriesAdvancementQueryHandler(
                 stage.TournamentStatus.Name,
                 stage.SquadId,
                 entries,
+                alreadyAdvanced,
                 overrides,
                 outcomes);
-        }).ToList();
+        });
 
         // Target field: a Qualifying Stage's stored slot total, else its advancing count times the team size.
         var targetField = rows.Stages
@@ -92,7 +112,7 @@ internal sealed class GetSeriesAdvancementQueryHandler(
             targetField,
             stages,
             [.. rows.Positions
-                .Select(p => new SeriesPositionDto(p.BowlerId, p.BowlerName.ToDisplayName(), p.Position, p.Bowled, p.IsFinalist))
+                .Select(p => new SeriesPositionDto(p.BowlerId, p.BowlerName.ToDisplayName(), p.Position, p.Bowled, p.IsFinalist, p.TournamentPlace))
                 .OrderBy(p => p.Position)
                 .ThenBy(p => p.BowlerId.Value)]);
     }

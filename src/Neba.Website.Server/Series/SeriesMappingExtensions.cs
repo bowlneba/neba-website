@@ -1,6 +1,7 @@
 using Neba.Api.Contracts.Series.CreateSeries;
 using Neba.Api.Contracts.Series.GetSeries;
 using Neba.Api.Contracts.Series.GetSeriesAdvancement;
+using Neba.Api.Contracts.Series.GetSeriesAdvancers;
 using Neba.Api.Contracts.Series.ListSeries;
 using Neba.Api.Contracts.Series.ListStageResults;
 using Neba.Api.Contracts.Series.ListStageSquads;
@@ -87,9 +88,7 @@ internal static class SeriesMappingExtensions
     {
         /// <summary>Every UTC instant the page shows in local time, once each. The page converts them, then calls ToViewModel.</summary>
         public IReadOnlyList<DateTimeOffset> Instants()
-            => [.. response.Stages.Select(s => s.OfficialDueAt).OfType<DateTimeOffset>()
-                .Concat(response.Stages.SelectMany(s => s.Overrides).Select(o => o.CreatedAt))
-                .Distinct()];
+            => [.. response.Stages.SelectMany(s => s.Overrides).Select(o => o.CreatedAt).Distinct()];
 
         public SeriesAdvancementViewModel ToViewModel(AdvancementAccess access, IReadOnlyDictionary<DateTimeOffset, DateTimeOffset> localTimes)
         {
@@ -103,9 +102,18 @@ internal static class SeriesMappingExtensions
                 TargetField = response.TargetField,
                 Stages = [.. ordered.Select(s => MapStage(s, s.StageId == lastQualifyingId, access, localTimes))],
                 Positions = [.. response.Positions.OrderBy(p => p.Position)
-                    .Select(p => new PositionViewModel(p.BowlerId, p.BowlerName, p.Position, p.Bowled, p.IsFinalist))],
+                    .Select(p => new PositionViewModel(p.BowlerId, p.BowlerName, p.Position, p.Bowled, p.IsFinalist, p.TournamentPlace))],
             };
         }
+    }
+
+    extension(SeriesAdvancersResponse response)
+    {
+        public IReadOnlyList<StageAdvancersViewModel> ToViewModel()
+            => [.. response.Stages.OrderBy(s => s.Order).Select(s => new StageAdvancersViewModel(
+                s.StageId, s.Order, s.Kind,
+                [.. s.Advancers.Select(a => new AdvancerViewModel(a.BowlerId, a.BowlerName, a.Place, a.BlockTotal, a.IsBackfill, a.Advanced, a.AlreadyAdvancedFromOrder,
+                    a.BackfillPoints, a.Position, a.Bowled, a.IsFinalist))]))];
     }
 
     extension(StageResultSummaryResponse response)
@@ -135,7 +143,7 @@ internal static class SeriesMappingExtensions
             Status: stage.Status,
             IsStale: stage.IsStale,
             NeedsSquad: stage.NeedsSquad,
-            OfficialDueAt: stage.OfficialDueAt is { } due ? ToLocal(due, localTimes) : null,
+            CanMakeOfficial: access.CanMakeOfficial && stage.CanMakeOfficial,
             SlotCount: stage.SlotCount,
             VacantSlotCount: stage.VacantSlotCount,
             TournamentId: stage.TournamentId,
@@ -145,13 +153,15 @@ internal static class SeriesMappingExtensions
             Entries: [.. stage.Entries.Select(e => new FieldEntryViewModel(
                 e.BowlerId, e.BowlerName, e.SourceStageId, e.Place, e.BackfillPoints, e.ViaOverride,
                 CanClear: canChangeOutput && e.SourceStageId == stage.StageId && !e.ViaOverride))],
+            AlreadyAdvanced: [.. stage.AlreadyAdvanced.Select(a => new AlreadyAdvancedViewModel(
+                a.BowlerId, a.BowlerName, a.Place, a.EarlierStageOrder))],
             Overrides: [.. stage.Overrides.Select(o => new StageOverrideViewModel(
                 o.OverrideId, o.BowlerId, o.BowlerName, o.Kind, o.Reason, ToLocal(o.CreatedAt, localTimes), o.Applied))],
             Outcomes: [.. stage.SurvivorOutcomes.Select(o => new SurvivorOutcomeViewModel(o.BowlerId, o.BowlerName, o.BlockTotal, o.Advanced))],
             CanAddOverride: canChangeOutput,
             CanRemoveOverride: canChangeOutput,
-            CanRecompute: access.CanView,
-            CanPickSquad: access.CanView && stage.Kind == StageKinds.Survivor);
+            CanRecompute: access.CanEdit,
+            CanPickSquad: access.CanEdit && stage.Kind == StageKinds.Survivor);
     }
 
     private static DateTimeOffset ToLocal(DateTimeOffset utc, IReadOnlyDictionary<DateTimeOffset, DateTimeOffset> localTimes)

@@ -182,11 +182,12 @@ test.describe('Series (admin)', () => {
   test('creates a Series from Qualifying, Survivor and Placement rows', async ({ page }) => {
     await page.goto('/series/new');
     await page.waitForSelector('#series-name');
+    await expect(page.getByText('Set the tournaments in order. Each one has a role in the Series.')).toBeVisible();
 
     await page.locator('#series-name').fill('E2E Series');
 
     for (let index = 0; index < 3; index++) {
-      await page.getByRole('button', { name: '+ Add Stage' }).click();
+      await page.getByRole('button', { name: '+ Add tournament' }).click();
     }
 
     await page.locator('#stage-0-kind').selectOption('Qualifying');
@@ -216,7 +217,7 @@ test.describe('Series (admin)', () => {
 
     await page.locator('#series-name').fill('fail');
     for (let index = 0; index < 2; index++) {
-      await page.getByRole('button', { name: '+ Add Stage' }).click();
+      await page.getByRole('button', { name: '+ Add tournament' }).click();
     }
 
     await page.locator('#stage-0-tournament').selectOption({ label: 'Sat 4/11 · Series Pick One' });
@@ -226,7 +227,7 @@ test.describe('Series (admin)', () => {
     const rows = page.locator('li.series-grid__row');
     await expect(rows.nth(1).locator('.series-grid__error')).toContainText('This Stage must follow the previous Stage by date.');
     await expect(rows.nth(0).locator('.series-grid__error')).toHaveCount(0);
-    await expect(page.getByText('1 Stage needs changes before this Series can be saved.')).toBeVisible();
+    await expect(page.getByText('Changes are still needed in 1 tournament before this Series can be saved.')).toBeVisible();
     await expect(page).toHaveURL(/\/series\/new$/);
   });
 
@@ -316,7 +317,7 @@ test.describe('Series on a phone', () => {
     await page.request.post('/__test/login?permissions=Series.CreateSeries');
     await page.goto('/series/new');
     await page.waitForSelector('#series-name');
-    await page.getByRole('button', { name: '+ Add Stage' }).click();
+    await page.getByRole('button', { name: '+ Add tournament' }).click();
 
     await expect(page.locator('.series-grid__head')).toBeHidden();
     await expect(page.locator('li.series-grid__row .series-grid__cell-label').first()).toBeVisible();

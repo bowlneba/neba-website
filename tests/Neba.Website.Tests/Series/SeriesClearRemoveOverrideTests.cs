@@ -113,7 +113,7 @@ public sealed class SeriesClearRemoveOverrideTests : IDisposable
         cut.Find("#stage-override-title").TextContent.ShouldBe("Clear slot");
         cut.Find("[data-testid='stage-override-bowler-fixed']").TextContent.ShouldBe("Alice Adams · 1st place");
         cut.Find("[data-testid='stage-override-lead']").TextContent
-            .ShouldBe("Stage 1, Tournament 1. The slot goes vacant and the Backfill fills it. This bowler can't come back through the Backfill.");
+            .ShouldBe("1st tournament, Tournament 1. The slot goes vacant and the Bowler of the Year point list fills it. This bowler can't come back through that list.");
         cut.FindAll("[data-testid='stage-override-bowler']").ShouldBeEmpty();
         cut.FindAll("#override-bowler").ShouldBeEmpty();
         cut.FindAll("[data-testid='stage-override-loading']").ShouldBeEmpty();
@@ -186,8 +186,8 @@ public sealed class SeriesClearRemoveOverrideTests : IDisposable
     // ---- Remove override ----
 
     [Theory(DisplayName = "Should ask to confirm with the remove text for an Add override and for a Clear override")]
-    [InlineData("ov-add", "Cara Cole leaves the field for Stage 1.")]
-    [InlineData("ov-clear", "Zed Zane takes the slot back, and the Backfill no longer refills it.")]
+    [InlineData("ov-add", "Cara Cole leaves the field for the 1st tournament.", TestDisplayName = "an Add override")]
+    [InlineData("ov-clear", "Zed Zane takes the slot back, and the Bowler of the Year point list no longer refills it.", TestDisplayName = "a Clear override")]
     public async Task Remove_ShouldAskToConfirm_WithKindText(string overrideId, string message)
     {
         // Arrange
@@ -596,7 +596,7 @@ public sealed class SeriesClearRemoveOverrideTests : IDisposable
         // Assert
         var toast = _host.Toasts.Current.ShouldNotBeNull();
         toast.Title.ShouldBe("Reload Failed");
-        toast.Message.ShouldBe("The Stage status could not refresh. Reload the page to see the latest.");
+        toast.Message.ShouldBe("The tournament status could not refresh. Reload the page to see the latest.");
         toast.Severity.ShouldBe(NotifySeverity.Warning);
         cut.FindAll(Modal).ShouldBeEmpty();
         cut.FindAll("[data-testid='series-stage-card']").Count.ShouldBe(3);

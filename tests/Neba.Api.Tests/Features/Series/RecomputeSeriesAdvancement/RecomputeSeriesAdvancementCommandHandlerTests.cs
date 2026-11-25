@@ -116,11 +116,11 @@ public sealed class RecomputeSeriesAdvancementCommandHandlerTests(AppDbContextFi
         var error = result.FirstError;
         error.Code.ShouldBe("Series.Recompute.ConfirmationRequired");
         error.Type.ShouldBe(ErrorType.Conflict);
-        ((int[])error.Metadata![SeriesAdvancementErrors.OfficialStageOrdersKey]).ShouldBe([1, 2]);
+        ((int[])error.Metadata![SeriesAdvancementErrors.OfficialStageOrdersKey]).ShouldBe([1, 2, 3]);
         run.Saves.Saves.ShouldBe(0);
         var stored = await _context.StoredAsync(ct);
         stored.Version.ShouldBe(before.Version);
-        stored.Stages.Where(stage => stage.Order <= 2).ShouldAllBe(stage => stage.Status == StageStatus.Official);
+        stored.Stages.ShouldAllBe(stage => stage.Status == StageStatus.Official);
     }
 
     [Fact(DisplayName = "HandleAsync should list only the official Stages at or after the Stage it starts from")]
@@ -137,7 +137,7 @@ public sealed class RecomputeSeriesAdvancementCommandHandlerTests(AppDbContextFi
 
         // Assert
         result.IsError.ShouldBeTrue();
-        ((int[])result.FirstError.Metadata![SeriesAdvancementErrors.OfficialStageOrdersKey]).ShouldBe([2]);
+        ((int[])result.FirstError.Metadata![SeriesAdvancementErrors.OfficialStageOrdersKey]).ShouldBe([2, 3]);
     }
 
     [Fact(DisplayName = "HandleAsync should reset the official Stages to Computed, save and evict the tournament cache when the caller confirms")]

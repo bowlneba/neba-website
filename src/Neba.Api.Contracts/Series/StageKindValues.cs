@@ -1,7 +1,7 @@
 namespace Neba.Api.Contracts.Series;
 
 /// <summary>
-/// The SmartEnum values of a Stage kind, as commands send them. The API's StageKind and the website share these.
+/// The SmartEnum values of a tournament kind, as commands send them. The API's StageKind and the website share these.
 /// </summary>
 public static class StageKindValues
 {

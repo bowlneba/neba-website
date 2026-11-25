@@ -9,6 +9,7 @@ using Neba.Api.Features.Series.Domain;
 using Neba.Api.Features.Tournaments.Domain;
 using Neba.TestFactory.Attributes;
 using Neba.TestFactory.Infrastructure;
+using Neba.TestFactory.Series;
 
 using SeriesAggregate = Neba.Api.Features.Series.Domain.Series;
 
@@ -20,7 +21,6 @@ namespace Neba.Api.Tests.Features.Series;
 public sealed class SeriesAdvancementTests(AppDbContextFixture fixture)
     : IClassFixture<AppDbContextFixture>, IAsyncLifetime
 {
-    private static readonly TimeSpan Grace = TimeSpan.FromHours(24);
 
     private readonly AppDbContext _dbContext = fixture.CreateDbContext();
     private readonly AdvancementRunHarness _harness = new(fixture);
@@ -39,7 +39,7 @@ public sealed class SeriesAdvancementTests(AppDbContextFixture fixture)
         => (series, facts, now) => series.Advance(tournament.Id, facts, now);
 
     private static AdvancementOperation MakeOfficial()
-        => (series, _, now) => series.MakeDueOfficial(now.AddDays(3), Grace);
+        => (series, _, now) => series.MakeReadyStagesOfficial(now.AddDays(3));
 
     private static Task<ErrorOr<AdvanceResult>> RunAsync(
         AdvancementRun run, AdvancementScenario scenario, AdvancementOperation operation)
@@ -240,7 +240,7 @@ public sealed class SeriesAdvancementTests(AppDbContextFixture fixture)
         (await AdvanceQualifierAsync(scenario, script)).IsError.ShouldBeFalse();
         var official = _harness.CreateRun(FactsReaderDoubles.Untouched());
         (await RunWithoutFactsAsync(official, scenario, MakeOfficial())).Value.OfficialStageIds
-            .ShouldBe([scenario.Stage(1).Id, scenario.Stage(2).Id]);
+            .ShouldBe([scenario.Stage(1).Id, scenario.Stage(2).Id, scenario.Stage(3).Id]);
         var versionBefore = (await StoredAsync(scenario)).Version;
         var firstTwo = script.QualifierPlaces.Take(2).ToList();
         script.QualifierPlaces = [firstTwo[1], firstTwo[0], .. script.QualifierPlaces.Skip(2)];

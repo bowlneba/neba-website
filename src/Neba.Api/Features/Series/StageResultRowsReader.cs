@@ -11,7 +11,7 @@ internal sealed record StageResultPickRow(BowlerId BowlerId, Name BowlerName, in
 
 internal static class StageResultRowsReader
 {
-    /// <summary>Null when the Series or Stage does not exist. An empty list means the tournament has no results yet.</summary>
+    /// <summary>Null when the Series or Stage does not exist. Rows without a place (team results not yet grouped) are left out. An empty list means the tournament has no placed results yet.</summary>
     public static async Task<IReadOnlyList<StageResultPickRow>?> ReadAsync(
         AppDbContext appDbContext, SeriesId seriesId, SeriesStageId stageId, CancellationToken cancellationToken)
     {
@@ -26,7 +26,7 @@ internal static class StageResultRowsReader
             ? null
             : await appDbContext.Tournaments.AsNoTracking()
                 .Where(tournament => tournament.Id == stage.TournamentId)
-                .SelectMany(tournament => tournament.Results)
+                .SelectMany(tournament => tournament.Results.Where(result => result.Place > 0))
                 .OrderBy(result => result.Place)
                 .ThenBy(result => result.Bowler.Name.LastName)
                 .ThenBy(result => result.Bowler.Name.FirstName)

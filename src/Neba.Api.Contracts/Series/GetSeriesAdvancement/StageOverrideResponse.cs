@@ -1,6 +1,6 @@
 namespace Neba.Api.Contracts.Series.GetSeriesAdvancement;
 
-/// <summary>An admin Add or Clear on a Qualifying Stage.</summary>
+/// <summary>An admin Add or Clear on a Qualifying tournament.</summary>
 public sealed record StageOverrideResponse
 {
     /// <summary>The override id.</summary>

@@ -54,10 +54,11 @@ public sealed class SeriesAdvancementRailTests : IDisposable
         pill.ClassList.ShouldContain(pillClass);
     }
 
-    [Theory(DisplayName = "Should show a Placement Stage as Pending or Computed, never Official")]
-    [InlineData("Pending")]
-    [InlineData("Computed")]
-    public void Status_ShouldNotShowOfficial_ForPlacementStage(string status)
+    [Theory(DisplayName = "Should show a Placement Stage's status, Official included")]
+    [InlineData("Pending", TestDisplayName = "a Pending Placement tournament")]
+    [InlineData("Computed", TestDisplayName = "a Computed Placement tournament")]
+    [InlineData("Official", TestDisplayName = "an Official Placement tournament")]
+    public void Status_ShouldShowStatus_ForPlacementStage(string status)
     {
         // Arrange
         var stages = new[]
@@ -72,7 +73,6 @@ public sealed class SeriesAdvancementRailTests : IDisposable
         // Assert
         var pill = card.QuerySelector("[data-testid='stage-status']")!;
         pill.TextContent.Trim().ShouldBe(status);
-        pill.ClassList.ShouldNotContain("series-pill--official");
     }
 
     [Fact(DisplayName = "Should colour each progress strip segment by status and title it with the Stage number")]
@@ -93,7 +93,7 @@ public sealed class SeriesAdvancementRailTests : IDisposable
         var strip = cut.Find("[data-testid='series-strip']");
         strip.GetAttribute("aria-hidden").ShouldBe("true");
         var segments = strip.QuerySelectorAll("span").ToList();
-        segments.Select(s => s.GetAttribute("title")).ShouldBe(["Stage 1: Official", "Stage 2: Computed", "Stage 3: Pending"]);
+        segments.Select(s => s.GetAttribute("title")).ShouldBe(["1st tournament: Official", "2nd tournament: Computed", "3rd tournament: Pending"]);
         segments[0].ClassList.ShouldContain("series-strip__seg--official");
         segments[1].ClassList.ShouldContain("series-strip__seg--computed");
         segments[2].ClassList.ShouldNotContain("series-strip__seg--official");
@@ -159,7 +159,7 @@ public sealed class SeriesAdvancementRailTests : IDisposable
 
         // Assert
         cut.Find("[data-testid='series-progress-line']").TextContent
-            .ShouldBe("2 of 3 Stages computed or official (1 official). Backfill has not run.");
+            .ShouldBe("2 of 3 tournaments computed or official (1 official). Bowler of the Year point list not used yet.");
     }
 
     [Fact(DisplayName = "Should show a headline for a computed Stage and none for a Pending Stage")]
@@ -225,39 +225,6 @@ public sealed class SeriesAdvancementRailTests : IDisposable
         card.QuerySelector("[data-testid='stage-flag-cancelled']").ShouldBeNull();
     }
 
-    [Fact(DisplayName = "Should show when a Computed Stage becomes official, in the viewer's time zone")]
-    public void Flags_ShouldShowDueLabel_WhenComputed()
-    {
-        // Arrange
-        var due = new DateTimeOffset(2030, 7, 12, 19, 15, 0, TimeSpan.Zero);
-        _host.TimeZone.Setup(x => x.ToLocalAsync(due)).ReturnsAsync(due.AddHours(-4));
-        var stage = StageAdvancementResponseFactory.Create(stageId: "q1", status: "Computed", officialDueAt: due);
-
-        // Act
-        var card = Render("q1", stage);
-
-        // Assert
-        var flag = card.QuerySelector("[data-testid='stage-flag-due']")!;
-        flag.TextContent.ShouldBe("Becomes official about 3:15 PM on 7/12");
-        flag.ClassList.ShouldContain("series-flag--info");
-    }
-
-    [Theory(DisplayName = "Should not show the due label unless the Stage is Computed")]
-    [InlineData("Pending")]
-    [InlineData("Official")]
-    public void Flags_ShouldHideDueLabel_WhenNotComputed(string status)
-    {
-        // Arrange
-        var due = new DateTimeOffset(2030, 7, 12, 19, 15, 0, TimeSpan.Zero);
-        var stage = StageAdvancementResponseFactory.Create(stageId: "q1", status: status, officialDueAt: due);
-
-        // Act
-        var card = Render("q1", stage);
-
-        // Assert
-        card.QuerySelector("[data-testid='stage-flag-due']").ShouldBeNull();
-    }
-
     [Fact(DisplayName = "Should show a cancelled flag with a link to edit the Series when the tournament was cancelled")]
     public void Flags_ShouldShowCancelledWithEditLink()
     {
@@ -270,7 +237,7 @@ public sealed class SeriesAdvancementRailTests : IDisposable
         // Assert
         var flag = card.QuerySelector("[data-testid='stage-flag-cancelled']")!;
         flag.ClassList.ShouldContain("series-flag--error");
-        flag.TextContent.ShouldBe("Tournament cancelled: remove this Stage");
+        flag.TextContent.ShouldBe("Tournament cancelled: remove it from the Series");
         flag.QuerySelector("a")!.GetAttribute("href").ShouldBe("/series/" + SeriesId + "/edit");
     }
 
@@ -278,10 +245,9 @@ public sealed class SeriesAdvancementRailTests : IDisposable
     public void Flags_ShouldShowAllThatApply()
     {
         // Arrange
-        var due = new DateTimeOffset(2030, 7, 12, 19, 15, 0, TimeSpan.Zero);
         var stages = new[]
         {
-            StageAdvancementResponseFactory.Create(stageId: "q1", order: 1, status: "Computed", isStale: true, officialDueAt: due),
+            StageAdvancementResponseFactory.Create(stageId: "q1", order: 1, status: "Computed", isStale: true),
             StageAdvancementResponseFactory.Create(stageId: "s1", order: 2, kind: "Survivor", needsSquad: true, tournamentStatus: "Cancelled"),
         };
 
@@ -291,7 +257,6 @@ public sealed class SeriesAdvancementRailTests : IDisposable
         // Assert
         var computed = SeriesDetailHost.Card(cut, "q1");
         computed.QuerySelector("[data-testid='stage-flag-stale']").ShouldNotBeNull();
-        computed.QuerySelector("[data-testid='stage-flag-due']").ShouldNotBeNull();
         computed.QuerySelector("[data-testid='stage-flag-backfill']").ShouldNotBeNull();
         computed.QuerySelector("[data-testid='stage-flag-needs-squad']").ShouldBeNull();
         var survivor = SeriesDetailHost.Card(cut, "s1");
@@ -317,7 +282,7 @@ public sealed class SeriesAdvancementRailTests : IDisposable
         var cut = RenderPage(new DateOnly(2025, 6, 14), stages);
 
         // Assert
-        SeriesDetailHost.Card(cut, "q2").QuerySelector("[data-testid='stage-flag-backfill']")!.TextContent.ShouldBe("Backfill as of 6/14/2025");
+        SeriesDetailHost.Card(cut, "q2").QuerySelector("[data-testid='stage-flag-backfill']")!.TextContent.ShouldBe("Bowler of the Year point list as of 6/14/2025");
         SeriesDetailHost.Card(cut, "q1").QuerySelector("[data-testid='stage-flag-backfill']").ShouldBeNull();
         SeriesDetailHost.Card(cut, "s1").QuerySelector("[data-testid='stage-flag-backfill']").ShouldBeNull();
         SeriesDetailHost.Card(cut, "p1").QuerySelector("[data-testid='stage-flag-backfill']").ShouldBeNull();

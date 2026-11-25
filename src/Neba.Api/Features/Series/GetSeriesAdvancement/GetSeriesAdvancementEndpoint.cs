@@ -28,7 +28,7 @@ internal sealed class GetSeriesAdvancementEndpoint(
             .WithVersionSet("Series")
             .MapToApiVersion(new ApiVersion(1, 0)));
 
-        Policies(PermissionCatalog.EditSeries.PolicyName);
+        Policies(PermissionCatalog.CanViewSeriesAdvancementPolicyName);
 
         Description(description => description
             .WithName("GetSeriesAdvancement")
@@ -69,7 +69,7 @@ internal sealed class GetSeriesAdvancementEndpoint(
                 IsStale = s.IsStale,
                 NeedsSquad = s.NeedsSquad,
                 ComputedAt = s.ComputedAt,
-                OfficialDueAt = s.OfficialDueAt,
+                CanMakeOfficial = s.CanMakeOfficial,
                 OfficialAt = s.OfficialAt,
                 SlotCount = s.SlotCount,
                 VacantSlotCount = s.VacantSlotCount,
@@ -84,6 +84,14 @@ internal sealed class GetSeriesAdvancementEndpoint(
                     Place = e.Place,
                     BackfillPoints = e.BackfillPoints,
                     ViaOverride = e.ViaOverride,
+                })],
+                AlreadyAdvanced = [.. s.AlreadyAdvanced.Select(a => new AlreadyAdvancedResponse
+                {
+                    BowlerId = a.BowlerId.Value.ToString(),
+                    BowlerName = a.BowlerName,
+                    Place = a.Place,
+                    EarlierStageId = a.EarlierStageId.Value.ToString(),
+                    EarlierStageOrder = a.EarlierStageOrder,
                 })],
                 Overrides = [.. s.Overrides.Select(o => new StageOverrideResponse
                 {
@@ -111,6 +119,7 @@ internal sealed class GetSeriesAdvancementEndpoint(
                 Position = p.Position,
                 Bowled = p.Bowled,
                 IsFinalist = p.IsFinalist,
+                TournamentPlace = p.TournamentPlace,
             })],
         }, ct);
     }

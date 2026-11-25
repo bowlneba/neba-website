@@ -129,8 +129,8 @@ internal sealed class AdvancementHarness
         return this;
     }
 
-    public AdvanceResult MakeDueOfficial(DateTimeOffset? now = null)
-        => Series.MakeDueOfficial(now ?? Now + Grace, Grace);
+    public AdvanceResult MakeReadyOfficial(DateTimeOffset? now = null)
+        => Series.MakeReadyStagesOfficial(now ?? Now + Grace);
 
     public ErrorOr<AdvanceResult> Recompute(int order, bool confirm = false, int? version = null, DateTimeOffset? now = null)
         => Series.Recompute(Stage(order).Id, confirm, version ?? Series.Version, Facts, now ?? Now);

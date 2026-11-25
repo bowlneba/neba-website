@@ -146,7 +146,7 @@ public static class SeriesFactory
 
         if (official)
         {
-            _ = series.MakeDueOfficial(at.AddDays(2), TimeSpan.FromHours(24));
+            _ = series.MakeReadyStagesOfficial(at.AddDays(2));
         }
 
         return (series, advancementFacts);

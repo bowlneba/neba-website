@@ -1,6 +1,6 @@
 # Delete a Series
 
-Lets staff permanently remove a Series, and its Stages, from the site.
+Lets staff permanently remove a Series, and its tournaments, from the site.
 
 ## Prerequisites
 
@@ -13,7 +13,7 @@ You need the `Series.DeleteSeries` permission, enforced through the dynamic `Per
 
    ![Series page with the Delete button at the top right](images/delete-series/detail-delete-button.png)
 
-3. A confirmation dialog titled **"Delete Series?"** names the Series and warns that its Stages are removed too. Deleting is not reversible.
+3. A confirmation dialog titled **"Delete Series?"** names the Series and warns that its tournaments are removed too. Deleting is not reversible.
    ![Delete Series confirmation dialog](images/delete-series/detail-confirm-dialog.png)
 
 4. Click **Delete** to confirm, or **Cancel** to leave the Series untouched.
@@ -22,7 +22,7 @@ Deleting a Series does not delete its tournaments. They stay on the schedule and
 
 ## A locked Series cannot be deleted
 
-Once any Stage of a Series has been processed, the Series is locked. On a locked Series the **Delete** button is greyed out and the reason is shown beside it. Remove the Series only before processing begins.
+Once any tournament of a Series has been processed, the Series is locked. On a locked Series the **Delete** button is greyed out and the reason is shown beside it. Remove the Series only before processing begins.
 
 ## What happens after you confirm
 
@@ -41,5 +41,5 @@ Once any Stage of a Series has been processed, the Series is locked. On a locked
 ## Related
 
 - [`docs/help/edit-series.md`](edit-series.md): change a Series instead of removing it.
-- [`docs/help/delete-tournament.md`](delete-tournament.md): a tournament that is a Series Stage cannot be deleted until it is removed from its Series.
+- [`docs/help/delete-tournament.md`](delete-tournament.md): a tournament that is in a Series cannot be deleted until it is removed from its Series.
 - [`docs/policies/README.md`](../policies/README.md): the `Series.DeleteSeries` policy.

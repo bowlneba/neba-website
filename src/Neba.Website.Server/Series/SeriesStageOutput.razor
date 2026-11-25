@@ -25,7 +25,7 @@ else
                 }
             </div>
 
-            @if (Stage.Entries.Count == 0)
+            @if (Stage.Entries.Count == 0 && Stage.AlreadyAdvanced.Count == 0)
             {
                 <p class="series-output__empty">@SeriesDisplay.NoFieldEntries</p>
             }
@@ -38,7 +38,7 @@ else
                                 <th scope="col">Place</th>
                                 <th scope="col">Bowler</th>
                                 <th scope="col">Source</th>
-                                <th scope="col">Backfill points</th>
+                                <th scope="col">Bowler of the Year points</th>
                                 @if (CanManage)
                                 {
                                     <th scope="col">Actions</th>
@@ -63,6 +63,19 @@ else
                                                         disabled="@IsBusy" @onclick="@(() => OnClearSlot.InvokeAsync(entry))">Clear slot</button>
                                             }
                                         </td>
+                                    }
+                                </tr>
+                            }
+                            @foreach (var advanced in Stage.AlreadyAdvanced)
+                            {
+                                <tr @key="@("advanced-" + advanced.BowlerId)" class="series-output__advanced" data-testid="stage-already-advanced">
+                                    <td class="series-output__num">@SeriesDisplay.OrdinalPlace(advanced.Place)</td>
+                                    <td>@advanced.BowlerName</td>
+                                    <td class="series-output__inactive">@SeriesDisplay.AlreadyAdvancedSource(advanced.EarlierStageOrder)</td>
+                                    <td class="series-output__num">—</td>
+                                    @if (CanManage)
+                                    {
+                                        <td></td>
                                     }
                                 </tr>
                             }
@@ -145,9 +158,17 @@ else
                             </tr>
                         </thead>
                         <tbody>
+                            @{ var cutDrawn = false; }
                             @foreach (var outcome in Stage.Outcomes)
                             {
-                                <tr @key="outcome.BowlerId" class="@(outcome.Advanced ? null : "series-output__out")">
+                                var isCut = !outcome.Advanced && !cutDrawn;
+                                if (!outcome.Advanced) { cutDrawn = true; }
+                                var rowClass = "series-output__in";
+                                if (!outcome.Advanced)
+                                {
+                                    rowClass = isCut ? "series-output__out series-output__cut" : "series-output__out";
+                                }
+                                <tr @key="outcome.BowlerId" class="@rowClass">
                                     <td>@outcome.BowlerName</td>
                                     <td class="series-output__num">@SeriesDisplay.BlockTotal(outcome.BlockTotal)</td>
                                     <td>@(outcome.Advanced ? "Yes" : "No")</td>
@@ -170,11 +191,12 @@ else
                 var summary = SeriesDisplay.PlacementSummary(Positions.Count, hasFinalists);
                 <p class="series-output__summary" data-testid="stage-placement-summary"><strong>@summary.Lead</strong>@summary.Detail</p>
                 <div class="series-output__scroll">
-                    <table class="@(hasFinalists ? "neba-table neba-data-table" : "neba-table")" aria-label="Placement positions" data-testid="stage-positions">
+                    <table class="neba-table neba-data-table" aria-label="Placement positions" data-testid="stage-positions">
                         <thead>
                             <tr>
                                 <th scope="col">Position</th>
                                 <th scope="col">Bowler</th>
+                                <th scope="col">Tournament place</th>
                                 <th scope="col">Bowled</th>
                                 @if (hasFinalists)
                                 {
@@ -183,11 +205,26 @@ else
                             </tr>
                         </thead>
                         <tbody>
+                            @{ var finaleCutDrawn = false; }
                             @foreach (var position in Positions)
                             {
-                                <tr @key="position.BowlerId">
+                                var rowClass = "";
+                                if (hasFinalists)
+                                {
+                                    if (position.IsFinalist == true)
+                                    {
+                                        rowClass = "series-output__in";
+                                    }
+                                    else
+                                    {
+                                        rowClass = finaleCutDrawn ? "series-output__out" : "series-output__out series-output__cut";
+                                        finaleCutDrawn = true;
+                                    }
+                                }
+                                <tr @key="position.BowlerId" class="@rowClass">
                                     <td class="series-output__num">@SeriesDisplay.OrdinalPlace(position.Position)</td>
                                     <td>@position.BowlerName</td>
+                                    <td class="series-output__num">@SeriesDisplay.OrdinalPlace(position.TournamentPlace)</td>
                                     <td>@(position.Bowled ? "Yes" : "No")</td>
                                     @if (hasFinalists)
                                     {

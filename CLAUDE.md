@@ -157,6 +157,7 @@ Detailed write-ups live in `docs/learnings/`. Read the matching file before work
 ### Hangfire PostgreSql — `docs/learnings/hangfire-postgres.md`
 
 - `EnableTransactionScopeEnlistment` stays `false`. Dev runs one worker, so one wedged job stops all local jobs.
+- Dropping an `AddOrUpdateRecurring` call does not remove the stored recurring job. It keeps firing and fails. Call `RemoveRecurring(id)` at startup (see `UseSeriesRemoveMakeOfficialJob`), then delete that call after every environment deploys it.
 
 ### Hotfix deploys — `docs/learnings/hotfix.md`
 

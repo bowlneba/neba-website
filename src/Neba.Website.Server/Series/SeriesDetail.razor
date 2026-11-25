@@ -67,7 +67,7 @@ else
         {
             <section aria-labelledby="series-progress-failed-title" data-testid="series-progress-failed">
                 <h2 class="series-group-title" id="series-progress-failed-title">Season progress</h2>
-                <NebaAlert Severity="NotifySeverity.Error" Title="Stage status could not load" Message="@SeriesDisplay.AdvancementReloadFailed" />
+                <NebaAlert Severity="NotifySeverity.Error" Title="Tournament status could not load" Message="@SeriesDisplay.AdvancementReloadFailed" />
                 <button type="button" class="neba-btn neba-btn-secondary series-detail__retry" @onclick="RetryAdvancementAsync">Retry</button>
             </section>
         }
@@ -88,7 +88,7 @@ else
                 }
                 else if (_advancement.Stages.Count == 0)
                 {
-                    <p class="series-detail__message">This Series has no Stages yet.</p>
+                    <p class="series-detail__message">This Series has no tournaments yet.</p>
                 }
                 else
                 {
@@ -114,6 +114,7 @@ else
                                                  IsExpanded="@_expandedStageIds.Contains(stage.Id)"
                                                  IsBusy="@_isWriting"
                                                  OnToggle="@(() => ToggleStage(stage.Id))"
+                                                 OnMakeOfficial="@(() => OpenMakeOfficial(stage))"
                                                  OnRecompute="@(() => StartRecomputeAsync(stage))"
                                                  OnPickSquad="@(() => OpenSquadPickerAsync(stage))">
                                     <SeriesStageOutput Stage="@stage"
@@ -132,40 +133,7 @@ else
         }
         else
         {
-            @foreach (var kind in StageKinds.All)
-            {
-                var stages = StagesOf(kind);
-                if (stages.Count == 0)
-                {
-                    continue;
-                }
-
-                <section aria-labelledby="@GroupId(kind)">
-                    <h2 class="series-group-title" id="@GroupId(kind)">@SeriesDisplay.GroupHeading(kind) <span>@SeriesDisplay.GroupNote(kind)</span></h2>
-                    <ol class="neba-card series-stage-list">
-                        @foreach (var stage in stages)
-                        {
-                            var advancing = SeriesDisplay.Advancing(stage.Kind, stage.AdvancingCount, stage.TeamSize, _model.Finale?.FinalistCount);
-                            <li @key="stage.Id">
-                                <span class="series-stage__order">@stage.Order</span>
-                                <span class="series-stage__tournament">
-                                    <a href="@TournamentHref(stage)">@stage.TournamentName</a>
-                                    <small>@TournamentMeta(stage)</small>
-                                </span>
-                                <span class="series-stage__advancing">
-                                    @advancing.Primary
-                                    @if (advancing.Secondary is not null)
-                                    {
-                                        <small class="series-stage__advancing-sub">@advancing.Secondary</small>
-                                    }
-                                </span>
-                                <span class="series-stage__squad">@SeriesDisplay.Squad(stage.SquadDate, stage.SquadStartTime)</span>
-                            </li>
-                        }
-                    </ol>
-                </section>
-            }
-
+            <SeriesPublicStages Stages="@PublicStages" ExpandedIds="@_expandedStageIds" OnToggle="ToggleStageById" />
         }
 
         @if (_model.Finale is { } finale)
@@ -232,6 +200,15 @@ else
                                 OnCancel="CancelRemove" />
         }
 
+        <ConfirmActionModal IsOpen="@(_makeOfficialTarget is not null)"
+                            Title="@MakeOfficialTitle"
+                            Message="@MakeOfficialMessage"
+                            ConfirmLabel="Mark official"
+                            BusyLabel="Saving..."
+                            IsBusy="@_isWriting"
+                            OnConfirm="ConfirmMakeOfficialAsync"
+                            OnCancel="CancelMakeOfficial" />
+
         <ConfirmActionModal IsOpen="@(_recomputeTarget is not null)"
                             Title="@RecomputeTitle"
                             Message="@RecomputeMessage"
@@ -267,7 +244,7 @@ else
 
     private string PageTitleText => _model?.Name ?? "Series";
     private string EditHref => "/series/" + Id + "/edit";
-    private string DeleteMessage => "\"" + (_model?.Name ?? string.Empty) + "\" and its Stages will be deleted. The tournaments stay on the schedule.";
+    private string DeleteMessage => "\"" + (_model?.Name ?? string.Empty) + "\" will be deleted. Its tournaments stay on the schedule.";
 
     protected override async Task OnParametersSetAsync()
     {
@@ -301,9 +278,21 @@ else
         }
     }
 
-    private List<SeriesStageViewModel> StagesOf(string kind) => [.. _model!.Stages.Where(s => s.Kind == kind)];
-
-    private static string GroupId(string kind) => "series-group-" + SeriesDisplay.KindClass(kind);
+    private IReadOnlyList<PublicStageViewModel> PublicStages
+    {
+        get
+        {
+            var results = _advancers.ToDictionary(stage => stage.Id);
+            return [.. _model!.Stages.Select(stage =>
+            {
+                var advancing = SeriesDisplay.Advancing(stage.Kind, stage.AdvancingCount, stage.TeamSize, _model.Finale?.FinalistCount);
+                return new PublicStageViewModel(
+                    stage.Id, stage.Order, stage.Kind, stage.TournamentName, TournamentHref(stage), TournamentMeta(stage),
+                    advancing.Primary, advancing.Secondary, SeriesDisplay.Squad(stage.SquadDate, stage.SquadStartTime),
+                    results.GetValueOrDefault(stage.Id));
+            })];
+        }
+    }
 
     private static string TournamentHref(SeriesStageViewModel stage) => "/tournaments/" + stage.TournamentId;
 

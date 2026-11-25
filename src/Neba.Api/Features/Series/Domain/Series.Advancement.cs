@@ -92,43 +92,53 @@ public sealed partial class Series
     }
 
     /// <summary>
-    /// Makes every Computed Qualifying or Survivor Stage whose grace period passed Official, in order. A Stage waits for every
-    /// earlier one, so a stale Stage holds back every later Stage until an admin recomputes it, and the last Qualifying Stage waits for the Backfill. A Placement Stage never becomes Official.
+    /// Marks a reviewed Stage Official. A Stage that is already Official is left alone. See
+    /// <see cref="SeriesAdvancementRules.MakeOfficialBlocker"/> for when a Stage cannot be made Official.
     /// </summary>
-    public AdvanceResult MakeDueOfficial(DateTimeOffset now, TimeSpan grace)
+    public ErrorOr<AdvanceResult> MakeOfficial(SeriesStageId stageId, int expectedVersion, DateTimeOffset now)
     {
-        var trace = new FoldTrace();
-
-        foreach (var stage in Ordered().Where(s => s.Kind != StageKind.Placement))
+        var stage = _stages.Find(s => s.Id == stageId);
+        if (stage is null)
         {
-            if (stage.Status == StageStatus.Official)
-            {
-                continue;
-            }
-
-            if (OfficialDueAt(stage, grace) is not { } due || due > now)
-            {
-                break;
-            }
-
-            stage.MarkOfficial(now);
-            trace.Changed = true;
-            trace.StatusChanged = true;
-            trace.Official.Add(stage.Id);
+            return SeriesAdvancementErrors.StageNotFound(stageId);
         }
+
+        if (stage.Status == StageStatus.Official)
+        {
+            return AdvanceResult.None; // before the version check, so a retry never conflicts
+        }
+
+        var version = EnsureVersion(expectedVersion);
+        if (version.IsError)
+        {
+            return version.Errors;
+        }
+
+        if (MakeOfficialBlocker(stage) is { } blocker)
+        {
+            return blocker;
+        }
+
+        stage.MarkOfficial(now);
+
+        var trace = new FoldTrace { Changed = true, StatusChanged = true };
+        trace.Official.Add(stage.Id);
 
         return Finish(trace);
     }
 
-    /// <summary>When the Stage will become Official, or null. See <see cref="SeriesAdvancementRules.OfficialDueAt"/>.</summary>
-    public DateTimeOffset? OfficialDueAt(SeriesStage stage, TimeSpan grace)
+    /// <summary>Why the Stage cannot be made Official, or null when it can. See <see cref="SeriesAdvancementRules.MakeOfficialBlocker"/>.</summary>
+    public Error? MakeOfficialBlocker(SeriesStage stage)
     {
         ArgumentNullException.ThrowIfNull(stage);
 
-        return SeriesAdvancementRules.OfficialDueAt(
-            stage.Kind, stage.Status, stage.IsStale, stage.ComputedAt,
+        var firstUnofficialEarlier = SeriesAdvancementRules.FirstUnofficialEarlierOrder(
+            _stages.Select(s => (s.Order, s.Status)), stage.Order);
+
+        return SeriesAdvancementRules.MakeOfficialBlocker(
+            stage.Status, stage.IsStale,
             awaitingBackfill: LastQualifyingStage?.Id == stage.Id && BackfillAsOf is null,
-            grace);
+            firstUnofficialEarlier);
     }
 
     // ---------- squad ----------
@@ -180,7 +190,7 @@ public sealed partial class Series
 
     // ---------- overrides ----------
 
-    /// <summary>Adds a bowler who has a result row in the Stage's tournament, then recomputes inline.</summary>
+    /// <summary>Adds a bowler who has a placed result row (Place above 0) in the Stage's tournament, then recomputes inline.</summary>
     public ErrorOr<AdvanceResult> AddOverride(
         SeriesStageId stageId, BowlerId bowlerId, string reason, string createdBy,
         int expectedVersion, AdvancementFacts facts, DateTimeOffset now)
@@ -196,7 +206,7 @@ public sealed partial class Series
         var stage = target.Value;
 
         var hasResultRow = facts.Tournaments.TryGetValue(stage.TournamentId, out var tournament)
-            && tournament.Results.Any(row => row.BowlerId == bowlerId);
+            && tournament.Results.Any(row => row.BowlerId == bowlerId && row.Place > 0);
 
         return (hasResultRow, _fieldEntries.Exists(e => e.BowlerId == bowlerId), stage.Overrides.Any(o => o.BowlerId == bowlerId)) switch
         {

@@ -12,11 +12,13 @@ public sealed class SeriesErrorsTests
     [Fact(DisplayName = "Stage errors should name the Stage and tournament and carry StageOrder metadata")]
     public void StageErrors_ShouldNameStageAndCarryOrder()
     {
-        // Arrange & Act
+        // Arrange
+
+        // Act
         var error = SeriesErrors.TournamentNotInSeason(9, "Callahan's");
 
         // Assert
-        error.Description.ShouldStartWith("Stage 9 (Callahan's): ");
+        error.Description.ShouldStartWith("Tournament 9 (Callahan's): ");
         error.Metadata![SeriesErrors.StageOrderKey].ShouldBe(9);
         error.Type.ShouldBe(ErrorType.Validation);
     }
@@ -24,11 +26,13 @@ public sealed class SeriesErrorsTests
     [Fact(DisplayName = "A Stage error without a tournament name should name only the Stage")]
     public void StageErrors_ShouldOmitTournament_WhenNameIsUnknown()
     {
-        // Arrange & Act
+        // Arrange
+
+        // Act
         var error = SeriesErrors.StageNotFound(2);
 
         // Assert
-        error.Description.ShouldStartWith("Stage 2: ");
+        error.Description.ShouldStartWith("Tournament 2: ");
     }
 
     [Fact(DisplayName = "TournamentInAnotherSeries should be a Conflict")]

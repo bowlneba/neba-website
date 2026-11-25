@@ -178,10 +178,10 @@ public sealed class SeriesDetailTests : IDisposable
         var cut = _ctx.Render<SeriesDetail>(p => p.Add(x => x.Id, SeriesId));
 
         // Assert
-        var squads = cut.FindAll(".series-stage__squad").Select(s => s.TextContent.Trim()).ToList();
-        squads[0].ShouldBeEmpty();
-        squads[2].ShouldBe("9:00 AM squad on 7/12");
-        squads[3].ShouldBeEmpty();
+        var rows = cut.FindAll(".series-stage-list li");
+        rows[0].QuerySelector(".series-stage__squad").ShouldBeNull();
+        rows[2].QuerySelector(".series-stage__squad")!.TextContent.Trim().ShouldBe("9:00 AM squad on 7/12");
+        rows[3].QuerySelector(".series-stage__squad").ShouldBeNull();
     }
 
     [Fact(DisplayName = "Should read the Placement row as 'Top N to the Finale' when the Series has a Finale")]

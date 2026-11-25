@@ -490,6 +490,18 @@ public static class CacheDescriptors
             };
 
         /// <summary>
+        /// Returns a cache descriptor for the public advancers of one Series. It carries the tournaments tag, which
+        /// every Series command and every Stage status change clears.
+        /// </summary>
+        /// <param name="id">The Series identifier.</param>
+        public static CacheDescriptor Advancers(SeriesId id)
+            => new()
+            {
+                Key = $"neba:series:{id}:advancers",
+                Tags = ["neba", Tournaments.Tag, Tag, $"{Tag}:{id}"]
+            };
+
+        /// <summary>
         /// Returns a cache descriptor for the list of Series Finales. It carries the tournaments tag, which
         /// every Series command clears, and the bowling centers tag, because it embeds a center's name.
         /// </summary>

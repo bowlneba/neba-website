@@ -12,35 +12,41 @@ public sealed class SeriesAdvancementErrorsTests
     [Fact(DisplayName = "ConfirmationRequired should say a single Official Stage is official and carry its order")]
     public void ConfirmationRequired_ShouldUseSingularWording_WhenOneStageIsOfficial()
     {
-        // Arrange & Act
+        // Arrange
+
+        // Act
         var error = SeriesAdvancementErrors.ConfirmationRequired([3]);
 
         // Assert
-        error.Description.ShouldStartWith("Stage 3 is official.");
+        error.Description.ShouldStartWith("Tournament 3 is official. Recomputing resets it to Computed.");
         ((int[])error.Metadata![SeriesAdvancementErrors.OfficialStageOrdersKey]).ShouldBe([3]);
     }
 
     [Fact(DisplayName = "ConfirmationRequired should list several Official Stages and say they are official")]
     public void ConfirmationRequired_ShouldUsePluralWording_WhenSeveralStagesAreOfficial()
     {
-        // Arrange & Act
+        // Arrange
+
+        // Act
         var error = SeriesAdvancementErrors.ConfirmationRequired([2, 3, 5]);
 
         // Assert
-        error.Description.ShouldStartWith("Stage 2, 3, 5 are official.");
+        error.Description.ShouldStartWith("Tournaments 2, 3, 5 are official. Recomputing resets them to Computed.");
         ((int[])error.Metadata![SeriesAdvancementErrors.OfficialStageOrdersKey]).ShouldBe([2, 3, 5]);
     }
 
     [Fact(DisplayName = "StageNotComputed should tell the admin to recompute for an Official Stage and to wait for a Pending one")]
     public void StageNotComputed_ShouldExplainTheStatus()
     {
-        // Arrange & Act
+        // Arrange
+
+        // Act
         var official = SeriesAdvancementErrors.StageNotComputed(StageStatus.Official);
         var pending = SeriesAdvancementErrors.StageNotComputed(StageStatus.Pending);
 
         // Assert
-        official.Description.ShouldBe("This Stage is official. Recompute it from the Series page before changing it.");
-        pending.Description.ShouldBe("This Stage has not been computed yet.");
+        official.Description.ShouldBe("This tournament is official. Recompute it from the Series page before changing it.");
+        pending.Description.ShouldBe("This tournament has not been computed yet.");
         official.Code.ShouldBe(pending.Code);
     }
 

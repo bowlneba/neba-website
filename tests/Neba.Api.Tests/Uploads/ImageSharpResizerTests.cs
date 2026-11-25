@@ -40,9 +40,10 @@ public sealed class ImageSharpResizerTests
     private static MemoryStream JpegWithExif(int width, int height, ushort orientation)
     {
         using var image = new Image<Rgba32>(width, height);
-        image.Metadata.ExifProfile = new ExifProfile();
-        image.Metadata.ExifProfile.SetValue(ExifTag.Orientation, orientation);
-        image.Metadata.ExifProfile.SetValue(ExifTag.Software, "camera-app");
+        var exif = new ExifProfile();
+        exif.SetValue(ExifTag.Orientation, orientation);
+        exif.SetValue(ExifTag.Software, "camera-app");
+        image.Metadata.ExifProfile = exif;
         var stream = new MemoryStream();
         image.Save(stream, new JpegEncoder());
         stream.Position = 0;
@@ -307,11 +308,13 @@ public sealed class ImageSharpResizerTests
         // Arrange
         var ct = TestContext.Current.CancellationToken;
         using var image = new Image<Rgba32>(20, 20);
-        image.Metadata.ExifProfile = new ExifProfile();
-        image.Metadata.ExifProfile.SetValue(ExifTag.Software, "camera-app");
+        var exif = new ExifProfile();
+        exif.SetValue(ExifTag.Software, "camera-app");
+        image.Metadata.ExifProfile = exif;
         image.Metadata.XmpProfile = new XmpProfile("<x:xmpmeta xmlns:x=\"adobe:ns:meta/\"/>"u8.ToArray());
-        image.Metadata.IptcProfile = new IptcProfile();
-        image.Metadata.IptcProfile.SetValue(IptcTag.Caption, "private caption");
+        var iptc = new IptcProfile();
+        iptc.SetValue(IptcTag.Caption, "private caption");
+        image.Metadata.IptcProfile = iptc;
         var stream = new MemoryStream();
         await image.SaveAsync(stream, new JpegEncoder(), ct);
         stream.Position = 0;

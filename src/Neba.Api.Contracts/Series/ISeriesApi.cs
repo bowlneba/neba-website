@@ -4,10 +4,12 @@ using Neba.Api.Contracts.Series.EditSeries;
 using Neba.Api.Contracts.Series.EditSeriesLogo;
 using Neba.Api.Contracts.Series.GetSeries;
 using Neba.Api.Contracts.Series.GetSeriesAdvancement;
+using Neba.Api.Contracts.Series.GetSeriesAdvancers;
 using Neba.Api.Contracts.Series.ListSeries;
 using Neba.Api.Contracts.Series.ListSeriesFinales;
 using Neba.Api.Contracts.Series.ListStageResults;
 using Neba.Api.Contracts.Series.ListStageSquads;
+using Neba.Api.Contracts.Series.MakeStageOfficial;
 using Neba.Api.Contracts.Series.PickStageSquad;
 using Neba.Api.Contracts.Series.RecomputeSeriesAdvancement;
 using Neba.Api.Contracts.Uploads;
@@ -29,7 +31,7 @@ public interface ISeriesApi
     [Get("/series/finales")]
     Task<IApiResponse<CollectionResponse<SeriesFinaleSummaryResponse>>> ListSeriesFinalesAsync(CancellationToken cancellationToken = default);
 
-    /// <summary>Gets a Series and its Stage schedule.</summary>
+    /// <summary>Gets a Series and its tournament schedule.</summary>
     [Get("/series/{seriesId}")]
     Task<IApiResponse<SeriesDetailResponse>> GetSeriesAsync(string seriesId, CancellationToken cancellationToken = default);
 
@@ -37,11 +39,11 @@ public interface ISeriesApi
     [Post("/series")]
     Task<IApiResponse<CreatedSeriesResponse>> CreateSeriesAsync(CreateSeriesRequest request, CancellationToken cancellationToken = default);
 
-    /// <summary>Saves a Series' name, full Stage list and Finale. Requires Series.EditSeries.</summary>
+    /// <summary>Saves a Series' name, full tournament list and Finale. Requires Series.EditSeries.</summary>
     [Put("/series/{seriesId}")]
     Task<IApiResponse> EditSeriesAsync(string seriesId, EditSeriesRequest request, CancellationToken cancellationToken = default);
 
-    /// <summary>Deletes an unlocked Series and its Stages. Requires Series.DeleteSeries.</summary>
+    /// <summary>Deletes an unlocked Series and its tournaments. Requires Series.DeleteSeries.</summary>
     [Delete("/series/{seriesId}")]
     Task<IApiResponse> DeleteSeriesAsync(string seriesId, CancellationToken cancellationToken = default);
 
@@ -54,19 +56,27 @@ public interface ISeriesApi
     [Put("/series/{seriesId}/logo")]
     Task<IApiResponse> EditSeriesLogoAsync(string seriesId, EditSeriesLogoRequest request, CancellationToken cancellationToken = default);
 
-    /// <summary>Gets each Stage's status, output and markers, and the Version writes must send. Requires Series.EditSeries.</summary>
+    /// <summary>Gets each tournament's status, output and markers, and the Version writes must send. Requires Series.EditSeries or Series.MakeStageOfficial.</summary>
     [Get("/series/{seriesId}/advancement")]
     Task<IApiResponse<SeriesAdvancementResponse>> GetSeriesAdvancementAsync(string seriesId, CancellationToken cancellationToken = default);
 
-    /// <summary>Recomputes from a Stage to the end. Requires Series.EditSeries.</summary>
+    /// <summary>Gets the bowlers who advanced out of each settled tournament. Public.</summary>
+    [Get("/series/{seriesId}/advancers")]
+    Task<IApiResponse<SeriesAdvancersResponse>> GetSeriesAdvancersAsync(string seriesId, CancellationToken cancellationToken = default);
+
+    /// <summary>Recomputes from a tournament to the end. Requires Series.EditSeries.</summary>
     [Post("/series/{seriesId}/stages/{stageId}/recomputations")]
     Task<IApiResponse> RecomputeSeriesAdvancementAsync(string seriesId, string stageId, RecomputeSeriesAdvancementRequest request, CancellationToken cancellationToken = default);
 
-    /// <summary>Picks a Survivor Stage's squad. Requires Series.EditSeries.</summary>
+    /// <summary>Marks a reviewed tournament Official. Requires Series.MakeStageOfficial.</summary>
+    [Put("/series/{seriesId}/stages/{stageId}/official")]
+    Task<IApiResponse> MakeStageOfficialAsync(string seriesId, string stageId, MakeStageOfficialRequest request, CancellationToken cancellationToken = default);
+
+    /// <summary>Picks a Survivor tournament's squad. Requires Series.EditSeries.</summary>
     [Put("/series/{seriesId}/stages/{stageId}/squad")]
     Task<IApiResponse> PickStageSquadAsync(string seriesId, string stageId, PickStageSquadRequest request, CancellationToken cancellationToken = default);
 
-    /// <summary>Adds a bowler to a Qualifying Stage or clears a slot. Requires Series.ManageAdvancement.</summary>
+    /// <summary>Adds a bowler to a Qualifying tournament or clears a slot. Requires Series.ManageAdvancement.</summary>
     [Post("/series/{seriesId}/stages/{stageId}/overrides")]
     Task<IApiResponse<CreatedStageOverrideResponse>> CreateStageOverrideAsync(string seriesId, string stageId, CreateStageOverrideRequest request, CancellationToken cancellationToken = default);
 
@@ -74,11 +84,11 @@ public interface ISeriesApi
     [Delete("/series/{seriesId}/stages/{stageId}/overrides/{overrideId}")]
     Task<IApiResponse> RemoveStageOverrideAsync(string seriesId, string stageId, string overrideId, [Query] int version, CancellationToken cancellationToken = default);
 
-    /// <summary>Lists the result rows of a Stage's tournament, for the add-bowler picker. Requires Series.ManageAdvancement.</summary>
+    /// <summary>Lists the result rows of the Series tournament, for the add-bowler picker. Requires Series.ManageAdvancement.</summary>
     [Get("/series/{seriesId}/stages/{stageId}/results")]
     Task<IApiResponse<CollectionResponse<StageResultSummaryResponse>>> ListStageResultsAsync(string seriesId, string stageId, CancellationToken cancellationToken = default);
 
-    /// <summary>Lists the squads of a Stage's tournament, for the squad picker. Requires Series.EditSeries.</summary>
+    /// <summary>Lists the squads of the Series tournament, for the squad picker. Requires Series.EditSeries.</summary>
     [Get("/series/{seriesId}/stages/{stageId}/squads")]
     Task<IApiResponse<CollectionResponse<StageSquadSummaryResponse>>> ListStageSquadsAsync(string seriesId, string stageId, CancellationToken cancellationToken = default);
 }

@@ -15,7 +15,8 @@ public static class SeriesPositionResponseFactory
         string? bowlerName = null,
         int? position = null,
         bool? bowled = null,
-        bool? isFinalist = null)
+        bool? isFinalist = null,
+        int? tournamentPlace = null)
         => new()
         {
             BowlerId = bowlerId ?? ValidBowlerId,
@@ -23,6 +24,7 @@ public static class SeriesPositionResponseFactory
             Position = position ?? ValidPosition,
             Bowled = bowled ?? ValidBowled,
             IsFinalist = isFinalist,
+            TournamentPlace = tournamentPlace,
         };
 
     /// <summary>Positions 1..count, each a new bowler.</summary>

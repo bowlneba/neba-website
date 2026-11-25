@@ -1001,8 +1001,6 @@ namespace Neba.Api.Database.Migrations
 
                     b.ToTable("series_stages", "app", t =>
                         {
-                            t.HasCheckConstraint("ck_series_stages_placement_never_official", "NOT (kind = 3 AND status = 2)");
-
                             t.HasCheckConstraint("ck_series_stages_slot_count_not_negative", "slot_count IS NULL OR slot_count >= 0");
 
                             t.HasCheckConstraint("ck_series_stages_status_timestamps", "(status = 0 AND computed_at_utc IS NULL AND official_at_utc IS NULL) OR (status = 1 AND computed_at_utc IS NOT NULL AND official_at_utc IS NULL) OR (status = 2 AND computed_at_utc IS NOT NULL AND official_at_utc IS NOT NULL)");

@@ -3,7 +3,6 @@ using Microsoft.Extensions.DependencyInjection;
 
 using Neba.Api.BackgroundJobs;
 using Neba.Api.Features.Series;
-using Neba.Api.Features.Series.MakeDueStagesOfficial;
 using Neba.TestFactory.Attributes;
 
 namespace Neba.Api.Tests.Features.Series;
@@ -12,23 +11,21 @@ namespace Neba.Api.Tests.Features.Series;
 [Component("Series")]
 public sealed class SeriesFeatureConfigurationTests
 {
-    [Fact(DisplayName = "UseSeriesMakeOfficialJob should schedule the make-official job every 15 minutes")]
-    public void UseSeriesMakeOfficialJob_ShouldRegisterRecurringJob_EveryFifteenMinutes()
+    [Fact(DisplayName = "UseSeriesRemoveMakeOfficialJob should remove the old make-official recurring job and schedule nothing")]
+    public void UseSeriesRemoveMakeOfficialJob_ShouldRemoveRecurringJob()
     {
         // Arrange
         var scheduler = new Mock<IBackgroundJobScheduler>(MockBehavior.Strict);
-        scheduler.Setup(s => s.AddOrUpdateRecurring("series-make-official", new MakeDueStagesOfficialJob(), "0 23 * * 1"));
+        scheduler.Setup(s => s.RemoveRecurring("series-make-official"));
         var builder = WebApplication.CreateSlimBuilder();
         builder.Services.AddSingleton(scheduler.Object);
         using var app = builder.Build();
 
         // Act
-        app.UseSeriesMakeOfficialJob();
+        app.UseSeriesRemoveMakeOfficialJob();
 
         // Assert
-        scheduler.Verify(
-            s => s.AddOrUpdateRecurring("series-make-official", new MakeDueStagesOfficialJob(), "0 23 * * 1"),
-            Times.Once);
+        scheduler.Verify(s => s.RemoveRecurring("series-make-official"), Times.Once);
         scheduler.Invocations.ShouldHaveSingleItem();
     }
 }

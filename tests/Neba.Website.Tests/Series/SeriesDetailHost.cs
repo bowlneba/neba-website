@@ -13,8 +13,10 @@ using Neba.Api.Contracts.Series;
 using Neba.Api.Contracts.Series.CreateStageOverride;
 using Neba.Api.Contracts.Series.GetSeries;
 using Neba.Api.Contracts.Series.GetSeriesAdvancement;
+using Neba.Api.Contracts.Series.GetSeriesAdvancers;
 using Neba.Api.Contracts.Series.ListStageResults;
 using Neba.Api.Contracts.Series.ListStageSquads;
+using Neba.Api.Contracts.Series.MakeStageOfficial;
 using Neba.Api.Contracts.Series.PickStageSquad;
 using Neba.Api.Contracts.Series.RecomputeSeriesAdvancement;
 using Neba.TestFactory.Series;
@@ -53,6 +55,8 @@ internal sealed class SeriesDetailHost : IDisposable
 
         TimeZone.Setup(x => x.ToLocalAsync(It.IsAny<DateTimeOffset>())).ReturnsAsync((DateTimeOffset utc) => utc);
 
+        SetupAdvancers(SeriesAdvancersResponseFactory.Create([]));
+
         Ctx.Services.AddSingleton(Api.Object);
         Ctx.Services.AddSingleton(TimeZone.Object);
         Ctx.Services.AddSingleton(sp => new ApiExecutor(stopwatch.Object, sp.GetRequiredService<NavigationManager>(), NullLogger<ApiExecutor>.Instance));
@@ -82,18 +86,34 @@ internal sealed class SeriesDetailHost : IDisposable
 
     public IRenderedComponent<SeriesDetail> Render() => Ctx.Render<SeriesDetail>(p => p.Add(x => x.Id, SeriesId));
 
-    /// <summary>Holds Series.EditSeries only.</summary>
+    /// <summary>Holds Series.EditSeries and Series.MakeStageOfficial.</summary>
     public void SignInAsManager()
     {
         Auth.SetAuthorized("test-user");
-        Auth.SetPolicies(Permissions.EditSeries.PolicyName);
+        Auth.SetPolicies(Permissions.CanViewSeriesAdvancementPolicyName, Permissions.EditSeries.PolicyName, Permissions.MakeStageOfficial.PolicyName);
     }
 
-    /// <summary>Holds Series.EditSeries and Series.ManageAdvancement.</summary>
+    /// <summary>Holds Series.EditSeries only: sees the rail and can Recompute, but cannot mark a Stage Official.</summary>
+    public void SignInAsEditorWithoutMakeOfficial()
+    {
+        Auth.SetAuthorized("test-user");
+        Auth.SetPolicies(Permissions.CanViewSeriesAdvancementPolicyName, Permissions.EditSeries.PolicyName);
+    }
+
+    /// <summary>Holds Series.MakeStageOfficial only: sees the rail and can mark a Stage Official, but not Recompute or Pick squad.</summary>
+    public void SignInAsTournamentDirector()
+    {
+        Auth.SetAuthorized("test-user");
+        Auth.SetPolicies(Permissions.CanViewSeriesAdvancementPolicyName, Permissions.MakeStageOfficial.PolicyName);
+    }
+
+    /// <summary>Holds Series.EditSeries, Series.ManageAdvancement and Series.MakeStageOfficial.</summary>
     public void SignInAsAdmin()
     {
         Auth.SetAuthorized("test-user");
-        Auth.SetPolicies(Permissions.EditSeries.PolicyName, Permissions.ManageAdvancement.PolicyName);
+        Auth.SetPolicies(
+            Permissions.CanViewSeriesAdvancementPolicyName, Permissions.EditSeries.PolicyName,
+            Permissions.ManageAdvancement.PolicyName, Permissions.MakeStageOfficial.PolicyName);
     }
 
     /// <summary>Signed in, with a Series permission that is not Series.EditSeries.</summary>
@@ -124,6 +144,19 @@ internal sealed class SeriesDetailHost : IDisposable
             .ToArray();
 
         SetupDetail(SeriesDetailResponseFactory.Create(id: SeriesId, finale: SeriesFinaleResponseFactory.Create(), logoUrl: logo, stages: stages));
+    }
+
+    /// <summary>What the public advancers call returns. The default is no settled Stage.</summary>
+    public void SetupAdvancers(SeriesAdvancersResponse advancers)
+    {
+        var response = Track(Stub(HttpStatusCode.OK, advancers));
+        Api.Setup(x => x.GetSeriesAdvancersAsync(SeriesId, It.IsAny<CancellationToken>())).ReturnsAsync(response);
+    }
+
+    public void SetupAdvancersStatus(HttpStatusCode status)
+    {
+        var response = Track(Stub<SeriesAdvancersResponse>(status, null));
+        Api.Setup(x => x.GetSeriesAdvancersAsync(SeriesId, It.IsAny<CancellationToken>())).ReturnsAsync(response);
     }
 
     public void SetupAdvancement(SeriesAdvancementResponse advancement)
@@ -248,6 +281,19 @@ internal sealed class SeriesDetailHost : IDisposable
 
     public List<PickStageSquadRequest> SetupPickSquad(string stageId, IApiResponse response)
         => SetupPickSquad(stageId, () => Task.FromResult(response));
+
+    /// <summary>Sets up the Mark official write for <paramref name="stageId"/>; returns the requests it receives.</summary>
+    public List<MakeStageOfficialRequest> SetupMakeOfficial(string stageId, IApiResponse response)
+    {
+        var requests = new List<MakeStageOfficialRequest>();
+        Api.Setup(x => x.MakeStageOfficialAsync(SeriesId, stageId, It.IsAny<MakeStageOfficialRequest>(), It.IsAny<CancellationToken>()))
+            .Returns((string _, string _, MakeStageOfficialRequest request, CancellationToken _) =>
+            {
+                requests.Add(request);
+                return Task.FromResult(response);
+            });
+        return requests;
+    }
 
     /// <summary>A completed OK squads response.</summary>
     public IApiResponse<CollectionResponse<StageSquadSummaryResponse>> SquadsResponse(params StageSquadSummaryResponse[] squads)

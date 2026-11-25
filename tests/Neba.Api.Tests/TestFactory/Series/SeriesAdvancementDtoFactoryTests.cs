@@ -25,7 +25,9 @@ public sealed class SeriesAdvancementDtoFactoryTests
     [Fact(DisplayName = "StageAdvancementDtoFactory Create should return a Pending Qualifying Stage with no output with no arguments")]
     public void StageAdvancementDtoFactory_Create_ShouldReturnDefaults()
     {
-        // Arrange & Act
+        // Arrange
+
+        // Act
         var dto = StageAdvancementDtoFactory.Create();
 
         // Assert
@@ -36,7 +38,7 @@ public sealed class SeriesAdvancementDtoFactoryTests
         dto.IsStale.ShouldBeFalse();
         dto.NeedsSquad.ShouldBeFalse();
         dto.ComputedAt.ShouldBeNull();
-        dto.OfficialDueAt.ShouldBeNull();
+        dto.CanMakeOfficial.ShouldBeFalse();
         dto.OfficialAt.ShouldBeNull();
         dto.SlotCount.ShouldBeNull();
         dto.VacantSlotCount.ShouldBeNull();

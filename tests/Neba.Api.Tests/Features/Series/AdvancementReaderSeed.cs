@@ -58,7 +58,8 @@ internal static class AdvancementReaderSeed
 
     public static async Task<SeriesAggregate> AddSeriesAsync(
         AppDbContext dbContext, Season season, Tournament qualifier, Tournament survivor, Tournament placement, CancellationToken ct,
-        string? name = null)
+        string? name = null,
+        SeriesFinaleDefinition? finale = null)
     {
         var series = SeriesFactory.CreateFor(
             season,
@@ -67,6 +68,7 @@ internal static class AdvancementReaderSeed
                 (survivor, StageKind.Survivor, 20, survivor.StartDate, new TimeOnly(9, 0)),
                 (placement, StageKind.Placement, null, null, null),
             ],
+            finale,
             name: name);
 
         dbContext.Series.Add(series);

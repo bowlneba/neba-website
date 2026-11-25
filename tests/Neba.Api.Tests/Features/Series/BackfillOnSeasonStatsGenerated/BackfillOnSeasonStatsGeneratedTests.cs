@@ -27,7 +27,6 @@ namespace Neba.Api.Tests.Features.Series.BackfillOnSeasonStatsGenerated;
 public sealed class BackfillOnSeasonStatsGeneratedTests(AppDbContextFixture fixture)
     : IClassFixture<AppDbContextFixture>, IAsyncLifetime
 {
-    private static readonly TimeSpan Grace = TimeSpan.FromHours(24);
 
     private readonly AppDbContext _dbContext = fixture.CreateDbContext();
     private readonly AdvancementRunHarness _harness = new(fixture);
@@ -186,7 +185,7 @@ public sealed class BackfillOnSeasonStatsGeneratedTests(AppDbContextFixture fixt
         var official = _harness.CreateRun(FactsReaderDoubles.Untouched());
         var result = await official.Run.RunWithoutFactsAsync(
             scenario.SeriesId,
-            (series, _, now) => series.MakeDueOfficial(now.AddDays(3), Grace),
+            (series, _, now) => series.MakeReadyStagesOfficial(now.AddDays(3)),
             AdvancementRunHarness.Wait,
             TestContext.Current.CancellationToken);
 

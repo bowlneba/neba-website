@@ -169,7 +169,7 @@ public sealed class EditSeriesPageTests : IDisposable
         IsRemovable(cut, 0).ShouldBeFalse();
         IsRemovable(cut, 1).ShouldBeTrue();
         IsRemovable(cut, 2).ShouldBeFalse();
-        cut.Find("[data-testid='stage-cancelled-note']").TextContent.ShouldBe("Tournament cancelled: remove this Stage");
+        cut.Find("[data-testid='stage-cancelled-note']").TextContent.ShouldBe("Tournament cancelled: remove it from the Series");
         cut.Markup.ShouldContain("can still be removed");
         cut.FindAll("[data-testid='series-cancelled-check-warning']").ShouldBeEmpty();
     }
@@ -195,6 +195,19 @@ public sealed class EditSeriesPageTests : IDisposable
         // Assert
         IsRemovable(cut, 1).ShouldBe(expected);
         cut.FindAll("[data-testid='stage-remove-cancelled']").Count.ShouldBe(expected ? 1 : 0);
+    }
+
+    [Fact(DisplayName = "The page should explain that the tournaments go in order and each has a role")]
+    public async Task Render_ShouldShowTournamentOrderCopy()
+    {
+        // Arrange
+        SetupDetail(isLocked: false);
+
+        // Act
+        var cut = await RenderAsync();
+
+        // Assert
+        cut.Find(".page-title-inner p").TextContent.ShouldBe("Set the tournaments in order. Each one has a role in the Series.");
     }
 
     [Fact(DisplayName = "A Stage missing from the advancement response should not be removable")]
@@ -246,7 +259,7 @@ public sealed class EditSeriesPageTests : IDisposable
         // Assert
         var warning = cut.Find("[data-testid='series-cancelled-check-warning']");
         warning.TextContent.ShouldContain("Cancelled tournaments not checked");
-        warning.TextContent.ShouldContain("A Stage whose tournament was cancelled can't be removed until this check works. Reload the page to try again.");
+        warning.TextContent.ShouldContain("A cancelled tournament can't be removed until this check works. Reload the page to try again.");
         cut.FindAll("[data-testid='stage-remove-cancelled']").ShouldBeEmpty();
         cut.FindAll("li.series-grid__row").Count.ShouldBe(3);
         cut.Markup.ShouldNotContain("can still be removed");

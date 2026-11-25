@@ -71,7 +71,7 @@
                 @if (Model.LogoUrl is not null)
                 {
                     <div class="series-editor__logo-current">
-                        <SeriesLogoTile LogoUrl="@Model.LogoUrl" Name="@Model.Name" Size="SeriesLogoTile.Large" />
+                        <SeriesLogoTile LogoUrl="@Model.LogoUrl" Name="@Model.Name" Size="@SeriesLogoTile.Large" />
                         <button type="button" class="neba-btn neba-btn-secondary" @onclick="RemoveLogo">Remove logo</button>
                     </div>
                 }
@@ -108,8 +108,8 @@
 
 <ConfirmActionModal IsOpen="@(_pendingSeasonId is not null)"
                     Title="Change season?"
-                    Message="Tournaments belong to one season, so changing it clears the Stages you've added."
-                    ConfirmLabel="Change and clear Stages"
+                    Message="Tournaments belong to one season, so changing it clears the tournaments you've added."
+                    ConfirmLabel="Change and clear tournaments"
                     BusyLabel="Changing..."
                     CancelLabel="Keep season"
                     IsBusy="false"

@@ -37,15 +37,15 @@ public sealed class SeriesStateMachineTests
         result.StatusChanged.ShouldBeTrue();
     }
 
-    [Fact(DisplayName = "MakeDueOfficial should move a Computed Stage to Official and stamp OfficialAt")]
-    public void MakeDueOfficial_ShouldMoveStageToOfficial()
+    [Fact(DisplayName = "MakeReadyOfficial should move a Computed Stage to Official and stamp OfficialAt")]
+    public void MakeReadyOfficial_ShouldMoveStageToOfficial()
     {
         // Arrange
         var harness = AdvancementHarness.Create(StageKind.Qualifying).Advanced();
         var stage = harness.Stage(1);
 
         // Act
-        var result = harness.MakeDueOfficial();
+        var result = harness.MakeReadyOfficial();
 
         // Assert
         stage.Status.ShouldBe(StageStatus.Official);
@@ -54,8 +54,8 @@ public sealed class SeriesStateMachineTests
         result.StatusChanged.ShouldBeTrue();
     }
 
-    [Fact(DisplayName = "MakeDueOfficial should hold back a later Stage while an earlier Stage is Stale")]
-    public void MakeDueOfficial_ShouldHoldBackLaterStage_WhenEarlierStageIsStale()
+    [Fact(DisplayName = "MakeReadyOfficial should hold back a later Stage while an earlier Stage is Stale")]
+    public void MakeReadyOfficial_ShouldHoldBackLaterStage_WhenEarlierStageIsStale()
     {
         // Arrange
         var harness = AdvancementHarness.Create(StageKind.Qualifying, StageKind.Survivor, StageKind.Placement).Advanced();
@@ -65,7 +65,7 @@ public sealed class SeriesStateMachineTests
         harness.Stage(2).Status.ShouldBe(StageStatus.Computed);
 
         // Act
-        var result = harness.MakeDueOfficial(Now.AddDays(10));
+        var result = harness.MakeReadyOfficial(Now.AddDays(10));
 
         // Assert
         harness.Stage(1).Status.ShouldBe(StageStatus.Computed);
@@ -148,7 +148,7 @@ public sealed class SeriesStateMachineTests
         var harness = AdvancementHarness.Create(StageKind.Qualifying).Advanced();
         if (official)
         {
-            _ = harness.MakeDueOfficial();
+            _ = harness.MakeReadyOfficial();
         }
 
         var statusBefore = harness.Stage(1).Status;
@@ -171,7 +171,7 @@ public sealed class SeriesStateMachineTests
     {
         // Arrange
         var harness = AdvancementHarness.Create(StageKind.Qualifying).Advanced();
-        _ = harness.MakeDueOfficial();
+        _ = harness.MakeReadyOfficial();
         var version = harness.Series.Version;
 
         // Act
@@ -189,7 +189,7 @@ public sealed class SeriesStateMachineTests
     {
         // Arrange
         var harness = AdvancementHarness.Create(StageKind.Qualifying).Advanced();
-        _ = harness.MakeDueOfficial();
+        _ = harness.MakeReadyOfficial();
         var first = harness.Qualifiers(1)[0];
         harness.SwapFirstTwoPlaces(1);
 
@@ -213,7 +213,7 @@ public sealed class SeriesStateMachineTests
     {
         // Arrange
         var harness = AdvancementHarness.Create(StageKind.Qualifying).Advanced();
-        _ = harness.MakeDueOfficial();
+        _ = harness.MakeReadyOfficial();
         harness.SwapFirstTwoPlaces(1);
         _ = harness.Advance(now: Now.AddDays(3));
         var version = harness.Series.Version;
@@ -233,7 +233,7 @@ public sealed class SeriesStateMachineTests
     {
         // Arrange
         var harness = AdvancementHarness.Create(StageKind.Qualifying).Advanced();
-        _ = harness.MakeDueOfficial();
+        _ = harness.MakeReadyOfficial();
         var version = harness.Series.Version;
 
         // Act
@@ -253,7 +253,7 @@ public sealed class SeriesStateMachineTests
     {
         // Arrange
         var harness = AdvancementHarness.Create(StageKind.Qualifying, StageKind.Qualifying).Advanced();
-        _ = harness.MakeDueOfficial();
+        _ = harness.MakeReadyOfficial();
 
         // Act
         var fromFirst = harness.Recompute(1, confirm: false);
@@ -271,7 +271,7 @@ public sealed class SeriesStateMachineTests
         var harness = AdvancementHarness.Create(StageKind.Qualifying, StageKind.Qualifying)
             .SetStatus(2, TournamentStatus.Scheduled)
             .Advanced();
-        _ = harness.MakeDueOfficial();
+        _ = harness.MakeReadyOfficial();
 
         // Act
         var result = harness.Recompute(2, confirm: false);
@@ -287,7 +287,7 @@ public sealed class SeriesStateMachineTests
     {
         // Arrange
         var harness = AdvancementHarness.Create(StageKind.Qualifying).Advanced();
-        _ = harness.MakeDueOfficial();
+        _ = harness.MakeReadyOfficial();
         var first = harness.Qualifiers(1)[0];
         harness.SwapFirstTwoPlaces(1);
         _ = harness.Advance(now: Now.AddDays(3));
@@ -313,7 +313,7 @@ public sealed class SeriesStateMachineTests
     {
         // Arrange
         var harness = AdvancementHarness.Create(StageKind.Qualifying).Advanced();
-        _ = harness.MakeDueOfficial();
+        _ = harness.MakeReadyOfficial();
         var version = harness.Series.Version;
 
         // Act
@@ -331,7 +331,7 @@ public sealed class SeriesStateMachineTests
     {
         // Arrange
         var harness = AdvancementHarness.Create(StageKind.Qualifying).Advanced();
-        _ = harness.MakeDueOfficial();
+        _ = harness.MakeReadyOfficial();
         harness.SetResults(1, []);
         var later = Now.AddDays(5);
 
@@ -387,7 +387,7 @@ public sealed class SeriesStateMachineTests
     {
         // Arrange
         var harness = AdvancementHarness.Create(StageKind.Qualifying).Advanced();
-        _ = harness.MakeDueOfficial();
+        _ = harness.MakeReadyOfficial();
 
         // Act
         var result = harness.Recompute(1, confirm: false, version: harness.Series.Version - 1);
@@ -397,56 +397,24 @@ public sealed class SeriesStateMachineTests
         result.FirstError.Type.ShouldBe(ErrorType.Conflict);
     }
 
-    // ---- MakeDueOfficial ----
+    // ---- MakeReadyOfficial ----
 
-    [Fact(DisplayName = "MakeDueOfficial should wait until the grace period has passed")]
-    public void MakeDueOfficial_ShouldWaitForTheGracePeriod()
-    {
-        // Arrange
-        var harness = AdvancementHarness.Create(StageKind.Qualifying).Advanced();
-
-        // Act
-        var early = harness.MakeDueOfficial(Now + Grace - TimeSpan.FromTicks(1));
-        var onTime = harness.MakeDueOfficial(Now + Grace);
-
-        // Assert
-        early.OfficialStageIds.ShouldBeEmpty();
-        onTime.OfficialStageIds.ShouldBe([harness.Stage(1).Id]);
-    }
-
-    [Fact(DisplayName = "MakeDueOfficial should make Qualifying and Survivor Stages Official in order")]
-    public void MakeDueOfficial_ShouldMakeQualifyingAndSurvivorStagesOfficial()
+    [Fact(DisplayName = "MakeReadyOfficial should make Qualifying and Survivor Stages Official in order")]
+    public void MakeReadyOfficial_ShouldMakeQualifyingAndSurvivorStagesOfficial()
     {
         // Arrange
         var harness = AdvancementHarness.Create(StageKind.Qualifying, StageKind.Survivor, StageKind.Survivor).Advanced();
 
         // Act
-        var result = harness.MakeDueOfficial();
+        var result = harness.MakeReadyOfficial();
 
         // Assert
         result.OfficialStageIds.ShouldBe([harness.Stage(1).Id, harness.Stage(2).Id, harness.Stage(3).Id]);
         harness.Series.Stages.ShouldAllBe(stage => stage.Status == StageStatus.Official);
     }
 
-    [Fact(DisplayName = "MakeDueOfficial should wait for an earlier Stage whose grace period has not ended")]
-    public void MakeDueOfficial_ShouldWaitForEarlierStages()
-    {
-        // Arrange
-        var harness = AdvancementHarness.Create(StageKind.Qualifying, StageKind.Qualifying).Advanced();
-        harness.SwapFirstTwoPlaces(1);
-        _ = harness.Advance(now: Now.AddHours(20)); // Stage 1 recomputed later; Stage 2 keeps its earlier ComputedAt
-
-        // Act
-        var beforeFirstIsDue = harness.MakeDueOfficial(Now.AddHours(25));
-        var afterBothAreDue = harness.MakeDueOfficial(Now.AddHours(45));
-
-        // Assert
-        beforeFirstIsDue.OfficialStageIds.ShouldBeEmpty();
-        afterBothAreDue.OfficialStageIds.ShouldBe([harness.Stage(1).Id, harness.Stage(2).Id]);
-    }
-
-    [Fact(DisplayName = "MakeDueOfficial should skip a Stale Stage and hold every Stage after it")]
-    public void MakeDueOfficial_ShouldSkipStaleStages()
+    [Fact(DisplayName = "MakeReadyOfficial should skip a Stale Stage and hold every Stage after it")]
+    public void MakeReadyOfficial_ShouldSkipStaleStages()
     {
         // Arrange
         var harness = AdvancementHarness.Create(StageKind.Qualifying, StageKind.Qualifying).Advanced();
@@ -454,7 +422,7 @@ public sealed class SeriesStateMachineTests
         _ = harness.Advance(now: Now.AddHours(1));
 
         // Act
-        var result = harness.MakeDueOfficial(Now.AddDays(10));
+        var result = harness.MakeReadyOfficial(Now.AddDays(10));
 
         // Assert
         harness.Stage(1).IsStale.ShouldBeTrue();
@@ -462,8 +430,8 @@ public sealed class SeriesStateMachineTests
         harness.Series.Stages.ShouldAllBe(stage => stage.Status == StageStatus.Computed);
     }
 
-    [Fact(DisplayName = "MakeDueOfficial should hold the last Qualifying Stage until the Backfill ran")]
-    public void MakeDueOfficial_ShouldHoldLastQualifyingStage_UntilBackfillRan()
+    [Fact(DisplayName = "MakeReadyOfficial should hold the last Qualifying Stage until the Backfill ran")]
+    public void MakeReadyOfficial_ShouldHoldLastQualifyingStage_UntilBackfillRan()
     {
         // Arrange
         var harness = AdvancementHarness.Create(StageKind.Qualifying);
@@ -474,28 +442,28 @@ public sealed class SeriesStateMachineTests
         var stage = harness.Stage(1);
 
         // Act
-        var withoutBackfill = harness.MakeDueOfficial(Now.AddDays(10));
-        var dueAtBefore = harness.Series.OfficialDueAt(stage, Grace);
+        var withoutBackfill = harness.MakeReadyOfficial(Now.AddDays(10));
+        var blockedBefore = harness.Series.MakeOfficialBlocker(stage);
         harness.SetBackfill(BackfillFactsFactory.Create(harness.EndDate(1), ready: false, points: points));
         _ = harness.Advance(now: Now.AddHours(1));
-        var notReady = harness.MakeDueOfficial(Now.AddDays(10));
+        var notReady = harness.MakeReadyOfficial(Now.AddDays(10));
         harness.SetBackfill(BackfillFactsFactory.Create(harness.EndDate(1), ready: true, points: points));
         _ = harness.Advance(now: Now.AddHours(2));
-        var dueAtAfter = harness.Series.OfficialDueAt(stage, Grace);
-        var ready = harness.MakeDueOfficial(Now.AddHours(2) + Grace);
+        var blockedAfter = harness.Series.MakeOfficialBlocker(stage);
+        var ready = harness.MakeReadyOfficial(Now.AddHours(2) + Grace);
 
         // Assert
         withoutBackfill.Changed.ShouldBeFalse();
-        dueAtBefore.ShouldBeNull();
+        blockedBefore.ShouldBe(SeriesAdvancementErrors.OfficialAwaitingBackfill);
         notReady.Changed.ShouldBeFalse();
-        dueAtAfter.ShouldBe(Now.AddHours(2) + Grace);
+        blockedAfter.ShouldBeNull();
         ready.OfficialStageIds.ShouldBe([stage.Id]);
         harness.Series.BackfillAsOf.ShouldBe(harness.EndDate(1));
         harness.Series.FieldEntries.Single(entry => entry.IsBackfill).BowlerId.ShouldBe(replacement);
     }
 
-    [Fact(DisplayName = "MakeDueOfficial should not hold an earlier Qualifying Stage for the Backfill")]
-    public void MakeDueOfficial_ShouldNotHoldEarlierQualifyingStage()
+    [Fact(DisplayName = "MakeReadyOfficial should not hold an earlier Qualifying Stage for the Backfill")]
+    public void MakeReadyOfficial_ShouldNotHoldEarlierQualifyingStage()
     {
         // Arrange
         var harness = AdvancementHarness.Create(StageKind.Qualifying, StageKind.Qualifying)
@@ -503,27 +471,26 @@ public sealed class SeriesStateMachineTests
             .Advanced();
 
         // Act
-        var result = harness.MakeDueOfficial();
+        var result = harness.MakeReadyOfficial();
 
         // Assert
         result.OfficialStageIds.ShouldBe([harness.Stage(1).Id]);
         harness.Stage(2).Status.ShouldBe(StageStatus.Pending);
     }
 
-    [Fact(DisplayName = "MakeDueOfficial should never make a Placement Stage Official")]
-    public void MakeDueOfficial_ShouldNeverMakePlacementOfficial()
+    [Fact(DisplayName = "MakeReadyOfficial should make a ready Placement Stage Official too")]
+    public void MakeReadyOfficial_ShouldMakePlacementOfficial()
     {
         // Arrange
         var harness = AdvancementHarness.Create(StageKind.Qualifying, StageKind.Placement).Advanced();
         var placement = harness.Stage(2);
 
         // Act
-        var result = harness.MakeDueOfficial(Now.AddDays(365));
+        var result = harness.MakeReadyOfficial(Now.AddDays(365));
 
         // Assert
-        result.OfficialStageIds.ShouldBe([harness.Stage(1).Id]);
-        placement.Status.ShouldBe(StageStatus.Computed);
-        harness.Series.OfficialDueAt(placement, Grace).ShouldBeNull();
+        result.OfficialStageIds.ShouldBe([harness.Stage(1).Id, placement.Id]);
+        placement.Status.ShouldBe(StageStatus.Official);
     }
 
     // ---- LastQualifyingStage ----

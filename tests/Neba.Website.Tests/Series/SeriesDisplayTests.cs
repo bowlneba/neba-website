@@ -281,11 +281,13 @@ public sealed class SeriesDisplayTests
     }
 
     [Theory(DisplayName = "RowsNeedChanges should use the singular for one row and the plural for more")]
-    [InlineData(1, "1 Stage needs changes before this Series can be saved.")]
-    [InlineData(2, "2 Stages need changes before this Series can be saved.")]
+    [InlineData(1, "Changes are still needed in 1 tournament before this Series can be saved.", TestDisplayName = "one tournament")]
+    [InlineData(2, "Changes are still needed in 2 tournaments before this Series can be saved.", TestDisplayName = "two tournaments")]
     public void RowsNeedChanges_ShouldAgreeWithCount(int count, string expected)
     {
-        // Arrange & Act
+        // Arrange
+
+        // Act
         var text = SeriesDisplay.RowsNeedChanges(count);
 
         // Assert
