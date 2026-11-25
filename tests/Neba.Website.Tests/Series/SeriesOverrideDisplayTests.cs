@@ -8,8 +8,8 @@ namespace Neba.Website.Tests.Series;
 public sealed class SeriesOverrideDisplayTests
 {
     [Theory(DisplayName = "AddBowlerLabel should name the Stage order")]
-    [InlineData(1, "Add bowler to Stage 1")]
-    [InlineData(12, "Add bowler to Stage 12")]
+    [InlineData(1, "Add bowler to the 1st tournament")]
+    [InlineData(12, "Add bowler to the 12th tournament")]
     public void AddBowlerLabel_ShouldNameStage(int order, string expected)
     {
         // Arrange & Act

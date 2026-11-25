@@ -93,7 +93,7 @@ public sealed class SeriesAdvancementRailTests : IDisposable
         var strip = cut.Find("[data-testid='series-strip']");
         strip.GetAttribute("aria-hidden").ShouldBe("true");
         var segments = strip.QuerySelectorAll("span").ToList();
-        segments.Select(s => s.GetAttribute("title")).ShouldBe(["Stage 1: Official", "Stage 2: Computed", "Stage 3: Pending"]);
+        segments.Select(s => s.GetAttribute("title")).ShouldBe(["1st tournament: Official", "2nd tournament: Computed", "3rd tournament: Pending"]);
         segments[0].ClassList.ShouldContain("series-strip__seg--official");
         segments[1].ClassList.ShouldContain("series-strip__seg--computed");
         segments[2].ClassList.ShouldNotContain("series-strip__seg--official");
@@ -159,7 +159,7 @@ public sealed class SeriesAdvancementRailTests : IDisposable
 
         // Assert
         cut.Find("[data-testid='series-progress-line']").TextContent
-            .ShouldBe("2 of 3 Stages computed or official (1 official). Backfill has not run.");
+            .ShouldBe("2 of 3 tournaments computed or official (1 official). Bowler of the Year point list not used yet.");
     }
 
     [Fact(DisplayName = "Should show a headline for a computed Stage and none for a Pending Stage")]
@@ -237,7 +237,7 @@ public sealed class SeriesAdvancementRailTests : IDisposable
         // Assert
         var flag = card.QuerySelector("[data-testid='stage-flag-cancelled']")!;
         flag.ClassList.ShouldContain("series-flag--error");
-        flag.TextContent.ShouldBe("Tournament cancelled: remove this Stage");
+        flag.TextContent.ShouldBe("Tournament cancelled: remove it from the Series");
         flag.QuerySelector("a")!.GetAttribute("href").ShouldBe("/series/" + SeriesId + "/edit");
     }
 
@@ -282,7 +282,7 @@ public sealed class SeriesAdvancementRailTests : IDisposable
         var cut = RenderPage(new DateOnly(2025, 6, 14), stages);
 
         // Assert
-        SeriesDetailHost.Card(cut, "q2").QuerySelector("[data-testid='stage-flag-backfill']")!.TextContent.ShouldBe("Backfill as of 6/14/2025");
+        SeriesDetailHost.Card(cut, "q2").QuerySelector("[data-testid='stage-flag-backfill']")!.TextContent.ShouldBe("Bowler of the Year point list as of 6/14/2025");
         SeriesDetailHost.Card(cut, "q1").QuerySelector("[data-testid='stage-flag-backfill']").ShouldBeNull();
         SeriesDetailHost.Card(cut, "s1").QuerySelector("[data-testid='stage-flag-backfill']").ShouldBeNull();
         SeriesDetailHost.Card(cut, "p1").QuerySelector("[data-testid='stage-flag-backfill']").ShouldBeNull();

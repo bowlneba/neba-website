@@ -76,7 +76,7 @@ public sealed class SeriesRecomputeTests : IDisposable
             var button = SeriesDetailHost.Card(cut, stage.StageId).QuerySelector("[data-testid='stage-recompute']");
             button.ShouldNotBeNull();
             button.TextContent.Trim().ShouldBe("Recompute from here");
-            button.GetAttribute("aria-label").ShouldBe("Recompute from Stage " + stage.Order);
+            button.GetAttribute("aria-label").ShouldBe("Recompute from the " + SeriesDisplay.TournamentOrdinal(stage.Order));
             button.HasAttribute("disabled").ShouldBeFalse();
         }
     }
@@ -175,8 +175,8 @@ public sealed class SeriesRecomputeTests : IDisposable
 
         // Assert
         var modal = cut.Find(".neba-modal-content");
-        modal.QuerySelector(".neba-modal-title")!.TextContent.ShouldBe("Recompute from Stage 2?");
-        modal.QuerySelector("p")!.TextContent.ShouldBe("Stage 3 is official. Recomputing resets it to Computed.");
+        modal.QuerySelector(".neba-modal-title")!.TextContent.ShouldBe("Recompute from the 2nd tournament?");
+        modal.QuerySelector("p")!.TextContent.ShouldBe("The 3rd tournament is official. Recomputing resets it to Computed.");
         cut.Find(ConfirmButton).TextContent.Trim().ShouldBe("Recompute");
     }
 
@@ -191,8 +191,8 @@ public sealed class SeriesRecomputeTests : IDisposable
 
         // Assert
         var modal = cut.Find(".neba-modal-content");
-        modal.QuerySelector(".neba-modal-title")!.TextContent.ShouldBe("Recompute from Stage 1?");
-        modal.QuerySelector("p")!.TextContent.ShouldBe("Stages 1 and 3 are official. Recomputing resets them to Computed.");
+        modal.QuerySelector(".neba-modal-title")!.TextContent.ShouldBe("Recompute from the 1st tournament?");
+        modal.QuerySelector("p")!.TextContent.ShouldBe("The 1st and 3rd tournaments are official. Recomputing resets them to Computed.");
     }
 
     [Fact(DisplayName = "Should make no recompute call until the confirmation is accepted")]

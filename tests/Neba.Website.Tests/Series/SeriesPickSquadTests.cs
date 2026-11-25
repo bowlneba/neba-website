@@ -98,7 +98,7 @@ public sealed class SeriesPickSquadTests : IDisposable
         // Assert
         survivor.ShouldNotBeNull();
         survivor.TextContent.Trim().ShouldBe("Pick squad");
-        survivor.GetAttribute("aria-label").ShouldBe("Pick squad for Stage 3");
+        survivor.GetAttribute("aria-label").ShouldBe("Pick squad for the 3rd tournament");
         survivor.HasAttribute("disabled").ShouldBeFalse();
         SeriesDetailHost.Card(cut, "q1").QuerySelector("[data-testid='stage-pick-squad']").ShouldBeNull();
         SeriesDetailHost.Card(cut, "q2").QuerySelector("[data-testid='stage-pick-squad']").ShouldBeNull();
@@ -204,7 +204,7 @@ public sealed class SeriesPickSquadTests : IDisposable
 
         // Assert
         var lead = cut.Find("[data-testid='stage-squad-lead']").TextContent;
-        lead.StartsWith("Stage 3, Tournament 3.", StringComparison.Ordinal).ShouldBeTrue();
+        lead.StartsWith("3rd tournament, Tournament 3.", StringComparison.Ordinal).ShouldBeTrue();
         lead.Contains("No squad matches it exactly", StringComparison.Ordinal).ShouldBe(mentionsNoMatch);
         lead.Contains("Choose the squad this round uses.", StringComparison.Ordinal).ShouldBe(!mentionsNoMatch);
     }

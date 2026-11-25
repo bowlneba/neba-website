@@ -1,5 +1,5 @@
 <div class="series-grid">
-    <p class="series-editor__label">Stages <small>(order must follow tournament dates: Qualifying, then Survivor, then Placement)</small></p>
+    <p class="series-editor__label">Tournaments <small>(order must follow tournament dates: Qualifying, then Survivor, then Placement)</small></p>
 
     <div class="series-grid__head" aria-hidden="true">
         <span>#</span><span>Kind</span><span>Tournament</span><span>Advancing</span><span>Squad (Survivor only)</span><span></span>
@@ -112,7 +112,7 @@
     @if (!ReadOnly)
     {
         <div class="series-grid__foot">
-            <button type="button" class="neba-btn neba-btn-secondary" @onclick="Add">+ Add Stage</button>
+            <button type="button" class="neba-btn neba-btn-secondary" @onclick="Add">+ Add tournament</button>
             @if (HeldElsewhere > 0)
             {
                 <span class="series-editor__hint">@HeldElsewhereNote</span>
@@ -152,7 +152,7 @@
 
     private static string FieldId(string field, int index) => "stage-" + index + "-" + field;
 
-    private static string AriaLabel(string what, int order) => "Stage " + order + " " + what;
+    private static string AriaLabel(string what, int order) => SeriesDisplay.TournamentOrdinal(order) + " " + what;
 
     private bool IsLast(int index) => index == Rows.Count - 1;
 

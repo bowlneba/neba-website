@@ -169,7 +169,7 @@ public sealed class EditSeriesPageTests : IDisposable
         IsRemovable(cut, 0).ShouldBeFalse();
         IsRemovable(cut, 1).ShouldBeTrue();
         IsRemovable(cut, 2).ShouldBeFalse();
-        cut.Find("[data-testid='stage-cancelled-note']").TextContent.ShouldBe("Tournament cancelled: remove this Stage");
+        cut.Find("[data-testid='stage-cancelled-note']").TextContent.ShouldBe("Tournament cancelled: remove it from the Series");
         cut.Markup.ShouldContain("can still be removed");
         cut.FindAll("[data-testid='series-cancelled-check-warning']").ShouldBeEmpty();
     }
@@ -246,7 +246,7 @@ public sealed class EditSeriesPageTests : IDisposable
         // Assert
         var warning = cut.Find("[data-testid='series-cancelled-check-warning']");
         warning.TextContent.ShouldContain("Cancelled tournaments not checked");
-        warning.TextContent.ShouldContain("A Stage whose tournament was cancelled can't be removed until this check works. Reload the page to try again.");
+        warning.TextContent.ShouldContain("A cancelled tournament can't be removed until this check works. Reload the page to try again.");
         cut.FindAll("[data-testid='stage-remove-cancelled']").ShouldBeEmpty();
         cut.FindAll("li.series-grid__row").Count.ShouldBe(3);
         cut.Markup.ShouldNotContain("can still be removed");

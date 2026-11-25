@@ -63,11 +63,11 @@ public sealed class SeriesAdvancementOutputTests : IDisposable
         await button.ClickAsync();
 
         // Assert
-        closedState.ShouldBe(("false", "Show output for Stage 3", false));
+        closedState.ShouldBe(("false", "Show output for the 3rd tournament", false));
         var opened = SeriesDetailHost.Card(cut, "q1");
         var openButton = opened.QuerySelector("button.series-expander")!;
         openButton.GetAttribute("aria-expanded").ShouldBe("true");
-        openButton.GetAttribute("aria-label").ShouldBe("Hide output for Stage 3");
+        openButton.GetAttribute("aria-label").ShouldBe("Hide output for the 3rd tournament");
         openButton.GetAttribute("aria-controls").ShouldBe("series-output-q1");
         opened.QuerySelector("[data-testid='stage-output']")!.Id.ShouldBe("series-output-q1");
     }
@@ -85,7 +85,7 @@ public sealed class SeriesAdvancementOutputTests : IDisposable
 
         // Assert
         Output(cut, "q1").QuerySelector("[data-testid='stage-output-pending']")!.TextContent
-            .ShouldContain("This tournament was cancelled. Remove this Stage on the Edit page");
+            .ShouldContain("This tournament was cancelled. Remove it from the Series on the Edit page");
     }
 
     [Fact(DisplayName = "Should say a Pending Survivor Stage waits for a squad when it needs one")]
@@ -128,7 +128,7 @@ public sealed class SeriesAdvancementOutputTests : IDisposable
         // Assert
         var output = Output(cut, "q1");
         output.QuerySelector("[data-testid='stage-output-pending']")!.TextContent
-            .ShouldContain("Not computed yet. This Stage computes when its tournament completes.");
+            .ShouldContain("Not computed yet. This tournament computes when it completes.");
         output.QuerySelector("[data-testid='stage-entries']").ShouldBeNull();
         output.QuerySelector("[data-testid='stage-slots']").ShouldBeNull();
     }
@@ -151,7 +151,7 @@ public sealed class SeriesAdvancementOutputTests : IDisposable
         // Assert
         var rows = Output(cut, "q2").QuerySelectorAll("[data-testid='stage-entries'] tbody tr").ToList();
         rows.Count.ShouldBe(2);
-        Cells(rows[1]).ShouldBe(["2nd", "Kyle Wilks", "Advanced in Stage 1", "—"]);
+        Cells(rows[1]).ShouldBe(["2nd", "Kyle Wilks", "Advanced in 1st tournament", "—"]);
         rows[1].GetAttribute("data-testid").ShouldBe("stage-already-advanced");
         rows[1].QuerySelector("button").ShouldBeNull();
     }
@@ -194,7 +194,7 @@ public sealed class SeriesAdvancementOutputTests : IDisposable
         var rows = table.QuerySelectorAll("tbody tr").ToList();
         Cells(rows[0]).ShouldBe(["3rd", "Alice Adams", "Qualifier", "—"]);
         Cells(rows[1]).ShouldBe(["5th", "Bea Brown", "Added by admin", "—"]);
-        Cells(rows[2]).ShouldBe(["—", "Cara Cole", "Backfill", "250"]);
+        Cells(rows[2]).ShouldBe(["—", "Cara Cole", "Bowler of the Year point list", "250"]);
         rows[1].QuerySelectorAll("td")[2].ClassList.ShouldContain("series-src--admin");
         rows[2].QuerySelectorAll("td")[2].ClassList.ShouldContain("series-src--backfill");
         rows[0].QuerySelectorAll("td")[2].ClassList.ShouldNotContain("series-src--admin");
@@ -211,7 +211,7 @@ public sealed class SeriesAdvancementOutputTests : IDisposable
 
         // Assert
         Output(cut, "q1").QuerySelector("[data-testid='stage-slots']")!.TextContent.Trim()
-            .ShouldBe("8 slots, 2 vacant slots. Vacant slots go to the Backfill.");
+            .ShouldBe("8 slots, 2 vacant slots. Vacant slots go to the Bowler of the Year point list.");
     }
 
     [Fact(DisplayName = "Should say none are vacant when every slot is filled")]
@@ -238,7 +238,7 @@ public sealed class SeriesAdvancementOutputTests : IDisposable
 
         // Assert
         var output = Output(cut, "q1");
-        output.TextContent.ShouldContain("No bowlers in the field from this Stage.");
+        output.TextContent.ShouldContain("No bowlers in the field from this tournament.");
         output.QuerySelector("[data-testid='stage-entries']").ShouldBeNull();
     }
 
@@ -345,7 +345,7 @@ public sealed class SeriesAdvancementOutputTests : IDisposable
 
         // Assert
         var output = Output(cut, "s1");
-        output.TextContent.ShouldContain("No bowlers in the field from this Stage.");
+        output.TextContent.ShouldContain("No bowlers in the field from this tournament.");
         output.QuerySelector("[data-testid='stage-outcomes']").ShouldBeNull();
         output.QuerySelector("[data-testid='stage-survivor-summary']").ShouldBeNull();
     }

@@ -55,7 +55,7 @@ public sealed class SeriesMakeOfficialTests : IDisposable
         // Assert
         var button = SeriesDetailHost.Card(cut, "q1").QuerySelector(MakeOfficialButton)!;
         button.TextContent.Trim().ShouldBe("Mark official");
-        button.GetAttribute("aria-label").ShouldBe("Mark Stage 1 official");
+        button.GetAttribute("aria-label").ShouldBe("Mark the 1st tournament official");
         SeriesDetailHost.Card(cut, "s1").QuerySelector(MakeOfficialButton).ShouldBeNull();
         SeriesDetailHost.Card(cut, "p1").QuerySelector(MakeOfficialButton).ShouldBeNull();
         cut.FindAll(MakeOfficialButton).Count.ShouldBe(1);
@@ -125,7 +125,7 @@ public sealed class SeriesMakeOfficialTests : IDisposable
         await MakeOfficialAsync(cut, "q1");
 
         // Assert
-        cut.Markup.ShouldContain("Mark Stage 1 official?");
+        cut.Markup.ShouldContain("Mark the 1st tournament official?");
         cut.Markup.ShouldContain("public Series page");
         cut.FindAll(ConfirmButton).Count.ShouldBe(1);
         requests.ShouldBeEmpty();
@@ -160,7 +160,7 @@ public sealed class SeriesMakeOfficialTests : IDisposable
         request.StageId.ShouldBe("q1");
         request.Official.Version.ShouldBe(7);
         _host.Toasts.Current.ShouldNotBeNull();
-        _host.Toasts.Current.Message.ShouldBe("Stage 1 is official.");
+        _host.Toasts.Current.Message.ShouldBe("The 1st tournament is official.");
         cut.FindAll(ConfirmButton).ShouldBeEmpty();
         SeriesDetailHost.Card(cut, "q1").QuerySelector(MakeOfficialButton).ShouldBeNull();
         SeriesDetailHost.Card(cut, "s1").QuerySelector(MakeOfficialButton).ShouldNotBeNull();

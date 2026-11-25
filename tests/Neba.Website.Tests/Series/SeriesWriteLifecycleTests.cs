@@ -103,7 +103,7 @@ public sealed class SeriesWriteLifecycleTests : IDisposable
         // Assert
         var toast = _host.Toasts.Current.ShouldNotBeNull();
         toast.Title.ShouldBe("Recomputed");
-        toast.Message.ShouldBe("Recomputed from Stage 2.");
+        toast.Message.ShouldBe("Recomputed from the 2nd tournament.");
         toast.Severity.ShouldBe(NotifySeverity.Success);
         VerifyReloadedOnce();
     }
@@ -165,8 +165,8 @@ public sealed class SeriesWriteLifecycleTests : IDisposable
         await cut.Find(ConfirmButton).ClickAsync();
 
         // Assert
-        title.ShouldBe("Recompute from Stage 1?");
-        message.ShouldBe("Stages 2 and 3 are official. Recomputing resets them to Computed.");
+        title.ShouldBe("Recompute from the 1st tournament?");
+        message.ShouldBe("The 2nd and 3rd tournaments are official. Recomputing resets them to Computed.");
         requests.Count.ShouldBe(2);
         requests[0].Recomputation.ConfirmResetOfficial.ShouldBeFalse();
         requests[0].Recomputation.Version.ShouldBe(7);
@@ -529,7 +529,7 @@ public sealed class SeriesWriteLifecycleTests : IDisposable
         // Assert
         toast.ShouldNotBeNull();
         toast.Title.ShouldBe("Reload Failed");
-        toast.Message.ShouldBe("The Stage status could not refresh. Reload the page to see the latest.");
+        toast.Message.ShouldBe("The tournament status could not refresh. Reload the page to see the latest.");
         toast.Severity.ShouldBe(NotifySeverity.Warning);
         cardsAfterFailedReload.ShouldBe(4);
         pillsAfter.ShouldBe(pillsBefore);

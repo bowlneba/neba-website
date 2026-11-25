@@ -18,7 +18,7 @@ namespace Neba.Website.Tests.Series;
 public sealed class SeriesAdvancementLoadTests : IDisposable
 {
     private const string SeriesId = SeriesDetailHost.SeriesId;
-    private const string ReloadFailedText = "The Stage status could not refresh. Reload the page to see the latest.";
+    private const string ReloadFailedText = "The tournament status could not refresh. Reload the page to see the latest.";
 
     private readonly SeriesDetailHost _host = new();
 
@@ -217,7 +217,7 @@ public sealed class SeriesAdvancementLoadTests : IDisposable
         var cut = _host.Render();
 
         // Assert
-        cut.Find("[data-testid='series-progress']").TextContent.ShouldContain("This Series has no Stages yet.");
+        cut.Find("[data-testid='series-progress']").TextContent.ShouldContain("This Series has no tournaments yet.");
         cut.FindAll("[data-testid='series-strip']").ShouldBeEmpty();
         cut.FindAll("[data-testid='series-stage-card']").ShouldBeEmpty();
     }

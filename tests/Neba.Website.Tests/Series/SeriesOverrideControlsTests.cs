@@ -78,7 +78,7 @@ public sealed class SeriesOverrideControlsTests : IDisposable
         var output = Output(cut, "q1");
         var add = output.QuerySelector(AddButton).ShouldNotBeNull();
         add.TextContent.Trim().ShouldBe("Add bowler");
-        add.GetAttribute("aria-label").ShouldBe("Add bowler to Stage 1");
+        add.GetAttribute("aria-label").ShouldBe("Add bowler to the 1st tournament");
         add.HasAttribute("disabled").ShouldBeFalse();
         var clear = output.QuerySelectorAll(ClearButton).ShouldHaveSingleItem();
         clear.GetAttribute("data-bowler-id").ShouldBe("b1");

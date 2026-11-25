@@ -67,7 +67,7 @@ public sealed class SeriesStageGridTests : IDisposable
         var cut = Render(rows);
 
         // Act
-        await cut.Find("button[aria-label='Stage 1 remove']").ClickAsync();
+        await cut.Find("button[aria-label='1st tournament remove']").ClickAsync();
 
         // Assert
         rows.Select(r => r.TournamentId).ShouldBe(["t2"]);
@@ -82,17 +82,17 @@ public sealed class SeriesStageGridTests : IDisposable
         var cut = Render(rows);
 
         // Assert (before)
-        cut.Find("button[aria-label='Stage 1 move up']").HasAttribute("disabled").ShouldBeTrue();
-        cut.Find("button[aria-label='Stage 2 move down']").HasAttribute("disabled").ShouldBeTrue();
+        cut.Find("button[aria-label='1st tournament move up']").HasAttribute("disabled").ShouldBeTrue();
+        cut.Find("button[aria-label='2nd tournament move down']").HasAttribute("disabled").ShouldBeTrue();
 
         // Act
-        await cut.Find("button[aria-label='Stage 1 move down']").ClickAsync();
+        await cut.Find("button[aria-label='1st tournament move down']").ClickAsync();
 
         // Assert
         rows.Select(r => r.TournamentId).ShouldBe(["t2", "t1"]);
 
         // Act
-        await cut.Find("button[aria-label='Stage 2 move up']").ClickAsync();
+        await cut.Find("button[aria-label='2nd tournament move up']").ClickAsync();
 
         // Assert
         rows.Select(r => r.TournamentId).ShouldBe(["t1", "t2"]);
@@ -229,7 +229,7 @@ public sealed class SeriesStageGridTests : IDisposable
         items[1].ClassList.ShouldContain("series-grid__row--error");
 
         // Act
-        await cut.Find("button[aria-label='Stage 2 move up']").ClickAsync();
+        await cut.Find("button[aria-label='2nd tournament move up']").ClickAsync();
 
         // Assert
         cut.FindAll(".series-grid__error").ShouldBeEmpty();
@@ -306,8 +306,8 @@ public sealed class SeriesStageGridTests : IDisposable
         items[0].QuerySelector("[data-testid='stage-cancelled-note']").ShouldBeNull();
         var button = items[1].QuerySelector("button[data-testid='stage-remove-cancelled']");
         button.ShouldNotBeNull();
-        button.GetAttribute("aria-label").ShouldBe("Stage 2 remove");
-        items[1].QuerySelector("[data-testid='stage-cancelled-note']")!.TextContent.ShouldBe("Tournament cancelled: remove this Stage");
+        button.GetAttribute("aria-label").ShouldBe("2nd tournament remove");
+        items[1].QuerySelector("[data-testid='stage-cancelled-note']")!.TextContent.ShouldBe("Tournament cancelled: remove it from the Series");
         cut.FindAll("button").Count.ShouldBe(1);
     }
 
@@ -324,7 +324,7 @@ public sealed class SeriesStageGridTests : IDisposable
         var cut = Render(rows, readOnly: true);
 
         // Act
-        await cut.Find("button[aria-label='Stage 2 remove']").ClickAsync();
+        await cut.Find("button[aria-label='2nd tournament remove']").ClickAsync();
 
         // Assert
         rows.Select(r => r.TournamentId).ShouldBe(["t1", "t3"]);
@@ -386,7 +386,7 @@ public sealed class SeriesStageGridTests : IDisposable
         cut.FindAll("[data-testid='stage-remove-cancelled']").ShouldBeEmpty();
 
         // Act
-        await cut.Find("button[aria-label='Stage 2 remove']").ClickAsync();
+        await cut.Find("button[aria-label='2nd tournament remove']").ClickAsync();
 
         // Assert
         rows.Select(r => r.TournamentId).ShouldBe(["t1"]);

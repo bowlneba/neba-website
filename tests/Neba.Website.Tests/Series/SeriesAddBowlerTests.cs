@@ -161,7 +161,7 @@ public sealed class SeriesAddBowlerTests : IDisposable
         cut.Find("#stage-override-title").TextContent.ShouldBe("Add bowler");
         cut.Find("[role='dialog']").GetAttribute("aria-labelledby").ShouldBe("stage-override-title");
         cut.Find("[data-testid='stage-override-lead']").TextContent
-            .ShouldBe("Stage 1, Tournament 1. Pick any bowler with a result in this tournament, whatever the place or membership. The field can then be larger than the target.");
+            .ShouldBe("1st tournament, Tournament 1. Pick any bowler with a result in this tournament, whatever the place or membership. The field can then be larger than the target.");
         cut.Find("#override-bowler").GetAttribute("role").ShouldBe("combobox");
         cut.Find(Reason).GetAttribute("id").ShouldBe("override-reason");
         cut.Find(Reason).GetAttribute("aria-describedby").ShouldBe("override-reason-hint override-reason-error");
@@ -381,7 +381,7 @@ public sealed class SeriesAddBowlerTests : IDisposable
         // Assert
         var toast = _host.Toasts.Current.ShouldNotBeNull();
         toast.Title.ShouldBe("Bowler Added");
-        toast.Message.ShouldBe("Cara Cole added to Stage 1.");
+        toast.Message.ShouldBe("Cara Cole added to the 1st tournament.");
         toast.Severity.ShouldBe(NotifySeverity.Success);
         _host.VerifyAdvancementCalls(Times.Exactly(2));
         _host.VerifySeriesCalls(Times.Once());
