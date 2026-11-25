@@ -149,12 +149,16 @@ public partial class SeriesDetail
     private async Task LoadAdvancersAsync()
     {
         var result = await ApiExecutor.ExecuteAsync(ApiName, "GetSeriesAdvancers", ct => SeriesApi.GetSeriesAdvancersAsync(Id, ct));
+        var firstLoad = _advancers.Count == 0;
         _advancers = result.IsError ? [] : result.Value.ToViewModel();
 
-        // Official Stages open with their results showing; the visitor can collapse them.
-        foreach (var stage in _advancers)
+        // Official Stages open with their results showing on the first load only, so a stage the visitor collapsed stays closed.
+        if (firstLoad)
         {
-            _expandedStageIds.Add(stage.Id);
+            foreach (var stage in _advancers)
+            {
+                _expandedStageIds.Add(stage.Id);
+            }
         }
     }
 

@@ -286,6 +286,22 @@ public sealed class SeriesOverrideTests
         harness.Stage(1).Overrides.ShouldBeEmpty();
     }
 
+    [Fact(DisplayName = "AddOverride should return NoResultRow for a bowler whose result row has no place")]
+    public void AddOverride_ShouldReturnNoResultRow_WhenResultRowHasNoPlace()
+    {
+        // Arrange
+        var (harness, _) = Computed();
+        var unplaced = BowlerId.New();
+        harness.SetResults(1, [.. harness.Tournament(1).Results, StageResultRowFactory.Create(unplaced, 0)]);
+
+        // Act
+        var result = harness.AddOverride(1, unplaced);
+
+        // Assert
+        result.FirstError.Code.ShouldBe("Series.Override.NoResultRow");
+        harness.Stage(1).Overrides.ShouldBeEmpty();
+    }
+
     [Fact(DisplayName = "AddOverride should return NoResultRow when the facts hold no tournament for the Stage")]
     public void AddOverride_ShouldReturnNoResultRow_WhenTournamentIsMissing()
     {

@@ -32,6 +32,25 @@ public sealed class SeriesMakeOfficialTests
         harness.Series.Version.ShouldBe(version + 1);
     }
 
+    [Fact(DisplayName = "MakeOfficial should leave an Official Stage alone, even with a stale Version")]
+    public void MakeOfficial_ShouldDoNothing_WhenStageIsAlreadyOfficialAndVersionIsStale()
+    {
+        // Arrange
+        var harness = AdvancementHarness.Create(StageKind.Qualifying).Advanced();
+        var stage = harness.Stage(1);
+        var staleVersion = harness.Series.Version;
+        _ = harness.Series.MakeOfficial(stage.Id, staleVersion, Now);
+        var version = harness.Series.Version;
+
+        // Act
+        var result = harness.Series.MakeOfficial(stage.Id, staleVersion, Now.AddHours(1));
+
+        // Assert
+        result.IsError.ShouldBeFalse();
+        result.Value.Changed.ShouldBeFalse();
+        harness.Series.Version.ShouldBe(version);
+    }
+
     [Fact(DisplayName = "MakeOfficial should return NotFound for an unknown Stage")]
     public void MakeOfficial_ShouldReturnNotFound_WhenStageIsUnknown()
     {

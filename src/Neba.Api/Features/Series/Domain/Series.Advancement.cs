@@ -103,15 +103,15 @@ public sealed partial class Series
             return SeriesAdvancementErrors.StageNotFound(stageId);
         }
 
+        if (stage.Status == StageStatus.Official)
+        {
+            return AdvanceResult.None; // before the version check, so a retry never conflicts
+        }
+
         var version = EnsureVersion(expectedVersion);
         if (version.IsError)
         {
             return version.Errors;
-        }
-
-        if (stage.Status == StageStatus.Official)
-        {
-            return AdvanceResult.None;
         }
 
         if (MakeOfficialBlocker(stage) is { } blocker)
@@ -190,7 +190,7 @@ public sealed partial class Series
 
     // ---------- overrides ----------
 
-    /// <summary>Adds a bowler who has a result row in the Stage's tournament, then recomputes inline.</summary>
+    /// <summary>Adds a bowler who has a placed result row (Place above 0) in the Stage's tournament, then recomputes inline.</summary>
     public ErrorOr<AdvanceResult> AddOverride(
         SeriesStageId stageId, BowlerId bowlerId, string reason, string createdBy,
         int expectedVersion, AdvancementFacts facts, DateTimeOffset now)
@@ -206,7 +206,7 @@ public sealed partial class Series
         var stage = target.Value;
 
         var hasResultRow = facts.Tournaments.TryGetValue(stage.TournamentId, out var tournament)
-            && tournament.Results.Any(row => row.BowlerId == bowlerId);
+            && tournament.Results.Any(row => row.BowlerId == bowlerId && row.Place > 0);
 
         return (hasResultRow, _fieldEntries.Exists(e => e.BowlerId == bowlerId), stage.Overrides.Any(o => o.BowlerId == bowlerId)) switch
         {

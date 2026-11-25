@@ -6,7 +6,7 @@ using Neba.Api.Messaging;
 
 namespace Neba.Api.Features.Series.GetSeriesAdvancers;
 
-/// <summary>Gets who advanced out of each Official Stage. Cached; a Stage status change clears it.</summary>
+/// <summary>Gets who advanced out of each Official Stage. Cached; a Stage status change clears it, and names and results expire after 5 minutes.</summary>
 internal sealed record GetSeriesAdvancersQuery
     : ICachedQuery<ErrorOr<SeriesAdvancersDto>>
 {
@@ -16,5 +16,5 @@ internal sealed record GetSeriesAdvancersQuery
         => CacheDescriptors.Series.Advancers(SeriesId);
 
     public TimeSpan Expiry
-        => TimeSpan.FromHours(1);
+        => TimeSpan.FromMinutes(5);
 }

@@ -138,12 +138,15 @@ public sealed class SeriesAdvancersTests : IDisposable
         var cut = _host.Render();
         var toggle = cut.Find("[data-testid='series-stage'][data-stage-id='q1'] [data-testid='series-stage-toggle']");
         toggle.GetAttribute("aria-expanded").ShouldBe("true");
+        toggle.GetAttribute("aria-controls").ShouldBe("series-results-q1");
 
         // Act
         toggle.Click();
 
         // Assert
         cut.FindAll("[data-testid='series-stage-results']").ShouldBeEmpty();
+        cut.Find("[data-testid='series-stage'][data-stage-id='q1'] [data-testid='series-stage-toggle']")
+            .HasAttribute("aria-controls").ShouldBeFalse();
         cut.Find("[data-testid='series-stage'][data-stage-id='q1'] [data-testid='series-stage-toggle']")
             .GetAttribute("aria-expanded").ShouldBe("false");
 
