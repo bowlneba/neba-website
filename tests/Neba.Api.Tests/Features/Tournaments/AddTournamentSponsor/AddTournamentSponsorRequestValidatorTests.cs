@@ -114,6 +114,24 @@ public sealed class AddTournamentSponsorRequestValidatorTests
             && e.ErrorCode == "AddTournamentSponsorRequest.SponsorshipAmountInvalid");
     }
 
+    [Theory(DisplayName = "Validate should fail with SponsorshipAmountInvalid error when SponsorshipAmount exceeds the maximum or has more than two decimals")]
+    [InlineData(100_000)]
+    [InlineData(10.123)]
+    public void Validate_ShouldFail_WhenSponsorshipAmountIsOutOfRange(double amount)
+    {
+        // Arrange
+        var request = CreateRequest(sponsorshipAmount: (decimal)amount);
+
+        // Act
+        var result = _validator.Validate(request);
+
+        // Assert
+        result.IsValid.ShouldBeFalse();
+        result.Errors.ShouldContain(e =>
+            e.PropertyName == "Sponsor.SponsorshipAmount"
+            && e.ErrorCode == "AddTournamentSponsorRequest.SponsorshipAmountInvalid");
+    }
+
     [Fact(DisplayName = "Validate should succeed when SponsorshipAmount is zero")]
     public void Validate_ShouldSucceed_WhenSponsorshipAmountIsZero()
     {

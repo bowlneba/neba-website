@@ -951,6 +951,50 @@ tournamentType: TournamentType.Doubles, logoUrl: null));
         cut.Markup.ShouldContain("$2,500");
     }
 
+    [Fact(DisplayName = "Should send the new amount for the sponsor and reload the tournament when an edited amount is saved")]
+    public async Task EditSponsorAmount_ShouldCallApiAndReload_WhenAmountSaved()
+    {
+        // Arrange
+        _authContext.SetAuthorized("test-user");
+        _authContext.SetPolicies(Permissions.ManageTournamentSponsors.PolicyName);
+
+        var sponsor = TournamentDetailSponsorResponseFactory.Create(name: "Acme Corp", sponsorshipAmount: 2500m);
+        SetupSuccessResponseSequence(
+            TournamentDetailResponseFactory.Create(sponsors: [sponsor]),
+            TournamentDetailResponseFactory.Create(sponsors: [sponsor]));
+
+        Neba.Api.Contracts.Tournaments.EditTournamentSponsorAmount.EditTournamentSponsorAmountRequest? captured = null;
+        using var editResponse = new StubApiResponse<object>
+        {
+            IsSuccessStatusCode = true,
+            StatusCode = System.Net.HttpStatusCode.NoContent
+        };
+        _mockApi
+            .Setup(x => x.EditTournamentSponsorAmountAsync(
+                TournamentDetailResponseFactory.ValidId,
+                sponsor.SponsorId,
+                It.IsAny<Neba.Api.Contracts.Tournaments.EditTournamentSponsorAmount.EditTournamentSponsorAmountRequest>(),
+                It.IsAny<CancellationToken>()))
+            .Callback<string, string, Neba.Api.Contracts.Tournaments.EditTournamentSponsorAmount.EditTournamentSponsorAmountRequest, CancellationToken>((_, _, r, _) => captured = r)
+            .ReturnsAsync(editResponse);
+
+        var cut = _ctx.Render<TournamentDetail>(p => p.Add(x => x.Id, TournamentDetailResponseFactory.ValidId));
+        await cut.Find("button[aria-label='Edit added money for Acme Corp']").ClickAsync();
+        await cut.Find("#sponsor-edit-amount").InputAsync(new Microsoft.AspNetCore.Components.ChangeEventArgs { Value = "750" });
+
+        // Act
+        await cut.Find(".mts-modal-actions button.neba-btn-primary").ClickAsync();
+
+        // Assert
+        captured.ShouldNotBeNull();
+        captured.Id.ShouldBe(TournamentDetailResponseFactory.ValidId);
+        captured.SponsorId.ShouldBe(sponsor.SponsorId);
+        captured.Sponsor.SponsorshipAmount.ShouldBe(750m);
+        _mockApi.Verify(
+            x => x.GetTournamentAsync(TournamentDetailResponseFactory.ValidId, It.IsAny<CancellationToken>()),
+            Times.Exactly(2));
+    }
+
     // ── Edit logo ────────────────────────────────────────────────────────────
 
     [Fact(DisplayName = "Should not render the edit-logo button when caller lacks the policy")]

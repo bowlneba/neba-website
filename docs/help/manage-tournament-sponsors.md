@@ -1,6 +1,6 @@
 # Manage Tournament Sponsors
 
-Lets tournament management add or remove the sponsors attached to a tournament, including which one (if any) is the title sponsor.
+Lets tournament management add, remove, or change the added money of the sponsors attached to a tournament, including which one (if any) is the title sponsor.
 
 ## Prerequisites
 
@@ -19,6 +19,13 @@ You need the `Tournaments.ManageSponsors` permission, enforced via the dynamic `
 
 ![Add Sponsor dialog with sponsor, amount, and title sponsor fields](images/manage-tournament-sponsors/add-sponsor-dialog.png)
 
+### Change a sponsor's added money
+
+1. In the **Manage Sponsors** panel, click the dollar amount shown next to the sponsor (for example, **$1,000**).
+2. In the **Edit Added Money** dialog, enter the new amount and click **Save**, or **Cancel** to back out. If you've changed the amount and try to cancel or close the dialog, you're asked to confirm discarding it.
+
+This changes only the amount. The sponsor stays attached and keeps its title sponsor setting, so you don't need to remove and re-add it.
+
 ### Remove a sponsor
 
 1. In the **Manage Sponsors** panel, find the sponsor and click **Remove**.
@@ -30,6 +37,7 @@ You need the `Tournaments.ManageSponsors` permission, enforced via the dynamic `
 ## What happens after you confirm
 
 - **Adding**: a "Sponsor Added" toast confirms the sponsor was attached, the dialog closes, and the sponsor list refreshes to show it.
+- **Changing the amount**: an "Added Money Updated" toast confirms the change, the dialog closes, and the list shows the new amount.
 - **Removing**: a "Sponsor Removed" toast confirms the sponsor was detached, and it disappears from the list.
 - **Failure** (either action): an alert appears in the panel explaining the problem, and the sponsor list is left unchanged.
 
@@ -41,7 +49,7 @@ If the tournament has no logo of its own, it displays the title sponsor's logo (
 | --- | --- |
 | No "Manage Sponsors" panel on the tournament detail page | You don't hold `Tournaments.ManageSponsors` — ask an admin to grant it if you believe you should have it. |
 | Sponsor doesn't appear in the "Add Sponsor" list | It's either inactive or already attached to this tournament — only active, not-yet-attached sponsors are offered. |
-| "Couldn't Add Sponsor" / "Couldn't Update Sponsors" alert | The add or remove request was rejected by the server (e.g. a validation or state problem). No change was made; try again or contact support if it persists. |
+| "Couldn't Add Sponsor" / "Couldn't Update Amount" / "Couldn't Update Sponsors" alert | The add, amount change, or remove request was rejected by the server (e.g. a validation or state problem). No change was made; try again or contact support if it persists. |
 
 ## Related
 

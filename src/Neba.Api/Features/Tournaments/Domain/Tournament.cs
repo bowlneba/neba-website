@@ -491,6 +491,18 @@ public sealed class Tournament
     }
 
     /// <summary>
+    /// Changes an attached sponsor's amount; returns an error if the sponsor isn't attached or the amount is negative.
+    /// </summary>
+    public ErrorOr<Success> ChangeSponsorAmount(SponsorId sponsorId, decimal sponsorshipAmount)
+    {
+        var sponsor = _sponsors.SingleOrDefault(tournamentSponsor => tournamentSponsor.SponsorId == sponsorId);
+
+        return sponsor is null
+            ? TournamentErrors.SponsorNotAttached(sponsorId)
+            : sponsor.ChangeSponsorshipAmount(sponsorshipAmount);
+    }
+
+    /// <summary>
     /// Removes a sponsor; returns an error if the sponsor isn't currently attached.
     /// </summary>
     public ErrorOr<Deleted> RemoveSponsor(SponsorId sponsorId)

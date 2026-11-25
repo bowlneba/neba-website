@@ -32,12 +32,39 @@ public sealed class TournamentSponsor
     /// <summary>
     /// The amount of the sponsorship provided by the sponsor for this tournament. This decimal property allows us to capture the financial contribution of the sponsor to the tournament, which can be used for reporting, analytics, and determining sponsorship tiers. It is required to quantify the sponsorship relationship in the database.
     /// </summary>
-    public required decimal SponsorshipAmount { get; init; }
+    public decimal SponsorshipAmount { get; internal set; }
+
+    /// <summary>
+    /// The largest sponsorship amount the database column holds (precision 7, scale 2).
+    /// </summary>
+    public const decimal MaxSponsorshipAmount = 99_999.99m;
+
+    internal ErrorOr<Success> ChangeSponsorshipAmount(decimal sponsorshipAmount)
+    {
+        if (sponsorshipAmount < 0)
+        {
+            return TournamentSponsorErrors.NegativeSponsorshipAmount;
+        }
+
+        if (sponsorshipAmount > MaxSponsorshipAmount)
+        {
+            return TournamentSponsorErrors.SponsorshipAmountTooLarge;
+        }
+
+        SponsorshipAmount = sponsorshipAmount;
+
+        return Result.Success;
+    }
 
     internal static ErrorOr<TournamentSponsor> Create(SponsorId sponsorId, bool titleSponsor, decimal sponsorshipAmount)
     {
-        return sponsorshipAmount < 0
-            ? TournamentSponsorErrors.NegativeSponsorshipAmount
+        if (sponsorshipAmount < 0)
+        {
+            return TournamentSponsorErrors.NegativeSponsorshipAmount;
+        }
+
+        return sponsorshipAmount > MaxSponsorshipAmount
+            ? TournamentSponsorErrors.SponsorshipAmountTooLarge
             : new TournamentSponsor
             {
                 SponsorId = sponsorId,

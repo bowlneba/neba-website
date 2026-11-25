@@ -66,7 +66,7 @@ internal static class SeriesAdvancementReader
 
     /// <summary>
     /// The same read for the public page. Skips the admin-only overrides (reason and author), which the public view never shows.
-    /// It retries once when a write lands between the queries, so the cache never holds a mixed view.
+    /// It retries once when a write lands between the queries; if the retry also sees a change it still returns the rows, and tag invalidation clears the cache entry.
     /// </summary>
     public static Task<SeriesAdvancementRows?> ReadPublicAsync(
         AppDbContext appDbContext, SeriesId seriesId, CancellationToken cancellationToken)

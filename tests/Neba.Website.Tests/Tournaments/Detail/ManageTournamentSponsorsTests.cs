@@ -8,6 +8,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Neba.Api.Contracts;
 using Neba.Api.Contracts.Sponsors;
 using Neba.Api.Contracts.Tournaments.AddTournamentSponsor;
+using Neba.Api.Contracts.Tournaments.EditTournamentSponsorAmount;
 using Neba.TestFactory.Attributes;
 using Neba.TestFactory.Sponsors;
 using Neba.TestFactory.Tournaments;
@@ -50,13 +51,15 @@ public sealed class ManageTournamentSponsorsTests : IDisposable
         Action? onChanged = null,
         Func<CancellationToken, Task<ErrorOr<CollectionResponse<SponsorSummaryResponse>>>>? onListActiveSponsorsRequestedAsync = null,
         Func<AddTournamentSponsorInput, CancellationToken, Task<ErrorOr<Success>>>? onAddSponsorRequestedAsync = null,
-        Func<string, CancellationToken, Task<ErrorOr<Success>>>? onRemoveSponsorRequestedAsync = null)
+        Func<string, CancellationToken, Task<ErrorOr<Success>>>? onRemoveSponsorRequestedAsync = null,
+        Func<string, EditTournamentSponsorAmountInput, CancellationToken, Task<ErrorOr<Success>>>? onEditSponsorAmountRequestedAsync = null)
         => _ctx.Render<ManageTournamentSponsors>(p =>
         {
             p.Add(x => x.Sponsors, sponsors);
             p.Add(x => x.OnListActiveSponsorsRequestedAsync, onListActiveSponsorsRequestedAsync ?? ((_) => ListActiveSponsorsAsync([])));
             p.Add(x => x.OnAddSponsorRequestedAsync, onAddSponsorRequestedAsync ?? ((_, _) => Task.FromResult<ErrorOr<Success>>(Result.Success)));
             p.Add(x => x.OnRemoveSponsorRequestedAsync, onRemoveSponsorRequestedAsync ?? ((_, _) => Task.FromResult<ErrorOr<Success>>(Result.Success)));
+            p.Add(x => x.OnEditSponsorAmountRequestedAsync, onEditSponsorAmountRequestedAsync ?? ((_, _, _) => Task.FromResult<ErrorOr<Success>>(Result.Success)));
 
             if (onChanged is not null)
             {
@@ -111,6 +114,51 @@ public sealed class ManageTournamentSponsorsTests : IDisposable
         var options = cut.Find("#sponsor-pick").TextContent;
         options.ShouldContain("Storm");
         options.ShouldNotContain("Kegel");
+    }
+
+    [Fact(DisplayName = "Should give each row's amount link an accessible name naming its sponsor")]
+    public void Render_ShouldGiveAmountLinkAccessibleNameNamingSponsor()
+    {
+        // Arrange
+        var sponsor = TournamentDetailSponsorViewModelFactory.Create(name: "Kegel", sponsorshipAmount: 2500m);
+
+        // Act
+        var cut = Render([sponsor]);
+
+        // Assert
+        var link = cut.Find(".mts-row__amount");
+        link.GetAttribute("aria-label").ShouldBe("Edit added money for Kegel");
+        link.TextContent.ShouldBe("$2,500");
+    }
+
+    [Fact(DisplayName = "Should call the edit delegate with the new amount and notify when the amount is saved")]
+    public void SaveAmount_ShouldCallDelegateAndNotify_WhenSaved()
+    {
+        // Arrange
+        var sponsor = TournamentDetailSponsorViewModelFactory.Create(sponsorId: "01000000000000000000000001", name: "Kegel", sponsorshipAmount: 500m);
+        string? editedSponsorId = null;
+        decimal? editedAmount = null;
+        var changed = false;
+        var cut = Render(
+            [sponsor],
+            onChanged: () => changed = true,
+            onEditSponsorAmountRequestedAsync: (sponsorId, input, _) =>
+            {
+                editedSponsorId = sponsorId;
+                editedAmount = input.SponsorshipAmount;
+                return Task.FromResult<ErrorOr<Success>>(Result.Success);
+            });
+
+        // Act
+        cut.Find(".mts-row__amount").Click();
+        cut.Find("#sponsor-edit-amount").Input("1250");
+        cut.Find(".mts-modal-actions .neba-btn-primary").Click();
+
+        // Assert
+        editedSponsorId.ShouldBe("01000000000000000000000001");
+        editedAmount.ShouldBe(1250m);
+        changed.ShouldBeTrue();
+        cut.FindAll("#sponsor-edit-amount").ShouldBeEmpty();
     }
 
     [Fact(DisplayName = "Should give each row's Remove button an accessible name naming its sponsor")]

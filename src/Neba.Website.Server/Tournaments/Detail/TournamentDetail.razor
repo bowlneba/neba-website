@@ -6,6 +6,7 @@
 @using Neba.Api.Contracts.Sponsors
 @using Neba.Api.Contracts.Tournaments
 @using Neba.Api.Contracts.Tournaments.AddTournamentSponsor
+@using Neba.Api.Contracts.Tournaments.EditTournamentSponsorAmount
 @using Neba.Website.Server.Services
 @using Neba.Website.Server.Time
 @using System.Globalization
@@ -423,6 +424,7 @@ else
                                                            OnChanged="ReloadTournamentAsync"
                                                            OnListActiveSponsorsRequestedAsync="ListActiveSponsorsAsync"
                                                            OnAddSponsorRequestedAsync="AddTournamentSponsorAsync"
+                                                           OnEditSponsorAmountRequestedAsync="EditTournamentSponsorAmountAsync"
                                                            OnRemoveSponsorRequestedAsync="RemoveTournamentSponsorAsync" />
                             </section>
                         </Authorized>
@@ -637,6 +639,17 @@ else
             "TournamentsApi",
             "AddTournamentSponsor",
             c => TournamentsApi.AddTournamentSponsorAsync(Id, request, c),
+            ct);
+    }
+
+    private Task<ErrorOr<Success>> EditTournamentSponsorAmountAsync(string sponsorId, EditTournamentSponsorAmountInput input, CancellationToken ct)
+    {
+        var request = new EditTournamentSponsorAmountRequest { Id = Id, SponsorId = sponsorId, Sponsor = input };
+
+        return ApiExecutor.ExecuteAsync(
+            "TournamentsApi",
+            "EditTournamentSponsorAmount",
+            c => TournamentsApi.EditTournamentSponsorAmountAsync(Id, sponsorId, request, c),
             ct);
     }
 

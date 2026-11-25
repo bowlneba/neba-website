@@ -2896,6 +2896,30 @@ async function handleRequest(req: IncomingMessage, res: ServerResponse): Promise
     return;
   }
 
+  if (req.method === 'PUT' && pathname.startsWith('/tournaments/') && pathname.includes('/sponsors/')) {
+    if (sendMockOverrideErrorIfSet(res, pathname)) return;
+
+    const [tournamentId, , sponsorId] = pathname.slice('/tournaments/'.length).split('/');
+    const tournament = resolveGetRoute(`/tournaments/${tournamentId}`, new URLSearchParams()) as
+      | { sponsors: TournamentSponsorFixture[] }
+      | null;
+
+    const sponsor = tournament?.sponsors.find((s) => s.sponsorId === sponsorId);
+
+    if (tournament === null || sponsor === undefined) {
+      sendJsonResponse(res, { error: 'Not Found' }, 404);
+      return;
+    }
+
+    const body = await readRequestBody(req);
+    const parsed = JSON.parse(body) as { sponsor?: { sponsorshipAmount?: number } };
+    sponsor.sponsorshipAmount = parsed.sponsor?.sponsorshipAmount ?? sponsor.sponsorshipAmount;
+
+    res.writeHead(204);
+    res.end();
+    return;
+  }
+
   if (req.method === 'DELETE' && pathname.startsWith('/tournaments/') && pathname.includes('/sponsors/')) {
     if (sendMockOverrideErrorIfSet(res, pathname)) return;
 

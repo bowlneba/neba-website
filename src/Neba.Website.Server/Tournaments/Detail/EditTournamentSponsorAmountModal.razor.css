@@ -1,0 +1,35 @@
+.form-field {
+    margin-bottom: 1rem;
+}
+
+.form-field label {
+    display: block;
+    font-size: 0.8125rem;
+    font-weight: 600;
+    margin-bottom: 0.375rem;
+    color: var(--neba-gray-700);
+}
+
+.mts-currency-input {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.mts-currency-input__prefix {
+    position: absolute;
+    left: 0.75rem;
+    color: var(--neba-gray-500);
+    font-size: 0.9375rem;
+    pointer-events: none;
+}
+
+.mts-currency-input__field {
+    padding-left: 1.75rem;
+}
+
+.mts-modal-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 0.5rem;
+}

@@ -3,6 +3,7 @@ using FastEndpoints;
 using FluentValidation;
 
 using Neba.Api.Contracts.Tournaments.AddTournamentSponsor;
+using Neba.Api.Features.Tournaments.Domain;
 
 namespace Neba.Api.Features.Tournaments.AddTournamentSponsor;
 
@@ -20,8 +21,11 @@ internal sealed class AddTournamentSponsorRequestValidator
             .Length(26).WithErrorCode("AddTournamentSponsorRequest.SponsorIdInvalidLength").WithMessage("Sponsor ID must be a 26-character ULID.");
 
         RuleFor(r => r.Sponsor.SponsorshipAmount)
-            .GreaterThanOrEqualTo(0)
+            .InclusiveBetween(0m, TournamentSponsor.MaxSponsorshipAmount)
             .WithErrorCode("AddTournamentSponsorRequest.SponsorshipAmountInvalid")
-            .WithMessage("Sponsorship amount must be zero or greater.");
+            .WithMessage("Sponsorship amount must be between $0 and $99,999.99.")
+            .PrecisionScale(7, 2, ignoreTrailingZeros: true)
+            .WithErrorCode("AddTournamentSponsorRequest.SponsorshipAmountInvalid")
+            .WithMessage("Sponsorship amount can have at most two decimal places.");
     }
 }
