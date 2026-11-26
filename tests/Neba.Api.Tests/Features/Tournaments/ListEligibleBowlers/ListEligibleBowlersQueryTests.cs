@@ -49,7 +49,7 @@ public sealed class ListEligibleBowlersQueryTests
         firstKey.ShouldNotBe(secondKey);
     }
 
-    [Fact(DisplayName = "Cache tags should contain neba, neba:tournaments, the tournament tag and the eligible-bowlers tag")]
+    [Fact(DisplayName = "Cache tags should contain neba, neba:tournaments, the tournament, eligible-bowlers and bowlers tags")]
     public void Cache_Tags_ShouldContainExpectedTags()
     {
         // Arrange
@@ -63,10 +63,11 @@ public sealed class ListEligibleBowlersQueryTests
         tags.ShouldContain("neba:tournaments");
         tags.ShouldContain($"neba:tournaments:{query.Id}");
         tags.ShouldContain("neba:tournaments:eligible-bowlers");
+        tags.ShouldContain("neba:bowlers");
     }
 
-    [Fact(DisplayName = "Cache tags should contain exactly 4 tags")]
-    public void Cache_Tags_ShouldContainExactly4Tags()
+    [Fact(DisplayName = "Cache tags should contain exactly 5 tags")]
+    public void Cache_Tags_ShouldContainExactly5Tags()
     {
         // Arrange
         var query = new ListEligibleBowlersQuery { Id = TournamentId.New() };
@@ -75,6 +76,6 @@ public sealed class ListEligibleBowlersQueryTests
         var tags = query.Cache.Tags;
 
         // Assert
-        tags.Count.ShouldBe(4);
+        tags.Count.ShouldBe(5);
     }
 }

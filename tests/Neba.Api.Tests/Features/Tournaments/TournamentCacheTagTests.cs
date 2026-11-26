@@ -24,7 +24,7 @@ public sealed class TournamentCacheTagTests
         detail.Tags.ShouldContain(CacheDescriptors.Tournaments.Tag);
     }
 
-    [Fact(DisplayName = "The eligible-bowlers descriptor should carry the tag the results sync, delete and edit evictions clear")]
+    [Fact(DisplayName = "The eligible-bowlers descriptor should carry the tags the results sync, delete, edit and bowler evictions clear")]
     public void EligibleBowlers_ShouldCarryTheEvictionTag()
     {
         // Arrange
@@ -37,7 +37,7 @@ public sealed class TournamentCacheTagTests
         CacheDescriptors.Tournaments.EligibleBowlersTag.ShouldBe("neba:tournaments:eligible-bowlers");
         descriptor.Key.ShouldBe($"neba:tournaments:{id}:eligible-bowlers");
         descriptor.Tags.ShouldBe(
-            ["neba", CacheDescriptors.Tournaments.Tag, $"neba:tournaments:{id}", CacheDescriptors.Tournaments.EligibleBowlersTag],
+            ["neba", CacheDescriptors.Tournaments.Tag, $"neba:tournaments:{id}", CacheDescriptors.Tournaments.EligibleBowlersTag, "neba:bowlers"],
             ignoreOrder: true);
     }
 }

@@ -469,7 +469,7 @@ public static class CacheDescriptors
             => new()
             {
                 Key = $"{Tag}:{id}:eligible-bowlers",
-                Tags = ["neba", Tag, $"{Tag}:{id}", EligibleBowlersTag]
+                Tags = ["neba", Tag, $"{Tag}:{id}", EligibleBowlersTag, "neba:bowlers"]
             };
     }
 

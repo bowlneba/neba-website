@@ -14,7 +14,7 @@ internal sealed record ListEligibleBowlersQuery
     public CacheDescriptor Cache
         => CacheDescriptors.Tournaments.EligibleBowlers(Id);
 
-    // A backstop: the results sync, delete and edit handlers clear the list by tag.
+    // A backstop: the results sync, delete and edit handlers and the bowler jobs clear the list by tag.
     public TimeSpan Expiry
         => TimeSpan.FromDays(1);
 }
