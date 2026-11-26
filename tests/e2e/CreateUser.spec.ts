@@ -1,5 +1,7 @@
 import { test, expect, type Locator } from '@playwright/test';
 
+import { gotoInteractive } from './blazor';
+
 test.describe.configure({ mode: 'serial' });
 
 // The radios are visually hidden; users click the labels, so the specs do too.
@@ -49,8 +51,7 @@ test.describe('Create User page (authenticated)', () => {
   });
 
   test('shows a validation error when submitting with no email', async ({ page }) => {
-    await page.goto('/account/create-user');
-    await page.waitForSelector('#email');
+    await gotoInteractive(page, '/account/create-user');
 
     await page.locator('button[type="submit"]').click();
 
@@ -59,8 +60,7 @@ test.describe('Create User page (authenticated)', () => {
   });
 
   test('shows a validation error when submitting with no roles selected', async ({ page }) => {
-    await page.goto('/account/create-user');
-    await page.waitForSelector('#email');
+    await gotoInteractive(page, '/account/create-user');
 
     await page.locator('#email').fill('new.staff@bowlneba.com');
     await page.locator('button[type="submit"]').click();
@@ -70,8 +70,7 @@ test.describe('Create User page (authenticated)', () => {
   });
 
   test('creates the user and shows a success message', async ({ page }) => {
-    await page.goto('/account/create-user');
-    await page.waitForSelector('#email');
+    await gotoInteractive(page, '/account/create-user');
 
     await page.locator('#email').fill('new.staff@bowlneba.com');
     await page.getByRole('checkbox', { name: 'Webmaster' }).check();
@@ -86,8 +85,7 @@ test.describe('Create User page (authenticated)', () => {
   test('sends the added and removed permissions chosen in the overrides section', async ({ page }) => {
     await page.request.post('/__test/login?permissions=System.CreateUser,Cache.Clear,Tournaments.DeleteTournament');
 
-    await page.goto('/account/create-user');
-    await page.waitForSelector('#email');
+    await gotoInteractive(page, '/account/create-user');
 
     await page.locator('#email').fill('overrides.staff@bowlneba.com');
     await page.getByRole('checkbox', { name: 'Webmaster' }).check();
@@ -108,8 +106,7 @@ test.describe('Create User page (authenticated)', () => {
   test('shows an error alert and stays on the page when creation fails', async ({ page }) => {
     await page.request.post('http://localhost:5151/__mock/fail?path=/security/users&status=409');
 
-    await page.goto('/account/create-user');
-    await page.waitForSelector('#email');
+    await gotoInteractive(page, '/account/create-user');
 
     await page.locator('#email').fill('conflict@bowlneba.com');
     await page.getByRole('checkbox', { name: 'Manager' }).check();
