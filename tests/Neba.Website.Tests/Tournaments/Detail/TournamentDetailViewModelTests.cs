@@ -253,12 +253,12 @@ public sealed class TournamentDetailViewModelTests
     }
 
     [Theory(DisplayName = "ShowEligibleBowlers should be true only for a scheduled Invitational")]
-    [InlineData("Invitational", "Scheduled", true)]
-    [InlineData("Invitational", "Completed", false)]
-    [InlineData("Invitational", "Truncated", false)]
-    [InlineData("Invitational", "Cancelled", false)]
-    [InlineData("Singles", "Scheduled", false)]
-    [InlineData("Doubles", "Scheduled", false)]
+    [InlineData("Invitational", "Scheduled", true, TestDisplayName = "Scheduled Invitational")]
+    [InlineData("Invitational", "Completed", false, TestDisplayName = "Completed Invitational")]
+    [InlineData("Invitational", "Truncated", false, TestDisplayName = "Truncated Invitational")]
+    [InlineData("Invitational", "Cancelled", false, TestDisplayName = "Cancelled Invitational")]
+    [InlineData("Singles", "Scheduled", false, TestDisplayName = "Scheduled Singles")]
+    [InlineData("Doubles", "Scheduled", false, TestDisplayName = "Scheduled Doubles")]
     public void ShowEligibleBowlers_ShouldRequireScheduledInvitational(string tournamentType, string status, bool expected)
     {
         // Arrange
