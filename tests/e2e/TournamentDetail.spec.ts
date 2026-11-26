@@ -1,5 +1,6 @@
 import { test, expect } from '@playwright/test';
 import {
+  MOCK_TOURNAMENT_INVITATIONAL_ERRORS_ID,
   MOCK_TOURNAMENT_INVITATIONAL_PAST_ID,
   MOCK_TOURNAMENT_INVITATIONAL_UPCOMING_ID,
   MOCK_TOURNAMENT_TEAM_ID,
@@ -573,5 +574,26 @@ test.describe('Tournament Detail page — eligible bowlers', () => {
     await page.goto(`/tournaments/${MOCK_TOURNAMENT_INVITATIONAL_PAST_ID}`);
     await page.waitForSelector('.td-hero');
     await expect(page.locator('.eligible-bowlers')).toHaveCount(0);
+  });
+
+  test('a failed load shows an error beside the rest of the page, and Try again loads the list', async ({ page }, testInfo) => {
+    const tournamentId = perProjectTournamentId(MOCK_TOURNAMENT_INVITATIONAL_ERRORS_ID, testInfo.project.name);
+    const failPath = `/tournaments/${tournamentId}/eligible-bowlers`;
+
+    try {
+      // A 4xx: a 5xx would make the site retry past the expect timeout.
+      await page.request.post(`http://localhost:5151/__mock/fail?path=${failPath}&status=400`);
+      await page.goto(`/tournaments/${tournamentId}`);
+
+      await expect(page.locator('.eligible-bowlers__error')).toContainText('Could not load the eligible bowlers.');
+      await expect(page.locator('.td-hero__title')).toContainText('NEBA Upcoming Invitational');
+
+      await page.request.post(`http://localhost:5151/__mock/reset?path=${failPath}`);
+      await page.getByRole('button', { name: 'Try again' }).click();
+
+      await expect(page.locator('.eligible-bowlers__table tbody tr')).toHaveCount(3);
+    } finally {
+      await page.request.post(`http://localhost:5151/__mock/reset?path=${failPath}`);
+    }
   });
 });
