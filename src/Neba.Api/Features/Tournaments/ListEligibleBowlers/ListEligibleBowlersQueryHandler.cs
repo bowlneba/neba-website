@@ -11,6 +11,9 @@ namespace Neba.Api.Features.Tournaments.ListEligibleBowlers;
 internal sealed class ListEligibleBowlersQueryHandler(AppDbContext appDbContext)
     : IQueryHandler<ListEligibleBowlersQuery, ErrorOr<EligibleBowlersDto>>
 {
+    // Far above any season's bowler count (about 1,000 members), so no qualifier is ever cut.
+    private const int MaxBowlers = 5000;
+
     public async Task<ErrorOr<EligibleBowlersDto>> HandleAsync(
         ListEligibleBowlersQuery query, CancellationToken cancellationToken)
     {
@@ -48,6 +51,8 @@ internal sealed class ListEligibleBowlersQueryHandler(AppDbContext appDbContext)
         var rows = await appDbContext.Bowlers
             .AsNoTracking()
             .Where(bowler => eligibleBowlerIds.Contains(bowler.Id))
+            .OrderBy(bowler => bowler.Id)
+            .Take(MaxBowlers)
             .Select(bowler => new { bowler.Id, bowler.Name, bowler.UsbcId })
             .ToListAsync(cancellationToken);
 
