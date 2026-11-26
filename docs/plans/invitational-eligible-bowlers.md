@@ -110,7 +110,7 @@ Commits 1 and 2 are already done. Start at commit 3.
 - [x] 2. Keep feature-plan agents to planning (committed 2026-11-25 as `31b8f50f`)
 - [x] 3. Define Invitational Eligibility
 - [x] 4. Add eligible bowlers cache tag and eviction
-- [ ] 5. Add eligible bowlers query
+- [x] 5. Add eligible bowlers query
 - [ ] 6. Add eligible bowlers endpoint
 - [ ] 7. Mock the eligible bowlers route
 - [ ] 8. Load eligible bowlers in the tournament service
@@ -1166,9 +1166,11 @@ public sealed class ListEligibleBowlersQueryHandlerTests(AppDbContextFixture fix
         // Arrange
         var ct = TestContext.Current.CancellationToken;
         var invitational = await SeedInvitationalAsync(ct);
-        var name = NameFactory.Create(firstName: "Sam", lastName: "Lee");
-        var higher = await SeedBowlerAsync(ct, name, usbcId: "2222-22222", id: new BowlerId(HigherBowlerId));
-        var lower = await SeedBowlerAsync(ct, name, usbcId: "1111-11111", id: new BowlerId(LowerBowlerId));
+        // EF owns each Name by its bowler, so the two bowlers need separate instances.
+        var higher = await SeedBowlerAsync(
+            ct, NameFactory.Create(firstName: "Sam", lastName: "Lee"), usbcId: "2222-22222", id: new BowlerId(HigherBowlerId));
+        var lower = await SeedBowlerAsync(
+            ct, NameFactory.Create(firstName: "Sam", lastName: "Lee"), usbcId: "1111-11111", id: new BowlerId(LowerBowlerId));
         await SeedParticipationAsync(_season, ct, (higher, 3), (lower, 3));
 
         // Act
