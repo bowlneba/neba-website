@@ -36,7 +36,7 @@ internal sealed class ListEligibleBowlersQueryHandler(AppDbContext appDbContext)
         }
 
         var seasonId = invitational.SeasonId;
-        var threshold = Tournament.InvitationalEligibilityThreshold;
+        const int threshold = Tournament.InvitationalEligibilityThreshold;
 
         // Every result counts: results exist only on Completed or Truncated tournaments, and
         // (tournament, bowler) is unique, so Count() is the number of distinct tournaments.

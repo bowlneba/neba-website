@@ -98,8 +98,8 @@ public sealed class ListEligibleBowlersQueryHandlerTests(AppDbContextFixture fix
             tournamentType: type ?? TournamentType.Singles,
             startDate: date,
             endDate: date,
-            seasonId: season.Id,
             statsEligible: statsEligible,
+            seasonId: season.Id,
             status: status ?? TournamentStatus.Completed,
             results: [.. participants.Select((bowler, place) =>
                 TournamentResultFactory.Create(bowlerId: bowler.Id, place: place + 1))]);

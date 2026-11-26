@@ -12,7 +12,7 @@ public sealed class EligibleBowlerViewModelTests
     public void Name_ShouldThrow_WhenNull()
     {
         // Arrange
-        string name = null;
+        const string name = null;
 
         // Act
         var create = () => new EligibleBowlerViewModel { Name = name };
