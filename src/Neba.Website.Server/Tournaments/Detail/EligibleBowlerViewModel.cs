@@ -35,31 +35,16 @@ public sealed record EligibleBowlerViewModel
     public string UsbcKey { get; private init; } = string.Empty;
 
     // Every word must be in the name, in any order. The ID is tried only when the term has a digit.
-    internal bool Matches(string term)
-    {
-        var trimmed = term.Trim();
-
-        if (trimmed.Length == 0)
-        {
-            return true;
-        }
-
-        var words = NormalizeName(trimmed).Split((char[]?)null, StringSplitOptions.RemoveEmptyEntries);
-
-        if (words.All(word => NameKey.Contains(word, StringComparison.Ordinal)))
-        {
-            return true;
-        }
-
-        return UsbcKey.Length > 0
-            && trimmed.Any(char.IsAsciiDigit)
-            && UsbcKey.Contains(NormalizeUsbcId(trimmed), StringComparison.OrdinalIgnoreCase);
-    }
+    internal bool Matches(EligibleBowlerSearchTerm term)
+        => term.Words.All(word => NameKey.Contains(word, StringComparison.Ordinal))
+            || (UsbcKey.Length > 0
+                && term.UsbcKey is not null
+                && UsbcKey.Contains(term.UsbcKey, StringComparison.OrdinalIgnoreCase));
 
     [SuppressMessage("Globalization", "CA1308:Normalize strings to uppercase", Justification = "A lower-case search key, not a security comparison.")]
-    private static string NormalizeName(string value)
+    internal static string NormalizeName(string value)
         => value.ToLowerInvariant().Replace('’', '\'').Replace('‘', '\'');
 
-    private static string NormalizeUsbcId(string value)
+    internal static string NormalizeUsbcId(string value)
         => string.Concat(value.Where(character => character != '-' && !char.IsWhiteSpace(character)));
 }

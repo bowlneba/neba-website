@@ -133,5 +133,8 @@
     protected override void OnParametersSet() => ApplyFilter();
 
     private void ApplyFilter()
-        => _shown = List is null ? [] : [.. List.Bowlers.Where(bowler => bowler.Matches(_term))];
+    {
+        var term = EligibleBowlerSearchTerm.From(_term);
+        _shown = List is null ? [] : [.. List.Bowlers.Where(bowler => bowler.Matches(term))];
+    }
 }
