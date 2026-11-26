@@ -385,6 +385,13 @@ else
                         </section>
                     }
 
+                    @if (_model.ShowEligibleBowlers)
+                    {
+                        <section class="tournament-detail__section">
+                            <EligibleBowlers TournamentId="@Id" />
+                        </section>
+                    }
+
                     @if (_model.HasResults)
                     {
                         <section class="tournament-detail__section tournament-detail__results">

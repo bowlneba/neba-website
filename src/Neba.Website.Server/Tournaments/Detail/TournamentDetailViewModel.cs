@@ -112,6 +112,11 @@ public sealed record TournamentDetailViewModel
     public bool ShowTeamEligibilityLink => IsScheduled && TeamSize > 1;
 
     /// <summary>
+    /// A scheduled Invitational lists the bowlers who qualify to bowl it.
+    /// </summary>
+    public bool ShowEligibleBowlers => IsScheduled && TournamentType == "Invitational";
+
+    /// <summary>
     /// Per-bowler entry fee in USD; null if not set.
     /// </summary>
     public decimal? EntryFee { get; init; }

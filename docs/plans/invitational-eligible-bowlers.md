@@ -115,7 +115,7 @@ Commits 1 and 2 are already done. Start at commit 3.
 - [x] 7. Mock the eligible bowlers route
 - [x] 8. Load eligible bowlers in the tournament service
 - [x] 9. Add eligible bowlers component
-- [ ] 10. Show eligible bowlers on Invitational details
+- [x] 10. Show eligible bowlers on Invitational details
 - [ ] 11. Cover the eligible bowlers section
 - [ ] 12. Document the eligible bowlers list
 
@@ -2826,6 +2826,7 @@ A user-facing page changes, so add or update the help doc under `docs/help/` (AD
 - Not handled: accented names ("Chloe" does not match "Chloé"). The component loads only in `OnInitializedAsync`, so direct navigation between two tournament pages would not reload it.
 - The e2e mock returns 200 with null requirements for any unknown ID, where the real API returns 404. The e2e check on the past Invitational proves no section renders, not that no call was made; bUnit proves that.
 - Not run: the unit, bUnit and Playwright tests.
+- Browser check at commit 10 (390px wide, 303 mock rows): no sideways scroll, the box stays at 28rem, filtering kept up with typing on a desktop (not tried on a real phone). After "Try again" succeeds, focus drops to the page body and the next Tab lands on the list, passing the search box.
 
 ## Commit plan
 

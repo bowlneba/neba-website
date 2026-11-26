@@ -359,6 +359,10 @@
     margin-bottom: 1rem;
 }
 
+.tournament-detail__section:empty {
+    display: none;
+}
+
 .td-section-title {
     font-family: var(--neba-font-display);
     font-size: 1.125rem;
