@@ -18,7 +18,7 @@
                     <label class="sr-only" for="eligible-bowlers-search">Search eligible bowlers by name or USBC ID</label>
                     <input id="eligible-bowlers-search" type="search" class="neba-input eligible-bowlers__search"
                            placeholder="Search by name or USBC ID" autocomplete="off"
-                           value="@_term" @oninput="HandleSearchInput" />
+                           @bind="_term" @bind:event="oninput" @bind:after="ApplyFilter" />
                 </div>
             }
         </div>
@@ -131,12 +131,6 @@
     }
 
     protected override void OnParametersSet() => ApplyFilter();
-
-    private void HandleSearchInput(ChangeEventArgs e)
-    {
-        _term = e.Value?.ToString() ?? string.Empty;
-        ApplyFilter();
-    }
 
     private void ApplyFilter()
         => _shown = List is null ? [] : [.. List.Bowlers.Where(bowler => bowler.Matches(_term))];
