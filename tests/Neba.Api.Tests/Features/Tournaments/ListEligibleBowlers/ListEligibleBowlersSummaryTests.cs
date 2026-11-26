@@ -18,6 +18,16 @@ public sealed class ListEligibleBowlersSummaryTests
         summary.Description.ShouldNotBeNullOrWhiteSpace();
     }
 
+    [Fact(DisplayName = "Constructor should set an example request")]
+    public void Constructor_ShouldSetExampleRequest_WhenConstructed()
+    {
+        // Arrange & Act
+        var summary = new ListEligibleBowlersSummary();
+
+        // Assert
+        summary.ExampleRequest.ShouldBeOfType<ListEligibleBowlersRequest>();
+    }
+
     [Theory(DisplayName = "Constructor should register a response for each status code")]
     [InlineData(200, TestDisplayName = "200")]
     [InlineData(400, TestDisplayName = "400")]

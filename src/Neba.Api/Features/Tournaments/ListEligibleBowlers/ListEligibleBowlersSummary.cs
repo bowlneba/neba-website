@@ -16,6 +16,8 @@ internal sealed class ListEligibleBowlersSummary
             + "Only a scheduled Invitational has a list; any other tournament returns null requirements and no bowlers. "
             + "Only the display name and USBC ID return. Tournament counts, ineligible bowlers and dates of birth never do.";
 
+        ExampleRequest = new ListEligibleBowlersRequest { TournamentId = "01JZ8K3M4N5P6Q7R8S9T0V1W2X" };
+
         Response(200, "The requirements and eligible bowlers. Requirements are null when the tournament has no list.",
             contentType: MediaTypeNames.Application.Json,
             example: new EligibleBowlersResponse
