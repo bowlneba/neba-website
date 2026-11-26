@@ -1,0 +1,166 @@
+@implements IDisposable
+@inject ITournamentApiService TournamentApiService
+
+@if (_isLoading || _loadFailed || _list is { ListApplies: true })
+{
+    <div class="eligible-bowlers">
+        <div class="eligible-bowlers__head">
+            <div>
+                <h2 class="td-section-title">Eligible bowlers</h2>
+                @if (_list is not null)
+                {
+                    <span class="td-section-subtitle">@Subtitle</span>
+                }
+            </div>
+            @if (_list is { Bowlers.Count: > 0 })
+            {
+                <div class="eligible-bowlers__tools">
+                    <label class="sr-only" for="eligible-bowlers-search">Search eligible bowlers by name or USBC ID</label>
+                    <input id="eligible-bowlers-search" type="search" class="neba-input eligible-bowlers__search"
+                           placeholder="Search by name or USBC ID" autocomplete="off"
+                           value="@_term" @oninput="HandleSearchInput" />
+                </div>
+            }
+        </div>
+
+        @if (_isLoading)
+        {
+            <div class="eligible-bowlers__loading" role="status">
+                <div class="neba-spinner" aria-hidden="true"></div>
+                <span class="sr-only">Loading eligible bowlers…</span>
+            </div>
+        }
+        else if (_loadFailed)
+        {
+            <div class="eligible-bowlers__error" role="alert">
+                <p>Could not load the eligible bowlers.</p>
+                <button type="button" class="neba-btn neba-btn-secondary neba-btn-sm eligible-bowlers__retry"
+                        @onclick="LoadAsync">
+                    Try again
+                </button>
+            </div>
+        }
+        else if (_list!.Bowlers.Count == 0)
+        {
+            <p class="eligible-bowlers__empty">@EmptyText</p>
+        }
+        else
+        {
+            <div class="eligible-bowlers__panel">
+                @if (_shown.Count > 0)
+                {
+                    <div class="eligible-bowlers__scroll" tabindex="0" role="region" aria-label="Eligible bowlers list">
+                        <table class="eligible-bowlers__table">
+                            <thead>
+                                <tr>
+                                    <th scope="col">Name</th>
+                                    <th scope="col">USBC ID</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var (index, bowler) in _shown.Index())
+                                {
+                                    <tr @key="index">
+                                        <td>@bowler.Name</td>
+                                        <td>
+                                            @if (bowler.UsbcId is null)
+                                            {
+                                                <span class="eligible-bowlers__no-id">No USBC ID</span>
+                                            }
+                                            else
+                                            {
+                                                @bowler.UsbcId
+                                            }
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                }
+                else
+                {
+                    <p class="eligible-bowlers__no-match">No bowlers match “@(_term.Trim())”.</p>
+                }
+            </div>
+
+            <p class="eligible-bowlers__count" role="status">@CountText</p>
+        }
+    </div>
+}
+
+@code {
+    private readonly CancellationTokenSource _disposed = new();
+
+    private EligibleBowlersViewModel? _list;
+    private IReadOnlyList<EligibleBowlerViewModel> _shown = [];
+    private string _term = string.Empty;
+    private bool _isLoading = true;
+    private bool _loadFailed;
+
+    [Parameter, EditorRequired]
+    public string TournamentId { get; set; } = default!;
+
+    private string Subtitle
+        => _list?.MinTournamentsCount is { } minimum
+            ? "Bowlers with a result in " + minimum + " or more "
+                + "tournament".ToQuantity(minimum, ShowQuantityAs.None) + " this season."
+            : "Bowlers who have qualified this season.";
+
+    private string EmptyText
+        => _list?.MinTournamentsCount is { } minimum
+            ? "No bowlers have reached "
+                + "tournament".ToQuantity(minimum, formatProvider: DisplayCulture.English) + " yet this season."
+            : "No bowlers have qualified yet this season.";
+
+    private string CountText
+    {
+        get
+        {
+            var total = "bowler".ToQuantity(_list!.Bowlers.Count, formatProvider: DisplayCulture.English);
+
+            return string.IsNullOrWhiteSpace(_term)
+                ? total
+                : _shown.Count + " of " + total;
+        }
+    }
+
+    protected override Task OnInitializedAsync() => LoadAsync();
+
+    public void Dispose()
+    {
+        _disposed.Cancel();
+        _disposed.Dispose();
+    }
+
+    private async Task LoadAsync()
+    {
+        _isLoading = true;
+        _loadFailed = false;
+
+        var result = await TournamentApiService.GetEligibleBowlersAsync(TournamentId, _disposed.Token);
+
+        // The visitor left, or the status changed and the page dropped this section.
+        if (_disposed.IsCancellationRequested)
+        {
+            return;
+        }
+
+        _isLoading = false;
+
+        if (result.IsError)
+        {
+            _loadFailed = true;
+            return;
+        }
+
+        _list = result.Value;
+        _shown = _list.Bowlers;
+    }
+
+    private void HandleSearchInput(ChangeEventArgs e)
+    {
+        _term = e.Value?.ToString() ?? string.Empty;
+        _shown = [.. _list!.Bowlers.Where(bowler => bowler.Matches(_term))];
+    }
+}

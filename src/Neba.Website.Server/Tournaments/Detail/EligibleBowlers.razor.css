@@ -1,0 +1,127 @@
+.eligible-bowlers__head {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    align-items: flex-end;
+    gap: 1rem;
+    margin-bottom: 0.75rem;
+    padding-top: 0.75rem;
+    border-top: 2px solid var(--neba-gray-200);
+}
+
+/* Same look as the page's section heading, whose rules are scoped to TournamentDetail. */
+.td-section-title {
+    margin: 0;
+    font-family: var(--neba-font-display);
+    font-size: 1.125rem;
+    font-weight: 600;
+    color: var(--neba-text);
+}
+
+.td-section-subtitle {
+    font-size: 0.8125rem;
+    color: var(--neba-gray-500);
+}
+
+.eligible-bowlers__tools {
+    width: 16.25rem;
+}
+
+.eligible-bowlers__panel {
+    background: var(--neba-bg-panel);
+    border-top: 2px solid var(--tournaments-gold);
+}
+
+.eligible-bowlers__scroll {
+    max-height: 28rem;
+    overflow-y: auto;
+}
+
+.eligible-bowlers__scroll:focus-visible {
+    outline: 2px solid var(--neba-blue-500);
+    outline-offset: 2px;
+}
+
+.eligible-bowlers__table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.9375rem;
+    color: var(--neba-text);
+}
+
+.eligible-bowlers__table th {
+    position: sticky;
+    top: 0;
+    padding: 0.625rem 1rem;
+    background: var(--neba-bg-panel);
+    box-shadow: inset 0 -1px var(--neba-surface-highest);
+    text-align: left;
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--neba-gray-500);
+}
+
+.eligible-bowlers__table td {
+    padding: 0.75rem 1rem;
+    border-bottom: 1px solid var(--neba-surface-high);
+    overflow-wrap: anywhere;
+}
+
+.eligible-bowlers__table th:last-child,
+.eligible-bowlers__table td:last-child {
+    text-align: right;
+    white-space: nowrap;
+    font-variant-numeric: tabular-nums;
+}
+
+.eligible-bowlers__table tbody tr:hover {
+    background: color-mix(in srgb, var(--neba-blue-700) 4%, transparent);
+}
+
+.eligible-bowlers__no-id,
+.eligible-bowlers__count {
+    font-size: 0.8125rem;
+    color: var(--neba-gray-500);
+}
+
+.eligible-bowlers__count {
+    margin: 0.5rem 0 0;
+}
+
+.eligible-bowlers__loading {
+    display: flex;
+    justify-content: center;
+    padding: 1.75rem 1rem;
+}
+
+.eligible-bowlers__empty,
+.eligible-bowlers__no-match,
+.eligible-bowlers__error {
+    margin: 0;
+    padding: 1.75rem 1rem;
+    text-align: center;
+    color: var(--neba-gray-500);
+    overflow-wrap: anywhere;
+}
+
+.eligible-bowlers__retry {
+    margin-top: 0.625rem;
+}
+
+@media (max-width: 767px) {
+    .eligible-bowlers__tools {
+        width: 100%;
+    }
+
+    /* Leaves room around the box so a swipe can still scroll the page. */
+    .eligible-bowlers__scroll {
+        max-height: min(28rem, 60vh);
+    }
+
+    .eligible-bowlers__table th,
+    .eligible-bowlers__table td {
+        padding-inline: 0.75rem;
+    }
+}
