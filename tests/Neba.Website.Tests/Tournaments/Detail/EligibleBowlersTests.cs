@@ -290,6 +290,22 @@ public sealed class EligibleBowlersTests : IDisposable
         Names(cut).ShouldBe(["Pat O'Brien"]);
     }
 
+    [Theory(DisplayName = "Should match a straight apostrophe when the stored name has a curly one")]
+    [InlineData("Pat O\u2019Brien", TestDisplayName = "Right single quote")]
+    [InlineData("Pat O\u2018Brien", TestDisplayName = "Left single quote")]
+    public void Search_ShouldMatch_WhenNameHasCurlyApostrophe(string name)
+    {
+        // Arrange
+        var cut = RenderList(EligibleBowlersViewModelFactory.Create(
+            bowlers: [EligibleBowlerViewModelFactory.Create(name: name)]));
+
+        // Act
+        cut.Find("input.eligible-bowlers__search").Input("o'brien");
+
+        // Assert
+        Names(cut).ShouldBe([name]);
+    }
+
     private IRenderedComponent<EligibleBowlers> RenderList(EligibleBowlersViewModel list)
         => _ctx.Render<EligibleBowlers>(p => p.Add(x => x.List, list));
 
