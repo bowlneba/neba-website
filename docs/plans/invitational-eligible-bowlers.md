@@ -108,7 +108,7 @@ Commits 1 and 2 are already done. Start at commit 3.
 
 - [x] 1. Add invitational eligible bowlers plan (committed 2026-11-25 as `1391a3c6`, "Plan Invitational eligible-bowler list")
 - [x] 2. Keep feature-plan agents to planning (committed 2026-11-25 as `31b8f50f`)
-- [ ] 3. Define Invitational Eligibility
+- [x] 3. Define Invitational Eligibility
 - [ ] 4. Add eligible bowlers cache tag and eviction
 - [ ] 5. Add eligible bowlers query
 - [ ] 6. Add eligible bowlers endpoint
