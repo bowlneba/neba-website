@@ -72,11 +72,11 @@ public sealed class DocumentSectionSlideoverTests : IDisposable
         var cut = RenderSlideover(isOpen: false);
         cut.Render(p => p.Add(x => x.IsOpen, true));
 
-        // Act
+        // Act: completing on the renderer's dispatcher runs the rest of the render before this returns.
         await cut.InvokeAsync(js.CompleteImport);
 
         // Assert
-        await cut.WaitForAssertionAsync(() => js.Calls.ShouldContain("focusElement"));
+        js.Calls.ShouldContain("focusElement");
     }
 
     // Holds the module import open until the test releases it.
@@ -92,8 +92,7 @@ public sealed class DocumentSectionSlideoverTests : IDisposable
         {
             if (identifier == "import")
             {
-                return new ValueTask<TValue>(_import.Task.ContinueWith(
-                    task => (TValue)task.Result, TaskScheduler.Default));
+                return new ValueTask<TValue>(ImportAsync<TValue>());
             }
 
             Calls.Add(identifier);
@@ -104,6 +103,10 @@ public sealed class DocumentSectionSlideoverTests : IDisposable
             => InvokeAsync<TValue>(identifier, args);
 
         public ValueTask DisposeAsync() => ValueTask.CompletedTask;
+
+#pragma warning disable VSTHRD003 // The test completes this task itself.
+        private async Task<TValue> ImportAsync<TValue>() => (TValue)await _import.Task;
+#pragma warning restore VSTHRD003
     }
 
     [Fact(DisplayName = "Closed slide-out renders no dialog")]
