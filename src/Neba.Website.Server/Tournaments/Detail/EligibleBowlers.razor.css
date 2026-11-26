@@ -1,3 +1,8 @@
+/* The section loading overlay covers this box. */
+.eligible-bowlers {
+    position: relative;
+}
+
 .eligible-bowlers__head {
     display: flex;
     flex-wrap: wrap;
@@ -96,10 +101,9 @@
     margin: 0.5rem 0 0;
 }
 
+/* Holds room for the overlay while there is no list yet. */
 .eligible-bowlers__loading {
-    display: flex;
-    justify-content: center;
-    padding: 1.75rem 1rem;
+    min-height: 8rem;
 }
 
 .eligible-bowlers__empty,

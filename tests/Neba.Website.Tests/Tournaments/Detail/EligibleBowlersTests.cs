@@ -33,6 +33,9 @@ public sealed class EligibleBowlersTests : IDisposable
         // Assert
         cut.Find("h2").TextContent.Trim().ShouldBe("Eligible bowlers");
         cut.Find(".eligible-bowlers__loading").ShouldNotBeNull();
+        var indicator = cut.FindComponent<NebaLoadingIndicator>().Instance;
+        indicator.IsVisible.ShouldBeTrue();
+        indicator.Scope.ShouldBe(LoadingIndicatorScope.Section);
         cut.FindAll(".eligible-bowlers__table, .eligible-bowlers__search, .eligible-bowlers__empty, .eligible-bowlers__error").ShouldBeEmpty();
     }
 

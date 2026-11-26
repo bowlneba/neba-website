@@ -1,6 +1,7 @@
 @if (IsLoading || LoadFailed || List is { ListApplies: true })
 {
     <div class="eligible-bowlers">
+        <NebaLoadingIndicator IsVisible="@IsLoading" Scope="LoadingIndicatorScope.Section" />
         <div class="eligible-bowlers__head">
             <div>
                 <div class="eligible-bowlers__title">
@@ -26,7 +27,6 @@
         @if (IsLoading)
         {
             <div class="eligible-bowlers__loading" role="status">
-                <div class="neba-spinner" aria-hidden="true"></div>
                 <span class="sr-only">Loading eligible bowlers…</span>
             </div>
         }
