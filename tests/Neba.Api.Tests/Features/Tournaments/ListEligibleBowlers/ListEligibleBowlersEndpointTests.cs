@@ -49,7 +49,7 @@ public sealed class ListEligibleBowlersEndpointTests
         var tournamentId = TournamentId.New();
         ListEligibleBowlersQuery? captured = null;
         var handler = HandlerReturning(
-            EligibleBowlersDtoFactory.Create(bowlers: EligibleBowlerSummaryDtoFactory.Bogus(1, 2202)), ct, query => captured = query);
+            EligibleBowlersDtoFactory.Create(bowlers: EligibleBowlerSummaryDtoFactory.Bogus(1)), ct, query => captured = query);
         var endpoint = Factory.Create<ListEligibleBowlersEndpoint>(handler.Object);
 
         // Act

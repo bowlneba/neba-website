@@ -87,7 +87,7 @@ public sealed class ListEligibleBowlersPipelineTests : IAsyncLifetime
         _handler
             .Setup(handler => handler.HandleAsync(It.IsAny<ListEligibleBowlersQuery>(), It.IsAny<CancellationToken>()))
             .Callback<ListEligibleBowlersQuery, CancellationToken>((query, _) => captured = query)
-            .ReturnsAsync(EligibleBowlersDtoFactory.Create(bowlers: EligibleBowlerSummaryDtoFactory.Bogus(3, 2201)));
+            .ReturnsAsync(EligibleBowlersDtoFactory.Create(bowlers: EligibleBowlerSummaryDtoFactory.Bogus(3)));
 
         // Act
         using var response = await _client.GetAsync(new Uri($"/tournaments/{TournamentId}/eligible-bowlers", UriKind.Relative), ct);
