@@ -64,7 +64,7 @@ Decisions win over notes, notes over code drafts, code drafts over `docs/ubiquit
 4. Fix failures. If the code drifts from the plan, update the plan.
 5. Stage that commit's files by name (never `git add -A`), commit with the subject and the attribution lines the session gives, and tick the box under "Progress". Include the ticked plan file in the same commit.
 
-Commits 1 and 2 only stage files that already exist.
+Commits 1 and 2 are already done. Start at commit 3.
 
 ### Do not
 
@@ -106,8 +106,8 @@ Commits 1 and 2 only stage files that already exist.
 
 ### Progress
 
-- [ ] 1. Add invitational eligible bowlers plan
-- [ ] 2. Keep feature-plan agents to planning
+- [x] 1. Add invitational eligible bowlers plan (committed 2026-11-25 as `1391a3c6`, "Plan Invitational eligible-bowler list")
+- [x] 2. Keep feature-plan agents to planning (committed 2026-11-25 as `31b8f50f`)
 - [ ] 3. Define Invitational Eligibility
 - [ ] 4. Add eligible bowlers cache tag and eviction
 - [ ] 5. Add eligible bowlers query
