@@ -9,7 +9,7 @@ namespace Neba.Api.Tests.Features.Tournaments.ListEligibleBowlers;
 public sealed class ListEligibleBowlersQueryTests
 {
     [Fact(DisplayName = "Expiry should be 1 day")]
-    public void Expiry_ShouldBe1Day()
+    public void Expiry_ShouldBe1Day_WhenRead()
     {
         // Arrange
         var query = new ListEligibleBowlersQuery { Id = TournamentId.New() };
@@ -22,7 +22,7 @@ public sealed class ListEligibleBowlersQueryTests
     }
 
     [Fact(DisplayName = "Cache key should be neba:tournaments:{id}:eligible-bowlers with no caller scope")]
-    public void Cache_Key_ShouldFollowExpectedFormat()
+    public void Cache_Key_ShouldFollowExpectedFormat_WhenBuilt()
     {
         // Arrange
         var query = new ListEligibleBowlersQuery { Id = TournamentId.New() };
@@ -35,7 +35,7 @@ public sealed class ListEligibleBowlersQueryTests
     }
 
     [Fact(DisplayName = "Cache key should be specific to the tournament")]
-    public void Cache_Key_ShouldBeSpecificToTournament()
+    public void Cache_Key_ShouldDiffer_WhenTournamentsDiffer()
     {
         // Arrange
         var first = new ListEligibleBowlersQuery { Id = TournamentId.New() };
@@ -50,7 +50,7 @@ public sealed class ListEligibleBowlersQueryTests
     }
 
     [Fact(DisplayName = "Cache tags should contain neba, neba:tournaments, the tournament, eligible-bowlers and bowlers tags")]
-    public void Cache_Tags_ShouldContainExpectedTags()
+    public void Cache_Tags_ShouldContainExpectedTags_WhenBuilt()
     {
         // Arrange
         var query = new ListEligibleBowlersQuery { Id = TournamentId.New() };
@@ -67,7 +67,7 @@ public sealed class ListEligibleBowlersQueryTests
     }
 
     [Fact(DisplayName = "Cache tags should contain exactly 5 tags")]
-    public void Cache_Tags_ShouldContainExactly5Tags()
+    public void Cache_Tags_ShouldContainExactly5Tags_WhenBuilt()
     {
         // Arrange
         var query = new ListEligibleBowlersQuery { Id = TournamentId.New() };

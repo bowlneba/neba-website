@@ -25,7 +25,7 @@ public sealed class EligibleBowlersTests : IDisposable
     public void Dispose() => _ctx.Dispose();
 
     [Fact(DisplayName = "Should show the heading and loading state while the list is pending")]
-    public void Render_ShouldShowLoading_WhilePending()
+    public void Render_ShouldShowLoading_WhenLoadIsPending()
     {
         // Arrange & Act
         var cut = _ctx.Render<EligibleBowlers>(p => p.Add(x => x.IsLoading, true));
@@ -37,7 +37,7 @@ public sealed class EligibleBowlersTests : IDisposable
     }
 
     [Fact(DisplayName = "Should show names and USBC IDs in the order returned")]
-    public void Render_ShouldShowRows_InReturnedOrder()
+    public void Render_ShouldShowRows_WhenListHasBowlers()
     {
         // Arrange: not alphabetical, so a re-sort in the component would fail.
         var list = EligibleBowlersViewModelFactory.Create(bowlers:
@@ -69,7 +69,7 @@ public sealed class EligibleBowlersTests : IDisposable
     }
 
     [Fact(DisplayName = "Should take the number in the subtitle from the response")]
-    public void Render_ShouldShowThresholdInSubtitle()
+    public void Render_ShouldShowThresholdInSubtitle_WhenMinimumApplies()
     {
         // Arrange
         var list = EligibleBowlersViewModelFactory.Create(minTournamentsCount: 5);
@@ -95,7 +95,7 @@ public sealed class EligibleBowlersTests : IDisposable
     }
 
     [Fact(DisplayName = "Should give the scroll box keyboard focus and a name, and label the search box")]
-    public void Render_ShouldBeAccessible()
+    public void Render_ShouldBeAccessible_WhenListShown()
     {
         // Arrange
         var list = EligibleBowlersViewModelFactory.Create();
@@ -173,7 +173,7 @@ public sealed class EligibleBowlersTests : IDisposable
     [Theory(DisplayName = "Should count the bowlers with a singular or plural noun")]
     [InlineData(1, "1 bowler", TestDisplayName = "One")]
     [InlineData(24, "24 bowlers", TestDisplayName = "Many")]
-    public void Render_ShouldShowCount(int count, string expected)
+    public void Render_ShouldShowCount_WhenListHasBowlers(int count, string expected)
     {
         // Arrange
         var list = EligibleBowlersViewModelFactory.Create(bowlers: EligibleBowlerViewModelFactory.Bogus(count));
@@ -186,7 +186,7 @@ public sealed class EligibleBowlersTests : IDisposable
     }
 
     [Fact(DisplayName = "Should show the filtered and total counts while filtering")]
-    public void Search_ShouldShowFilteredCount()
+    public void Search_ShouldShowFilteredCount_WhenFiltering()
     {
         // Arrange
         var list = EligibleBowlersViewModelFactory.Create(bowlers:
@@ -213,7 +213,7 @@ public sealed class EligibleBowlersTests : IDisposable
     [InlineData("482109317", "Dave Smith", TestDisplayName = "ID without dash")]
     [InlineData("4821 09317", "Dave Smith", TestDisplayName = "ID with a space")]
     [InlineData("11-112", "Pat O'Brien", TestDisplayName = "Part of an ID with a misplaced dash")]
-    public void Search_ShouldFilter(string term, string expected)
+    public void Search_ShouldFilter_WhenTermMatches(string term, string expected)
     {
         // Arrange
         var cut = RenderSearchableList();
@@ -229,7 +229,7 @@ public sealed class EligibleBowlersTests : IDisposable
     [InlineData("zzz", TestDisplayName = "Unknown name")]
     [InlineData("dave jones", TestDisplayName = "Every word must match the same bowler")]
     [InlineData("-", TestDisplayName = "A term with no digit does not search IDs")]
-    public void Search_ShouldShowNoMatch(string term)
+    public void Search_ShouldShowNoMatch_WhenNothingMatches(string term)
     {
         // Arrange
         var cut = RenderSearchableList();
@@ -275,7 +275,7 @@ public sealed class EligibleBowlersTests : IDisposable
     }
 
     [Fact(DisplayName = "Should match a straight apostrophe when the term has a curly one")]
-    public void Search_ShouldTreatCurlyApostropheAsStraight()
+    public void Search_ShouldMatch_WhenTermHasCurlyApostrophe()
     {
         // Arrange
         var cut = RenderSearchableList();

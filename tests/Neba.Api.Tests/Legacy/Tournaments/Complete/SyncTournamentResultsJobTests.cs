@@ -968,7 +968,7 @@ public sealed class SyncTournamentResultsJobTests(AppDbContextFixture fixture, L
     }
 
     [Fact(DisplayName = "SyncAsync should evict the eligible-bowlers cache tag after saving")]
-    public async Task SyncAsync_ShouldEvictEligibleBowlersCacheTag_AfterSaving()
+    public async Task SyncAsync_ShouldEvictEligibleBowlersCacheTag_WhenResultsAreSaved()
     {
         // Arrange
         var ct = TestContext.Current.CancellationToken;

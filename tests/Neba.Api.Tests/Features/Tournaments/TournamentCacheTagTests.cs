@@ -25,7 +25,7 @@ public sealed class TournamentCacheTagTests
     }
 
     [Fact(DisplayName = "The eligible-bowlers descriptor should carry the tags the results sync, delete, edit and bowler evictions clear")]
-    public void EligibleBowlers_ShouldCarryTheEvictionTag()
+    public void EligibleBowlers_ShouldCarryEvictionTags_WhenBuilt()
     {
         // Arrange
         var id = TournamentId.New();

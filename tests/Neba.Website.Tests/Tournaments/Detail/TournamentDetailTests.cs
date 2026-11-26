@@ -1657,7 +1657,7 @@ tournamentType: TournamentType.Doubles, logoUrl: null));
     }
 
     [Fact(DisplayName = "Should show the rest of the page while the eligible bowlers are loading")]
-    public void Render_ShouldShowPage_WhileEligibleBowlersPending()
+    public void Render_ShouldShowPage_WhenEligibleBowlersArePending()
     {
         // Arrange
         SetupScheduledInvitational();

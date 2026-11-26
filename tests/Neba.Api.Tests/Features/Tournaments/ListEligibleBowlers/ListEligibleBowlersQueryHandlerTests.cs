@@ -147,7 +147,7 @@ public sealed class ListEligibleBowlersQueryHandlerTests(AppDbContextFixture fix
     [InlineData(Tournament.InvitationalEligibilityThreshold - 1, false, TestDisplayName = "One below the threshold is excluded")]
     [InlineData(Tournament.InvitationalEligibilityThreshold, true, TestDisplayName = "At the threshold is included")]
     [InlineData(Tournament.InvitationalEligibilityThreshold + 1, true, TestDisplayName = "Above the threshold is included")]
-    public async Task HandleAsync_ShouldApplyThreshold_ToResultCount(int resultCount, bool expectedIncluded)
+    public async Task HandleAsync_ShouldApplyThreshold_WhenCountingResults(int resultCount, bool expectedIncluded)
     {
         // Arrange
         var ct = TestContext.Current.CancellationToken;
@@ -181,7 +181,7 @@ public sealed class ListEligibleBowlersQueryHandlerTests(AppDbContextFixture fix
     }
 
     [Fact(DisplayName = "HandleAsync does not count results from another season")]
-    public async Task HandleAsync_ShouldNotCountResults_FromAnotherSeason()
+    public async Task HandleAsync_ShouldNotCountResults_WhenFromAnotherSeason()
     {
         // Arrange
         var ct = TestContext.Current.CancellationToken;
@@ -199,7 +199,7 @@ public sealed class ListEligibleBowlersQueryHandlerTests(AppDbContextFixture fix
     }
 
     [Fact(DisplayName = "HandleAsync does not add results across seasons: two here and two elsewhere stay excluded")]
-    public async Task HandleAsync_ShouldNotCombineResults_AcrossSeasons()
+    public async Task HandleAsync_ShouldNotCombineResults_WhenSplitAcrossSeasons()
     {
         // Arrange
         var ct = TestContext.Current.CancellationToken;
@@ -218,7 +218,7 @@ public sealed class ListEligibleBowlersQueryHandlerTests(AppDbContextFixture fix
     }
 
     [Fact(DisplayName = "HandleAsync matches the season by SeasonId, not by tournament date")]
-    public async Task HandleAsync_ShouldMatchSeasonBySeasonId_NotByDate()
+    public async Task HandleAsync_ShouldMatchSeasonById_WhenDatesDiffer()
     {
         // Arrange
         var ct = TestContext.Current.CancellationToken;
@@ -248,7 +248,7 @@ public sealed class ListEligibleBowlersQueryHandlerTests(AppDbContextFixture fix
     }
 
     [Fact(DisplayName = "HandleAsync counts results from Truncated tournaments")]
-    public async Task HandleAsync_ShouldCountTruncatedTournaments()
+    public async Task HandleAsync_ShouldCountResult_WhenTournamentIsTruncated()
     {
         // Arrange
         var ct = TestContext.Current.CancellationToken;
@@ -266,7 +266,7 @@ public sealed class ListEligibleBowlersQueryHandlerTests(AppDbContextFixture fix
     }
 
     [Fact(DisplayName = "HandleAsync counts results from tournaments that are not stats eligible")]
-    public async Task HandleAsync_ShouldCountNonStatsEligibleTournaments()
+    public async Task HandleAsync_ShouldCountResult_WhenTournamentIsNotStatsEligible()
     {
         // Arrange
         var ct = TestContext.Current.CancellationToken;
@@ -406,7 +406,7 @@ public sealed class ListEligibleBowlersQueryHandlerTests(AppDbContextFixture fix
     }
 
     [Fact(DisplayName = "HandleAsync sorts last names ignoring case and treating punctuation by ordinal value")]
-    public async Task HandleAsync_ShouldSortOrdinalIgnoreCase_WithMixedCaseAndPunctuation()
+    public async Task HandleAsync_ShouldSortOrdinalIgnoreCase_WhenNamesMixCaseAndPunctuation()
     {
         // Arrange
         var ct = TestContext.Current.CancellationToken;

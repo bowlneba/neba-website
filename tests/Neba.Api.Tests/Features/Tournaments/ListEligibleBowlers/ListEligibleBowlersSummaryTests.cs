@@ -8,7 +8,7 @@ namespace Neba.Api.Tests.Features.Tournaments.ListEligibleBowlers;
 public sealed class ListEligibleBowlersSummaryTests
 {
     [Fact(DisplayName = "Constructor should set the summary and description")]
-    public void Constructor_ShouldSetSummaryAndDescription()
+    public void Constructor_ShouldSetSummaryAndDescription_WhenConstructed()
     {
         // Arrange & Act
         var summary = new ListEligibleBowlersSummary();
@@ -32,7 +32,7 @@ public sealed class ListEligibleBowlersSummaryTests
     [InlineData(200, TestDisplayName = "200")]
     [InlineData(400, TestDisplayName = "400")]
     [InlineData(404, TestDisplayName = "404")]
-    public void Constructor_ShouldRegisterResponse(int statusCode)
+    public void Constructor_ShouldRegisterResponse_WhenConstructed(int statusCode)
     {
         // Arrange & Act
         var summary = new ListEligibleBowlersSummary();

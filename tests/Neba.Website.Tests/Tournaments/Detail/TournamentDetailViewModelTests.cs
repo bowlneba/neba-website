@@ -259,7 +259,7 @@ public sealed class TournamentDetailViewModelTests
     [InlineData("Invitational", "Cancelled", false, TestDisplayName = "Cancelled Invitational")]
     [InlineData("Singles", "Scheduled", false, TestDisplayName = "Scheduled Singles")]
     [InlineData("Doubles", "Scheduled", false, TestDisplayName = "Scheduled Doubles")]
-    public void ShowEligibleBowlers_ShouldRequireScheduledInvitational(string tournamentType, string status, bool expected)
+    public void ShowEligibleBowlers_ShouldBeTrue_WhenScheduledInvitational(string tournamentType, string status, bool expected)
     {
         // Arrange
         var model = TournamentDetailViewModelFactory.Create(tournamentType: tournamentType, status: status);

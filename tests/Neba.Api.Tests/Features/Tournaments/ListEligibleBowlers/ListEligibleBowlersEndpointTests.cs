@@ -42,7 +42,7 @@ public sealed class ListEligibleBowlersEndpointTests
     }
 
     [Fact(DisplayName = "HandleAsync should pass the route tournament ID to the query")]
-    public async Task HandleAsync_ShouldBuildQueryFromRoute()
+    public async Task HandleAsync_ShouldBuildQuery_WhenRouteHasId()
     {
         // Arrange
         var ct = TestContext.Current.CancellationToken;
@@ -61,7 +61,7 @@ public sealed class ListEligibleBowlersEndpointTests
     }
 
     [Fact(DisplayName = "HandleAsync should map a bowler without a USBC ID to a null USBC ID")]
-    public async Task HandleAsync_ShouldMapNullUsbcId()
+    public async Task HandleAsync_ShouldMapNullUsbcId_WhenBowlerHasNone()
     {
         // Arrange
         var ct = TestContext.Current.CancellationToken;
@@ -125,7 +125,7 @@ public sealed class ListEligibleBowlersEndpointTests
     }
 
     [Fact(DisplayName = "Configure should register an anonymous GET route ending in eligible-bowlers")]
-    public void Configure_ShouldRegisterAnonymousGetRoute()
+    public void Configure_ShouldRegisterAnonymousGetRoute_WhenCreated()
     {
         // Arrange
         var handler = new Mock<IQueryHandler<ListEligibleBowlersQuery, ErrorOr<EligibleBowlersDto>>>(MockBehavior.Strict);

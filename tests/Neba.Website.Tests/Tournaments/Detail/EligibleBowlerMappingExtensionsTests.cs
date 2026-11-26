@@ -9,7 +9,7 @@ namespace Neba.Website.Tests.Tournaments.Detail;
 public sealed class EligibleBowlerMappingExtensionsTests
 {
     [Fact(DisplayName = "Maps the requirement and the bowlers in order")]
-    public void ToViewModel_ShouldMapResponse()
+    public void ToViewModel_ShouldMapFields_WhenGivenResponse()
     {
         // Arrange
         var response = EligibleBowlersResponseFactory.Create(
@@ -49,7 +49,7 @@ public sealed class EligibleBowlerMappingExtensionsTests
     [InlineData("4821-09317", "482109317", TestDisplayName = "Dash")]
     [InlineData("48 21-09317", "482109317", TestDisplayName = "Space and dash")]
     [InlineData(null, "", TestDisplayName = "No ID")]
-    public void ToViewModel_ShouldBuildSearchKeys(string? usbcId, string expectedKey)
+    public void ToViewModel_ShouldBuildSearchKeys_WhenMapped(string? usbcId, string expectedKey)
     {
         // Arrange
         var response = EligibleBowlersResponseFactory.Create(
