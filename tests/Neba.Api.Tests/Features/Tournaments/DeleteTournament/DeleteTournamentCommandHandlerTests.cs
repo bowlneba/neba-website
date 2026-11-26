@@ -2,6 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 
 using Neba.Api.BackgroundJobs;
+using Neba.Api.Caching;
 using Neba.Api.Database;
 using Neba.Api.Database.Entities;
 using Neba.Api.Features.Series.Domain;
@@ -516,5 +517,24 @@ public sealed class DeleteTournamentCommandHandlerTests(AppDbContextFixture fixt
             _ => Task.FromResult("fresh-tournament"),
             token: ct);
         tournamentCacheAfterDelete.ShouldBe("cached-tournament");
+    }
+
+    [Fact(DisplayName = "HandleAsync evicts the eligible-bowlers cache tag when the tournament is deleted")]
+    public async Task HandleAsync_ShouldEvictEligibleBowlersTag_WhenTournamentIsDeleted()
+    {
+        // Arrange
+        var ct = TestContext.Current.CancellationToken;
+        var tournament = await SeedTournamentAsync(ct);
+        var cache = _serviceProvider.GetRequiredService<IFusionCache>();
+        const string key = "delete-eligible-bowlers-cache-test";
+        await cache.GetOrSetAsync(key, _ => Task.FromResult("stale"), tags: [CacheDescriptors.Tournaments.EligibleBowlersTag], token: ct);
+        var handler = CreateHandler();
+
+        // Act
+        var result = await handler.HandleAsync(new DeleteTournamentCommand { TournamentId = tournament.Id }, ct);
+
+        // Assert
+        result.IsError.ShouldBeFalse();
+        (await cache.GetOrSetAsync(key, _ => Task.FromResult("fresh"), token: ct)).ShouldBe("fresh");
     }
 }

@@ -1,0 +1,140 @@
+@if (IsLoading || LoadFailed || List is { ListApplies: true })
+{
+    <div class="eligible-bowlers">
+        <NebaLoadingIndicator IsVisible="@IsLoading" Scope="@LoadingIndicatorScope.Section" />
+        <div class="eligible-bowlers__head">
+            <div>
+                <div class="eligible-bowlers__title">
+                    <h2 class="td-section-title">Eligible bowlers</h2>
+                    <HelpButton DocName="invitational-eligibility" />
+                </div>
+                @if (List is not null)
+                {
+                    <span class="td-section-subtitle">@Subtitle</span>
+                }
+            </div>
+            @if (List is { Bowlers.Count: > 0 })
+            {
+                <div class="eligible-bowlers__tools">
+                    <label class="sr-only" for="eligible-bowlers-search">Search eligible bowlers by name or USBC ID</label>
+                    <input id="eligible-bowlers-search" type="search" class="neba-input eligible-bowlers__search"
+                           placeholder="Search by name or USBC ID" autocomplete="off"
+                           @bind="_term" @bind:event="oninput" @bind:after="ApplyFilter" />
+                </div>
+            }
+        </div>
+
+        @if (IsLoading)
+        {
+            <div class="eligible-bowlers__loading" role="status">
+                <span class="sr-only">Loading eligible bowlers…</span>
+            </div>
+        }
+        else if (LoadFailed)
+        {
+            <div class="eligible-bowlers__error" role="alert">
+                <p>Could not load the eligible bowlers.</p>
+                <button type="button" class="neba-btn neba-btn-secondary neba-btn-sm eligible-bowlers__retry"
+                        @onclick="OnRetry">
+                    Try again
+                </button>
+            </div>
+        }
+        else if (List!.Bowlers.Count == 0)
+        {
+            <p class="eligible-bowlers__empty">@EmptyText</p>
+        }
+        else
+        {
+            <div class="eligible-bowlers__panel">
+                @if (_shown.Count > 0)
+                {
+                    <div class="eligible-bowlers__scroll" tabindex="0" role="region" aria-label="Eligible bowlers list">
+                        <table class="eligible-bowlers__table">
+                            <thead>
+                                <tr>
+                                    <th scope="col">Name</th>
+                                    <th scope="col">USBC ID</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var bowler in _shown)
+                                {
+                                    <tr>
+                                        <td>@bowler.Name</td>
+                                        <td>
+                                            @if (bowler.UsbcId is null)
+                                            {
+                                                <span class="eligible-bowlers__no-id">No USBC ID</span>
+                                            }
+                                            else
+                                            {
+                                                @bowler.UsbcId
+                                            }
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                }
+                else
+                {
+                    <p class="eligible-bowlers__no-match">No bowlers match “@(_term.Trim())”.</p>
+                }
+            </div>
+
+            <p class="eligible-bowlers__count" role="status">@CountText</p>
+        }
+    </div>
+}
+
+@code {
+    private IReadOnlyList<EligibleBowlerViewModel> _shown = [];
+    private string _term = string.Empty;
+
+    /// <summary>The loaded list; null until the first load succeeds.</summary>
+    [Parameter]
+    public EligibleBowlersViewModel? List { get; set; }
+
+    [Parameter]
+    public bool IsLoading { get; set; }
+
+    [Parameter]
+    public bool LoadFailed { get; set; }
+
+    [Parameter, EditorRequired]
+    public EventCallback OnRetry { get; set; }
+
+    private string Subtitle
+        => List?.MinTournamentsCount is { } minimum
+            ? "Bowlers with a result in " + minimum + " or more "
+                + "tournament".ToQuantity(minimum, ShowQuantityAs.None) + " this season."
+            : "Bowlers who have qualified this season.";
+
+    private string EmptyText
+        => List?.MinTournamentsCount is { } minimum
+            ? "No bowlers have reached "
+                + "tournament".ToQuantity(minimum, formatProvider: DisplayCulture.English) + " yet this season."
+            : "No bowlers have qualified yet this season.";
+
+    private string CountText
+    {
+        get
+        {
+            var total = "bowler".ToQuantity(List!.Bowlers.Count, formatProvider: DisplayCulture.English);
+
+            return string.IsNullOrWhiteSpace(_term)
+                ? total
+                : _shown.Count + " of " + total;
+        }
+    }
+
+    protected override void OnParametersSet() => ApplyFilter();
+
+    private void ApplyFilter()
+    {
+        var term = EligibleBowlerSearchTerm.From(_term);
+        _shown = List is null ? [] : [.. List.Bowlers.Where(bowler => bowler.Matches(term))];
+    }
+}

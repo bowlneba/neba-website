@@ -9,6 +9,7 @@ using Neba.Api.Contracts.Security;
 using Neba.Api.Contracts.Series;
 using Neba.Api.Contracts.Series.GetSeries;
 using Neba.Api.Contracts.Series.GetSeriesAdvancement;
+using Neba.Api.Contracts.Series.GetSeriesAdvancers;
 using Neba.TestFactory.Attributes;
 using Neba.TestFactory.Series;
 using Neba.Website.Server.Clock;
@@ -18,6 +19,7 @@ using Neba.Website.Server.Series;
 using Neba.Website.Server.Services;
 using Neba.Website.Server.Time;
 
+using Refit;
 using Refit.Testing;
 
 namespace Neba.Website.Tests.Series;
@@ -396,5 +398,29 @@ public sealed class SeriesDetailTests : IDisposable
 
         // Assert
         _seriesApi.Verify(x => x.GetSeriesAsync(SeriesId, It.IsAny<CancellationToken>()), Times.Exactly(2));
+    }
+
+    [Fact(DisplayName = "Should show the Series to a public visitor while the advancers are still loading")]
+    public async Task Render_ShouldShowSeries_WhileAdvancersArePending()
+    {
+        // Arrange: the Series call finishes after the first render, as it does over the network.
+        var series = new TaskCompletionSource<IApiResponse<SeriesDetailResponse>>();
+        _seriesApi.Setup(x => x.GetSeriesAsync(SeriesId, It.IsAny<CancellationToken>())).Returns(series.Task);
+        _seriesApi
+            .Setup(x => x.GetSeriesAdvancersAsync(SeriesId, It.IsAny<CancellationToken>()))
+            .Returns(new TaskCompletionSource<IApiResponse<SeriesAdvancersResponse>>().Task);
+        var cut = _ctx.Render<SeriesDetail>(p => p.Add(x => x.Id, SeriesId));
+        using var response = new StubApiResponse<SeriesDetailResponse>
+        {
+            IsSuccessStatusCode = true,
+            StatusCode = System.Net.HttpStatusCode.OK,
+            Content = Config(),
+        };
+
+        // Act
+        await cut.InvokeAsync(() => series.SetResult(response));
+
+        // Assert
+        cut.Find("h1").TextContent.ShouldBe(SeriesDetailResponseFactory.ValidName);
     }
 }

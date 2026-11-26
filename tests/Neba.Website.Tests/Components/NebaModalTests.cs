@@ -2,9 +2,12 @@ using Bunit;
 
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Web;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.JSInterop;
 
 using Neba.TestFactory.Attributes;
 using Neba.Website.Server.Components;
+using Neba.Website.Tests.TestSupport;
 
 namespace Neba.Website.Tests.Components;
 
@@ -348,5 +351,24 @@ public sealed class NebaModalTests : IDisposable
         var backdropStyle = cut.Find(".neba-modal-backdrop").GetAttribute("style") ?? string.Empty;
 
         backdropStyle.ShouldContain("z-index: 1100 !important;");
+    }
+
+    [Fact(DisplayName = "Opening before the script has loaded still moves focus into the dialog")]
+    public async Task Open_ShouldFocusDialog_WhenScriptLoadsLate()
+    {
+        // Arrange
+        await using var js = new DeferredImportJsRuntime();
+        _ctx.Services.AddSingleton<IJSRuntime>(js);
+        var cut = _ctx.Render<NebaModal>(p => p
+            .Add(x => x.IsOpen, false)
+            .Add(x => x.OnClose, EventCallback.Factory.Create(this, () => { })));
+        cut.Render(p => p.Add(x => x.IsOpen, true));
+
+        // Act: completing on the renderer's dispatcher runs the rest of the render before this returns.
+        await cut.InvokeAsync(js.CompleteImport);
+
+        // Assert
+        js.Calls.ShouldContain("focusElement");
+        js.Calls.ShouldContain("enableFocusTrap");
     }
 }

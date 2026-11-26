@@ -1,5 +1,11 @@
 import { test, expect } from '@playwright/test';
-import { MOCK_TOURNAMENT_TEAM_ID, perProjectTournamentId } from './mock-api/mock-api-server';
+import {
+  MOCK_TOURNAMENT_INVITATIONAL_ERRORS_ID,
+  MOCK_TOURNAMENT_INVITATIONAL_PAST_ID,
+  MOCK_TOURNAMENT_INVITATIONAL_UPCOMING_ID,
+  MOCK_TOURNAMENT_TEAM_ID,
+  perProjectTournamentId,
+} from './mock-api/mock-api-server';
 
 const MOCK_TOURNAMENT_ID = '01JX0000000000000000000010';
 const MOCK_TOURNAMENT_OIL_REVEAL_PENDING_ID = '01JX0000000000000000000030';
@@ -488,6 +494,8 @@ test.describe('Tournament Detail page - rules link', () => {
     const fullLink = dialog.getByRole('link', { name: 'Open full rules page' });
     await expect(fullLink).toHaveAttribute('href', '/tournaments/rules#invitational');
 
+    // Escape is handled by the dialog, so wait until focus has moved into it.
+    await expect(dialog).toBeFocused();
     await page.keyboard.press('Escape');
     await expect(dialog).toBeHidden();
     await expect(button).toBeFocused();
@@ -544,5 +552,50 @@ test.describe('Tournament Detail page — team eligibility and defending champio
 
     await expect(page.locator('a.td-team-link')).toHaveCount(0);
     await expect(page.locator('.defending')).toHaveCount(0);
+  });
+});
+
+test.describe('Tournament Detail page — eligible bowlers', () => {
+  test.use({ viewport: { width: 1200, height: 800 } });
+
+  test('a scheduled Invitational lists and filters eligible bowlers, and a past one has no section', async ({ page }) => {
+    await page.goto(`/tournaments/${MOCK_TOURNAMENT_INVITATIONAL_UPCOMING_ID}`);
+    await page.waitForSelector('.eligible-bowlers__table tbody tr');
+
+    const rows = page.locator('.eligible-bowlers__table tbody tr');
+    await expect(rows).toHaveCount(3);
+
+    // The page is server-rendered until its Blazor circuit attaches, and text typed before then is
+    // lost, so refill until the list narrows.
+    await expect(async () => {
+      await page.locator('.eligible-bowlers__search').fill('baxter');
+      await expect(rows).toHaveCount(1, { timeout: 1000 });
+    }).toPass({ timeout: 20000 });
+    await expect(rows).toContainText('Ben Baxter');
+
+    await page.goto(`/tournaments/${MOCK_TOURNAMENT_INVITATIONAL_PAST_ID}`);
+    await page.waitForSelector('.td-hero');
+    await expect(page.locator('.eligible-bowlers')).toHaveCount(0);
+  });
+
+  test('a failed load shows an error beside the rest of the page, and Try again loads the list', async ({ page }, testInfo) => {
+    const tournamentId = perProjectTournamentId(MOCK_TOURNAMENT_INVITATIONAL_ERRORS_ID, testInfo.project.name);
+    const failPath = `/tournaments/${tournamentId}/eligible-bowlers`;
+
+    try {
+      // A 4xx: a 5xx would make the site retry past the expect timeout.
+      await page.request.post(`http://localhost:5151/__mock/fail?path=${failPath}&status=400`);
+      await page.goto(`/tournaments/${tournamentId}`);
+
+      await expect(page.locator('.eligible-bowlers__error')).toContainText('Could not load the eligible bowlers.');
+      await expect(page.locator('.td-hero__title')).toContainText('NEBA Upcoming Invitational');
+
+      await page.request.post(`http://localhost:5151/__mock/reset?path=${failPath}`);
+      await page.getByRole('button', { name: 'Try again' }).click();
+
+      await expect(page.locator('.eligible-bowlers__table tbody tr')).toHaveCount(3);
+    } finally {
+      await page.request.post(`http://localhost:5151/__mock/reset?path=${failPath}`);
+    }
   });
 });

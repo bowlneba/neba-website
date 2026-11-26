@@ -59,4 +59,19 @@ public sealed class MakeStageOfficialRequestValidatorTests
         result.IsValid.ShouldBeFalse();
         result.Errors.ShouldContain(e => e.ErrorCode == "MakeStageOfficialRequest.VersionInvalid");
     }
+
+#nullable disable
+    [Fact(DisplayName = "Validate should fail with OfficialRequired for a null Official")]
+    public async Task Validate_ShouldFail_WhenOfficialIsNull()
+    {
+        // Arrange
+        var request = Request() with { Official = null };
+
+        // Act
+        var result = await _validator.ValidateAsync(request, TestContext.Current.CancellationToken);
+
+        // Assert
+        result.Errors.ShouldHaveSingleItem().ErrorCode.ShouldBe("MakeStageOfficialRequest.OfficialRequired");
+    }
+#nullable enable
 }

@@ -15,9 +15,11 @@
 @inject ApiExecutor ApiExecutor
 @inject ITournamentsApi TournamentsApi
 @inject ISponsorsApi SponsorsApi
+@inject ITournamentApiService TournamentApiService
 @inject NavigationManager Navigation
 @inject IClientTimeZoneService ClientTimeZoneService
 @inject ToastService ToastService
+@implements IDisposable
 
 @if (_isLoading)
 {
@@ -385,6 +387,16 @@ else
                         </section>
                     }
 
+                    @if (_model.ShowEligibleBowlers)
+                    {
+                        <section class="tournament-detail__section">
+                            <EligibleBowlers List="@_eligibleBowlers"
+                                             IsLoading="@_isLoadingEligibleBowlers"
+                                             LoadFailed="@_eligibleBowlersFailed"
+                                             OnRetry="@LoadEligibleBowlersAsync" />
+                        </section>
+                    }
+
                     @if (_model.HasResults)
                     {
                         <section class="tournament-detail__section tournament-detail__results">
@@ -572,6 +584,11 @@ else
     private bool _isLoading = true;
     private bool _hasError;
 
+    private readonly CancellationTokenSource _disposed = new();
+    private EligibleBowlersViewModel? _eligibleBowlers;
+    private bool _isLoadingEligibleBowlers;
+    private bool _eligibleBowlersFailed;
+
     protected override async Task OnInitializedAsync()
     {
         var result = await ApiExecutor.ExecuteAsync(
@@ -601,6 +618,49 @@ else
         }
 
         _isLoading = false;
+
+        if (_model.ShowEligibleBowlers)
+        {
+            var load = LoadEligibleBowlersAsync();
+
+            // Blazor renders only at the first await, which is already past, so show the page now.
+            StateHasChanged();
+            await load;
+        }
+    }
+
+    public void Dispose()
+    {
+        _disposed.Cancel();
+        _disposed.Dispose();
+    }
+
+    private async Task LoadEligibleBowlersAsync()
+    {
+        // The visitor left while the tournament was loading; the token source is already disposed.
+        if (_disposed.IsCancellationRequested)
+        {
+            return;
+        }
+
+        _isLoadingEligibleBowlers = true;
+        _eligibleBowlersFailed = false;
+
+        var result = await TournamentApiService.GetEligibleBowlersAsync(Id, _disposed.Token);
+
+        // The visitor left the page.
+        if (_disposed.IsCancellationRequested)
+        {
+            return;
+        }
+
+        _isLoadingEligibleBowlers = false;
+        _eligibleBowlersFailed = result.IsError;
+
+        if (!result.IsError)
+        {
+            _eligibleBowlers = result.Value;
+        }
     }
 
     private static string GetCutStyle(string? color) =>

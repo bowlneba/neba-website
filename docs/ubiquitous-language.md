@@ -984,6 +984,16 @@ The two dates combine to **Eligible**, **Ineligible**, or **Depends on date** (e
 
 ---
 
+### Invitational Eligibility
+
+**Definition**: Whether a Bowler may bowl a season's Invitational: they have a Tournament Result in 3 or more distinct tournaments of the Invitational's own season. Any result counts, whether or not the tournament was Title Eligible or counts toward stats, so this is separate from **Title Eligible** (a property of a Tournament) and from stats eligibility. The list of eligible bowlers is public and shows only while the Invitational is **Scheduled**; it grows as the season's results are recorded.
+
+**In Code**:
+
+- `Tournament.InvitationalEligibilityThreshold` (`Neba.Api.Features.Tournaments.Domain`), `GET /tournaments/{id}/eligible-bowlers`
+
+---
+
 ### Tournament Sponsor
 
 **Definition**: The sponsorship association between a specific Tournament and a specific Sponsor. A Tournament Sponsor records sponsor participation for that event, including whether the sponsor is the tournament's Title Sponsor (the main sponsor) and the sponsorship amount.

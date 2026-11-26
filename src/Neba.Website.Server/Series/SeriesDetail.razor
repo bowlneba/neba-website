@@ -133,7 +133,7 @@ else
         }
         else
         {
-            <SeriesPublicStages Stages="@PublicStages" ExpandedIds="@_expandedStageIds" OnToggle="ToggleStageById" />
+            <SeriesPublicStages Stages="@PublicStages" ExpandedIds="@_expandedStageIds" OnToggle="@ToggleStageById" />
         }
 
         @if (_model.Finale is { } finale)

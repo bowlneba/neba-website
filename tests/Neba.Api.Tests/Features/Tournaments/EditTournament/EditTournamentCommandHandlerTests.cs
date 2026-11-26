@@ -1287,4 +1287,47 @@ public sealed class EditTournamentCommandHandlerTests(AppDbContextFixture fixtur
         scheduled.ShouldNotBeNull();
         scheduled.ExpectedRevealDateTime.ShouldBe(newRevealAt);
     }
+
+    [Fact(DisplayName = "HandleAsync evicts the eligible-bowlers cache tag when the edit moves the tournament to another season")]
+    public async Task HandleAsync_ShouldEvictEligibleBowlersTag_WhenSeasonChanges()
+    {
+        // Arrange
+        var ct = TestContext.Current.CancellationToken;
+        var originalSeason = await SeedSeasonAsync(new DateOnly(2025, 1, 1), new DateOnly(2025, 6, 30), ct);
+        var newSeason = await SeedSeasonAsync(new DateOnly(2025, 7, 1), new DateOnly(2025, 12, 31), ct);
+        var tournament = await SeedTournamentAsync(originalSeason, ct);
+        var cache = _serviceProvider.GetRequiredService<IFusionCache>();
+        const string key = "edit-eligible-bowlers-cache-test";
+        await cache.GetOrSetAsync(key, _ => Task.FromResult("stale"), tags: [CacheDescriptors.Tournaments.EligibleBowlersTag], token: ct);
+        var handler = CreateHandler();
+        var command = ValidCommand(tournament.Id, startDate: newSeason.StartDate, endDate: newSeason.StartDate);
+
+        // Act
+        var result = await handler.HandleAsync(command, ct);
+
+        // Assert
+        result.IsError.ShouldBeFalse();
+        (await cache.GetOrSetAsync(key, _ => Task.FromResult("fresh"), token: ct)).ShouldBe("fresh");
+    }
+
+    [Fact(DisplayName = "HandleAsync keeps the eligible-bowlers cache tag when the edit stays in the same season")]
+    public async Task HandleAsync_ShouldKeepEligibleBowlersTag_WhenSeasonUnchanged()
+    {
+        // Arrange
+        var ct = TestContext.Current.CancellationToken;
+        var season = await SeedSeasonAsync(new DateOnly(2025, 1, 1), new DateOnly(2025, 12, 31), ct);
+        var tournament = await SeedTournamentAsync(season, ct);
+        var cache = _serviceProvider.GetRequiredService<IFusionCache>();
+        const string key = "edit-eligible-bowlers-kept-cache-test";
+        await cache.GetOrSetAsync(key, _ => Task.FromResult("stale"), tags: [CacheDescriptors.Tournaments.EligibleBowlersTag], token: ct);
+        var handler = CreateHandler();
+        var command = ValidCommand(tournament.Id, startDate: season.StartDate, endDate: season.StartDate);
+
+        // Act
+        var result = await handler.HandleAsync(command, ct);
+
+        // Assert
+        result.IsError.ShouldBeFalse();
+        (await cache.GetOrSetAsync(key, _ => Task.FromResult("fresh"), token: ct)).ShouldBe("stale");
+    }
 }

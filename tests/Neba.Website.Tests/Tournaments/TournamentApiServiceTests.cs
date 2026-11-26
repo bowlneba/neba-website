@@ -1,3 +1,5 @@
+using ErrorOr;
+
 using Microsoft.Extensions.Logging.Abstractions;
 
 using Neba.Api.Contracts;
@@ -6,6 +8,7 @@ using Neba.Api.Contracts.Seasons.ListSeasons;
 using Neba.Api.Contracts.Seasons.ListTournamentsInSeason;
 using Neba.Api.Contracts.Tournaments;
 using Neba.Api.Contracts.Tournaments.ListChampions;
+using Neba.Api.Contracts.Tournaments.ListEligibleBowlers;
 using Neba.TestFactory.Attributes;
 using Neba.TestFactory.Tournaments;
 using Neba.Website.Server.Clock;
@@ -575,6 +578,69 @@ public sealed class TournamentApiServiceTests
 
         _mockSeasonsApi
             .Setup(x => x.ListTournamentsInSeasonAsync(seasonId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(response);
+    }
+
+    [Fact(DisplayName = "GetEligibleBowlersAsync should return the mapped list when API succeeds")]
+    public async Task GetEligibleBowlersAsync_ShouldReturnMappedList_WhenApiSucceeds()
+    {
+        // Arrange
+        SetupEligibleBowlers(EligibleBowlersResponseFactory.Create());
+
+        // Act
+        var result = await _service.GetEligibleBowlersAsync(EligibleTournamentId, TestContext.Current.CancellationToken);
+
+        // Assert
+        result.IsError.ShouldBeFalse();
+        result.Value.ListApplies.ShouldBeTrue();
+        result.Value.Bowlers.ShouldHaveSingleItem().Name.ShouldBe(EligibleBowlerSummaryResponseFactory.ValidName);
+    }
+
+    [Fact(DisplayName = "GetEligibleBowlersAsync should report no list when requirements are null")]
+    public async Task GetEligibleBowlersAsync_ShouldNotApply_WhenRequirementsAreNull()
+    {
+        // Arrange
+        SetupEligibleBowlers(EligibleBowlersResponseFactory.CreateNotApplicable());
+
+        // Act
+        var result = await _service.GetEligibleBowlersAsync(EligibleTournamentId, TestContext.Current.CancellationToken);
+
+        // Assert
+        result.IsError.ShouldBeFalse();
+        result.Value.ListApplies.ShouldBeFalse();
+    }
+
+    [Theory(DisplayName = "GetEligibleBowlersAsync should pass the API error through")]
+    [InlineData(System.Net.HttpStatusCode.NotFound, ErrorType.NotFound, TestDisplayName = "Not found")]
+    [InlineData(System.Net.HttpStatusCode.InternalServerError, ErrorType.Failure, TestDisplayName = "Server error")]
+    public async Task GetEligibleBowlersAsync_ShouldReturnError_WhenApiFails(System.Net.HttpStatusCode status, ErrorType expected)
+    {
+        // Arrange
+        SetupEligibleBowlers(null, status);
+
+        // Act
+        var result = await _service.GetEligibleBowlersAsync(EligibleTournamentId, TestContext.Current.CancellationToken);
+
+        // Assert
+        result.IsError.ShouldBeTrue();
+        result.FirstError.Type.ShouldBe(expected);
+    }
+
+    private const string EligibleTournamentId = "01J7ZK8X6ZQJ8V3F8N9T9C9R2E";
+
+    private void SetupEligibleBowlers(
+        EligibleBowlersResponse? content,
+        System.Net.HttpStatusCode status = System.Net.HttpStatusCode.OK)
+    {
+        using var response = new StubApiResponse<EligibleBowlersResponse>
+        {
+            IsSuccessStatusCode = status == System.Net.HttpStatusCode.OK,
+            StatusCode = status,
+            Content = content
+        };
+
+        _mockTournamentsApi
+            .Setup(x => x.ListEligibleBowlersAsync(EligibleTournamentId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(response);
     }
 }

@@ -251,4 +251,23 @@ public sealed class TournamentDetailViewModelTests
         // Act & Assert
         model.ShowTeamEligibilityLink.ShouldBe(expected);
     }
+
+    [Theory(DisplayName = "ShowEligibleBowlers should be true only for a scheduled Invitational")]
+    [InlineData("Invitational", "Scheduled", true, TestDisplayName = "Scheduled Invitational")]
+    [InlineData("Invitational", "Completed", false, TestDisplayName = "Completed Invitational")]
+    [InlineData("Invitational", "Truncated", false, TestDisplayName = "Truncated Invitational")]
+    [InlineData("Invitational", "Cancelled", false, TestDisplayName = "Cancelled Invitational")]
+    [InlineData("Singles", "Scheduled", false, TestDisplayName = "Scheduled Singles")]
+    [InlineData("Doubles", "Scheduled", false, TestDisplayName = "Scheduled Doubles")]
+    public void ShowEligibleBowlers_ShouldBeTrue_WhenScheduledInvitational(string tournamentType, string status, bool expected)
+    {
+        // Arrange
+        var model = TournamentDetailViewModelFactory.Create(tournamentType: tournamentType, status: status);
+
+        // Act
+        var show = model.ShowEligibleBowlers;
+
+        // Assert
+        show.ShouldBe(expected);
+    }
 }

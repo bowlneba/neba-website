@@ -85,6 +85,9 @@ internal sealed class SyncTournamentResultsJob(
         await cache.RemoveByTagAsync("neba:tournaments:champions", token: ct);
         await cache.RemoveByTagAsync(CacheDescriptors.HallOfFame.PointsTag, token: ct);
 
+        // An Invitational's eligible list counts other tournaments' results, so recorded results can change it.
+        await cache.RemoveByTagAsync(CacheDescriptors.Tournaments.EligibleBowlersTag, token: ct);
+
         // Each winner's cached title list (GetBowlerTitlesQuery) lasts days and nothing else clears it.
         foreach (var winnerId in tournament.Results.Where(result => result.Place == 1).Select(result => result.BowlerId).Distinct())
         {

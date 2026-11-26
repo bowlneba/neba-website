@@ -1,5 +1,7 @@
 import { test, expect } from '@playwright/test';
 
+import { gotoInteractive } from './blazor';
+
 test.describe.configure({ mode: 'serial' });
 
 test.describe('Set Password page (anonymous)', () => {
@@ -19,8 +21,7 @@ test.describe('Set Password page (anonymous)', () => {
   });
 
   test('disables submit and shows a mismatch message when passwords differ', async ({ page }) => {
-    await page.goto('/account/set-password?userId=01JX0000000000000000000399&token=valid-token');
-    await page.waitForSelector('form');
+    await gotoInteractive(page, '/account/set-password?userId=01JX0000000000000000000399&token=valid-token');
 
     await page.getByLabel('New Password', { exact: true }).fill('NewPassw0rd!');
     await page.getByLabel('Confirm New Password').fill('DifferentPassw0rd!');
@@ -30,8 +31,7 @@ test.describe('Set Password page (anonymous)', () => {
   });
 
   test('sets the password and redirects to login with a success message', async ({ page }) => {
-    await page.goto('/account/set-password?userId=01JX0000000000000000000399&token=valid-token');
-    await page.waitForSelector('form');
+    await gotoInteractive(page, '/account/set-password?userId=01JX0000000000000000000399&token=valid-token');
 
     await page.getByLabel('New Password', { exact: true }).fill('NewPassw0rd!');
     await page.getByLabel('Confirm New Password').fill('NewPassw0rd!');
@@ -50,8 +50,7 @@ test.describe('Set Password page (anonymous)', () => {
       'http://localhost:5151/__mock/fail?path=/security/password/set-from-token&status=400'
     );
 
-    await page.goto('/account/set-password?userId=01JX0000000000000000000399&token=expired-token');
-    await page.waitForSelector('form');
+    await gotoInteractive(page, '/account/set-password?userId=01JX0000000000000000000399&token=expired-token');
 
     await page.getByLabel('New Password', { exact: true }).fill('NewPassw0rd!');
     await page.getByLabel('Confirm New Password').fill('NewPassw0rd!');
@@ -66,8 +65,7 @@ test.describe('Set Password page (anonymous)', () => {
   });
 
   test('shows an invalid-link error when the userId or token is missing from the URL', async ({ page }) => {
-    await page.goto('/account/set-password');
-    await page.waitForSelector('form');
+    await gotoInteractive(page, '/account/set-password');
 
     await page.getByLabel('New Password', { exact: true }).fill('NewPassw0rd!');
     await page.getByLabel('Confirm New Password').fill('NewPassw0rd!');
@@ -97,8 +95,7 @@ test.describe('Set Password page (anonymous)', () => {
       'http://localhost:5151/__mock/fail?path=/security/password/set-from-token&status=400'
     );
 
-    await page.goto('/account/set-password?userId=01JX0000000000000000000399&token=expired-token&reason=reset');
-    await page.waitForSelector('form');
+    await gotoInteractive(page, '/account/set-password?userId=01JX0000000000000000000399&token=expired-token&reason=reset');
 
     await page.getByLabel('New Password', { exact: true }).fill('NewPassw0rd!');
     await page.getByLabel('Confirm New Password').fill('NewPassw0rd!');

@@ -184,6 +184,7 @@ ConnectionStrings__bowlneba='Host=localhost;Port=52502;Database=bowlneba;Usernam
 - [ ] Tournament Documents
 - [x] Tournament Detail
 - [x] Team Eligibility Checker
+- [x] Invitational Eligible Bowlers
 - [x] Sponsors
 - [x] Series
 - [x] News

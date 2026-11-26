@@ -2,9 +2,12 @@ using Bunit;
 
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Web;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.JSInterop;
 
 using Neba.TestFactory.Attributes;
 using Neba.Website.Server.Documents;
+using Neba.Website.Tests.TestSupport;
 
 namespace Neba.Website.Tests.Documents;
 
@@ -39,6 +42,43 @@ public sealed class DocumentSectionSlideoverTests : IDisposable
             .Add(x => x.CloseLabel, "Close")
             .Add(x => x.ErrorMessage, error)
             .Add(x => x.LastUpdated, lastUpdated));
+
+    private const string ModulePath = "./Components/NebaModal.razor.js";
+
+    [Fact(DisplayName = "Closing returns focus even while the open calls are still running")]
+    public void Close_ShouldReturnFocus_WhenOpenCallsAreStillRunning()
+    {
+        // Arrange: enableFocusTrap never completes, so the open render never finishes.
+        var module = _ctx.JSInterop.SetupModule(ModulePath);
+        module.Mode = JSRuntimeMode.Loose;
+        module.SetupVoid("enableFocusTrap", _ => true);
+        var cut = RenderSlideover(isOpen: false);
+        cut.Render(p => p.Add(x => x.ReturnFocusTo, new ElementReference("trigger")));
+        cut.Render(p => p.Add(x => x.IsOpen, true));
+
+        // Act
+        cut.Render(p => p.Add(x => x.IsOpen, false));
+
+        // Assert
+        module.Invocations["focusElement"][^1].Arguments[0]
+            .ShouldBeOfType<ElementReference>().Id.ShouldBe("trigger");
+    }
+
+    [Fact(DisplayName = "Opening before the script has loaded still moves focus into the dialog")]
+    public async Task Open_ShouldFocusDialog_WhenScriptLoadsLate()
+    {
+        // Arrange
+        await using var js = new DeferredImportJsRuntime();
+        _ctx.Services.AddSingleton<IJSRuntime>(js);
+        var cut = RenderSlideover(isOpen: false);
+        cut.Render(p => p.Add(x => x.IsOpen, true));
+
+        // Act: completing on the renderer's dispatcher runs the rest of the render before this returns.
+        await cut.InvokeAsync(js.CompleteImport);
+
+        // Assert
+        js.Calls.ShouldContain("focusElement");
+    }
 
     [Fact(DisplayName = "Closed slide-out renders no dialog")]
     public void Render_ShouldRenderNothing_WhenClosed()

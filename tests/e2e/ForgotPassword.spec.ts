@@ -1,5 +1,7 @@
 import { test, expect } from '@playwright/test';
 
+import { gotoInteractive } from './blazor';
+
 test.describe.configure({ mode: 'serial' });
 
 const NEUTRAL_MESSAGE =
@@ -24,8 +26,7 @@ test.describe('Forgot Password page (anonymous)', () => {
 
   test('shows the same neutral message for any email', async ({ page }) => {
     for (const email of ['known@bowlneba.com', 'nobody@example.com']) {
-      await page.goto('/account/forgot-password');
-      await page.waitForSelector('form');
+      await gotoInteractive(page, '/account/forgot-password');
 
       await page.getByLabel('Email').fill(email);
       await page.getByRole('button', { name: 'Send reset link' }).click();
@@ -38,8 +39,7 @@ test.describe('Forgot Password page (anonymous)', () => {
   test('shows a generic error and keeps the form when the request fails', async ({ page }) => {
     await page.request.post('http://localhost:5151/__mock/fail?path=/security/password/forgot&status=422');
 
-    await page.goto('/account/forgot-password');
-    await page.waitForSelector('form');
+    await gotoInteractive(page, '/account/forgot-password');
 
     await page.getByLabel('Email').fill('known@bowlneba.com');
     await page.getByRole('button', { name: 'Send reset link' }).click();
@@ -50,8 +50,7 @@ test.describe('Forgot Password page (anonymous)', () => {
   });
 
   test('asks for a valid email without calling the API', async ({ page }) => {
-    await page.goto('/account/forgot-password');
-    await page.waitForSelector('form');
+    await gotoInteractive(page, '/account/forgot-password');
 
     await page.getByLabel('Email').fill('not-an-email');
     await page.getByRole('button', { name: 'Send reset link' }).click();

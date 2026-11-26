@@ -9,7 +9,7 @@ A Series is a chain of tournaments. Each tournament has a job: Qualifying, Survi
 - **Qualifying.** The top finishers of the tournament take that tournament's slots. A bowler must be a member on the tournament's end date. If a slot goes to a non-member, or to a bowler who already qualified, the slot is vacant.
 - **Bowler of the Year point list.** Vacant slots in the last Qualifying tournament go to the next bowlers in Open Bowler of the Year points. A bowler needs more than zero points and must be a member on the point list date. The point list date is the end date of the last Qualifying tournament. The point list is used after the season's stats are generated.
 - **Survivor Round.** The Series cuts the field by the score of one squad. Each bowler gets a block total, and the best totals advance.
-- **Placement Round.** Bowlers are ranked by their place in the tournament. If the Series has a Finale, the top finishers are the finalists.
+- **Placement Round.** Bowlers are ranked by their place in the tournament. A bowler who bowled but has no place ranks after those with one. If the Series has a Finale, the top finishers are the finalists.
 
 A tournament in a Series computes only when it is completed (or truncated), it has results, and the tournament before it has computed. Until then it stays Pending.
 

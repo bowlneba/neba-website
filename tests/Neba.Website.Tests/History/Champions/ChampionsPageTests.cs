@@ -13,6 +13,7 @@ using Neba.Website.Server.Clock;
 using Neba.Website.Server.History.Champions;
 using Neba.Website.Server.Services;
 using Neba.Website.Server.Tournaments;
+using Neba.Website.Server.Tournaments.Detail;
 using Neba.Website.Server.Tournaments.Schedule;
 
 using ChampionsPage = Neba.Website.Server.History.Champions.Champions;
@@ -372,6 +373,10 @@ public sealed class ChampionsPageTests : IDisposable
         Task<ErrorOr<(IReadOnlyCollection<BowlerTitleSummaryViewModel> Summaries, IReadOnlyCollection<TitlesByYearViewModel> Years)>> task)
         : ITournamentApiService
     {
+        Task<ErrorOr<EligibleBowlersViewModel>>
+            ITournamentApiService.GetEligibleBowlersAsync(string tournamentId, CancellationToken ct)
+            => throw new NotSupportedException();
+
         Task<ErrorOr<(IReadOnlyCollection<BowlerTitleSummaryViewModel> Summaries, IReadOnlyCollection<TitlesByYearViewModel> Years)>>
 #pragma warning disable VSTHRD003
             ITournamentApiService.GetChampionsDataAsync(CancellationToken ct) => task;

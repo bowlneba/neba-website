@@ -6,6 +6,7 @@ using Neba.Api.Contracts.Seasons.ListTournamentsInSeason;
 using Neba.Api.Contracts.Tournaments;
 using Neba.Website.Server.History.Champions;
 using Neba.Website.Server.Services;
+using Neba.Website.Server.Tournaments.Detail;
 using Neba.Website.Server.Tournaments.Schedule;
 
 namespace Neba.Website.Server.Tournaments;
@@ -70,6 +71,20 @@ internal sealed class TournamentApiService(
 
         var items = result.Value.Items;
         return (items.ToTitleSummaries(), items.ToTitlesByYear());
+    }
+
+    public async Task<ErrorOr<EligibleBowlersViewModel>> GetEligibleBowlersAsync(
+        string tournamentId, CancellationToken ct)
+    {
+        var result = await executor.ExecuteAsync(
+            "TournamentsApi",
+            nameof(GetEligibleBowlersAsync),
+            token => tournamentsApi.ListEligibleBowlersAsync(tournamentId, token),
+            ct);
+
+        return result.IsError
+            ? result.Errors
+            : result.Value.ToViewModel();
     }
 
     private static SeasonViewModel MapToViewModel(SeasonResponse r) => new()

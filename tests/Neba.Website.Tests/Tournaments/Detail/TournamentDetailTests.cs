@@ -1,6 +1,8 @@
 using Bunit;
 using Bunit.TestDoubles;
 
+using ErrorOr;
+
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Web;
 using Microsoft.Extensions.DependencyInjection;
@@ -19,6 +21,7 @@ using Neba.Website.Server.Help;
 using Neba.Website.Server.Notifications;
 using Neba.Website.Server.Services;
 using Neba.Website.Server.Time;
+using Neba.Website.Server.Tournaments;
 using Neba.Website.Server.Tournaments.Detail;
 
 using Refit;
@@ -35,6 +38,7 @@ public sealed class TournamentDetailTests : IDisposable
     private readonly Mock<ISponsorsApi> _mockSponsorsApi;
     private readonly Mock<IRulesSectionService> _mockRulesSectionService;
     private readonly Mock<IClientTimeZoneService> _mockClientTimeZoneService;
+    private readonly Mock<ITournamentApiService> _mockTournamentService;
     private readonly BunitAuthorizationContext _authContext;
     private readonly ToastService _toastService;
 
@@ -44,6 +48,7 @@ public sealed class TournamentDetailTests : IDisposable
         _mockSponsorsApi = new Mock<ISponsorsApi>(MockBehavior.Strict);
         _mockRulesSectionService = new Mock<IRulesSectionService>(MockBehavior.Strict);
         _mockClientTimeZoneService = new Mock<IClientTimeZoneService>(MockBehavior.Strict);
+        _mockTournamentService = new Mock<ITournamentApiService>(MockBehavior.Strict);
 
         var mockStopwatch = new Mock<IStopwatchProvider>(MockBehavior.Strict);
         mockStopwatch.Setup(x => x.GetTimestamp()).Returns(0L);
@@ -61,6 +66,7 @@ public sealed class TournamentDetailTests : IDisposable
         _ctx.Services.AddSingleton(_mockSponsorsApi.Object);
         _ctx.Services.AddSingleton(_mockRulesSectionService.Object);
         _ctx.Services.AddSingleton(_mockClientTimeZoneService.Object);
+        _ctx.Services.AddSingleton(_mockTournamentService.Object);
         _ctx.Services.AddSingleton(sp => new ApiExecutor(mockStopwatch.Object, sp.GetRequiredService<NavigationManager>(), NullLogger<ApiExecutor>.Instance));
         _ctx.Services.AddSingleton(_toastService);
         _ctx.Services.AddSingleton<HelpDocumentService>();
@@ -130,6 +136,7 @@ public sealed class TournamentDetailTests : IDisposable
         // Arrange
         SetupSuccessResponse(TournamentDetailResponseFactory.Create(
             status: TournamentStatus.Scheduled, tournamentType: TournamentType.Invitational));
+        SetupEligibleBowlers();
 
         // Act
         var cut = _ctx.Render<TournamentDetail>(p => p.Add(x => x.Id, TournamentDetailResponseFactory.ValidId));
@@ -1577,5 +1584,189 @@ tournamentType: TournamentType.Doubles, logoUrl: null));
 
         // Assert
         cut.FindAll(".tournament-series-callout").ShouldBeEmpty();
+    }
+
+    [Fact(DisplayName = "Should show the eligible bowlers in the main column for a scheduled Invitational")]
+    public void Render_ShouldShowEligibleBowlers_WhenScheduledInvitational()
+    {
+        // Arrange
+        SetupSuccessResponse(TournamentDetailResponseFactory.Create(
+            status: TournamentStatus.Scheduled, tournamentType: TournamentType.Invitational));
+        SetupEligibleBowlers();
+
+        // Act
+        var cut = _ctx.Render<TournamentDetail>(p => p.Add(x => x.Id, TournamentDetailResponseFactory.ValidId));
+
+        // Assert
+        cut.Find(".td-body__main .tournament-detail__section .eligible-bowlers")
+            .TextContent.ShouldContain(EligibleBowlerViewModelFactory.ValidName);
+        _mockTournamentService.Verify(
+            x => x.GetEligibleBowlersAsync(TournamentDetailResponseFactory.ValidId, It.IsAny<CancellationToken>()),
+            Times.Once);
+    }
+
+    [Theory(DisplayName = "Should not load or show eligible bowlers unless the tournament is a scheduled Invitational")]
+    [InlineData("Invitational", "Completed", TestDisplayName = "Completed Invitational")]
+    [InlineData("Invitational", "Truncated", TestDisplayName = "Truncated Invitational")]
+    [InlineData("Invitational", "Cancelled", TestDisplayName = "Cancelled Invitational")]
+    [InlineData("Singles", "Scheduled", TestDisplayName = "Scheduled Singles")]
+    [InlineData("Doubles", "Scheduled", TestDisplayName = "Scheduled Doubles")]
+    public void Render_ShouldNotShowEligibleBowlers_WhenNotScheduledInvitational(string typeName, string statusName)
+    {
+        // Arrange
+        SetupSuccessResponse(TournamentDetailResponseFactory.Create(
+            status: TournamentStatus.FromName(statusName),
+            tournamentType: TournamentType.FromName(typeName)));
+
+        // Act
+        var cut = _ctx.Render<TournamentDetail>(p => p.Add(x => x.Id, TournamentDetailResponseFactory.ValidId));
+
+        // Assert
+        // No setup for the load: the strict mock throws if the page asks for the list.
+        cut.FindAll(".eligible-bowlers").ShouldBeEmpty();
+    }
+
+    [Fact(DisplayName = "Should remove the eligible bowlers once the Invitational is cancelled")]
+    public void ConfirmCancel_ShouldRemoveEligibleBowlers_WhenCancelSucceeds()
+    {
+        // Arrange
+        _authContext.SetAuthorized("test-user");
+        _authContext.SetPolicies(Permissions.ManageTournamentStatus.PolicyName);
+        SetupSuccessResponseSequence(
+            TournamentDetailResponseFactory.Create(status: TournamentStatus.Scheduled, tournamentType: TournamentType.Invitational),
+            TournamentDetailResponseFactory.Create(status: TournamentStatus.Cancelled, tournamentType: TournamentType.Invitational));
+        SetupEligibleBowlers();
+
+        using var cancelResponse = new StubApiResponse<object>
+        {
+            IsSuccessStatusCode = true,
+            StatusCode = System.Net.HttpStatusCode.NoContent
+        };
+        _mockApi
+            .Setup(x => x.CancelTournamentAsync(TournamentDetailResponseFactory.ValidId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(cancelResponse);
+
+        var cut = _ctx.Render<TournamentDetail>(p => p.Add(x => x.Id, TournamentDetailResponseFactory.ValidId));
+        cut.Find("button.td-hero__cancel-btn").Click();
+
+        // Act
+        cut.Find("button.confirm-action-modal-confirm").Click();
+
+        // Assert
+        cut.FindAll(".eligible-bowlers").ShouldBeEmpty();
+    }
+
+    [Fact(DisplayName = "Should show the rest of the page while the eligible bowlers are loading")]
+    public void Render_ShouldShowPage_WhenEligibleBowlersArePending()
+    {
+        // Arrange
+        SetupScheduledInvitational();
+        _mockTournamentService
+            .Setup(x => x.GetEligibleBowlersAsync(TournamentDetailResponseFactory.ValidId, It.IsAny<CancellationToken>()))
+            .Returns(new TaskCompletionSource<ErrorOr<EligibleBowlersViewModel>>().Task);
+
+        // Act
+        var cut = _ctx.Render<TournamentDetail>(p => p.Add(x => x.Id, TournamentDetailResponseFactory.ValidId));
+
+        // Assert
+        cut.Find("h1.td-hero__title").ShouldNotBeNull();
+        cut.Find(".eligible-bowlers__loading").ShouldNotBeNull();
+    }
+
+    [Fact(DisplayName = "Should show the list when Try again succeeds after a failed load")]
+    public void Retry_ShouldShowEligibleBowlers_WhenSecondLoadSucceeds()
+    {
+        // Arrange
+        SetupScheduledInvitational();
+        _mockTournamentService
+            .SetupSequence(x => x.GetEligibleBowlersAsync(TournamentDetailResponseFactory.ValidId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync((ErrorOr<EligibleBowlersViewModel>)Error.Failure())
+            .ReturnsAsync((ErrorOr<EligibleBowlersViewModel>)EligibleBowlersViewModelFactory.Create());
+        var cut = _ctx.Render<TournamentDetail>(p => p.Add(x => x.Id, TournamentDetailResponseFactory.ValidId));
+
+        // Act
+        cut.Find("button.eligible-bowlers__retry").Click();
+
+        // Assert
+        cut.Find(".eligible-bowlers").TextContent.ShouldContain(EligibleBowlerViewModelFactory.ValidName);
+        cut.FindAll(".eligible-bowlers__error").ShouldBeEmpty();
+    }
+
+    [Fact(DisplayName = "Should show loading and hide the error while a retry is pending")]
+    public void Retry_ShouldShowLoading_WhenSecondLoadIsPending()
+    {
+        // Arrange
+        SetupScheduledInvitational();
+        _mockTournamentService
+            .SetupSequence(x => x.GetEligibleBowlersAsync(TournamentDetailResponseFactory.ValidId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync((ErrorOr<EligibleBowlersViewModel>)Error.Failure())
+            .Returns(new TaskCompletionSource<ErrorOr<EligibleBowlersViewModel>>().Task);
+        var cut = _ctx.Render<TournamentDetail>(p => p.Add(x => x.Id, TournamentDetailResponseFactory.ValidId));
+
+        // Act
+        cut.Find("button.eligible-bowlers__retry").Click();
+
+        // Assert
+        cut.Find(".eligible-bowlers__loading").ShouldNotBeNull();
+        cut.FindAll(".eligible-bowlers__error").ShouldBeEmpty();
+    }
+
+    [Fact(DisplayName = "Should cancel the eligible bowlers load when disposed while it is pending")]
+    public async Task Dispose_ShouldCancelEligibleBowlersLoad_WhenPending()
+    {
+        // Arrange
+        SetupScheduledInvitational();
+        var pending = new TaskCompletionSource<ErrorOr<EligibleBowlersViewModel>>();
+        var token = CancellationToken.None;
+        _mockTournamentService
+            .Setup(x => x.GetEligibleBowlersAsync(TournamentDetailResponseFactory.ValidId, It.IsAny<CancellationToken>()))
+            .Callback<string, CancellationToken>((_, ct) => token = ct)
+            .Returns(pending.Task);
+        _ctx.Render<TournamentDetail>(p => p.Add(x => x.Id, TournamentDetailResponseFactory.ValidId));
+
+        // Act
+        await _ctx.DisposeComponentsAsync();
+        pending.SetResult(Error.Failure());
+
+        // Assert
+        token.IsCancellationRequested.ShouldBeTrue();
+        _ctx.Renderer.UnhandledException.IsCompleted.ShouldBeFalse();
+    }
+
+    private void SetupScheduledInvitational()
+        => SetupSuccessResponse(TournamentDetailResponseFactory.Create(
+            status: TournamentStatus.Scheduled, tournamentType: TournamentType.Invitational));
+
+    private void SetupEligibleBowlers()
+        => _mockTournamentService
+            .Setup(x => x.GetEligibleBowlersAsync(TournamentDetailResponseFactory.ValidId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(EligibleBowlersViewModelFactory.Create());
+
+    [Fact(DisplayName = "Should not load eligible bowlers when the visitor leaves before the tournament loads")]
+    public async Task Dispose_ShouldNotThrow_WhenTournamentLoadsAfterLeaving()
+    {
+        // Arrange
+        var tournament = new TaskCompletionSource<IApiResponse<TournamentDetailResponse>>();
+        _mockApi
+            .Setup(x => x.GetTournamentAsync(TournamentDetailResponseFactory.ValidId, It.IsAny<CancellationToken>()))
+            .Returns(tournament.Task);
+        _ctx.Render<TournamentDetail>(p => p.Add(x => x.Id, TournamentDetailResponseFactory.ValidId));
+        await _ctx.DisposeComponentsAsync();
+        using var response = new StubApiResponse<TournamentDetailResponse>
+        {
+            IsSuccessStatusCode = true,
+            StatusCode = System.Net.HttpStatusCode.OK,
+            Content = TournamentDetailResponseFactory.Create(
+                status: TournamentStatus.Scheduled, tournamentType: TournamentType.Invitational),
+        };
+
+        // Act
+        await _ctx.Renderer.Dispatcher.InvokeAsync(() => tournament.SetResult(response));
+
+        // Assert
+        _ctx.Renderer.UnhandledException.IsCompleted.ShouldBeFalse();
+        _mockTournamentService.Verify(
+            x => x.GetEligibleBowlersAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()),
+            Times.Never);
     }
 }
