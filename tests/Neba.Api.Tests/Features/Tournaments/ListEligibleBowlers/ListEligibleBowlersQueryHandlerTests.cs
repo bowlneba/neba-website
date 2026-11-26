@@ -284,25 +284,31 @@ public sealed class ListEligibleBowlersQueryHandlerTests(AppDbContextFixture fix
         result.Value.Bowlers.ShouldHaveSingleItem();
     }
 
-    [Fact(DisplayName = "HandleAsync counts a result from every tournament type")]
-    public async Task HandleAsync_ShouldCountEveryTournamentType()
+    [Theory(DisplayName = "HandleAsync counts a result from every tournament type")]
+    [MemberData(nameof(EveryTypeName))]
+    public async Task HandleAsync_ShouldCountResult_WhenTournamentIsAnyType(string typeName)
     {
-        // Arrange
+        // Arrange: one short of the threshold, so the result of the type under test decides it.
         var ct = TestContext.Current.CancellationToken;
         var invitational = await SeedInvitationalAsync(ct);
-        var everyType = await SeedBowlerAsync(ct, NameFactory.Create(firstName: "Every", lastName: "Type"));
-        var index = 0;
-        foreach (var type in TournamentType.List)
+        var bowler = await SeedBowlerAsync(ct);
+        for (var index = 0; index < Tournament.InvitationalEligibilityThreshold - 1; index++)
         {
-            await SeedResultTournamentAsync(_season, index++, [everyType], ct, type: type);
+            await SeedResultTournamentAsync(_season, index, [bowler], ct, type: TournamentType.Singles);
         }
+
+        await SeedResultTournamentAsync(
+            _season, Tournament.InvitationalEligibilityThreshold, [bowler], ct, type: TournamentType.FromName(typeName));
 
         // Act
         var result = await CreateHandler().HandleAsync(Query(invitational), ct);
 
         // Assert
-        Names(result).ShouldBe(["Every Type"]);
+        result.Value.Bowlers.ShouldHaveSingleItem();
     }
+
+    public static TheoryData<string> EveryTypeName
+        => [.. TournamentType.List.Select(type => type.Name)];
 
     [Theory(DisplayName = "HandleAsync returns an empty list when the Invitational is not Scheduled, even with qualifiers")]
     [InlineData("Completed", TestDisplayName = "Completed")]
