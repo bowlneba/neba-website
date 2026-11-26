@@ -1,0 +1,18 @@
+﻿{
+  Requirements: {
+    MinTournamentsCount: 3
+  },
+  Bowlers: [
+    {
+      Name: Bobby Adams,
+      UsbcId: 1111-11111
+    },
+    {
+      Name: Carl Baker,
+      UsbcId: 2222-22222
+    },
+    {
+      Name: Dana Cole
+    }
+  ]
+}

@@ -310,6 +310,26 @@ public sealed class ListEligibleBowlersQueryHandlerTests(AppDbContextFixture fix
     public static TheoryData<string> EveryTypeName
         => [.. TournamentType.List.Select(type => type.Name)];
 
+    [Fact(DisplayName = "HandleAsync maps the requirement and each bowler's name and USBC ID")]
+    public async Task HandleAsync_ShouldMapResult_WhenSeveralBowlersQualify()
+    {
+        // Arrange
+        var ct = TestContext.Current.CancellationToken;
+        var invitational = await SeedInvitationalAsync(ct);
+        var nicknamed = await SeedBowlerAsync(
+            ct, NameFactory.Create(firstName: "Robert", lastName: "Adams", nickname: "Bobby"), "1111-11111");
+        var suffixed = await SeedBowlerAsync(
+            ct, NameFactory.Create(firstName: "Carl", lastName: "Baker", suffix: NameSuffix.Jr), "2222-22222");
+        var noId = await SeedBowlerAsync(ct, NameFactory.Create(firstName: "Dana", lastName: "Cole"));
+        await SeedParticipationAsync(_season, ct, (nicknamed, 3), (suffixed, 3), (noId, 3));
+
+        // Act
+        var result = await CreateHandler().HandleAsync(Query(invitational), ct);
+
+        // Assert
+        await Verify(result.Value);
+    }
+
     [Theory(DisplayName = "HandleAsync returns an empty list when the Invitational is not Scheduled, even with qualifiers")]
     [InlineData("Completed", TestDisplayName = "Completed")]
     [InlineData("Truncated", TestDisplayName = "Truncated")]
