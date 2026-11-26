@@ -4,6 +4,7 @@ using Microsoft.Extensions.DependencyInjection;
 
 using Neba.TestFactory.Attributes;
 using Neba.TestFactory.Tournaments;
+using Neba.Website.Server.Components;
 using Neba.Website.Server.Help;
 using Neba.Website.Server.Tournaments.Detail;
 
@@ -78,6 +79,19 @@ public sealed class EligibleBowlersTests : IDisposable
 
         // Assert
         cut.Markup.ShouldContain("Bowlers with a result in 5 or more tournaments this season.");
+    }
+
+    [Fact(DisplayName = "Should link the help button to the eligibility help doc")]
+    public void Render_ShouldLinkHelp_WhenListShown()
+    {
+        // Arrange
+        var list = EligibleBowlersViewModelFactory.Create();
+
+        // Act
+        var cut = RenderList(list);
+
+        // Assert
+        cut.FindComponent<HelpButton>().Instance.DocName.ShouldBe("invitational-eligibility");
     }
 
     [Fact(DisplayName = "Should give the scroll box keyboard focus and a name, and label the search box")]
