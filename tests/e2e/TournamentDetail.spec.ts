@@ -494,6 +494,8 @@ test.describe('Tournament Detail page - rules link', () => {
     const fullLink = dialog.getByRole('link', { name: 'Open full rules page' });
     await expect(fullLink).toHaveAttribute('href', '/tournaments/rules#invitational');
 
+    // Escape is handled by the dialog, so wait until focus has moved into it.
+    await expect(dialog).toBeFocused();
     await page.keyboard.press('Escape');
     await expect(dialog).toBeHidden();
     await expect(button).toBeFocused();
