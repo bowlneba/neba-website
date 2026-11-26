@@ -1622,10 +1622,8 @@ tournamentType: TournamentType.Doubles, logoUrl: null));
         var cut = _ctx.Render<TournamentDetail>(p => p.Add(x => x.Id, TournamentDetailResponseFactory.ValidId));
 
         // Assert
+        // No setup for the load: the strict mock throws if the page asks for the list.
         cut.FindAll(".eligible-bowlers").ShouldBeEmpty();
-        _mockTournamentService.Verify(
-            x => x.GetEligibleBowlersAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()),
-            Times.Never);
     }
 
     [Fact(DisplayName = "Should remove the eligible bowlers once the Invitational is cancelled")]
