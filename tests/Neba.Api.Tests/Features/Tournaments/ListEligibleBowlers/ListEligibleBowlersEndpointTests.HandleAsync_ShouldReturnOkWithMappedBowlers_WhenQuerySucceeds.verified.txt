@@ -1,0 +1,18 @@
+﻿{
+  Requirements: {
+    MinTournamentsCount: 3
+  },
+  Bowlers: [
+    {
+      Name: Krystina Murray,
+      UsbcId: 2390-06288
+    },
+    {
+      Name: Reese Rath,
+      UsbcId: 5660-62528
+    },
+    {
+      Name: Wanda Weissnat
+    }
+  ]
+}

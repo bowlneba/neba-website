@@ -7,6 +7,7 @@ using Neba.Api.Contracts.Tournaments.EditTournamentLogo;
 using Neba.Api.Contracts.Tournaments.EditTournamentSponsorAmount;
 using Neba.Api.Contracts.Tournaments.GetTournament;
 using Neba.Api.Contracts.Tournaments.ListChampions;
+using Neba.Api.Contracts.Tournaments.ListEligibleBowlers;
 using Neba.Api.Contracts.Tournaments.ListTournamentTypes;
 using Neba.Api.Contracts.Uploads;
 
@@ -56,6 +57,18 @@ public interface ITournamentsApi
     /// <returns>A collection of tournament champions.</returns>
     [Get("/tournaments/champions")]
     Task<IApiResponse<CollectionResponse<TournamentChampionResponse>>> ListTournamentChampionsAsync(CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Gets the bowlers eligible for an Invitational: a result in 3 or more tournaments of its season.
+    /// Returns null requirements and no bowlers for a tournament that is not a scheduled Invitational.
+    /// </summary>
+    /// <param name="tournamentId">The Invitational's ID.</param>
+    /// <param name="cancellationToken">A token to cancel the operation.</param>
+    /// <returns>The requirements and the eligible bowlers, sorted by last then first name.</returns>
+    [Get("/tournaments/{tournamentId}/eligible-bowlers")]
+    Task<IApiResponse<EligibleBowlersResponse>> ListEligibleBowlersAsync(
+        string tournamentId,
+        CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Gets every tournament that has not ended yet, across the current and later seasons, ordered by start date.

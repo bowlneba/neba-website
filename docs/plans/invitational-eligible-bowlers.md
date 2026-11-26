@@ -111,7 +111,7 @@ Commits 1 and 2 are already done. Start at commit 3.
 - [x] 3. Define Invitational Eligibility
 - [x] 4. Add eligible bowlers cache tag and eviction
 - [x] 5. Add eligible bowlers query
-- [ ] 6. Add eligible bowlers endpoint
+- [x] 6. Add eligible bowlers endpoint
 - [ ] 7. Mock the eligible bowlers route
 - [ ] 8. Load eligible bowlers in the tournament service
 - [ ] 9. Add eligible bowlers component

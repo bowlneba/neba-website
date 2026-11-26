@@ -1,0 +1,33 @@
+using Neba.Api.Features.Tournaments.ListEligibleBowlers;
+using Neba.TestFactory.Attributes;
+
+namespace Neba.Api.Tests.Features.Tournaments.ListEligibleBowlers;
+
+[UnitTest]
+[Component("Tournaments")]
+public sealed class ListEligibleBowlersSummaryTests
+{
+    [Fact(DisplayName = "Constructor should set the summary and description")]
+    public void Constructor_ShouldSetSummaryAndDescription()
+    {
+        // Arrange & Act
+        var summary = new ListEligibleBowlersSummary();
+
+        // Assert
+        summary.Summary.ShouldNotBeNullOrWhiteSpace();
+        summary.Description.ShouldNotBeNullOrWhiteSpace();
+    }
+
+    [Theory(DisplayName = "Constructor should register a response for each status code")]
+    [InlineData(200, TestDisplayName = "200")]
+    [InlineData(400, TestDisplayName = "400")]
+    [InlineData(404, TestDisplayName = "404")]
+    public void Constructor_ShouldRegisterResponse(int statusCode)
+    {
+        // Arrange & Act
+        var summary = new ListEligibleBowlersSummary();
+
+        // Assert
+        summary.Responses.ShouldContainKey(statusCode);
+    }
+}
