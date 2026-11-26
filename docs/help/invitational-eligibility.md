@@ -17,6 +17,22 @@ None. The page is public: you do not need to sign in. The list shows only on an 
 
    ![The list narrowed to one bowler by a search](images/invitational-eligibility/search.png)
 
+   When nothing matches, the list says so:
+
+   ![A search with no match, showing "No bowlers match" and the term](images/invitational-eligibility/no-match.png)
+
+## Before anyone qualifies
+
+Early in a season the section says that no bowler has qualified yet.
+
+![The Eligible bowlers section saying no bowlers have reached 3 tournaments yet this season](images/invitational-eligibility/empty.png)
+
+## If the list does not load
+
+The section shows an error and a **Try again** button. The rest of the page still works.
+
+![The Eligible bowlers section with a load error and a Try again button](images/invitational-eligibility/load-failed.png)
+
 ## How eligibility is counted
 
 - Every tournament of the Invitational's season in which you have a recorded result counts once. It does not matter whether the tournament counted toward stats or titles.

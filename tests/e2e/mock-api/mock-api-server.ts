@@ -1929,6 +1929,10 @@ const MOCK_TOURNAMENT_ADDED_MONEY_PAST = {
 // completed (link hidden, because the rules may have changed since it ran).
 export const MOCK_TOURNAMENT_INVITATIONAL_UPCOMING_ID = '01JX0000000000000000000070';
 export const MOCK_TOURNAMENT_INVITATIONAL_PAST_ID = '01JX0000000000000000000071';
+// Upcoming Invitationals for the eligible bowlers list: one with nobody qualified, and one whose
+// load a spec makes fail (one copy per project, so a forced failure does not affect other specs).
+export const MOCK_TOURNAMENT_INVITATIONAL_EMPTY_ID = '01JX0000000000000000000072';
+export const MOCK_TOURNAMENT_INVITATIONAL_ERRORS_ID = '01JX0000000000000000000073';
 
 const MOCK_TOURNAMENT_INVITATIONAL_UPCOMING = {
   ...MOCK_TOURNAMENT_STATUS_ACTIONS,
@@ -1950,7 +1954,19 @@ const MOCK_TOURNAMENT_INVITATIONAL_PAST = {
   tournamentType: 'Invitational',
 };
 
+const PER_PROJECT_INVITATIONAL_ERRORS_TOURNAMENTS: [string, object][] = E2E_PROJECT_NAMES.map((projectName) => [
+  perProjectTournamentId(MOCK_TOURNAMENT_INVITATIONAL_ERRORS_ID, projectName),
+  {
+    ...MOCK_TOURNAMENT_INVITATIONAL_UPCOMING,
+    id: perProjectTournamentId(MOCK_TOURNAMENT_INVITATIONAL_ERRORS_ID, projectName),
+  },
+]);
+
 const EXTRA_TOURNAMENT_DETAILS = new Map<string, object>([
+  [
+    MOCK_TOURNAMENT_INVITATIONAL_EMPTY_ID,
+    { ...MOCK_TOURNAMENT_INVITATIONAL_UPCOMING, id: MOCK_TOURNAMENT_INVITATIONAL_EMPTY_ID },
+  ],
   [MOCK_TOURNAMENT_OIL_REVEAL_PENDING_ID, MOCK_TOURNAMENT_OIL_REVEAL_PENDING],
   [MOCK_TOURNAMENT_OIL_REVEALED_ID, MOCK_TOURNAMENT_OIL_REVEALED],
   [MOCK_TOURNAMENT_OIL_REVEAL_MGMT_ID, MOCK_TOURNAMENT_OIL_REVEAL_MGMT],
@@ -1972,15 +1988,23 @@ const EXTRA_TOURNAMENT_DETAILS = new Map<string, object>([
   ],
   ...PER_PROJECT_STATUS_TOURNAMENTS,
   ...PER_PROJECT_TEAM_ERRORS_TOURNAMENTS,
+  ...PER_PROJECT_INVITATIONAL_ERRORS_TOURNAMENTS,
 ]);
 
-// Invitational eligible bowlers (TournamentDetail.spec.ts): only the upcoming Invitational has a
+// Invitational eligible bowlers (TournamentDetail.spec.ts): only the upcoming Invitationals have a
 // list. One bowler has no USBC ID.
 function resolveEligibleBowlersRoute(pathname: string): object | null {
   const match = /^\/tournaments\/([^/]+)\/eligible-bowlers$/.exec(pathname);
   if (!match) return null;
 
-  if (match[1] !== MOCK_TOURNAMENT_INVITATIONAL_UPCOMING_ID) {
+  if (match[1] === MOCK_TOURNAMENT_INVITATIONAL_EMPTY_ID) {
+    return { requirements: { minTournamentsCount: 3 }, bowlers: [] };
+  }
+
+  const hasList =
+    match[1] === MOCK_TOURNAMENT_INVITATIONAL_UPCOMING_ID ||
+    PER_PROJECT_INVITATIONAL_ERRORS_TOURNAMENTS.some(([id]) => id === match[1]);
+  if (!hasList) {
     return { requirements: null, bowlers: [] };
   }
 
