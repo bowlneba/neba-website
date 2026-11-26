@@ -374,6 +374,12 @@ public static class CacheDescriptors
         /// </summary>
         public const string Tag = "neba:tournaments";
 
+        /// <summary>
+        /// The tag every cached eligible-bowlers list carries. Each list depends on other tournaments' results,
+        /// so the results sync, delete tournament and edit tournament (season change) clear it.
+        /// </summary>
+        public const string EligibleBowlersTag = "neba:tournaments:eligible-bowlers";
+
         private static string ResolveScope(bool callerIsAuthenticated, bool callerHasTournamentManagementPermission)
         {
             if (callerHasTournamentManagementPermission)
@@ -452,6 +458,18 @@ public static class CacheDescriptors
             {
                 Key = $"{Tag}:types:list",
                 Tags = ["neba", Tag, $"{Tag}:types"]
+            };
+
+        /// <summary>
+        /// Returns a cache descriptor for the bowlers eligible for an Invitational. Every caller sees the same
+        /// data, so the key has no caller scope.
+        /// </summary>
+        /// <param name="id">The Invitational's tournament identifier.</param>
+        public static CacheDescriptor EligibleBowlers(TournamentId id)
+            => new()
+            {
+                Key = $"{Tag}:{id}:eligible-bowlers",
+                Tags = ["neba", Tag, $"{Tag}:{id}", EligibleBowlersTag]
             };
     }
 

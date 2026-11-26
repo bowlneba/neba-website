@@ -21,6 +21,11 @@ public sealed class Tournament
     : AggregateRoot
 {
     /// <summary>
+    /// The number of distinct tournaments in the Invitational's season a bowler must have a result in to be Invitational eligible.
+    /// </summary>
+    public const int InvitationalEligibilityThreshold = 3;
+
+    /// <summary>
     /// Gets the unique identifier for this tournament.
     /// </summary>
     public required TournamentId Id { get; init; }

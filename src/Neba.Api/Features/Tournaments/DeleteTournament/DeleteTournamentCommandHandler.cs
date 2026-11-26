@@ -3,6 +3,7 @@ using ErrorOr;
 using Microsoft.EntityFrameworkCore;
 
 using Neba.Api.BackgroundJobs;
+using Neba.Api.Caching;
 using Neba.Api.Database;
 using Neba.Api.Database.Configurations;
 using Neba.Api.Features.Tournaments.Domain;
@@ -57,6 +58,9 @@ internal sealed class DeleteTournamentCommandHandler(
 
         await cache.RemoveByTagAsync($"neba:tournaments:{tournament.Id}", token: cancellationToken);
         await cache.RemoveByTagAsync($"neba:tournaments:{seasonId}", token: cancellationToken);
+
+        // Deleting a finalized tournament removes its results, which other Invitationals' eligible lists counted.
+        await cache.RemoveByTagAsync(CacheDescriptors.Tournaments.EligibleBowlersTag, token: cancellationToken);
         await TournamentSuccessorCacheEviction.EvictAsync(cache, successors, cancellationToken);
 
         // The predecessor's season list showed this tournament as its next tournament. The predecessor row stays.

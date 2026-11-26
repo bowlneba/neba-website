@@ -23,4 +23,21 @@ public sealed class TournamentCacheTagTests
         list.Tags.ShouldContain(CacheDescriptors.Tournaments.Tag);
         detail.Tags.ShouldContain(CacheDescriptors.Tournaments.Tag);
     }
+
+    [Fact(DisplayName = "The eligible-bowlers descriptor should carry the tag the results sync, delete and edit evictions clear")]
+    public void EligibleBowlers_ShouldCarryTheEvictionTag()
+    {
+        // Arrange
+        var id = TournamentId.New();
+
+        // Act
+        var descriptor = CacheDescriptors.Tournaments.EligibleBowlers(id);
+
+        // Assert
+        CacheDescriptors.Tournaments.EligibleBowlersTag.ShouldBe("neba:tournaments:eligible-bowlers");
+        descriptor.Key.ShouldBe($"neba:tournaments:{id}:eligible-bowlers");
+        descriptor.Tags.ShouldBe(
+            ["neba", CacheDescriptors.Tournaments.Tag, $"neba:tournaments:{id}", CacheDescriptors.Tournaments.EligibleBowlersTag],
+            ignoreOrder: true);
+    }
 }

@@ -194,6 +194,9 @@ internal sealed class EditTournamentCommandHandler(
         if (currentSeasonId != previousSeasonId)
         {
             await cache.RemoveByTagAsync($"neba:tournaments:{currentSeasonId}", token: cancellationToken);
+
+            // The tournament's results count in a different season now, so every eligible list can change.
+            await cache.RemoveByTagAsync(CacheDescriptors.Tournaments.EligibleBowlersTag, token: cancellationToken);
         }
 
         // The champions list and each bowler's titles project the tournament's name, end date and type.

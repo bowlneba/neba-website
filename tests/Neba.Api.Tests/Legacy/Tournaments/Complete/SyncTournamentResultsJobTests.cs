@@ -966,4 +966,27 @@ public sealed class SyncTournamentResultsJobTests(AppDbContextFixture fixture, L
         var enqueued = createdJobs.ShouldHaveSingleItem();
         enqueued.Type.ShouldBe(typeof(IDomainEventJob<TournamentResultsRecorded>));
     }
+
+    [Fact(DisplayName = "SyncAsync should evict the eligible-bowlers cache tag after saving")]
+    public async Task SyncAsync_ShouldEvictEligibleBowlersCacheTag_AfterSaving()
+    {
+        // Arrange
+        var ct = TestContext.Current.CancellationToken;
+        await CreateTournamentAsync(42, TournamentType.Singles, complete: true, ct);
+        await CreateBowlerAsync(100, ct);
+        var statsId = await InsertStatsAsync(100, 42);
+        await InsertResultsStatsAsync(statsId, place: 1, payout: 500m, points: 100);
+
+        var cache = _serviceProvider.GetRequiredService<IFusionCache>();
+        const string key = "eligible-bowlers-cache-test";
+        await cache.GetOrSetAsync(key, _ => Task.FromResult("stale-cached-value"), tags: [CacheDescriptors.Tournaments.EligibleBowlersTag], token: ct);
+
+        var job = CreateJob();
+
+        // Act
+        await job.SyncAsync(42, ct);
+
+        // Assert
+        (await cache.GetOrSetAsync(key, _ => Task.FromResult("fresh-value"), token: ct)).ShouldBe("fresh-value");
+    }
 }
