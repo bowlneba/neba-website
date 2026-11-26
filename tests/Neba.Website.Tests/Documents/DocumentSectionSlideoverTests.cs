@@ -7,6 +7,7 @@ using Microsoft.JSInterop;
 
 using Neba.TestFactory.Attributes;
 using Neba.Website.Server.Documents;
+using Neba.Website.Tests.TestSupport;
 
 namespace Neba.Website.Tests.Documents;
 
@@ -77,36 +78,6 @@ public sealed class DocumentSectionSlideoverTests : IDisposable
 
         // Assert
         js.Calls.ShouldContain("focusElement");
-    }
-
-    // Holds the module import open until the test releases it.
-    private sealed class DeferredImportJsRuntime : IJSRuntime, IJSObjectReference
-    {
-        private readonly TaskCompletionSource<IJSObjectReference> _import = new();
-
-        public List<string> Calls { get; } = [];
-
-        public void CompleteImport() => _import.SetResult(this);
-
-        public ValueTask<TValue> InvokeAsync<TValue>(string identifier, object?[]? args)
-        {
-            if (identifier == "import")
-            {
-                return new ValueTask<TValue>(ImportAsync<TValue>());
-            }
-
-            Calls.Add(identifier);
-            return ValueTask.FromResult<TValue>(default!);
-        }
-
-        public ValueTask<TValue> InvokeAsync<TValue>(string identifier, CancellationToken cancellationToken, object?[]? args)
-            => InvokeAsync<TValue>(identifier, args);
-
-        public ValueTask DisposeAsync() => ValueTask.CompletedTask;
-
-#pragma warning disable VSTHRD003 // The test completes this task itself.
-        private async Task<TValue> ImportAsync<TValue>() => (TValue)await _import.Task;
-#pragma warning restore VSTHRD003
     }
 
     [Fact(DisplayName = "Closed slide-out renders no dialog")]

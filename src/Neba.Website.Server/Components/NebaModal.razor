@@ -182,22 +182,28 @@
             _module = await JsRuntime.InvokeAsync<IJSObjectReference>("import", "./Components/NebaModal.razor.js");
         }
 
-        if (_module is not null)
+        // Still loading: leave _wasOpen alone, so the render that loads the script handles an early open.
+        if (_module is null)
         {
-            await _module.InvokeVoidAsync("setBodyOverflow", IsOpen);
-
-            if (IsOpen && !_wasOpen)
-            {
-                await _module.InvokeVoidAsync("focusElement", _dialogElement);
-                await _module.InvokeVoidAsync("enableFocusTrap", _dialogElement);
-            }
-            else if (!IsOpen && _wasOpen)
-            {
-                await _module.InvokeVoidAsync("disableFocusTrap");
-            }
+            return;
         }
 
-        _wasOpen = IsOpen;
+        // Record the state before the first await: a close can render while the open calls are running.
+        var isOpen = IsOpen;
+        var wasOpen = _wasOpen;
+        _wasOpen = isOpen;
+
+        await _module.InvokeVoidAsync("setBodyOverflow", isOpen);
+
+        if (isOpen && !wasOpen)
+        {
+            await _module.InvokeVoidAsync("focusElement", _dialogElement);
+            await _module.InvokeVoidAsync("enableFocusTrap", _dialogElement);
+        }
+        else if (!isOpen && wasOpen)
+        {
+            await _module.InvokeVoidAsync("disableFocusTrap");
+        }
     }
 
     private async Task HandleClose()
