@@ -23,6 +23,12 @@
     color: var(--neba-gray-500);
 }
 
+.eligible-bowlers__title {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
 .eligible-bowlers__tools {
     width: 16.25rem;
 }

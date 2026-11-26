@@ -6,6 +6,7 @@ using Microsoft.Extensions.DependencyInjection;
 
 using Neba.TestFactory.Attributes;
 using Neba.TestFactory.Tournaments;
+using Neba.Website.Server.Help;
 using Neba.Website.Server.Tournaments;
 using Neba.Website.Server.Tournaments.Detail;
 
@@ -24,6 +25,7 @@ public sealed class EligibleBowlersTests : IDisposable
     {
         _ctx.JSInterop.Mode = JSRuntimeMode.Loose;
         _ctx.Services.AddSingleton(_service.Object);
+        _ctx.Services.AddSingleton<HelpDocumentService>();
     }
 
     public void Dispose() => _ctx.Dispose();

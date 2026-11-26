@@ -117,7 +117,7 @@ Commits 1 and 2 are already done. Start at commit 3.
 - [x] 9. Add eligible bowlers component
 - [x] 10. Show eligible bowlers on Invitational details
 - [x] 11. Cover the eligible bowlers section
-- [ ] 12. Document the eligible bowlers list
+- [x] 12. Document the eligible bowlers list
 
 ## Phase 1: API
 
@@ -2868,3 +2868,4 @@ Implement in this order, in one session, with no subagents. Each commit builds a
 12. `Document the eligible bowlers list`
     - Files: new `docs/help/invitational-eligibility.md`
     - Why: a public page changed (ADR-0007). Use the `help-documentation` skill, which takes screenshots from the running page.
+   - Added at build time: the skill also puts a `HelpButton` beside the section heading in `EligibleBowlers.razor` (with its CSS and the test registration), and adds screenshots and `tests/e2e/docs-screenshots/invitational-eligibility.spec.ts`.
