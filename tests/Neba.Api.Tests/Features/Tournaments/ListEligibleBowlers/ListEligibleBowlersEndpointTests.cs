@@ -129,6 +129,8 @@ public sealed class ListEligibleBowlersEndpointTests
     {
         // Arrange
         var handler = new Mock<IQueryHandler<ListEligibleBowlersQuery, ErrorOr<EligibleBowlersDto>>>(MockBehavior.Strict);
+
+        // Act
         var endpoint = Factory.Create<ListEligibleBowlersEndpoint>(handler.Object);
 
         // Assert
