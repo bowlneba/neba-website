@@ -637,6 +637,12 @@ else
 
     private async Task LoadEligibleBowlersAsync()
     {
+        // The visitor left while the tournament was loading; the token source is already disposed.
+        if (_disposed.IsCancellationRequested)
+        {
+            return;
+        }
+
         _isLoadingEligibleBowlers = true;
         _eligibleBowlersFailed = false;
 
