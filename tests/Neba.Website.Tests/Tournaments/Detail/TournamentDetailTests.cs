@@ -1692,6 +1692,25 @@ tournamentType: TournamentType.Doubles, logoUrl: null));
         cut.FindAll(".eligible-bowlers__error").ShouldBeEmpty();
     }
 
+    [Fact(DisplayName = "Should show loading and hide the error while a retry is pending")]
+    public void Retry_ShouldShowLoading_WhenSecondLoadIsPending()
+    {
+        // Arrange
+        SetupScheduledInvitational();
+        _mockTournamentService
+            .SetupSequence(x => x.GetEligibleBowlersAsync(TournamentDetailResponseFactory.ValidId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync((ErrorOr<EligibleBowlersViewModel>)Error.Failure())
+            .Returns(new TaskCompletionSource<ErrorOr<EligibleBowlersViewModel>>().Task);
+        var cut = _ctx.Render<TournamentDetail>(p => p.Add(x => x.Id, TournamentDetailResponseFactory.ValidId));
+
+        // Act
+        cut.Find("button.eligible-bowlers__retry").Click();
+
+        // Assert
+        cut.Find(".eligible-bowlers__loading").ShouldNotBeNull();
+        cut.FindAll(".eligible-bowlers__error").ShouldBeEmpty();
+    }
+
     [Fact(DisplayName = "Should cancel the eligible bowlers load when disposed while it is pending")]
     public async Task Dispose_ShouldCancelEligibleBowlersLoad_WhenPending()
     {
