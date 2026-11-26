@@ -2,7 +2,7 @@
 
 Read this in Step 13. It is not optional: a plan with no implementation guide is unfinished.
 
-Once the commit plan is confirmed, make the plan usable by an agent in a fresh session.
+Once the commit plan is confirmed, make the plan usable by a fresh session that implements it alone, with no subagents.
 
 **1. Consistency pass.** Fix problems in the plan itself before writing the guide:
 - List every rename and every decision that changed after a draft existed. Grep the plan for each old name and fix the code and prose. Reconciliation notes may stay only for conflicts too big to rewrite, and each says which commit applies it.
@@ -16,13 +16,13 @@ Once the commit plan is confirmed, make the plan usable by an agent in a fresh s
 - **Read first**, in order: that section, the decisions and the confirmed UI flow, the reconciliation or phase notes, the commit plan, then only the sections the commit needs. Say plainly: do not read the whole file, and give its length.
 - **Precedence** when two parts disagree: decisions, notes, code drafts, then the source ticket and docs. The repo wins over the plan on a name that does not match; fix the plan when you find one.
 - **State of the drafts:** whether the code was compiled, what is assumed, and what cannot build until a named commit lands.
-- **Per-commit procedure:** read the entry and its sections; hand it to the agent it names, passing the plan path and the entry; run the build and the tests for that area (with the actual commands); fix failures; update the plan if the code drifted; stage files by name, commit with the subject and the attribution trailer; tick the box.
-- **Do not** list, from the decisions (things the user ruled out, such as a flag, a deferred pattern, a banned word).
+- **Per-commit procedure:** read the entry and its sections; make the changes in this session; run the build and only the tests for that area (with the actual commands), showing failures rather than whole logs; fix failures; update the plan if the code drifted; stage files by name, commit with the subject and the attribution trailer; tick the box.
+- **Do not** list: do not spawn subagents (agents were used to draft the plan, not to build it); then, from the decisions, things the user ruled out (such as a flag, a deferred pattern, a banned word).
 - **Before specific commits:** data checks, contract confirmations, secrets or licenses needed.
 - **Commit to section map:** a table from each commit number to the sections it needs, using heading names and layer labels, not line numbers (lines drift).
 - **Mockups:** where they are, which one is chosen, which commits use them.
 - **Progress:** a checkbox list that repeats each commit subject, so a fresh session resumes at the first unchecked box.
 
-**3. Tell the user how to start a fresh session.** Give a short paste-ready prompt, for example: "Implement `docs/plans/{feature-name}.md`. Start with its 'Implementing this plan' section. Do the next unchecked commit in the progress list: hand it to the agent the commit names, run the build and tests, update the plan if the code drifted, commit by file name, tick the box, then continue with the next commit. Ask me before anything the plan marks as a decision I still owe."
+**3. Tell the user how to start a fresh session.** Give a short paste-ready prompt, for example: "Implement `docs/plans/{feature-name}.md`. Start with its 'Implementing this plan' section. Do the next unchecked commit in the progress list yourself, with no subagents: make the changes, run the build and that commit's tests, update the plan if the code drifted, commit by file name, tick the box, then continue with the next commit. Ask me before anything the plan marks as a decision I still owe."
 
 **4.** Report the plan is complete: **"The plan is ready for a fresh session. The full plan is in `docs/plans/{feature-name}.md`. The prompt above starts the work. I'll commit each step as it is done."**
