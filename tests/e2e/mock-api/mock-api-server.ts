@@ -1974,6 +1974,26 @@ const EXTRA_TOURNAMENT_DETAILS = new Map<string, object>([
   ...PER_PROJECT_TEAM_ERRORS_TOURNAMENTS,
 ]);
 
+// Invitational eligible bowlers (TournamentDetail.spec.ts): only the upcoming Invitational has a
+// list. One bowler has no USBC ID.
+function resolveEligibleBowlersRoute(pathname: string): object | null {
+  const match = /^\/tournaments\/([^/]+)\/eligible-bowlers$/.exec(pathname);
+  if (!match) return null;
+
+  if (match[1] !== MOCK_TOURNAMENT_INVITATIONAL_UPCOMING_ID) {
+    return { requirements: null, bowlers: [] };
+  }
+
+  return {
+    requirements: { minTournamentsCount: 3 },
+    bowlers: [
+      { name: 'Alice Anders', usbcId: '2222-00001' },
+      { name: 'Ben Baxter', usbcId: null },
+      { name: 'Carla Cole', usbcId: '2222-00003' },
+    ],
+  };
+}
+
 type SeasonVariants = {
   label: string;
   leaderName: string;
@@ -2530,6 +2550,7 @@ function resolveGetRoute(pathname: string, searchParams: URLSearchParams): objec
     resolveStatsRoute(pathname, searchParams) ??
     resolveSeasonTournamentsRoute(pathname) ??
     resolveTeamEligibilityRoute(pathname, searchParams) ??
+    resolveEligibleBowlersRoute(pathname) ??
     resolveBowlerSearchRoute(pathname, searchParams) ??
     resolveStaticGetRoute(pathname) ??
     resolveAdvancementRoute(pathname) ??
