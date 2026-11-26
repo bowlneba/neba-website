@@ -14,6 +14,6 @@ public sealed record EligibleBowlerSummaryResponse
     /// <summary>
     /// The bowler's USBC ID, or <see langword="null"/> when none is on file.
     /// </summary>
-    /// <example>1234-567890</example>
+    /// <example>4821-09317</example>
     public string? UsbcId { get; init; }
 }
