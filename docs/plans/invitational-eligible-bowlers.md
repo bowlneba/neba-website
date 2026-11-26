@@ -116,7 +116,7 @@ Commits 1 and 2 are already done. Start at commit 3.
 - [x] 8. Load eligible bowlers in the tournament service
 - [x] 9. Add eligible bowlers component
 - [x] 10. Show eligible bowlers on Invitational details
-- [ ] 11. Cover the eligible bowlers section
+- [x] 11. Cover the eligible bowlers section
 - [ ] 12. Document the eligible bowlers list
 
 ## Phase 1: API
