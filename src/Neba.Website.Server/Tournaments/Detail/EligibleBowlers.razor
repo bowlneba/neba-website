@@ -58,9 +58,9 @@
                                 </tr>
                             </thead>
                             <tbody>
-                                @foreach (var (index, bowler) in _shown.Index())
+                                @foreach (var bowler in _shown)
                                 {
-                                    <tr @key="index">
+                                    <tr>
                                         <td>@bowler.Name</td>
                                         <td>
                                             @if (bowler.UsbcId is null)
