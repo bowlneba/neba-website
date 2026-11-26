@@ -19,8 +19,8 @@ using Neba.Website.Server.Clock;
 using Neba.Website.Server.History.Champions;
 using Neba.Website.Server.Notifications;
 using Neba.Website.Server.Services;
-using Neba.Website.Server.Tournaments.Detail;
 using Neba.Website.Server.Tournaments;
+using Neba.Website.Server.Tournaments.Detail;
 using Neba.Website.Server.Tournaments.Schedule;
 
 using Refit.Testing;
@@ -726,9 +726,9 @@ public sealed class TournamentsPageTests : IDisposable
 
     private sealed class FakeTournamentDataService : ITournamentApiService
     {
-    Task<ErrorOr<EligibleBowlersViewModel>>
-        ITournamentApiService.GetEligibleBowlersAsync(string tournamentId, CancellationToken ct)
-        => throw new NotSupportedException();
+        Task<ErrorOr<EligibleBowlersViewModel>>
+            ITournamentApiService.GetEligibleBowlersAsync(string tournamentId, CancellationToken ct)
+            => throw new NotSupportedException();
 
         public List<SeasonViewModel>? Seasons { get; set; } = [];
 

@@ -2,13 +2,13 @@ using ErrorOr;
 
 using Microsoft.Extensions.Logging.Abstractions;
 
-using Neba.Api.Contracts.Tournaments.ListEligibleBowlers;
 using Neba.Api.Contracts;
 using Neba.Api.Contracts.Seasons;
 using Neba.Api.Contracts.Seasons.ListSeasons;
 using Neba.Api.Contracts.Seasons.ListTournamentsInSeason;
 using Neba.Api.Contracts.Tournaments;
 using Neba.Api.Contracts.Tournaments.ListChampions;
+using Neba.Api.Contracts.Tournaments.ListEligibleBowlers;
 using Neba.TestFactory.Attributes;
 using Neba.TestFactory.Tournaments;
 using Neba.Website.Server.Clock;
