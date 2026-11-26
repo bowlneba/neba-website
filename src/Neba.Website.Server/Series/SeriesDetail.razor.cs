@@ -123,6 +123,7 @@ public partial class SeriesDetail
             _canManage = false;
             _canMakeOfficial = false;
             _advancementState = AdvancementState.Hidden;
+            StateHasChanged(); // advancers are optional, so show the page without waiting for them
             await LoadAdvancersAsync();
             return;
         }
