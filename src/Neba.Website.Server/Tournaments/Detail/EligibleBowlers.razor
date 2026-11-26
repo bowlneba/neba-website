@@ -1,7 +1,4 @@
-@implements IDisposable
-@inject ITournamentApiService TournamentApiService
-
-@if (_isLoading || _loadFailed || _list is { ListApplies: true })
+@if (IsLoading || LoadFailed || List is { ListApplies: true })
 {
     <div class="eligible-bowlers">
         <div class="eligible-bowlers__head">
@@ -10,12 +7,12 @@
                     <h2 class="td-section-title">Eligible bowlers</h2>
                     <HelpButton DocName="invitational-eligibility" />
                 </div>
-                @if (_list is not null)
+                @if (List is not null)
                 {
                     <span class="td-section-subtitle">@Subtitle</span>
                 }
             </div>
-            @if (_list is { Bowlers.Count: > 0 })
+            @if (List is { Bowlers.Count: > 0 })
             {
                 <div class="eligible-bowlers__tools">
                     <label class="sr-only" for="eligible-bowlers-search">Search eligible bowlers by name or USBC ID</label>
@@ -26,24 +23,24 @@
             }
         </div>
 
-        @if (_isLoading)
+        @if (IsLoading)
         {
             <div class="eligible-bowlers__loading" role="status">
                 <div class="neba-spinner" aria-hidden="true"></div>
                 <span class="sr-only">Loading eligible bowlers…</span>
             </div>
         }
-        else if (_loadFailed)
+        else if (LoadFailed)
         {
             <div class="eligible-bowlers__error" role="alert">
                 <p>Could not load the eligible bowlers.</p>
                 <button type="button" class="neba-btn neba-btn-secondary neba-btn-sm eligible-bowlers__retry"
-                        @onclick="LoadAsync">
+                        @onclick="OnRetry">
                     Try again
                 </button>
             </div>
         }
-        else if (_list!.Bowlers.Count == 0)
+        else if (List!.Bowlers.Count == 0)
         {
             <p class="eligible-bowlers__empty">@EmptyText</p>
         }
@@ -93,25 +90,30 @@
 }
 
 @code {
-    private readonly CancellationTokenSource _disposed = new();
-
-    private EligibleBowlersViewModel? _list;
     private IReadOnlyList<EligibleBowlerViewModel> _shown = [];
     private string _term = string.Empty;
-    private bool _isLoading = true;
-    private bool _loadFailed;
+
+    /// <summary>The loaded list; null until the first load succeeds.</summary>
+    [Parameter]
+    public EligibleBowlersViewModel? List { get; set; }
+
+    [Parameter]
+    public bool IsLoading { get; set; }
+
+    [Parameter]
+    public bool LoadFailed { get; set; }
 
     [Parameter, EditorRequired]
-    public string TournamentId { get; set; } = default!;
+    public EventCallback OnRetry { get; set; }
 
     private string Subtitle
-        => _list?.MinTournamentsCount is { } minimum
+        => List?.MinTournamentsCount is { } minimum
             ? "Bowlers with a result in " + minimum + " or more "
                 + "tournament".ToQuantity(minimum, ShowQuantityAs.None) + " this season."
             : "Bowlers who have qualified this season.";
 
     private string EmptyText
-        => _list?.MinTournamentsCount is { } minimum
+        => List?.MinTournamentsCount is { } minimum
             ? "No bowlers have reached "
                 + "tournament".ToQuantity(minimum, formatProvider: DisplayCulture.English) + " yet this season."
             : "No bowlers have qualified yet this season.";
@@ -120,7 +122,7 @@
     {
         get
         {
-            var total = "bowler".ToQuantity(_list!.Bowlers.Count, formatProvider: DisplayCulture.English);
+            var total = "bowler".ToQuantity(List!.Bowlers.Count, formatProvider: DisplayCulture.English);
 
             return string.IsNullOrWhiteSpace(_term)
                 ? total
@@ -128,42 +130,14 @@
         }
     }
 
-    protected override Task OnInitializedAsync() => LoadAsync();
-
-    public void Dispose()
-    {
-        _disposed.Cancel();
-        _disposed.Dispose();
-    }
-
-    private async Task LoadAsync()
-    {
-        _isLoading = true;
-        _loadFailed = false;
-
-        var result = await TournamentApiService.GetEligibleBowlersAsync(TournamentId, _disposed.Token);
-
-        // The visitor left, or the status changed and the page dropped this section.
-        if (_disposed.IsCancellationRequested)
-        {
-            return;
-        }
-
-        _isLoading = false;
-
-        if (result.IsError)
-        {
-            _loadFailed = true;
-            return;
-        }
-
-        _list = result.Value;
-        _shown = _list.Bowlers;
-    }
+    protected override void OnParametersSet() => ApplyFilter();
 
     private void HandleSearchInput(ChangeEventArgs e)
     {
         _term = e.Value?.ToString() ?? string.Empty;
-        _shown = [.. _list!.Bowlers.Where(bowler => bowler.Matches(_term))];
+        ApplyFilter();
     }
+
+    private void ApplyFilter()
+        => _shown = List is null ? [] : [.. List.Bowlers.Where(bowler => bowler.Matches(_term))];
 }

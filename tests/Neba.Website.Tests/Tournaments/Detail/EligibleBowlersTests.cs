@@ -1,13 +1,10 @@
 using Bunit;
 
-using ErrorOr;
-
 using Microsoft.Extensions.DependencyInjection;
 
 using Neba.TestFactory.Attributes;
 using Neba.TestFactory.Tournaments;
 using Neba.Website.Server.Help;
-using Neba.Website.Server.Tournaments;
 using Neba.Website.Server.Tournaments.Detail;
 
 namespace Neba.Website.Tests.Tournaments.Detail;
@@ -16,15 +13,11 @@ namespace Neba.Website.Tests.Tournaments.Detail;
 [Component("Website.Tournaments.Detail.EligibleBowlers")]
 public sealed class EligibleBowlersTests : IDisposable
 {
-    private const string TournamentId = "01J7ZK8X6ZQJ8V3F8N9T9C9R2E";
-
     private readonly BunitContext _ctx = new();
-    private readonly Mock<ITournamentApiService> _service = new(MockBehavior.Strict);
 
     public EligibleBowlersTests()
     {
         _ctx.JSInterop.Mode = JSRuntimeMode.Loose;
-        _ctx.Services.AddSingleton(_service.Object);
         _ctx.Services.AddSingleton<HelpDocumentService>();
     }
 
@@ -33,14 +26,8 @@ public sealed class EligibleBowlersTests : IDisposable
     [Fact(DisplayName = "Should show the heading and loading state while the list is pending")]
     public void Render_ShouldShowLoading_WhilePending()
     {
-        // Arrange
-        var pending = new TaskCompletionSource<ErrorOr<EligibleBowlersViewModel>>();
-        _service
-            .Setup(x => x.GetEligibleBowlersAsync(TournamentId, It.IsAny<CancellationToken>()))
-            .Returns(pending.Task);
-
-        // Act
-        var cut = RenderComponent();
+        // Arrange & Act
+        var cut = _ctx.Render<EligibleBowlers>(p => p.Add(x => x.IsLoading, true));
 
         // Assert
         cut.Find("h2").TextContent.Trim().ShouldBe("Eligible bowlers");
@@ -48,31 +35,18 @@ public sealed class EligibleBowlersTests : IDisposable
         cut.FindAll(".eligible-bowlers__table, .eligible-bowlers__search, .eligible-bowlers__empty, .eligible-bowlers__error").ShouldBeEmpty();
     }
 
-    [Fact(DisplayName = "Should load the list for the TournamentId parameter once")]
-    public void OnInit_ShouldLoadOnce_ForTournamentId()
-    {
-        // Arrange
-        SetupResult(EligibleBowlersViewModelFactory.Create());
-
-        // Act
-        RenderComponent();
-
-        // Assert
-        _service.Verify(x => x.GetEligibleBowlersAsync(TournamentId, It.IsAny<CancellationToken>()), Times.Once);
-    }
-
     [Fact(DisplayName = "Should show names and USBC IDs in the order returned")]
     public void Render_ShouldShowRows_InReturnedOrder()
     {
         // Arrange: not alphabetical, so a re-sort in the component would fail.
-        SetupResult(EligibleBowlersViewModelFactory.Create(bowlers:
+        var list = EligibleBowlersViewModelFactory.Create(bowlers:
         [
             EligibleBowlerViewModelFactory.Create(name: "Zed Young", usbcId: "2222-22222"),
             EligibleBowlerViewModelFactory.Create(name: "Ann Adams", usbcId: "1111-11111")
-        ]));
+        ]);
 
         // Act
-        var cut = RenderComponent();
+        var cut = RenderList(list);
 
         // Assert
         Names(cut).ShouldBe(["Zed Young", "Ann Adams"]);
@@ -84,10 +58,10 @@ public sealed class EligibleBowlersTests : IDisposable
     public void Render_ShouldShowNoUsbcId_WhenBowlerHasNone()
     {
         // Arrange
-        SetupResult(EligibleBowlersViewModelFactory.Create(bowlers: [EligibleBowlerViewModelFactory.Create(usbcId: null)]));
+        var list = EligibleBowlersViewModelFactory.Create(bowlers: [EligibleBowlerViewModelFactory.Create(usbcId: null)]);
 
         // Act
-        var cut = RenderComponent();
+        var cut = RenderList(list);
 
         // Assert
         cut.Find(".eligible-bowlers__no-id").TextContent.Trim().ShouldBe("No USBC ID");
@@ -97,10 +71,10 @@ public sealed class EligibleBowlersTests : IDisposable
     public void Render_ShouldShowThresholdInSubtitle()
     {
         // Arrange
-        SetupResult(EligibleBowlersViewModelFactory.Create(minTournamentsCount: 5));
+        var list = EligibleBowlersViewModelFactory.Create(minTournamentsCount: 5);
 
         // Act
-        var cut = RenderComponent();
+        var cut = RenderList(list);
 
         // Assert
         cut.Markup.ShouldContain("Bowlers with a result in 5 or more tournaments this season.");
@@ -110,10 +84,10 @@ public sealed class EligibleBowlersTests : IDisposable
     public void Render_ShouldBeAccessible()
     {
         // Arrange
-        SetupResult(EligibleBowlersViewModelFactory.Create());
+        var list = EligibleBowlersViewModelFactory.Create();
 
         // Act
-        var cut = RenderComponent();
+        var cut = RenderList(list);
 
         // Assert
         var scroll = cut.Find(".eligible-bowlers__scroll");
@@ -130,10 +104,10 @@ public sealed class EligibleBowlersTests : IDisposable
     public void Render_ShouldShowEmptyText_WhenNobodyQualifies(int minimum, string expected)
     {
         // Arrange
-        SetupResult(EligibleBowlersViewModelFactory.Create(minTournamentsCount: minimum, bowlers: []));
+        var list = EligibleBowlersViewModelFactory.Create(minTournamentsCount: minimum, bowlers: []);
 
         // Act
-        var cut = RenderComponent();
+        var cut = RenderList(list);
 
         // Assert
         cut.Find(".eligible-bowlers__empty").TextContent.Trim().ShouldBe(expected);
@@ -144,10 +118,10 @@ public sealed class EligibleBowlersTests : IDisposable
     public void Render_ShouldRenderNothing_WhenListDoesNotApply()
     {
         // Arrange
-        SetupResult(EligibleBowlersViewModelFactory.CreateNotApplicable());
+        var list = EligibleBowlersViewModelFactory.CreateNotApplicable();
 
         // Act
-        var cut = RenderComponent();
+        var cut = RenderList(list);
 
         // Assert
         cut.Markup.ShouldBeNullOrWhiteSpace();
@@ -156,11 +130,8 @@ public sealed class EligibleBowlersTests : IDisposable
     [Fact(DisplayName = "Should show the error text and a Try again button, keeping the heading")]
     public void Render_ShouldShowError_WhenLoadFails()
     {
-        // Arrange
-        SetupResult(Error.Failure());
-
-        // Act
-        var cut = RenderComponent();
+        // Arrange & Act
+        var cut = _ctx.Render<EligibleBowlers>(p => p.Add(x => x.LoadFailed, true));
 
         // Assert
         cut.Find("h2").TextContent.Trim().ShouldBe("Eligible bowlers");
@@ -169,42 +140,20 @@ public sealed class EligibleBowlersTests : IDisposable
         cut.FindAll(".eligible-bowlers__table, .eligible-bowlers__empty").ShouldBeEmpty();
     }
 
-    [Fact(DisplayName = "Should reload and show the list when Try again succeeds")]
-    public void Retry_ShouldShowList_WhenSecondLoadSucceeds()
+    [Fact(DisplayName = "Should raise OnRetry when Try again is clicked")]
+    public void Retry_ShouldRaiseOnRetry_WhenClicked()
     {
         // Arrange
-        _service
-            .SetupSequence(x => x.GetEligibleBowlersAsync(TournamentId, It.IsAny<CancellationToken>()))
-            .ReturnsAsync((ErrorOr<EligibleBowlersViewModel>)Error.Failure())
-            .ReturnsAsync((ErrorOr<EligibleBowlersViewModel>)EligibleBowlersViewModelFactory.Create());
-        var cut = RenderComponent();
+        var retries = 0;
+        var cut = _ctx.Render<EligibleBowlers>(p => p
+            .Add(x => x.LoadFailed, true)
+            .Add(x => x.OnRetry, () => retries++));
 
         // Act
         cut.Find("button.eligible-bowlers__retry").Click();
 
         // Assert
-        Names(cut).ShouldBe([EligibleBowlerViewModelFactory.ValidName]);
-        cut.FindAll(".eligible-bowlers__error").ShouldBeEmpty();
-        _service.Verify(x => x.GetEligibleBowlersAsync(TournamentId, It.IsAny<CancellationToken>()), Times.Exactly(2));
-    }
-
-    [Fact(DisplayName = "Should show loading and hide the error while a retry is pending")]
-    public void Retry_ShouldShowLoading_WhilePending()
-    {
-        // Arrange
-        var pending = new TaskCompletionSource<ErrorOr<EligibleBowlersViewModel>>();
-        _service
-            .SetupSequence(x => x.GetEligibleBowlersAsync(TournamentId, It.IsAny<CancellationToken>()))
-            .ReturnsAsync((ErrorOr<EligibleBowlersViewModel>)Error.Failure())
-            .Returns(pending.Task);
-        var cut = RenderComponent();
-
-        // Act
-        cut.Find("button.eligible-bowlers__retry").Click();
-
-        // Assert
-        cut.Find(".eligible-bowlers__loading").ShouldNotBeNull();
-        cut.FindAll(".eligible-bowlers__error").ShouldBeEmpty();
+        retries.ShouldBe(1);
     }
 
     [Theory(DisplayName = "Should count the bowlers with a singular or plural noun")]
@@ -213,10 +162,10 @@ public sealed class EligibleBowlersTests : IDisposable
     public void Render_ShouldShowCount(int count, string expected)
     {
         // Arrange
-        SetupResult(EligibleBowlersViewModelFactory.Create(bowlers: EligibleBowlerViewModelFactory.Bogus(count)));
+        var list = EligibleBowlersViewModelFactory.Create(bowlers: EligibleBowlerViewModelFactory.Bogus(count));
 
         // Act
-        var cut = RenderComponent();
+        var cut = RenderList(list);
 
         // Assert
         cut.Find(".eligible-bowlers__count").TextContent.Trim().ShouldBe(expected);
@@ -226,12 +175,12 @@ public sealed class EligibleBowlersTests : IDisposable
     public void Search_ShouldShowFilteredCount()
     {
         // Arrange
-        SetupResult(EligibleBowlersViewModelFactory.Create(bowlers:
+        var list = EligibleBowlersViewModelFactory.Create(bowlers:
         [
             .. Enumerable.Range(0, 21).Select(_ => EligibleBowlerViewModelFactory.Create()),
             .. Enumerable.Range(0, 3).Select(_ => EligibleBowlerViewModelFactory.Create(name: "Zed Quill"))
-        ]));
-        var cut = RenderComponent();
+        ]);
+        var cut = RenderList(list);
 
         // Act
         cut.Find("input.eligible-bowlers__search").Input("quill");
@@ -301,10 +250,10 @@ public sealed class EligibleBowlersTests : IDisposable
     public void Render_ShouldOmitNumber_WhenMinimumIsNull()
     {
         // Arrange
-        SetupResult(EligibleBowlersViewModelFactory.Create(minTournamentsCount: null, bowlers: []));
+        var list = EligibleBowlersViewModelFactory.Create(minTournamentsCount: null, bowlers: []);
 
         // Act
-        var cut = RenderComponent();
+        var cut = RenderList(list);
 
         // Assert
         cut.Markup.ShouldContain("Bowlers who have qualified this season.");
@@ -324,44 +273,17 @@ public sealed class EligibleBowlersTests : IDisposable
         Names(cut).ShouldBe(["Pat O'Brien"]);
     }
 
-    [Fact(DisplayName = "Should raise no error when disposed while the load is pending")]
-    public async Task Dispose_ShouldCancelLoad_WhenPending()
-    {
-        // Arrange
-        var pending = new TaskCompletionSource<ErrorOr<EligibleBowlersViewModel>>();
-        var token = CancellationToken.None;
-        _service
-            .Setup(x => x.GetEligibleBowlersAsync(TournamentId, It.IsAny<CancellationToken>()))
-            .Callback<string, CancellationToken>((_, ct) => token = ct)
-            .Returns(pending.Task);
-        RenderComponent();
-
-        // Act
-        await _ctx.DisposeComponentsAsync();
-        pending.SetResult(Error.Failure());
-
-        // Assert
-        token.IsCancellationRequested.ShouldBeTrue();
-        _ctx.Renderer.UnhandledException.IsCompleted.ShouldBeFalse();
-    }
-
-    private void SetupResult(ErrorOr<EligibleBowlersViewModel> result)
-        => _service
-            .Setup(x => x.GetEligibleBowlersAsync(TournamentId, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(result);
-
-    private IRenderedComponent<EligibleBowlers> RenderComponent()
-        => _ctx.Render<EligibleBowlers>(p => p.Add(x => x.TournamentId, TournamentId));
+    private IRenderedComponent<EligibleBowlers> RenderList(EligibleBowlersViewModel list)
+        => _ctx.Render<EligibleBowlers>(p => p.Add(x => x.List, list));
 
     private IRenderedComponent<EligibleBowlers> RenderSearchableList()
     {
-        SetupResult(EligibleBowlersViewModelFactory.Create(bowlers:
+        return RenderList(EligibleBowlersViewModelFactory.Create(bowlers:
         [
             EligibleBowlerViewModelFactory.Create(name: "Dave Smith", usbcId: "4821-09317"),
             EligibleBowlerViewModelFactory.Create(name: "Pat O'Brien", usbcId: "1111-22222"),
             EligibleBowlerViewModelFactory.Create(name: "Mary Ann Jones", usbcId: null)
         ]));
-        return RenderComponent();
     }
 
     private static string[] Names(IRenderedComponent<EligibleBowlers> cut)

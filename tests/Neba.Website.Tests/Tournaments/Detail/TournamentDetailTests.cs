@@ -1,6 +1,8 @@
 using Bunit;
 using Bunit.TestDoubles;
 
+using ErrorOr;
+
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Web;
 using Microsoft.Extensions.DependencyInjection;
@@ -1655,6 +1657,68 @@ tournamentType: TournamentType.Doubles, logoUrl: null));
         // Assert
         cut.FindAll(".eligible-bowlers").ShouldBeEmpty();
     }
+
+    [Fact(DisplayName = "Should show the rest of the page while the eligible bowlers are loading")]
+    public void Render_ShouldShowPage_WhileEligibleBowlersPending()
+    {
+        // Arrange
+        SetupScheduledInvitational();
+        _mockTournamentService
+            .Setup(x => x.GetEligibleBowlersAsync(TournamentDetailResponseFactory.ValidId, It.IsAny<CancellationToken>()))
+            .Returns(new TaskCompletionSource<ErrorOr<EligibleBowlersViewModel>>().Task);
+
+        // Act
+        var cut = _ctx.Render<TournamentDetail>(p => p.Add(x => x.Id, TournamentDetailResponseFactory.ValidId));
+
+        // Assert
+        cut.Find("h1.td-hero__title").ShouldNotBeNull();
+        cut.Find(".eligible-bowlers__loading").ShouldNotBeNull();
+    }
+
+    [Fact(DisplayName = "Should show the list when Try again succeeds after a failed load")]
+    public void Retry_ShouldShowEligibleBowlers_WhenSecondLoadSucceeds()
+    {
+        // Arrange
+        SetupScheduledInvitational();
+        _mockTournamentService
+            .SetupSequence(x => x.GetEligibleBowlersAsync(TournamentDetailResponseFactory.ValidId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync((ErrorOr<EligibleBowlersViewModel>)Error.Failure())
+            .ReturnsAsync((ErrorOr<EligibleBowlersViewModel>)EligibleBowlersViewModelFactory.Create());
+        var cut = _ctx.Render<TournamentDetail>(p => p.Add(x => x.Id, TournamentDetailResponseFactory.ValidId));
+
+        // Act
+        cut.Find("button.eligible-bowlers__retry").Click();
+
+        // Assert
+        cut.Find(".eligible-bowlers").TextContent.ShouldContain(EligibleBowlerViewModelFactory.ValidName);
+        cut.FindAll(".eligible-bowlers__error").ShouldBeEmpty();
+    }
+
+    [Fact(DisplayName = "Should cancel the eligible bowlers load when disposed while it is pending")]
+    public async Task Dispose_ShouldCancelEligibleBowlersLoad_WhenPending()
+    {
+        // Arrange
+        SetupScheduledInvitational();
+        var pending = new TaskCompletionSource<ErrorOr<EligibleBowlersViewModel>>();
+        var token = CancellationToken.None;
+        _mockTournamentService
+            .Setup(x => x.GetEligibleBowlersAsync(TournamentDetailResponseFactory.ValidId, It.IsAny<CancellationToken>()))
+            .Callback<string, CancellationToken>((_, ct) => token = ct)
+            .Returns(pending.Task);
+        _ctx.Render<TournamentDetail>(p => p.Add(x => x.Id, TournamentDetailResponseFactory.ValidId));
+
+        // Act
+        await _ctx.DisposeComponentsAsync();
+        pending.SetResult(Error.Failure());
+
+        // Assert
+        token.IsCancellationRequested.ShouldBeTrue();
+        _ctx.Renderer.UnhandledException.IsCompleted.ShouldBeFalse();
+    }
+
+    private void SetupScheduledInvitational()
+        => SetupSuccessResponse(TournamentDetailResponseFactory.Create(
+            status: TournamentStatus.Scheduled, tournamentType: TournamentType.Invitational));
 
     private void SetupEligibleBowlers()
         => _mockTournamentService
