@@ -1,7 +1,7 @@
 @if (IsLoading || LoadFailed || List is { ListApplies: true })
 {
     <div class="eligible-bowlers">
-        <NebaLoadingIndicator IsVisible="@IsLoading" Scope="LoadingIndicatorScope.Section" />
+        <NebaLoadingIndicator IsVisible="@IsLoading" Scope="@LoadingIndicatorScope.Section" />
         <div class="eligible-bowlers__head">
             <div>
                 <div class="eligible-bowlers__title">

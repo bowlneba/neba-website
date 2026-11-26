@@ -70,9 +70,9 @@
 
 <EditTournamentSponsorAmountModal IsOpen="@(_editTarget is not null)"
                                    Sponsor="@_editTarget"
-                                   OnSaved="HandleAmountSavedAsync"
-                                   OnClose="() => _editTarget = null"
-                                   OnSubmitRequestedAsync="OnEditSponsorAmountRequestedAsync" />
+                                   OnSaved="@HandleAmountSavedAsync"
+                                   OnClose="@(() => _editTarget = null)"
+                                   OnSubmitRequestedAsync="@OnEditSponsorAmountRequestedAsync" />
 
 <ConfirmActionModal IsOpen="@(_removeTarget is not null)"
                      Title="Remove sponsor?"
