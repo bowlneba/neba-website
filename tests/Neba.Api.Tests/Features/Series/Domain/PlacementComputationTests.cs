@@ -163,4 +163,22 @@ public sealed class PlacementComputationTests
         second.Positions.ShouldBe(first.Positions);
         reversed.Positions.ShouldBe(first.Positions);
     }
+
+    [Theory(DisplayName = "Compute should rank a bowler with no real place after placed bowlers and before no-shows")]
+    [InlineData(0, TestDisplayName = "place of zero")]
+    [InlineData(-1, TestDisplayName = "negative place")]
+    public void Compute_ShouldRankUnplacedAfterPlaced_WhenPlaceIsBelowOne(int place)
+    {
+        // Arrange
+        var ids = AdvancementTestData.Ids(3);
+
+        // Act
+        var result = Compute(ids, [Row(ids[0], place), Row(ids[2], 5)], finalistCount: 1);
+
+        // Assert
+        result.Positions.ShouldBe([
+            new PositionDraft(ids[2], 1, true, true),
+            new PositionDraft(ids[0], 2, true, false),
+            new PositionDraft(ids[1], 3, false, false)]);
+    }
 }
