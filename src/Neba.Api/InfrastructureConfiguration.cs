@@ -68,21 +68,22 @@ public static class InfrastructureConfiguration
         }
 
         private WebApplicationBuilder AddKeyVault()
-        {
-            builder.AddKeyVaultSecretsIfConfigured("keyvault");
+            => builder.AddKeyVault(name => builder.Configuration.AddAzureKeyVaultSecrets(name));
 
-            // A second vault that only the API references, for encryption keys and their secrets.
-            builder.AddKeyVaultSecretsIfConfigured("piivault");
+        // The loader is a parameter so tests can see which vaults load without calling Azure.
+        internal WebApplicationBuilder AddKeyVault(Action<string> addSecrets)
+        {
+            // "piivault" is a second vault that only the API references, for encryption keys and
+            // their secrets.
+            string[] vaults = ["keyvault", "piivault"];
+
+            foreach (var connectionName in vaults.Where(
+                name => !string.IsNullOrWhiteSpace(builder.Configuration.GetConnectionString(name))))
+            {
+                addSecrets(connectionName);
+            }
 
             return builder;
-        }
-
-        private void AddKeyVaultSecretsIfConfigured(string connectionName)
-        {
-            if (!string.IsNullOrWhiteSpace(builder.Configuration.GetConnectionString(connectionName)))
-            {
-                builder.Configuration.AddAzureKeyVaultSecrets(connectionName);
-            }
         }
     }
 
