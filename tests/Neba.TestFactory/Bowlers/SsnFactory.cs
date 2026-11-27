@@ -22,6 +22,10 @@ public static class SsnFactory
             faker.Random = new Randomizer(seed.Value);
         }
 
-        return [.. Enumerable.Range(0, count).Select(_ => faker.Random.ReplaceNumbers("9########"))];
+        return Bogus(count, faker);
     }
+
+    // For a parent factory that shares its faker.
+    internal static IReadOnlyCollection<string> Bogus(int count, Faker faker)
+        => [.. Enumerable.Range(0, count).Select(_ => faker.Random.ReplaceNumbers("9########"))];
 }
