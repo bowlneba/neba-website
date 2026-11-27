@@ -4,7 +4,8 @@ namespace Neba.Api.Legacy;
 /// Configuration for the temporary `/legacy` backdoor (see docs/api/software-backdoor-plan.md).
 /// Deleted along with the rest of Legacy/ at Software sunset.
 /// </summary>
-internal sealed record LegacySettings
+// A class, not a record: a record would print the secrets from ToString().
+internal sealed class LegacySettings
 {
     /// <summary>
     /// Shared secret the Software presents via the <c>X-Api-Key</c> header on every `/legacy` request.
