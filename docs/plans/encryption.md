@@ -171,9 +171,7 @@ Map both parameters in `cd.yml`, `staging.yml` and `hotfix.yml`. Set both GitHub
 
 ### Key rotation
 
-The configured key URI names the version used to encrypt. Decryption uses the version stored in the value, so keep old versions enabled.
-
-Rotation is manual. Deploys do not create key versions: on 2026-11-27 `dataprotection-key`, defined the same way, had one version after many deploys. A value moves to a new version only when it is encrypted again. Confirm in staging that a new version reaches `api` on the next deploy.
+The configured key URI names the version used to encrypt. Decryption uses the version stored in the value, so keep old versions enabled. Confirm in staging that a new version reaches `api` on the next deploy.
 
 ## Local development
 
@@ -220,7 +218,7 @@ This keeps plaintext out of `web`, SignalR and API request bodies. It does not p
 
 ## Tests
 
-Use fake SSNs only. Generate them with Bogus (`Ssn()` in `Bogus.Extensions.UnitedStates`), and seed it where the value matters to the result, such as committed samples and hash assertions. Give each test its own seed. Bogus returns dashes, so strip them where a test needs the 9-digit form.
+Use fake SSNs only (numbers starting with `9`).
 
 ### Encryptor
 
