@@ -31,7 +31,8 @@ internal static class UpdateBowler
             bowler.Name = name;
             bowler.Gender = gender;
             bowler.DateOfBirth = dateOfBirth;
-            bowler.UsbcId = usbcId;
+            // A blank Software value is not a removal: keep the ID the website already has.
+            bowler.UsbcId = usbcId ?? bowler.UsbcId;
         }
     }
 }

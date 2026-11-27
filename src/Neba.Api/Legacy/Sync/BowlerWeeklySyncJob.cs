@@ -177,7 +177,8 @@ internal sealed class BowlerWeeklySyncJob(
 
         var gender = LegacyBowlerMapping.MapGender(row.Gender);
         var dateOfBirth = LegacyBowlerMapping.MapDateOfBirth(row.DateOfBirth);
-        var usbcId = LegacyBowlerMapping.MapUsbcId(row.UsbcId);
+        // Fall back before comparing, so a blank Software value does not count as a change.
+        var usbcId = LegacyBowlerMapping.MapUsbcId(row.UsbcId) ?? existing.UsbcId;
         var suffix = LegacyBowlerMapping.MapSuffix(row.Suffix);
         if (suffix is null && !string.IsNullOrWhiteSpace(row.Suffix))
         {

@@ -360,6 +360,26 @@ public sealed class BowlerWeeklySyncJobTests(AppDbContextFixture fixture, Legacy
         logger.Collector.GetSnapshot().Single().Message.ShouldContain("1 already current");
     }
 
+    [Fact(DisplayName = "SyncAsync should keep the website UsbcId and report no change when the legacy value is blank")]
+    public async Task SyncAsync_ShouldKeepUsbcId_WhenLegacyValueIsBlank()
+    {
+        // Arrange
+        var ct = TestContext.Current.CancellationToken;
+        var name = NameFactory.Create(firstName: "David", lastName: "Smith");
+        await SeedExistingBowlerAsync(1, name: name, gender: Gender.Male, dateOfBirth: new DateOnly(1980, 1, 1), usbcId: "4821-09317");
+        await InsertLegacyBowlerAsync(1, Since.AddDays(1), firstName: "David", lastName: "Smith", gender: 0, dateOfBirth: new DateTime(1980, 1, 1, 0, 0, 0, DateTimeKind.Unspecified), usbcId: null);
+        var logger = new FakeLogger<BowlerWeeklySyncJob>();
+        var job = CreateJob(logger);
+
+        // Act
+        await job.SyncAsync(Since, ct);
+
+        // Assert
+        var bowler = await _dbContext.Set<Bowler>().SingleAsync(ct);
+        bowler.UsbcId.ShouldBe("4821-09317");
+        logger.Collector.GetSnapshot().Single().Message.ShouldContain("1 already current");
+    }
+
     [Fact(DisplayName = "SyncAsync should be idempotent: a second run changes nothing and evicts nothing")]
     public async Task SyncAsync_ShouldBeIdempotent_WhenRunTwice()
     {

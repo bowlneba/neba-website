@@ -1,4 +1,4 @@
-using System.Diagnostics.CodeAnalysis;
+﻿using System.Diagnostics.CodeAnalysis;
 using System.Net;
 using System.Net.Http.Json;
 
@@ -68,7 +68,7 @@ public sealed class BowlerApplyLegacyUpdateTests
         bowler.DateOfBirth.ShouldBe(new DateOnly(1990, 6, 15));
     }
 
-    [Fact(DisplayName = "ApplyLegacyUpdate should set UsbcId, and clear it when none is provided")]
+    [Fact(DisplayName = "ApplyLegacyUpdate should set UsbcId, and keep it when none is provided")]
     public void ApplyLegacyUpdate_ShouldSetUsbcId_WhenProvided()
     {
         // Arrange
@@ -82,7 +82,7 @@ public sealed class BowlerApplyLegacyUpdateTests
 
         // Assert
         usbcIdAfterSet.ShouldBe("4821-09317");
-        bowler.UsbcId.ShouldBeNull();
+        bowler.UsbcId.ShouldBe("4821-09317");
     }
 
     [Fact(DisplayName = "ApplyLegacyUpdate should set Gender and DateOfBirth to null when not provided")]
@@ -432,6 +432,26 @@ public sealed class UpdateBowlerSyncJobTests(AppDbContextFixture fixture, Legacy
         // Assert
         var bowler = await _dbContext.Set<Bowler>().SingleAsync(b => b.LegacyId == 1, ct);
         bowler.UsbcId.ShouldBe("4821-09317");
+    }
+
+    [Theory(DisplayName = "SyncAsync should keep the website UsbcId when the legacy value is blank")]
+    [InlineData(null, TestDisplayName = "Null")]
+    [InlineData("   ", TestDisplayName = "Whitespace")]
+    public async Task SyncAsync_ShouldKeepUsbcId_WhenLegacyValueIsBlank(string? legacyUsbcId)
+    {
+        // Arrange
+        var ct = TestContext.Current.CancellationToken;
+        await SeedExistingBowlerAsync(1, usbcId: "1111-11111");
+        await InsertLegacyBowlerAsync(1, usbcId: legacyUsbcId);
+        var job = CreateJob();
+
+        // Act
+        await job.SyncAsync(1, ct);
+
+        // Assert
+        _dbContext.ChangeTracker.Clear();
+        var bowler = await _dbContext.Set<Bowler>().SingleAsync(ct);
+        bowler.UsbcId.ShouldBe("1111-11111");
     }
 
     [Fact(DisplayName = "SyncAsync should store the legacy UsbcId when it falls back to create")]
