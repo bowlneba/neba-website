@@ -38,24 +38,19 @@ public sealed class LegacyDecryptorTests
         result.ShouldBe(expected);
     }
 
-    [Fact(DisplayName = "A wrong passphrase should not give the plaintext")]
-    public void Decrypt_ShouldNotReturnPlaintext_WhenPassphraseIsWrong()
+    // Nothing authenticates a legacy value, so another passphrase could give garbage instead. This
+    // passphrase and sample are fixed, and give bad padding every time.
+    [Fact(DisplayName = "A wrong passphrase should throw for this sample")]
+    public void Decrypt_ShouldThrow_WhenPassphraseIsWrong()
     {
         // Arrange
         var sut = CreateSut("not-the-passphrase");
-        var result = string.Empty;
 
-        // Act: usually bad padding throws; by chance it can give garbage instead.
-        var exception = Record.Exception(
-            () => result = sut.Decrypt("2Rm1YVVEhWqEp24DJPOrjxYo0ic5GuWmtn4VWRLwClRLSwTstCRifzT2qXnsfxIh"));
+        // Act
+        var act = () => sut.Decrypt("2Rm1YVVEhWqEp24DJPOrjxYo0ic5GuWmtn4VWRLwClRLSwTstCRifzT2qXnsfxIh");
 
         // Assert
-        if (exception is not null)
-        {
-            exception.ShouldBeOfType<CryptographicException>();
-        }
-
-        result.ShouldNotBe("900123456");
+        act.ShouldThrow<CryptographicException>();
     }
 
     [Fact(DisplayName = "Empty input should give empty output")]
