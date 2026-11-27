@@ -171,7 +171,9 @@ Map both parameters in `cd.yml`, `staging.yml` and `hotfix.yml`. Set both GitHub
 
 ### Key rotation
 
-The configured key URI names the version used to encrypt. Decryption uses the version stored in the value, so keep old versions enabled. Confirm in staging that a new version reaches `api` on the next deploy.
+The configured key URI names the version used to encrypt. Decryption uses the version stored in the value, so keep old versions enabled.
+
+Rotation is manual. Deploys do not create key versions: on 2026-11-27 `dataprotection-key`, defined the same way, had one version after many deploys. A value moves to a new version only when it is encrypted again. Confirm in staging that a new version reaches `api` on the next deploy.
 
 ## Local development
 
