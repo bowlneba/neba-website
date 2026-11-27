@@ -40,4 +40,32 @@ public sealed class EncryptedValueTests
         text.ShouldBe("[REDACTED]");
         json.ShouldBe("{}");
     }
+
+#nullable disable
+    [Fact(DisplayName = "A missing ciphertext should be rejected")]
+    public void Constructor_ShouldThrow_WhenEncryptedIsNull()
+    {
+        // Arrange
+        var hash = new Hashed<BowlerPii>("hash-text");
+
+        // Act
+        var act = () => new EncryptedValue<BowlerPii>(null, hash);
+
+        // Assert
+        act.ShouldThrow<ArgumentNullException>().ParamName.ShouldBe("encrypted");
+    }
+
+    [Fact(DisplayName = "A missing hash should be rejected")]
+    public void Constructor_ShouldThrow_WhenHashIsNull()
+    {
+        // Arrange
+        var encrypted = new Encrypted<BowlerPii>("cipher-text");
+
+        // Act
+        var act = () => new EncryptedValue<BowlerPii>(encrypted, null);
+
+        // Assert
+        act.ShouldThrow<ArgumentNullException>().ParamName.ShouldBe("hash");
+    }
+#nullable enable
 }
