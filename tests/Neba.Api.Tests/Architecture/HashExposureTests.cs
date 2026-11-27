@@ -129,9 +129,10 @@ public sealed partial class HashExposureTests
         var offenders = FindHashProperties(types);
 
         // Assert
-        offenders.Count.ShouldBe(2);
+        offenders.Count.ShouldBe(3);
         offenders.ShouldContain(o => o.EndsWith(".Fingerprint", StringComparison.Ordinal));
         offenders.ShouldContain(o => o.EndsWith(".SsnHash", StringComparison.Ordinal));
+        offenders.ShouldContain(o => o.EndsWith(".Sealed", StringComparison.Ordinal));
     }
 
     // Properties here are public so the check, which reads public properties, can see them.
@@ -143,6 +144,8 @@ public sealed partial class HashExposureTests
     internal sealed class Inner
     {
         public Hashed<BowlerPii>? Fingerprint { get; init; }
+
+        public EncryptedValue<BowlerPii>? Sealed { get; init; }
 
         public string? SsnHash { get; init; }
     }
