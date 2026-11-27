@@ -15,4 +15,9 @@ internal sealed record LegacySettings
     /// Plain ADO.NET connection string to the Software's own database (`neba-fwk`, Azure SQL).
     /// </summary>
     public string ConnectionString { get; init; } = string.Empty;
+
+    /// <summary>
+    /// Passphrase the Software encrypted SSNs with. Required outside Development.
+    /// </summary>
+    public string SsnPassphrase { get; init; } = string.Empty;
 }

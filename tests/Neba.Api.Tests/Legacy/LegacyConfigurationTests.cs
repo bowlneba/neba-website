@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Builder;
 using Microsoft.Data.SqlClient;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Options;
 
 using Neba.Api.Legacy;
@@ -19,7 +20,8 @@ public sealed class LegacyConfigurationTests
     public void AddLegacy_ShouldRegisterIDbConnection_AsScopedSqlConnection()
     {
         // Arrange
-        var builder = WebApplication.CreateSlimBuilder();
+        var builder = WebApplication.CreateSlimBuilder(
+            new WebApplicationOptions { EnvironmentName = Environments.Development });
 
         // Act
         builder.AddLegacy();
@@ -42,7 +44,8 @@ public sealed class LegacyConfigurationTests
         builder.Configuration.AddInMemoryCollection(new Dictionary<string, string?>
         {
             ["Legacy:ApiKey"] = "config-api-key",
-            ["Legacy:ConnectionString"] = "data source=test;initial catalog=neba"
+            ["Legacy:ConnectionString"] = "data source=test;initial catalog=neba",
+            ["Legacy:SsnPassphrase"] = "config-passphrase"
         });
 
         // Act
@@ -53,13 +56,16 @@ public sealed class LegacyConfigurationTests
             .GetRequiredService<IOptions<LegacySettings>>().Value;
         settings.ApiKey.ShouldBe("config-api-key");
         settings.ConnectionString.ShouldBe("data source=test;initial catalog=neba");
+        settings.SsnPassphrase.ShouldBe("config-passphrase");
     }
 
     [Fact(DisplayName = "AddLegacy should use empty defaults when the Legacy section is absent")]
     public void AddLegacy_ShouldUseEmptyDefaults_WhenSectionIsAbsent()
     {
-        // Arrange
-        var builder = WebApplication.CreateSlimBuilder();
+        // Arrange: Development, where no Legacy setting is required.
+        var builder = WebApplication.CreateSlimBuilder(
+            new WebApplicationOptions { EnvironmentName = Environments.Development });
+        builder.Configuration.Sources.Clear();
 
         // Act
         builder.AddLegacy();
@@ -69,6 +75,35 @@ public sealed class LegacyConfigurationTests
             .GetRequiredService<IOptions<LegacySettings>>().Value;
         settings.ApiKey.ShouldBe(string.Empty);
         settings.ConnectionString.ShouldBe(string.Empty);
+        settings.SsnPassphrase.ShouldBe(string.Empty);
+    }
+
+    [Theory(DisplayName = "Startup should fail outside Development when the legacy passphrase is missing")]
+    [InlineData("Production", "", true, TestDisplayName = "Production without it")]
+    [InlineData("Staging", " ", true, TestDisplayName = "Staging with a blank one")]
+    [InlineData("Production", "a-passphrase", false, TestDisplayName = "Production with it")]
+    [InlineData("Development", "", false, TestDisplayName = "Development without it")]
+    public void AddLegacy_ShouldRequireSsnPassphrase_OutsideDevelopment(string environment, string passphrase, bool fails)
+    {
+        // Arrange
+        var builder = WebApplication.CreateSlimBuilder(new WebApplicationOptions { EnvironmentName = environment });
+        builder.Configuration.Sources.Clear();
+        builder.Configuration.AddInMemoryCollection(new Dictionary<string, string?> { ["Legacy:SsnPassphrase"] = passphrase });
+        builder.AddLegacy();
+        using var serviceProvider = builder.Services.BuildServiceProvider();
+
+        // Act: the check the host runs at startup.
+        var exception = Record.Exception(() => serviceProvider.GetRequiredService<IStartupValidator>().Validate());
+
+        // Assert
+        if (fails)
+        {
+            exception.ShouldBeOfType<OptionsValidationException>().Message.ShouldContain("Legacy:SsnPassphrase");
+        }
+        else
+        {
+            exception.ShouldBeNull();
+        }
     }
 
     [Fact(DisplayName = "UseLegacyWeeklySync should register the weekly job in Eastern time when a connection string is set")]
