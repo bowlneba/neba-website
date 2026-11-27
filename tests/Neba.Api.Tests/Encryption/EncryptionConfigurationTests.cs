@@ -48,7 +48,7 @@ public sealed class EncryptionConfigurationTests
         var exception = await Record.ExceptionAsync(() => app.StartAsync(TestContext.Current.CancellationToken));
         await app.StopAsync(TestContext.Current.CancellationToken);
 
-        return exception is null ? null : exception.ShouldBeOfType<OptionsValidationException>();
+        return exception?.ShouldBeOfType<OptionsValidationException>();
     }
 
     private static Dictionary<string, string?> ProductionSettings() => new()
@@ -198,7 +198,7 @@ public sealed class EncryptionConfigurationTests
     }
 
     [Fact(DisplayName = "The hasher should use the configured hash key")]
-    public async Task AddEncryption_ShouldHashWithTheConfiguredKey_WhenHashKeyIsSet()
+    public Task AddEncryption_ShouldHashWithTheConfiguredKey_WhenHashKeyIsSet()
     {
         // Arrange
         var hashKey = RandomNumberGenerator.GetBytes(32);
@@ -212,7 +212,7 @@ public sealed class EncryptionConfigurationTests
 
         // Assert
         hash.Value.ShouldBe(Convert.ToBase64String(HMACSHA256.HashData(hashKey, Encoding.UTF8.GetBytes(ssn))));
-        await app.StopAsync(TestContext.Current.CancellationToken);
+        return app.StopAsync(TestContext.Current.CancellationToken);
     }
 
     [Fact(DisplayName = "The local settings committed in the repo should load and work")]

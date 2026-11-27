@@ -5,20 +5,28 @@ set -euo pipefail
 script="$(dirname "${BASH_SOURCE[0]}")/check-hash-key.sh"
 failures=0
 
-fail() { echo "FAIL: $1" >&2; failures=$((failures + 1)); }
+fail() {
+  local message="$1"
+  echo "FAIL: $message" >&2
+  failures=$((failures + 1))
+}
 
-key_of() { head -c "$1" /dev/zero | base64; }
+key_of() {
+  local length="$1"
+  head -c "$length" /dev/zero | base64
+}
 
 expect_pass() {
-  BOWLER_PII_HASH_KEY="$2" "$script" > /dev/null 2>&1 || fail "$1: expected success"
+  local name="$1" key="$2"
+  BOWLER_PII_HASH_KEY="$key" "$script" > /dev/null 2>&1 || fail "$name: expected success"
 }
 
 expect_failure() {
-  local output
-  if output="$(BOWLER_PII_HASH_KEY="$2" "$script" 2>&1)"; then
-    fail "$1: expected failure"
-  elif [[ -n "$2" && "$output" == *"$2"* ]]; then
-    fail "$1: the output shows the value"
+  local name="$1" key="$2" output
+  if output="$(BOWLER_PII_HASH_KEY="$key" "$script" 2>&1)"; then
+    fail "$name: expected failure"
+  elif [[ -n "$key" && "$output" == *"$key"* ]]; then
+    fail "$name: the output shows the value"
   fi
 }
 

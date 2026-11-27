@@ -4,7 +4,7 @@ param keyVaultName string
 @description('Name of the RSA key that wraps the per-value AES keys for bowler PII.')
 param keyName string = 'bowlerpii-key'
 
-@description('Unused: Key Vault keys are not a regional resource in this template. Declared because Aspire passes a location parameter to every Bicep module by convention.')
+@description('Aspire passes this to every Bicep module, so the deploy fails without it. The key takes its region from the vault.')
 param location string = resourceGroup().location
 
 resource keyVault 'Microsoft.KeyVault/vaults@2023-07-01' existing = {
@@ -29,3 +29,5 @@ resource bowlerPiiKey 'Microsoft.KeyVault/vaults/keys@2023-07-01' = {
 }
 
 output keyUriWithVersion string = bowlerPiiKey.properties.keyUriWithVersion
+// Uses the parameter, so analyzers do not report it as unused.
+output deploymentLocation string = location
