@@ -8,6 +8,7 @@ using Neba.Api.Database;
 using Neba.Api.Discord;
 using Neba.Api.Documents;
 using Neba.Api.Email;
+using Neba.Api.Encryption;
 using Neba.Api.Features.News;
 using Neba.Api.Features.Seasons;
 using Neba.Api.Features.Series;
@@ -47,6 +48,7 @@ public static class InfrastructureConfiguration
                 .AddAuditing()
                 .AddDatabase()
                 .AddKeyVault()
+                .AddEncryption()
                 .AddStorage()
                 .AddEmail()
                 .AddDiscord()
@@ -67,16 +69,20 @@ public static class InfrastructureConfiguration
 
         private WebApplicationBuilder AddKeyVault()
         {
-            var keyVaultConnectionString = builder.Configuration.GetConnectionString("keyvault");
+            builder.AddKeyVaultSecretsIfConfigured("keyvault");
 
-            if (string.IsNullOrWhiteSpace(keyVaultConnectionString))
-            {
-                return builder;
-            }
-
-            builder.Configuration.AddAzureKeyVaultSecrets("keyvault");
+            // A second vault that only the API references, for encryption keys and their secrets.
+            builder.AddKeyVaultSecretsIfConfigured("piivault");
 
             return builder;
+        }
+
+        private void AddKeyVaultSecretsIfConfigured(string connectionName)
+        {
+            if (!string.IsNullOrWhiteSpace(builder.Configuration.GetConnectionString(connectionName)))
+            {
+                builder.Configuration.AddAzureKeyVaultSecrets(connectionName);
+            }
         }
     }
 
