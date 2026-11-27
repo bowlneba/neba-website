@@ -82,6 +82,10 @@ This applies to any `ISchemaProcessor`, startup-cached registries, or other stat
 
 All classes that use `[LoggerMessage]` source-generated log methods have dedicated log-assertion tests using `FakeLogger<T>`. When adding a new class that logs, add `Microsoft.Extensions.Diagnostics.Testing` to its test project (if not already present) and add log-assertion tests covering every log level/path.
 
+### Key Vault keys are mocked, not run in a container
+
+`KeyVaultKeyWrapperTests` mocks `CryptographyClient`, an exception to the rule that services wrapping external SDKs use Testcontainers: Key Vault has no local emulator. The unit tests cover version, URI and error handling; wrap and unwrap against a real vault are checked only in Azure.
+
 ### E2E mock API: upcoming tournaments and failure overrides
 
 - `MOCK_UPCOMING_TOURNAMENTS` stays empty on purpose. One upcoming tournament replaces the Tournaments page hero (the h1 becomes that tournament's name) and removes the season eyebrow, which `Tournaments.spec.ts` expects. The upcoming card's team link and defending strip are covered by bUnit; if you want them in e2e, give those tests their own mock path first.
