@@ -99,9 +99,32 @@ internal interface IEncryptor<TKey> where TKey : IEncryptionKey
 
 Adding a key means one marker type, one Bicep key, one config section and one registration.
 
+### Where it goes
+
+| Piece | Location |
+| --- | --- |
+| Keys, encryptor, wrappers, hasher | `src/Neba.Api/Encryption/` |
+| Registration | `AddEncryption()` in the `AddInfrastructure()` chain, C# 14 `extension` syntax |
+| Legacy decryptor and its setting (`LegacySettings`) | `src/Neba.Api/Legacy/` |
+| Browser module and Jest test | `src/Neba.Website.Server/wwwroot/js/` |
+| Tests | `tests/Neba.Api.Tests/`, under the matching folders |
+
+The key wrapper is a small internal interface: wrap returns the key version and wrapped key; unwrap takes both. `api` may need a direct package reference to `Azure.Security.KeyVault.Keys`.
+
+Load the `piivault` secrets on their own connection string check. `AddKeyVault()` returns early when the `keyvault` string is blank.
+
 ## Hashing for uniqueness
 
 Encrypting the same SSN twice gives different output, so ciphertext cannot enforce uniqueness. Store a second value: HMAC-SHA256 of the 9 digits with a secret hash key.
+
+```csharp
+internal interface IHasher<TKey> where TKey : IEncryptionKey
+{
+    Hashed<TKey> Hash(string value);
+}
+```
+
+`Hashed<TKey>` holds the Base64 hash. A record prints its values by default, so override `ToString()`.
 
 - The hash has no per-row salt, or duplicates would not match. The secret key protects it. A plain SHA hash would be useless, since every possible SSN can be tried quickly.
 - The hash key is separate from the RSA key and never sits in the database.
@@ -216,6 +239,8 @@ Use fake SSNs only (numbers starting with `9`).
 
 - Reads samples made by the old code on .NET Framework with a fake passphrase and fake SSNs. Samples made by new code would only test it against itself.
 
+Get the samples before writing these tests: write a LINQPad 5 script that runs the old `Encrypt` code with a made-up passphrase over made-up SSNs, and ask the user to run it and paste the output. Never use the real passphrase. Until the samples arrive, report the decryptor as unproven.
+
 ### Browser to API
 
 - A committed sample made by the browser module decrypts in a C# test.
@@ -228,6 +253,17 @@ Use fake SSNs only (numbers starting with `9`).
 - The contract architecture test described under hashing.
 
 The Key Vault wrapper has no local emulator. Test its version and URI handling in unit tests, then verify wrap and unwrap in staging.
+
+## Done when
+
+- Unit and integration tests, Jest tests and the build pass.
+- A fresh clone runs with `aspire run` and no extra setup.
+- Existing tests that start the API still pass with the new startup checks.
+- `cd.yml`, `staging.yml` and `hotfix.yml` map both new parameters.
+- The AppHost publish output shows `piivault` referenced by `api` only.
+- A new ADR records the second vault and envelope encryption.
+
+The user verifies in staging: deploy, then wrap and unwrap with the real vault. Iteration 1 has no endpoint that does this, so propose a way to check it.
 
 ## Iteration 2
 
