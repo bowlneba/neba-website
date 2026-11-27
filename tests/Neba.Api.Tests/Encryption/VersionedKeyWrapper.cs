@@ -4,12 +4,6 @@ using Neba.Api.Encryption;
 
 namespace Neba.Api.Tests.Encryption;
 
-/// <summary>A second key marker. Production has no second key.</summary>
-internal sealed class OtherPii : IEncryptionKey
-{
-    public static string Name => "OtherPii";
-}
-
 /// <summary>Several key versions, so a test can wrap with a newer one and still unwrap an older one.</summary>
 internal sealed class VersionedKeyWrapper : IKeyWrapper, IDisposable
 {
