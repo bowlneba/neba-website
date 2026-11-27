@@ -220,7 +220,7 @@ This keeps plaintext out of `web`, SignalR and API request bodies. It does not p
 
 ## Tests
 
-Use fake SSNs only (numbers starting with `9`).
+Use fake SSNs only. Generate them with Bogus (`Ssn()` in `Bogus.Extensions.UnitedStates`), and seed it where the value matters to the result, such as committed samples and hash assertions. Give each test its own seed. Bogus returns dashes, so strip them where a test needs the 9-digit form.
 
 ### Encryptor
 
