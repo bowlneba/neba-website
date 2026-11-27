@@ -5,6 +5,7 @@ using Microsoft.Extensions.Logging.Abstractions;
 
 using Neba.Api.Encryption;
 using Neba.TestFactory.Attributes;
+using Neba.TestFactory.Bowlers;
 
 namespace Neba.Api.Tests.Encryption;
 
@@ -35,6 +36,6 @@ public sealed class BrowserSampleTests
         sample.KeyName.ShouldBe(BowlerPii.Name);
         result.IsError.ShouldBeFalse();
         result.Value.ShouldBe(sample.Plaintext);
-        result.Value.ShouldStartWith("9");
+        result.Value.ShouldBe(SsnFactory.Bogus(1, seed: 8201).Single());
     }
 }

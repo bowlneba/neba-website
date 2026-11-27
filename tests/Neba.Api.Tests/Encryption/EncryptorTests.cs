@@ -8,6 +8,7 @@ using Microsoft.Extensions.Logging.Testing;
 
 using Neba.Api.Encryption;
 using Neba.TestFactory.Attributes;
+using Neba.TestFactory.Bowlers;
 
 namespace Neba.Api.Tests.Encryption;
 
@@ -21,35 +22,36 @@ public sealed class EncryptorTests : IDisposable
 
     private Encryptor<BowlerPii> CreateSut() => new(_wrapper, NullLogger<Encryptor<BowlerPii>>.Instance);
 
-    // Fake SSNs start with 9, which is never issued as one.
-    private const string FakeSsn = "900123456";
+    private static string FakeSsn() => SsnFactory.Bogus(1).Single();
 
     [Fact(DisplayName = "A value should survive encrypt then decrypt")]
     public async Task DecryptAsync_ShouldReturnPlaintext_WhenValueWasEncrypted()
     {
         // Arrange
+        var ssn = FakeSsn();
         var ct = TestContext.Current.CancellationToken;
         var sut = CreateSut();
-        var encrypted = await sut.EncryptAsync(FakeSsn, ct);
+        var encrypted = await sut.EncryptAsync(ssn, ct);
 
         // Act
         var result = await sut.DecryptAsync(encrypted, ct);
 
         // Assert
-        result.ShouldBe(FakeSsn);
-        encrypted.Value.ShouldNotContain(FakeSsn);
+        result.ShouldBe(ssn);
+        encrypted.Value.ShouldNotContain(ssn);
     }
 
     [Fact(DisplayName = "The same input should give different output each time")]
     public async Task EncryptAsync_ShouldReturnDifferentValues_WhenInputIsTheSame()
     {
         // Arrange
+        var ssn = FakeSsn();
         var ct = TestContext.Current.CancellationToken;
         var sut = CreateSut();
 
         // Act
-        var first = await sut.EncryptAsync(FakeSsn, ct);
-        var second = await sut.EncryptAsync(FakeSsn, ct);
+        var first = await sut.EncryptAsync(ssn, ct);
+        var second = await sut.EncryptAsync(ssn, ct);
 
         // Assert
         first.Value.ShouldNotBe(second.Value);
@@ -70,7 +72,7 @@ public sealed class EncryptorTests : IDisposable
         // Arrange
         var ct = TestContext.Current.CancellationToken;
         var sut = CreateSut();
-        var bytes = Convert.FromBase64String((await sut.EncryptAsync(FakeSsn, ct)).Value);
+        var bytes = Convert.FromBase64String((await sut.EncryptAsync(FakeSsn(), ct)).Value);
         bytes.Length.ShouldBe(299); // 290 bytes of header, then 9 digits
         bytes[offset] ^= 0x01;
         var tampered = new Encrypted<BowlerPii>(Convert.ToBase64String(bytes));
@@ -105,7 +107,7 @@ public sealed class EncryptorTests : IDisposable
     {
         // Arrange
         var ct = TestContext.Current.CancellationToken;
-        var encrypted = await CreateSut().EncryptAsync(FakeSsn, ct);
+        var encrypted = await CreateSut().EncryptAsync(FakeSsn(), ct);
         using var otherWrapper = new VersionedKeyWrapper();
         var other = new Encryptor<BowlerPii>(otherWrapper, NullLogger<Encryptor<BowlerPii>>.Instance);
 
@@ -121,7 +123,7 @@ public sealed class EncryptorTests : IDisposable
     {
         // Arrange
         var ct = TestContext.Current.CancellationToken;
-        var encrypted = await CreateSut().EncryptAsync(FakeSsn, ct);
+        var encrypted = await CreateSut().EncryptAsync(FakeSsn(), ct);
         var other = new Encryptor<OtherPii>(_wrapper, NullLogger<Encryptor<OtherPii>>.Instance);
 
         // Act
@@ -135,16 +137,17 @@ public sealed class EncryptorTests : IDisposable
     public async Task DecryptFromClientAsync_ShouldReturnPlaintext_WhenValueIsAWireValue()
     {
         // Arrange
+        var ssn = FakeSsn();
         var ct = TestContext.Current.CancellationToken;
         var sut = CreateSut();
-        var wire = await sut.SealAsync(FakeSsn, EncryptionPurpose.Wire, ct);
+        var wire = await sut.SealAsync(ssn, EncryptionPurpose.Wire, ct);
 
         // Act
         var result = await sut.DecryptFromClientAsync(wire, ct);
 
         // Assert
         result.IsError.ShouldBeFalse();
-        result.Value.ShouldBe(FakeSsn);
+        result.Value.ShouldBe(ssn);
     }
 
     [Fact(DisplayName = "A wire value should fail as a stored value")]
@@ -153,7 +156,7 @@ public sealed class EncryptorTests : IDisposable
         // Arrange
         var ct = TestContext.Current.CancellationToken;
         var sut = CreateSut();
-        var wire = await sut.SealAsync(FakeSsn, EncryptionPurpose.Wire, ct);
+        var wire = await sut.SealAsync(FakeSsn(), EncryptionPurpose.Wire, ct);
 
         // Act
         var act = () => sut.DecryptAsync(new Encrypted<BowlerPii>(wire), ct);
@@ -166,10 +169,11 @@ public sealed class EncryptorTests : IDisposable
     public async Task DecryptFromClientAsync_ShouldReturnGeneralError_WhenValueIsAStoredValue()
     {
         // Arrange
+        var ssn = FakeSsn();
         var ct = TestContext.Current.CancellationToken;
         var logger = new FakeLogger<Encryptor<BowlerPii>>();
         var sut = new Encryptor<BowlerPii>(_wrapper, logger);
-        var stored = await sut.EncryptAsync(FakeSsn, ct);
+        var stored = await sut.EncryptAsync(ssn, ct);
 
         // Act
         var result = await sut.DecryptFromClientAsync(stored.Value, ct);
@@ -181,7 +185,7 @@ public sealed class EncryptorTests : IDisposable
         var record = logger.Collector.GetSnapshot().ShouldHaveSingleItem();
         record.Level.ShouldBe(LogLevel.Warning);
         record.Exception.ShouldBeOfType<AuthenticationTagMismatchException>();
-        record.Message.ShouldNotContain(FakeSsn);
+        record.Message.ShouldNotContain(ssn);
         record.Message.ShouldNotContain(stored.Value);
     }
 
@@ -228,19 +232,20 @@ public sealed class EncryptorTests : IDisposable
     public async Task DecryptAsync_ShouldReturnPlaintext_WhenKeyHasRotated()
     {
         // Arrange
+        var ssn = FakeSsn();
         var ct = TestContext.Current.CancellationToken;
         var sut = CreateSut();
-        var old = await sut.EncryptAsync(FakeSsn, ct);
+        var old = await sut.EncryptAsync(ssn, ct);
         _wrapper.Rotate("v2");
-        var current = await sut.EncryptAsync(FakeSsn, ct);
+        var current = await sut.EncryptAsync(ssn, ct);
 
         // Act
         var fromOld = await sut.DecryptAsync(old, ct);
         var fromCurrent = await sut.DecryptAsync(current, ct);
 
         // Assert
-        fromOld.ShouldBe(FakeSsn);
-        fromCurrent.ShouldBe(FakeSsn);
+        fromOld.ShouldBe(ssn);
+        fromCurrent.ShouldBe(ssn);
         Envelope.Decode(old.Value).KeyVersion.ShouldBe("v1");
         Envelope.Decode(current.Value).KeyVersion.ShouldBe("v2");
     }

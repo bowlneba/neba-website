@@ -9,6 +9,7 @@ using Microsoft.Extensions.Options;
 
 using Neba.Api.Encryption;
 using Neba.TestFactory.Attributes;
+using Neba.TestFactory.Bowlers;
 
 namespace Neba.Api.Tests.Encryption;
 
@@ -168,13 +169,15 @@ public sealed class EncryptionConfigurationTests
         await app.StartAsync(ct);
         var encryptor = app.Services.GetRequiredService<IEncryptor<BowlerPii>>();
 
+        var ssn = SsnFactory.Create();
+
         // Act
-        var encrypted = await encryptor.EncryptAsync("900123456", ct);
+        var encrypted = await encryptor.EncryptAsync(ssn, ct);
         var decrypted = await encryptor.DecryptAsync(encrypted, ct);
-        var hash = app.Services.GetRequiredService<IHasher<BowlerPii>>().Hash("900123456");
+        var hash = app.Services.GetRequiredService<IHasher<BowlerPii>>().Hash(ssn);
 
         // Assert
-        decrypted.ShouldBe("900123456");
+        decrypted.ShouldBe(ssn);
         Envelope.Decode(encrypted.Value).KeyVersion.ShouldBe(LocalKeyWrapper.KeyVersion);
         hash.Value.ShouldNotBeNullOrWhiteSpace();
         await app.StopAsync(ct);

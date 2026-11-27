@@ -2,6 +2,6 @@
   "note": "Made by field-encryption.js with the public half of the development key in appsettings.Development.json. The plaintext is a fake SSN. Regenerate if that key or the format changes.",
   "keyName": "BowlerPii",
   "keyVersion": "local",
-  "plaintext": "900123456",
-  "wireValue": "AQVsb2NhbAEAGgxxb8YEbpNyCQiW2l1FynN77R+qKZST2Jo67hTmOzHt4+JOUyeSAVZ8wGkb8B2ZfF1vl9OuCirZUsvdM0AqT0O2Br7FzDNeup2WS0SLjRI5Try0zrhoE/XsBqqptENKd+pBKjWQmnMN1Bvce+yURvDVs8/9xZ6K3jxQ6N0N/yweYXrwhH4b1o7rQ2RVDzWVA1jVd3jrH0OtZtVbIDtTwtAN7txD/1cWkhvSyvgc39yFIas0dywbLo2Dhd8zZhPuoSQbc4gd1uFDm8KinQ5/DIx+xTEmhglVRfkS7zXHqM2H2gSIzSFr3vHOWxGBZdgHaQvSY3AbUdq8JN3xaegTQ6IU4VeV2kU1M+zhQLdRIRSnjUd+o+lnbAPErNvbZiTb6qe3Jww="
+  "plaintext": "911108347",
+  "wireValue": "AQVsb2NhbAEAbYMVcEA/db3ju3ga/DV8a2xbQ3bn2n8gzg7MFZFZLA0vw9KdIbPUy8dHXPVSNwVCY8HYbUWthfoBBaPc+Z2mzroyt54WV9+qR4L8d+w59ssoaflMn3ibZc2LB1qwn+vHaKNWz7RcVKhlKxm3646rnH4JFPPk6cMBBK4H+ManPmtpALsMxkUg8JSnFiYIKxLoe5F9ZZJDECGDU458NQWAZ2vTVskFvZSHo6qLSzDLgaQS98cJN9YKqq0chrfhvbT5TLUu3JpEX5iVUFlAS6aD0lxCPWcMltC4TxSzpz20/4Zv8AjEkZBB+MK4OXvxTdrIqsbgoYJy5aq51jxNym4Pnxi3jgY6is1b990NgNyFvAwECMyrn0s46d0LYWjBIBz+x0YohSs="
 }
