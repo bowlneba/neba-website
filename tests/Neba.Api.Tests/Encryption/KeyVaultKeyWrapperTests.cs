@@ -112,6 +112,23 @@ public sealed class KeyVaultKeyWrapperTests
         await act.ShouldThrowAsync<CryptographicException>();
     }
 
+    [Fact(DisplayName = "A version that failed to unwrap should not keep its client")]
+    public async Task UnwrapAsync_ShouldNotCacheTheClient_WhenUnwrapFails()
+    {
+        // Arrange
+        var ct = TestContext.Current.CancellationToken;
+        SetupUnwrapFailure(404);
+        var sut = CreateSut();
+        await Should.ThrowAsync<CryptographicException>(() => sut.UnwrapAsync(OldVersion, WrappedBytes, ct));
+
+        // Act
+        var act = () => sut.UnwrapAsync(OldVersion, WrappedBytes, ct);
+
+        // Assert
+        await act.ShouldThrowAsync<CryptographicException>();
+        _requested.Count.ShouldBe(2);
+    }
+
     [Theory(DisplayName = "An outage or access failure should not read as bad input")]
     [InlineData(403, TestDisplayName = "Forbidden")]
     [InlineData(503, TestDisplayName = "Unavailable")]
