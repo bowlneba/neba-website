@@ -53,6 +53,12 @@ jobs:
           rm -f install-aspire.sh
           echo "$HOME/.aspire/bin" >> "$GITHUB_PATH"
 
+      # A bad key would otherwise fail only when the new api starts.
+      - name: Check the bowler PII hash key
+        env:
+          BOWLER_PII_HASH_KEY: ${{ secrets.BOWLER_PII_HASH_KEY }}
+        run: .github/scripts/check-hash-key.sh
+
       # Stops the deploy if it would create or delete the database or storage account (a wrong
       # resource group or a renamed resource would do that). Reads Azure only.
       - name: What-if guard

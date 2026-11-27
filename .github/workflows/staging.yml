@@ -92,6 +92,12 @@ jobs:
           rm -f install-aspire.sh
           echo "$HOME/.aspire/bin" >> "$GITHUB_PATH"
 
+      # A bad key would otherwise fail only when the new api starts.
+      - name: Check the bowler PII hash key
+        env:
+          BOWLER_PII_HASH_KEY: ${{ secrets.BOWLER_PII_HASH_KEY }}
+        run: .github/scripts/check-hash-key.sh
+
       # Same read-only check as production runs before it deploys. A new staging environment has
       # nothing yet, so creating Postgres and storage is allowed here (ALLOW_CREATE).
       - name: What-if guard
