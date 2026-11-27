@@ -1,8 +1,5 @@
 using System.Text.Json;
 
-using Bogus;
-using Bogus.Extensions.UnitedStates;
-
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging.Abstractions;
 
@@ -30,8 +27,6 @@ public sealed class BrowserSampleTests
         var settings = new ConfigurationBuilder().AddJsonFile(RepoFiles.DevelopmentSettings, optional: false).Build();
         var wrapper = new LocalKeyWrapper(settings["Encryption:Keys:BowlerPii:LocalPrivateKey"]!);
         var sut = new Encryptor<BowlerPii>(wrapper, NullLogger<Encryptor<BowlerPii>>.Instance);
-        var expected = new Faker { Random = new Randomizer(8201) }.Person.Ssn()
-            .Replace("-", string.Empty, StringComparison.Ordinal);
 
         // Act
         var result = await sut.DecryptFromClientAsync(sample.WireValue, ct);
@@ -40,6 +35,6 @@ public sealed class BrowserSampleTests
         sample.KeyName.ShouldBe(BowlerPii.Name);
         result.IsError.ShouldBeFalse();
         result.Value.ShouldBe(sample.Plaintext);
-        result.Value.ShouldBe(expected);
+        result.Value.ShouldStartWith("9");
     }
 }

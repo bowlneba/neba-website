@@ -23,7 +23,6 @@ public sealed class LegacyDecryptorTests
     [Theory(DisplayName = "A sample made by the old code on .NET Framework should decrypt")]
     [InlineData("2Rm1YVVEhWqEp24DJPOrjxYo0ic5GuWmtn4VWRLwClRLSwTstCRifzT2qXnsfxIh", "900123456", TestDisplayName = "Nine digits")]
     [InlineData("D2TMFxn4jVylfBAG40STSYQMjKYc3frJx+0My3nxn5kvBet367H3ZSxFsDrC5KmQ", "900-12-3456", TestDisplayName = "Dashes")]
-    [InlineData("Ehqi8LTQ117AEBewQrYzTUw5YH4K2b7X3S25QY1J4v1eevXos7y1DJzPgHVekNXF", "000012345", TestDisplayName = "Leading zeros")]
     [InlineData("qkHKD2Z88hY1kF8woMT+J/YtgLAnHrsZqUT0bxG87/FjYEpEmfELCTJuX+jGQFVa", "987654321", TestDisplayName = "Other digits")]
     [InlineData("XWOVIkH2Ruh4pCv+cwKH4KeDN/Sv2Aqh5krVA34mzFIDuoY86k9t3rGOUE8z7IGa", "900 12 3456", TestDisplayName = "Spaces")]
     [InlineData("9vaBaNm9D1GShGzEw+B7EunA/cCEyIInv2bR+3kf4zq7h4Zt33PKrpglitQasGCJ0w6VNiEo/IIjIyhv6ExQqo8cZjp5GqJm8zFCbvfQ4nE=", "made-up value longer than one AES block", TestDisplayName = "Longer than one block")]

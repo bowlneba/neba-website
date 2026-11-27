@@ -2,9 +2,6 @@ using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
 
-using Bogus;
-using Bogus.Extensions.UnitedStates;
-
 using Neba.Api.Encryption;
 using Neba.TestFactory.Attributes;
 
@@ -16,19 +13,18 @@ public sealed class HasherTests
 {
     private static readonly byte[] HashKey = Encoding.UTF8.GetBytes("test-hash-key-of-32-bytes-......");
 
-    private static string FakeSsn(int seed)
-        => new Faker { Random = new Randomizer(seed) }.Person.Ssn().Replace("-", string.Empty, StringComparison.Ordinal);
+    // Fake SSNs start with 9, which is never issued as one.
+    private const string FakeSsn = "900123456";
 
     [Fact(DisplayName = "The same input and key should give the same HMAC-SHA256 hash")]
     public void Hash_ShouldReturnSameHash_WhenInputAndKeyMatch()
     {
         // Arrange
-        var ssn = FakeSsn(8101);
-        var expected = Convert.ToBase64String(HMACSHA256.HashData(HashKey, Encoding.UTF8.GetBytes(ssn)));
+        var expected = Convert.ToBase64String(HMACSHA256.HashData(HashKey, Encoding.UTF8.GetBytes(FakeSsn)));
 
         // Act
-        var first = new Hasher<BowlerPii>(HashKey).Hash(ssn);
-        var second = new Hasher<BowlerPii>(HashKey).Hash(ssn);
+        var first = new Hasher<BowlerPii>(HashKey).Hash(FakeSsn);
+        var second = new Hasher<BowlerPii>(HashKey).Hash(FakeSsn);
 
         // Assert
         first.ShouldBe(second);
@@ -39,12 +35,11 @@ public sealed class HasherTests
     public void Hash_ShouldReturnDifferentHash_WhenKeyDiffers()
     {
         // Arrange
-        var ssn = FakeSsn(8102);
         var otherKey = Encoding.UTF8.GetBytes("another-hash-key-of-32-bytes-...");
 
         // Act
-        var first = new Hasher<BowlerPii>(HashKey).Hash(ssn);
-        var second = new Hasher<BowlerPii>(otherKey).Hash(ssn);
+        var first = new Hasher<BowlerPii>(HashKey).Hash(FakeSsn);
+        var second = new Hasher<BowlerPii>(otherKey).Hash(FakeSsn);
 
         // Assert
         first.Value.ShouldNotBe(second.Value);
@@ -54,7 +49,7 @@ public sealed class HasherTests
     public void Serialize_ShouldThrow_ForAHash()
     {
         // Arrange
-        var hash = new Hasher<BowlerPii>(HashKey).Hash(FakeSsn(8103));
+        var hash = new Hasher<BowlerPii>(HashKey).Hash(FakeSsn);
 
         // Act
         var alone = () => JsonSerializer.Serialize(hash);
@@ -71,7 +66,7 @@ public sealed class HasherTests
     public void ToString_ShouldBeRedacted()
     {
         // Arrange
-        var hash = new Hasher<BowlerPii>(HashKey).Hash(FakeSsn(8104));
+        var hash = new Hasher<BowlerPii>(HashKey).Hash(FakeSsn);
 
         // Act
         var text = $"{hash}";
