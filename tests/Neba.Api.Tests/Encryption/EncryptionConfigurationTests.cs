@@ -1,4 +1,5 @@
 using System.Security.Cryptography;
+using System.Text;
 
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.TestHost;
@@ -159,6 +160,24 @@ public sealed class EncryptionConfigurationTests
         // Assert
         exception.ShouldBeOfType<CryptographicException>().Message.ShouldBe("Unknown key version.");
         hasher.ShouldNotBeNull();
+        await app.StopAsync(TestContext.Current.CancellationToken);
+    }
+
+    [Fact(DisplayName = "The hasher should use the configured hash key")]
+    public async Task AddEncryption_ShouldHashWithTheConfiguredKey_WhenHashKeyIsSet()
+    {
+        // Arrange
+        var hashKey = RandomNumberGenerator.GetBytes(32);
+        var settings = ProductionSettings();
+        settings[$"{Section}:HashKey"] = Convert.ToBase64String(hashKey);
+        var app = Build("Production", settings);
+        var ssn = SsnFactory.Create();
+
+        // Act
+        var hash = app.Services.GetRequiredService<IHasher<BowlerPii>>().Hash(ssn);
+
+        // Assert
+        hash.Value.ShouldBe(Convert.ToBase64String(HMACSHA256.HashData(hashKey, Encoding.UTF8.GetBytes(ssn))));
         await app.StopAsync(TestContext.Current.CancellationToken);
     }
 
