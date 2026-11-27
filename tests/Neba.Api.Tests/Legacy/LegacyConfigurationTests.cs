@@ -36,6 +36,24 @@ public sealed class LegacyConfigurationTests
         scope.ServiceProvider.GetRequiredService<IDbConnection>().ShouldBeOfType<SqlConnection>();
     }
 
+    [Fact(DisplayName = "AddLegacy should register LegacyDecryptor as a singleton")]
+    public void AddLegacy_ShouldRegisterLegacyDecryptor_AsSingleton()
+    {
+        // Arrange
+        var builder = WebApplication.CreateSlimBuilder();
+
+        // Act
+        builder.AddLegacy();
+
+        // Assert
+        builder.Services.ShouldContain(sd =>
+            sd.ServiceType == typeof(LegacyDecryptor) &&
+            sd.Lifetime == ServiceLifetime.Singleton);
+
+        using var serviceProvider = builder.Services.BuildServiceProvider();
+        serviceProvider.GetRequiredService<LegacyDecryptor>().ShouldNotBeNull();
+    }
+
     [Fact(DisplayName = "AddLegacy should bind LegacySettings from the Legacy configuration section")]
     public void AddLegacy_ShouldBindLegacySettings_FromConfiguration()
     {
