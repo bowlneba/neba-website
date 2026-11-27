@@ -21,11 +21,12 @@ Every deploy-time value is an Aspire parameter, set by a `Parameters__<name>` en
 | Parameter | GitHub source | Notes |
 | --- | --- | --- |
 | `postgresSkuName`, `postgresSkuTier` | `AZURE_POSTGRES_SKU_NAME`, `_TIER` | |
-| `deployPrincipalId` | `AZURE_PRINCIPAL_ID` | Key Vault Secrets Officer role for the deploy principal. Not needed by `aspire deploy` itself. |
+| `deployPrincipalId` | `AZURE_PRINCIPAL_ID` | Key Vault Secrets Officer role for the deploy principal on both vaults. Not needed by `aspire deploy` itself. |
 | `minReplicas`, `maxReplicas`, `concurrentRequests` | `AZURE_CONTAINERAPP_*` | Strings; Bicep converts with `int()`. |
 | `webCustomDomain`, `apiCustomDomain`, `webWwwCustomDomain` | `AZURE_WEB_CUSTOM_DOMAIN`, `AZURE_API_CUSTOM_DOMAIN`, `AZURE_WEB_WWW_CUSTOM_DOMAIN` | A domain is declared only when its value is set. Staging sets none. |
 | `webCertificateName`, `apiCertificateName`, `webWwwCertificateName` | `AZURE_*_CERTIFICATE_NAME` | Optional. Empty binds the hostname without a certificate. |
 | Ten secret parameters | GitHub secrets (Production or Staging environment) | See the table in the AppHost; Key Vault secret names are unchanged. |
+| `bowlerPiiHashKey`, `legacySsnPassphrase` | `BOWLER_PII_HASH_KEY`, `LEGACY_SSN_PASSPHRASE` | Written to `piivault`, which only `api` references (ADR-0011). The hash key is 32 random bytes in Base64; staging has its own. Never change it once hashes are stored. |
 
 A required parameter rejects an empty value, so a blank secret stops the deploy before it reaches Azure.
 
@@ -39,6 +40,7 @@ A required parameter rejects an empty value, so a blank secret stops the deploy 
 
 ## Things that bite
 
+- `piivault` has purge protection in production (the `--environment production` publish), never in staging. Azure cannot turn it off again.
 - `aspire do` takes one step per call. A hotfix calls it twice, and each call also runs the steps the app depends on (infrastructure provisioning is idempotent and quick when nothing changed).
 - Deploy steps for apps and jobs are named `provision-<name>-containerapp`. They are created late, so `--list-steps` does not show them, and a wrong name fails at the start of a real run, not in list mode.
 - `aspire publish` and `aspire deploy` cache parameter values per environment in `~/.aspire/deployments`. To test locally with different values, pass `--environment`. Fresh CI runners have no cache.
