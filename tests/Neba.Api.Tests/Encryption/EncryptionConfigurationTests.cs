@@ -140,6 +140,40 @@ public sealed class EncryptionConfigurationTests
         failure.Message.ShouldContain($"{Section}:LocalPrivateKey");
     }
 
+    [Fact(DisplayName = "Startup should succeed in Development with a Key Vault URI and no local key")]
+    public async Task Start_ShouldSucceed_WhenDevelopmentUsesKeyVault()
+    {
+        // Arrange
+        var settings = ProductionSettings();
+
+        // Act
+        var failure = await StartAsync("Development", settings);
+
+        // Assert
+        failure.ShouldBeNull();
+    }
+
+    [Theory(DisplayName = "Startup should fail in Development when the local key cannot be read")]
+    [InlineData("not base64!", TestDisplayName = "Not Base64")]
+    [InlineData("bm90IGEga2V5", TestDisplayName = "Base64 but not PKCS#8")]
+    public async Task Start_ShouldFail_WhenDevelopmentLocalKeyIsMalformed(string privateKey)
+    {
+        // Arrange
+        var settings = new Dictionary<string, string?>
+        {
+            [$"{Section}:HashKey"] = HashKey,
+            [$"{Section}:LocalPrivateKey"] = privateKey
+        };
+
+        // Act
+        var failure = await StartAsync("Development", settings);
+
+        // Assert
+        failure.ShouldNotBeNull();
+        failure.Message.ShouldContain($"{Section}:LocalPrivateKey");
+        failure.Message.ShouldNotContain(privateKey);
+    }
+
     [Fact(DisplayName = "A Key Vault URI should build the Key Vault encryptor without calling Azure")]
     public async Task AddEncryption_ShouldResolveServices_WhenKeyVaultUriIsSet()
     {
