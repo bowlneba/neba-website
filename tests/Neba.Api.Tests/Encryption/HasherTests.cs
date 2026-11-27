@@ -14,13 +14,13 @@ public sealed class HasherTests
 {
     private static readonly byte[] HashKey = Encoding.UTF8.GetBytes("test-hash-key-of-32-bytes-......");
 
-    private static string FakeSsn(int seed) => SsnFactory.Bogus(1, seed).Single();
+    private static string FakeSsn() => SsnFactory.Bogus(1).Single();
 
     [Fact(DisplayName = "The same input and key should give the same HMAC-SHA256 hash")]
     public void Hash_ShouldReturnSameHash_WhenInputAndKeyMatch()
     {
         // Arrange
-        var ssn = FakeSsn(8101);
+        var ssn = FakeSsn();
         var expected = Convert.ToBase64String(HMACSHA256.HashData(HashKey, Encoding.UTF8.GetBytes(ssn)));
 
         // Act
@@ -36,7 +36,7 @@ public sealed class HasherTests
     public void Hash_ShouldReturnDifferentHash_WhenKeyDiffers()
     {
         // Arrange
-        var ssn = FakeSsn(8102);
+        var ssn = FakeSsn();
         var otherKey = Encoding.UTF8.GetBytes("another-hash-key-of-32-bytes-...");
 
         // Act
@@ -51,7 +51,7 @@ public sealed class HasherTests
     public void Serialize_ShouldThrow_ForAHash()
     {
         // Arrange
-        var ssn = FakeSsn(8103);
+        var ssn = FakeSsn();
         var hash = new Hasher<BowlerPii>(HashKey).Hash(ssn);
 
         // Act
@@ -69,7 +69,7 @@ public sealed class HasherTests
     public void ToString_ShouldBeRedacted()
     {
         // Arrange
-        var ssn = FakeSsn(8104);
+        var ssn = FakeSsn();
         var hash = new Hasher<BowlerPii>(HashKey).Hash(ssn);
 
         // Act
