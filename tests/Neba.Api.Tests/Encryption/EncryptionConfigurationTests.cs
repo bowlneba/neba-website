@@ -145,12 +145,19 @@ public sealed class EncryptionConfigurationTests
         // Arrange
         var app = Build("Production", ProductionSettings());
 
+        // A "local" version is refused by the Key Vault wrapper before any call to Azure; the local
+        // wrapper would try to decrypt it instead.
+        var value = new Envelope(LocalKeyWrapper.KeyVersion, new byte[256], new byte[12], new byte[16], new byte[9])
+            .Encode();
+
         // Act
         var encryptor = app.Services.GetRequiredService<IEncryptor<BowlerPii>>();
         var hasher = app.Services.GetRequiredService<IHasher<BowlerPii>>();
+        var exception = await Record.ExceptionAsync(
+            () => encryptor.DecryptAsync(new Encrypted<BowlerPii>(value), TestContext.Current.CancellationToken));
 
         // Assert
-        encryptor.ShouldNotBeNull();
+        exception.ShouldBeOfType<CryptographicException>().Message.ShouldBe("Unknown key version.");
         hasher.ShouldNotBeNull();
         await app.StopAsync(TestContext.Current.CancellationToken);
     }
