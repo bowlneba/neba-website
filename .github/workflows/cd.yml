@@ -53,6 +53,12 @@ jobs:
           rm -f install-aspire.sh
           echo "$HOME/.aspire/bin" >> "$GITHUB_PATH"
 
+      # A bad key would otherwise fail only when the new api starts.
+      - name: Check the bowler PII hash key
+        env:
+          BOWLER_PII_HASH_KEY: ${{ secrets.BOWLER_PII_HASH_KEY }}
+        run: .github/scripts/check-hash-key.sh
+
       # Stops the deploy if it would create or delete the database or storage account (a wrong
       # resource group or a renamed resource would do that). Reads Azure only.
       - name: What-if guard
@@ -107,6 +113,8 @@ jobs:
           Parameters__discordApiLogsWebhookUrl: ${{ secrets.DISCORD_API_LOGS_WEBHOOK_URL }}
           Parameters__discordManualInterventionWebhookUrl: ${{ secrets.DISCORD_MANUAL_INTERVENTION_WEBHOOK_URL }}
           Parameters__discordNewsWebhookUrl: ${{ secrets.DISCORD_NEWS_WEBHOOK_URL }}
+          Parameters__bowlerPiiHashKey: ${{ secrets.BOWLER_PII_HASH_KEY }}
+          Parameters__legacySsnPassphrase: ${{ secrets.LEGACY_SSN_PASSPHRASE }}
         run: aspire deploy --environment production --non-interactive --include-exception-details
 
       # Container Apps run in single-revision mode, so a new revision takes traffic only

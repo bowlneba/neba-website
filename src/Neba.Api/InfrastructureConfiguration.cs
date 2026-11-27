@@ -8,6 +8,7 @@ using Neba.Api.Database;
 using Neba.Api.Discord;
 using Neba.Api.Documents;
 using Neba.Api.Email;
+using Neba.Api.Encryption;
 using Neba.Api.Features.News;
 using Neba.Api.Features.Seasons;
 using Neba.Api.Features.Series;
@@ -47,6 +48,7 @@ public static class InfrastructureConfiguration
                 .AddAuditing()
                 .AddDatabase()
                 .AddKeyVault()
+                .AddEncryption()
                 .AddStorage()
                 .AddEmail()
                 .AddDiscord()
@@ -66,15 +68,20 @@ public static class InfrastructureConfiguration
         }
 
         private WebApplicationBuilder AddKeyVault()
+            => builder.AddKeyVault(name => builder.Configuration.AddAzureKeyVaultSecrets(name));
+
+        // The loader is a parameter so tests can see which vaults load without calling Azure.
+        internal WebApplicationBuilder AddKeyVault(Action<string> addSecrets)
         {
-            var keyVaultConnectionString = builder.Configuration.GetConnectionString("keyvault");
+            // "piivault" is a second vault that only the API references, for encryption keys and
+            // their secrets.
+            string[] vaults = ["keyvault", "piivault"];
 
-            if (string.IsNullOrWhiteSpace(keyVaultConnectionString))
+            foreach (var connectionName in vaults.Where(
+                name => !string.IsNullOrWhiteSpace(builder.Configuration.GetConnectionString(name))))
             {
-                return builder;
+                addSecrets(connectionName);
             }
-
-            builder.Configuration.AddAzureKeyVaultSecrets("keyvault");
 
             return builder;
         }

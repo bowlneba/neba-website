@@ -93,6 +93,24 @@
 
 ---
 
+### Encrypted Value
+
+**Definition**: A value object that holds a sensitive value as an entity stores it: the ciphertext and a keyed hash used to find duplicates. The two are always set together, and neither is the plaintext. No entity uses it yet.
+
+**Characteristics**:
+
+- **Value**: The ciphertext, readable only by the API with the key named by its type
+- **Hash**: HMAC of the plaintext with a secret key; equal plaintexts give equal hashes. Never leaves the API
+- **Key**: The data boundary it belongs to (for example `BowlerPii`), fixed by the type
+
+**In Code**:
+
+- Namespace: `Neba.Api.Encryption`
+- Type: `EncryptedValue<TKey>` (internal sealed record)
+- EF mapping: `EncryptedValueConfiguration.HasEncryptedValue(expression, "ssn")` maps an owned type to `ssn_encrypted` and `ssn_hash`; `.HasUniqueHash()` adds the unique index. See [ADR-0011](adr/0011-envelope-encryption-for-sensitive-values.md)
+
+---
+
 ### File Content
 
 **Definition**: The materialized content of a File after it has been read from Azure Blob Storage. Returned by `IFileStorageService.GetFileAsync()`. Carries the file bytes (as a string), the MIME content type, and the metadata stored alongside the blob. Ephemeral — used within a request or handler and not persisted.

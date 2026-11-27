@@ -26,7 +26,12 @@ internal static class LegacyConfiguration
             builder.Services
                 .AddOptions<LegacySettings>()
                 .Bind(builder.Configuration.GetSection("Legacy"))
+                .Validate<IHostEnvironment>(
+                    (settings, environment) => environment.IsDevelopment() || !string.IsNullOrWhiteSpace(settings.SsnPassphrase),
+                    "Legacy:SsnPassphrase is required outside Development.")
                 .ValidateOnStart();
+
+            builder.Services.AddSingleton<LegacyDecryptor>();
 
             builder.Services.AddScoped<IDbConnection>(sp =>
                 new SqlConnection(sp.GetRequiredService<IOptions<LegacySettings>>().Value.ConnectionString));

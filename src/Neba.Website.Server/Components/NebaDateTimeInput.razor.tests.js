@@ -61,6 +61,14 @@ describe('NebaDateTimeInput', () => {
             expect(s.minute.value).toBe('00');
             expect(s.meridiem.value).toBe('AM');
         });
+
+        test('should mark the container ready once listeners are attached', () => {
+            const container = makeContainer('dt-1b');
+
+            initialize('dt-1b', makeDotNetRef(), '', '', '', '', '', '');
+
+            expect(container.dataset.ready).toBe('true');
+        });
     });
 
     describe('auto-advance on digit fill', () => {

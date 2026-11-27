@@ -4,10 +4,13 @@ import { expect, Page } from '@playwright/test';
 // src/Neba.Website.Server/Components/NebaDateInput.razor) — `id` lands on the month segment only,
 // and the segment's own JS auto-advances focus on keydown, which .fill() never fires. Fill each
 // segment directly so the 'input' event listener (which does run on .fill()) reports the value.
+// Wait for data-ready first: the segments are server-rendered before their script attaches, and
+// attaching resets them, so anything filled earlier is lost.
 export async function fillDateInput(page: Page, monthInputId: string, isoDate: string): Promise<void> {
   const [year, month, day] = isoDate.split('-');
   const monthInput = page.locator(`#${monthInputId}`);
   const container = monthInput.locator('xpath=..');
+  await expect(container).toHaveAttribute('data-ready', 'true');
 
   await monthInput.fill(month);
   await container.locator('[data-segment="day"]').fill(day);
@@ -32,6 +35,7 @@ export async function fillDateTimeInput(page: Page, monthInputId: string, isoDat
 
   const monthInput = page.locator(`#${monthInputId}`);
   const container = monthInput.locator('xpath=..');
+  await expect(container).toHaveAttribute('data-ready', 'true');
 
   await monthInput.fill(month);
   await container.locator('[data-segment="day"]').fill(day);

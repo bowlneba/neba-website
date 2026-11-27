@@ -149,6 +149,9 @@ export function initialize(containerId, dotNetHelper, initialMonth, initialDay, 
     });
 
     instances.set(containerId, { segments, listeners });
+
+    // Anything typed before this point is overwritten by the initial values; e2e tests wait on this.
+    container.dataset.ready = "true";
 }
 
 export function setValue(containerId, month, day, year, hour, minute, meridiem) {

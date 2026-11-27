@@ -92,6 +92,12 @@ jobs:
           rm -f install-aspire.sh
           echo "$HOME/.aspire/bin" >> "$GITHUB_PATH"
 
+      # A bad key would otherwise fail only when the new api starts.
+      - name: Check the bowler PII hash key
+        env:
+          BOWLER_PII_HASH_KEY: ${{ secrets.BOWLER_PII_HASH_KEY }}
+        run: .github/scripts/check-hash-key.sh
+
       # Same read-only check as production runs before it deploys. A new staging environment has
       # nothing yet, so creating Postgres and storage is allowed here (ALLOW_CREATE).
       - name: What-if guard
@@ -139,6 +145,8 @@ jobs:
           Parameters__discordApiLogsWebhookUrl: ${{ secrets.DISCORD_API_LOGS_WEBHOOK_URL }}
           Parameters__discordManualInterventionWebhookUrl: ${{ secrets.DISCORD_MANUAL_INTERVENTION_WEBHOOK_URL }}
           Parameters__discordNewsWebhookUrl: ${{ secrets.DISCORD_NEWS_WEBHOOK_URL }}
+          Parameters__bowlerPiiHashKey: ${{ secrets.BOWLER_PII_HASH_KEY }}
+          Parameters__legacySsnPassphrase: ${{ secrets.LEGACY_SSN_PASSPHRASE }}
         run: |
           set -euo pipefail
           date -u +"Deploy ($MODE) started %H:%M:%S UTC"

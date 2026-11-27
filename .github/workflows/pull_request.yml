@@ -49,6 +49,9 @@ jobs:
       - name: Test whatif-guard.sh
         run: .github/scripts/whatif-guard.test.sh
 
+      - name: Test check-hash-key.sh
+        run: .github/scripts/check-hash-key.test.sh
+
   format-check:
     name: Code Format Check
     runs-on: ubuntu-latest
