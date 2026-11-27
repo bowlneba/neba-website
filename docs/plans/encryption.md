@@ -263,7 +263,7 @@ The Key Vault wrapper has no local emulator. Test its version and URI handling i
 - The AppHost publish output shows `piivault` referenced by `api` only.
 - A new ADR records the second vault and envelope encryption.
 
-The user verifies in staging: deploy, then wrap and unwrap with the real vault. Iteration 1 has no endpoint that does this, so propose a way to check it.
+The user verifies in staging: deploy, then wrap and unwrap with the real vault. Iteration 1 has no code that calls the encryptor, so a healthy deploy proves only that the settings load. This check waits for iteration 2 (see below).
 
 ## Iteration 2
 
@@ -275,6 +275,18 @@ The user verifies in staging: deploy, then wrap and unwrap with the real vault. 
 - A bad value raises an alert, and the rest of the bowler still saves.
 - Backfill all bowlers once and always overwrite. The weekly sync only reads recently changed rows.
 - The 402 legacy SSNs were unique on 2026-11-27.
+
+### From the iteration 1 review
+
+- Add a check constraint so the two columns are both set or both null: `(ssn_encrypted IS NULL) = (ssn_hash IS NULL)`. Today a half-filled row can be saved.
+- Quote the column name in the `HasUniqueHash()` index filter. Without quotes, a prefix with capitals or other special characters would not match its column.
+- Test replacing a saved value (also with the same hash) and clearing it, saving and reloading after each.
+- Map the test entity with `ConfigureShadowId()`, or cover that key pattern in the `Bowler` mapping test.
+- Prove wrap and unwrap in staging before the backfill. Proposed: a health check on `api` that encrypts and decrypts a made-up value and keeps the result for some hours, so probes do not call Key Vault each time. This also proves the Crypto Service Encryption User role is enough.
+
+## After the first production deploy
+
+- Add `microsoft.keyvault/vaults` to the protected types in `.github/scripts/whatif-guard.sh` and cover it in `whatif-guard.test.sh`, so a deploy cannot create a new, empty `piivault` unnoticed. Adding it before the vault exists would block that first deploy.
 
 ## Open questions
 
