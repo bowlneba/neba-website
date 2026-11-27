@@ -54,6 +54,7 @@ public sealed class EncryptedValueConfigurationTests : IAsyncLifetime
         value.GetColumnName(table).ShouldBe("ssn_encrypted");
         value.GetColumnType().ShouldBe("text");
         hash.GetColumnName(table).ShouldBe("ssn_hash");
+        hash.GetMaxLength().ShouldBe(44);
         index.IsUnique.ShouldBeTrue();
         index.Properties.ShouldHaveSingleItem().Name.ShouldBe("Hash");
         index.GetFilter().ShouldBe("ssn_hash IS NOT NULL");
