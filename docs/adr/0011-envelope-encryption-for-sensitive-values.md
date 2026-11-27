@@ -51,6 +51,8 @@ The AES-GCM additional data is `v1|{keyName}|{purpose}|{keyVersion}`, where `pur
 
 There is no EF value converter: handlers and jobs encrypt, and entities hold only ciphertext. That avoids a Key Vault call per loaded row and keeps plaintext out of change auditing.
 
+An entity holds an `EncryptedValue<TKey>` (ciphertext and hash together), mapped with `HasEncryptedValue(expression, name)` to `{name}_encrypted` and `{name}_hash`, with `HasUniqueHash()` for the unique index. It is an owned type rather than a complex property, because EF Core 10 cannot index a property of a complex type.
+
 ### Hashing for uniqueness
 
 Ciphertext differs every time, so duplicates are found with HMAC-SHA256 under a secret hash key. The hash never leaves `api`.

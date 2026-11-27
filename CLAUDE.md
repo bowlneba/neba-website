@@ -154,7 +154,7 @@ Detailed write-ups live in `docs/learnings/`. Read the matching file before work
 - Enqueue every domain event through `IDomainEventPublisher`, one `IDomainEventJob<T>` per event, events carry typed IDs only; the outbox (#56) is deferred; lock Series advancement with the keyed lock (`docs/learnings/backend.md`).
 - ImageSharp needs a license in Release builds: local `sixlabors.lic` in the repo root (git-ignored, never commit), CI `SIXLABORS_LICENSE_KEY` secret. Resize uploads through `IImageResizer`.
 
-- Sensitive values use `IEncryptor<TKey>`/`IHasher<TKey>` (ADR-0011), never an EF value converter or Data Protection. Keys and their secrets go in `piivault`, which `web` must not reference. A format change touches `Envelope.cs`, `field-encryption.js` and the committed browser sample.
+- Sensitive values use `IEncryptor<TKey>`/`IHasher<TKey>` (ADR-0011), never an EF value converter or Data Protection. Entities hold `EncryptedValue<TKey>`, mapped with `HasEncryptedValue(...).HasUniqueHash()`. Keys and their secrets go in `piivault`, which `web` must not reference. A format change touches `Envelope.cs`, `field-encryption.js` and the committed browser sample.
 
 ### Hangfire PostgreSql — `docs/learnings/hangfire-postgres.md`
 

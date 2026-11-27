@@ -52,7 +52,9 @@ public sealed partial class HashExposureTests
             foreach (var property in type.GetProperties(BindingFlags.Instance | BindingFlags.Static | BindingFlags.Public))
             {
                 var propertyType = Nullable.GetUnderlyingType(property.PropertyType) ?? property.PropertyType;
-                var isHashType = propertyType.IsGenericType && propertyType.GetGenericTypeDefinition() == typeof(Hashed<>);
+                var isHashType = propertyType.IsGenericType
+                    && (propertyType.GetGenericTypeDefinition() == typeof(Hashed<>)
+                        || propertyType.GetGenericTypeDefinition() == typeof(EncryptedValue<>));
 
                 if (isHashType || SsnHashName().IsMatch(property.Name))
                 {
