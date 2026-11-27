@@ -194,6 +194,8 @@ if (builder.ExecutionContext.IsPublishMode)
         }
     });
 
+    // As with "secrets" below, every workflow that deploys (cd, staging, hotfix) must map these.
+    // Never change the hash key once hashes are stored: they would no longer match.
     (string SecretName, string ParameterName)[] piiSecrets =
     [
         ("Encryption--Keys--BowlerPii--HashKey", "bowlerPiiHashKey"),
