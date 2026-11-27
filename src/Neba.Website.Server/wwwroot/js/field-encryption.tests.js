@@ -12,6 +12,12 @@ import { encryptField } from './field-encryption.js';
 const sample = JSON.parse(readFileSync(
     resolve(process.cwd(), 'tests/Neba.Api.Tests/Encryption/Samples/browser-sample.json'), 'utf8'));
 
+// The throwaway key committed for Development, which made the sample readable. The settings file has
+// comments, so it is not plain JSON.
+const developmentPrivateKey = readFileSync(
+    resolve(process.cwd(), 'src/Neba.Api/appsettings.Development.json'), 'utf8')
+    .match(/"Encryption:Keys:BowlerPii:LocalPrivateKey": "([^"]+)"/)[1];
+
 const encoder = new TextEncoder();
 const decoder = new TextDecoder();
 
@@ -75,6 +81,16 @@ describe('field-encryption', () => {
 
     test('the committed sample has the wire layout', () => {
         expectLayout(sample.wireValue, sample.keyVersion, sample.plaintext);
+    });
+
+    // A format change made in the module and in decrypt() above fails here until the sample is
+    // remade, and the C# test then checks the new sample.
+    test('the committed sample decrypts with the development key', async () => {
+        const privateKey = await crypto.subtle.importKey(
+            'pkcs8', Buffer.from(developmentPrivateKey, 'base64'), { name: 'RSA-OAEP', hash: 'SHA-256' },
+            false, ['decrypt']);
+
+        await expect(decrypt(sample.wireValue, privateKey, sample.keyName)).resolves.toBe(sample.plaintext);
     });
 
     test('fresh output has the wire layout', async () => {
