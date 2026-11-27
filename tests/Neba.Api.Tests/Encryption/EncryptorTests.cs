@@ -1,4 +1,5 @@
 using System.Security.Cryptography;
+using System.Text;
 
 using Azure;
 
@@ -193,7 +194,7 @@ public sealed class EncryptorTests : IDisposable
 
     [Theory(DisplayName = "Bad client input should give the general error")]
     [InlineData("", TestDisplayName = "Empty")]
-    [InlineData("900123456", TestDisplayName = "Plaintext digits")]
+    [InlineData(SsnFactory.ValidSsn, TestDisplayName = "Plaintext digits")]
     [InlineData("not base64!", TestDisplayName = "Not Base64")]
     [InlineData("AgJ2MQ==", TestDisplayName = "Unknown format version")]
     public async Task DecryptFromClientAsync_ShouldReturnGeneralError_WhenValueIsMalformed(string value)
@@ -238,7 +239,7 @@ public sealed class EncryptorTests : IDisposable
         var tag = new byte[Envelope.TagSize];
         var ciphertext = new byte[9];
         using var aes = new AesGcm(shortKey, Envelope.TagSize);
-        aes.Encrypt(nonce, "900123456"u8, ciphertext, tag,
+        aes.Encrypt(nonce, Encoding.UTF8.GetBytes(SsnFactory.ValidSsn), ciphertext, tag,
             Envelope.AdditionalData(BowlerPii.Name, EncryptionPurpose.Wire, wrapped.KeyVersion));
         var wire = new Envelope(wrapped.KeyVersion, wrapped.Value, nonce, tag, ciphertext).Encode();
 
