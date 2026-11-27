@@ -139,12 +139,12 @@ Turn on purge protection in production, because losing the key loses the data. L
 
 ### Secrets
 
-| Vault secret | Aspire parameter | Use |
-| --- | --- | --- |
-| `Encryption--Keys--BowlerPii--HashKey` | `bowlerPiiHashKey` | HMAC key, 32 random bytes in Base64 |
-| `Legacy--SsnPassphrase` | `legacySsnPassphrase` | Legacy decryption |
+| Vault secret | Aspire parameter | GitHub secret | Use |
+| --- | --- | --- | --- |
+| `Encryption--Keys--BowlerPii--HashKey` | `bowlerPiiHashKey` | `BOWLER_PII_HASH_KEY` | HMAC key, 32 random bytes in Base64 |
+| `Legacy--SsnPassphrase` | `legacySsnPassphrase` | `LEGACY_SSN_PASSPHRASE` | Legacy decryption |
 
-Map both parameters in `cd.yml`, `staging.yml` and `hotfix.yml`. Create the GitHub secrets before the first deploy. Staging gets its own hash key.
+Map both parameters in `cd.yml`, `staging.yml` and `hotfix.yml`. Set both GitHub secrets in the `Production` and `Staging` environments before the first deploy. Staging gets its own hash key.
 
 ### Key rotation
 
