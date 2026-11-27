@@ -1,351 +1,247 @@
-# Sensitive Column Encryption
+# Sensitive Data Encryption
 
-## Problem
+## Goal
 
-Upcoming features will store sensitive values on domain entities that must be encrypted at
-rest — starting with bowler SSNs, and later potentially payment card numbers. There is
-currently no pattern in the codebase for encrypting a column's value before it hits the
-database and decrypting it on the way out.
+Set the pattern for encrypting sensitive values, starting with bowler SSNs:
 
-This doc captures the design so it isn't lost before an issue/implementation picks it up.
+- One key per data boundary. `BowlerPii` is the first.
+- Only `api` can decrypt.
+- Legacy SSNs from the management software can be decrypted and encrypted again with the new key.
+- A browser can encrypt a value before it leaves the page.
+- Anyone who clones the repo can run and test it locally.
 
-## Non-goals / out of scope for v1
+This is separate from ASP.NET Core Data Protection, which protects the shared sign-in cookie keys. Do not reuse that key or mechanism.
 
-- Only one encryption key exists to start (for SSNs). The design supports multiple keys, but
-  a second key (e.g. for card numbers) is not being built now — see "Multiple keys" below for
-  how to add one later.
-- This is not a replacement for ASP.NET Core Data Protection. Data Protection
-  (`AddSharedDataProtection` in `Neba.Api`/`Neba.Website.Server`) exists solely to protect the
-  shared auth-cookie key ring and is unrelated to this feature — do not reuse that key or that
-  mechanism for business data.
-- Not using Key Vault's direct RSA `Encrypt`/`Decrypt` on the plaintext. Payload size is capped
-  (~190 bytes for a 2048-bit RSA-OAEP key) and it doesn't generalize past small fields. Using
-  envelope encryption instead — see below.
+## Scope
 
-## Key strategy: one key per compliance/access boundary
+| Iteration 1 (this plan) | Iteration 2 | With the first SSN entry page |
+| --- | --- | --- |
+| Second Key Vault, key and secrets | `Bowler` columns and unique index | Public key endpoint |
+| Encryptor and hasher | SSN in the legacy sync jobs | Page wiring for the browser module |
+| Legacy decryptor | One-off backfill | API handling of browser input |
+| Browser encryption module and wire format | | |
+| Tests | | |
 
-Rule of thumb: **one key per compliance/access boundary, not one key per field or table.**
+Iteration 1 adds no columns, endpoints or pages, and moves no SSN data.
 
-Split into a new key when any of these differ from an existing key's data:
+## When to add a key
 
-- **Regulatory regime** — e.g. SSN/PII vs. PCI-scoped card data are different audit and
-  rotation requirements; mixing them means every PCI audit has to review everything else that
-  key touches.
-- **Access boundary** — if the set of services/identities that need to decrypt differs at all,
-  split. E.g. only `api` should ever decrypt an SSN; `web` has no reason to hold that access.
-- **Lifecycle** — data that might need independent bulk rotation/purge from other data should
-  be on its own key.
-- **Blast radius** — a suspected key compromise should only force re-encryption of the data
-  under that one key, not everything.
+Add a key when any of these differ from an existing key's data:
 
-It's fine to share a key across fields that share all of the above — e.g. SSN and driver's
-license number could reasonably sit under one `BowlerPii` key if both are only ever decrypted
-by the same service and rotate together.
+- **Rules:** for example, SSNs and payment cards have different audit needs.
+- **Access:** who may decrypt.
+- **Lifecycle:** the data must be rotated or purged on its own.
+- **Damage:** a leaked key should expose only one set of data.
 
-For now: **one key, `BowlerPii`**, used for the SSN column. A `PaymentCard` key would be added
-later, if/when card data is actually stored directly (note: for PCI, tokenizing through a
-processor like Stripe and never storing the raw card number is usually the better call, and
-would avoid needing this key at all).
+Fields that share all four can share a key. `StaffPii` is a hypothetical second key; do not build it now. For payment cards, prefer a processor's tokens over storing card numbers.
 
-## Provisioning the key (Azure/Aspire)
+## Algorithms
 
-No typed Aspire/`Azure.Provisioning` resource exists for Key Vault *keys* (only secrets) — same
-situation as the existing Data Protection key. Follow the same handwritten-Bicep pattern as
-`src/Neba.AppHost/dataprotectionkey.bicep`:
+Envelope encryption:
 
-1. New Bicep file, e.g. `bowlerpii-key.bicep`, creating an RSA key scoped to **wrap/unwrap**
-   operations (envelope encryption, not direct encrypt):
+1. Make a new AES-256 key and nonce for each value.
+2. Encrypt the value with AES-GCM.
+3. Wrap the AES key with the RSA key, using RSA-OAEP with SHA-256.
 
-   ```bicep
-   @description('Name of the existing Key Vault to create the key in.')
-   param keyVaultName string
+Only the wrap and unwrap steps use the RSA key. Anyone with the public key can encrypt; only the holder of the private key can decrypt.
 
-   @description('Name of the RSA key used to wrap/unwrap the per-value AES key for Bowler PII encryption.')
-   param keyName string = 'bowlerpii-key'
+## Stored and wire format
 
-   @description('Unused: Key Vault keys are not a regional resource in this template. Declared because Aspire passes a location parameter to every Bicep module by convention.')
-   param location string = resourceGroup().location
+Base64 of these bytes:
 
-   resource keyVault 'Microsoft.KeyVault/vaults@2023-07-01' existing = {
-     name: keyVaultName
-   }
+| Field | Size |
+| --- | --- |
+| Format version (`1`) | 1 byte |
+| Key version length | 1 byte |
+| Key version (UTF-8) | variable |
+| Wrapped key length (big-endian) | 2 bytes |
+| Wrapped key | 256 bytes for RSA 2048 |
+| Nonce | 12 bytes |
+| Tag | 16 bytes |
+| Ciphertext | rest |
 
-   resource bowlerPiiKey 'Microsoft.KeyVault/vaults/keys@2023-07-01' = {
-     parent: keyVault
-     name: keyName
-     properties: {
-       kty: 'RSA'
-       keySize: 2048
-       keyOps: [
-         'wrapKey'
-         'unwrapKey'
-       ]
-     }
-   }
+The AES-GCM additional data is the UTF-8 text `v1|{keyName}|{purpose}|{keyVersion}`. `purpose` is `storage` or `wire`.
 
-   output keyUri string = bowlerPiiKey.properties.keyUriWithVersion
-   ```
+- A value fails to decrypt under another key name or purpose. A stored value copied from the database cannot be submitted as browser input.
+- The format does not prove who wrote a value, since the public key is public. Treat all browser input as untrusted.
+- A 9-digit value takes about 450 characters. Use a `text` column.
 
-2. Wire it into `AppHost.cs`, alongside the existing `dataProtectionKey`:
+WebCrypto returns the tag appended to the ciphertext, so the browser module must split them.
 
-   ```csharp
-   var bowlerPiiKey = builder.AddBicepTemplate("bowlerpiikey", "bowlerpii-key.bicep")
-       .WithParameter("keyVaultName", keyVault.Resource.NameOutputReference);
-   ```
-
-3. Pass the key URI only to the app(s) that need it — `api` only, not `web`, since only `api`
-   should decrypt SSNs:
-
-   ```csharp
-   api.WithEnvironment("Encryption__Keys__BowlerPii__KeyVaultKeyUri", bowlerPiiKey.GetOutput("keyUri"));
-   ```
-
-4. Role assignment: scope `KeyVaultCryptoUser` to just this key for `api`'s managed identity,
-   rather than reusing the vault-wide grant already used for the Data Protection key — this
-   keeps SSN decryption access separate and auditable from cookie key-ring access.
-
-## Runtime design
-
-### `IEncryptor`
+## Code shape
 
 ```csharp
-public interface IEncryptor
+internal interface IEncryptionKey
 {
-    string Encrypt(string plaintext);
-    string Decrypt(string cipherText);
+    static abstract string Name { get; }
 }
-```
 
-### Envelope format
-
-Both implementations produce/consume the same self-describing, length-prefixed, Base64-encoded
-envelope (`EncryptedEnvelope.Pack`/`Unpack`): `wrappedKey | nonce | tag | ciphertext`. The
-production implementation populates `wrappedKey`; the local implementation leaves it empty.
-This keeps `Decrypt` environment-agnostic — it doesn't need to know which implementation wrote
-the value.
-
-### Production — `KeyVaultEnvelopeEncryptor`
-
-Generates a random AES-256 key per value, encrypts the plaintext with AES-GCM, then wraps the
-AES key with the Key Vault RSA key (`WrapKey`/`UnwrapKey`, `RsaOaep256`). Only the small AES key
-touches Key Vault — the plaintext itself never leaves the process.
-
-```csharp
-internal sealed class KeyVaultEnvelopeEncryptor(Uri keyUri, TokenCredential credential) : IEncryptor
+internal sealed class BowlerPii : IEncryptionKey
 {
-    private readonly CryptographyClient _cryptographyClient = new(keyUri, credential);
-
-    public string Encrypt(string plaintext)
-    {
-        using var aes = Aes.Create();
-        aes.KeySize = 256;
-        aes.GenerateKey();
-
-        var nonce = RandomNumberGenerator.GetBytes(AesGcm.NonceByteSizes.MaxSize);
-        var tag = new byte[AesGcm.TagByteSizes.MaxSize];
-        var ciphertext = new byte[Encoding.UTF8.GetByteCount(plaintext)];
-
-        using (var aesGcm = new AesGcm(aes.Key, AesGcm.TagByteSizes.MaxSize))
-        {
-            aesGcm.Encrypt(nonce, Encoding.UTF8.GetBytes(plaintext), ciphertext, tag);
-        }
-
-        var wrapped = _cryptographyClient.WrapKey(KeyWrapAlgorithm.RsaOaep256, aes.Key);
-
-        return EncryptedEnvelope.Pack(wrapped.EncryptedKey, nonce, tag, ciphertext);
-    }
-
-    public string Decrypt(string cipherText)
-    {
-        var (wrappedKey, nonce, tag, ciphertext) = EncryptedEnvelope.Unpack(cipherText);
-
-        var unwrapped = _cryptographyClient.UnwrapKey(KeyWrapAlgorithm.RsaOaep256, wrappedKey);
-
-        var plaintextBytes = new byte[ciphertext.Length];
-        using var aesGcm = new AesGcm(unwrapped.Key, AesGcm.TagByteSizes.MaxSize);
-        aesGcm.Decrypt(nonce, ciphertext, tag, plaintextBytes);
-
-        return Encoding.UTF8.GetString(plaintextBytes);
-    }
+    public static string Name => "BowlerPii";
 }
-```
 
-### Local dev — `ConfiguredKeyEncryptor`
+internal sealed record Encrypted<TKey>(string Value) where TKey : IEncryptionKey;
 
-No Key Vault locally, so no wrap/unwrap step — just AES-GCM directly with a fixed key read from
-config.
-
-```csharp
-internal sealed class ConfiguredKeyEncryptor(byte[] key) : IEncryptor
+internal interface IEncryptor<TKey> where TKey : IEncryptionKey
 {
-    public string Encrypt(string plaintext)
-    {
-        var nonce = RandomNumberGenerator.GetBytes(AesGcm.NonceByteSizes.MaxSize);
-        var tag = new byte[AesGcm.TagByteSizes.MaxSize];
-        var ciphertext = new byte[Encoding.UTF8.GetByteCount(plaintext)];
-
-        using var aesGcm = new AesGcm(key, AesGcm.TagByteSizes.MaxSize);
-        aesGcm.Encrypt(nonce, Encoding.UTF8.GetBytes(plaintext), ciphertext, tag);
-
-        return EncryptedEnvelope.Pack(wrappedKey: [], nonce, tag, ciphertext);
-    }
-
-    public string Decrypt(string cipherText)
-    {
-        var (_, nonce, tag, ciphertext) = EncryptedEnvelope.Unpack(cipherText);
-
-        var plaintextBytes = new byte[ciphertext.Length];
-        using var aesGcm = new AesGcm(key, AesGcm.TagByteSizes.MaxSize);
-        aesGcm.Decrypt(nonce, ciphertext, tag, plaintextBytes);
-
-        return Encoding.UTF8.GetString(plaintextBytes);
-    }
+    Task<Encrypted<TKey>> EncryptAsync(string plaintext, CancellationToken ct);
+    Task<string> DecryptAsync(Encrypted<TKey> value, CancellationToken ct);
+    Task<ErrorOr<string>> DecryptFromClientAsync(string wireValue, CancellationToken ct);
 }
 ```
 
-`appsettings.Development.json`:
+- A class asks for the key it needs: `IEncryptor<BowlerPii>`. The compiler stops a `BowlerPii` value from going to a `StaffPii` encryptor.
+- `DecryptAsync` throws on a bad stored value. `DecryptFromClientAsync` returns one general validation error, with no detail about which step failed.
+- One encryptor holds the envelope logic. Only the key wrapper differs by environment: Key Vault or a local RSA key.
+- The methods are async because Key Vault calls go over the network.
+- No EF value converter. Handlers and jobs encrypt, and entities only hold ciphertext. This avoids a Key Vault call per loaded row, keeps plaintext out of change auditing and leaves `AppDbContext` pooling as it is.
 
-```json
-"Encryption": {
-  "Keys": {
-    "BowlerPii": { "Key": "<base64 32-byte value>" }
-  }
-}
-```
+Adding a key means one marker type, one Bicep key, one config section and one registration.
 
-### DI registration — keyed services
+## Hashing for uniqueness
 
-Registered as a **DI-resolved singleton**, not a static/service-locator singleton — keeps it
-swappable for tests and consistent with the rest of the codebase's DI-first conventions.
+Encrypting the same SSN twice gives different output, so ciphertext cannot enforce uniqueness. Store a second value: HMAC-SHA256 of the 9 digits with a secret hash key.
 
-Multiple keys are supported via .NET's built-in **keyed DI services**
-(`AddKeyedSingleton`/`[FromKeyedServices]`), keyed by a `SmartEnum` rather than a raw string or
-a plain `enum`. `SmartEnum` was chosen over a plain `enum` so each key can carry its own
-metadata — the actual Key Vault key name (Bicep resource names are kebab-case, e.g.
-`bowlerpii-key`, which doesn't match a PascalCase enum member) and the expected local AES key
-size — right on the value, instead of a separate switch/dictionary elsewhere that could drift
-out of sync as keys are added. Same pattern already used for
-`DiscordAlertSeverity`/`NotificationColor` (`src/Neba.Api/Discord/DiscordAlert.cs`).
+- The hash has no per-row salt, or duplicates would not match. The secret key protects it. A plain SHA hash would be useless, since every possible SSN can be tried quickly.
+- The hash key is separate from the RSA key and never sits in the database.
+- Changing the hash key means decrypting every value and hashing it again.
+- No search by SSN is planned.
 
-```csharp
-public sealed class EncryptionKeyName : SmartEnum<EncryptionKeyName>
-{
-    public static readonly EncryptionKeyName BowlerPii =
-        new(nameof(BowlerPii), 0, keyVaultKeyName: "bowlerpii-key", localKeySizeBytes: 32);
-    // PaymentCard, later, if ever needed
+The hash must never leave `api`:
 
-    private EncryptionKeyName(string name, int value, string keyVaultKeyName, int localKeySizeBytes)
-        : base(name, value)
-    {
-        KeyVaultKeyName = keyVaultKeyName;
-        LocalKeySizeBytes = localKeySizeBytes;
-    }
+- Its type is internal, its `ToString()` is redacted, and JSON serialization of it throws.
+- An architecture test fails if a type in `Neba.Api.Contracts` or an endpoint response has an SSN hash property.
+- It stays out of logs, caches and audit records.
 
-    public string KeyVaultKeyName { get; }
-    public int LocalKeySizeBytes { get; }
-}
-```
+## SSN rules
 
-```csharp
-extension(IServiceCollection services)
-{
-    public IServiceCollection AddEncryption(IConfiguration configuration)
-    {
-        foreach (var keyName in EncryptionKeyName.List)
-        {
-            var section = configuration.GetSection($"Encryption:Keys:{keyName.Name}");
-            var keyVaultKeyUri = section["KeyVaultKeyUri"];
+- Stored value: exactly 9 digits (`[0-9]`), no dashes. Browser and legacy input drop dashes and spaces first.
+- Check this right after decryption, in the handler or job. Request validators only check the shape of a request and do not decrypt.
+- Put `[PrivateData]` on any request property or `[LoggerMessage]` parameter that carries an SSN, encrypted or not.
 
-            services.AddKeyedSingleton<IEncryptor>(keyName, (_, _) => string.IsNullOrEmpty(keyVaultKeyUri)
-                ? new ConfiguredKeyEncryptor(Convert.FromBase64String(
-                    section["Key"] ?? throw new InvalidOperationException(
-                        $"Encryption:Keys:{keyName.Name}:Key is required when KeyVaultKeyUri is not set.")))
-                : new KeyVaultEnvelopeEncryptor(new Uri(keyVaultKeyUri), new DefaultAzureCredential()));
-        }
+## Keys and secrets
 
-        return services;
-    }
-}
-```
+### A second Key Vault
 
-**Why keyed DI instead of a key parameter on `Encrypt`/`Decrypt` itself**: a parameter approach
-means a single `IEncryptor` implementation holding every key's credentials internally and
-branching on the argument — which defeats the purpose of separate keys (one compromised or
-buggy class now touches all of them, tests for one key drag in config for all of them). Keyed
-DI keeps each key's encryptor a fully separate, independently swappable instance.
+`web` has Crypto User and Secrets User on the whole existing vault, and loads every secret at startup. A new vault that only `api` references keeps `web` out without changing its permissions.
 
-**Why `SmartEnum` instead of a plain `enum`**: a plain `enum` would work fine as a DI key by
-itself, but has nowhere to hang per-key metadata. `SmartEnum` is only worth it here because a
-second key is already anticipated (`PaymentCard`) with its own Key Vault resource name and
-possibly its own local key size — if this were permanently a single key with no per-key
-metadata, a plain `enum` would be the right, simpler choice.
+In `AppHost.cs`, publish mode only:
 
-### Extension methods
+- Add `piivault`.
+- Give `api` a reference to it with Secrets User and Crypto User. Do not reference it from `web`.
+- Give the deploy principal Secrets Officer, as on the existing vault.
+- Add `bowlerpii-key.bicep`, following `dataprotectionkey.bicep`: RSA 2048, `wrapKey` and `unwrapKey` only, output `keyUriWithVersion`.
+- Pass the output to `api` as `Encryption__Keys__BowlerPii__KeyVaultKeyUri`.
+- `api` loads the vault's secrets with `AddAzureKeyVaultSecrets("piivault")`.
 
-```csharp
-public static class StringEncryptionExtensions
-{
-    extension(string plaintext)
-    {
-        public string Encrypt(IEncryptor encryptor) => encryptor.Encrypt(plaintext);
-    }
+Turn on purge protection in production, because losing the key loses the data. Leave it off in staging so `destroy-staging.yml` can still purge the vault.
 
-    extension(string cipherText)
-    {
-        public string Decrypt(IEncryptor encryptor) => encryptor.Decrypt(cipherText);
-    }
-}
-```
+### Secrets
 
-Takes the encryptor explicitly rather than reaching for ambient/static state — "which key" is
-decided once, at DI composition time (which converter/class is asking), not passed around as a
-string at every call site.
+| Vault secret | Aspire parameter | Use |
+| --- | --- | --- |
+| `Encryption--Keys--BowlerPii--HashKey` | `bowlerPiiHashKey` | HMAC key, 32 random bytes in Base64 |
+| `Legacy--SsnPassphrase` | `legacySsnPassphrase` | Legacy decryption |
 
-### EF Core integration
+Map both parameters in `cd.yml`, `staging.yml` and `hotfix.yml`. Create the GitHub secrets before the first deploy. Staging gets its own hash key.
 
-Inject the keyed `IEncryptor` into `AppDbContext` and build a `ValueConverter<string, string>`
-in `OnModelCreating`, same shape as the existing converters in `Database/Converters`:
+### Key rotation
 
-```csharp
-public sealed class AppDbContext(
-    [FromKeyedServices(EncryptionKeyName.BowlerPii)] IEncryptor bowlerPiiEncryptor,
-    DbContextOptions<AppDbContext> options) : DbContext(options)
-{
-    protected override void OnModelCreating(ModelBuilder modelBuilder)
-    {
-        var ssnConverter = new ValueConverter<string, string>(
-            plaintext => plaintext.Encrypt(bowlerPiiEncryptor),
-            cipherText => cipherText.Decrypt(bowlerPiiEncryptor));
+The configured key URI names the version used to encrypt. Decryption uses the version stored in the value, so keep old versions enabled. Confirm in staging that a new version reaches `api` on the next deploy.
 
-        modelBuilder.Entity<Bowler>().Property(b => b.Ssn).HasConversion(ssnConverter);
-    }
-}
-```
+## Local development
 
-A column is always encrypted/decrypted with the same key by construction (the converter wiring
-fixes it) — there's no need to encode "which key" into the ciphertext itself, unlike a generic
-secrets store.
+`appsettings.Development.json` holds throwaway values, committed so a fresh clone works:
 
-## Adding a second key later (e.g. `PaymentCard`)
+- `Encryption:Keys:BowlerPii:LocalPrivateKey`: an RSA private key (Base64 PKCS#8). Key version is `local`.
+- `Encryption:Keys:BowlerPii:HashKey`
+- `Legacy:SsnPassphrase`: a fake value. Use user secrets for the real one.
 
-1. Add the `SmartEnum` value: `EncryptionKeyName.PaymentCard`, with its own
-   `keyVaultKeyName`/`localKeySizeBytes`.
-2. Add a matching Bicep file/AppHost wiring/config section, scoped to whichever app(s)
-   actually need to decrypt it (may differ from `BowlerPii`'s access boundary).
-3. `AddEncryption`'s loop over `EncryptionKeyName.List` registers it automatically — no other
-   registration code changes.
-4. Inject a second `[FromKeyedServices(EncryptionKeyName.PaymentCard)] IEncryptor` parameter
-   wherever the card-number converter is configured. A class needing both keys just takes both
-   parameters — no other change to the pattern.
+GitHub secret scanning may flag the private key. Add a comment that it is for development only.
 
-## Open questions for implementation time
+Outside Development, startup fails if the Key Vault key URI, hash key or legacy passphrase is missing, or if a local private key is set. No environment falls back to a local key.
 
-- Confirm AES-GCM/RSA-OAEP-256 choice against whatever compliance requirement ends up driving
-  the SSN feature (some frameworks mandate FIPS-validated algorithms specifically).
-- Decide `Bowler.Ssn` column type/length in the DB — the encrypted+Base64 envelope is
-  significantly longer than the raw 9/11-character SSN.
-- Decide whether searching/filtering by SSN is ever needed — this design has no support for
-  equality search on encrypted values (would need a separate blind index / HMAC column if so).
-- Confirm no logging/audit path anywhere could log the plaintext SSN before encryption or after
-  decryption (see the PII redaction convention in `Neba.Api.Compliance` — `[PrivateData]` should
-  be applied to any `[LoggerMessage]` parameter carrying it).
+## Legacy decryptor
+
+Lives in `Neba.Api.Legacy`, so it is deleted with the rest of the folder when the management software retires.
+
+Source: `Common/NEBA.Common/Encryption.cs` in nebamgmt-v3.
+
+- Base64 input: 16-byte salt, 16-byte IV, ciphertext
+- Key: PBKDF2 with SHA-1, 1,000 iterations, 16 bytes
+- AES-128-CBC with PKCS7 padding
+- Empty input gives empty output
+
+On 2026-11-27 all 402 stored SSNs were 64 characters, which matches this format. `Reporting/Queries/SSN.linq` uses a different 256-bit block format that .NET 10 cannot read; no stored value uses it.
+
+**The passphrase is weak.** The old code derives it from the GUID of a built-in .NET type, so anyone with the source can work it out. Treat legacy SSN data and its backups as barely protected.
+
+**Capture the passphrase on .NET Framework** (for example LINQPad 5), using the same expression as the old code. .NET 10 is likely to give a different value. Check it by decrypting one real value, and do not write the passphrase or the SSN into the repo, logs or chat.
+
+## Browser encryption module
+
+`wwwroot/js/field-encryption.js`, using WebCrypto only. It takes a value, a public key (SPKI), a key name and a key version, and returns the wire value.
+
+When the first page uses it:
+
+- Encrypt on blur, then show a mask. Editing means typing the value again.
+- Never bind the input with `@bind` or `@oninput`, or the plaintext travels over SignalR.
+- Only the encrypted value reaches .NET.
+- `web` gets the public key from `api` and gets no access to `piivault`.
+- `api` decrypts, validates, hashes and encrypts again for storage. It never stores the wire value.
+
+This keeps plaintext out of `web`, SignalR and API request bodies. It does not protect against a compromised browser or a `web` server that serves altered script.
+
+## Tests
+
+Use fake SSNs only (numbers starting with `9`).
+
+### Encryptor
+
+- A value survives encrypt then decrypt.
+- The same input gives different output each time.
+- A change to any field makes decryption fail.
+- Another key cannot decrypt the value.
+- A `wire` value fails as `storage`, and the reverse.
+- A value from an older key version still decrypts.
+
+### Hasher
+
+- The same input and key give the same hash.
+- A different key gives a different hash.
+- Serialization throws, and `ToString()` is redacted.
+
+### Legacy decryptor
+
+- Reads samples made by the old code on .NET Framework with a fake passphrase and fake SSNs. Samples made by new code would only test it against itself.
+
+### Browser to API
+
+- A committed sample made by the browser module decrypts in a C# test.
+- Jest checks the layout of both that sample and fresh output, so a format change fails the build. Use the `node` test environment for WebCrypto.
+
+### Startup and structure
+
+- Startup fails outside Development when a setting is missing.
+- The local settings in the repo load and work.
+- The contract architecture test described under hashing.
+
+The Key Vault wrapper has no local emulator. Test its version and URI handling in unit tests, then verify wrap and unwrap in staging.
+
+## Iteration 2
+
+- Add `ssn_encrypted` and `ssn_hash` to `bowlers`, always set together, with a unique index on `ssn_hash` where it is not null.
+- Exclude both from change auditing.
+- Add SSN to `LegacyBowlerRow` and all three paths: new bowler, update and weekly sync.
+- Decrypt with the legacy code, check the 9 digits, then encrypt and hash.
+- A blank legacy value keeps what the website has.
+- A bad value raises an alert, and the rest of the bowler still saves.
+- Backfill all bowlers once and always overwrite. The weekly sync only reads recently changed rows.
+- The 402 legacy SSNs were unique on 2026-11-27.
+
+## Open questions
+
+- Does any compliance rule require FIPS-validated algorithms or modules?
+- Iteration 2: how should bowler merge and delete treat SSN, so a removed record does not hold a hash that blocks the surviving one?
+- Iteration 2: should the weekly sync rewrite SSN on every run, or only when the hash differs? Rewriting every time creates a change and an audit entry each run.
