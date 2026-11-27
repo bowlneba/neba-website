@@ -1,0 +1,7 @@
+{
+  "note": "Made by field-encryption.js with the public half of the development key in appsettings.Development.json. The plaintext is a fake SSN. Regenerate if that key or the format changes.",
+  "keyName": "BowlerPii",
+  "keyVersion": "local",
+  "plaintext": "509998260",
+  "wireValue": "AQVsb2NhbAEAHEUews1uCjNZd425H/S50xEOmTG4ioaHeQTWntGRbdw+bpGbqp+aA5AoBC5eLjmotYw31Ff1Fw+4yeIM4lXdEuwYFMru/vtasH7i1AQMyJJLZTpttGgIxKCgGAuIF3efPE6bZdN1VbHxi0gcmT3I3i951Z1ruLmzXhr/8CcpmimvKYZuG0p9eCrAI1cephICSPvI5EY+ljuRnPpDhDAUWg8vyicezcAHBoSTqj16qpcn42y+1GjftCCShAET5iua+MwIvIOjkdAMNBw/OGn1R96uHcjq3E+1dY7QX5TSE5p2P8eBQZakjarEp4EaIieDjXywA3LzR6vS2u8SLfRbks7hCcmP8NAVlqhGkYoakFfCHoGugNAnQqCVs4lmg9Ub47252v8="
+}

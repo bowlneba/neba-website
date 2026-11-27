@@ -1,0 +1,110 @@
+/**
+ * @jest-environment node
+ */
+// Tests for field-encryption.js. They check the wire layout of a committed sample (which a C# test
+// decrypts) and of fresh output, so a format change on either side fails the build.
+
+import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
+
+import { encryptField } from './field-encryption.js';
+
+const sample = JSON.parse(readFileSync(
+    resolve(process.cwd(), 'tests/Neba.Api.Tests/Encryption/Samples/browser-sample.json'), 'utf8'));
+
+const encoder = new TextEncoder();
+const decoder = new TextDecoder();
+
+function parse(wireValue) {
+    const bytes = Buffer.from(wireValue, 'base64');
+    let offset = 0;
+    const take = (length) => {
+        const part = bytes.subarray(offset, offset + length);
+        expect(part.length).toBe(length);
+        offset += length;
+        return part;
+    };
+
+    const formatVersion = take(1)[0];
+    const keyVersion = take(take(1)[0]).toString('utf8');
+    const wrappedKey = take(take(2).readUInt16BE(0));
+    const nonce = take(12);
+    const tag = take(16);
+    const ciphertext = bytes.subarray(offset);
+
+    return { formatVersion, keyVersion, wrappedKey, nonce, tag, ciphertext };
+}
+
+function expectLayout(wireValue, keyVersion, plaintext) {
+    const parts = parse(wireValue);
+    expect(parts.formatVersion).toBe(1);
+    expect(parts.keyVersion).toBe(keyVersion);
+    expect(parts.wrappedKey).toHaveLength(256);
+    expect(parts.ciphertext).toHaveLength(encoder.encode(plaintext).length);
+}
+
+async function createKeyPair() {
+    const pair = await crypto.subtle.generateKey(
+        { name: 'RSA-OAEP', modulusLength: 2048, publicExponent: Uint8Array.of(1, 0, 1), hash: 'SHA-256' },
+        false, ['encrypt', 'decrypt']);
+    const spki = await crypto.subtle.exportKey('spki', pair.publicKey);
+
+    return { publicKey: Buffer.from(spki).toString('base64'), privateKey: pair.privateKey };
+}
+
+// Decrypts the way the API does, using only the documented format.
+async function decrypt(wireValue, privateKey, keyName) {
+    const { keyVersion, wrappedKey, nonce, tag, ciphertext } = parse(wireValue);
+    const aesKeyBytes = await crypto.subtle.decrypt({ name: 'RSA-OAEP' }, privateKey, wrappedKey);
+    expect(aesKeyBytes.byteLength).toBe(32);
+    const aesKey = await crypto.subtle.importKey('raw', aesKeyBytes, { name: 'AES-GCM' }, false, ['decrypt']);
+    const additionalData = encoder.encode(`v1|${keyName}|wire|${keyVersion}`);
+    const plaintext = await crypto.subtle.decrypt(
+        { name: 'AES-GCM', iv: nonce, additionalData }, aesKey, Buffer.concat([ciphertext, tag]));
+
+    return decoder.decode(plaintext);
+}
+
+describe('field-encryption', () => {
+    const value = '900123456';
+    let keys;
+
+    beforeAll(async () => {
+        keys = await createKeyPair();
+    });
+
+    test('the committed sample has the wire layout', () => {
+        expectLayout(sample.wireValue, sample.keyVersion, sample.plaintext);
+    });
+
+    test('fresh output has the wire layout', async () => {
+        const wireValue = await encryptField(value, keys.publicKey, 'BowlerPii', 'abc123');
+
+        expectLayout(wireValue, 'abc123', value);
+        expect(Buffer.from(wireValue, 'base64')).toHaveLength(2 + 6 + 2 + 256 + 12 + 16 + value.length);
+    });
+
+    test('fresh output decrypts with the private key under the wire purpose', async () => {
+        const wireValue = await encryptField(value, keys.publicKey, 'BowlerPii', 'abc123');
+
+        await expect(decrypt(wireValue, keys.privateKey, 'BowlerPii')).resolves.toBe(value);
+    });
+
+    test('output is bound to the key name', async () => {
+        const wireValue = await encryptField(value, keys.publicKey, 'BowlerPii', 'abc123');
+
+        await expect(decrypt(wireValue, keys.privateKey, 'OtherPii')).rejects.toThrow();
+    });
+
+    test('the same input gives different output each time', async () => {
+        const first = await encryptField(value, keys.publicKey, 'BowlerPii', 'local');
+        const second = await encryptField(value, keys.publicKey, 'BowlerPii', 'local');
+
+        expect(first).not.toBe(second);
+    });
+
+    test('a key version over 255 bytes is rejected', async () => {
+        await expect(encryptField(value, keys.publicKey, 'BowlerPii', 'v'.repeat(256)))
+            .rejects.toThrow('key version');
+    });
+});

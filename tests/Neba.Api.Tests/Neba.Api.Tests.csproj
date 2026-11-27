@@ -22,6 +22,7 @@
   <ItemGroup>
     <!-- Encryption tests read the committed local settings and the browser module sample. -->
     <None Include="..\..\src\Neba.Api\appsettings.Development.json" Link="Encryption\Samples\api.appsettings.Development.json" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="Encryption\Samples\browser-sample.json" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 
   <ItemGroup>
