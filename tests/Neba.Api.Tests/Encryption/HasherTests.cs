@@ -48,7 +48,7 @@ public sealed class HasherTests
     }
 
     [Fact(DisplayName = "Serializing a hash should throw, alone or inside another object")]
-    public void Serialize_ShouldThrow_ForAHash()
+    public void Serialize_ShouldThrow_WhenValueIsAHash()
     {
         // Arrange
         var ssn = FakeSsn();
@@ -66,7 +66,7 @@ public sealed class HasherTests
     }
 
     [Fact(DisplayName = "ToString should not show the hash")]
-    public void ToString_ShouldBeRedacted()
+    public void ToString_ShouldBeRedacted_WhenHashIsSet()
     {
         // Arrange
         var ssn = FakeSsn();
@@ -80,7 +80,7 @@ public sealed class HasherTests
     }
 
     [Fact(DisplayName = "A hash should have no public properties for serializers or loggers to read")]
-    public void Hashed_ShouldHaveNoPublicProperties()
+    public void Hashed_ShouldHaveNoPublicProperties_WhenInspected()
     {
         // Arrange
         var type = typeof(Hashed<BowlerPii>);

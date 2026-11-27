@@ -18,7 +18,7 @@ public sealed class BrowserSampleTests
     private sealed record Sample(string KeyName, string KeyVersion, string Plaintext, string WireValue);
 
     [Fact(DisplayName = "A sample made by the browser module should decrypt")]
-    public async Task DecryptFromClientAsync_ShouldReadTheBrowserSample()
+    public async Task DecryptFromClientAsync_ShouldReadTheSample_WhenTheBrowserMadeIt()
     {
         // Arrange
         var ct = TestContext.Current.CancellationToken;

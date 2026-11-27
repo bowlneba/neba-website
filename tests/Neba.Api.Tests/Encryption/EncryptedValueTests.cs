@@ -13,7 +13,7 @@ public sealed class EncryptedValueTests
         => new(new Encrypted<BowlerPii>("cipher-text"), new Hashed<BowlerPii>("hash-text"));
 
     [Fact(DisplayName = "It should hold the ciphertext and hash it was given")]
-    public void Constructor_ShouldHoldBothParts()
+    public void Constructor_ShouldHoldBothParts_WhenGivenBoth()
     {
         // Arrange
 
@@ -27,7 +27,7 @@ public sealed class EncryptedValueTests
     }
 
     [Fact(DisplayName = "Neither ToString nor JSON should show the ciphertext or hash")]
-    public void ToStringAndSerialize_ShouldShowNothing()
+    public void ToStringAndSerialize_ShouldShowNothing_WhenValueIsSet()
     {
         // Arrange
         var value = Create();
