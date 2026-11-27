@@ -9,6 +9,8 @@ using Azure.Provisioning.KeyVault;
 using Azure.Provisioning.PostgreSql;
 using Azure.Provisioning.Storage;
 
+using Microsoft.Extensions.Hosting;
+
 using Neba.AppHost;
 
 // WithDisplayOrder is experimental in Aspire 17.
@@ -163,7 +165,7 @@ if (builder.ExecutionContext.IsPublishMode)
     // without an explicit data role here, the seed step fails with 403 Forbidden.
     var deployPrincipalId = builder.AddParameter("deployPrincipalId");
 
-    keyVault.ConfigureInfrastructure(infra =>
+    void GrantDeployPrincipalSecretsOfficer(AzureResourceInfrastructure infra)
     {
         var vault = infra.GetProvisionableResources().OfType<KeyVaultService>().Single();
         var roleAssignment = vault.CreateRoleAssignment(
@@ -172,7 +174,39 @@ if (builder.ExecutionContext.IsPublishMode)
             new BicepValue<Guid>(((BicepValue<string>)deployPrincipalId.AsProvisioningParameter(infra, "deployPrincipalId")).Compile()),
             "deploy_pipeline");
         infra.Add(roleAssignment);
+    }
+
+    keyVault.ConfigureInfrastructure(GrantDeployPrincipalSecretsOfficer);
+
+    // A second vault for encryption keys of sensitive data (docs/adr/0011). Only api references it:
+    // web holds Crypto User and Secrets User on the whole "keyvault" and loads every secret there,
+    // so anything in that vault is readable by web.
+    var piiVault = builder.AddAzureKeyVault("piivault");
+    piiVault.ConfigureInfrastructure(infra =>
+    {
+        GrantDeployPrincipalSecretsOfficer(infra);
+
+        // Losing the key loses the data, so production cannot purge the vault. Staging must, so
+        // that destroy-staging.yml can free the vault name. Azure cannot turn this off again.
+        if (builder.Environment.IsProduction())
+        {
+            infra.GetProvisionableResources().OfType<KeyVaultService>().Single().Properties.EnablePurgeProtection = true;
+        }
     });
+
+    (string SecretName, string ParameterName)[] piiSecrets =
+    [
+        ("Encryption--Keys--BowlerPii--HashKey", "bowlerPiiHashKey"),
+        ("Legacy--SsnPassphrase", "legacySsnPassphrase"),
+    ];
+
+    foreach (var (secretName, parameterName) in piiSecrets)
+    {
+        piiVault.AddSecret($"{parameterName}Secret", secretName, builder.AddParameter(parameterName, secret: true).Resource);
+    }
+
+    var bowlerPiiKey = builder.AddBicepTemplate("bowlerpiikey", "bowlerpii-key.bicep")
+        .WithParameter("keyVaultName", piiVault.Resource.NameOutputReference);
 
     // App secrets, written to the vault by the deploy (the Key Vault secret names are what the
     // apps read as configuration keys, so they must not change). Each value arrives as a secret
@@ -226,7 +260,10 @@ if (builder.ExecutionContext.IsPublishMode)
         .WithReference(appInsights)
         .WithReference(keyVault)
         .WithRoleAssignments(keyVault, KeyVaultBuiltInRole.KeyVaultSecretsUser, KeyVaultBuiltInRole.KeyVaultCryptoUser)
-        .WithEnvironment("DataProtection__KeyVaultKeyUri", dataProtectionKey.GetOutput("keyUri"));
+        .WithEnvironment("DataProtection__KeyVaultKeyUri", dataProtectionKey.GetOutput("keyUri"))
+        .WithReference(piiVault)
+        .WithRoleAssignments(piiVault, KeyVaultBuiltInRole.KeyVaultSecretsUser, KeyVaultBuiltInRole.KeyVaultCryptoUser)
+        .WithEnvironment("Encryption__Keys__BowlerPii__KeyVaultKeyUri", bowlerPiiKey.GetOutput("keyUriWithVersion"));
 
     // No Aspire.Hosting.Azure.Maps / Azure.Provisioning.Maps package exists, so the Maps
     // account is provisioned via a handwritten Bicep template. See maps.bicep and issue #28
