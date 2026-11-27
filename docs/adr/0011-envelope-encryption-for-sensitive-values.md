@@ -26,7 +26,7 @@ The website must hold bowler SSNs, starting with those the management software s
 
 ### Second vault
 
-`piivault` is referenced by `api` only, with Secrets User and Crypto User. It holds the RSA 2048 wrapping key (`wrapKey` and `unwrapKey` only), the HMAC hash key and the legacy passphrase. Purge protection is on in production, because losing the key loses the data, and off in staging so the environment can be destroyed.
+`piivault` is referenced by `api` only, with Secrets User and Crypto Service Encryption User (read, wrap and unwrap; it cannot change keys). It holds the RSA 2048 wrapping key (`wrapKey` and `unwrapKey` only), the HMAC hash key and the legacy passphrase. Purge protection is on in production, because losing the key loses the data, and off in staging so the environment can be destroyed.
 
 ### Envelope encryption
 

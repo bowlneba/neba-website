@@ -152,7 +152,7 @@ The hash must never leave `api`:
 In `AppHost.cs`, publish mode only:
 
 - Add `piivault`.
-- Give `api` a reference to it with Secrets User and Crypto User. Do not reference it from `web`.
+- Give `api` a reference to it with Secrets User and Crypto Service Encryption User. Do not reference it from `web`.
 - Give the deploy principal Secrets Officer, as on the existing vault.
 - Add `bowlerpii-key.bicep`, following `dataprotectionkey.bicep`: RSA 2048, `wrapKey` and `unwrapKey` only, output `keyUriWithVersion`.
 - Pass the output to `api` as `Encryption__Keys__BowlerPii__KeyVaultKeyUri`.

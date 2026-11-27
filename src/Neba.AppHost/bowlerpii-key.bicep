@@ -11,8 +11,9 @@ resource keyVault 'Microsoft.KeyVault/vaults@2023-07-01' existing = {
   name: keyVaultName
 }
 
-// Only the api's managed identity may wrap and unwrap with it (Key Vault Crypto User on this vault,
-// granted in AppHost.cs). A deploy does not add a version to an existing key; rotation is manual.
+// Only the api's managed identity may wrap and unwrap with it (Key Vault Crypto Service Encryption
+// User on this vault, granted in AppHost.cs). A deploy does not add a version to an existing key;
+// rotation is manual.
 // Keep old versions enabled: each encrypted value names the version that decrypts it.
 resource bowlerPiiKey 'Microsoft.KeyVault/vaults/keys@2023-07-01' = {
   parent: keyVault

@@ -262,7 +262,8 @@ if (builder.ExecutionContext.IsPublishMode)
         .WithRoleAssignments(keyVault, KeyVaultBuiltInRole.KeyVaultSecretsUser, KeyVaultBuiltInRole.KeyVaultCryptoUser)
         .WithEnvironment("DataProtection__KeyVaultKeyUri", dataProtectionKey.GetOutput("keyUri"))
         .WithReference(piiVault)
-        .WithRoleAssignments(piiVault, KeyVaultBuiltInRole.KeyVaultSecretsUser, KeyVaultBuiltInRole.KeyVaultCryptoUser)
+        // Crypto Service Encryption User reads, wraps and unwraps; Crypto User could also change keys.
+        .WithRoleAssignments(piiVault, KeyVaultBuiltInRole.KeyVaultSecretsUser, KeyVaultBuiltInRole.KeyVaultCryptoServiceEncryptionUser)
         .WithEnvironment("Encryption__Keys__BowlerPii__KeyVaultKeyUri", bowlerPiiKey.GetOutput("keyUriWithVersion"));
 
     // No Aspire.Hosting.Azure.Maps / Azure.Provisioning.Maps package exists, so the Maps
