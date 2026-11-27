@@ -1,5 +1,7 @@
 using System.Security.Cryptography;
 
+using Azure;
+
 using ErrorOr;
 
 using Microsoft.Extensions.Logging;
@@ -204,6 +206,25 @@ public sealed class EncryptorTests : IDisposable
 
         // Assert
         result.FirstError.ShouldBe(EncryptionErrors.InvalidClientValue);
+    }
+
+    [Fact(DisplayName = "A Key Vault failure should surface as an error, not as bad client input")]
+    public async Task DecryptFromClientAsync_ShouldThrow_WhenKeyVaultFails()
+    {
+        // Arrange
+        var ct = TestContext.Current.CancellationToken;
+        var wire = await CreateSut().SealAsync(FakeSsn(), EncryptionPurpose.Wire, ct);
+        var wrapper = new Mock<IKeyWrapper>(MockBehavior.Strict);
+        wrapper
+            .Setup(w => w.UnwrapAsync(It.IsAny<string>(), It.IsAny<byte[]>(), ct))
+            .ThrowsAsync(new RequestFailedException(503, "unavailable"));
+        var sut = new Encryptor<BowlerPii>(wrapper.Object, NullLogger<Encryptor<BowlerPii>>.Instance);
+
+        // Act
+        var act = () => sut.DecryptFromClientAsync(wire, ct);
+
+        // Assert
+        (await act.ShouldThrowAsync<RequestFailedException>()).Status.ShouldBe(503);
     }
 
     [Fact(DisplayName = "A wrapped key of the wrong size should be rejected")]
