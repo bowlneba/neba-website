@@ -52,6 +52,14 @@ describe('NebaDateInput', () => {
             expect(day.value).toBe('05');
             expect(year.value).toBe('2026');
         });
+
+        test('should mark the container ready once listeners are attached', () => {
+            const container = makeContainer('date-1b');
+
+            initialize('date-1b', makeDotNetRef(), '', '', '');
+
+            expect(container.dataset.ready).toBe('true');
+        });
     });
 
     describe('auto-advance on digit fill', () => {
