@@ -61,6 +61,7 @@ src/
 │   ├── Caching/                  # FusionCache setup and decorators
 │   ├── BackgroundJobs/           # Hangfire job definitions
 │   ├── Storage/                  # Azure Blob Storage
+│   ├── Encryption/               # Envelope encryption and hashing for sensitive values (ADR-0011)
 │   ├── Security/, Identity/      # Auth, policies, current-user resolution
 │   └── Legacy/                   # Temporary /legacy sync bridge from the Software (nebamgmt-v3) — see docs/api/software-backdoor-plan.md
 │
@@ -121,6 +122,7 @@ src/
 | **Local Development** | .NET Aspire |
 | **Production** | Azure (Container Apps, Monitor, Key Vault, Blob Storage, Maps) |
 | **Background Jobs** | Hangfire |
+| **Field Encryption** | AES-256-GCM envelope encryption for sensitive values, with RSA keys in a second Key Vault that only the API can reach ([ADR-0011](docs/adr/0011-envelope-encryption-for-sensitive-values.md)) |
 | **Image Processing** | SixLabors ImageSharp (Hall of Fame photo resize; commercial license) |
 | **Caching** | FusionCache |
 | **API Documentation** | Scalar |
