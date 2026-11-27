@@ -16,8 +16,9 @@ function fromBase64(text) {
     return Uint8Array.from(atob(text), (character) => character.charCodeAt(0));
 }
 
+// Byte by byte: spreading a large array into String.fromCharCode overflows the call stack.
 function toBase64(bytes) {
-    return btoa(String.fromCharCode(...bytes));
+    return btoa(Array.from(bytes, (byte) => String.fromCharCode(byte)).join(''));
 }
 
 function concat(parts) {
@@ -50,26 +51,29 @@ export async function encryptField(value, publicKey, keyName, keyVersion) {
         'spki', fromBase64(publicKey), { name: 'RSA-OAEP', hash: 'SHA-256' }, false, ['encrypt']);
 
     const aesKeyBytes = globalThis.crypto.getRandomValues(new Uint8Array(32));
-    const aesKey = await subtle.importKey('raw', aesKeyBytes, { name: 'AES-GCM' }, false, ['encrypt']);
-    const nonce = globalThis.crypto.getRandomValues(new Uint8Array(NONCE_SIZE));
-    const additionalData = encoder.encode(`v1|${keyName}|wire|${keyVersion}`);
+    try {
+        const aesKey = await subtle.importKey('raw', aesKeyBytes, { name: 'AES-GCM' }, false, ['encrypt']);
+        const nonce = globalThis.crypto.getRandomValues(new Uint8Array(NONCE_SIZE));
+        const additionalData = encoder.encode(`v1|${keyName}|wire|${keyVersion}`);
 
-    // WebCrypto returns the tag appended to the ciphertext; the format stores it first.
-    const sealed = new Uint8Array(await subtle.encrypt(
-        { name: 'AES-GCM', iv: nonce, additionalData, tagLength: TAG_SIZE * 8 }, aesKey, encoder.encode(value)));
-    const ciphertext = sealed.subarray(0, sealed.length - TAG_SIZE);
-    const tag = sealed.subarray(sealed.length - TAG_SIZE);
+        // WebCrypto returns the tag appended to the ciphertext; the format stores it first.
+        const sealed = new Uint8Array(await subtle.encrypt(
+            { name: 'AES-GCM', iv: nonce, additionalData, tagLength: TAG_SIZE * 8 }, aesKey, encoder.encode(value)));
+        const ciphertext = sealed.subarray(0, sealed.length - TAG_SIZE);
+        const tag = sealed.subarray(sealed.length - TAG_SIZE);
 
-    const wrappedKey = new Uint8Array(await subtle.encrypt({ name: 'RSA-OAEP' }, rsaKey, aesKeyBytes));
-    aesKeyBytes.fill(0);
+        const wrappedKey = new Uint8Array(await subtle.encrypt({ name: 'RSA-OAEP' }, rsaKey, aesKeyBytes));
 
-    return toBase64(concat([
-        Uint8Array.of(FORMAT_VERSION, versionBytes.length),
-        versionBytes,
-        Uint8Array.of(wrappedKey.length >> 8, wrappedKey.length & 0xff),
-        wrappedKey,
-        nonce,
-        tag,
-        ciphertext,
-    ]));
+        return toBase64(concat([
+            Uint8Array.of(FORMAT_VERSION, versionBytes.length),
+            versionBytes,
+            Uint8Array.of(wrappedKey.length >> 8, wrappedKey.length & 0xff),
+            wrappedKey,
+            nonce,
+            tag,
+            ciphertext,
+        ]));
+    } finally {
+        aesKeyBytes.fill(0);
+    }
 }

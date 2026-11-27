@@ -103,6 +103,25 @@ describe('field-encryption', () => {
         expect(first).not.toBe(second);
     });
 
+    test('a large value does not overflow the call stack', async () => {
+        const large = 'a'.repeat(300000);
+
+        const wireValue = await encryptField(large, keys.publicKey, 'BowlerPii', 'local');
+
+        expectLayout(wireValue, 'local', large);
+    });
+
+    test('the AES key is cleared when encryption fails', async () => {
+        const encrypt = jest.spyOn(crypto.subtle, 'encrypt').mockRejectedValue(new Error('encrypt failed'));
+        const fill = jest.spyOn(Uint8Array.prototype, 'fill');
+
+        await expect(encryptField(value, keys.publicKey, 'BowlerPii', 'local')).rejects.toThrow('encrypt failed');
+
+        expect(fill).toHaveBeenCalledWith(0);
+        encrypt.mockRestore();
+        fill.mockRestore();
+    });
+
     test('a key version over 255 bytes is rejected', async () => {
         await expect(encryptField(value, keys.publicKey, 'BowlerPii', 'v'.repeat(256)))
             .rejects.toThrow('key version');
